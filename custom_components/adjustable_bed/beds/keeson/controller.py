@@ -1259,6 +1259,16 @@ async def build_controller(ctx: BuildContext) -> BedController:
     coordinator = ctx.coordinator
     device_name = ctx.device_name
     variant = ctx.variant
+    if variant == "ore_ultramatic":
+        await ctx.preload("ore_ultramatic.controller")
+        from ..ore_ultramatic.controller import OreUltramaticController
+
+        controller = OreUltramaticController(
+            coordinator, snapshot=ctx.stored_capabilities("keeson")
+        )
+        if ctx.client is None and controller.capability_snapshot() is None:
+            raise ConnectionError("Connect ORE Ultramatic once to discover its bed route")
+        return controller
     if variant in ORE_COMFORT_BED_VARIANTS:
         # Explicit app profile with its own controller; Auto never selects it.
         await ctx.preload("ore_comfort_bed")

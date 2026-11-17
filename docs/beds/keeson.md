@@ -82,6 +82,7 @@ APK Protocol Audit row044.
 | ✅ | [Avanti Bases](https://play.google.com/store/apps/details?id=com.ore.AvantiBases) 1.0.5 (7) | `com.ore.AvantiBases` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [AMERICANSTAR](https://play.google.com/store/apps/details?id=com.ore.americanstar) 1.0 (1), hardware unverified | `com.ore.americanstar` | [ORE comfort-bed](#ore-comfort-bed-profiles) |
 | ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), hardware unverified | `com.ore.okincomfortbed` | [OKIN Comfort Bed](#okin-comfort-bed) |
+| ✅ | [ORE Ultramatic](https://play.google.com/store/apps/details?id=com.ore.ultramatic) 1.0.5 (9), hardware unverified | `com.ore.ultramatic` | [ORE Ultramatic](#ore-ultramatic) |
 | ✅ | [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (11) | `com.ore.bedding.glideawaymontion` | [Glideaway Motion](#glideaway-motion) |
 | ✅ | [AdjustaMattress](https://play.google.com/store/apps/details?id=com.okin.adjustamattress) 1.6.0 (10) | `com.okin.adjustamattress` | [AdjustaMattress](#adjustamattress) |
 | ✅ | Scott Living | `com.keeson.scottlivingrelease` | [Scott Living](#scott-living) |
@@ -211,6 +212,7 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | OKIN-Seating | `keeson` `okin_seating` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | Heal Every Night | `keeson` `heal_every_night` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | OKIN Comfort Bed | `keeson` `okin_comfort_bed` | K1 `E5`, big-endian | live FFE9 / FFE4 | app controller | app controller | renewable lease |
+| ORE Ultramatic | bed type `keeson`, `ore_ultramatic` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | AMERICANSTAR | `keeson` `americanstar` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | Avanti Bases | `keeson` `avanti_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
 | Bedsense Bases | `keeson` `bedsense_bases` | K1 `E5`, big-endian | BASE (fixed) | app controller | app controller | renewable lease |
@@ -283,8 +285,9 @@ AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
 ComfortBaseForBluetooth, Cool Base, Dynasty Bases, Glideaway Motion, Heal Every
 Night, INNOVA, OkinComfortBed II P1, OkinComfortBed II P2, OkinComfortBed II P3,
 OkinComfortBed Ⅱ (Jalon), Malouf legacy OKIN, MaxCoil Una, OKIN Comfort Bed,
-OKIN-Seating, Rondure, SBI, Scott Living, Simon Li, Sleepy's BOX15, アシステック P1,
-アシステック P2 keep their key tables with their app controllers; see their sections.
+OKIN-Seating, ORE Ultramatic, Rondure, SBI, Scott Living, Simon Li, Sleepy's
+BOX15, アシステック P1, アシステック P2 keep their key tables with their app controllers; see
+their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -411,7 +414,7 @@ family's codec exists.
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | OkinComfortBed II P3, アシステック P2 |
 | K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, SBI, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
-| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
+| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, ORE Ultramatic, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
 | JSON | JSON envelope, see below | see JSON envelope | JSON/A00A |
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
@@ -2102,6 +2105,7 @@ frames of other families and keep it.
 
 | Profile | Bed type | Frame | Word `0x1` | Zero word | Hold until release | Guide |
 |---|---|---|---|---|---|---|
+| ORE Ultramatic | `keeson`, `ore_ultramatic` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [ORE Ultramatic](#ore-ultramatic) |
 | アシステック P1 | `yamada`, P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [アシステック](#アシステック--yamada) |
 | アシステック P2 | `yamada`, P2 | P2 7-byte (`05`) | `05 02 00 00 00 01 00` | `05 02 00 00 00 00 00` | renewable lease | [アシステック](#アシステック--yamada) |
 | OkinComfortBed II P1 | `jalon` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [OkinComfortBed II](#okincomfortbed-ii) |
@@ -5298,3 +5302,183 @@ Row178, com.okin.yamada 1.0.1 (6): the verified direct BLE scope reproduces all
 35 frozen packet literals through the existing Keeson and Okin N-frame codecs,
 plus all four valid parser fixtures. App behavior is statically supported;
 hardware qualification remains external beta/release validation.
+
+### ORE Ultramatic
+
+**App:** [Ultramatic](https://play.google.com/store/apps/details?id=com.ore.ultramatic) 1.0.5 (9), `com.ore.ultramatic`
+
+**Status:** ❓ Hardware UNVERIFIED; static app evidence only. External beta qualification is welcome.
+
+#### Setup
+
+Choose **ORE Ultramatic app (Keeson)** and the actual 2-,3- or 4-motor screen.
+The layout belongs to each physical receiver in a paired bed. Detection: none;
+this app accepts any nonempty device name and supplies no safe advertisement filter.
+The live GATT table selects P1 if any FFF0 service exists, otherwise P2. FF20
+is not a selection requirement. Both FFE9 and FFE4 must exist; the last instance
+of each across all services wins. No PIN, authentication, capability query,
+firmware read or motor-position query is established. Route capabilities are
+captured after connection, including for offline paired-side entities.
+
+#### Controls
+
+Both routes expose back/feet plus the selected screen's combined, head, waist
+or lumbar controls. The waist label uses head/neck artwork in the app; actual
+linkage remains unverified. P1 recalls M1/M2/Zero G/Flat with one packet and
+stops a repeated tap of the same target. Each can be programmed independently.
+P2 holds TV/Anti Snore/Zero G/Flat and offers no programming. Its alarm label ZG
+uses a different action from its Anti Snore preset, so the integration preserves
+both paths.
+
+P1 exposes explicit head/foot/wave levels, timer, massage start/stop and light
+on/off. P2 exposes five held massage buttons and a light toggle. No physical
+cycling algorithm, brightness, color or discrete P2 massage-off command is
+inferred. Head/foot/wave preferences remain local and optimistic; reported
+intensity and timer are separate sensors.
+
+<!-- generated:keeson-ore-ultramatic -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Selector | Write | Notify |
+|---|---|---|
+| 0000fff0-0000-1000-8000-00805f9b34fb present: P1, absent: P2 | 0000ffe9-0000-1000-8000-00805f9b34fb | 0000ffe4-0000-1000-8000-00805f9b34fb |
+
+| Route | Layout motors | Axis | Up | Down |
+|---|---|---|---|---|
+| P1 | 2 | back | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 02 04` |
+| P1 | 2 | feet | `E5 FE 16 00 00 00 04 02` | `E5 FE 16 00 00 00 08 FE` |
+| P1 | 2 | both | `E5 FE 16 00 00 00 10 F6` | `E5 FE 16 00 00 00 20 E6` |
+| P1 | 3 | back | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 02 04` |
+| P1 | 3 | feet | `E5 FE 16 00 00 00 04 02` | `E5 FE 16 00 00 00 08 FE` |
+| P1 | 3 | head | `E5 FE 16 00 00 00 10 F6` | `E5 FE 16 00 00 00 20 E6` |
+| P1 | 4 | back | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 02 04` |
+| P1 | 4 | feet | `E5 FE 16 00 00 00 04 02` | `E5 FE 16 00 00 00 08 FE` |
+| P1 | 4 | waist | `E5 FE 16 00 00 00 10 F6` | `E5 FE 16 00 00 00 20 E6` |
+| P1 | 4 | lumbar | `E5 FE 16 00 00 00 40 C6` | `E5 FE 16 00 00 00 80 86` |
+| P2 | 2 | back | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 02 00 00 00 00 03` |
+| P2 | 2 | feet | `E6 FE 16 04 00 00 00 00 01` | `E6 FE 16 08 00 00 00 00 FD` |
+| P2 | 2 | both | `E6 FE 16 05 00 00 00 00 00` | `E6 FE 16 0A 00 00 00 00 FB` |
+| P2 | 3 | back | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 02 00 00 00 00 03` |
+| P2 | 3 | feet | `E6 FE 16 04 00 00 00 00 01` | `E6 FE 16 08 00 00 00 00 FD` |
+| P2 | 3 | head | `E6 FE 16 10 00 00 00 00 F5` | `E6 FE 16 20 00 00 00 00 E5` |
+| P2 | 4 | back | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 02 00 00 00 00 03` |
+| P2 | 4 | feet | `E6 FE 16 04 00 00 00 00 01` | `E6 FE 16 08 00 00 00 00 FD` |
+| P2 | 4 | waist | `E6 FE 16 10 00 00 00 00 F5` | `E6 FE 16 20 00 00 00 00 E5` |
+| P2 | 4 | lumbar | `E6 FE 16 40 00 00 00 00 C5` | `E6 FE 16 80 00 00 00 00 85` |
+
+| Route | Preset | Recall | Program |
+|---|---|---|---|
+| P1 | memory_1 | `E5 FE 16 01 00 00 08 FD` | `E5 FE 16 20 00 00 08 DE` |
+| P1 | memory_2 | `E5 FE 16 01 00 00 09 FC` | `E5 FE 16 20 00 00 09 DD` |
+| P1 | zero_g | `E5 FE 16 01 00 00 01 04` | `E5 FE 16 20 00 00 01 E5` |
+| P1 | flat | `E5 FE 16 01 00 00 02 03` | `E5 FE 16 20 00 00 02 E4` |
+| P2 | tv | `E6 FE 16 00 40 00 00 00 C5` | none |
+| P2 | anti_snore | `E6 FE 16 00 80 00 00 00 85` | none |
+| P2 | zero_g | `E6 FE 16 00 10 00 00 00 F5` | none |
+| P2 | flat | `E6 FE 16 00 00 00 08 00 FD` | none |
+
+| Route | Control | Frame / sequence |
+|---|---|---|
+| P1 | wave level 0 | `E5 FE 16 10 00 00 20 D6` |
+| P1 | wave level 1 | `E5 FE 16 10 00 00 21 D5` |
+| P1 | wave level 2 | `E5 FE 16 10 00 00 22 D4` |
+| P1 | wave level 3 | `E5 FE 16 10 00 00 23 D3` |
+| P1 | head level 0 | `E5 FE 16 10 00 00 10 E6` |
+| P1 | head level 1 | `E5 FE 16 10 00 00 11 E5` |
+| P1 | head level 2 | `E5 FE 16 10 00 00 12 E4` |
+| P1 | head level 3 | `E5 FE 16 10 00 00 13 E3` |
+| P1 | foot level 0 | `E5 FE 16 11 00 00 10 E5` |
+| P1 | foot level 1 | `E5 FE 16 11 00 00 11 E4` |
+| P1 | foot level 2 | `E5 FE 16 11 00 00 12 E3` |
+| P1 | foot level 3 | `E5 FE 16 11 00 00 13 E2` |
+| P1 | timer 10 min | `E5 FE 16 10 00 00 30 C6` |
+| P1 | timer 20 min | `E5 FE 16 10 00 00 31 C5` |
+| P1 | timer 30 min | `E5 FE 16 10 00 00 32 C4` |
+| P1 | light on | `E5 FE 16 31 00 00 01 D4` |
+| P1 | light off | `E5 FE 16 31 00 00 00 D5` |
+| P2 | light toggle | `E6 FE 16 00 00 02 00 00 03` |
+| P2 | held massage head | `E6 FE 16 00 08 00 00 00 FD` |
+| P2 | held massage foot | `E6 FE 16 00 04 00 00 00 01` |
+| P2 | held massage timer | `E6 FE 16 00 02 00 00 00 03` |
+| P2 | held massage toggle | `E6 FE 16 00 01 00 00 00 04` |
+| P2 | held massage wave | `E6 FE 16 00 00 00 10 00 F5` |
+| P1 | release / STOP | `E5 FE 16 00 00 00 00 06` |
+| P2 | release / STOP | `E6 FE 16 00 00 00 00 00 05` |
+| P1 | massage start (saved wave/head/foot, default1) | `E5 FE 16 10 00 00 21 D5`; `E5 FE 16 10 00 00 11 E5`; `E5 FE 16 11 00 00 11 E4` |
+| P1 | massage stop | `E5 FE 16 10 00 00 10 E6`; `E5 FE 16 11 00 00 10 E5` |
+
+Alarm examples use local2026-11-17 07:06:05, alarm07:30, repeat130.
+
+| Route | Alarm control | Frame |
+|---|---|---|
+| P1 | query | `E2 FE 16 05 06 07 02 F5` |
+| P2 | query | `E2 80 03 00 9A` |
+| P2 | clock | `E7 80 01 7E 0A 11 07 06 05 EC` |
+| P1 | disable | `EB FE 16 05 06 07 FF FF 02 FF FF FF FF F2` |
+| P1 | enable type0 | `EB FE 16 05 06 07 1E 07 02 82 FF FF FF 48` |
+| P1 | enable type1 | `EB FE 16 05 06 07 1E 07 02 82 11 11 FF 24` |
+| P1 | enable type2 | `EB FE 16 05 06 07 1E 07 02 82 FF FF 08 3F` |
+| P1 | enable type3 | `EB FE 16 05 06 07 1E 07 02 82 FF FF 09 3E` |
+| P2 | disable | `ED 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8F` |
+| P2 | enable type0 | `ED 80 03 07 1E 82 0F 00 00 00 00 00 00 00 00 D9` |
+| P2 | enable type1 | `ED 80 03 07 1E 82 09 00 00 00 00 00 00 00 00 DF` |
+| P2 | enable type2 | `ED 80 03 07 1E 82 0F 00 00 00 00 00 00 00 00 D9` |
+| P2 | enable type3 | `ED 80 03 07 1E 82 0D 00 00 00 00 00 00 00 00 DB` |
+
+| Lifecycle | Timing |
+|---|---|
+| Held refresh | immediate, then100ms after each write |
+| Single, release and clock | 100ms before each write |
+| Query | 200ms before write |
+| Startup | subscribe only, no initialization/query/control write |
+<!-- /generated -->
+
+#### Timing
+
+The generated table gives app timing. Motor, P2 preset and P2 massage holds use
+elapsed deadlines and renewable HA leases, up to 30 seconds. Cancellation drains
+the proven zero-word release on the captured connection. A replacement session
+never receives old movement, settings or release packets. P1 one-shot presets,
+settings and sequences do not gain an invented trailing STOP. HA supplies
+serialization, bounded commands and cleanup for cancellation, including the
+P2 massage cancellation case the app omits. Disconnect stopping remains unknown.
+
+#### Notifications
+
+`UltramaticParser` preserves the corrected fresh-fragment rule: a 4..20-byte
+F4 prefix caches and returns without state changes or callback. Uncached short
+non 10/non 16 inputs also return unchanged. Exact 10/16, >20 and cached continuation
+paths retain their existing decoder differences; a continuation leaves the
+cache intact. Unknown decoded lengths reset massage values, while an input
+returned by the preflight does not. HA clears the activity-wide app cache and
+reported state at the connection boundary, and ignores retired callbacks.
+
+Alarm fields retain signed Java values and P2 raw actions. P2 repeat 80 is a
+sentinel for the prior true repeat; P1 repeat 80 decodes to-128. Received-128
+and positive UI 128 remain distinct when sent back. No checksum or strict
+header validation is added to massage decoding. HA ignores truncated alarm
+fields safely instead of reproducing out-of-bounds exceptions. Notifications
+establish no positions or light state. Bleak manages the actual notification
+subscription; the Android app only enables it locally and writes no CCCD.
+
+#### Services
+
+`adjustable_bed.ore_ultramatic_set_alarm` exposes enabled, local minute-precision
+time, raw repeat-128..255 and all four app action choices. Repeat bits 0..6 are
+Sunday..Saturday; editing days also adds 128. Exactly 0 or positive 128 selects
+today, or tomorrow when the requested hour/minute has passed; seconds do not
+change that comparison. P1 carries current clock fields in its query/alarm;
+P2 sends clock, alarm, then query. Both routes expose Refresh alarm. P2 also
+supports the generic Sync clock, held presets and held controls actions.
+Whole-target admission captures STOP epochs and paired ownership before the
+first import/connect wait. A child-device target retains its side.
+
+#### Evidence
+
+Accepted standalone row 158,91 frozen command/parser vectors and 12 scoped
+ULTRA-A001 repair observations. Both transport builders reproduce every frozen
+transmit literal through the Keeson codec. Package 1.0.5(9), delivery SHA-256
+`b1080bf0ae7691c101622afd95d2406db4acfc766596e8426ce8c61da191e6e7`.
+The acquisition was frozen 2026-07-14; no fresh latest-version attestation is
+claimed. Physical layouts, stopping and reply semantics need external user
+qualification after beta/release; this is not a maintainer hardware task.

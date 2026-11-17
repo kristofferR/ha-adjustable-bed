@@ -1092,3 +1092,13 @@ it does not write a hardware lock. Protocol, layout and local settings belong
 to each physical side of a two-address pair. See [M Line](beds/mline.md).
 
 SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).
+
+### ORE Ultramatic
+
+Choose **ORE Ultramatic app (Keeson)** for `com.ore.ultramatic`, then choose the
+actual 2-,3- or 4-motor layout. Configure keeps the layout with its physical bed
+side. The live GATT table chooses P1 or P2; names and a shared UUID never select
+this app automatically. Massage and light are part of its bed controls, and
+position sensing stays disabled. P1 has programmable presets and explicit
+massage/light settings; P2 has held presets/massage and a light toggle. See the
+[profile reference](beds/keeson.md#ore-ultramatic) for alarms and raw state.

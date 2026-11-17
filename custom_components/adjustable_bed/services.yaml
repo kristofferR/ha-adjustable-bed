@@ -4548,3 +4548,44 @@ sonicsleep:
       default: true
       selector:
         boolean: null
+
+ore_ultramatic_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      required: true
+      selector:
+        time:
+    repeat:
+      default: 0
+      selector:
+        number:
+          min: -128
+          max: 255
+          mode: box
+    alarm_type:
+      default: 0
+      selector:
+        select:
+          options:
+            - value: '0'
+              label: None (P2 TV)
+            - value: '1'
+              label: Massage
+            - value: '2'
+              label: M1 / P2 TV
+            - value: '3'
+              label: M2 / P2 alarm ZG

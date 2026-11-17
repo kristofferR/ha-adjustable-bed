@@ -720,7 +720,7 @@ source capability replies.
 
 Independent MM/SXB entries expose `sensor_time`, `sensor_part`,
 `sensor_query_part`, `sensor_live`, `sensor_report`, `sensor_stop`, and the
-SXB-only `sensor_sensitivity` query. Device-part setting uses `value` (MM 1/2,
+SXB-only `sensor_sensitivity` query. Device-part setting uses `value` (MM1/2,
 SXB 11/12/13). Reports use `part` (1 left, 2 right), `report_type` (1 day, 2 month)
 and optional `report_date`. Live polling uses `enabled`. Local stop sends no
 hardware STOP. The [sleep-module reference](beds/gmmotor.md#sleep-modules) records
@@ -1128,3 +1128,14 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### ORE Ultramatic bed alarm
+
+`adjustable_bed.ore_ultramatic_set_alarm` accepts `device_id` (one or more),
+optional paired `side`, `enabled`, `time` (minute precision), `repeat` (-128..255)
+and `alarm_type` (0 none,1 massage,2 M1/P2 TV,3 M2/P2 alarm ZG).
+Repeat uses Sunday..Saturday bits 0..6; edited day masks also set bit 7. A received
+signed negative byte is preserved. Exactly 0 or positive 128 means a one-day alarm,
+rolled to tomorrow only when its hour/minute is earlier than local current time.
+P2 sends clock sync, alarm and query; P1 sends alarm and query. Refresh alarm is
+also a native button. See the [Ultramatic profile](beds/keeson.md#ore-ultramatic).

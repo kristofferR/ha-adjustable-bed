@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BE
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._ore_ultramatic import BLOCKS as _ULTRAMATIC_BLOCKS
 from scripts.codec_docs._yamada import BLOCKS as _YAMADA_BLOCKS
 
 GUIDE = "docs/beds/keeson.md"
@@ -50,6 +51,7 @@ _KEESON_NAMES: dict[str, str] = {
     "okin_seating": "OKIN-Seating",
     "heal_every_night": "Heal Every Night",
     "okin_comfort_bed": "OKIN Comfort Bed",
+    "ore_ultramatic": "ORE Ultramatic",
     "americanstar": "AMERICANSTAR",
     "avanti_bases": "Avanti Bases",
     "bedsense_bases": "Bedsense Bases",
@@ -77,6 +79,7 @@ _KEESON_NAMES: dict[str, str] = {
 }
 # Controllers that keep their key tables and timing; their profile is only the frame.
 _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
+    "ore_ultramatic": ("`keeson`, `ore_ultramatic`", "[ORE Ultramatic](#ore-ultramatic)"),
     "yamada_p1": ("`yamada`, P1", "[アシステック](#アシステック--yamada)"),
     "yamada_p2": ("`yamada`, P2", "[アシステック](#アシステック--yamada)"),
     **dict.fromkeys(("jalon_13", "jalon_15", "jalon_24"), ("`jalon`", "[OkinComfortBed II](#okincomfortbed-ii)")),
@@ -1155,3 +1158,5 @@ def render_symphony_sleep() -> str:
 BLOCKS.append((GUIDE, "keeson-symphony-sleep", render_symphony_sleep))
 
 BLOCKS.extend(_YAMADA_BLOCKS)
+
+BLOCKS.extend(_ULTRAMATIC_BLOCKS)

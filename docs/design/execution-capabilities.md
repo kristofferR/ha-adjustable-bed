@@ -836,3 +836,13 @@ commands every 300 ms until release. P1 releases after 100 ms; P2 motor
 release is immediate and differs from global STOP. Preset gestures retain
 their format-specific behavior. No concurrent motor, side addressing or motor
 speed selection is proven. See [Smart Sleep](../beds/smart-sleep.md).
+
+### ORE Ultramatic
+
+| Profile | Held | Concurrent | Speed | Evidence | Scope |
+| --- | --- | --- | --- | --- | --- |
+| `keeson:ore_ultramatic` | S stream | U | U | oreultra | MainActivity shared key refresh at100ms, one zero release; no simultaneous independent controls |
+
+| Evidence key | Package | Version | Status | Frozen report |
+| --- | --- | --- | --- | --- |
+| oreultra | `com.ore.ultramatic` | 1.0.5 (9) | COMPLETE, hardware UNVERIFIED | `com.ore.ultramatic-1.0.5-2026-11-17-queue001/report/` |

@@ -1986,6 +1986,7 @@ KEESON_VARIANT_INNOVA: Final = "innova"
 # Accepted ORE comfort-bed app profiles: explicit, never auto-selected.
 KEESON_VARIANT_AVANTI_BASES: Final = "avanti_bases"
 KEESON_VARIANT_OKIN_COMFORT_BED: Final = "okin_comfort_bed"
+KEESON_VARIANT_ORE_ULTRAMATIC: Final = "ore_ultramatic"
 # ORE comfort-bed apps (com.ore.okincomfortbed code base): explicit, never auto-selected.
 KEESON_VARIANT_AMERICANSTAR: Final = "americanstar"
 KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
@@ -1997,13 +1998,15 @@ ORE_COMFORT_BED_VARIANTS: Final = frozenset(
         KEESON_VARIANT_BEDSENSE_BASES,
         KEESON_VARIANT_AVANTI_BASES,
         KEESON_VARIANT_OKIN_COMFORT_BED,
+        KEESON_VARIANT_ORE_ULTRAMATIC,
         KEESON_VARIANT_AMERICANSTAR,
     }
 )
 # Keeson's share of ``pairing.OFFLINE_CAPABILITY_SAFE_VARIANTS``: variants whose
 # capabilities come only from stored config ("auto" detects its variant live).
 OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
-    ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
+    (ORE_COMFORT_BED_VARIANTS - {KEESON_VARIANT_ORE_ULTRAMATIC})
+    | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
 )
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
@@ -2022,6 +2025,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_OKIN_SEATING: "OKIN-Seating app",
     KEESON_VARIANT_AVANTI_BASES: "Avanti Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_OKIN_COMFORT_BED: "OKIN Comfort Bed app (2M / 3M / 4M motor count)",
+    KEESON_VARIANT_ORE_ULTRAMATIC: "ORE Ultramatic app (2M / 3M / 4M; automatic GATT route)",
     KEESON_VARIANT_AMERICANSTAR: "AMERICANSTAR app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_BEDSENSE_BASES: "Bedsense Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_INNOVA: "INNOVA app (2M / 3M / 4M motor count)",

@@ -1,0 +1,1666 @@
+{
+  "P1": [
+    {
+      "action": "back_up",
+      "key": "00000001",
+      "bytes": "E5 FE 16 00 00 00 01 05",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:89-105",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V001"
+      ],
+      "notes": "Same key also proved in BedSixButtonThreeMotorFragment:88-154 and BedFourButtonFragment:81-148; all three layout paths traced.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:89-105 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "back_down",
+      "key": "00000002",
+      "bytes": "E5 FE 16 00 00 00 02 04",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:106-122",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V002"
+      ],
+      "notes": "Same key also proved in BedSixButtonThreeMotorFragment:88-154 and BedFourButtonFragment:81-148; all three layout paths traced.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:106-122 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "foot_up",
+      "key": "00000004",
+      "bytes": "E5 FE 16 00 00 00 04 02",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:123-139",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V003"
+      ],
+      "notes": "Same key also proved in BedSixButtonThreeMotorFragment:88-154 and BedFourButtonFragment:81-148; all three layout paths traced.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:123-139 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "foot_down",
+      "key": "00000008",
+      "bytes": "E5 FE 16 00 00 00 08 FE",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:140-156",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V004"
+      ],
+      "notes": "Same key also proved in BedSixButtonThreeMotorFragment:88-154 and BedFourButtonFragment:81-148; all three layout paths traced.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:140-156 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "combined_back_foot_up",
+      "key": "00000010",
+      "bytes": "E5 FE 16 00 00 00 10 F6",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:157-176",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V005"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:157-176 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "combined_back_foot_down",
+      "key": "00000020",
+      "bytes": "E5 FE 16 00 00 00 20 E6",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:178-197",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V006"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:178-197 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "head_up",
+      "key": "00000010",
+      "bytes": "E5 FE 16 00 00 00 10 F6",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:156-172",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding3"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V007"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:156-172 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "head_down",
+      "key": "00000020",
+      "bytes": "E5 FE 16 00 00 00 20 E6",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:173-189",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding3"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V008"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:173-189 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "waist_up",
+      "key": "00000010",
+      "bytes": "E5 FE 16 00 00 00 10 F6",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:82-98",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V009"
+      ],
+      "notes": "Waist is the artifact field name; animation is bedhead. Do not reinterpret this axis as lift/height without external qualification.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:82-98 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "waist_down",
+      "key": "00000020",
+      "bytes": "E5 FE 16 00 00 00 20 E6",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:99-115",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V010"
+      ],
+      "notes": "Waist is the artifact field name; animation is bedhead. Do not reinterpret this axis as lift/height without external qualification.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:99-115 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "lumbar_up",
+      "key": "00000040",
+      "bytes": "E5 FE 16 00 00 00 40 C6",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:116-132",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V011"
+      ],
+      "notes": "Waist is the artifact field name; animation is bedhead. Do not reinterpret this axis as lift/height without external qualification.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:116-132 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "lumbar_down",
+      "key": "00000080",
+      "bytes": "E5 FE 16 00 00 00 80 86",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:133-149",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V012"
+      ],
+      "notes": "Waist is the artifact field name; animation is bedhead. Do not reinterpret this axis as lift/height without external qualification.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:133-149 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "release_stop",
+      "key": "00000000",
+      "bytes": "E5 FE 16 00 00 00 00 06",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Cancels held runnable; if connected sends one zero-key packet. P1 preset second tap also sends this packet.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:883-896",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V013"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:883-896 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "recall_M1",
+      "key": "01000008",
+      "bytes": "E5 FE 16 01 00 00 08 FD",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Tap ACTION_UP sends one packet; another tap of same lastButton sends zero STOP instead. Long press suppresses recall. ACTION_CANCEL has no matching recall branch.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:258-284",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V027"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:258-284 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "recall_M2",
+      "key": "01000009",
+      "bytes": "E5 FE 16 01 00 00 09 FC",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Tap ACTION_UP sends one packet; another tap of same lastButton sends zero STOP instead. Long press suppresses recall. ACTION_CANCEL has no matching recall branch.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:292-317",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V028"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:292-317 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "recall_ZG",
+      "key": "01000001",
+      "bytes": "E5 FE 16 01 00 00 01 04",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Tap ACTION_UP sends one packet; another tap of same lastButton sends zero STOP instead. Long press suppresses recall. ACTION_CANCEL has no matching recall branch.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:326-351",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V029"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:326-351 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "recall_Flat",
+      "key": "01000002",
+      "bytes": "E5 FE 16 01 00 00 02 03",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Tap ACTION_UP sends one packet; another tap of same lastButton sends zero STOP instead. Long press suppresses recall. ACTION_CANCEL has no matching recall branch.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:360-385",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V030"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:360-385 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "save_M1",
+      "key": "20000008",
+      "bytes": "E5 FE 16 20 00 00 08 DE",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Framework OnLongClick listener sends one save packet; isLongPress suppresses the following ACTION_UP recall. No explicit hold duration is defined by this artifact.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:138-140",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V031"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:138-140 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "save_M2",
+      "key": "20000009",
+      "bytes": "E5 FE 16 20 00 00 09 DD",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Framework OnLongClick listener sends one save packet; isLongPress suppresses the following ACTION_UP recall. No explicit hold duration is defined by this artifact.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:141-143",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V032"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:141-143 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "save_ZG",
+      "key": "20000001",
+      "bytes": "E5 FE 16 20 00 00 01 E5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Framework OnLongClick listener sends one save packet; isLongPress suppresses the following ACTION_UP recall. No explicit hold duration is defined by this artifact.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:144-146",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V033"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:144-146 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "save_Flat",
+      "key": "20000002",
+      "bytes": "E5 FE 16 20 00 00 02 E4",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Framework OnLongClick listener sends one save packet; isLongPress suppresses the following ACTION_UP recall. No explicit hold duration is defined by this artifact.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:147-149",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V034"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:147-149 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "massage_wave",
+      "bytes": "control(P1, 0x10000020 + floor(progress/10)), progress 0..39, q 0..3",
+      "key_formula": "10000020+q",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "SeekBar progress at multiples of 10 writes immediately through the 100 ms helper; start/stop tracking with a nonmultiple writes floor(progress/10). No release/zero packet.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
+        "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice. Visible P1 sliders; saved progress defaults to 10.",
+      "response": "Shared parser can update massage intensity/timer only, no matching per-slider acknowledgement.",
+      "vector_ids": [
+        "V039",
+        "V040",
+        "V041",
+        "V042"
+      ]
+    },
+    {
+      "action": "massage_head_intensity",
+      "bytes": "control(P1, 0x10000010 + floor(progress/10)), progress 0..39, q 0..3",
+      "key_formula": "10000010+q",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "SeekBar progress at multiples of 10 writes immediately through the 100 ms helper; start/stop tracking with a nonmultiple writes floor(progress/10). No release/zero packet.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
+        "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice. Visible P1 sliders; saved progress defaults to 10.",
+      "response": "Shared parser can update massage intensity/timer only, no matching per-slider acknowledgement.",
+      "vector_ids": [
+        "V043",
+        "V044",
+        "V045",
+        "V046"
+      ]
+    },
+    {
+      "action": "massage_foot_intensity",
+      "bytes": "control(P1, 0x11000010 + floor(progress/10)), progress 0..39, q 0..3",
+      "key_formula": "11000010+q",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "SeekBar progress at multiples of 10 writes immediately through the 100 ms helper; start/stop tracking with a nonmultiple writes floor(progress/10). No release/zero packet.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
+        "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice. Visible P1 sliders; saved progress defaults to 10.",
+      "response": "Shared parser can update massage intensity/timer only, no matching per-slider acknowledgement.",
+      "vector_ids": [
+        "V047",
+        "V048",
+        "V049",
+        "V050"
+      ]
+    },
+    {
+      "action": "massage_timer_10min",
+      "key": "10000030",
+      "bytes": "E5 FE 16 10 00 00 30 C6",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "ACTION_UP sends single timer command. Local masTimeStatus cycles 0 -> 1 -> 2 -> 3 -> 1, with labels 10/20/30 min; no release packet.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:375-397",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V051"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:375-397 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "massage_timer_20min",
+      "key": "10000031",
+      "bytes": "E5 FE 16 10 00 00 31 C5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "ACTION_UP sends single timer command. Local masTimeStatus cycles 0 -> 1 -> 2 -> 3 -> 1, with labels 10/20/30 min; no release packet.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:375-397",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V052"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:375-397 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "massage_timer_30min",
+      "key": "10000032",
+      "bytes": "E5 FE 16 10 00 00 32 C4",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "ACTION_UP sends single timer command. Local masTimeStatus cycles 0 -> 1 -> 2 -> 3 -> 1, with labels 10/20/30 min; no release packet.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:375-397",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V053"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:375-397 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "underbed_light_on",
+      "key": "31000001",
+      "bytes": "E5 FE 16 31 00 00 01 D4",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "ACTION_UP sends one packet; no release/zero packet. P1 toggles a fragment-local boolean initially false, not reported hardware state.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedLightFragment.java:72-79",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V059"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedLightFragment.java:72-79 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "underbed_light_off",
+      "key": "31000000",
+      "bytes": "E5 FE 16 31 00 00 00 D5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "ACTION_UP sends one packet; no release/zero packet. P1 toggles a fragment-local boolean initially false, not reported hardware state.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedLightFragment.java:72-79",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V060"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedLightFragment.java:72-79 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "massage_start",
+      "bytes": "control(P1,0x10000020+qw); control(P1,0x10000010+qh); control(P1,0x11000010+qf), each q=0..3",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "delay_before_each_write_ms": 100,
+        "writes": 3
+      },
+      "release_behavior": "ACTION_UP sends sequence once. No final zero-key release.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:344-357"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice. P1 massage UI visible.",
+      "semantics": "wave(qw), head(qh), foot(qf), each q=floor(saved/current progress/10)",
+      "response": "No sequence acknowledgement parsed."
+    },
+    {
+      "action": "massage_stop",
+      "bytes": "E5 FE 16 10 00 00 10 E6 ; E5 FE 16 11 00 00 10 E5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "delay_before_each_write_ms": 100,
+        "writes": 2
+      },
+      "release_behavior": "ACTION_UP sends sequence once. No final zero-key release.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:358-374"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice. P1 massage UI visible.",
+      "semantics": "head intensity 0 followed by foot intensity 0",
+      "response": "No sequence acknowledgement parsed."
+    },
+    {
+      "action": "alarm_query",
+      "bytes": "finish(E2 FE 16 now.second now.minute now.hour (Calendar.DAY_OF_WEEK-1))",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "delay_before_write_ms": 200,
+        "writes": 1
+      },
+      "release_behavior": "Single query; no STOP/release.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:366-393",
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/AlarmFragment.java:219-240",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:752-758"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "P1 E2 FE reply or P2 ED 80 alarm state, parsed as documented.",
+      "vector_ids": [
+        "V062"
+      ]
+    },
+    {
+      "action": "alarm_enable",
+      "bytes": "alarm(P1, enabled=True, local now, alarm_hour/minute, repeat mask, alarm_type); see exact offsets/pseudocode and reproduce.py",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "delay_before_write_ms": 100,
+        "writes": 1,
+        "ui_sequence": "For P2 send current-time first (100 ms); then alarm packet (100 ms); then query (200 ms). P1 omits time-sync."
+      },
+      "release_behavior": "Single persistent alarm configuration; no STOP/release. Disable uses source sentinel/zero fields, never a movement STOP.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-539",
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/AlarmFragment.java:53-86"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "Queried back by alarm_query after switch action. See parser mismatch and signed-byte caveats."
+    },
+    {
+      "action": "alarm_disable",
+      "bytes": "alarm(P1, enabled=False, local now, alarm_hour/minute, repeat mask, alarm_type); see exact offsets/pseudocode and reproduce.py",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "delay_before_write_ms": 100,
+        "writes": 1,
+        "ui_sequence": "For P2 send current-time first (100 ms); then alarm packet (100 ms); then query (200 ms). P1 omits time-sync."
+      },
+      "release_behavior": "Single persistent alarm configuration; no STOP/release. Disable uses source sentinel/zero fields, never a movement STOP.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-539",
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/AlarmFragment.java:53-86"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "Queried back by alarm_query after switch action. See parser mismatch and signed-byte caveats."
+    }
+  ],
+  "P2": [
+    {
+      "action": "back_up",
+      "key": "00000001",
+      "bytes": "E6 FE 16 01 00 00 00 00 04",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:89-105",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V014"
+      ],
+      "notes": "Same key also proved in BedSixButtonThreeMotorFragment:88-154 and BedFourButtonFragment:81-148; all three layout paths traced.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:89-105 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "back_down",
+      "key": "00000002",
+      "bytes": "E6 FE 16 02 00 00 00 00 03",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:106-122",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V015"
+      ],
+      "notes": "Same key also proved in BedSixButtonThreeMotorFragment:88-154 and BedFourButtonFragment:81-148; all three layout paths traced.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:106-122 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "foot_up",
+      "key": "00000004",
+      "bytes": "E6 FE 16 04 00 00 00 00 01",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:123-139",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V016"
+      ],
+      "notes": "Same key also proved in BedSixButtonThreeMotorFragment:88-154 and BedFourButtonFragment:81-148; all three layout paths traced.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:123-139 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "foot_down",
+      "key": "00000008",
+      "bytes": "E6 FE 16 08 00 00 00 00 FD",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:140-156",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V017"
+      ],
+      "notes": "Same key also proved in BedSixButtonThreeMotorFragment:88-154 and BedFourButtonFragment:81-148; all three layout paths traced.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:140-156 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "combined_back_foot_up",
+      "key": "00000005",
+      "bytes": "E6 FE 16 05 00 00 00 00 00",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:157-176",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V018"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:157-176 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "combined_back_foot_down",
+      "key": "0000000A",
+      "bytes": "E6 FE 16 0A 00 00 00 00 FB",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:178-197",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V019"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:178-197 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "head_up",
+      "key": "00000010",
+      "bytes": "E6 FE 16 10 00 00 00 00 F5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:156-172",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding3"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V020"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:156-172 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "head_down",
+      "key": "00000020",
+      "bytes": "E6 FE 16 20 00 00 00 00 E5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:173-189",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding3"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V021"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:173-189 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "waist_up",
+      "key": "00000010",
+      "bytes": "E6 FE 16 10 00 00 00 00 F5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:82-98",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V022"
+      ],
+      "notes": "Waist is the artifact field name; animation is bedhead. Do not reinterpret this axis as lift/height without external qualification.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:82-98 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "waist_down",
+      "key": "00000020",
+      "bytes": "E6 FE 16 20 00 00 00 00 E5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:99-115",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V023"
+      ],
+      "notes": "Waist is the artifact field name; animation is bedhead. Do not reinterpret this axis as lift/height without external qualification.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:99-115 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "lumbar_up",
+      "key": "00000040",
+      "bytes": "E6 FE 16 40 00 00 00 00 C5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:116-132",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V024"
+      ],
+      "notes": "Waist is the artifact field name; animation is bedhead. Do not reinterpret this axis as lift/height without external qualification.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:116-132 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "lumbar_down",
+      "key": "00000080",
+      "bytes": "E6 FE 16 80 00 00 00 00 85",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP or ACTION_CANCEL or pointer outside motor button stops handler, then writes key 0 after 100 ms if connected. App does not guarantee STOP after disconnect or activity destruction.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:133-149",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V025"
+      ],
+      "notes": "Waist is the artifact field name; animation is bedhead. Do not reinterpret this axis as lift/height without external qualification.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:133-149 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "release_stop",
+      "key": "00000000",
+      "bytes": "E6 FE 16 00 00 00 00 00 05",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Cancels held runnable; if connected sends one zero-key packet. P1 preset second tap also sends this packet.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:883-896",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V026"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:883-896 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "preset_TV",
+      "key": "00004000",
+      "bytes": "E6 FE 16 00 40 00 00 00 C5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP/ACTION_CANCEL calls buttonUp, cancelling repeats then sending zero. No memory save: long-click listeners are removed, and the 5200 ms saveRunnable is empty.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:179-195",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V035"
+      ],
+      "notes": "anti label comes from anti_r drawable; its exact physical position is hardware UNVERIFIED.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:179-195 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "preset_Anti_Snore",
+      "key": "00008000",
+      "bytes": "E6 FE 16 00 80 00 00 00 85",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP/ACTION_CANCEL calls buttonUp, cancelling repeats then sending zero. No memory save: long-click listeners are removed, and the 5200 ms saveRunnable is empty.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:197-213",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880",
+        "work/apks/com.ore.ultramatic.apk!res/drawable-xxhdpi-v4/anti_r.png: visually inspected"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V036"
+      ],
+      "notes": "ANTI SNORE label visually verified in base APK res/drawable-xxhdpi-v4/anti_r.png; physical behavior remains hardware UNVERIFIED.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:197-213 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "preset_ZG",
+      "key": "00001000",
+      "bytes": "E6 FE 16 00 10 00 00 00 F5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP/ACTION_CANCEL calls buttonUp, cancelling repeats then sending zero. No memory save: long-click listeners are removed, and the 5200 ms saveRunnable is empty.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:215-232",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V037"
+      ],
+      "notes": "anti label comes from anti_r drawable; its exact physical position is hardware UNVERIFIED.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:215-232 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "preset_Flat",
+      "key": "08000000",
+      "bytes": "E6 FE 16 00 00 00 08 00 FD",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_UP/ACTION_CANCEL calls buttonUp, cancelling repeats then sending zero. No memory save: long-click listeners are removed, and the 5200 ms saveRunnable is empty.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:234-249",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V038"
+      ],
+      "notes": "anti label comes from anti_r drawable; its exact physical position is hardware UNVERIFIED.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:234-249 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "massage_head_button",
+      "key": "00000800",
+      "bytes": "E6 FE 16 00 08 00 00 00 FD",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_DOWN repeats every 100 ms. ACTION_UP calls buttonUp and zero STOP. This massage listener has no ACTION_CANCEL or pointer-outside cleanup branch.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:289-299",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V054"
+      ],
+      "notes": "0x800 and 0x400 independently confirmed in smali ButtonListener:207/290; P1 UI hides these controls.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:289-299 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "massage_foot_button",
+      "key": "00000400",
+      "bytes": "E6 FE 16 00 04 00 00 00 01",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_DOWN repeats every 100 ms. ACTION_UP calls buttonUp and zero STOP. This massage listener has no ACTION_CANCEL or pointer-outside cleanup branch.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:300-310",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V055"
+      ],
+      "notes": "0x800 and 0x400 independently confirmed in smali ButtonListener:207/290; P1 UI hides these controls.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:300-310 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "massage_timer_button",
+      "key": "00000200",
+      "bytes": "E6 FE 16 00 02 00 00 00 03",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_DOWN repeats every 100 ms. ACTION_UP calls buttonUp and zero STOP. This massage listener has no ACTION_CANCEL or pointer-outside cleanup branch.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:311-321",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V056"
+      ],
+      "notes": "0x800 and 0x400 independently confirmed in smali ButtonListener:207/290; P1 UI hides these controls.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:311-321 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "massage_toggle",
+      "key": "00000100",
+      "bytes": "E6 FE 16 00 01 00 00 00 04",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_DOWN repeats every 100 ms. ACTION_UP calls buttonUp and zero STOP. This massage listener has no ACTION_CANCEL or pointer-outside cleanup branch.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:322-332",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V057"
+      ],
+      "notes": "0x800 and 0x400 independently confirmed in smali ButtonListener:207/290; P1 UI hides these controls.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:322-332 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "massage_wave_button",
+      "key": "10000000",
+      "bytes": "E6 FE 16 00 00 00 10 00 F5",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "release_behavior": "ACTION_DOWN repeats every 100 ms. ACTION_UP calls buttonUp and zero STOP. This massage listener has no ACTION_CANCEL or pointer-outside cleanup branch.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:333-343",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V058"
+      ],
+      "notes": "0x800 and 0x400 independently confirmed in smali ButtonListener:207/290; P1 UI hides these controls.",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:333-343 -> MainActivity.setContinueKeyCode -> runnable -> sendContinueMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "underbed_light_toggle",
+      "key": "00020000",
+      "bytes": "E6 FE 16 00 00 02 00 00 03",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "ACTION_UP sends one packet; no release/zero packet. P1 toggles a fragment-local boolean initially false, not reported hardware state.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/BedLightFragment.java:80-82",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
+      ],
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "vector_ids": [
+        "V061"
+      ],
+      "notes": "",
+      "call_chain": "work/jadx/sources/com/ore/okincomfortbed/fragment/BedLightFragment.java:80-82 -> MainActivity.sendSingleMessage -> selected builder -> writeMessage -> BluetoothLeService.wirteCharacteristic -> BluetoothGatt.writeCharacteristic"
+    },
+    {
+      "action": "alarm_query",
+      "bytes": "E2 80 03 00 9A",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "delay_before_write_ms": 200,
+        "writes": 1
+      },
+      "release_behavior": "Single query; no STOP/release.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:366-393",
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/AlarmFragment.java:219-240",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:752-758"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "P1 E2 FE reply or P2 ED 80 alarm state, parsed as documented.",
+      "vector_ids": [
+        "V071"
+      ]
+    },
+    {
+      "action": "alarm_enable",
+      "bytes": "alarm(P2, enabled=True, local now, alarm_hour/minute, repeat mask, alarm_type); see exact offsets/pseudocode and reproduce.py",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "delay_before_write_ms": 100,
+        "writes": 1,
+        "ui_sequence": "For P2 send current-time first (100 ms); then alarm packet (100 ms); then query (200 ms). P1 omits time-sync."
+      },
+      "release_behavior": "Single persistent alarm configuration; no STOP/release. Disable uses source sentinel/zero fields, never a movement STOP.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-539",
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/AlarmFragment.java:53-86"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "Queried back by alarm_query after switch action. See parser mismatch and signed-byte caveats."
+    },
+    {
+      "action": "alarm_disable",
+      "bytes": "alarm(P2, enabled=False, local now, alarm_hour/minute, repeat mask, alarm_type); see exact offsets/pseudocode and reproduce.py",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "delay_before_write_ms": 100,
+        "writes": 1,
+        "ui_sequence": "For P2 send current-time first (100 ms); then alarm packet (100 ms); then query (200 ms). P1 omits time-sync."
+      },
+      "release_behavior": "Single persistent alarm configuration; no STOP/release. Disable uses source sentinel/zero fields, never a movement STOP.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-539",
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/AlarmFragment.java:53-86"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice.",
+      "response": "Queried back by alarm_query after switch action. See parser mismatch and signed-byte caveats."
+    },
+    {
+      "action": "set_current_time",
+      "bytes": "finish(E7 80 01 (year-1900) month0 day hour minute second)",
+      "characteristic": "0000ffe9-0000-1000-8000-00805f9b34fb",
+      "write_type": "Android BluetoothGatt.writeCharacteristic(characteristic), existing characteristic default write type; app never calls setWriteType",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "release_behavior": "Single clock synchronization immediately before alarm change; no release.",
+      "evidence": [
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:395-415",
+        "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:503-510",
+        "work/jadx/sources/com/ore/okincomfortbed/fragment/AlarmFragment.java:75-85"
+      ],
+      "preconditions": "Selected BLE device connected, discovery complete, FFE4 and FFE9 characteristic objects present. Layout selector is explicit user choice. P2 alarm switch action.",
+      "response": "No clock-sync acknowledgement parsed.",
+      "vector_ids": [
+        "V080"
+      ]
+    }
+  ]
+}
