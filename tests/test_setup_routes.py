@@ -285,7 +285,7 @@ _FLOYD = bed_type_choice(const.BED_TYPE_KAIDI, const.KAIDI_VARIANT_FLOYD)
         ("ComfyDS", {const.BED_TYPE_COMFYDS}),
         ("Bed Connect", {const.BED_TYPE_LINAK}),
         # POWER BOB ULTRA-O is the app of the Rize Bob product on Okin CST.
-        ("Power Bob", {const.BED_TYPE_MOTOSLEEP, const.BED_TYPE_OKIN_CST}),
+        ("Power Bob", {const.BED_TYPE_MOTOSLEEP, const.BED_TYPE_OKIN_CST, const.BED_TYPE_BOBPOWERBASE}),
         *(
             (name, {const.BED_TYPE_OKIN_CST})
             # The full app names of their accepted reports.

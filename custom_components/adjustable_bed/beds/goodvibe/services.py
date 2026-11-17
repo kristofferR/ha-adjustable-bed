@@ -493,6 +493,9 @@ async def handle_goodvibe(call: ServiceCall) -> None:
             for child in _command_targets(parent, side):
                 async def inspect(controller: BedController) -> bool:
                     try:
+                        check_admission()
+                        if isinstance(controller, GoodVibeController):
+                            await controller.async_prepare_goodvibe_request(request, admitted=check_admission)
                         live_plan(controller)
                     except ValueError as error:
                         raise ServiceValidationError(str(error)) from error
@@ -515,6 +518,8 @@ async def handle_goodvibe(call: ServiceCall) -> None:
                     await query()
 
         async def execute_bob(target: GoodVibeController) -> None:
+            check_admission()
+            await target.async_prepare_goodvibe_request(request, admitted=check_admission)
             plan = live_plan(target)
             owner, link = target._coordinator, target._current_link()
             generation = owner._position_connection_generation

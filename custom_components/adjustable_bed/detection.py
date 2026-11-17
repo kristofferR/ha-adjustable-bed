@@ -1328,13 +1328,6 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # The first pass matches the declared discovery hints, as the manifest does.
     first = first_pass(service_info)
     result = _detect_bed_type_with_app_candidates(service_info, first)
-    if service_info.name and any(word in service_info.name for word in BOB_SCAN_KEYWORDS) and not any(
-        signal.startswith("excluded:") for signal in result.signals
-    ):
-        if result.bed_type is None:
-            result = DetectionResult("bobpowerbase", 0.3, ["name:bobpowerbase_app_candidate"])
-        elif result.bed_type != "bobpowerbase":
-            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
     # The app's scan filter is wider than the manifest gate, so it refines
     # advertisements another matcher admitted; it declares no hint of its own.
     if galaxy_scan_matches(service_info.name) and result.bed_type != BED_TYPE_GALAXY and not any(
@@ -1445,6 +1438,15 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_MLINE:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MLINE]))
             result.signals.append("name:mline_app_candidate")
+    # Bob's shared scan words are an opt-in app choice, after established
+    # receiver and app-name priorities, with the same exclusion boundary.
+    if service_info.name and any(word in service_info.name for word in BOB_SCAN_KEYWORDS) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult("bobpowerbase", 0.3, ["name:bobpowerbase_app_candidate"])
+        elif result.bed_type != "bobpowerbase":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
     return result
 
 

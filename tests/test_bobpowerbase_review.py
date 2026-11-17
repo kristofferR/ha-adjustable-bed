@@ -161,7 +161,8 @@ async def test_registered_light_action_reconnects_after_ordinary_idle(hass, disc
     assert client.write_gatt_char.call_args.args[1].hex() == "6e0b012ca6"
 
 
-async def test_restored_light_preferences_do_not_grant_a_missing_fresh_reply(hass, disconnected_service):
+async def test_restored_light_preferences_do_not_grant_a_missing_fresh_reply(hass, disconnected_service, monkeypatch):
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.goodvibe.controller.MENU_REPLY_TIMEOUT_S", 0)
     coordinator, device, client, reply = disconnected_service
     coordinator.capability_controller.restore_persisted_app_state({"light_duration": 300, "light_color": [1, 2, 3]})
     reply[0] = False

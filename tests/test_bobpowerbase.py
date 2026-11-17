@@ -384,7 +384,8 @@ async def test_registered_service_uses_real_scheduler_and_exact_alarm_record(has
     ]
 
 
-async def test_all_target_validation_precedes_every_control_write(hass, public_service):
+async def test_all_target_validation_precedes_every_control_write(hass, public_service, monkeypatch):
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.goodvibe.controller.MENU_REPLY_TIMEOUT_S", 0)
     first = public_service
     first.controller._normal.feed(bytes.fromhex("6e0e00037f"))
     second = runtime(hass, product="elite", address="AA:BB:CC:DD:EE:97")

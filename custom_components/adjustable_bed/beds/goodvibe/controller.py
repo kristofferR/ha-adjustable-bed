@@ -478,6 +478,8 @@ class GoodVibeController(BedController):
                 return
         self._last_event = name
         self.choices.events[name] = deepcopy(value)
+        if self.catalog.bed is not None and name == "deviceCharacteristicsSubscriptionLightEvent":
+            self._menus_changed.set()
         if self.catalog.notification_menus and self.product is not None:
             if name == "deviceCharacteristicsSubscriptionClockEvent" and self.product.alarms:
                 self._menus.add("alarm")
@@ -1533,6 +1535,44 @@ class GoodVibeController(BedController):
 
     def validate_goodvibe_request(self, request: Request) -> None:
         request.validate(self)
+
+    async def async_prepare_goodvibe_request(
+        self, request: Request, *, admitted: Callable[[], bool]
+    ) -> None:
+        """Await Bob's reported light permission within the existing HA readiness budget."""
+        if self.catalog.bed is None or not request.operation.startswith("light_"):
+            return
+        request.validate(self, reported=False)
+        link = self._current_link()
+        generation = self._coordinator._position_connection_generation
+        cancel = self._coordinator.cancel_command
+
+        def current() -> None:
+            admitted()
+            if self._current_link() is not link or self._coordinator._position_connection_generation != generation:
+                raise ConnectionError("Power Bob Base session changed while awaiting light capability")
+            if cancel.is_set():
+                raise asyncio.CancelledError
+
+        self._menus_changed.clear()
+        current()
+        if self.menu_available("light"):
+            return
+        ready = asyncio.create_task(self._menus_changed.wait())
+        stopped = asyncio.create_task(cancel.wait())
+        try:
+            done, _pending = await asyncio.wait(
+                (ready, stopped), timeout=MENU_REPLY_TIMEOUT_S,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            current()
+            if not done:
+                raise ValueError("The connected bed has no light menu reply before readiness timed out")
+            request.validate(self)
+        finally:
+            ready.cancel()
+            stopped.cancel()
+            await asyncio.gather(ready, stopped, return_exceptions=True)
 
     async def async_execute_goodvibe_request(
         self, request: Request, *, dispatch: Callable[[], None] | None = None
