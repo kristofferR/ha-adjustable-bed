@@ -54,6 +54,7 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SOMOS,
     BED_TYPE_SYMPHONY,
     BED_TYPE_YAMADA,
     CB24_BED_SELECTION_A,
@@ -117,6 +118,7 @@ from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    BED_TYPE_SOMOS: frozenset({"a", "b", "c", "d", "e"}),
     BED_TYPE_COMFORTBASE: frozenset(COMFORTBASE_PRODUCTS),
     BED_TYPE_YAMADA: frozenset({"p1", "p2"}),
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),

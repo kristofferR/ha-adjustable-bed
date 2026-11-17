@@ -9,6 +9,9 @@ from pathlib import Path
 from custom_components.adjustable_bed.profiles.keeson import AppProfile, KeesonProfile
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.keeson_vectors import FROZEN_FRAMES
+from tests.somos_vectors import FROZEN_FRAMES as SOMOS_FRAMES
+
+_SOMOS = {f"somos_{key}": value for key, value in SOMOS_FRAMES.items()}
 
 # The guide's AdjustaMattress section also spells its P3/P4 Okin N-frames, which
 # its accepted report (row067) freezes in this fixture.
@@ -29,7 +32,7 @@ _SYMPHONY_FRAMES = {
 
 FAMILY = CodecFamily(
     # The Keeson layout apps: one AppProfile per layout, vectors per app.
-    profiles={KeesonProfile: {**FROZEN_FRAMES, **_SYMPHONY_FRAMES}, AppProfile: FROZEN_FRAMES},
+    profiles={KeesonProfile: {**FROZEN_FRAMES, **_SYMPHONY_FRAMES, **_SOMOS}, AppProfile: FROZEN_FRAMES},
     bed_types=frozenset(
         {
             "symphony_sleep",
@@ -38,6 +41,7 @@ FAMILY = CodecFamily(
             "keeson",
             "jalon_bed",
             "yamada",
+            "somos",
             "okin_ffe",
             "serta",
             "ergo_slim",
@@ -68,6 +72,6 @@ FAMILY = CodecFamily(
         spelled=spelled_frames(
             r"`((?:E[56] ?FE ?16|0[45] ?02)(?: ?[0-9A-F]{2}){4,})`", re.IGNORECASE
         ),
-        frozen=frozenset().union(*FROZEN_FRAMES.values(), *_SYMPHONY_FRAMES.values(), _ADJUSTAMATTRESS),
+        frozen=frozenset().union(*FROZEN_FRAMES.values(), *_SYMPHONY_FRAMES.values(), *_SOMOS.values(), _ADJUSTAMATTRESS),
     ),
 )

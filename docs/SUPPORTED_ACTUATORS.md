@@ -267,3 +267,5 @@ Community contributors who helped reverse-engineer specific protocols:
 | BedJet PowerLayer | [natekspencer](https://github.com/natekspencer/ha-bedjet) and [Tim-GitHub](https://github.com/Tim-GitHub) |
 | Mattress Firm 900 | [David Delahoz](https://github.com/daviddelahoz/BLEAdjustableBase) |
 | Nectar | [MaximumWorf](https://github.com/MaximumWorf/homeassistant-nectar) |
+
+Somos / SomosBeds uses five explicit [Keeson carrier profiles](beds/keeson.md#somos--somosbeds). D/E keep neutral axes 1–3; physical roles and hardware behavior are unverified.

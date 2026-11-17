@@ -155,6 +155,8 @@ def json_command(word: int, device_id: str, *, ctrm: int, km: int, keykt: int) -
 
 # Two-byte status request of the direct P2 remotes; not a STOP.
 STATUS_QUERY: Final = b"\x00\xb0"
+# Somos Ultra Split Head (row099 E); a query, never a movement release.
+SOMOS_SPLIT_STATUS_QUERY: Final = b"\x01\xb0\x00"
 
 
 def custom_massage(program: int) -> bytes:

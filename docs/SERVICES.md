@@ -1128,3 +1128,16 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### Somos app buttons
+
+`adjustable_bed.somos_action` accepts `device_id` (one or more), optional `side`
+(`left`, `right`, `both`), and `action`: `flat`, `zero_g`, `anti_snore`,
+`memory_1`, `memory_2`, `memory_3`, `head_massage`, `foot_massage`,
+`massage_timer_cycle`, `light`, or `status_query`. Every selected product must
+support the requested action before any target receives a write. Massage and
+light actions press the app button without guessing its current state.
+
+Use the standard `hold_control`, `timed_move` and STOP actions for movement.
+D/E motors remain `axis_1`, `axis_2`, `axis_3`, with matching `_up`/`_down`
+held controls. Physical roles are unverified; see [Somos](beds/keeson.md#somos--somosbeds).

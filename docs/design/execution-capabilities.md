@@ -836,3 +836,18 @@ commands every 300 ms until release. P1 releases after 100 ms; P2 motor
 release is immediate and differs from global STOP. Preset gestures retain
 their format-specific behavior. No concurrent motor, side addressing or motor
 speed selection is proven. See [Smart Sleep](../beds/smart-sleep.md).
+
+### Somos row099
+
+| Bed type | Hold | Concurrent | Speed | Evidence | Behavior |
+|---|---|---|---|---|---|
+| `somos` (A–E) | S stream | U | U | row099 | one selected axis refreshed every 300 ms; A/C initial 30 ms, others immediate; release ends refresh without a frame |
+
+Evidence key **row099**: accepted Somos 1.0.0/code1, `cn.com.somos`, five
+explicit profiles, all 60 command/query literals. ROW099-F01 repaired and
+rechecked D/E neutral axis identities. No physical-side, anatomy, watchdog,
+concurrent-mask or motor-speed inference.
+
+| Key | Accepted source |
+|---|---|
+| row099 | Somos 1.0.0/code1, cn.com.somos, accepted report and ROW099-F01 scoped repair/recheck; A–E stream held controls, no release frame. |

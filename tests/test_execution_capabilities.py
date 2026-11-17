@@ -107,6 +107,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 
 # Declaration -> declared field -> evidence keys from the design document.
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"KeesonProfile:somos_{key}": {"hold": ("row099",)} for key in "abcde"},
     "SmartSleepProfile:p1": {"hold": ("row094",)},
     "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
@@ -314,6 +315,7 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/somos.py:<module>.PROFILES": tuple(f"KeesonProfile:somos_{key}" for key in "abcde"),
     "profiles/smart_sleep.py:<module>.PROFILES": ("SmartSleepProfile:p2",),
     "profiles/smart_sleep.py:<module>.SmartSleepProfile": ("SmartSleepProfile:p1", "SmartSleepProfile:p2"),
     "profiles/comfort_enhancement3.py:<module>.profile": tuple(f"OkinNFrameProfile:apex_{i}" for i in range(15)),
@@ -500,6 +502,9 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         PROFILES as SYMPHONY_PROFILES,
     )
     profiles.extend(SYMPHONY_PROFILES.values())
+    from custom_components.adjustable_bed.profiles.somos import PROFILES as SOMOS_PROFILES
+
+    profiles.extend(SOMOS_PROFILES.values())
     for bed_type in SUPPORTED_BED_TYPES:
         profiles.append(getattr(await _create_controller_for_bed_type(bed_type), "profile", None))
     # Layouts are built at runtime and never stored; reach every one.

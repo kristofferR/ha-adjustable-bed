@@ -3348,6 +3348,54 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
+      },
+      "somos_head_massage": {
+        "name": "Head massage button"
+      },
+      "somos_foot_massage": {
+        "name": "Foot massage button"
+      },
+      "somos_massage_timer_cycle": {
+        "name": "Cycle massage timer"
+      },
+      "somos_light": {
+        "name": "Light button"
+      },
+      "somos_head_up": {
+        "name": "Head up"
+      },
+      "somos_head_down": {
+        "name": "Head down"
+      },
+      "somos_feet_up": {
+        "name": "Feet up"
+      },
+      "somos_feet_down": {
+        "name": "Feet down"
+      },
+      "somos_lumbar_tilt_up": {
+        "name": "Lumbar / tilt up"
+      },
+      "somos_lumbar_tilt_down": {
+        "name": "Lumbar / tilt down"
+      },
+      "somos_axis_1_up": {
+        "name": "Axis 1 up"
+      },
+      "somos_axis_1_down": {
+        "name": "Axis 1 down"
+      },
+      "somos_axis_2_up": {
+        "name": "Axis 2 up"
+      },
+      "somos_axis_2_down": {
+        "name": "Axis 2 down"
+      },
+      "somos_axis_3_up": {
+        "name": "Axis 3 up"
+      },
+      "somos_axis_3_down": {
+        "name": "Axis 3 down"
       }
     },
     "cover": {
@@ -3677,6 +3725,24 @@
       },
       "bedgear_combined": {
         "name": "Head and foot"
+      },
+      "somos_head": {
+        "name": "Head"
+      },
+      "somos_feet": {
+        "name": "Feet"
+      },
+      "somos_lumbar_tilt": {
+        "name": "Lumbar / tilt"
+      },
+      "somos_axis_1": {
+        "name": "Axis 1"
+      },
+      "somos_axis_2": {
+        "name": "Axis 2"
+      },
+      "somos_axis_3": {
+        "name": "Axis 3"
       }
     },
     "sensor": {
@@ -5238,6 +5304,9 @@
       },
       "sonicsleep": {
         "name": "SonicSleep state"
+      },
+      "somos_timer": {
+        "name": "Massage timer indicator"
       }
     },
     "light": {
@@ -9962,6 +10031,24 @@
         },
         "enabled": {
           "name": "Enabled"
+        }
+      }
+    },
+    "somos_action": {
+      "name": "Press Somos app button",
+      "description": "Press an available button on the selected Somos product. Validates all targets before sending.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "One or more Somos receivers."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined bed."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Exact Somos button or status query. Availability depends on the product."
         }
       }
     }

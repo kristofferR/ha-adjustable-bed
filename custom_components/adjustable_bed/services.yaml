@@ -351,6 +351,14 @@ timed_move:
       selector:
         select:
           options:
+            - label: Axis 1
+              value: axis_1
+            - label: Axis 2
+              value: axis_2
+            - label: Axis 3
+              value: axis_3
+            - label: Lumbar / tilt
+              value: lumbar_tilt
             - label: TV Lift
               value: tv_lift
             - label: Back
@@ -4548,3 +4556,21 @@ sonicsleep:
       default: true
       selector:
         boolean: null
+
+somos_action:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    action:
+      required: true
+      selector:
+        select:
+          options: [flat, zero_g, anti_snore, memory_1, memory_2, memory_3, head_massage, foot_massage, massage_timer_cycle, light, status_query]

@@ -1185,6 +1185,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_GALAXY: "6BRM",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_COMFORTBASE: "accord",
+        const.BED_TYPE_SOMOS: "a",
         const.BED_TYPE_YAMADA: "p1",
         const.BED_TYPE_RICHMAT_APP: "6BRM",
         const.BED_TYPE_RICHMAT_APP_SLEEP: "hj",
@@ -1463,6 +1464,8 @@ def route_scenarios() -> list[Scenario]:
                 layout_id=const.BED_TYPE_JALON_BED,
             )
         )
+    for variant in "bcde":
+        scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))
     scenarios.append(Scenario(id="yamada:p2", bed_type="yamada", protocol_variant="p2", layout_id="yamada"))
 
     # Jiecang family: one app, four profiles, shared and distinct layouts.

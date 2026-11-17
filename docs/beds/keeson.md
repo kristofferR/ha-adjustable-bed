@@ -58,6 +58,7 @@ APK Protocol Audit row044.
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
 | ✅ (verified scope) | [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada) 1.0.1 (6) | `com.okin.yamada` | [Explicit P1/P2](#アシステック--yamada) |
+| ✅ | Somos / SomosBeds 1.0.0 (code 1) | `cn.com.somos` | [Five explicit products](#somos--somosbeds) |
 | ✅ | [ComfortBaseForBluetooth](https://play.google.com/store/apps/details?id=com.ore.yorkfeng.comfortbaseble2) 1.1.2 (6) | `com.ore.yorkfeng.comfortbaseble2` | [ComfortBaseForBluetooth](#comfortbaseforbluetooth) |
 | ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [Ergomotion 4.0](#ergomotion-40); also [KSBT](#ksbt-family) |
 | ✅ | [1500 Tilt Base Remote](https://play.google.com/store/apps/details?id=com.sfd.rondure_hump) | `com.sfd.rondure_hump` | [KSBT](#ksbt-family) |
@@ -5298,3 +5299,153 @@ Row178, com.okin.yamada 1.0.1 (6): the verified direct BLE scope reproduces all
 35 frozen packet literals through the existing Keeson and Okin N-frame codecs,
 plus all four valid parser fixtures. App behavior is statically supported;
 hardware qualification remains external beta/release validation.
+
+## Somos / SomosBeds
+
+### Status
+
+**Hardware unverified**, external beta use only. Somos 1.0.0 (code 1),
+`cn.com.somos`, is a separately selected app. Its five products share proven
+Keeson carriers, with their own controls, timing and status interpretation.
+The frozen July 2026 delivery has no newer recency attestation.
+
+### Configuration
+
+Choose **Somos / SomosBeds**, then Signature (A), Elite (B), Ultra (C),
+Signature Split Head (D), or Ultra Split Head (E). Setup, Configure and imports
+require an explicit product. Names containing `base-i5`, `KSBT03C3` or
+`KSBT03CR` are case-sensitive candidates, not product identification. HA keeps
+the selected physical Bluetooth address; no QR, phone ID or network setup is needed.
+Two separate receivers can be combined with independent product choices.
+D/E do not support single-address left/right pairing.
+
+### Capabilities
+
+A/C expose head and feet. B additionally exposes the app's lumbar/tilt control.
+D/E expose **Axis 1**, **Axis 2** and **Axis 3**. These are neutral app control
+identities: physical anatomy and side are unverified. Both first rockers use
+head artwork; the third uses separate leg-arrow artwork. Neither the product
+name nor a Java field name assigns an axis to a side or body part.
+
+Native covers, bounded moves and renewable held controls use only the selected
+product's axes. Preset and memory buttons are single writes; memory programming
+is unavailable. D's star/M favorite is memory button 1. B's `iv_light` is memory
+button 2, while B's bed light is `v_snore`. Massage head, foot and timer buttons
+are opaque app actions, with no inferred levels, timer values or cycle order.
+The timer sensor reports the app's 10/20/30-minute indicator and a remaining
+seconds attribute. No position or light-state feedback is established.
+
+### Commands and timing
+
+<!-- generated:keeson-somos -->
+| Product | Control | Frame | Timing |
+|---|---|---|---|
+| Signature (A) | head up | `E6 FE 16 01 00 00 00 00 04` | held, 30 ms then 300 ms |
+| Signature (A) | head down | `E6 FE 16 02 00 00 00 00 03` | held, 30 ms then 300 ms |
+| Signature (A) | feet up | `E6 FE 16 04 00 00 00 00 01` | held, 30 ms then 300 ms |
+| Signature (A) | feet down | `E6 FE 16 08 00 00 00 00 FD` | held, 30 ms then 300 ms |
+| Signature (A) | flat | `E6 FE 16 00 00 00 08 00 FD` | once |
+| Signature (A) | zero_g | `E6 FE 16 00 10 00 00 00 F5` | once |
+| Elite (B) | head up | `04 02 00 00 00 01` | held, 0 ms then 300 ms |
+| Elite (B) | head down | `04 02 00 00 00 02` | held, 0 ms then 300 ms |
+| Elite (B) | feet up | `04 02 00 00 00 04` | held, 0 ms then 300 ms |
+| Elite (B) | feet down | `04 02 00 00 00 08` | held, 0 ms then 300 ms |
+| Elite (B) | lumbar_tilt up | `04 02 00 00 00 40` | held, 0 ms then 300 ms |
+| Elite (B) | lumbar_tilt down | `04 02 00 00 00 80` | held, 0 ms then 300 ms |
+| Elite (B) | flat | `04 02 08 00 00 00` | once |
+| Elite (B) | zero_g | `04 02 00 00 10 00` | once |
+| Elite (B) | anti_snore | `04 02 00 00 80 00` | once |
+| Elite (B) | memory 1 | `04 02 00 01 00 00` | once |
+| Elite (B) | memory 2 | `04 02 00 00 20 00` | once |
+| Elite (B) | memory 3 | `04 02 00 00 40 00` | once |
+| Elite (B) | head_massage | `04 02 00 00 08 00` | once |
+| Elite (B) | foot_massage | `04 02 00 00 04 00` | once |
+| Elite (B) | massage_timer_cycle | `04 02 00 00 02 00` | once |
+| Elite (B) | light | `04 02 00 02 00 00` | once |
+| Elite (B) | status query | `00 B0` | after 2 s, then 1 s |
+| Ultra (C) | head up | `E6 FE 16 01 00 00 00 00 04` | held, 30 ms then 300 ms |
+| Ultra (C) | head down | `E6 FE 16 02 00 00 00 00 03` | held, 30 ms then 300 ms |
+| Ultra (C) | feet up | `E6 FE 16 04 00 00 00 00 01` | held, 30 ms then 300 ms |
+| Ultra (C) | feet down | `E6 FE 16 08 00 00 00 00 FD` | held, 30 ms then 300 ms |
+| Ultra (C) | flat | `E6 FE 16 00 00 00 08 00 FD` | once |
+| Ultra (C) | zero_g | `E6 FE 16 00 10 00 00 00 F5` | once |
+| Ultra (C) | anti_snore | `E6 FE 16 00 80 00 00 00 85` | once |
+| Ultra (C) | memory 1 | `E6 FE 16 00 00 01 00 00 04` | once |
+| Ultra (C) | memory 2 | `E6 FE 16 00 40 00 00 00 C5` | once |
+| Ultra (C) | head_massage | `E6 FE 16 00 08 00 00 00 FD` | once |
+| Ultra (C) | foot_massage | `E6 FE 16 00 04 00 00 00 01` | once |
+| Ultra (C) | massage_timer_cycle | `E6 FE 16 00 02 00 00 00 03` | once |
+| Ultra (C) | light | `E6 FE 16 00 00 02 00 00 03` | once |
+| Ultra (C) | status query | `E6 FE 16 00 00 00 00 00 05` | after 2 s, then 1 s |
+| Signature Split Head (D) | axis_1 up | `05 02 00 00 00 01 00` | held, 0 ms then 300 ms |
+| Signature Split Head (D) | axis_1 down | `05 02 00 00 00 02 00` | held, 0 ms then 300 ms |
+| Signature Split Head (D) | axis_2 up | `05 02 00 00 00 04 00` | held, 0 ms then 300 ms |
+| Signature Split Head (D) | axis_2 down | `05 02 00 00 00 08 00` | held, 0 ms then 300 ms |
+| Signature Split Head (D) | axis_3 up | `05 02 00 00 00 10 00` | held, 0 ms then 300 ms |
+| Signature Split Head (D) | axis_3 down | `05 02 00 00 00 20 00` | held, 0 ms then 300 ms |
+| Signature Split Head (D) | flat | `05 02 08 00 00 00 00` | once |
+| Signature Split Head (D) | zero_g | `05 02 00 00 10 00 00` | once |
+| Signature Split Head (D) | favorite M | `05 02 00 01 00 00 00` | once |
+| Ultra Split Head (E) | axis_1 up | `05 02 00 00 00 01 00` | held, 0 ms then 300 ms |
+| Ultra Split Head (E) | axis_1 down | `05 02 00 00 00 02 00` | held, 0 ms then 300 ms |
+| Ultra Split Head (E) | axis_2 up | `05 02 00 00 00 04 00` | held, 0 ms then 300 ms |
+| Ultra Split Head (E) | axis_2 down | `05 02 00 00 00 08 00` | held, 0 ms then 300 ms |
+| Ultra Split Head (E) | axis_3 up | `05 02 00 00 00 10 00` | held, 0 ms then 300 ms |
+| Ultra Split Head (E) | axis_3 down | `05 02 00 00 00 20 00` | held, 0 ms then 300 ms |
+| Ultra Split Head (E) | flat | `05 02 08 00 00 00 00` | once |
+| Ultra Split Head (E) | zero_g | `05 02 00 00 10 00 00` | once |
+| Ultra Split Head (E) | anti_snore | `05 02 00 00 80 00 00` | once |
+| Ultra Split Head (E) | head_massage | `05 02 00 00 08 00 00` | once |
+| Ultra Split Head (E) | foot_massage | `05 02 00 00 04 00 00` | once |
+| Ultra Split Head (E) | massage_timer_cycle | `05 02 00 00 02 00 00` | once |
+| Ultra Split Head (E) | light | `05 02 00 02 00 00 00` | once |
+| Ultra Split Head (E) | status query | `01 B0 00` | after 2 s, then 1 s |
+<!-- /generated -->
+
+Movement refreshes every 300 ms. A/C begin after 30 ms; B/D/E begin immediately.
+Release, cancellation, lease expiry and STOP end refresh, sending **no packet**.
+C's all-zero query is delayed by 2 seconds and is not a release command.
+Hardware watchdog timing remains unverified. One-shot presets cannot be
+physically stopped by an invented packet.
+
+B/C/E poll after 2 seconds, then every second while connected and idle. Movement
+suspends polling and release restarts its initial delay. B's flat, head/foot
+massage and timer actions additionally issue three queries 300 ms apart.
+HA serializes these writes, binds them to their original receiver and clears
+observations on disconnect. Polling never reconnects or extends the idle timer.
+
+### Transport and responses
+
+A/C require write FFE9 on FFE5 and notify FFE4 on FFE0. B/D/E require Nordic UART
+write `6e400002-b5a3-f393-e0a9-e50e24dcca9e` and notify
+`6e400003-b5a3-f393-e0a9-e50e24dcca9e` on service
+`6e400001-b5a3-f393-e0a9-e50e24dcca9e`. There is no GATT fallback or authentication
+handshake. HA negotiates Bluetooth MTU through its transport; the app requests
+243, which none of these at-most-nine-byte frames requires. Notify subscriptions
+use CCCD notifications, not indications. Live characteristic properties select
+the supported write mode; hardware write properties remain unverified.
+
+B reads seconds big-endian at bytes 3–4, E at bytes 2–3. C reads signed little-endian
+32-bit hundredths at bytes 9–12, dividing by 100 with truncation toward zero.
+All three truncate seconds to minutes before choosing their indicator:
+1–10 maps to 10, 11–20 to 20, above 20 to 30, otherwise 0. HA discards short
+notifications rather than reproducing the app's indexing exception; it adds
+no guessed header, checksum, position or acknowledgment interpretation.
+
+### Actions
+
+`adjustable_bed.somos_action` exposes each available preset, memory, massage,
+light button and status query. It validates all selected targets before sending
+anything and supports the normal paired `side` field. `hold_control` accepts
+`head_up/down`, `feet_up/down`, B's `lumbar_tilt_up/down`, or D/E's
+`axis_1_up/down`, `axis_2_up/down`, `axis_3_up/down`, as applicable.
+
+### Analysis provenance
+
+Accepted APK Protocol Audit row099, Somos 1.0.0/code1, complete XAPK SHA-256
+`5488ea9f3db6137b31eeb3b23c75f8e1ef602a7b21488442480feeef4d7279be`.
+The accepted ROW099-F01 repair and scoped recheck preserve all 60 literal
+command/query vectors and withdraw unsupported D/E anatomical mappings.
+Physical directions, favorite/memory effects, massage cycles, notification
+semantics, write properties and stopped-refresh timing await volunteered beta
+feedback; no maintainer acquisition or testing is required.

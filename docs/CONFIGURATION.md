@@ -411,6 +411,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app (Remedy III / Contempo IV) | `rize_home` | 3 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
+| Somos / SomosBeds (choose product) | `somos` | 10 | 300 ms |
 | SUTA Smart Home (AT protocol) | `suta` | 7 | 150 ms |
 | Symphony Sleep app (com.ore.bedding.symphony, choose model and transport) | `symphony_sleep` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
@@ -1092,3 +1093,11 @@ it does not write a hardware lock. Protocol, layout and local settings belong
 to each physical side of a two-address pair. See [M Line](beds/mline.md).
 
 SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).
+
+### Somos / SomosBeds
+
+Choose the product shown in the Somos app: Signature (A), Elite (B), Ultra (C),
+Signature Split Head (D), or Ultra Split Head (E). The choice fixes the axes,
+massage buttons and 300 ms refresh cadence; it stays independent for each
+receiver in a two-address pair. D/E axes are numbered 1–3 because physical
+anatomy and sides are unverified. See [Somos controls](beds/keeson.md#somos--somosbeds).

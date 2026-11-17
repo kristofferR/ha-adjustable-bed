@@ -306,3 +306,9 @@ cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
 the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
 name gates, timing and control release policies. No sibling app's parameters
 select its capabilities.
+
+Somos 1.0.0/code1 (row099) reuses Keeson's K1 E6, P2 and P2-side carriers
+only after all 60 accepted literal rows match. The final zero in its P1
+carrier and P3 trailer establishes no side selection. Its five explicit
+`profiles/somos.py` products use the shared family controller, extended only
+for source-specific polling, notification parsing and neutral UI axes.
