@@ -3346,6 +3346,9 @@
       "bedgear_combined_down": {
         "name": "Head and foot down"
       },
+      "luniosmart_action": {
+        "name": "Lunio Smart+ {action}"
+      },
       "sonicsleep_action": {
         "name": "{action}"
       }
@@ -5235,6 +5238,9 @@
       },
       "mline_alarm_mode": {
         "name": "Alarm wake mode"
+      },
+      "luniosmart": {
+        "name": "Lunio Smart+ observations"
       },
       "sonicsleep": {
         "name": "SonicSleep state"
@@ -10773,6 +10779,7 @@
         "another": "Another app or remote: search every app",
         "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
         "richmat_420": "Richmat 4.2.0 app",
+        "luniosmart": "Lunio Smart+",
         "sonicsleep": "SonicSleep / 소닉슬립 (IQRM)"
       }
     },

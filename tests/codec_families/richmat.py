@@ -7,10 +7,17 @@ import re
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.profiles.casper import CasperProfile
 from custom_components.adjustable_bed.profiles.hush import HushProfile
+from custom_components.adjustable_bed.profiles.luniosmart import LunioSmartProfile
 from custom_components.adjustable_bed.profiles.luuna import LuunaProfile
 from custom_components.adjustable_bed.profiles.richmat import RICHMAT_CLASSIC, RichmatProfile
 from custom_components.adjustable_bed.profiles.sonicsleep import SonicSleepProfile
-from tests import casper_base_vectors, hush_vectors, luuna_vectors, sonicsleep_vectors
+from tests import (
+    casper_base_vectors,
+    hush_vectors,
+    luniosmart_vectors,
+    luuna_vectors,
+    sonicsleep_vectors,
+)
 from tests.codec_families import CodecFamily, CodecGuide
 from tests.richmat_vectors import FROZEN_FRAMES
 
@@ -33,6 +40,7 @@ _VARIANTS = {
 _PRODUCT_VARIANTS = frozenset({const.BED_TYPE_CASPER_BASE, const.BED_TYPE_HUSH_BASE, const.BED_TYPE_LUUNA})
 _FROZEN = frozenset().union(
     *FROZEN_FRAMES.values(),
+    *luniosmart_vectors.FROZEN_FRAMES.values(),
     *(frozenset(r["expected_bytes"] for r in sonicsleep_vectors.VECTORS["commands"] + sonicsleep_vectors.VECTORS["alarm_repair"]),),
     *(
         vectors.SHARED_FRAMES.union(*vectors.FROZEN_FRAMES.values())
@@ -63,6 +71,7 @@ def _spelled(text: str) -> set[str]:
 FAMILY = CodecFamily(
     profiles={
         RichmatProfile: FROZEN_FRAMES,
+        LunioSmartProfile: luniosmart_vectors.FROZEN_FRAMES,
         CasperProfile: casper_base_vectors.FROZEN_FRAMES,
         HushProfile: hush_vectors.FROZEN_FRAMES,
         LuunaProfile: luuna_vectors.FROZEN_FRAMES,
@@ -82,6 +91,7 @@ FAMILY = CodecFamily(
             "hush_base",
             "luuna",
             "sonicsleep",
+            "luniosmart",
             "leggett_lp_legacy",
             "leggett_wilinke",
             "richmat",

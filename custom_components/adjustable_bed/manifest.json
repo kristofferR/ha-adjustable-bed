@@ -4646,7 +4646,19 @@
       "local_name": "P5RM*"
     },
     {
+      "local_name": "P5RN*"
+    },
+    {
       "local_name": "P6RM*"
+    },
+    {
+      "local_name": "P6RN*"
+    },
+    {
+      "local_name": "P7RN*"
+    },
+    {
+      "local_name": "P8RN*"
     },
     {
       "local_name": "P9RM*"
@@ -4658,10 +4670,31 @@
       "local_name": "PARN*"
     },
     {
+      "local_name": "PBRN*"
+    },
+    {
+      "local_name": "PCRN*"
+    },
+    {
+      "local_name": "PDRN*"
+    },
+    {
+      "local_name": "PERN*"
+    },
+    {
+      "local_name": "PFRN*"
+    },
+    {
       "local_name": "PGRN*"
     },
     {
       "local_name": "PHRN*"
+    },
+    {
+      "local_name": "PJRN*"
+    },
+    {
+      "local_name": "PKRN*"
     },
     {
       "local_name": "PLRN*"

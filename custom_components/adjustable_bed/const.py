@@ -562,6 +562,7 @@ BED_TYPE_LUUNA: Final = "luuna"
 BED_TYPE_MLINE: Final = "mline"
 CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
 BED_TYPE_SONICSLEEP: Final = "sonicsleep"
+BED_TYPE_LUNIOSMART: Final = "luniosmart"
 BED_TYPE_HUSH_BASE: Final = "hush_base"
 BED_TYPE_HUSH_SLEEP_MM: Final = "hush_sleep_mm"
 BED_TYPE_HUSH_SLEEP_SXB: Final = "hush_sleep_sxb"
@@ -755,6 +756,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LUUNA,
     BED_TYPE_MLINE,
     BED_TYPE_SONICSLEEP,
+    BED_TYPE_LUNIOSMART,
     BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
@@ -921,6 +923,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
         BED_TYPE_BEDGEAR,
         BED_TYPE_SONICSLEEP,
+        BED_TYPE_LUNIOSMART,
         BED_TYPE_MOTOMOTION,
         BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_ERGOMOTION_4,

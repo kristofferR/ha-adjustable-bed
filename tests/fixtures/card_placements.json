@@ -4808,5 +4808,11 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:luniosmart_action": {
+    "card_section": "utility"
+  },
+  "sensor:luniosmart": {
+    "card_section": "hidden"
   }
 }

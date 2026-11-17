@@ -1359,6 +1359,8 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(dataclasses.replace(default_scenario("symphony"),
             id=f"symphony:{product}:{selector}", protocol_variant=selector,
             entry_data={const.CONF_PRODUCT_TYPE: product}, layout_id="symphony"))
+    for route in ("S1", "S3", "S4", "S5", "S6"):
+        scenarios.append(Scenario(id=f"luniosmart:{route}", bed_type="luniosmart", layout_id=f"luniosmart:{route}"))
     for route in ("Nordic", "W2", "W3", "W4", "W5"):
         scenarios.append(Scenario(
             id=f"sonicsleep:{route}", bed_type="sonicsleep",

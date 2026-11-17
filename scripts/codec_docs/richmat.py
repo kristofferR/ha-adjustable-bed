@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     get_lp_legacy_profile,
 )
+from custom_components.adjustable_bed.beds.luniosmart.discovery import ALIASES as LUNIO_ALIASES
 from custom_components.adjustable_bed.beds.luuna import controller as luuna_bed
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic_frames
 from custom_components.adjustable_bed.beds.richmat_classic import (
@@ -40,6 +41,7 @@ from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
+from custom_components.adjustable_bed.profiles import luniosmart as lunio
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
@@ -157,6 +159,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
         "one": (_const.BED_TYPE_SONICSLEEP,),
+        "luniosmart": (_const.BED_TYPE_LUNIOSMART,),
         **{
             profile.key: (_const.BED_TYPE_RICHMAT,) for profile in richmat_profiles.RICHMAT.values()
         },
@@ -258,6 +261,7 @@ def render_richmat_profiles() -> str:
     catalog = _table(
         ("Profile", "Bed type", "Transport order", "Commands", "Hold until release"),
         (
+            ("Lunio Smart+", "`luniosmart`", "platform GATT order", "fixed two-axis layout", "100 ms stream and explicit release"),
             ("SonicSleep", "`sonicsleep`", "platform GATT order", "fixed IQRM product", "renewable lease; no release packet"),
             *(
                 (
@@ -309,6 +313,8 @@ def render_richmat_transports() -> str:
             users.setdefault(transport, []).append(app)
     for transport in sonic.ROUTES.values():
         users.setdefault(transport, []).append("SonicSleep")
+    for transport in lunio.PROFILE.transports:
+        users.setdefault(transport, []).append("Lunio Smart+ (framed controls on every route)")
     return _block(
         _table(
             ("Key", "Service", "Write", "Notify", "Commands", "Profiles"),
@@ -1210,6 +1216,31 @@ def render_bedtech_commands() -> str:
 
 
 
+def render_luniosmart() -> str:
+    return _block(
+        _table(("Layout", "Refresh", "Partial receive expiry", "Memory slots"), [
+            ("Head and foot", f"{lunio.PROFILE.tick_s * 1000:g} ms", f"{lunio.PROFILE.receive_expiry_s * 1000:g} ms", "1"),
+        ]),
+        _table(("Route", "Service", "Write", "Declared notify", "Isolated query"), (
+            (f"S{i}", f"`{t.service_uuid}`", f"`{t.write_uuid}`", f"`{t.notify_uuid}`",
+             _hex(codec.function(0, action="deviceFunctionItemExitLimit", single=t.single)))
+            for i, key in enumerate(lunio.PROFILE.transports, 1) for t in (codec.TRANSPORTS[key],)
+        )),
+        _table(("Control", "All six routes"), (
+            (name, _hex(codec.command(code)))
+            for name, code in {**lunio.DIRECTIONS, **lunio.PRESETS, "release": lunio.RELEASE}.items()
+        )),
+        _table(("Startup", "Encoding"), [
+            ("Query", "Last matched service selects the isolated query above, independently of the writer"),
+            ("Local calendar example, 2026-11-17 12:34:56", _hex(codec.calendar(datetime(2026, 11, 17, 12, 34, 56), build=codec.record_20_len))),
+        ]),
+        _table(("Discovery", "Value"), [
+            ("Explicit case-sensitive substrings", ", ".join(f"`{word}`" for word in lunio.KEYWORDS)),
+            ("Catalog", f"{len(LUNIO_ALIASES)} aliases, {sum(row['eligible'] for row in LUNIO_ALIASES)} eligible; discovery only"),
+        ]),
+    )
+
+
 def render_sonicsleep() -> str:
     actions = {**sonic.DIRECTIONS, "flat": sonic.FLAT}
     for action, (recall, save) in sonic.PRESETS.items():
@@ -1345,6 +1376,7 @@ def render_rise_commands() -> str:
 
 
 BLOCKS: list[Block] = [
+    (GUIDE, "luniosmart", render_luniosmart),
     (GUIDE, "sonicsleep", render_sonicsleep),
     (GUIDE, "bedtech-models", render_bedtech_models),
     (GUIDE, "bedtech-app-commands", render_bedtech_commands),
