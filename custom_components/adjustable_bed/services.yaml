@@ -4550,8 +4550,6 @@ sonicsleep:
         boolean: null
 
 okimiki:
-  name: Okimiki
-  description: Control an Okimiki product and its reported lights or alarms.
   fields:
     device_id:
       required: true
@@ -4594,7 +4592,6 @@ okimiki:
         select:
           options: [lounge, zero_gravity, memory_1, memory_2]
     weekdays:
-      description: Monday 0 to Sunday 6; empty means once.
       selector:
         object:
     enabled:

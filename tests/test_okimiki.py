@@ -124,6 +124,35 @@ def test_scan_keeps_substrings_case_and_no_product_inference():
     assert not scan_matches("hcrn")
 
 
+def test_app_hint_is_opt_in_without_contesting_established_receivers():
+    from custom_components.adjustable_bed.config_flow import _confident_auto_detect
+    from custom_components.adjustable_bed.detection import detect_bed_type, detect_bed_type_detailed
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+    from tests.test_detection import _make_service_info
+
+    advert = _make_service_info(
+        "QRRM157738",
+        service_uuids=["0000fee9-0000-1000-8000-00805f9b34fb"],
+        manufacturer_data={19543: bytes.fromhex("54307651")},
+    )
+    detected = detect_bed_type_detailed(advert)
+    assert detected.bed_type == "bedtech" and "okimiki" in detected.ambiguous_types
+    for selected, variant in (("richmat", "auto"), ("bedtech", "auto"), ("okimiki", "HCRN")):
+        result = recommend_profile({"bed_type": selected, "protocol_variant": variant}, advert, {})
+        if selected == "richmat":
+            assert result is not None and result.suggested == "bedtech"
+            assert "okimiki" not in result.choices
+        else:
+            assert result is None
+    candidate = _make_service_info("prefix-HCRN-suffix", service_uuids=[])
+    result = detect_bed_type_detailed(candidate)
+    assert result.bed_type == "okimiki" or "okimiki" in (result.ambiguous_types or ())
+    assert result.confidence < 0.7 and _confident_auto_detect(result) is None
+    if result.bed_type == "okimiki":
+        assert detect_bed_type(candidate) is None
+    assert not hasattr(result, "protocol_variant")
+
+
 @pytest.mark.parametrize("legacy", (False, True))
 async def test_startup_exact_order_query_headers_and_gatt_properties(
     obj, coordinator, virtual, legacy

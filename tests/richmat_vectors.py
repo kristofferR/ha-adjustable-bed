@@ -2233,4 +2233,6 @@ def _okimiki() -> frozenset[str]:
     return frozenset(frames)
 
 
-FROZEN_FRAMES["okimiki"] = _okimiki()
+# Accepted row169 report/ANALYSIS.md:171-174, P1 command table,
+# E-BUILDER/E-ENUM/E-UI: Nordic saves. Original42+focused29 fixtures unchanged.
+FROZEN_FRAMES["okimiki"] = _okimiki() | frozenset({"2b", "2c", "65", "66"})

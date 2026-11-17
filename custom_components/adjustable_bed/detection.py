@@ -1319,7 +1319,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_bed_type_detailed().
     """
     result = detect_bed_type_detailed(service_info)
-    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1417,7 +1417,8 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
             result = DetectionResult(BED_TYPE_OKIMIKI, 0.3, ["name:okimiki_app_candidate"])
         elif result.bed_type != BED_TYPE_OKIMIKI:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_OKIMIKI]))
-            result.signals.append("name:okimiki_app_candidate")
+            # Keep established receiver/name evidence in its existing priority.
+            result.signals.insert(0, "name:okimiki_app_candidate")
 
     from .profiles.symphony import scan_matches as symphony_scan_matches
 
