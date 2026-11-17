@@ -206,6 +206,12 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             return 0
         return {"left": 1, "right": 2}.get(self.command_side or "", self.local.selected)
 
+    def _invalidate_preset(self, selected: int) -> None:
+        if selected == 0:
+            self._presets.clear()
+        else:
+            self._presets.pop(selected, None)
+
     def _live(self, link: Link | None = None) -> Link:
         current = self._link
         if (
@@ -342,6 +348,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                 max(1, self._coordinator.motor_pulse_count) * self.profile.refresh_ms,
             )
         command, release = self._motion(axis, up)
+        self._invalidate_preset(0 if self.model.format == "p1" and axis == "legs" else self._side())
         await self._hold(command, release, duration_ms, latched=self.model.format == "p1")
 
     def validate_timed_movement(self, motor: str, direction: str, duration_ms: int) -> None:
@@ -394,6 +401,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
     async def stop_all(self) -> None:
         link = self._live()
         frame = self._counters.control(1) if self.model.format == "p1" else codec.normal(0)
+        self._invalidate_preset(0)
         await self._release(link, frame)
 
     move_head_stop = stop_all
@@ -402,6 +410,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
     move_feet_stop = stop_all
 
     async def preset_flat(self) -> None:
+        self._invalidate_preset(0 if self.model.format == "p1" else self._side())
         await self._tap(
             self._counters.control(0x111)
             if self.model.format == "p1"
@@ -414,6 +423,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             raise NotImplementedError("This model has no memory controls")
         self.validate_memory_recall(memory_num)
         selected = self._side()
+        self._invalidate_preset(selected)
         command = (
             (0x6530 if selected == 1 else 0x6538) + memory_num - 1
             if self.model.split
@@ -448,12 +458,12 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             raise NotImplementedError("This model has no ZZ/TV/ZG controls")
         selected = self._side()
         if self._presets.get(selected) == name:
+            self._invalidate_preset(selected)
             await self._tap(
                 self._counters.control(1)
                 if self.model.format == "p1"
                 else codec.normal(0x40000000, selected)
             )
-            self._presets[selected] = None
             return
         legacy, modern = app.PRESETS[name]
         if self.model.split:
@@ -875,8 +885,15 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                 if request.sleeper
                 else None,
             )
+            self._invalidate_preset(
+                {"left": 1, "right": 2}.get(request.sleeper or "", self._side())
+                if self.model.split and op == "seven_motion" and axis != "legs"
+                else 0
+            )
             await self._hold(command, release, request.duration_ms, latched=True)
         elif op.endswith(("recall", "save")):
+            if op.endswith("recall"):
+                self._invalidate_preset(0)
             await self._tap(
                 self._counters.control(
                     (0x310 if op.endswith("save") else 0x311) + 2 * (request.value - 1)

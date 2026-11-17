@@ -214,6 +214,62 @@ async def test_burst_seven_writes_and_interrupted_counter(clock):
     assert frames(c) == ["ee010508000000aac0"] + ["ee010500000000aac0"] * 4
 
 
+@pytest.mark.parametrize("key", [46, 51, 135, 140])
+@pytest.mark.parametrize("movement", ["flat", "memory", "manual", "stop"])
+async def test_superseded_preset_is_recalled_on_first_press(clock, key, movement):
+    ctrl, c = make(key)
+    await ctrl.start_notify()
+    with ctrl.side_scope("left"):
+        await ctrl.preset_zero_g()
+        first = frames(c)[0]
+        if movement == "flat":
+            await ctrl.preset_flat()
+        elif movement == "memory":
+            await ctrl.preset_memory(1)
+        elif movement == "manual":
+            await ctrl.move_axis("back", True, 10)
+        else:
+            await ctrl.stop_all()
+        c.client.write_gatt_char.reset_mock()
+        await ctrl.preset_zero_g()
+    # P1 serials advance, while the command and parameters must match the recall.
+    assert frames(c)[0][2:] == first[2:]
+
+
+@pytest.mark.parametrize("key", [51, 140])
+async def test_side_movement_preserves_other_sides_preset_toggle(clock, key):
+    ctrl, c = make(key)
+    await ctrl.start_notify()
+    with ctrl.side_scope("right"):
+        await ctrl.preset_zero_g()
+    with ctrl.side_scope("left"):
+        await ctrl.move_axis("back", True, 10)
+    c.client.write_gatt_char.reset_mock()
+    with ctrl.side_scope("right"):
+        await ctrl.preset_zero_g()
+    expected = codec.p1(0, 1, 1) if key == 51 else codec.normal(0x40000000, 2)
+    assert frames(c)[0][2:] == expected.hex()[2:]
+
+
+@pytest.mark.parametrize("movement", ["flat", "legs", "seven_motion", "ten_recall"])
+async def test_shared_legacy_movement_clears_both_preset_selections(clock, movement):
+    ctrl, c = make(51)
+    await ctrl.start_notify()
+    for side in ("left", "right"):
+        with ctrl.side_scope(side):
+            await ctrl.preset_zero_g()
+    with ctrl.side_scope("left"):
+        if movement == "flat":
+            await ctrl.preset_flat()
+        elif movement == "legs":
+            await ctrl.move_axis("legs", True, 10)
+        elif movement == "seven_motion":
+            await ctrl.execute_request(bed.Request(movement, axis="legs", duration_ms=10))
+        else:
+            await ctrl.execute_request(bed.Request(movement, value=1))
+    assert ctrl._presets == {}
+
+
 async def test_legacy_irregular_massage_local_state_survives_reconnect(clock):
     ctrl, c = make(52)
     await ctrl.start_notify()
@@ -450,7 +506,12 @@ async def test_split_position_and_color_toggle_keep_both_caller_scopes(clock):
     )
 
 
-async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict(hass, clock):
+@pytest.mark.parametrize(
+    "operation", ["sonic_mode_1", "color_light_toggle", "position_light_toggle", "preset_zero_g"]
+)
+async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict(
+    hass, clock, operation
+):
     from homeassistant.config_entries import ConfigEntryState
     from homeassistant.exceptions import ServiceValidationError
     from homeassistant.helpers import device_registry as dr
@@ -466,6 +527,7 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
     from custom_components.adjustable_bed.services import _resolve_sided_targets
     from tests.test_paired_setup import LEFT_ADDR, _paired_entry
 
+    key = 51 if operation == "preset_zero_g" else 172
     entry = _paired_entry(hass)
     hass.config_entries.async_update_entry(
         entry,
@@ -474,7 +536,7 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
             CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
             "address": LEFT_ADDR,
             CONF_BED_TYPE: "cheerssleep",
-            CONF_PRODUCT_TYPE: "172",
+            CONF_PRODUCT_TYPE: str(key),
         },
     )
     inner = AdjustableBedCoordinator(hass, entry)
@@ -495,9 +557,9 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
             _resolve_sided_targets(hass, [right.id], "left")
         from custom_components.adjustable_bed.beds.cheerssleep.services import register_services
 
-        template, transport = make(172)
+        template, transport = make(key)
         inner._client = transport.client
-        live = bed.CheersSleepController(inner, app.MODELS[172])
+        live = bed.CheersSleepController(inner, app.MODELS[key])
         inner._controller = live
         await live.start_notify()
 
@@ -505,14 +567,52 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
             await command(live)
 
         inner.async_execute_controller_command = AsyncMock(side_effect=execute)
+        if operation == "preset_zero_g":
+            from custom_components.adjustable_bed.button import (
+                BUTTON_DESCRIPTIONS,
+                PairedBedCombinedButton,
+            )
+
+            button = PairedBedCombinedButton(
+                pair, next(d for d in BUTTON_DESCRIPTIONS if d.key == "preset_zero_g")
+            )
+            button.hass = hass
+            await button.async_press()
+            assert frames(transport) == ["0201136500000000", "0301236500000000"]
+            await button.async_press()
+            assert frames(transport)[2:] == ["0401010000000000", "0501010000000000"]
+            return
         register_services(hass)
+        parent = registry.async_get_device_by_identifier(
+            next(iter(pair.device_info["identifiers"])), entry.entry_id
+        )
+        assert parent is not None
+        target_id = right.id if operation == "sonic_mode_1" else parent.id
+        data = {"device_id": [target_id], "operation": operation}
+        if operation != "sonic_mode_1":
+            data["side"] = "both"
         await hass.services.async_call(
             DOMAIN,
             "cheerssleep",
-            {"device_id": [right.id], "operation": "sonic_mode_1"},
+            data,
             blocking=True,
         )
-        assert frames(transport) == ["ee0105000000ccbbc0"] * 3 + ["ee010500000000bbc0"] * 4
+        if operation == "sonic_mode_1":
+            expected = ["ee0105000000ccbbc0"] * 3 + ["ee010500000000bbc0"] * 4
+        elif operation == "position_light_toggle":
+            expected = (
+                ["ee010500020000aac0"] * 3
+                + ["ee010500000000aac0"] * 4
+                + ["ee010500020000bbc0"] * 3
+                + ["ee010500000000bbc0"] * 4
+            )
+        else:
+            expected = ["ee01050002000000c0"] * 3 + ["ee01050000000000c0"] * 4
+        assert frames(transport) == expected
+        if operation == "color_light_toggle":
+            # A later action must still toggle, even before hardware feedback arrives.
+            await hass.services.async_call(DOMAIN, "cheerssleep", data, blocking=True)
+            assert frames(transport) == expected * 2
         assert live.commands_share_timer
         assert not pair._lanes.native_both
         assert [side for side, _ in pair._targets_for("both")] == ["left", "right"]

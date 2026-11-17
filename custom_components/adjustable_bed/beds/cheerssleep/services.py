@@ -89,9 +89,16 @@ async def handle_request(call: ServiceCall) -> None:
                     )
         controller.validate_request(request)
 
+    executed: set[int] = set()
+
     async def execute(controller: CheersSleepController) -> None:
         validate(controller)
+        # Both child lanes share the color light on one physical receiver.
+        receiver = id(controller._coordinator)
+        if request.operation == "color_light_toggle" and receiver in executed:
+            return
         await controller.execute_request(request)
+        executed.add(receiver)
 
     await _preflight_and_execute(
         targets,
