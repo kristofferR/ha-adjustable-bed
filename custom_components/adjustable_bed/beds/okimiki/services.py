@@ -169,8 +169,9 @@ class Request:
             row = self.record
             number = row.id if row else p.next_alarm_id(tuple(controller._alarms))
             reserved = row.reserved if row else 0
-            hour = self.when.hour if self.when else row.hour if row else 0
-            minute = self.when.minute if self.when else row.minute if row else 0
+            when = dt_util.as_local(self.when) if self.when else None
+            hour = when.hour if when else row.hour if row else 0
+            minute = when.minute if when else row.minute if row else 0
             opcode = CONTROLS[self.mode].opcode if self.mode else row.opcode if row else 0
             mask = row.mask if row else 1
             if self.days is not None:

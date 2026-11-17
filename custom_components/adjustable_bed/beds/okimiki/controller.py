@@ -647,7 +647,7 @@ class OkimikiController(GoodVibeController):
                 self._publish()
             if request.operation in ("repeat", "enable", "delete"):
                 # ACKs carry no record fields. Reusing a pre-write observation
-                # could undo a newer edit; wait for that ID's actual readback.
+                # could undo a newer edit; wait for readback or a list refresh.
                 self._stale_alarm_ids.add(frames[0][6])
             for frame in frames:
                 if not await self._send(frame, link=link):
@@ -657,6 +657,10 @@ class OkimikiController(GoodVibeController):
             elif request.operation == "light_duration":
                 self._requests["seconds"] = request.seconds
             self._publish()
+        if request.operation == "alarms":
+            # Deleted IDs cannot return a record. A successful explicit refresh
+            # starts a new observed list, without claiming it is complete.
+            self._stale_alarm_ids.clear()
 
 
 async def build_controller(ctx: BuildContext) -> OkimikiController:

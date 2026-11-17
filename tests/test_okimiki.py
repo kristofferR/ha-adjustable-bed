@@ -346,7 +346,8 @@ async def test_replacement_during_rgb_pair_never_writes_new_session(obj, coordin
     assert len(writes(coordinator)) == 1
 
 
-def test_alarm_records_modes_reserved_byte_enable_and_exhaustion(obj):
+async def test_alarm_records_modes_reserved_byte_enable_and_exhaustion(obj, hass):
+    await hass.config.async_set_time_zone("Europe/Oslo")
     obj._menus.add("alarm")
     row = p.Alarm(1, 213, 7, 30, 89, 137)
     obj._event("alarm_list", row)
@@ -424,6 +425,55 @@ async def test_alarm_ack_cannot_revalidate_pre_mutation_fields(obj, coordinator,
         Request("enable", alarm_id=1, enabled=False).plan(obj)
     obj._event("alarm_update", replace(row, opcode=89))
     assert Request("enable", alarm_id=1, enabled=False).plan(obj).record.opcode == 89
+
+
+@pytest.mark.parametrize("remaining", (False, True))
+async def test_alarm_refresh_allows_allocation_after_delete(obj, coordinator, virtual, remaining):
+    obj._menus.add("alarm")
+    obj._event("alarm_list", p.Alarm(1, 7, 6, 30, 69, 137))
+    await obj.execute_request(Request("delete", alarm_id=1).plan(obj))
+    obj._event("alarm_cancel_success", None)
+    new = Request("repeat", when=datetime(2026, 11, 17, 6, 30, tzinfo=UTC), mode="lounge")
+    with pytest.raises(ValueError, match="Read back"):
+        new.plan(obj)
+    await obj.execute_request(Request("alarms"))
+    if remaining:
+        obj._event("alarm_list", p.Alarm(2, 8, 8, 0, 69, 1))
+    with pytest.raises(ValueError, match="Query this bed's alarms"):
+        Request("enable", alarm_id=1, enabled=False).plan(obj)
+    await obj.execute_request(new.plan(obj))
+    assert writes(coordinator)[-1][6] == 1
+
+
+async def test_failed_alarm_refresh_keeps_allocation_guard(obj, coordinator, virtual):
+    from bleak.exc import BleakError
+
+    obj._menus.add("alarm")
+    obj._event("alarm_list", p.Alarm(1, 7, 6, 30, 69, 137))
+    await obj.execute_request(Request("delete", alarm_id=1).plan(obj))
+    coordinator.client.write_gatt_char.side_effect = BleakError("query failed")
+    with pytest.raises(BleakError, match="query failed"):
+        await obj.execute_request(Request("alarms"))
+    new = Request("repeat", when=datetime(2026, 11, 17, 6, 30, tzinfo=UTC), mode="lounge")
+    with pytest.raises(ValueError, match="Read back"):
+        new.plan(obj)
+
+
+@pytest.mark.parametrize("month,hour", ((11, 7), (7, 8)))
+@pytest.mark.parametrize("edit", (False, True))
+async def test_recurring_alarm_uses_clock_sync_timezone(obj, hass, month, hour, edit):
+    await hass.config.async_set_time_zone("Europe/Oslo")
+    obj._menus.add("alarm")
+    if edit:
+        obj._event("alarm_list", p.Alarm(1, 7, 5, 0, 69, 137))
+    request = Request(
+        "repeat",
+        alarm_id=1 if edit else None,
+        when=datetime(2026, month, 17, 6, 30, tzinfo=UTC),
+        mode="lounge",
+    ).plan(obj)
+    expected = p.Alarm(1, 7 if edit else 0, hour, 30, 89, 137 if edit else 1)
+    assert request.frames(obj) == (expected.frame(),)
 
 
 async def test_failed_fifo_head_drops_without_retry_then_drains_next_item(
