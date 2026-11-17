@@ -8817,9 +8817,11 @@ capability reply. HCRN and IPRM have no alarm page.
 Query KWRN's list before editing or deleting by ID. An edit retains the returned
 reserved byte; omitted fields retain the received values. Weekdays use Monday 0
 to Sunday 6; an empty list means once. The four modes are lounge, zero gravity,
-memory 1 and memory 2. The allocator uses the observed list without claiming it
-is complete; it has no completion marker. Its exhausted ID serializes FF, an
-app quirk with unverified firmware meaning.
+memory 1 and memory 2. Choose an explicit `alarm_id` from 1 through 7 when
+creating a recurring alarm. The list has no completion marker, so Home
+Assistant does not infer a free slot from missing or delayed replies. The
+app's exhausted allocator serializes FF; that evidence is retained in codec
+tests, but Home Assistant requires an explicit slot instead.
 
 A one-shot alarm uses the selected local time and a minute countdown; a positive
 subminute interval rolls to the next day. Clock sync sends epoch seconds with

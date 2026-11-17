@@ -9998,7 +9998,8 @@
           "name": "Alarm date and time"
         },
         "alarm_id": {
-          "name": "Observed alarm ID"
+          "name": "Alarm slot",
+          "description": "Choose 1 through 7 explicitly when creating an alarm. Query the existing record before editing, enabling or deleting it."
         },
         "mode": {
           "name": "Alarm preset"

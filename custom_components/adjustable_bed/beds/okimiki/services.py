@@ -100,6 +100,8 @@ class Request:
             if op == "single" and (self.when is None or self.when.utcoffset() is None):
                 raise ValueError("Choose a timezone-aware alarm time")
             if op == "repeat":
+                if self.alarm_id is None:
+                    raise ValueError("Choose an explicit alarm ID from 1 to 7")
                 if self.record is None and (self.when is None or self.mode is None):
                     raise ValueError("A new alarm needs a time and mode")
                 if self.when is not None and self.when.utcoffset() is None:
@@ -120,8 +122,11 @@ class Request:
                 )
                 if self.record.id in controller._stale_alarm_ids or current != self.record:
                     raise ValueError("Query a fresh record before changing this alarm again")
-            if op == "repeat" and self.record is None and controller._stale_alarm_ids:
-                raise ValueError("Read back the previous alarm change before allocating another ID")
+            if op == "repeat" and self.record is None and (
+                self.alarm_id in controller._stale_alarm_ids
+                or any(row.id == self.alarm_id for row in controller._alarms)
+            ):
+                raise ValueError("Query a fresh record before changing this alarm")
 
     def plan(self, controller: OkimikiController) -> Request:
         """Keep the actual returned reserved byte and physical receiver's record."""
@@ -130,9 +135,10 @@ class Request:
             record = next(
                 (row for row in reversed(controller._alarms) if row.id == self.alarm_id), None
             )
-            if record is None:
+            if record is None and self.operation != "repeat":
                 raise ValueError("Query this bed's alarms before editing or deleting one")
-            request = replace(self, record=record)
+            if record is not None:
+                request = replace(self, record=record)
         request.validate(controller)
         return request
 
@@ -167,7 +173,8 @@ class Request:
             )
         if op == "repeat":
             row = self.record
-            number = row.id if row else p.next_alarm_id(tuple(controller._alarms))
+            assert self.alarm_id is not None
+            number = row.id if row else self.alarm_id
             reserved = row.reserved if row else 0
             when = dt_util.as_local(self.when) if self.when else None
             hour = when.hour if when else row.hour if row else 0

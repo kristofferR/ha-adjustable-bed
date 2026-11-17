@@ -366,11 +366,11 @@ async def test_alarm_records_modes_reserved_byte_enable_and_exhaustion(obj, hass
     assert p.next_alarm_id(tuple(obj._alarms)) == -1
     when = datetime(2026, 11, 17, 7, 30, tzinfo=ZoneInfo("Europe/Oslo"))
     assert (
-        Request("repeat", mode="lounge", when=when, days=(0, 4)).frames(obj)[0].hex()
+        p.Alarm(p.next_alarm_id(tuple(obj._alarms)), 0, 7, 30, 89, p.repeat_mask((0, 4), True)).frame().hex()
         == "6e0d20050101ff00071e5989a8"
     )
     for mode in ("lounge", "zero_gravity", "memory_1", "memory_2"):
-        assert Request("repeat", mode=mode, when=when).frames(obj)[0][-3] == CONTROLS[mode].opcode
+        assert Request("repeat", alarm_id=1, mode=mode, when=when).frames(obj)[0][-3] == CONTROLS[mode].opcode
 
 
 def test_countdown_subminute_rollover_zone_and_restore_no_hardware_assumption(obj):
@@ -428,24 +428,29 @@ async def test_alarm_ack_cannot_revalidate_pre_mutation_fields(obj, coordinator,
 
 
 @pytest.mark.parametrize("remaining", (False, True))
-async def test_alarm_refresh_allows_allocation_after_delete(obj, coordinator, virtual, remaining):
+async def test_alarm_refresh_requires_explicit_slot_after_delete(obj, coordinator, virtual, remaining):
     obj._menus.add("alarm")
     obj._event("alarm_list", p.Alarm(1, 7, 6, 30, 69, 137))
-    await obj.execute_request(Request("delete", alarm_id=1).plan(obj))
+    obj._event("alarm_list", p.Alarm(2, 8, 8, 0, 69, 1))
+    await obj.execute_request(Request("delete", alarm_id=2).plan(obj))
     obj._event("alarm_cancel_success", None)
     new = Request("repeat", when=datetime(2026, 11, 17, 6, 30, tzinfo=UTC), mode="lounge")
-    with pytest.raises(ValueError, match="Read back"):
+    with pytest.raises(ValueError, match="explicit alarm ID"):
         new.plan(obj)
     await obj.execute_request(Request("alarms"))
     if remaining:
-        obj._event("alarm_list", p.Alarm(2, 8, 8, 0, 69, 1))
+        obj._event("alarm_list", p.Alarm(1, 7, 6, 30, 69, 137))
+    count = len(writes(coordinator))
+    with pytest.raises(ValueError, match="explicit alarm ID"):
+        await obj.execute_request(new.plan(obj))
+    assert len(writes(coordinator)) == count
     with pytest.raises(ValueError, match="Query this bed's alarms"):
-        Request("enable", alarm_id=1, enabled=False).plan(obj)
-    await obj.execute_request(new.plan(obj))
-    assert writes(coordinator)[-1][6] == 1
+        Request("enable", alarm_id=2, enabled=False).plan(obj)
+    await obj.execute_request(replace(new, alarm_id=2).plan(obj))
+    assert writes(coordinator)[-1][6] == 2
 
 
-async def test_failed_alarm_refresh_keeps_allocation_guard(obj, coordinator, virtual):
+async def test_failed_alarm_refresh_keeps_edits_guarded(obj, coordinator, virtual):
     from bleak.exc import BleakError
 
     obj._menus.add("alarm")
@@ -454,9 +459,17 @@ async def test_failed_alarm_refresh_keeps_allocation_guard(obj, coordinator, vir
     coordinator.client.write_gatt_char.side_effect = BleakError("query failed")
     with pytest.raises(BleakError, match="query failed"):
         await obj.execute_request(Request("alarms"))
-    new = Request("repeat", when=datetime(2026, 11, 17, 6, 30, tzinfo=UTC), mode="lounge")
-    with pytest.raises(ValueError, match="Read back"):
-        new.plan(obj)
+    with pytest.raises(ValueError, match="Query this bed's alarms"):
+        Request("enable", alarm_id=1, enabled=False).plan(obj)
+
+
+async def test_new_alarm_plan_rejects_a_slot_observed_after_preflight(obj, coordinator, virtual):
+    obj._menus.add("alarm")
+    plan = Request("repeat", alarm_id=2, when=datetime(2026, 11, 17, 6, 30, tzinfo=UTC), mode="lounge").plan(obj)
+    obj._event("alarm_list", p.Alarm(2, 91, 8, 0, 69, 137))
+    with pytest.raises(ValueError, match="fresh record"):
+        await obj.execute_request(plan)
+    assert not writes(coordinator)
 
 
 @pytest.mark.parametrize("month,hour", ((11, 7), (7, 8)))
@@ -468,7 +481,7 @@ async def test_recurring_alarm_uses_clock_sync_timezone(obj, hass, month, hour, 
         obj._event("alarm_list", p.Alarm(1, 7, 5, 0, 69, 137))
     request = Request(
         "repeat",
-        alarm_id=1 if edit else None,
+        alarm_id=1,
         when=datetime(2026, month, 17, 6, 30, tzinfo=UTC),
         mode="lounge",
     ).plan(obj)
