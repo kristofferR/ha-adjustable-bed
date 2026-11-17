@@ -4405,6 +4405,52 @@ class TestOfflineSafeBedTypes:
             assert left.client is None and right.client is None
             assert left.controller is None and right.controller is None
 
+    @pytest.mark.parametrize("product", ["FARM", "JLRM", "JGRN", "JHRN", None, "", "auto", "unknown", "none", "FARMX"])
+    async def test_majestichome_offline_capabilities_require_each_saved_product(
+        self, hass: HomeAssistant, product: str | None
+    ) -> None:
+        from custom_components.adjustable_bed.beds.majestichome.controller import (
+            MajesticHomeController,
+        )
+        from custom_components.adjustable_bed.pairing import OFFLINE_CAPABILITY_SAFE_VARIANTS
+        from custom_components.adjustable_bed.profiles.majestichome import PROFILE_CHOICES
+
+        assert "majestichome" not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
+        assert OFFLINE_CAPABILITY_SAFE_VARIANTS["majestichome"] == frozenset(PROFILE_CHOICES)
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = "majestichome"
+        for row in data[CONF_PAIR_CHILDREN]:
+            row[CONF_BED_TYPE] = "majestichome"
+            row.pop("capabilities", None)
+            row.pop(CONF_PROTOCOL_VARIANT, None)
+            if row[CONF_SIDE] == SIDE_RIGHT:
+                row[CONF_PROTOCOL_VARIANT] = "JLRM"
+            elif product is not None:
+                row[CONF_PROTOCOL_VARIANT] = product
+        entry = MockConfigEntry(domain=DOMAIN, data=data, version=5)
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+        for side, child in children.items():
+            with patch.object(child, "async_connect", new_callable=AsyncMock) as connect:
+                await child.async_prime_offline_controller()
+            connect.assert_not_awaited()
+            assert child.client is None and child.controller is None
+            controller = child.capability_controller
+            expected = "JLRM" if side == SIDE_RIGHT else product
+            if expected in PROFILE_CHOICES:
+                assert isinstance(expected, str)
+                assert isinstance(controller, MajesticHomeController)
+                assert controller.layout.key == expected
+                assert controller._link is None
+                assert {spec.key for spec in controller.motor_control_specs} == {
+                    "FARM": {"back", "legs", "both"},
+                    "JLRM": {"back", "legs", "lumbar"},
+                    "JGRN": {"back", "legs", "both"},
+                    "JHRN": {"legs"},
+                }[expected]
+            else:
+                assert controller is None
+
     @pytest.mark.parametrize("profile", [*ESHINE_OKIN_PROFILES, None, "", "auto", "unKnown", "eshine_e6000"])
     async def test_eshine_offline_capabilities_require_an_explicit_side_profile(
         self, hass: HomeAssistant, profile: str | None

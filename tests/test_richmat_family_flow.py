@@ -312,6 +312,26 @@ async def test_configure_switches_a_remote_entry_to_an_mh_app(hass):
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == "model_vorm"
 
 
+@pytest.mark.parametrize("product", ("FARM", "JLRM", "JGRN", "JHRN"))
+async def test_configure_lists_majestichome_and_requires_its_saved_product(hass, product):
+    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow.async_step_settings()
+    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
+    label = next(label for label, value in selector.rows().items() if value == "majestichome")
+    assert "Majestic Home" in label
+    form = await flow.async_step_settings({const.CONF_BED_TYPE: selector(label)})
+    assert form["type"] is FlowResultType.FORM
+    assert const.CONF_PROTOCOL_VARIANT in fields(form)
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow.async_step_settings({const.CONF_PROTOCOL_VARIANT: product})
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.data[const.CONF_BED_TYPE] == "majestichome"
+    assert entry.data[const.CONF_PROTOCOL_VARIANT] == product
+
+
 async def test_each_receiver_of_a_pair_answers_for_itself(hass, enable_custom_integrations):
     from tests.test_paired_receiver_questions import child, pair_entry, receiver_form
     from tests.test_paired_receiver_questions import fields as receiver_fields

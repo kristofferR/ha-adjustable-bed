@@ -45,6 +45,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_MAJESTICHOME,
     BED_TYPE_MLILY,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIN_CB24,
@@ -107,6 +108,7 @@ from .const import (
     VMATBASIC_CONFIG_KEYS,
 )
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
+from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
@@ -121,6 +123,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_YAMADA: frozenset({"p1", "p2"}),
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
     BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
+    BED_TYPE_MAJESTICHOME: frozenset(MAJESTICHOME_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
     BED_TYPE_RICHMAT_APP: frozenset(RICHMAT_APP_PRODUCTS),
     BED_TYPE_RICHMAT_APP_SLEEP: frozenset(RICHMAT_SLEEP_CHOICES),

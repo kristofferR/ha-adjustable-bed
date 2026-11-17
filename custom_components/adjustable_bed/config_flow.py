@@ -826,6 +826,7 @@ def _bed_type_selector(
             *RICHMAT_MH_BED_TYPES,
             "luuna",
             "sonicsleep",
+            "majestichome",
             BED_TYPE_MLILY,
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
