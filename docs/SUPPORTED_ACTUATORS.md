@@ -148,6 +148,13 @@ metadata do not establish bed support. Hardware behavior remains unverified.
 This exclusion applies to this exact app version. Existing support for other
 apps and Okin-based beds is unchanged; see [Okin Protocol Family](#okin-protocol-family).
 
+### SmartSofa
+
+**SmartSofa** (`com.okin.seating.ss`, version **1.1.3 (5)**) controls sofas,
+recliners and accessories over Bluetooth. No reachable direct bed controls or
+shared bed effect were found in this version. Similar names or commands do not
+establish bed support; this exclusion is specific to this app version.
+
 ### WiFi and Cloud-Based Beds
 
 **[Won't be supported, read reasons here](https://github.com/kristofferR/ha-adjustable-bed/issues/167).** This is a Bluetooth-only integration. WiFi and cloud beds require fundamentally different architecture and would be better served by a separate integration.
