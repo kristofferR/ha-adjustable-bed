@@ -62,8 +62,9 @@ async def handle_alarm(call: ServiceCall) -> None:
     }
 
     def validate(controller: OreUltramaticController) -> None:
-        link = controller._capture_link()
-        app.alarm(link.route, dt_util.now(), **fields)
+        if controller._route is None:
+            raise ValueError("Connect ORE Ultramatic once to discover its bed route")
+        app.alarm(controller._route, dt_util.now(), **fields)
 
     async def execute(controller: OreUltramaticController) -> None:
         validate(controller)

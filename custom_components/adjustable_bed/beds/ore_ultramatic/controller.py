@@ -443,6 +443,11 @@ class OreUltramaticController(OreComfortBedController):
         await self.start_notify()
         session.persist_capability_snapshot()
 
+    @property
+    def requires_notification_channel(self) -> bool:
+        """Alarm/massage reports remain subscribed when diagnostics finishes."""
+        return True
+
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         link = self._capture_link()
         if self._notifying:
@@ -455,6 +460,7 @@ class OreUltramaticController(OreComfortBedController):
                 or not link.client.is_connected
             ):
                 return
+            self.forward_raw_notification(str(link.notify.uuid), bytes(data))
             callbacks = self._parser.feed(bytes(data))
             s = self._parser.state
             if "alarm" in callbacks:
