@@ -52,7 +52,7 @@ def alarm_reply(alarm):
 
 @pytest.fixture
 async def live_pair(hass, mock_coordinator_connected, clock):
-    async def build(mode):
+    async def build(mode, *, delayed_clock=False):
         data = _paired_entry_data()
         data[const.CONF_BED_TYPE] = "majestichome"
         data[const.CONF_PAIR_CONNECTION_MODE] = mode
@@ -107,9 +107,13 @@ async def live_pair(hass, mock_coordinator_connected, clock):
                     if state["ready"]:
                         events.append((side, bytes(packet)))
                     if packet.hex() == "6e08010178":
-                        child.controller._notification(
-                            child.controller._link, rx, bytearray.fromhex("6e09010078")
-                        )
+                        if not delayed_clock or state["ready"]:
+                            hass.loop.call_soon(
+                                child.controller._notification,
+                                child.controller._link,
+                                rx,
+                                bytearray.fromhex("6e09010078"),
+                            )
                     elif packet == bed.LIST_ALARMS:
                         if hook := hooks.get("query"):
                             hook(side, child, connections[side])
@@ -158,6 +162,82 @@ def mutations(events):
         for side, packet in events
         if len(packet) > 6 and packet[3] == 5 and packet[5] == 1
     ]
+
+
+@pytest.mark.parametrize("operation", ("list", "new", "set", "delete"))
+async def test_standalone_waits_for_late_clock_reply(hass, runtime, operation):
+    target, client, _ = runtime
+    queries = 0
+
+    async def write(_char, packet, **kwargs):
+        nonlocal queries
+        if packet.hex() == "6e08010178":
+            queries += 1
+            if queries > 1:
+                hass.loop.call_soon(notify, target, "6e09010078")
+
+    client.write_gatt_char.side_effect = write
+    await settings(hass, operation, alarm_id=1)
+    assert queries == 2
+    assert target.controller.observations["clock_available"]
+
+
+async def test_concurrent_pair_waits_for_late_clock_replies(hass, live_pair):
+    live = await live_pair("concurrent", delayed_clock=True)
+    await hass.services.async_call(
+        const.DOMAIN,
+        "majestichome",
+        {"device_id": live.parent, "operation": "set", "alarm_id": 1},
+        blocking=True,
+    )
+    assert {side for side, _packet in mutations(live.events)} == {"left", "right"}
+    assert live.connections == {"left": 1, "right": 1}
+
+
+@pytest.mark.parametrize("fail", (False, True))
+@pytest.mark.parametrize("paired", (False, True))
+async def test_preflight_retains_links_until_all_targets_finish(
+    hass, live_pair, monkeypatch, fail, paired
+):
+    live = await live_pair("concurrent")
+    original = bed.MajesticHomeController.prepare_live
+    if not paired:
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            lambda *args: ([(child, "both") for child in live.children.values()], []),
+        )
+    for child in live.children.values():
+        child._disconnect_after_command = True
+        # Make the handoff expire as soon as the next target yields.
+        monkeypatch.setattr(child, "_idle_disconnect_delay", lambda: 0)
+
+    async def prepare(controller, request, **kwargs):
+        if controller.layout.key == "JLRM":
+            for _ in range(5):
+                await asyncio.sleep(0)
+            assert live.children["left"].is_connected
+            if fail:
+                raise ValueError("Right preflight failed")
+        return await original(controller, request, **kwargs)
+
+    with patch.object(bed.MajesticHomeController, "prepare_live", prepare):
+        call = hass.services.async_call(
+            const.DOMAIN,
+            "majestichome",
+            {"device_id": live.parent, "operation": "sync_clock"},
+            blocking=True,
+        )
+        if fail:
+            with pytest.raises(ServiceValidationError, match="Right preflight failed"):
+                await call
+        else:
+            await call
+            for side in live.children:
+                assert len([packet for owner, packet in live.events if owner == side]) == 2
+    assert live.connections == {"left": 1, "right": 1}
+    for child in live.children.values():
+        assert child._command_connection_holds == 0
+        assert not child.is_connected or child._disconnect_timer is not None
 
 
 @pytest.mark.parametrize("mode", ("concurrent", "sequential"))
@@ -318,8 +398,8 @@ async def test_sequential_all_target_live_preflight_before_first_mutation(hass, 
     live = await live_pair("sequential")
     original = bed.MajesticHomeController.prepare_live
 
-    async def reject_right(controller, request):
-        result = await original(controller, request)
+    async def reject_right(controller, request, **kwargs):
+        result = await original(controller, request, **kwargs)
         if controller.layout.key == "JLRM":
             raise ValueError("Right current settings unavailable")
         return result

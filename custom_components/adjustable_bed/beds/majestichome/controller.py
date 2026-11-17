@@ -456,8 +456,8 @@ class MajesticHomeController(GoodVibeController):
             if self._current_link() is not link:
                 raise ConnectionError("Majestic Home settings reply belongs to an old session")
 
-    async def prepare_live(self, request: Request) -> Plan:
-        """Read required fields on the current sequential link before building bytes."""
+    async def prepare_live(self, request: Request, *, refresh_alarm: bool = True) -> Plan:
+        """Read required fields on the current link before building bytes."""
         self.validate_request(request)
         link = self._current_link()
         if request.operation != "sync_clock" and not self.observations.get("clock_available"):
@@ -466,7 +466,7 @@ class MajesticHomeController(GoodVibeController):
                 link=link,
             )
             await self._await_reply(link, lambda: bool(self.observations.get("clock_available")))
-        if request.operation == "toggle":
+        if refresh_alarm and request.operation == "toggle":
             number = request.number
             assert number is not None
 

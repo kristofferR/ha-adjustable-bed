@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import ExitStack
 from typing import TYPE_CHECKING, cast
 
 import voluptuous as vol
@@ -93,6 +94,7 @@ async def handle_request(call: ServiceCall) -> None:
     plans: dict[MajesticHomeController, Plan] = {}
     intents: list[Intent] = []
     preflighted = []
+    connections = ExitStack()
 
     def validate_owners() -> None:
         for parent, side, children in physical:
@@ -113,19 +115,27 @@ async def handle_request(call: ServiceCall) -> None:
     try:
         validate_owners()
         for parent, _side, children in physical:
+            if not (
+                isinstance(parent, PairedBedCoordinator)
+                and parent.connection_mode == "sequential"
+            ):
+                for child in children:
+                    connections.enter_context(child.hold_command_connection())
+        for parent, _side, children in physical:
             for child in children:
 
                 async def query(controller: BedController, parent=parent) -> bool:
                     try:
                         target = selected(controller)
-                        if (
+                        sequential = (
                             isinstance(parent, PairedBedCoordinator)
                             and parent.connection_mode == "sequential"
-                        ):
-                            plan = await target.prepare_live(request)
+                        )
+                        plan = await target.prepare_live(request, refresh_alarm=sequential)
+                        if sequential:
                             intents.append(target.capture_intent(plan))
                         else:
-                            plans[target] = target.prepare(request)
+                            plans[target] = plan
                     except ValueError as error:
                         raise ServiceValidationError(str(error)) from error
                     return True
@@ -171,7 +181,10 @@ async def handle_request(call: ServiceCall) -> None:
             admissions=admissions,
         )
     finally:
-        await _release_preflighted(preflighted)
+        try:
+            await _release_preflighted(preflighted)
+        finally:
+            connections.close()
 
 
 def async_register_majestichome_services(hass: HomeAssistant) -> None:
