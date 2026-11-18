@@ -2220,7 +2220,7 @@ FROZEN_FRAMES.update(_cluster017_frames())
 
 
 def _okimiki() -> frozenset[str]:
-    """Accepted standalone row169, unchanged original42 plus focused29 literals."""
+    """Okimiki 1.0.1: the original 42 plus focused 29 literals, unchanged."""
     root = Path(__file__).parent / "fixtures" / "okimiki"
     frames = set()
     for file in ("vectors.json", "focused_vectors.json"):
@@ -2233,6 +2233,5 @@ def _okimiki() -> frozenset[str]:
     return frozenset(frames)
 
 
-# Accepted row169 report/ANALYSIS.md:171-174, P1 command table,
-# E-BUILDER/E-ENUM/E-UI: Nordic saves. Original42+focused29 fixtures unchanged.
+# Okimiki 1.0.1's P1 command table: Nordic saves. The 42+29 fixtures are unchanged.
 FROZEN_FRAMES["okimiki"] = _okimiki() | frozenset({"2b", "2c", "65", "66"})

@@ -9,7 +9,7 @@ from dataclasses import asdict, replace
 from functools import partial
 from math import isfinite
 from time import monotonic
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from ...card import CARD_UTILITY
 from ...codec import motomotion as codec
@@ -108,6 +108,26 @@ async def number(controller: BedController, value: float, *, key: str) -> None:
 async def select(controller: BedController, value: str, *, key: str) -> None:
     await require_controller(controller, MotoMotionController).async_select_motomotion(key, value)
 
+
+# Entity names for actions whose key does not read as one.
+_ACTION_NAMES: Final = {
+    "program_release": "Program memory",
+    "lumbar_toggle": "Toggle lumbar",
+    "light_cycle": "Cycle light",
+    "light_off": "Light off",
+    "light_toggle": "Toggle light",
+    "memory_lumbar_combo": "Memory and lumbar together",
+    "heat_cycle": "Cycle heat",
+    "rgb_apply": "Apply light color",
+    "timer_apply": "Start light timer",
+    "music_play": "Play or pause music",
+    "music_next": "Next track",
+    "music_previous": "Previous track",
+    "posture_recall": "Recall posture",
+    "posture_save": "Save posture",
+    "posture_reset": "Reset posture",
+    "unbind": "Remove app binding",
+}
 
 class MotoMotionController(BedController):
     def __init__(
@@ -941,6 +961,10 @@ class MotoMotionController(BedController):
         label = key.removeprefix("motomotion_")
         if self.profile.char(9) == "2" and label.startswith("headrest_"):
             label = "back_" + label.removeprefix("headrest_")
+        if label in _ACTION_NAMES:
+            return _ACTION_NAMES[label]
+        if label.startswith("main_"):
+            label = "main_motor_" + label.removeprefix("main_")
         return label.replace("_", " ").capitalize()
 
     @property
@@ -983,8 +1007,11 @@ class MotoMotionController(BedController):
                 translation_key="motomotion_release"
                 if key == "motomotion_release"
                 else "motomotion_action",
-                translation_placeholders={"action": self._action_label(key)},
+                translation_placeholders=None
+                if key == "motomotion_release"
+                else {"action": self._action_label(key)},
                 release_only=key == "motomotion_release",
+                diagnostic=key == "motomotion_unbind",
                 # The admitted controller owns both the first tick and cleanup delay.
                 hold=ControllerHoldSpec(
                     key,
@@ -1084,6 +1111,7 @@ class MotoMotionController(BedController):
                     number,
                     key=key,
                 ),
+                "s" if key == "timer" else None,
             )
             for key, (low, high) in ranges.items()
         )
@@ -1151,7 +1179,7 @@ class MotoMotionController(BedController):
                         "massage",
                     )
                 ),
-                card=CARD_UTILITY,
+                entity_registry_enabled_default=False,
             ),
         )
 
@@ -1166,6 +1194,7 @@ class MotoMotionController(BedController):
                 f"motomotion_{kind}" if bound else f"motomotion_{kind}_{side}",
                 _field_key(f"{kind}_{side}"),
                 "mdi:seat",
+                entity_registry_enabled_default=True,
                 card=CARD_UTILITY,
             )
             for side in sides

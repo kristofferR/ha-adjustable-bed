@@ -1,4 +1,4 @@
-"""Source-ordered streaming parser and callback state for cluster-018.
+"""Source-ordered streaming parser and callback state for the classic Richmat apps.
 
 Malformed input raises a bounded exception instead of crashing the HA BLE
 callback. The retained buffer and successful callback effects follow the app.

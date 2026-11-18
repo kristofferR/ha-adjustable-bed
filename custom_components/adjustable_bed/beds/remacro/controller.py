@@ -1,7 +1,7 @@
 """Remacro (SynData) controller for the Slumberland, The Brick and Jerome's apps.
 
-Accepted evidence: cluster-002 / row 050 (``com.cheers.slumber`` 1.0 (2),
-``com.cheers.brick`` 1.0 (3), ``com.cheers.jewmes`` 1.202112141512 (20)).
+Based on ``com.cheers.slumber`` 1.0 (2),
+``com.cheers.brick`` 1.0 (3), and ``com.cheers.jewmes`` 1.202112141512 (20).
 The advertised company ID selects one of the apps' control screens; this
 controller exposes exactly that screen's controls. A company ID the selected app
 does not list, or none seen yet, gets the limited fallback screen (see

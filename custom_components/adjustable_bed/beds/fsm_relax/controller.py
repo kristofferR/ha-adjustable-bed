@@ -242,24 +242,16 @@ class FsmRelaxController(ProfileExecution[LimossProfile], BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        fields = (
-            "key_count",
-            "vibration_count",
-            "reported_memory_count",
-            "hardware_version",
-            "software_version",
-            "serial",
-            "acknowledgement",
-            "calibration_observed",
-            "memory_quarantined",
-            "optional_information",
-        ) + tuple(f"motor_{i}_raw" for i in range(1, 5))
+        # Device metadata only; capability counts, acknowledgements and raw motor
+        # words stay in the diagnostics download (protocol_diagnostics).
+        fields = ("hardware_version", "software_version", "serial")
         return tuple(
             ControllerStateSensorSpec(
                 f"fsm_relax_{key}",
                 f"fsm_relax_{key}",
                 _state_key(key),
                 "mdi:information-outline",
+                entity_registry_enabled_default=False,
             )
             for key in fields
         )

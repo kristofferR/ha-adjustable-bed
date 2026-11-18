@@ -8,7 +8,7 @@ import pytest
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_IDLE_DISCONNECT_SECONDS,
     DOMAIN,
     PAIRLINK_ROLE_CENTRAL,
@@ -19,7 +19,7 @@ from tests.test_reverie_pairlink import _controller, _join_central
 from tests.test_reverie_pairlink_production import _entry
 
 
-@pytest.mark.parametrize("action", ["reverie_run_routine", "reverie_test"])
+@pytest.mark.parametrize("action", ["reverie_run_routine"])
 @pytest.mark.parametrize("stop", [False, True])
 async def test_later_deferred_target_respects_stop_before_dispatch(
     hass,
@@ -139,7 +139,7 @@ async def test_central_polls_preserve_idle_deadline_and_never_reconnect(
         entry,
         data={
             **entry.data,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
             CONF_IDLE_DISCONNECT_SECONDS: idle_seconds,
         },
     )
@@ -226,7 +226,7 @@ async def test_status_poll_rearms_after_internal_preemption_only(
         entry,
         data={
             **entry.data,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
             CONF_IDLE_DISCONNECT_SECONDS: idle_seconds,
         },
     )

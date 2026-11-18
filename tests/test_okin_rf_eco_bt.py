@@ -14,8 +14,8 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
@@ -78,7 +78,7 @@ class TestOkinRfEcoBtController:
             mock_okin_rf_eco_bt_config_entry,
             data={
                 **mock_okin_rf_eco_bt_config_entry.data,
-                CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command,
+                CONF_CONNECTION_MODE: "release" if disconnect_after_command else "idle",
             },
         )
         coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
@@ -115,7 +115,7 @@ class TestOkinRfEcoBtController:
             mock_okin_rf_eco_bt_config_entry,
             data={
                 **mock_okin_rf_eco_bt_config_entry.data,
-                CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command,
+                CONF_CONNECTION_MODE: "release" if disconnect_after_command else "idle",
             },
         )
         coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)

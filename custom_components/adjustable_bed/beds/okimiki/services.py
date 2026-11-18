@@ -50,6 +50,9 @@ OPERATIONS = (
     "delete",
     "sync",
 )
+# Alarm operations run through the shared set_alarm action (the controller's
+# AlarmCapability); this action keeps the rest.
+SERVICE_OPERATIONS = ("press", "save", "light_color", "light_duration", "light_off", "sync")
 MODES = ("lounge", "zero_gravity", "memory_1", "memory_2")
 # Service response budget, independent of the bed's query/write timing.
 CAPABILITY_REPLY_TIMEOUT_S = 3.0
@@ -203,14 +206,9 @@ class Request:
 
 FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-    vol.Required("operation"): vol.In(OPERATIONS),
+    vol.Required("operation"): vol.In(SERVICE_OPERATIONS),
     vol.Optional("control"): vol.In(CONTROLS),
     vol.Optional("duration_ms", default=1000): vol.All(cv.positive_int, vol.Range(max=60000)),
-    vol.Optional("datetime"): cv.datetime,
-    vol.Optional("alarm_id"): vol.All(cv.positive_int, vol.Range(min=1, max=7)),
-    vol.Optional("mode"): vol.In(MODES),
-    vol.Optional("weekdays"): vol.All(cv.ensure_list, [vol.All(cv.positive_int, vol.Range(max=6))]),
-    vol.Optional("enabled"): cv.boolean,
     vol.Optional("seconds"): vol.All(cv.positive_int, vol.Range(max=900)),
     vol.Optional("rgb_color"): vol.All(vol.ExactSequence((cv.byte,) * 3), vol.Coerce(tuple)),
 }
@@ -251,11 +249,6 @@ async def handle_okimiki(call: ServiceCall) -> None:
         call.data["operation"],
         control=call.data.get("control"),
         duration_ms=call.data["duration_ms"],
-        when=call.data.get("datetime"),
-        alarm_id=call.data.get("alarm_id"),
-        mode=call.data.get("mode"),
-        days=tuple(call.data["weekdays"]) if "weekdays" in call.data else None,
-        enabled=call.data.get("enabled"),
         seconds=call.data.get("seconds"),
         rgb=call.data.get("rgb_color"),
     )

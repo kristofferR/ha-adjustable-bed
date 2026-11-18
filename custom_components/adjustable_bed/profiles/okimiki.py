@@ -1,6 +1,6 @@
-"""Okimiki 1.0.1 (10101), accepted row169, frozen 2026-07-14.
+"""Okimiki 1.0.1 (10101).
 
-Hand-transcribed from the accepted report, no generator. The four concrete
+Hand-transcribed from the app, no generator. The four concrete
 receivers pass supportOkimiki; 1025 library entries do not. Hardware UNVERIFIED.
 """
 

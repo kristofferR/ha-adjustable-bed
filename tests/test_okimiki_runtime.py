@@ -46,7 +46,7 @@ async def runtime(hass, mock_coordinator_connected, mock_bleak_client):
             const.CONF_PROTOCOL_VARIANT: "KWRN",
             const.CONF_MOTOR_COUNT: 2,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)
@@ -101,7 +101,9 @@ async def test_registered_runtime_entities_alarm_light_and_timed_callers(hass, r
     notify(target, "6e09010078")
     notify(target, "6e200d0501020100071e5989ab")
     client.write_gatt_char.reset_mock()
-    await invoke(hass, "enable", alarm_id=1, enabled=False)
+    await hass.services.async_call(
+        const.DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False, "slot": 1}, blocking=True
+    )
     assert written(client) == ["6e0d200501010100071e5988a9"]
     client.write_gatt_char.reset_mock()
     await invoke(hass, "light_color", rgb_color=[1, 2, 3])
@@ -187,10 +189,9 @@ async def test_all_target_preflight_rejects_before_first_settings_write(
         ("light_off", {}, "6e010075e4"),
         ("light_color", {"rgb_color": [1, 2, 3]}, "6e0cff017a6e0d020380"),
         ("light_duration", {"seconds": 300}, "6e0b012ca6"),
-        ("alarms", {}, "6e0820050100009c"),
         (
-            "repeat",
-            {"alarm_id": 1, "datetime": "2026-11-18T07:30:00+00:00", "mode": "lounge"},
+            "set_alarm",
+            {"enabled": True, "slot": 1, "time": "07:30:00", "wake_action": "lounge"},
             bed.p.Alarm(1, 0, 7, 30, 0x59, 1).frame().hex(),
         ),
     ),
@@ -226,7 +227,12 @@ async def test_settings_service_reconnects_before_session_validation(
             await deliver()
 
     client.write_gatt_char.side_effect = reply
-    await invoke(hass, operation, **fields)
+    if operation == "set_alarm":
+        await hass.services.async_call(
+            const.DOMAIN, "set_alarm", {"device_id": "bed", **fields}, blocking=True
+        )
+    else:
+        await invoke(hass, operation, **fields)
     assert target.is_connected
     assert written(client)[-1] == expected
 
@@ -444,7 +450,7 @@ async def test_native_paired_child_target_keeps_physical_bed_and_side_owned_prod
     target, client, resolve = runtime
     data = _paired_entry_data()
     data[const.CONF_BED_TYPE] = "okimiki"
-    data[const.CONF_DISCONNECT_AFTER_COMMAND] = False
+    data[const.CONF_CONNECTION_MODE] = const.CONNECTION_MODE_IDLE
     for child, code in zip(data[const.CONF_PAIR_CHILDREN], ("IPRM", "KWRN"), strict=True):
         child.update(
             {
@@ -491,18 +497,21 @@ async def test_native_paired_child_target_keeps_physical_bed_and_side_owned_prod
     resolve.side_effect = None
     resolve.side_effect = REAL_RESOLVE
     try:
-        fields = (
-            {"control": "head_up", "duration_ms": 250}
-            if operation == "press"
-            else {"alarm_id": 1, "enabled": False} if operation == "enable" else {}
-        )
-        await hass.services.async_call(
-            const.DOMAIN,
-            "okimiki",
-            {"device_id": right.id if target_side == "right" else parent.id,
-             "operation": operation, **fields},
-            blocking=True,
-        )
+        device_id = right.id if target_side == "right" else parent.id
+        if operation == "enable":
+            # Turning a received alarm off runs through the shared set_alarm action.
+            await hass.services.async_call(
+                const.DOMAIN, "set_alarm",
+                {"device_id": device_id, "enabled": False, "slot": 1}, blocking=True,
+            )
+        else:
+            fields = {"control": "head_up", "duration_ms": 250} if operation == "press" else {}
+            await hass.services.async_call(
+                const.DOMAIN,
+                "okimiki",
+                {"device_id": device_id, "operation": operation, **fields},
+                blocking=True,
+            )
         if target_side == "right":
             left.async_connect.assert_not_awaited()
         if operation == "press":

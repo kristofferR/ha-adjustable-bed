@@ -1,4 +1,4 @@
-"""Comfort Motion 2.2.1 app profile, from accepted row115 evidence.
+"""Comfort Motion 2.2.1 app profile.
 
 The explicit app profile owns this controller; shared UUIDs do not identify
 it. Movement, presets and memory come from the shared Jiecang glue. This

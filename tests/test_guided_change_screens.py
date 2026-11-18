@@ -192,10 +192,11 @@ async def test_keep_on_a_new_bed_without_pairing_says_nothing_about_it(hass):
     assert "**Reconfigure**" in result["description_placeholders"]["later"]
 
 
-async def test_keep_on_a_route_without_a_guided_change_points_to_configure(hass):
+async def test_keep_on_a_route_without_a_guided_change_points_to_reconfigure(hass):
     flow = setup_flow(hass, const.BED_TYPE_SLEEP_NUMBER_MCR)
     with patch("homeassistant.components.bluetooth.async_last_service_info", return_value=None):
         result = await flow.async_step_sleep_number_family({"choice": "keep"})
     assert result["step_id"] == "keep_detected"
     later = result["description_placeholders"]["later"]
-    assert "**Configure" in later and "Reconfigure" not in later
+    # Reconfigure changes the app of every bed type.
+    assert "**Reconfigure**" in later

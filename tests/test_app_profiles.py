@@ -5,10 +5,7 @@ from __future__ import annotations
 from unittest.mock import AsyncMock
 
 import pytest
-from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
 from custom_components.adjustable_bed.app_profiles import (
@@ -28,11 +25,9 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
-    BED_TYPE_OKIN_CST,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
-    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
@@ -40,8 +35,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_FSM_RELAX_MEMORY_NAMES,
-    CONF_GMMOTOR_SIDE,
     CONF_HAS_MASSAGE,
     CONF_LEGGETT_APP_PROFILE,
     CONF_MOTOR_COUNT,
@@ -52,16 +45,12 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIRLINK_ROLE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
-    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M1X12_PROFILE,
-    DOMAIN,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_SINO,
-    OKIN_CST_VARIANT_NECTAR_MOVE,
-    OKIN_CST_VARIANT_SANCTUARY,
     STAR_ELEVATE_VARIANT_M1X12,
     SUPPORTED_BED_TYPES,
     SVANE_VARIANT_JENSEN_LINON,
@@ -74,8 +63,7 @@ from custom_components.adjustable_bed.detection import (
     get_bed_type_options,
     resolve_bed_type_choice,
 )
-from custom_components.adjustable_bed.setup_questions import CONF_SERTA_MP_MEMORIES
-from tests.form_helpers import finish_new_bed, shown_markers, start_new_bed
+from tests.form_helpers import finish_new_bed, start_new_bed
 
 
 def test_profiles_that_always_show_massage_hide_the_generic_choice() -> None:
@@ -180,38 +168,10 @@ def test_reverie_protocol_models_and_pairlink_credentials_are_side_owned() -> No
     } <= pairlink.keys
 
 
-async def test_options_show_the_fields_a_chosen_variant_needs(hass: HomeAssistant) -> None:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
-            CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-            CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
-            CONF_HAS_MASSAGE: False,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    form = await flow.async_step_settings()
-    assert CONF_HAS_MASSAGE not in shown_markers(form)
-    assert CONF_HAS_MASSAGE in shown_markers(
-        form, **{CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_SANCTUARY}
-    )
-    saved = await flow.async_step_settings(
-        {CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_SANCTUARY, CONF_HAS_MASSAGE: True}
-    )
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_SANCTUARY
-    assert entry.data[CONF_HAS_MASSAGE] is True
-
-
 def test_apps_chosen_by_a_variant_are_listed_by_name() -> None:
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
     innova = bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
-    assert options[innova] == "INNOVA app (Keeson)"
+    assert options[innova] == "INNOVA app"
     assert resolve_bed_type_choice(innova) == (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
     assert resolve_bed_type_choice(BED_TYPE_KEESON) == (BED_TYPE_KEESON, None)
     # Z-Series has no automatic page; the Customatic row names it and its
@@ -271,39 +231,6 @@ async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(
     )
 
 
-async def test_options_show_the_app_entry_and_let_the_variant_field_decide(
-    hass: HomeAssistant,
-) -> None:
-    # Keeson apps change through the guided change; Okin CST's stay in Configure.
-    variant = OKIN_CST_VARIANT_NECTAR_MOVE
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:03",
-            CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-            CONF_PROTOCOL_VARIANT: variant,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    choice = bed_type_choice(BED_TYPE_OKIN_CST, variant)
-
-    form = await flow.async_step_settings()
-    marker = next(m for m in form["data_schema"].schema if m.schema == CONF_BED_TYPE)
-    assert form["data_schema"].schema[marker](marker.default()) == choice
-    # The selector is unchanged, so the variant field decides.
-    result = await flow.async_step_settings(
-        {CONF_BED_TYPE: choice, CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_SANCTUARY}
-    )
-    if result["type"] == "form":
-        result = await flow.async_step_settings({})
-    assert result["type"] == "create_entry"
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
-    assert entry.data[CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_SANCTUARY
-
-
 def test_americanstar_profile_owns_massage_and_per_side_layout() -> None:
     variant = KEESON_VARIANT_AMERICANSTAR
     choice = bed_type_choice(BED_TYPE_KEESON, variant)
@@ -334,45 +261,3 @@ def test_a_bed_type_change_leaves_no_other_profiles_settings(bed_type: str) -> N
     assert set(data) & every == expected
 
 
-@pytest.mark.parametrize(
-    ("bed_type", "settings"),
-    [
-        ("gmmotor", {CONF_GMMOTOR_SIDE: "both"}),
-        (
-            BED_TYPE_RICHMAT_CLASSIC_APPS,
-            {
-                CONF_PROTOCOL_VARIANT: "avocadoecobase",
-                CONF_PRODUCT_TYPE: "6BRM",
-                CONF_RICHMAT_CLASSIC_THIRD_SERVICE: True,
-            },
-        ),
-        (BED_TYPE_FSM_RELAX, {CONF_FSM_RELAX_MEMORY_NAMES: ["Read"] * 8}),
-        ("serta_mp_remote", dict.fromkeys(CONF_SERTA_MP_MEMORIES, 20)),
-    ],
-)
-async def test_configure_drops_the_old_apps_settings_with_its_bed_type(
-    hass: HomeAssistant, enable_custom_integrations, bed_type: str, settings: dict
-) -> None:
-    """Settings a question or an action saved for one app leave with it."""
-    del enable_custom_integrations
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:31", CONF_BED_TYPE: bed_type, **settings},
-        unique_id="AA:BB:CC:DD:EE:31",
-    )
-    entry.add_to_hass(hass)
-    menu = await hass.config_entries.options.async_init(entry.entry_id)
-    form = await hass.config_entries.options.async_configure(
-        menu["flow_id"], user_input={"next_step_id": "settings"}
-    )
-    rebuilt = await hass.config_entries.options.async_configure(
-        form["flow_id"], user_input={CONF_BED_TYPE: BED_TYPE_LINAK}
-    )
-
-    saved = await hass.config_entries.options.async_configure(
-        rebuilt["flow_id"], user_input={CONF_BED_TYPE: BED_TYPE_LINAK}
-    )
-
-    assert saved["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
-    assert not (settings.keys() - {CONF_PROTOCOL_VARIANT}) & entry.data.keys()

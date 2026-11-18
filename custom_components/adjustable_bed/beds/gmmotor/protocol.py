@@ -1,8 +1,6 @@
-"""GM Control 4.6.6 binary BLE primitives (accepted row102, protocol P1).
+"""GM Control 4.6.6 binary BLE primitives (protocol P1).
 
-These are independent of the older RMControl app profile. Source identities,
-wire vectors and intentional malformed-input handling are documented in the
-row102 disposition ledger. Integers are masked only at the native byte boundary.
+These are independent of the older RMControl app profile. Integers are masked only at the native byte boundary.
 """
 
 from __future__ import annotations

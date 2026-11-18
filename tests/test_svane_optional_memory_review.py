@@ -14,7 +14,7 @@ from custom_components.adjustable_bed.beds.svane.state import get_svane_session,
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PROTOCOL_VARIANT,
@@ -36,7 +36,7 @@ async def current(hass, request):
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Svane", CONF_BED_TYPE: BED_TYPE_SVANE,
         CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC if profile == "jmc" else SVANE_VARIANT_MULTI,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: "idle",
         CONF_MOTOR_PULSE_COUNT: 1, CONF_MOTOR_PULSE_DELAY_MS: 1,
     })
     entry.add_to_hass(hass)

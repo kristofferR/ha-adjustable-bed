@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from ..command_scheduler import StreamMember
     from ..coordinator import AdjustableBedCoordinator
 
+from ..alarm import AlarmCapability, AlarmRequest
 from ..alarm_table import (
     OneTimeAlarmRecord as OneTimeAlarmRecord,
 )
@@ -53,6 +54,7 @@ from .entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
@@ -1070,6 +1072,11 @@ class BedController(GattWriter):
         return ()
 
     @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        """Return product on/off settings for the selected profile."""
+        return ()
+
+    @property
     def persisted_app_state(self) -> Mapping[str, Any] | None:
         """App-local state the phone app keeps across restarts, or None.
 
@@ -1199,6 +1206,11 @@ class BedController(GattWriter):
     def supports_clock_alarm(self) -> bool:
         """Return whether a weekly clock alarm can be configured."""
         return False
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        """Return what the shared ``set_alarm`` action may send, or None without an alarm."""
+        return None
 
     @property
     def supports_clock_sync(self) -> bool:
@@ -2044,6 +2056,29 @@ class BedController(GattWriter):
     ) -> None:
         """Configure a weekly alarm with Monday numbered zero."""
         raise NotImplementedError("Clock alarm not supported on this bed")
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        """Reject a request this bed cannot encode, before any target writes.
+
+        Raise ``ValueError`` with a message that says what to change.
+        """
+        return None
+
+    async def check_alarm(self, alarm: AlarmRequest) -> None:
+        """Check an alarm against the bed's reported state, for ``live_check`` beds."""
+        return None
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        """Write one alarm. The default suits beds built on ``configure_clock_alarm``."""
+        await self.configure_clock_alarm(
+            enabled=alarm.enabled,
+            weekdays=alarm.weekdays,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            preset=alarm.wake_action,
+            head_level=alarm.head_massage_level,
+            foot_level=alarm.foot_massage_level,
+        )
 
     def validate_clock_sync(self) -> None:
         """Validate profile-specific clock requirements before any target writes."""

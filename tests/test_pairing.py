@@ -286,13 +286,13 @@ class TestSplitRetention:
         )
         # Parent options win over the side descriptor, as at runtime.
         restored, options = standalone_config_after_split(
-            data, {"disconnect_after_command": True}, SIDE_LEFT
+            data, {"connection_mode": "release"}, SIDE_LEFT
         )
         assert restored == {
             **original,
             "preferred_adapter": "hci1",
             "idle_disconnect_seconds": 90,
-            "disconnect_after_command": True,
+            "connection_mode": "release",
             "profile_id": "linak",
         }
         assert options == {"back_max_angle": 55.0}

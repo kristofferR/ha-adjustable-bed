@@ -1,4 +1,4 @@
-"""Okimiki's source-backed product and gesture tables (accepted row169)."""
+"""Okimiki 1.0.1's product and gesture tables."""
 
 from custom_components.adjustable_bed.profiles.okimiki import (
     CONTROLS,

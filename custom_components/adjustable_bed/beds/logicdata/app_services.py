@@ -8,57 +8,20 @@ import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
 from ...import_executor import async_import_modules
 from ...services import (
     ATTR_DURATION,
-    ATTR_ENABLED,
-    ATTR_FOOT_LEVEL,
-    ATTR_HEAD_LEVEL,
     ATTR_PRESET,
-    ATTR_TIME,
-    ATTR_WEEKDAYS,
     DEVICE_IDS,
     SIDE_FIELD,
-    SOLACE_WEEKDAY_OPTIONS,
     _call_targets,
     _preflight_and_execute,
 )
 
-SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
 SERVICE_LOGICDATA_HOLD_PRESET = "logicdata_hold_preset"
-LOGICDATA_ALARM_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
 LOGICDATA_HOLD_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
-
-
-async def handle_logicdata_set_alarm(call: ServiceCall) -> None:
-    """Configure the Logicdata app controller's recurring clock alarm."""
-    await async_import_modules(call.hass, "beds.logicdata.app")
-    from .app import LogicdataAppController
-
-    alarm_time = call.data[ATTR_TIME]
-    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
-
-    async def program(controller: LogicdataAppController) -> None:
-        await controller.configure_clock_alarm(
-            enabled=call.data[ATTR_ENABLED],
-            weekdays=weekdays,
-            hour=alarm_time.hour,
-            minute=alarm_time.minute,
-            preset=call.data[ATTR_PRESET],
-            head_level=call.data[ATTR_HEAD_LEVEL],
-            foot_level=call.data[ATTR_FOOT_LEVEL],
-        )
-
-    await _preflight_and_execute(
-        _call_targets(call),
-        LogicdataAppController,
-        "Logicdata clock alarms",
-        program,
-        supported=lambda controller: controller.supports_clock_alarm,
-    )
 
 
 def _preset_hold_duration_seconds(value: object) -> Decimal:
@@ -103,29 +66,6 @@ async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
 
 def async_register_logicdata_app_services(hass: HomeAssistant) -> None:
     """Register the Logicdata app alarm and held-preset actions."""
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LOGICDATA_SET_ALARM,
-        handle_logicdata_set_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                vol.Required(ATTR_ENABLED): cv.boolean,
-                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
-                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
-                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
-                ),
-                vol.Optional(ATTR_PRESET, default="flat"): vol.In(LOGICDATA_ALARM_PRESETS),
-                vol.Optional(ATTR_HEAD_LEVEL, default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=3)
-                ),
-                vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=3)
-                ),
-                **SIDE_FIELD,
-            }
-        ),
-    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_LOGICDATA_HOLD_PRESET,

@@ -1,4 +1,4 @@
-"""Accepted row169 literals, evaluated against production codecs only."""
+"""Okimiki 1.0.1 literals, evaluated against production codecs only."""
 
 import json
 from pathlib import Path

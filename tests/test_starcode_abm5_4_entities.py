@@ -170,7 +170,6 @@ async def test_actual_entity_catalog_ranges_names_and_locked_dispatch(hass):
     assert not c._ui_state_observed
     sensors = _sensor_entities_for(hass, runtime)
     assert {s.translation_key for s in sensors} >= {
-        "starcode_abm5_4_raw_b",
         "starcode_abm5_4_wave",
         "starcode_abm5_4_head_intensity",
     }

@@ -104,13 +104,14 @@ the one-time app profile review is not raised for it again.
 
 ## Migration (5.1 to 5.2)
 
-The 5.2 step drops the keys the [config key audit](config-keys.md) found
-obsolete, from data, options, each paired side and each side's `origin_data`
-and `origin_options`. It adds `dropped_keys` to the record, by where each key
+The 5.2 step drops the keys no v5 code reads (`V5_2_OBSOLETE_KEYS` in
+`__init__.py`): `pair_schema_version`, written on every pair since 4.0.0 but
+never read, and a per-entry copy of `disable_discovery`, whose only reader is
+the integration-wide Store. It drops them from data, options, each paired
+side and each side's `origin_data` and `origin_options`. It adds `dropped_keys` to the record, by where each key
 was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so
 on), and creates the record for an entry made at 5.1 that has none. Nothing to
-drop leaves the entry's data and options unchanged. Keys the audit does not
-list are never touched.
+drop leaves the entry's data and options unchanged. No other key is touched.
 
 ## Migration (5.2 to 5.3)
 
@@ -125,7 +126,8 @@ it; no side's effective value changes except the corrected ones. The step
 adds `massage_off` to the record by the same locations as `dropped_keys`, and
 deletes the massage buttons of each corrected entry or side from the entity
 registry, with the both-sides buttons of a corrected side. These are the only
-entities a schema 5 step removes ([why](config-keys.md#massage-off-in-schema-53)).
+entities a schema 5 step removes: those buttons raised errors or did nothing
+([#787](https://github.com/kristofferR/ha-adjustable-bed/issues/787)).
 
 ### Physical validation
 
@@ -168,7 +170,7 @@ the wire: setup fields, capabilities, entities and Repairs, each with its own
 test. The wire snapshot proves bytes only, and shared names, UUIDs or grouping
 prove nothing ([#676](https://github.com/kristofferR/ha-adjustable-bed/issues/676)).
 
-No byte-identical group in the [protocol inventory](protocol-inventory.md) passes
+No byte-identical group in the wire snapshot passes
 yet, so every route keeps its own id. `tests/test_profile_id_aliases.py` pins one
 non-wire difference per group:
 
@@ -192,7 +194,7 @@ test, map the alias to the canonical id in `resolve_profile_id`, bump
 ([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)). Setup then
 re-derives the stored id; the saved fields still stay.
 
-The explicit `adjustable_bed` app route (unit087) keeps its own identity from
+The explicit `adjustable_bed` app route (Adjustable bed 1.2.1) keeps its own identity from
 `adjustable_lumbar` and `okin_64bit`: the STAR-manufacturer route has distinct
 speech movement packets and bounded execution. Shared long-table literals do
 not make their reachable features or configuration equivalent.

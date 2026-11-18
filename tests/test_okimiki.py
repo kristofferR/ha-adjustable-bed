@@ -509,7 +509,7 @@ def test_source_numeric_conversion_and_clock_first_digits():
 
 
 @pytest.mark.parametrize("code", PRODUCTS)
-def test_save_labels_and_status_is_opt_in(coordinator, code):
+def test_save_labels_and_no_raw_status_entity(coordinator, code):
     obj = bed.OkimikiController(coordinator, code)
     labels = {
         spec.key: spec.translation_placeholders["action"]
@@ -521,5 +521,25 @@ def test_save_labels_and_status_is_opt_in(coordinator, code):
         "okimiki_save_zero_gravity": "Save zero-gravity position",
     }
     assert labels == ({} if code == "IPRM" else saves)
-    (status,) = obj.controller_state_sensor_specs
-    assert not status.entity_registry_enabled_default
+    # Decoded events and alarm records stay in diagnostics.
+    assert obj.controller_state_sensor_specs == ()
+
+
+def test_shared_alarm_maps_to_the_product_alarm_page(coordinator):
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    now = datetime(2026, 11, 18, 6, 0, tzinfo=UTC)
+    single = bed.OkimikiController(coordinator, "IQRM")
+    assert single.alarm_capability.wake_actions == ("lounge",)
+    on = single._alarm_request(AlarmRequest(enabled=True, hour=7, minute=0, reference_time=now))
+    assert (on.operation, on.when) == ("single", now.replace(hour=7))
+    assert single._alarm_request(AlarmRequest(enabled=False, reference_time=now)).operation == "cancel_single"
+    repeat = bed.OkimikiController(coordinator, "KWRN")
+    assert repeat.alarm_capability.slots == 7
+    alarm = AlarmRequest(enabled=True, hour=7, minute=0, weekdays=(0, 6), slot=3,
+                         wake_action="zero_g", reference_time=now)
+    request = repeat._alarm_request(alarm)
+    assert (request.operation, request.alarm_id, request.mode, request.days) == ("repeat", 3, "zero_gravity", (0, 6))
+    off = repeat._alarm_request(AlarmRequest(enabled=False, slot=3, reference_time=now))
+    assert (off.operation, off.alarm_id, off.enabled) == ("enable", 3, False)
+    assert bed.OkimikiController(coordinator, "HCRN").alarm_capability is None
