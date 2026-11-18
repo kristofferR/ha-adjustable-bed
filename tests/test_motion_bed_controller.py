@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.beds.motion_bed.controller import (
     CHARACTERISTIC,
     STOP,
     MotionBedController,
+    button_actions_for,
 )
 from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
 from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
@@ -444,7 +445,9 @@ async def test_nullable_boolean_sensor_platform_remains_stable() -> None:
     assert {
         spec.key for spec in rig.controller.controller_state_binary_sensor_specs
     } == before_binary
-    assert "motion_bed_motor_light_enabled" in before_binary
+    assert "motion_bed_thermal_timer_enabled" in before_binary
+    # The module light is a switch with the reported state, not a binary sensor.
+    assert "motion_bed_motor_light_enabled" not in before_binary
     await rig.controller.stop_notify()
 
 
@@ -669,4 +672,78 @@ async def test_pressure_live_quiet_delay_is_bound_to_request_and_cancelled_befor
     await rig.controller.async_execute_motion_bed_write(request)
     assert intervals == [2.5]
     assert rig.writes == ([] if cancelled else [frame])
+    await rig.controller.stop_notify()
+
+
+async def _same_frames(rig: Rig, new: Callable[[], Awaitable[None]], old_key: str) -> list[bytes]:
+    """Return the frames ``new`` writes, after checking the old button wrote the same."""
+    ctrl = rig.controller
+    state = ctrl._state
+    rig.client.write_gatt_char.reset_mock()
+    await new()
+    sent = rig.writes
+    ctrl._state = state
+    rig.client.write_gatt_char.reset_mock()
+    await ctrl.async_execute_motion_bed_action(button_actions_for(ctrl._active_owners())[old_key].key)
+    assert rig.writes == sent, old_key
+    return sent
+
+
+@pytest.mark.asyncio
+async def test_value_buttons_become_one_control_sending_the_same_frames() -> None:
+    rig = rig_for()
+    ctrl = rig.controller
+    await ctrl.async_discover_capabilities()
+    buttons = {spec.key for spec in ctrl.controller_button_specs}
+    for replaced in ("motion_bed_10time", "motion_bed_brightness_5", "motion_bed_tv_8xiaoshi"):
+        assert replaced not in buttons
+    assert ctrl.auto_enable_massage and ctrl.supports_massage_timer_off
+    assert ctrl.massage_timer_options == [10, 20, 30]
+    assert ctrl.light_timer_options == ["10 min", "8 hours", "10 hours"]
+    (brightness,) = ctrl.controller_number_specs
+    assert (brightness.native_min_value, brightness.native_max_value) == (0, 10)
+    assert await _same_frames(rig, lambda: ctrl.set_massage_timer(20), "motion_bed_20time")
+    await _same_frames(rig, lambda: brightness.set_fn(ctrl, 7), "motion_bed_brightness_7")
+    await _same_frames(rig, lambda: ctrl.set_light_timer("8 hours"), "motion_bed_tv_8xiaoshi")
+    # Off presses the reported timer's key, which the app turns into its deselect frame.
+    ctrl._state = replace(ctrl._state, massage_timer=20)
+    off = await _same_frames(rig, lambda: ctrl.set_massage_timer(0), "motion_bed_20time")
+    assert off != await _same_frames(rig, lambda: ctrl.set_massage_timer(10), "motion_bed_10time")
+    # Choosing the reported timer keeps it instead of toggling it off.
+    rig.client.write_gatt_char.reset_mock()
+    await ctrl.set_massage_timer(20)
+    assert rig.writes == []
+
+
+@pytest.mark.asyncio
+async def test_toggles_and_module_pairs_are_switches_with_reported_state() -> None:
+    rig = rig_for()
+    ctrl = rig.controller
+    await ctrl.async_discover_capabilities()
+    switches = {spec.key: spec for spec in ctrl.controller_switch_specs}
+    assert {"motion_bed_night_light_enabled", "motion_bed_sleep_enabled"} <= switches.keys()
+    buttons = {spec.key for spec in ctrl.controller_button_specs}
+    assert not {"motion_bed_night_light", "motion_bed_sleepmian"} & buttons
+    night = switches["motion_bed_night_light_enabled"]
+    with pytest.raises(ValueError):
+        await night.set_fn(ctrl, False)  # Unknown: the toggle would turn it on.
+    ctrl._state = replace(ctrl._state, night_light_enabled=False)
+    await _same_frames(rig, lambda: night.set_fn(ctrl, True), "motion_bed_night_light")
+    rig.client.write_gatt_char.reset_mock()
+    await night.set_fn(ctrl, False)
+    assert rig.writes == []
+
+    hub = rig_for("TL-Q")
+    await hub.controller.async_discover_capabilities()
+    assert not hub.controller.controller_switch_specs
+    hub.controller._handle_notification(bytes.fromhex("FFFFFFFF01002714000A000000000000"))
+    module = {spec.key: spec for spec in hub.controller.controller_switch_specs}
+    assert {"motion_bed_motor_light_enabled", "motion_bed_motor_massage_enabled"} <= module.keys()
+    light = module["motion_bed_motor_light_enabled"]
+    await _same_frames(hub, lambda: light.set_fn(hub.controller, True), "motion_bed_light_enabled_on")
+    await _same_frames(hub, lambda: light.set_fn(hub.controller, False), "motion_bed_light_enabled_off")
+    assert ("switch", "controller_switch_motion_bed_motor_light_enabled") in (
+        hub.controller.retained_entity_keys
+    )
+    await hub.controller.stop_notify()
     await rig.controller.stop_notify()

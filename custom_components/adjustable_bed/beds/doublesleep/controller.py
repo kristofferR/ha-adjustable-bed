@@ -7,6 +7,7 @@ import logging
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass, field
+from functools import partial
 from typing import TYPE_CHECKING, Final, Literal, cast
 
 from homeassistant.util import dt as dt_util
@@ -75,6 +76,12 @@ _REFRESH_S = (DOUBLESLEEP.hold.repeat_ms or 0) / 1000
 
 
 CHILD_LOCK: Final = StateKey[str | None]("doublesleep_child_lock")
+# Whether massage and sonic massage run, from each report's "running" field.
+RUNNING: Final = {
+    domain: StateKey[bool | None](f"doublesleep_{domain}_on") for domain in ("massage", "sonic")
+}
+# The on/off key pair each switch sends, as its buttons did.
+_ON_OFF: Final = {"massage": (28, 29), "sonic": (89, 90)}
 # Refreshes, clock and sensor upkeep: diagnostic buttons, disabled by default.
 _MAINTENANCE_ACTIONS: Final = frozenset({47, 50, 51, 52, 53, 54, 55, 66, 69, 71, 73, 77})
 _SIDES: Final[tuple[Literal["left", "right"], ...]] = ("left", "right")
@@ -273,13 +280,18 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
         alarm = self.parser.state.get("alarm")
         if isinstance(alarm, dict):
             self.parser.state["alarm_enabled"] = alarm.get("enabled", 0)
+        running = {domain: self.parser.state.get(f"{domain}_running") for domain in RUNNING}
         self.forward_controller_state_updates(
             *(
                 CHILD_LOCK(value if isinstance(value, str) else None)
                 if field == "child_lock"
                 else _field_key(field)(value)
                 for field, value in self.parser.state.items()
-            )
+            ),
+            *(
+                key(bool(running[domain]) if type(running[domain]) is int else None)
+                for domain, key in RUNNING.items()
+            ),
         )
 
     async def async_discover_capabilities(self) -> None:
@@ -986,8 +998,6 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             items.update(
                 {
                     27: "Stop all",
-                    28: "Massage on",
-                    29: "Massage off",
                     31: "Massage time up",
                     32: "Massage time down",
                     35: "Head massage up",
@@ -1021,8 +1031,6 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     86: "Sonic time down",
                     87: "Sonic normal source",
                     88: "Sonic music source",
-                    89: "Sonic on",
-                    90: "Sonic off",
                 }
             )
         if self.protocol == "p3":
@@ -1106,7 +1114,36 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
         async def privacy(controller: BedController, on: bool) -> None:
             await selected(controller).press(59 if on else 60)
 
+        async def run(controller: BedController, on: bool, *, domain: str) -> None:
+            await selected(controller).press(_ON_OFF[domain][0 if on else 1])
+
+        def available(controller: BedController, *, domain: str) -> bool:
+            # The same gates as the on and off buttons the switch replaces.
+            return all(
+                selected(controller).controller_button_available(f"doublesleep_{index}")
+                for index in _ON_OFF[domain]
+            )
+
+        domains = (
+            ()
+            if self.protocol == "p3" or not self.supports_motor_control
+            else ("massage", "sonic")
+            if self.protocol == "p2"
+            else ("massage",)
+        )
         return (
+            *(
+                ControllerSwitchSpec(
+                    f"doublesleep_{domain}",
+                    f"doublesleep_{domain}",
+                    partial(run, domain=domain),
+                    RUNNING[domain],
+                    icon="mdi:vibrate",
+                    available_fn=partial(available, domain=domain),
+                    card=CARD_MASSAGE,
+                )
+                for domain in domains
+            ),
             ControllerSwitchSpec(
                 "doublesleep_child_lock",
                 "doublesleep_child_lock",
@@ -1224,7 +1261,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             if self.protocol == "p2"
             else ("massage",)
         ):
-            for key in ("mode", "strength", "head", "foot", "time", "running", "source"):
+            # The switch shows "running"; the rest mirror the step buttons
+            # (the bed takes no direct level), so they start hidden.
+            for key in ("mode", "strength", "head", "foot", "time", "source"):
                 if domain == "massage" and key == "source":
                     continue
                 name = f"doublesleep_{domain}_{key}"
@@ -1234,7 +1273,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                         name,
                         _field_key(f"{domain}_{key}"),
                         "mdi:vibrate",
-                        entity_registry_enabled_default=True,
+                        entity_registry_enabled_default=False,
                         card=CARD_MASSAGE,
                     )
                 )

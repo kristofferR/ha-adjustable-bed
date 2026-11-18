@@ -72,7 +72,7 @@ async def test_unknown_hub_inventory_preserves_customized_module_and_foreign_con
     shared_spec = next(
         s
         for s in ctrl.controller_button_specs
-        if s.key == "motion_bed_brightness_1"
+        if s.key == "motion_bed_massage_upper_increase"
     )
     ctrl._state = replace(ctrl._state, air_module_present=None, motor_module_present=None)
     registry = er.async_get(hass)
