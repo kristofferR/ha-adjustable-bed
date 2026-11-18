@@ -305,6 +305,8 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
     "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "sleep_evolution": GENERIC_FIELDS,
+    "wsilver_legacy": GENERIC_FIELDS,
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "agingplace": GENERIC_FIELDS,
@@ -2200,6 +2202,25 @@ def _cheerssleep_settings(data: Mapping[str, Any]) -> dict[str, Any]:
     return {CONF_MOTOR_COUNT: min(4, max(2, len(model.axes))), CONF_HAS_MASSAGE: model.massage or model.sonic or model.as_layout}
 
 
+def _legacy_choices(data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.richmat_legacy import choices
+
+    return choices(data[CONF_BED_TYPE])
+
+
+def _legacy_default(data: Mapping[str, Any]) -> str:
+    from .profiles.richmat_legacy import matching_profile
+
+    selected = data.get(CONF_PROTOCOL_VARIANT)
+    if isinstance(selected, str) and selected in _legacy_choices(data):
+        return selected
+    return matching_profile(data[CONF_BED_TYPE], data.get(CONF_BLE_DEVICE_NAME))
+
+
+def _legacy_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    return {} if data.get(CONF_PROTOCOL_VARIANT) in _legacy_choices(data) else {CONF_PROTOCOL_VARIANT: "invalid_selection"}
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     "ormatek": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
@@ -2770,6 +2791,25 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "Lunio Smart+",
         imports=("profiles.luniosmart",),
     ),
+    **{
+        app: SetupProfile(
+            owns={
+                CONF_MOTOR_COUNT: SET_BY_PROFILE,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_MOTOR_PULSE_COUNT: SET_BY_PROFILE,
+                CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
+            },
+            questions=(Question(CONF_PROTOCOL_VARIANT, _legacy_choices, _legacy_default),),
+            validate=_legacy_errors,
+            # The prefix names the layout, so a prefix change shows in the review.
+            title=lambda data: (
+                "SleepEvolution" if data[CONF_BED_TYPE] == "sleep_evolution" else "W.Silver Products 3.x"
+            ) + (f" {data[CONF_PROTOCOL_VARIANT]}" if data.get(CONF_PROTOCOL_VARIANT) else ""),
+            imports=("profiles.richmat_legacy",),
+        )
+        for app in ("sleep_evolution", "wsilver_legacy")
+    },
     "sonicsleep": SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,

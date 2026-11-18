@@ -1110,3 +1110,19 @@ this app automatically. Massage and light are part of its bed controls, and
 position sensing stays disabled. P1 has programmable presets and explicit
 massage/light settings; P2 has held presets/massage and a light toggle. See the
 [profile reference](beds/keeson.md#ore-ultramatic) for alarms and raw state.
+
+### SleepEvolution / W.Silver Products 3.x
+
+Choose **SleepEvolution** or **W.Silver Products 3.x** under Richmat, then the
+exact case-sensitive name prefix
+(`protocol_variant`). A matching name can suggest a prefix only after you choose
+the app. Shared prefixes and Nordic UART services cannot identify which app you
+use; the newer W.Silver MH app is a separate choice. **Reconfigure** asks the same
+app and prefix questions. A6, U3, U5 and X1 are offered only for SleepEvolution.
+
+Each receiver in a two-address pair retains its own app and prefix. There is no
+single-address side selector. The selected profile supplies its control labels,
+refresh schedule and release behavior; generic pulse settings do not replace
+that schedule. Angle feedback is disabled, and neither physical motor count nor
+remote light/massage state is inferred. See the
+[fixed ASCII app guide](beds/richmat.md#sleepevolution--wsilver-products-3x).

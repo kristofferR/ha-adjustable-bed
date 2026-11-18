@@ -3282,6 +3282,21 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "richmat_legacy_lighting": {
+        "name": "{action}"
+      },
+      "richmat_legacy_massage": {
+        "name": "{action}"
+      },
+      "richmat_legacy_presets": {
+        "name": "{action}"
+      },
+      "richmat_legacy_utility": {
+        "name": "{action}"
+      },
+      "richmat_legacy_save": {
+        "name": "{action}"
+      },
       "richmat_mh_toggle_smart_light_lock": {
         "name": "Toggle smart light lock"
       },
@@ -9119,6 +9134,31 @@
         }
       }
     },
+    "richmat_legacy": {
+      "name": "SleepEvolution and W.Silver Products 3.x: run app control",
+      "description": "Run a control from the selected app and name prefix, as a press or a save.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "control": {
+          "name": "Control",
+          "description": "Control key from the selected profile in the Richmat guide."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Press runs the control as the app's button does, so pressing a preset longer than the app's save time also saves it. Save runs only the save step."
+        },
+        "duration_ms": {
+          "name": "Press length",
+          "description": "Milliseconds, 1 to 60000. Applies to a press only."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a combined bed."
+        }
+      }
+    },
     "richmat_mh_control": {
       "name": "Nisco and MLILY Supreme: run app control",
       "description": "Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands.",
@@ -10461,6 +10501,8 @@
         "acaa": "ACAA app",
         "sta2": "STA Homecare app",
         "zerogravity": "Zero Gravity app",
+        "sleep_evolution": "SleepEvolution app",
+        "wsilver_legacy": "W.Silver Products 3.x app",
         "nisco": "Nisco app",
         "mlily_supreme": "MLILY Supreme app",
         "okimiki": "Okimiki app",
@@ -11534,6 +11576,12 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "richmat_legacy_operation": {
+      "options": {
+        "gesture": "Press",
+        "program": "Save"
       }
     },
     "richmat_mh_control_action": {

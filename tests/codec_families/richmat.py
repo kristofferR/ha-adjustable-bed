@@ -10,6 +10,8 @@ from custom_components.adjustable_bed.profiles.hush import HushProfile
 from custom_components.adjustable_bed.profiles.luniosmart import LunioSmartProfile
 from custom_components.adjustable_bed.profiles.luuna import LuunaProfile
 from custom_components.adjustable_bed.profiles.richmat import RICHMAT_CLASSIC, RichmatProfile
+from custom_components.adjustable_bed.profiles.richmat_legacy import LegacyProfile
+from custom_components.adjustable_bed.profiles.richmat_legacy import choices as legacy_choices
 from custom_components.adjustable_bed.profiles.sonicsleep import SonicSleepProfile
 from tests import (
     casper_base_vectors,
@@ -19,6 +21,7 @@ from tests import (
     sonicsleep_vectors,
 )
 from tests.codec_families import CodecFamily, CodecGuide
+from tests.richmat_legacy_vectors import FROZEN_FRAMES as LEGACY_FRAMES
 from tests.richmat_vectors import FROZEN_FRAMES
 
 _SPELLED = re.compile(r"`((?:6E|5E|55|AA|04)(?: ?[0-9A-F]{2}){4,})`", re.IGNORECASE)
@@ -41,6 +44,7 @@ _VARIANTS = {
 # The Casper Base and Hush Base products are their bed type's protocol variant.
 _PRODUCT_VARIANTS = frozenset({const.BED_TYPE_CASPER_BASE, const.BED_TYPE_HUSH_BASE, const.BED_TYPE_LUUNA})
 _FROZEN = frozenset().union(
+    *LEGACY_FRAMES.values(),
     *FROZEN_FRAMES.values(),
     *luniosmart_vectors.FROZEN_FRAMES.values(),
     *(frozenset(r["expected_bytes"] for r in sonicsleep_vectors.VECTORS["commands"] + sonicsleep_vectors.VECTORS["alarm_repair"]),),
@@ -74,6 +78,7 @@ FAMILY = CodecFamily(
     profiles={
         RichmatProfile: FROZEN_FRAMES,
         LunioSmartProfile: luniosmart_vectors.FROZEN_FRAMES,
+        LegacyProfile: LEGACY_FRAMES,
         CasperProfile: casper_base_vectors.FROZEN_FRAMES,
         HushProfile: hush_vectors.FROZEN_FRAMES,
         LuunaProfile: luuna_vectors.FROZEN_FRAMES,
@@ -96,6 +101,8 @@ FAMILY = CodecFamily(
             "luuna",
             "sonicsleep",
             "luniosmart",
+            "sleep_evolution",
+            "wsilver_legacy",
             "leggett_lp_legacy",
             "leggett_wilinke",
             "richmat",
@@ -113,14 +120,16 @@ FAMILY = CodecFamily(
             "wsilver_products",
         }
     ),
+    app_routes={app: (const.CONF_PROTOCOL_VARIANT, tuple(legacy_choices(app))) for app in ("sleep_evolution", "wsilver_legacy")},
     guide=CodecGuide(
         path="docs/beds/richmat.md",
         spelled=_spelled,
         frozen=_FROZEN,
-        variant=lambda key, bed_type: key if bed_type in _PRODUCT_VARIANTS else _VARIANTS.get(key),
+        variant=lambda key, bed_type: key.split(":", 1)[1] if bed_type in ("sleep_evolution", "wsilver_legacy") else key if bed_type in _PRODUCT_VARIANTS else _VARIANTS.get(key),
         entry_data={
             "bobpowerbase": {const.CONF_PRODUCT_TYPE: "standard"},
             "sonicsleep": {const.CONF_PRODUCT_TYPE: "one"},
+            **{app: {const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: "A1"} for app in ("sleep_evolution", "wsilver_legacy")},
             # A layout every classic app ships.
             "richmat_classic_apps": {const.CONF_PRODUCT_TYPE: "6BRM"},
             "leggett_lp_legacy": {

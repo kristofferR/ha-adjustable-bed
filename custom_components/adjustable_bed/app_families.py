@@ -1388,7 +1388,7 @@ def _richmat_answers(visit: Visit) -> Mapping[str, Answer]:
     name = info.name if info is not None else None
     answers: dict[str, Answer] = {}
     for key, answer in RICHMAT_FAMILY.answers.items():
-        if answer.bed_type in RICHMAT_MH_APPS:
+        if answer.bed_type in RICHMAT_MH_APPS or answer.bed_type in ("sleep_evolution", "wsilver_legacy"):
             answer = replace(
                 answer, data={**answer.data, **_name_rule_setup_name(answer.bed_type, name)}
             )
@@ -1432,6 +1432,8 @@ RICHMAT_FAMILY: Final = AppFamily(
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
         "luuna": Answer("luuna", data=_NO_RMCONTROL),
         "luniosmart": Answer("luniosmart", data=_NO_RMCONTROL),
+        "sleep_evolution": Answer("sleep_evolution", data=_NO_RMCONTROL),
+        "wsilver_legacy": Answer("wsilver_legacy", data=_NO_RMCONTROL),
         "sonicsleep": Answer("sonicsleep", data=_NO_RMCONTROL),
         "mlily": Answer(BED_TYPE_MLILY, data=_NO_RMCONTROL),
         "okimiki": Answer(BED_TYPE_OKIMIKI, data=_NO_RMCONTROL),
@@ -1443,7 +1445,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", "luniosmart", BED_TYPE_MLILY, BED_TYPE_OKIMIKI},
+    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_OKIMIKI},
     routes_show_row=False,
     lists_members=True,
     offers_keep=keep_never,

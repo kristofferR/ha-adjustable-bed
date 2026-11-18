@@ -101,6 +101,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_mh_light_color`](#richmat_mh_light_color) | Richmat app: light color | Write the LED or button-light page colour of a Richmat MH app profile. |
 | [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run app control | Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands. |
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: Set sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
+| [`richmat_legacy`](#richmat_legacy) | SleepEvolution and W.Silver Products 3.x: run app control | Run a control from the selected app and name prefix, as a press or a save. |
 | [`rize_program_preset`](#rize_program_preset) | Rize: set default preset | Store the current position as a default preset on one physical Rize bed. Select a single paired side and explicitly confirm. |
 | [`sleep_number_command`](#sleep_number_command) | Sleep Number: run command | Runs a Sleep Number control or reading. Readings return their results. See the actions guide for each command's options. |
 | [`sleeptracker_climate`](#sleeptracker_climate) | Sleeptracker: climate | Set local left/right/both fan modes and levels. Level 0 stops the selected fans. Heat sends a 3600 second timer; cool sends a 36000 second timer. Timers and curve are commanded settings, not reported remaining time. |
@@ -1829,6 +1830,53 @@ preliminary memory-slot write. See the [Rize guide](beds/kaidi.md#rize-beds).
 |-------|------|---------|
 | `command` | Command | Only commands supported by the selected bed can run. |
 | `parameters` | Parameters | Command-specific fields. Unknown fields and values are rejected. Parameter side cannot override the selected physical side. |
+
+## SleepEvolution and W.Silver Products 3.x
+
+<a id="richmat_legacy"></a>
+**`richmat_legacy`**: Run a control from the selected app and name prefix, as a press or a save.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `control` | Control | Control key from the selected profile in the Richmat guide. |
+| `operation` | Operation | Press runs the control as the app's button does, so pressing a preset longer than the app's save time also saves it. Save runs only the save step. |
+| `duration_ms` | Press length | Milliseconds, 1 to 60000. Applies to a press only. |
+### SleepEvolution and W.Silver Products 3.x controls
+
+`adjustable_bed.richmat_legacy` runs a listed profile `control` with
+`device_id` and optional paired `side`. Use the exact control keys from the
+selected app and prefix in the
+[Richmat guide](beds/richmat.md#sleepevolution--wsilver-products-3x).
+
+| Field | Behavior |
+|---|---|
+| `operation: gesture` (default) | Run the control's DOWN, scheduled refresh and release phases, including its short-recall or long-save boundary. |
+| `duration_ms` | Gesture duration, 1–60000 ms, default 1000. Motion with only `m` on DOWN waits for its first actual movement refresh before this active window starts. Other finite wire gestures retain their DOWN-to-release interval. |
+| `operation: program` | Only for a control with a proven save event. Wait for the first completed save write, then release. Uses a bounded elapsed budget rather than `duration_ms`; cancellation suppresses short recall. |
+
+For example, this recalls the displayed M1 control on the **A1** profile:
+
+```yaml
+action: adjustable_bed.richmat_legacy
+data:
+  device_id: YOUR_BED_DEVICE_ID
+  control: h26_lounge
+  operation: gesture
+  duration_ms: 100
+```
+
+For that same A1 control, `operation: program` saves M1. Control names and
+displayed slots differ by profile; generic numeric memory actions are
+unavailable. Finite `hold_control` gestures preserve their recall/save boundary.
+Native renewable holds admit proven motion only, excluding programming,
+countdown and massage. Local selectors and cancellation-only actions send no
+wire packet of their own.
+
+All batch targets pass admission before writes. Single-address side selection
+and sequential Both holds are unsupported. Release drains on the original
+physical connection independently of cancellation, and unconditional cleanup is
+attempted even if a short-recall write fails. No arbitrary bytes, phone-torch or
+network/account actions are accepted. Hardware behavior remains unverified.
 
 ## Sleeptracker
 

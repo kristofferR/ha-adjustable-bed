@@ -23,6 +23,8 @@ APPS = [
     "rmcontrol",
     "luuna",
     "luniosmart",
+    "sleep_evolution",
+    "wsilver_legacy",
     "sonicsleep",
     "mlily",
     "okimiki",

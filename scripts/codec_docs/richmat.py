@@ -48,7 +48,8 @@ from custom_components.adjustable_bed.profiles import richmat as richmat_profile
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
-from scripts.codec_docs import _galaxy, _okimiki, _richmat_mh_apps
+from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
+from scripts.codec_docs import _galaxy, _okimiki, _richmat_legacy, _richmat_mh_apps
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -167,6 +168,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     return {
         "one": (_const.BED_TYPE_SONICSLEEP,),
         "luniosmart": (_const.BED_TYPE_LUNIOSMART,),
+        **{key: (profile.app,) for key, profile in legacy_profiles().items()},
         **{
             profile.key: (_const.BED_TYPE_RICHMAT,) for profile in richmat_profiles.RICHMAT.values()
         },
@@ -1626,3 +1628,6 @@ def render_bobpowerbase() -> str:
 
 
 BLOCKS.append((GUIDE, "bobpowerbase", render_bobpowerbase))
+
+
+BLOCKS += _richmat_legacy.BLOCKS

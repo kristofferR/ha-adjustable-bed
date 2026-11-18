@@ -292,6 +292,8 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "personal_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "mline": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "luniosmart": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "sleep_evolution": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "wsilver_legacy": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "sonicsleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "hush_remote": _NO_ANGLES,
     BED_TYPE_HUSH_SLEEP_MM: _NO_ANGLES,

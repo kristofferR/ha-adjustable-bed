@@ -111,6 +111,8 @@ from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.somos import CHOICES as SOMOS_CHOICES
+from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
+from .profiles.richmat_legacy import choices as legacy_choices
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
 _LOGGER = logging.getLogger(__name__)
@@ -144,6 +146,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "ormatek": {"okin15": "Okin", "okin24": "SmartBed"},
     "linx": LINX_TRANSPORTS,
     "nerum": {"p1": "P1: ORE / 1000", "p2": "P2: Okin / FFE5", "p3": "P3: Smartbed / Nordic"},
+    **{app: legacy_choices(app) for app in LEGACY_APPS},
     "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
     "comfort_enhancement3": APEX_CHOICES,
     "symphony_sleep": {"box1": "Box 1 (P1)", "box2": "Box 2 (P2)", "fallback": "Box 1, without position readings"},
