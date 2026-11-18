@@ -857,6 +857,9 @@ async def test_nameless_manual_auto_without_scanner_requires_explicit_transport(
         )
         assert result["type"] == FlowResultType.FORM
         assert result["errors"] == {const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"}
+        # The error opens the Advanced section that holds the field.
+        advanced = next(v for k, v in result["data_schema"].schema.items() if k == "advanced")
+        assert advanced.options["collapsed"] is False
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={"advanced": {const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}}
         )
