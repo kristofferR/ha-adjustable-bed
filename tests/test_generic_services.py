@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import voluptuous as vol
 import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
@@ -443,3 +444,14 @@ def test_service_error_keys_have_translated_messages() -> None:
     used = set(re.findall(r'translation_key="([a-z_]+)"', source))
     used |= set(re.findall(r'_invalid\(\s*"([a-z_]+)"', source))
     assert used <= set(strings)
+
+
+@pytest.mark.parametrize("slot", [2.9, True, "two"])
+async def test_set_alarm_rejects_a_slot_that_is_not_a_whole_number(
+    hass: HomeAssistant, resolve, slot
+) -> None:
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False, "slot": slot}, blocking=True
+        )
+    resolve.assert_not_called()

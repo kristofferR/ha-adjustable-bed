@@ -360,6 +360,15 @@ def _invalid(key: str, message: str, **placeholders: object) -> ServiceValidatio
     )
 
 
+def _whole_number(value: object) -> int:
+    """Accept a whole number, also as 2.0 or "2"; reject Booleans and fractions."""
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value)
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
+        raise vol.Invalid("Expected a whole number")
+    return int(value)
+
+
 def _validation_error(err: ValueError) -> ServiceValidationError:
     """Turn a controller's rejection into a validation error, translated where it can be."""
     key = getattr(err, "translation_key", None)
@@ -2880,13 +2889,13 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Required(ATTR_ENABLED): cv.boolean,
                 vol.Optional(ATTR_TIME): cv.time,
                 vol.Optional(ATTR_WEEKDAYS): vol.All(cv.ensure_list, [vol.In(ALARM_WEEKDAYS)]),
-                vol.Optional(ATTR_SLOT): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
+                vol.Optional(ATTR_SLOT): vol.All(_whole_number, vol.Range(min=1, max=10)),
                 vol.Optional("wake_action"): vol.In(WAKE_ACTIONS),
                 vol.Optional(ATTR_MASSAGE): cv.boolean,
-                vol.Optional("head_massage_level"): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
-                vol.Optional("foot_massage_level"): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
-                vol.Optional("massage_intensity"): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
-                vol.Optional("massage_duration"): vol.All(vol.Coerce(int), vol.Range(min=1, max=120)),
+                vol.Optional("head_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),
+                vol.Optional("foot_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),
+                vol.Optional("massage_intensity"): vol.All(_whole_number, vol.Range(min=1, max=10)),
+                vol.Optional("massage_duration"): vol.All(_whole_number, vol.Range(min=1, max=120)),
                 vol.Optional("massage_zone"): vol.In(MASSAGE_ZONES),
                 vol.Optional("mattress_side"): vol.In(MATTRESS_SIDES),
                 vol.Optional(ATTR_SOUND): vol.In(ALARM_SOUNDS),

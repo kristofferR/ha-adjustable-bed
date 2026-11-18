@@ -19,6 +19,7 @@ from ...services import (
     PreflightedSides,
     _command_targets,
     _execute_sided,
+    _invalid,
     _missing_device_error,
     _release_preflighted,
     _resolve_sided_targets,
@@ -131,8 +132,11 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
                         or command in INTERNAL_COMMANDS
                         or command not in sleep_number.sleep_number_command_names
                     ):
-                        raise ServiceValidationError(
-                            f"Sleep Number command {command!r} is not supported by {target.name}"
+                        raise _invalid(
+                            "sleep_number_command_not_supported",
+                            f"Sleep Number command {command!r} is not supported by {target.name}",
+                            device_name=target.name,
+                            command=command,
                         )
                     sleep_number.validate_sleep_number_command(command, parameters)
 

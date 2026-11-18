@@ -9341,6 +9341,12 @@
     },
     "alarm_too_far": {
       "message": "This bed's alarm can be at most 24 hours ahead. Choose a nearer time."
+    },
+    "timer_minutes_required": {
+      "message": "Choose how many minutes the timer runs."
+    },
+    "sleep_number_command_not_supported": {
+      "message": "{device_name} does not accept the Sleep Number command \"{command}\"."
     }
   },
   "issues": {

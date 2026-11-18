@@ -35,7 +35,9 @@ async def handle_leggett_sleep_timer(call: ServiceCall) -> None:
     start = call.data[ATTR_ACTION] == "start"
     minutes = call.data.get(ATTR_MINUTES)
     if start and minutes is None:
-        raise ServiceValidationError("Starting a timer requires minutes")
+        from ...services import _invalid
+
+        raise _invalid("timer_minutes_required", "Starting a timer requires minutes")
     memory_num = call.data.get(ATTR_PRESET, 1)
     label = "Leggett sleep timers"
 
