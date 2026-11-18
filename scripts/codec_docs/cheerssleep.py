@@ -104,17 +104,17 @@ def profiles() -> str:
             (
                 (
                     "P1",
-                    "One frame, latched hold up to10s",
-                    "Matching axis STOP120ms after release",
-                    "Single writes",
-                    "Two/Two1: MAC query up to20 times,120ms before each",
+                    "One frame; the hold is latched for up to 10 s",
+                    "STOP for the same motor 120 ms after release",
+                    "One write",
+                    "Pages Two and Two1: up to 20 address queries, each after a 120 ms wait",
                 ),
                 (
                     "P2",
-                    "Repeat100ms, bounded/renewable hold",
-                    "Immediate unscoped zero-key",
-                    "Command0/100/200ms; release300/400/500/500ms; interrupted counter retained",
-                    "Stateful simple pages B0; navigation parent resume/destination D0 side0",
+                    "Repeats every 100 ms while held, within the hold limit",
+                    "Zero key at once, for both sides",
+                    "Command at 0, 100 and 200 ms; release at 300, 400, 500 and 500 ms; an interrupted tap keeps its counter",
+                    "Simple pages send a B0 query; pages with navigation send a D0 query for side 0 when the parent page resumes or a destination opens",
                 ),
             ),
         )

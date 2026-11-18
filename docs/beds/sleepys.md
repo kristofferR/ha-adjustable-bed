@@ -1,6 +1,6 @@
 # Sleepy's Elite (MFRM)
 
-**Status:** ⚠️ Partially tested (BOX25 STAR receivers work in [#413](https://github.com/kristofferR/ha-adjustable-bed/issues/413), [#617](https://github.com/kristofferR/ha-adjustable-bed/issues/617) and [#702](https://github.com/kristofferR/ha-adjustable-bed/issues/702); BOX15, BOX24 and the Sleepy's Elite app profile need testing)
+**Status:** Partly tested (BOX25 STAR receivers work in [#413](https://github.com/kristofferR/ha-adjustable-bed/issues/413), [#617](https://github.com/kristofferR/ha-adjustable-bed/issues/617) and [#702](https://github.com/kristofferR/ha-adjustable-bed/issues/702); BOX15, BOX24 and the Sleepy's Elite app profile need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [SethCalkins](https://github.com/SethCalkins) (BOX25 Star, ported from [ha-dewertokin-bed](https://github.com/sethcalkins/ha-dewertokin-bed))
 
@@ -429,7 +429,7 @@ They are Okin N-frames; the generated key table is in the
 
 ```text
 normal:   05 02 [32-bit key, big-endian] 00
-extended: 04 E0 [subcommand] [value] [value2] 00
+extended: 04 E0 [subcommand] [value] [value 2] 00
 position: 03 F0 [zone] [position] 00
 query:    00 B0 (massage/light), 00 D0 (motor position)
 ```
@@ -494,7 +494,7 @@ From app disassembly:
 
 ## Detection
 
-Sleepy's Elite beds are auto-detected by name plus BLE services:
+Sleepy's Elite beds are detected by name plus BLE services:
 
 - Device names starting with `star25` (case-insensitive) plus Nordic UART → BOX25, then `2A29` selects StarCode or legacy packets at connection time
 - `ELEVATE*` plus Nordic UART → the separate [ELEVATE controller](okin-5a.md#dewertokin-elevate),
@@ -504,7 +504,7 @@ Sleepy's Elite beds are auto-detected by name plus BLE services:
   - OKIN 64-bit service (62741523-...) → BOX24
   - FFE5 service (0000FFE5-...) → BOX15
 
-**If auto-detection fails:** scan the bed with the nRF Connect app and answer
+**If detection fails:** scan the bed with the nRF Connect app and answer
 the [setup question](#home-assistant-setup) with the receiver whose service it
 advertises: Nordic UART `6e400001-...` for BOX25, `62741523-...` for BOX24, or
 `0000FFE5-...` for BOX15. If you use the app, choose the app and the control

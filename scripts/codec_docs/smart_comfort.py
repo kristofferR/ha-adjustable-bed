@@ -30,7 +30,7 @@ def profiles() -> str:
                     f"{p.refresh_ms} / {p.release_ms}",
                     str(p.notify_delay_ms)
                     if p.notify_delay_ms is not None
-                    else "Unproven; no added delay",
+                    else "None",
                     str(p.system_timeout_ms),
                     "Subscribe, system query, device query",
                 )
