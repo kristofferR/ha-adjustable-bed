@@ -2106,7 +2106,7 @@ class TestSupportBundleLoggingWarning:
 
         assert len(created) == 1
         title, message = created[0]
-        assert title == "Adjustable Bed Support Bundle Ready"
+        assert title == "Adjustable bed: support bundle ready"
         assert "This bundle contains no logs" in message
         assert "Enable debug logging" in message
         # `logger:` only sets levels; it cannot create a missing log file.
@@ -2262,7 +2262,7 @@ class TestSupportBundlePreCaptureLogWarning:
         )
 
         titles = [title for title, _ in events]
-        assert titles.index("Adjustable Bed: this bundle will have no logs") < titles.index(
+        assert titles.index("Adjustable bed: this bundle will have no logs") < titles.index(
             "__capture_ran__"
         )
         pre_capture = next(msg for title, msg in events if "no logs" in title)

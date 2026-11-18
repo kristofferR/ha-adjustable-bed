@@ -25,7 +25,7 @@ from collections.abc import (
 )
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -2344,6 +2344,45 @@ async def handle_sync_clock(call: ServiceCall) -> None:
         raise
 
 
+# English text of the support-bundle notifications, used when no translation loads.
+_NOTICES: Final = {
+    "support_bundle_ready_title": "Adjustable bed: support bundle ready",
+    "support_bundle_ready_message": (
+        "[**Download the support bundle**]({url})\n\n"
+        "Bluetooth messages captured: {count}, over {seconds} seconds.\n\n"
+        "Next, attach the file to your bug report or bed support request. The download "
+        "link works for one hour or until Home Assistant restarts; the file stays saved "
+        "at `{path}`."
+    ),
+    "support_bundle_warnings": "**While capturing:**",
+    "support_bundle_no_logs_title": "Adjustable bed: this bundle will have no logs",
+    "support_bundle_no_logs_message": (
+        "The capture is running anyway, so you will still get a bundle with the Bluetooth details."
+    ),
+    "support_bundle_timeout_title": "Adjustable bed: support bundle timed out",
+    "support_bundle_timeout_message": (
+        "The capture for {address} did not finish within {seconds} seconds. Move the bed "
+        "closer to its Bluetooth adapter or proxy, then run the action again."
+    ),
+    "support_bundle_failed_title": "Adjustable bed: support bundle failed",
+    "support_bundle_failed_message": (
+        "The support bundle for {address} could not be created. Check the Home Assistant "
+        "log for details, then run the action again."
+    ),
+}
+
+
+async def _notice(hass: HomeAssistant, key: str, **placeholders: object) -> str:
+    """Return one support-bundle notification text in the user's language."""
+    from homeassistant.helpers.translation import async_get_translations
+
+    translations = await async_get_translations(
+        hass, hass.config.language, "exceptions", {DOMAIN}
+    )
+    template = translations.get(f"component.{DOMAIN}.exceptions.{key}.message", _NOTICES[key])
+    return template.format(**placeholders)
+
+
 async def handle_generate_support_bundle(call: ServiceCall) -> None:
     """Handle generate_support_bundle service call."""
     hass = call.hass
@@ -2477,9 +2516,9 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 async_create(
                     hass,
                     build_missing_log_notice(log_check["reason"], log_check["error"], future=True)
-                    + "\n\nThe capture is running anyway, so you will still get a "
-                    "bundle with Bluetooth diagnostics.",
-                    title="Adjustable Bed: this bundle will have no logs",
+                    + "\n\n"
+                    + await _notice(hass, "support_bundle_no_logs_message"),
+                    title=await _notice(hass, "support_bundle_no_logs_title"),
                     notification_id=log_notification_id,
                 )
                 hass.data.setdefault(_LOG_NOTICE_OWNERS, {}).setdefault(
@@ -2513,7 +2552,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         evidence_warnings = evidence.get("warnings", [])
         warning_summary = ""
         if evidence_warnings:
-            warning_summary = "\n\n**Capture warnings:**\n" + "\n".join(
+            warning_summary = "\n\n" + await _notice(hass, "support_bundle_warnings") + "\n" + "\n".join(
                 f"- {warning}" for warning in evidence_warnings
             )
 
@@ -2543,16 +2582,17 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
         async_create(
             hass,
-            f"[**Download support bundle**]({download_url})\n\n"
-            "The download link expires in one hour or when Home Assistant restarts. "
-            "The saved file remains available at the path below.\n\n"
-            f"Captured {notification_count} notifications. "
-            f"Requested capture window: {capture_duration} seconds."
-            f"{logging_notice}"
-            f"{warning_summary}\n\n"
-            "Attach this JSON file when reporting unsupported or broken beds.\n\n"
-            f"File path: `{filepath}`",
-            title="Adjustable Bed Support Bundle Ready",
+            await _notice(
+                hass,
+                "support_bundle_ready_message",
+                url=download_url,
+                path=filepath,
+                count=notification_count,
+                seconds=capture_duration,
+            )
+            + logging_notice
+            + warning_summary,
+            title=await _notice(hass, "support_bundle_ready_title"),
             notification_id=f"adjustable_bed_support_bundle_{address.replace(':', '_').lower()}",
         )
         _LOGGER.info("Support bundle saved to %s", filepath)
@@ -2564,19 +2604,22 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         )
         async_create(
             hass,
-            f"Support bundle generation timed out after {capture_duration + 120} seconds "
-            f"for {address}.\n\n"
-            "The BLE diagnostics may be hanging. Check Bluetooth connectivity and try again.",
-            title="Adjustable Bed Support Bundle Timeout",
+            await _notice(
+                hass,
+                "support_bundle_timeout_message",
+                address=address,
+                seconds=capture_duration + 120,
+            ),
+            title=await _notice(hass, "support_bundle_timeout_title"),
             notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
         )
         raise
-    except Exception as err:
+    except Exception:
         _LOGGER.exception("Failed to generate support bundle for %s", address)
         async_create(
             hass,
-            f"Failed to generate support bundle for {address}:\n\n{err}",
-            title="Adjustable Bed Support Bundle Error",
+            await _notice(hass, "support_bundle_failed_message", address=address),
+            title=await _notice(hass, "support_bundle_failed_title"),
             notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
         )
         raise

@@ -9189,7 +9189,33 @@
     "bed_changed": "The bed changed while the action was being checked. Try again.",
     "bed_reconnected": "{device_name} reconnected while the action was being checked. Try again.",
     "feature_not_supported": "{device_name} does not support {feature}.",
-    "support_bundle_failed": "The support bundle could not be created: {error}. Check the Home Assistant log, then try again."
+    "support_bundle_ready_title": {
+      "message": "Adjustable bed: support bundle ready"
+    },
+    "support_bundle_ready_message": {
+      "message": "[**Download the support bundle**]({url})\n\nBluetooth messages captured: {count}, over {seconds} seconds.\n\nNext, attach the file to your bug report or bed support request. The download link works for one hour or until Home Assistant restarts; the file stays saved at `{path}`."
+    },
+    "support_bundle_warnings": {
+      "message": "**While capturing:**"
+    },
+    "support_bundle_no_logs_title": {
+      "message": "Adjustable bed: this bundle will have no logs"
+    },
+    "support_bundle_no_logs_message": {
+      "message": "The capture is running anyway, so you will still get a bundle with the Bluetooth details."
+    },
+    "support_bundle_timeout_title": {
+      "message": "Adjustable bed: support bundle timed out"
+    },
+    "support_bundle_timeout_message": {
+      "message": "The capture for {address} did not finish within {seconds} seconds. Move the bed closer to its Bluetooth adapter or proxy, then run the action again."
+    },
+    "support_bundle_failed_title": {
+      "message": "Adjustable bed: support bundle failed"
+    },
+    "support_bundle_failed_message": {
+      "message": "The support bundle for {address} could not be created. Check the Home Assistant log for details, then run the action again."
+    }
   },
   "issues": {
     "pairing_required": {
