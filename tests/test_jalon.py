@@ -504,4 +504,4 @@ def test_massage_connection_state_keeps_link_between_commands_by_default():
     traits = bed_traits(BED_TYPE_JALON)
     assert traits.connection_scoped_state
     assert not traits.persistent_connection
-    assert not (default_connection_mode(BED_TYPE_JALON) == "release")
+    assert default_connection_mode(BED_TYPE_JALON) != "release"

@@ -218,7 +218,7 @@ def test_pump_has_no_motor_or_bed_preset_capabilities(coordinator):
         "logicdata_air_pump_save_memory",
     ]
     # The shared ffe0 service never selects the pump automatically.
-    assert not (default_connection_mode(BED_TYPE_LOGICDATA_AIR_PUMP) == "release")
+    assert default_connection_mode(BED_TYPE_LOGICDATA_AIR_PUMP) != "release"
 
 
 def test_shared_service_never_detects_the_pump():

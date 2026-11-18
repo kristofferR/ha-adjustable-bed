@@ -513,7 +513,7 @@ async def test_new_entries_keep_connection_state_and_layout_change_retires_actio
 ) -> None:
     from custom_components.adjustable_bed.bed_traits import default_connection_mode
 
-    assert not (default_connection_mode(BED_TYPE_COMFORT_ENHANCEMENTS, "mc2") == "release")
+    assert default_connection_mode(BED_TYPE_COMFORT_ENHANCEMENTS, "mc2") != "release"
     mock_bleak_client.services = services(
         Char(KEESON_BASE_WRITE_CHAR_UUID, ["write"]), Char(KEESON_BASE_NOTIFY_CHAR_UUID, ["notify"])
     )
