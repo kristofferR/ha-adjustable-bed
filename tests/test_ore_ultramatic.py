@@ -168,52 +168,22 @@ async def test_registered_alarm_all_fields_and_query_timing(hass, target, route)
         began = clock.time()
         await hass.services.async_call(
             const.DOMAIN,
-            "ore_ultramatic_set_alarm",
+            "set_alarm",
             {
                 "device_id": "bed",
                 "enabled": True,
                 "time": "07:30:00",
-                "repeat": -128,
-                "alarm_type": 2,
+                "weekdays": ["monday"],
+                "wake_action": "memory_1" if route == "P1" else "tv",
             },
             blocking=True,
         )
         assert clock.time() - began == pytest.approx(0.3 if route == "P1" else 0.4)
     assert _written(client) == (
-        ["ebfe160506071e070280ffff0841", "e2fe1605060702f5"]
+        ["ebfe160506071e070282ffff083f", "e2fe1605060702f5"]
         if route == "P1"
-        else ["e780017e0a11070605ec", "ed8003071e800f0000000000000000db", "e28003009a"]
+        else ["e780017e0a11070605ec", "ed8003071e820f0000000000000000d9", "e28003009a"]
     )
-
-
-async def test_alarm_captures_stop_before_lazy_import(hass, target, monkeypatch):
-    from custom_components.adjustable_bed.beds.ore_ultramatic import services
-
-    coordinator, client = await target()
-    await async_register_services(hass)
-    original = services.async_import_modules
-
-    async def stopped_import(*args):
-        await coordinator.async_stop_command()
-        client.write_gatt_char.reset_mock()
-        await original(*args)
-
-    monkeypatch.setattr(services, "async_import_modules", stopped_import)
-    with (
-        patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
-            return_value=([(coordinator, "both")], []),
-        ),
-        virtual_clock(),
-    ):
-        # A stopped scheduler admission ends normally without sending its plan.
-        await hass.services.async_call(
-            const.DOMAIN,
-            "ore_ultramatic_set_alarm",
-            {"device_id": "bed", "enabled": True, "time": "07:30:00"},
-            blocking=True,
-        )
-    assert not client.write_gatt_char.called
 
 
 async def test_notification_session_and_fragment_callbacks(target):
@@ -300,7 +270,7 @@ async def test_setup_configure_and_side_owned_layout(hass):
 
     choice = bed_type_choice("keeson", APP)
     assert (
-        "ORE Ultramatic" in {row["value"]: row["label"] for row in get_bed_type_options()}[choice]
+        "Ultramatic app (ORE)" in {row["value"]: row["label"] for row in get_bed_type_options()}[choice]
     )
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
@@ -432,8 +402,8 @@ async def test_real_paired_device_target_and_whole_target_rejection(hass, target
     with virtual_clock():
         await hass.services.async_call(
             const.DOMAIN,
-            "ore_ultramatic_set_alarm",
-            {"device_id": device.id, "enabled": False, "time": "00:00:00"},
+            "set_alarm",
+            {"device_id": device.id, "enabled": False},
             blocking=True,
         )
     assert not lc.write_gatt_char.called
@@ -442,8 +412,8 @@ async def test_real_paired_device_target_and_whole_target_rejection(hass, target
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             const.DOMAIN,
-            "ore_ultramatic_set_alarm",
-            {"device_id": device.id, "side": "left", "enabled": False, "time": "00:00:00"},
+            "set_alarm",
+            {"device_id": device.id, "side": "left", "enabled": False},
             blocking=True,
         )
     assert len(_written(rc)) == before

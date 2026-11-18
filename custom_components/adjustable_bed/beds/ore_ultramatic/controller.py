@@ -5,12 +5,13 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...codec import keeson as codec
 from ...command_scheduler import current_command_context
@@ -29,6 +30,15 @@ from ..entity_specs import (
 from ..lifecycle import CapabilitySnapshotPolicy, ControllerSession
 from ..ore_comfort_bed import OreComfortBedController
 from .state_keys import ACTION, ALL, INTENSITY, REPEAT, TIME, TIMER
+
+
+class AlarmFields(TypedDict):
+    enabled: bool
+    hour: int
+    minute: int
+    repeat: int
+    kind: int
+
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -366,6 +376,37 @@ class OreUltramaticController(OreComfortBedController):
         link = self._capture_link()
         await self._single_on(link, app.query(link.route, dt_util.now()), app.QUERY_MS)
 
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        # The route, and so the wake actions, is known once the bed has connected.
+        return AlarmCapability(
+            wake_actions=tuple(app.WAKE_KINDS[self._route]) if self._route else (),
+            weekdays=True,
+            resource="*",
+        )
+
+    def _alarm_fields(self, alarm: AlarmRequest) -> tuple[app.Route, AlarmFields]:
+        if self._route is None:
+            raise ValueError("Connect ORE Ultramatic once to discover its bed route")
+        kinds = app.WAKE_KINDS[self._route]
+        if alarm.wake_action not in kinds:
+            # The live route differs from the one the request was checked against.
+            raise ValueError(f"This bed now wakes with one of: {', '.join(kinds)}")
+        return self._route, {
+            "enabled": alarm.enabled,
+            "hour": alarm.hour,
+            "minute": alarm.minute,
+            "repeat": app.repeat_mask(alarm.weekdays),
+            "kind": kinds[alarm.wake_action],
+        }
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        route, fields = self._alarm_fields(alarm)
+        app.alarm(route, alarm.reference_time, **fields)
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.set_alarm(**self._alarm_fields(alarm)[1])
+
     async def set_alarm(
         self, *, enabled: bool, hour: int, minute: int, repeat: int, kind: int
     ) -> None:
@@ -484,9 +525,7 @@ class OreUltramaticController(OreComfortBedController):
                     ACTION(s.type),
                 )
             if "massage" in callbacks:
-                self.forward_controller_state_updates(
-                    TIMER(s.timer), INTENSITY(s.intensity)
-                )
+                self.forward_controller_state_updates(TIMER(s.timer), INTENSITY(s.intensity))
 
         async with self._ble_lock:
             self._check_link(link)

@@ -10,12 +10,7 @@
         "key": 1
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 01 05",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:89-105",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 01 05"
   },
   {
     "id": "V002",
@@ -28,12 +23,7 @@
         "key": 2
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 02 04",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:106-122",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 02 04"
   },
   {
     "id": "V003",
@@ -46,12 +36,7 @@
         "key": 4
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 04 02",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:123-139",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 04 02"
   },
   {
     "id": "V004",
@@ -64,12 +49,7 @@
         "key": 8
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 08 FE",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:140-156",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 08 FE"
   },
   {
     "id": "V005",
@@ -82,12 +62,7 @@
         "key": 16
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 10 F6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:157-176",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 10 F6"
   },
   {
     "id": "V006",
@@ -100,12 +75,7 @@
         "key": 32
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 20 E6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:178-197",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 20 E6"
   },
   {
     "id": "V007",
@@ -118,12 +88,7 @@
         "key": 16
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 10 F6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:156-172",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 10 F6"
   },
   {
     "id": "V008",
@@ -136,12 +101,7 @@
         "key": 32
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 20 E6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:173-189",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 20 E6"
   },
   {
     "id": "V009",
@@ -154,12 +114,7 @@
         "key": 16
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 10 F6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:82-98",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 10 F6"
   },
   {
     "id": "V010",
@@ -172,12 +127,7 @@
         "key": 32
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 20 E6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:99-115",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 20 E6"
   },
   {
     "id": "V011",
@@ -190,12 +140,7 @@
         "key": 64
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 40 C6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:116-132",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 40 C6"
   },
   {
     "id": "V012",
@@ -208,12 +153,7 @@
         "key": 128
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 80 86",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:133-149",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 80 86"
   },
   {
     "id": "V013",
@@ -226,12 +166,7 @@
         "key": 0
       }
     },
-    "expected_bytes": "E5 FE 16 00 00 00 00 06",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:883-896",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 00 00 00 00 06"
   },
   {
     "id": "V014",
@@ -244,12 +179,7 @@
         "key": 1
       }
     },
-    "expected_bytes": "E6 FE 16 01 00 00 00 00 04",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:89-105",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 01 00 00 00 00 04"
   },
   {
     "id": "V015",
@@ -262,12 +192,7 @@
         "key": 2
       }
     },
-    "expected_bytes": "E6 FE 16 02 00 00 00 00 03",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:106-122",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 02 00 00 00 00 03"
   },
   {
     "id": "V016",
@@ -280,12 +205,7 @@
         "key": 4
       }
     },
-    "expected_bytes": "E6 FE 16 04 00 00 00 00 01",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:123-139",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 04 00 00 00 00 01"
   },
   {
     "id": "V017",
@@ -298,12 +218,7 @@
         "key": 8
       }
     },
-    "expected_bytes": "E6 FE 16 08 00 00 00 00 FD",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:140-156",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 08 00 00 00 00 FD"
   },
   {
     "id": "V018",
@@ -316,12 +231,7 @@
         "key": 5
       }
     },
-    "expected_bytes": "E6 FE 16 05 00 00 00 00 00",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:157-176",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 05 00 00 00 00 00"
   },
   {
     "id": "V019",
@@ -334,12 +244,7 @@
         "key": 10
       }
     },
-    "expected_bytes": "E6 FE 16 0A 00 00 00 00 FB",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonFragment.java:178-197",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 0A 00 00 00 00 FB"
   },
   {
     "id": "V020",
@@ -352,12 +257,7 @@
         "key": 16
       }
     },
-    "expected_bytes": "E6 FE 16 10 00 00 00 00 F5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:156-172",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 10 00 00 00 00 F5"
   },
   {
     "id": "V021",
@@ -370,12 +270,7 @@
         "key": 32
       }
     },
-    "expected_bytes": "E6 FE 16 20 00 00 00 00 E5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedSixButtonThreeMotorFragment.java:173-189",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 20 00 00 00 00 E5"
   },
   {
     "id": "V022",
@@ -388,12 +283,7 @@
         "key": 16
       }
     },
-    "expected_bytes": "E6 FE 16 10 00 00 00 00 F5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:82-98",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 10 00 00 00 00 F5"
   },
   {
     "id": "V023",
@@ -406,12 +296,7 @@
         "key": 32
       }
     },
-    "expected_bytes": "E6 FE 16 20 00 00 00 00 E5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:99-115",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 20 00 00 00 00 E5"
   },
   {
     "id": "V024",
@@ -424,12 +309,7 @@
         "key": 64
       }
     },
-    "expected_bytes": "E6 FE 16 40 00 00 00 00 C5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:116-132",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 40 00 00 00 00 C5"
   },
   {
     "id": "V025",
@@ -442,12 +322,7 @@
         "key": 128
       }
     },
-    "expected_bytes": "E6 FE 16 80 00 00 00 00 85",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedWaistButtonFragment.java:133-149",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 80 00 00 00 00 85"
   },
   {
     "id": "V026",
@@ -460,12 +335,7 @@
         "key": 0
       }
     },
-    "expected_bytes": "E6 FE 16 00 00 00 00 00 05",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:883-896",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 00 00 00 00 05"
   },
   {
     "id": "V027",
@@ -478,12 +348,7 @@
         "key": 16777224
       }
     },
-    "expected_bytes": "E5 FE 16 01 00 00 08 FD",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:258-284",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 01 00 00 08 FD"
   },
   {
     "id": "V028",
@@ -496,12 +361,7 @@
         "key": 16777225
       }
     },
-    "expected_bytes": "E5 FE 16 01 00 00 09 FC",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:292-317",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 01 00 00 09 FC"
   },
   {
     "id": "V029",
@@ -514,12 +374,7 @@
         "key": 16777217
       }
     },
-    "expected_bytes": "E5 FE 16 01 00 00 01 04",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:326-351",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 01 00 00 01 04"
   },
   {
     "id": "V030",
@@ -532,12 +387,7 @@
         "key": 16777218
       }
     },
-    "expected_bytes": "E5 FE 16 01 00 00 02 03",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:360-385",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 01 00 00 02 03"
   },
   {
     "id": "V031",
@@ -550,12 +400,7 @@
         "key": 536870920
       }
     },
-    "expected_bytes": "E5 FE 16 20 00 00 08 DE",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:138-140",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 20 00 00 08 DE"
   },
   {
     "id": "V032",
@@ -568,12 +413,7 @@
         "key": 536870921
       }
     },
-    "expected_bytes": "E5 FE 16 20 00 00 09 DD",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:141-143",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 20 00 00 09 DD"
   },
   {
     "id": "V033",
@@ -586,12 +426,7 @@
         "key": 536870913
       }
     },
-    "expected_bytes": "E5 FE 16 20 00 00 01 E5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:144-146",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 20 00 00 01 E5"
   },
   {
     "id": "V034",
@@ -604,12 +439,7 @@
         "key": 536870914
       }
     },
-    "expected_bytes": "E5 FE 16 20 00 00 02 E4",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:147-149",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 20 00 00 02 E4"
   },
   {
     "id": "V035",
@@ -622,12 +452,7 @@
         "key": 16384
       }
     },
-    "expected_bytes": "E6 FE 16 00 40 00 00 00 C5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:179-195",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 40 00 00 00 C5"
   },
   {
     "id": "V036",
@@ -640,12 +465,7 @@
         "key": 32768
       }
     },
-    "expected_bytes": "E6 FE 16 00 80 00 00 00 85",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:197-213",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 80 00 00 00 85"
   },
   {
     "id": "V037",
@@ -658,12 +478,7 @@
         "key": 4096
       }
     },
-    "expected_bytes": "E6 FE 16 00 10 00 00 00 F5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:215-232",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 10 00 00 00 F5"
   },
   {
     "id": "V038",
@@ -676,12 +491,7 @@
         "key": 134217728
       }
     },
-    "expected_bytes": "E6 FE 16 00 00 00 08 00 FD",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMemoryFragment.java:234-249",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 00 00 08 00 FD"
   },
   {
     "id": "V039",
@@ -694,12 +504,7 @@
         "key": 268435488
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 20 D6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 20 D6"
   },
   {
     "id": "V040",
@@ -712,12 +517,7 @@
         "key": 268435489
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 21 D5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 21 D5"
   },
   {
     "id": "V041",
@@ -730,12 +530,7 @@
         "key": 268435490
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 22 D4",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 22 D4"
   },
   {
     "id": "V042",
@@ -748,12 +543,7 @@
         "key": 268435491
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 23 D3",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 23 D3"
   },
   {
     "id": "V043",
@@ -766,12 +556,7 @@
         "key": 268435472
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 10 E6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 10 E6"
   },
   {
     "id": "V044",
@@ -784,12 +569,7 @@
         "key": 268435473
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 11 E5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 11 E5"
   },
   {
     "id": "V045",
@@ -802,12 +582,7 @@
         "key": 268435474
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 12 E4",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 12 E4"
   },
   {
     "id": "V046",
@@ -820,12 +595,7 @@
         "key": 268435475
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 13 E3",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 13 E3"
   },
   {
     "id": "V047",
@@ -838,12 +608,7 @@
         "key": 285212688
       }
     },
-    "expected_bytes": "E5 FE 16 11 00 00 10 E5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 11 00 00 10 E5"
   },
   {
     "id": "V048",
@@ -856,12 +621,7 @@
         "key": 285212689
       }
     },
-    "expected_bytes": "E5 FE 16 11 00 00 11 E4",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 11 00 00 11 E4"
   },
   {
     "id": "V049",
@@ -874,12 +634,7 @@
         "key": 285212690
       }
     },
-    "expected_bytes": "E5 FE 16 11 00 00 12 E3",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 11 00 00 12 E3"
   },
   {
     "id": "V050",
@@ -892,12 +647,7 @@
         "key": 285212691
       }
     },
-    "expected_bytes": "E5 FE 16 11 00 00 13 E2",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:213-270",
-      "work/smali/base/res/layout/bed_massage.xml:waveSeekBar, headIntensitySeekBar, footIntensitySeekBar max=39"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 11 00 00 13 E2"
   },
   {
     "id": "V051",
@@ -910,12 +660,7 @@
         "key": 268435504
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 30 C6",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:375-397",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 30 C6"
   },
   {
     "id": "V052",
@@ -928,12 +673,7 @@
         "key": 268435505
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 31 C5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:375-397",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 31 C5"
   },
   {
     "id": "V053",
@@ -946,12 +686,7 @@
         "key": 268435506
       }
     },
-    "expected_bytes": "E5 FE 16 10 00 00 32 C4",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:375-397",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 10 00 00 32 C4"
   },
   {
     "id": "V054",
@@ -964,12 +699,7 @@
         "key": 2048
       }
     },
-    "expected_bytes": "E6 FE 16 00 08 00 00 00 FD",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:289-299",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 08 00 00 00 FD"
   },
   {
     "id": "V055",
@@ -982,12 +712,7 @@
         "key": 1024
       }
     },
-    "expected_bytes": "E6 FE 16 00 04 00 00 00 01",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:300-310",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 04 00 00 00 01"
   },
   {
     "id": "V056",
@@ -1000,12 +725,7 @@
         "key": 512
       }
     },
-    "expected_bytes": "E6 FE 16 00 02 00 00 00 03",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:311-321",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 02 00 00 00 03"
   },
   {
     "id": "V057",
@@ -1018,12 +738,7 @@
         "key": 256
       }
     },
-    "expected_bytes": "E6 FE 16 00 01 00 00 00 04",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:322-332",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 01 00 00 00 04"
   },
   {
     "id": "V058",
@@ -1036,12 +751,7 @@
         "key": 268435456
       }
     },
-    "expected_bytes": "E6 FE 16 00 00 00 10 00 F5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedMassageFragment.java:333-343",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 00 00 10 00 F5"
   },
   {
     "id": "V059",
@@ -1054,12 +764,7 @@
         "key": 822083585
       }
     },
-    "expected_bytes": "E5 FE 16 31 00 00 01 D4",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedLightFragment.java:72-79",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 31 00 00 01 D4"
   },
   {
     "id": "V060",
@@ -1072,12 +777,7 @@
         "key": 822083584
       }
     },
-    "expected_bytes": "E5 FE 16 31 00 00 00 D5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedLightFragment.java:72-79",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E5 FE 16 31 00 00 00 D5"
   },
   {
     "id": "V061",
@@ -1090,12 +790,7 @@
         "key": 131072
       }
     },
-    "expected_bytes": "E6 FE 16 00 00 02 00 00 03",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/fragment/BedLightFragment.java:80-82",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:835-880"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E6 FE 16 00 00 02 00 00 03"
   },
   {
     "id": "V062",
@@ -1111,12 +806,7 @@
         "weekday": 2
       }
     },
-    "expected_bytes": "E2 FE 16 05 06 07 02 F5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:366-393",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:418-425"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E2 FE 16 05 06 07 02 F5"
   },
   {
     "id": "V063",
@@ -1137,12 +827,7 @@
         "alarm_type": 0
       }
     },
-    "expected_bytes": "EB FE 16 05 06 07 FF FF 02 FF FF FF FF F2",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "EB FE 16 05 06 07 FF FF 02 FF FF FF FF F2"
   },
   {
     "id": "V064",
@@ -1163,12 +848,7 @@
         "alarm_type": 0
       }
     },
-    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 82 FF FF FF 48",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 82 FF FF FF 48"
   },
   {
     "id": "V065",
@@ -1189,12 +869,7 @@
         "alarm_type": 1
       }
     },
-    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 82 11 11 FF 24",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 82 11 11 FF 24"
   },
   {
     "id": "V066",
@@ -1215,12 +890,7 @@
         "alarm_type": 2
       }
     },
-    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 82 FF FF 08 3F",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 82 FF FF 08 3F"
   },
   {
     "id": "V067",
@@ -1241,12 +911,7 @@
         "alarm_type": 3
       }
     },
-    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 82 FF FF 09 3E",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 82 FF FF 09 3E"
   },
   {
     "id": "V068",
@@ -1267,11 +932,7 @@
         "alarm_type": 2
       }
     },
-    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 04 FF FF 08 BD",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-500"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 04 FF FF 08 BD"
   },
   {
     "id": "V069",
@@ -1292,11 +953,7 @@
         "alarm_type": 2
       }
     },
-    "expected_bytes": "EB FE 16 05 06 07 1E 06 02 08 FF FF 08 BA",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-500"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "EB FE 16 05 06 07 1E 06 02 08 FF FF 08 BA"
   },
   {
     "id": "V070",
@@ -1317,11 +974,7 @@
         "alarm_type": 2
       }
     },
-    "expected_bytes": "EB FE 16 05 06 07 05 07 06 01 FF FF 08 D5",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-500"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "EB FE 16 05 06 07 05 07 06 01 FF FF 08 D5"
   },
   {
     "id": "V071",
@@ -1337,12 +990,7 @@
         "weekday": 2
       }
     },
-    "expected_bytes": "E2 80 03 00 9A",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:366-393",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:418-425"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E2 80 03 00 9A"
   },
   {
     "id": "V072",
@@ -1363,12 +1011,7 @@
         "alarm_type": 0
       }
     },
-    "expected_bytes": "ED 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8F",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "ED 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8F"
   },
   {
     "id": "V073",
@@ -1389,12 +1032,7 @@
         "alarm_type": 0
       }
     },
-    "expected_bytes": "ED 80 03 07 1E 82 0F 00 00 00 00 00 00 00 00 D9",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "ED 80 03 07 1E 82 0F 00 00 00 00 00 00 00 00 D9"
   },
   {
     "id": "V074",
@@ -1415,12 +1053,7 @@
         "alarm_type": 1
       }
     },
-    "expected_bytes": "ED 80 03 07 1E 82 09 00 00 00 00 00 00 00 00 DF",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "ED 80 03 07 1E 82 09 00 00 00 00 00 00 00 00 DF"
   },
   {
     "id": "V075",
@@ -1441,12 +1074,7 @@
         "alarm_type": 2
       }
     },
-    "expected_bytes": "ED 80 03 07 1E 82 0F 00 00 00 00 00 00 00 00 D9",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "ED 80 03 07 1E 82 0F 00 00 00 00 00 00 00 00 D9"
   },
   {
     "id": "V076",
@@ -1467,12 +1095,7 @@
         "alarm_type": 3
       }
     },
-    "expected_bytes": "ED 80 03 07 1E 82 0D 00 00 00 00 00 00 00 00 DB",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:428-500",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:513-539"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "ED 80 03 07 1E 82 0D 00 00 00 00 00 00 00 00 DB"
   },
   {
     "id": "V077",
@@ -1493,11 +1116,7 @@
         "alarm_type": 2
       }
     },
-    "expected_bytes": "ED 80 03 07 1E 04 0F 00 00 00 00 00 00 00 00 57",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-500"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "ED 80 03 07 1E 04 0F 00 00 00 00 00 00 00 00 57"
   },
   {
     "id": "V078",
@@ -1518,11 +1137,7 @@
         "alarm_type": 2
       }
     },
-    "expected_bytes": "ED 80 03 06 1E 08 0F 00 00 00 00 00 00 00 00 54",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-500"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "ED 80 03 06 1E 08 0F 00 00 00 00 00 00 00 00 54"
   },
   {
     "id": "V079",
@@ -1543,11 +1158,7 @@
         "alarm_type": 2
       }
     },
-    "expected_bytes": "ED 80 03 07 05 01 0F 00 00 00 00 00 00 00 00 73",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:444-500"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "ED 80 03 07 05 01 0F 00 00 00 00 00 00 00 00 73"
   },
   {
     "id": "V080",
@@ -1564,12 +1175,7 @@
         "second": 5
       }
     },
-    "expected_bytes": "E7 80 01 7E 0A 11 07 06 05 EC",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:395-415",
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:503-510"
-    ],
-    "origin": "Synthetic static reconstruction from shipped bytecode; not a BLE capture"
+    "expected_bytes": "E7 80 01 7E 0A 11 07 06 05 EC"
   },
   {
     "id": "V081",
@@ -1587,11 +1193,7 @@
       "hour": 7,
       "repeat": -126,
       "type": 2
-    },
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:143-169"
-    ],
-    "origin": "Synthetic notification fixture, not observed hardware traffic"
+    }
   },
   {
     "id": "V082",
@@ -1609,11 +1211,7 @@
       "hour": 8,
       "repeat": 127,
       "type": 1
-    },
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:143-169"
-    ],
-    "origin": "Synthetic notification fixture, not observed hardware traffic"
+    }
   },
   {
     "id": "V083",
@@ -1631,11 +1229,7 @@
       "hour": 7,
       "repeat": -126,
       "type": 15
-    },
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:575-615"
-    ],
-    "origin": "Synthetic notification fixture, not observed hardware traffic"
+    }
   },
   {
     "id": "V084",
@@ -1654,11 +1248,7 @@
       "hour": 7,
       "repeat": -127,
       "type": 9
-    },
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:575-615"
-    ],
-    "origin": "Synthetic notification fixture, not observed hardware traffic"
+    }
   },
   {
     "id": "V085",
@@ -1674,11 +1264,7 @@
     "expected_state": {
       "intensity": 3,
       "timer": 3
-    },
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:619-655"
-    ],
-    "origin": "Synthetic notification fixture, not observed hardware traffic"
+    }
   },
   {
     "id": "V086",
@@ -1694,11 +1280,7 @@
     "expected_state": {
       "intensity": 0,
       "timer": 2
-    },
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:619-655"
-    ],
-    "origin": "Synthetic notification fixture, not observed hardware traffic"
+    }
   },
   {
     "id": "V087",
@@ -1714,11 +1296,7 @@
     "expected_state": {
       "intensity": 2,
       "timer": 2
-    },
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:619-655"
-    ],
-    "origin": "Synthetic notification fixture, not observed hardware traffic"
+    }
   },
   {
     "id": "V088",
@@ -1739,11 +1317,6 @@
       "intensity": 2,
       "timer": 2
     },
-    "evidence": [
-      "work/smali/base/smali/com/ore/okincomfortbed/activity/MainActivity.smali:937-1017 (handleCBData([B)V)",
-      "work/smali/base/smali/com/ore/okincomfortbed/activity/MainActivity.smali:1019-1298 (handleCBData([B)V)"
-    ],
-    "origin": "Synthetic notification fixture, not observed hardware traffic",
     "expected_seed_state": {
       "timer": 3,
       "intensity": 3
@@ -1792,10 +1365,6 @@
       "intensity": 3,
       "timer": 3
     },
-    "evidence": [
-      "work/smali/base/smali/com/ore/okincomfortbed/activity/MainActivity.smali:937-1017 (handleCBData([B)V)"
-    ],
-    "origin": "Synthetic notification fixture, not observed hardware traffic",
     "expected_seed_state": {
       "timer": 3,
       "intensity": 3
@@ -1831,11 +1400,7 @@
       "minute": 30,
       "repeat": -128,
       "type": 2
-    },
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:143-163"
-    ],
-    "origin": "Synthetic source-derived notification; no capture"
+    }
   },
   {
     "id": "V091",
@@ -1856,10 +1421,6 @@
         "alarm_type": 2
       }
     },
-    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 80 FF FF 08 41",
-    "evidence": [
-      "work/jadx/sources/com/ore/okincomfortbed/activity/MainActivity.java:148,462-470"
-    ],
-    "origin": "Synthetic source-derived builder vector; signed -128 differs from positive128 branch"
+    "expected_bytes": "EB FE 16 05 06 07 1E 07 02 80 FF FF 08 41"
   }
 ]

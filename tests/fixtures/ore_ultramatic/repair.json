@@ -1,12 +1,4 @@
 {
-  "finding": "ULTRA-A001",
-  "result": "PASS",
-  "source": "work/smali/base/smali/com/ore/okincomfortbed/activity/MainActivity.smali:937-1017",
-  "new_focused_cases": 8,
-  "affected_vectors": [
-    "V088",
-    "V089"
-  ],
   "observations": [
     {
       "case": "A001-cache20-return",
@@ -398,7 +390,5 @@
       "callback_total": 1,
       "exception": null
     }
-  ],
-  "full91_corpus_replayed": false,
-  "observer": "installed; callbacks are passive reconstruction observations"
+  ]
 }

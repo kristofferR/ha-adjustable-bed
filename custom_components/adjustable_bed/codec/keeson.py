@@ -359,7 +359,7 @@ class UltramaticState:
 class UltramaticParser:
     """Row158's corrected preflight and decoder, without unsafe indexing.
 
-    Fresh 4..20-byte F4 fragments cache and RETURN (ULTRA-A001). The cache
+    Fresh 4..20-byte F4 fragments cache and RETURN. The cache
     survives continuations and exact 10/16 or >20-byte decoding. Its owner
     resets it on session changes, unlike the app's activity-wide lifetime.
     Truncated alarm fields are ignored instead of raising Java bounds errors.

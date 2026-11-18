@@ -1,4 +1,4 @@
-"""All91 accepted row158 literals/state fixtures and corrected repair observations."""
+"""ORE Ultramatic 1.0.5 frames, state fixtures and parser observations."""
 
 from __future__ import annotations
 

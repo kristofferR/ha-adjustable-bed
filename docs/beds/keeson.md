@@ -5262,7 +5262,7 @@ hardware qualification remains external beta/release validation.
 
 #### Setup
 
-Choose **ORE Ultramatic app (Keeson)** and the actual 2-,3- or 4-motor screen.
+Choose **Ultramatic app (ORE)** and the actual 2-, 3- or 4-motor screen.
 The layout belongs to each physical receiver in a paired bed. Detection: none;
 this app accepts any nonempty device name and supplies no safe advertisement filter.
 The live GATT table selects P1 if any FFF0 service exists, otherwise P2. FF20
@@ -5416,11 +5416,13 @@ subscription; the Android app only enables it locally and writes no CCCD.
 
 #### Services
 
-`adjustable_bed.ore_ultramatic_set_alarm` exposes enabled, local minute-precision
-time, raw repeat-128..255 and all four app action choices. Repeat bits 0..6 are
-Sunday..Saturday; editing days also adds 128. Exactly 0 or positive 128 selects
-today, or tomorrow when the requested hour/minute has passed; seconds do not
-change that comparison. P1 carries current clock fields in its query/alarm;
+The bed alarm uses [`set_alarm`](../SERVICES.md#set_alarm) with `enabled`,
+`time`, `weekdays` and `wake_action`. P1 offers `none`, `massage`, `memory_1`
+and `memory_2`; P2 offers `tv`, `massage` and `zero_g` (the app's alarm types
+0, 1 and 3; P2 type 2 sends the same TV record as 0). Weekdays set repeat bits
+0..6, Sunday..Saturday, plus bit 7, as the app does when days are edited. No
+weekdays means once: today, or tomorrow when the requested hour/minute has
+passed; seconds do not change that comparison. P1 carries current clock fields in its query/alarm;
 P2 sends clock, alarm, then query. The bed reports its alarm only when
 asked, so both routes expose **Refresh alarm**, a diagnostic button disabled
 by default. The **Alarm time** sensor shows the reported time when it is a
@@ -5431,10 +5433,6 @@ first import/connect wait. A child-device target retains its side.
 
 #### Evidence
 
-Accepted standalone row 158,91 frozen command/parser vectors and 12 scoped
-ULTRA-A001 repair observations. Both transport builders reproduce every frozen
-transmit literal through the Keeson codec. Package 1.0.5(9), delivery SHA-256
-`b1080bf0ae7691c101622afd95d2406db4acfc766596e8426ce8c61da191e6e7`.
-The acquisition was frozen 2026-07-14; no fresh latest-version attestation is
-claimed. Physical layouts, stopping and reply semantics need external user
-qualification after beta/release; this is not a maintainer hardware task.
+Based on Ultramatic 1.0.5 (`com.ore.ultramatic`). Both transport builders
+reproduce every app frame through the Keeson codec. Physical layouts, stopping
+and reply semantics are unverified on hardware.

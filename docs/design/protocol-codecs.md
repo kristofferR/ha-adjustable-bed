@@ -341,12 +341,12 @@ the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
 name gates, timing and control release policies. No sibling app's parameters
 select its capabilities.
 
-ORE Ultramatic 1.0.5(9), row 158, selects the existing Keeson codec only after
+ORE Ultramatic 1.0.5 selects the existing Keeson codec only after
 all 81 frozen transmit literals reproduce through its production encoders.
 Both the big-endian P1 and reserved-byte little-endian P2 builders are proven;
 shared names or GATT roles do not establish that match. The app profile owns
 GATT-dependent selection, alarm choices and calendar transformations. A shared
 ORE controller extension owns route capabilities and session-fenced callbacks,
-with corrected ULTRA-A001 early returns in the Keeson parser. The full 91-vector
-harness and 12 frozen repair observations remain source-backed fixtures, with
+with corrected fragment early returns in the Keeson parser. The full 91-vector
+harness and 12 parser observations remain fixtures, with
 explicit bounds-safe/session-lifetime differences for Home Assistant.

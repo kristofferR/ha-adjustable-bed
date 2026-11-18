@@ -1,4 +1,4 @@
-"""ORE Ultramatic 1.0.5(9), row158, over the literal-proven Keeson codec.
+"""ORE Ultramatic 1.0.5 over the literal-proven Keeson codec.
 
 P1/P2 are selected from live FFF0 presence, never from an advertisement or name.
 Timing, keys and alarm choices below belong only to this accepted app.
@@ -36,6 +36,20 @@ P1_RECALL: Final = {
     "flat": 0x01000002,
 }
 P1_SAVE: Final = {name: word + 0x1F000000 for name, word in P1_RECALL.items()}
+# The app's alarm types by wake action; the first is the default. On P2 types
+# 0 and 2 both send TV, so TV keeps type 0.
+WAKE_KINDS: Final[dict[Route, dict[str, int]]] = {
+    "P1": {"none": 0, "massage": 1, "memory_1": 2, "memory_2": 3},
+    "P2": {"tv": 0, "massage": 1, "zero_g": 3},
+}
+
+
+def repeat_mask(weekdays: tuple[int, ...]) -> int:
+    """Sunday..Saturday bits 0..6 (Monday is 0 in a request); edited days also set bit 7.
+
+    No days means once, as the app's mask 0 does.
+    """
+    return 128 | sum(1 << ((day + 1) % 7) for day in weekdays) if weekdays else 0
 
 
 def profile(route: Route) -> KeesonProfile:

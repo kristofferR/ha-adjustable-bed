@@ -53,16 +53,17 @@ async def test_registered_alarm_after_idle_or_saved_route_restore(
     now = datetime(2026, 11, 17, 7, 6, 5)
     try:
         with patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(active, "both")], [])), patch("custom_components.adjustable_bed.beds.ore_ultramatic.controller.dt_util.now", return_value=now), virtual_clock():
-            await hass.services.async_call(const.DOMAIN, "ore_ultramatic_set_alarm", {
+            await hass.services.async_call(const.DOMAIN, "set_alarm", {
                 "device_id": "bed", "enabled": True, "time": "07:30:00",
-                "repeat": -128, "alarm_type": 2,
+                # Massage is offered on both routes, so a changed live route still accepts it.
+                "weekdays": ["monday"], "wake_action": "massage",
             }, blocking=True)
         assert mock_establish_connection.await_count == 1
         assert active.controller.capability_snapshot() == {"ultramatic_route": live}
         assert _written(client) == (
-            ["ebfe160506071e070280ffff0841", "e2fe1605060702f5"]
+            ["ebfe160506071e0702821111ff24", "e2fe1605060702f5"]
             if live == "P1" else
-            ["e780017e0a11070605ec", "ed8003071e800f0000000000000000db", "e28003009a"]
+            ["e780017e0a11070605ec", "ed8003071e82090000000000000000df", "e28003009a"]
         )
     finally:
         if restored:
@@ -91,7 +92,7 @@ async def test_unknown_cached_route_rejects_all_targets_before_reconnect_or_writ
         virtual_clock(),
         pytest.raises(ServiceValidationError, match="discover its bed route"),
     ):
-        await hass.services.async_call(const.DOMAIN, "ore_ultramatic_set_alarm", {
+        await hass.services.async_call(const.DOMAIN, "set_alarm", {
             "device_id": ["first", "invalid"], "enabled": True, "time": "07:30:00",
         }, blocking=True)
     mock_establish_connection.assert_not_awaited()
