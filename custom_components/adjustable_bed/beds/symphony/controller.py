@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability
 from ...app_session import app_session
 from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
 from ...codec import keeson, okin_nframe, okin_soundwave
@@ -444,6 +445,13 @@ class SymphonyController(KeesonController):
             side=side,
             cache=self._alarm_cache,
         )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        modes = self.app.alarm_modes
+        if not modes:
+            return None
+        return AlarmCapability(wake_actions=modes, weekdays=True, cancel_running=True, resource=None)
 
     def alarm_frames(
         self, *, sides: tuple[int, ...], enabled: bool, hour: int, minute: int, week: int, mode: str

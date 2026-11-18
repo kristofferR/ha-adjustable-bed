@@ -62,6 +62,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
@@ -2169,7 +2170,16 @@ async def handle_set_alarm(call: ServiceCall) -> None:
     given = [name for name in ALARM_OPTIONAL_FIELDS if name in call.data]
     targets = _call_targets(call)
 
-    if _profile_route(targets, {BED_TYPE_ZSERIES: "zseries"}, SERVICE_SET_ALARM):
+    route = _profile_route(
+        targets, {BED_TYPE_ZSERIES: "zseries", BED_TYPE_SYMPHONY: "symphony"}, SERVICE_SET_ALARM
+    )
+    if route == "symphony":
+        # Symphony reads the current alarm table live before rewriting one side.
+        from .beds.symphony.services import set_symphony_alarm
+
+        await set_symphony_alarm(call, alarm, given)
+        return
+    if route == "zseries":
         # Z-Series alarms exist only after a live manufacturer read; every
         # target is the same profile, so the first check fails before any write.
         async def write_zseries(controller: BedController) -> None:

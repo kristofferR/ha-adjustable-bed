@@ -384,13 +384,13 @@ async def test_registered_split_alarm_hydrates_peer_and_repeats_captured_frame(h
     with virtual_clock():
         await hass.services.async_call(
             DOMAIN,
-            "symphony_sense_set_alarm",
+            "set_alarm",
             {
                 "device_id": [device],
                 "enabled": True,
                 "time": "09:15:00",
-                "weekdays": [1],
-                "wake_mode": "memory_1",
+                "weekdays": ["monday"],
+                "wake_action": "memory_1",
             },
             blocking=True,
         )
@@ -420,9 +420,9 @@ async def test_split_p3_midnight_conflict_only_blocks_enabling(hass, monkeypatch
     with virtual_clock():
         if enabled:
             with pytest.raises(ServiceValidationError, match="opposite side"):
-                await hass.services.async_call(DOMAIN, "symphony_sense_set_alarm", data, blocking=True)
+                await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         else:
-            await hass.services.async_call(DOMAIN, "symphony_sense_set_alarm", data, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     writes = packets(client)
     alarm_writes = [frame for frame in writes if frame.startswith("0705")]
     if enabled:
@@ -470,14 +470,14 @@ async def test_review_S1_both_split_alarm_writes_one_composed_peer_table(hass, s
     with virtual_clock():
         await hass.services.async_call(
             DOMAIN,
-            "symphony_sense_set_alarm",
+            "set_alarm",
             {
                 "device_id": [device],
                 "side": "both",
                 "enabled": True,
                 "time": "09:15:00",
-                "weekdays": [1],
-                "wake_mode": "memory_1",
+                "weekdays": ["monday"],
+                "wake_action": "memory_1",
             },
             blocking=True,
         )
@@ -619,14 +619,14 @@ async def test_review_S3_sequential_alarm_rehydrates_inside_executing_session(
     with virtual_clock():
         await hass.services.async_call(
             DOMAIN,
-            "symphony_sense_set_alarm",
+            "set_alarm",
             {
                 "device_id": [device],
                 "side": side,
                 "enabled": True,
                 "time": "09:15:00",
-                "weekdays": [1],
-                "wake_mode": "memory_1",
+                "weekdays": ["monday"],
+                "wake_action": "memory_1",
             },
             blocking=True,
         )
