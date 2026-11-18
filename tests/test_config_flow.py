@@ -1743,8 +1743,9 @@ class TestBluetoothDiscoveryFlow:
         assert result["step_id"] == "bluetooth_confirm"
         result = await _past_app_question(hass, result)
         markers = {marker.schema: marker for marker in form_fields(result["data_schema"])}
-        assert markers[CONF_MOTOR_PULSE_COUNT].default() == "3"
-        assert markers[CONF_MOTOR_PULSE_DELAY_MS].default() == "50"
+        assert markers[CONF_MOTOR_PULSE_COUNT].default() == 3
+        # The 50 ms cadence is the bed's own and not a setting.
+        assert CONF_MOTOR_PULSE_DELAY_MS not in markers
 
     def test_disconnect_after_command_default_per_bed_type(self):
         """Beds that must hold the link open keep the option off; others get it on."""
@@ -1950,7 +1951,8 @@ class TestBluetoothDiscoveryFlow:
         # marker must be set here and not only in the options flow: otherwise a
         # protocol migration would treat a deliberate value as legacy data.
         assert result["data"][CONF_MOTOR_PULSE_USER_SET] is True
-        assert result["data"][CONF_DISABLE_ANGLE_SENSING] is False
+        # Reading the position is a Linak's default, so nothing is stored.
+        assert CONF_DISABLE_ANGLE_SENSING not in result["data"]
 
     async def test_bluetooth_confirm_bed_type_dropdown_uses_display_names(
         self,
@@ -2847,7 +2849,7 @@ class TestManualFlow:
         assert CONF_MOTOR_COUNT not in markers
         assert CONF_HAS_MASSAGE not in markers
         # The count bounds each HA movement; the app fixes the refresh interval.
-        assert markers[CONF_MOTOR_PULSE_COUNT].default() == "10"
+        assert markers[CONF_MOTOR_PULSE_COUNT].default() == 10
         assert CONF_MOTOR_PULSE_DELAY_MS not in markers
 
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
@@ -5396,13 +5398,16 @@ async def test_the_preview_follows_the_adapter_the_user_actually_picked(
         )
         # An invalid timing value re-renders the form with everything the
         # user submitted still in hand.
-        rendered = await _settings(
-            hass,
-            result,
-            {CONF_MOTOR_PULSE_COUNT: "not a number", CONF_PREFERRED_ADAPTER: "esphome_bedroom"},
-        )
+        with patch(
+            "custom_components.adjustable_bed.config_flow._invalid_pulse_count", return_value=True
+        ):
+            rendered = await _settings(
+                hass,
+                result,
+                {CONF_MOTOR_PULSE_COUNT: 7, CONF_PREFERRED_ADAPTER: "esphome_bedroom"},
+            )
         assert rendered["type"] is FlowResultType.FORM
-        assert rendered["errors"] == {CONF_MOTOR_PULSE_COUNT: "invalid_number"}
+        assert rendered["errors"] == {CONF_MOTOR_PULSE_COUNT: "invalid_pulse_count_range"}
 
     assert seen, "the form should have been re-rendered with a preview"
     _address, adapter, bed_type, _variant = seen[-1]
