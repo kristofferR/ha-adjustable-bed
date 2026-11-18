@@ -8626,7 +8626,7 @@
         }
       }
     },
-    "save_position": {
+    "estimate_save_position": {
       "name": "Save position",
       "description": "Save the current estimated position under a name. Every included motor must be tracking.",
       "fields": {
@@ -8648,7 +8648,7 @@
         }
       }
     },
-    "rename_position": {
+    "estimate_rename_position": {
       "name": "Rename saved position",
       "description": "Rename a saved position, and optionally show or hide its button entity.",
       "fields": {
@@ -8674,7 +8674,7 @@
         }
       }
     },
-    "update_position": {
+    "estimate_update_position": {
       "name": "Update saved position",
       "description": "Replace a saved position with the current estimated position of the sides it covers.",
       "fields": {
@@ -8692,7 +8692,7 @@
         }
       }
     },
-    "delete_position": {
+    "estimate_delete_position": {
       "name": "Delete saved position",
       "description": "Delete a saved position and its button entity.",
       "fields": {
@@ -8710,7 +8710,7 @@
         }
       }
     },
-    "recall_position": {
+    "estimate_recall_position": {
       "name": "Recall saved position",
       "description": "Move each motor for its calculated time to reach a saved position. Every covered side must be tracking. The result is estimated.",
       "fields": {
@@ -8728,7 +8728,7 @@
         }
       }
     },
-    "set_position_reference": {
+    "estimate_set_reference": {
       "name": "Set position reference",
       "description": "Confirm the selected motors are flat now. Their estimates start again at 0%.",
       "fields": {
@@ -8746,7 +8746,7 @@
         }
       }
     },
-    "confirm_position_unchanged": {
+    "estimate_confirm_unchanged": {
       "name": "Confirm position unchanged",
       "description": "Trust the estimate restored after a restart because the bed has not moved since.",
       "fields": {
@@ -8760,7 +8760,7 @@
         }
       }
     },
-    "mark_position_unknown": {
+    "estimate_mark_unknown": {
       "name": "Mark position unknown",
       "description": "Report a movement the integration could not see, such as the remote or the bed's app.",
       "fields": {

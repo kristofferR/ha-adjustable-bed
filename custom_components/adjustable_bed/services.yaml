@@ -2773,7 +2773,7 @@ gmmotor:
           max: 2559.999
           mode: box
 
-save_position:
+estimate_save_position:
   fields:
     device_id: &estimate_device
       required: true
@@ -2802,7 +2802,7 @@ save_position:
       selector:
         boolean:
 
-rename_position:
+estimate_rename_position:
   fields:
     device_id: *estimate_device
     side: *estimate_side
@@ -2817,25 +2817,25 @@ rename_position:
       selector:
         boolean:
 
-update_position:
+estimate_update_position:
   fields:
     device_id: *estimate_device
     side: *estimate_side
     position: *saved_position
 
-delete_position:
+estimate_delete_position:
   fields:
     device_id: *estimate_device
     side: *estimate_side
     position: *saved_position
 
-recall_position:
+estimate_recall_position:
   fields:
     device_id: *estimate_device
     side: *estimate_side
     position: *saved_position
 
-set_position_reference:
+estimate_set_reference:
   fields:
     device_id: *estimate_device
     side: *estimate_side
@@ -2856,12 +2856,12 @@ set_position_reference:
             - value: feet
               label: Feet
 
-confirm_position_unchanged:
+estimate_confirm_unchanged:
   fields:
     device_id: *estimate_device
     side: *estimate_side
 
-mark_position_unknown:
+estimate_mark_unknown:
   fields:
     device_id: *estimate_device
     side: *estimate_side
