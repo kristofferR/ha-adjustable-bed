@@ -17,6 +17,7 @@ from bleak import BleakClient
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_PRESETS, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...const import (
@@ -33,6 +34,7 @@ from ...profiles.n32_motion_bed import (
     REFRESH_MS,
     SLOTS,
     alarm_frame,
+    alarm_week,
     clock_frame,
     effective_week,
     manufacturer_identity,
@@ -66,6 +68,16 @@ class _Link:
     client: BleakClient
     write: BleakGATTCharacteristic
     notify: BleakGATTCharacteristic
+
+
+# Shared wake actions and this app's mode names, default first.
+_ALARM_MODES: Final = {
+    "none": "none",
+    "memory_1": "m1",
+    "memory_2": "m2",
+    "memory_3": "m3",
+    "flat": "flat",
+}
 
 
 class N32MotionBedController(Okin64BitController):
@@ -487,8 +499,32 @@ class N32MotionBedController(Okin64BitController):
         for slot in SLOTS:
             await self._write(link, query_frame(slot), cancel)
 
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(
+            wake_actions=tuple(_ALARM_MODES), weekdays=True, slots=len(SLOTS), live_check=True
+        )
+
     @staticmethod
-    def validate_alarm(slot: int, operation: str, row: AlarmRow | None) -> None:
+    def _alarm_operation(alarm: AlarmRequest) -> tuple[str, AlarmRow | None]:
+        # Turning an alarm off keeps the slot's reported time, as the app does.
+        if not alarm.enabled:
+            return "disable", None
+        week = alarm_week(alarm.weekdays)
+        mode = ALARM_MODES[_ALARM_MODES[alarm.wake_action]]
+        return "set", AlarmRow(alarm.hour, alarm.minute, week, mode, 1)
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_alarm_slot(alarm.slot, *self._alarm_operation(alarm))
+
+    async def check_alarm(self, alarm: AlarmRequest) -> None:
+        await self.check_alarm_slot(alarm.slot, *self._alarm_operation(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.apply_alarm(alarm.slot, *self._alarm_operation(alarm))
+
+    @staticmethod
+    def validate_alarm_slot(slot: int, operation: str, row: AlarmRow | None) -> None:
         if type(slot) is not int or slot not in SLOTS:
             raise ValueError("N32 has app alarm slots 1, 2 and 3")
         if operation not in ("set", "disable", "delete", "query"):
@@ -528,8 +564,8 @@ class N32MotionBedController(Okin64BitController):
         self._live(link)
         return self._seen[slot]
 
-    async def check_alarm(self, slot: int, operation: str, row: AlarmRow | None) -> None:
-        self.validate_alarm(slot, operation, row)
+    async def check_alarm_slot(self, slot: int, operation: str, row: AlarmRow | None) -> None:
+        self.validate_alarm_slot(slot, operation, row)
         self._live()
         if operation == "disable":
             report = await self._query_slot(slot)
@@ -546,7 +582,7 @@ class N32MotionBedController(Okin64BitController):
                 raise ValueError("N32 reported an unsupported alarm; nothing was changed")
 
     async def apply_alarm(self, slot: int, operation: str, row: AlarmRow | None) -> None:
-        await self.check_alarm(slot, operation, row)
+        await self.check_alarm_slot(slot, operation, row)
         link, cancel = self._live(), self._coordinator.cancel_command
         revision: tuple[int, int] | None = None
         if operation == "query":
