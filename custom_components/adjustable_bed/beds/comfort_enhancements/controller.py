@@ -1,6 +1,6 @@
 """Comfort Enhancements 1.0.3 (com.okin.enhancements), explicit MC2..MC5 layouts.
 
-Evidence: APK Protocol Audit row 110. No live status parser is reachable in
+No live status parser is reachable in
 the app, so local control state is assumed only.
 """
 
@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_PRESETS, CardPlacement
 from ...codec import keeson as codec
 from ...const import (
@@ -47,6 +48,10 @@ def clock_frame(now: datetime) -> bytes:
     return codec.checked(
         bytes((0xE2, 0xFE, 0x16, now.second, now.minute, now.hour, (now.weekday() + 1) % 7))
     )
+
+
+# Index is the app's memory number; none keeps the bed still.
+_ALARM_MEMORIES: Final = ("none", "memory_1", "memory_2")
 
 
 def alarm_frame(
@@ -467,30 +472,29 @@ class ComfortEnhancementsController(ProfileExecution[keeson_profiles.KeesonProfi
     async def sync_clock(self) -> None:
         await self.write_command(clock_frame(dt_util.now()))
 
-    def validate_alarm(
-        self, *, enabled: bool, hour: int, minute: int, memory: int, massage: bool
-    ) -> None:
-        if not 0 <= hour <= 23 or not 0 <= minute <= 59:
-            raise ValueError("Choose a valid alarm time")
-        if enabled and memory:
-            self._memory_id(memory)
-        # AlarmFragment exposes its massage checkbox on all four layouts,
-        # including MC3, independently of the hidden massage page.
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        # The alarm page shows its massage checkbox on all four layouts.
+        return AlarmCapability(wake_actions=_ALARM_MEMORIES, massage=True)
 
-    async def set_alarm(
-        self, *, enabled: bool, hour: int, minute: int, memory: int, massage: bool
-    ) -> None:
-        self.validate_alarm(
-            enabled=enabled, hour=hour, minute=minute, memory=memory, massage=massage
-        )
-        value = 0xF0 + self._memory_id(memory) if enabled and memory else 0xFF
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if not 0 <= alarm.hour <= 23 or not 0 <= alarm.minute <= 59:
+            raise ValueError("Choose a valid alarm time")
+        memory = _ALARM_MEMORIES.index(alarm.wake_action)
+        if alarm.enabled and memory:
+            self._memory_id(memory)
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_alarm(alarm)
+        memory = _ALARM_MEMORIES.index(alarm.wake_action)
+        value = 0xF0 + self._memory_id(memory) if alarm.enabled and memory else 0xFF
         await self.write_command(
             alarm_frame(
                 dt_util.now(),
-                enabled=enabled,
-                hour=hour,
-                minute=minute,
-                massage=massage,
+                enabled=alarm.enabled,
+                hour=alarm.hour,
+                minute=alarm.minute,
+                massage=alarm.massage,
                 memory=value,
             )
         )

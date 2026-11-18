@@ -185,15 +185,17 @@ reports the light state as the **Light** binary sensor.
 
 ### Alarms
 
-`adjustable_bed.nerum_set_alarms` writes all three records so P2 cannot overwrite
-unobserved slots accidentally. Each record has `hour`, `minute`, `enabled`,
-`repeat` and `action` (`none`, `memory_1`, `memory_2`, `light`). `repeat` is the
-wire mask: bits 0 through 6 are Sunday through Saturday, bit 7 is recurring.
-For a one-shot alarm supply today's or tomorrow's day bit. P2 disabling an alarm
-zeroes repeat; P3 preserves repeat and clears its separate on field. No phone
-sound is configured. Dormant wake type 9 is not an offered action.
+[`set_alarm`](../SERVICES.md#set_alarm) sets one of the three alarms (`slot` 1–3)
+with a wake action of `none`, `memory_1`, `memory_2` or `light`, repeating
+`weekdays` or once. The app writes all three records as one bank, so Home
+Assistant first reads the other two from the bed (the alarm query below) and
+writes them back unchanged; nothing is written if the bed does not report them.
+Repeating days set bits 0 through 6 (Sunday through Saturday) and bit 7; a
+one-shot alarm carries only its next day's bit. Turning an alarm off keeps its
+time: P2 zeroes repeat, P3 clears its separate on field. No phone sound is
+configured. Dormant wake type 9 is not an offered action.
 
-The bank action syncs RTC immediately. P2 writes its complete bank at 300 ms.
+An alarm change syncs the clock immediately. P2 writes its complete bank at 300 ms.
 P3 writes slots at 100/200/300 ms and queries them at 400/600/800 ms. Standalone
 refresh (the disabled-by-default **Refresh alarms** diagnostic button) queries P2
 once or P3 slots at 0/200/400 ms. Clock fields are raw numbers:
@@ -237,9 +239,4 @@ proxies remain supported.
 
 ### Analysis provenance
 
-- `com.okin.bedding.nerum` 1.0.8 (12), four-APK XAPK SHA-256
-  `f26fa526ee1de72643aed1ca968c7f29a5651cc1dca72344d014653826608b7f`.
-- Accepted COMPLETE report and sole scoped R1/R2 recheck, 2026-11-16.
-  Previously verified delivery, no new online recency attestation.
-- Hardware remains unverified. External beta/release validation covers scan/GATT
-  selection, release, clock fields, three alarms and real notifications.
+Based on Nerum 1.0.8 (`com.okin.bedding.nerum`).

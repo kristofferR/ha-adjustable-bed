@@ -19,8 +19,8 @@ from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT_APP,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
 )
@@ -40,7 +40,7 @@ async def runtime(hass, request, mock_coordinator_connected, mock_bleak_client, 
             CONF_BED_TYPE: BED_TYPE_RICHMAT_APP,
             CONF_PROTOCOL_VARIANT: getattr(request, "param", "7IRM"),
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     entry.add_to_hass(hass)

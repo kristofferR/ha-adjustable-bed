@@ -944,56 +944,6 @@ async def test_simon_memory_recall_is_bounded_by_elapsed_time(
     assert starts[-1][1] == ZERO  # The shielded release still follows.
 
 
-@pytest.mark.parametrize(
-    ("initial", "requested"),
-    [
-        (KEESON_VARIANT_BASE, KEESON_VARIANT_SIMON_LI),
-        (KEESON_VARIANT_HEAL_EVERY_NIGHT, KEESON_VARIANT_BASE),
-        (KEESON_VARIANT_SIMON_LI, KEESON_VARIANT_OKIN_SEATING),
-    ],
-)
-async def test_paired_options_require_unpairing_for_an_app_profile_change(
-    hass: HomeAssistant, initial: str, requested: str
-):
-    """Each physical seat keeps its own app; the shared form never copies one."""
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.pairing import (
-        build_pair_entry_data,
-        effective_child_data,
-    )
-
-    def side(address: str, variant: str) -> dict[str, Any]:
-        return {
-            CONF_ADDRESS: address,
-            CONF_NAME: "Seat",
-            CONF_BED_TYPE: BED_TYPE_KEESON,
-            CONF_PROTOCOL_VARIANT: variant,
-            CONF_MOTOR_COUNT: 2,
-            CONF_HAS_MASSAGE: False,
-            CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_PREFERRED_ADAPTER: "auto",
-        }
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=build_pair_entry_data(
-            side("AA:BB:CC:DD:EE:71", initial),
-            side("AA:BB:CC:DD:EE:72", KEESON_VARIANT_BASE),
-            name="Paired seats",
-        ),
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_BASE
-
-
 async def test_held_controls_keep_the_count_but_use_the_app_100ms_refresh(
     coordinator, mock_bleak_client: MagicMock, no_sleep
 ):

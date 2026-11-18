@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { TemplateResult } from "lit";
-import { deviceName, entityLabel } from "./names";
+import { deviceName, entityLabel, sideName } from "./names";
 import type { EntityNameItem, HassEntity, HomeAssistant } from "./types";
 import { placed } from "./test-placements";
 
@@ -111,4 +111,13 @@ test("a renamed entity re-renders once HA installs its new name formatter", () =
   expect(card.shouldUpdate(new Map([["hass", hass]]))).toBe(true);
   card.hass = { ...renamed };
   expect(card.shouldUpdate(new Map([["hass", renamed]]))).toBe(false);
+});
+
+test("a paired side drops the parent's name it repeats", () => {
+  expect(sideName("Bed Left", "Bed")).toBe("Left");
+  expect(sideName("Bed - Right", "Bed")).toBe("Right");
+  expect(sideName("Kris", "Bed")).toBe("Kris");
+  expect(sideName("Bedroom", "Bed")).toBe("Bedroom");
+  expect(sideName("Bed", "Bed")).toBe("Bed");
+  expect(sideName("Left", undefined)).toBe("Left");
 });

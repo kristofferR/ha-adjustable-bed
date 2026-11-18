@@ -1,9 +1,6 @@
 """HJBed 2.1.2 exact selectable profiles and static details.
 
-Source identity, exclusions and complete bindings: APK Protocol Audit row 121.
-Generated outside this repository from the accepted report (SHA-256
-88ce24aebae03a2a83fb0527d5b679329aaedc6624fd9a5c7efeb10fdf45d3f0);
-no generator is checked in, so edits are by hand. Hardware unverified.
+Generated outside this repository from the app; no generator is checked in, so edits are by hand. Hardware unverified.
 """
 
 from __future__ import annotations

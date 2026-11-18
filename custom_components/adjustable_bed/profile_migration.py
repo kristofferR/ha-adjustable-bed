@@ -42,7 +42,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.translation import async_get_translations
 
 from .app_families import GUIDED_FAMILIES, AppFamily
-from .const import CONF_BED_TYPE, DOMAIN, PAIR_SIDES
+from .const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT, DOMAIN, PAIR_SIDES
 from .pairing import effective_child_data, get_child, is_paired
 
 if TYPE_CHECKING:
@@ -109,11 +109,21 @@ class MigrationSnapshot:
         return dict(self.data) == dict(entry.data) and dict(self.options) == dict(entry.options)
 
     def is_unchanged_by(self, staged: Mapping[str, Any]) -> bool:
-        """Return True when a staged answer resolves to the saved setup."""
+        """Return True when a staged answer resolves to the saved setup.
+
+        A standalone bed runs the route its data stores, so a route saved only
+        in options still needs the change written to data.
+        """
         saved = {**self.data, **self.options}
         return {
             key: value for key, value in staged.items() if key in saved or key != CONF_NAME
-        } == saved
+        } == saved and self.runs_route_of(staged)
+
+    def runs_route_of(self, staged: Mapping[str, Any]) -> bool:
+        """Return True when the saved data already runs the staged route."""
+        return all(
+            self.data.get(key) == staged.get(key) for key in (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT)
+        )
 
     def staged(self, title: str) -> dict[str, Any]:
         """Return a mutable working copy that the wizard may change."""
@@ -122,9 +132,19 @@ class MigrationSnapshot:
         return staged
 
 
-def reconfigure_context(entry: ConfigEntry) -> ConfigFlowContext:
-    """Return the flow context that opens the guided change for an entry."""
-    return ConfigFlowContext(source=SOURCE_RECONFIGURE, entry_id=entry.entry_id)
+# Context key a repair sets to preselect the app it suggests in Reconfigure.
+SUGGESTED_CHOICE: Final = "suggested_choice"
+
+
+def reconfigure_context(entry: ConfigEntry, suggested: str | None = None) -> ConfigFlowContext:
+    """Return the flow context that opens Reconfigure for an entry.
+
+    ``suggested`` is a bed-type list value the bed-type question preselects.
+    """
+    context = ConfigFlowContext(source=SOURCE_RECONFIGURE, entry_id=entry.entry_id)
+    if suggested is not None:
+        context[SUGGESTED_CHOICE] = suggested  # type: ignore[typeddict-unknown-key]
+    return context
 
 
 @dataclass(frozen=True, slots=True)

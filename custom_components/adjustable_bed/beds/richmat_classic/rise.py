@@ -1,7 +1,7 @@
 """Luuna Rise 1.0.13 and Power Cool 1.0.8 direct bed utilities.
 
-Catalogs and gesture handlers remain member-specific. These bounded shared
-builders are established by cluster-021's accepted reconciliation.
+Catalogs and gesture handlers remain member-specific. These bounded
+builders are shared by both apps.
 """
 
 from __future__ import annotations

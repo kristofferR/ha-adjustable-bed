@@ -1,6 +1,6 @@
 """HHC ``$#`` wire codec: the MotoMotion, MotoSleep and Power Bob apps.
 
-The forms come from the accepted MotoMotion 3.1.9 report (row113); MotoSleep
+The forms come from MotoMotion 3.1.9; MotoSleep
 5.1.5 and Power Bob 2.0.3 send the ASCII, binary and letter forms. The apps
 write six frame forms:
 

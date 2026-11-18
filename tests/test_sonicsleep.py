@@ -15,6 +15,7 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import per_side_profile
 from custom_components.adjustable_bed.beds.sonicsleep import controller as bed
 from custom_components.adjustable_bed.beds.sonicsleep.protocol import Alarm, decode, form_alarm
+from custom_components.adjustable_bed.card import CARD_PRESET_SAVE
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.detection import bed_type_label, get_bed_type_options
 from custom_components.adjustable_bed.profiles.sonicsleep import DIRECTIONS, ROUTES
@@ -128,6 +129,10 @@ async def test_observations_do_not_enable_unproven_setters_or_positions(clock):
     assert ctrl.execution.hold == "stream" and not ctrl.execution.concurrent
     assert len(ctrl.controller_button_specs) == 8
     assert all(s.requires_confirmation for s in ctrl.controller_button_specs if s.key.endswith("_save"))
+    # Saves sit beside the presets as saves, so the card never offers them as quick actions.
+    saves = [s for s in ctrl.controller_button_specs if s.key.endswith("_save")]
+    assert {s.card for s in saves} == {CARD_PRESET_SAVE}
+    assert {s.translation_key for s in saves} == {"sonicsleep_save"}
 
 
 async def test_alarm_list_escalation_ack_and_opaque_caller_domains(clock):

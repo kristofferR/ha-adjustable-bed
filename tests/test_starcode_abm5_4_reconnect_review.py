@@ -31,7 +31,7 @@ def cold_child(hass, address, *, modern=False):
             const.CONF_STARCODE_UI_SELECTOR: "BOX25" if modern else "BOX3633",
             const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220" if modern else "BOX3633",
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Coroutine
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, Final
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import CARD_UTILITY
 from ...command_scheduler import current_command_context
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
@@ -55,6 +56,10 @@ async def settled[T](operation: Coroutine[object, object, T]) -> T:
     return result
 
 
+# How long to wait for the bed's alarm replies before giving up on a change.
+ALARM_REPLY_TIMEOUT_S: Final = 3.0
+
+
 class NerumController(ProfileExecution[app.NerumProfile], BedController):
     def __init__(
         self, coordinator: AdjustableBedCoordinator, protocol: app.Protocol = "p2"
@@ -67,6 +72,9 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
         self._link: Link | None = None
         self._notifying = False
         self._replies = state.Replies()
+        # The three alarms as the bed reported them on this connection.
+        self._reported: list[app.Alarm | None] = [None, None, None]
+        self._alarm_reply = asyncio.Event()
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -431,6 +439,60 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
             raise ValueError("Nerum P1 has no alarm query")
         await self._query_alarms(self._live())
 
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if self.profile.key == "p1":
+            return None
+        # The app writes all three alarms as one bank, so the other two come
+        # from the bed's own report on this connection.
+        return AlarmCapability(
+            wake_actions=tuple(app.WAKE),
+            weekdays=True,
+            slots=3,
+            live_check=True,
+            resource=None,
+        )
+
+    async def check_alarm(self, alarm: AlarmRequest) -> None:
+        await self._reported_bank()
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        bank = list(await self._reported_bank())
+        if alarm.enabled:
+            # Bits 0-6 are Sunday-Saturday, bit 7 repeats; a one-shot alarm
+            # carries only its next day's bit.
+            days = alarm.weekdays or (alarm.occurrence().weekday(),)
+            repeat = sum(1 << ((day + 1) % 7) for day in set(days))
+            bank[alarm.slot - 1] = app.Alarm(
+                alarm.hour,
+                alarm.minute,
+                repeat | (0x80 if alarm.weekdays else 0),
+                app.WAKE[alarm.wake_action],
+                True,
+            )
+        else:
+            bank[alarm.slot - 1] = replace(bank[alarm.slot - 1], on=False)
+        # The next change reads the bed again instead of trusting this write.
+        self._reported = [None, None, None]
+        await self.set_alarms((bank[0], bank[1], bank[2]))
+
+    async def _reported_bank(self) -> tuple[app.Alarm, app.Alarm, app.Alarm]:
+        link = self._live()
+        if None in self._reported:
+            self._alarm_reply.clear()
+            await self._query_alarms(link)
+            try:
+                async with asyncio.timeout(ALARM_REPLY_TIMEOUT_S):
+                    while None in self._reported:
+                        await self._alarm_reply.wait()
+                        self._alarm_reply.clear()
+            except TimeoutError:
+                pass
+        first, second, third = self._reported
+        if first is None or second is None or third is None:
+            raise AlarmError("alarm_refresh_needed", "The bed did not report its alarms; try again")
+        return first, second, third
+
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback
         link = self._live()
@@ -467,6 +529,8 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
         elif reply is not None and not isinstance(reply, state.Operation):
             # P1 operation replies only echo which app control ran; not state.
             for slot, alarm in reply:
+                self._reported[slot - 1] = alarm
+                self._alarm_reply.set()
                 self.forward_controller_state_updates(
                     state.ALARM_KEYS[slot - 1](f"{alarm.hour:02}:{alarm.minute:02}"),
                     state.ALARM_DETAIL_KEYS[slot - 1](state.alarm_detail(alarm)),
@@ -526,6 +590,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
         self._link = None
         self._notifying = False
         self._replies = state.Replies()
+        self._reported = [None, None, None]
 
     async def read_positions(self, motor_count: int = 2) -> None:
         return

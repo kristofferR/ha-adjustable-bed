@@ -1,4 +1,4 @@
-"""Frozen Nerum row103 literals and session-safe HA execution."""
+"""Frozen Nerum 1.0.8 literals and session-safe HA execution."""
 
 from __future__ import annotations
 

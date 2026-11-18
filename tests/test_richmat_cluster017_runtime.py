@@ -63,7 +63,7 @@ async def runtime(hass, request, mock_coordinator_connected, mock_bleak_client, 
             "product_type": layout,
             "ble_device_name": "6BRM-bed",
             "disable_angle_sensing": True,
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
             "motor_pulse_count": 1,
         },
     )
@@ -349,7 +349,7 @@ async def test_real_concurrent_pair_routes_each_app_session_and_single_side(hass
                 "bed_type": const.BED_TYPE_RICHMAT_CLASSIC_APPS,
                 "protocol_variant": app,
                 "product_type": "6BRM",
-                "disconnect_after_command": False,
+                "connection_mode": "idle",
             },
         )
         entry.add_to_hass(hass)

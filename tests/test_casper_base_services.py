@@ -110,7 +110,7 @@ async def test_real_coordinator_serializes_alarm_pair(hass):
             "bed_type": "casper_base",
             "protocol_variant": "nisconup355b",
             "disable_angle_sensing": True,
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
         },
     )
     c = AdjustableBedCoordinator(hass, entry)

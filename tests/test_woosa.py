@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Iterator
-from datetime import datetime, time
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -24,7 +24,6 @@ from custom_components.adjustable_bed.beds.solace.controller import (
     SolaceController,
     build_solace_clock_command,
 )
-from custom_components.adjustable_bed.beds.solace.services import handle_solace_set_alarm
 from custom_components.adjustable_bed.beds.woosa import MASSAGE_MODE, WoosaController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
@@ -45,6 +44,7 @@ from custom_components.adjustable_bed.select import (
     MASSAGE_TIMER_DESCRIPTION,
     AdjustableBedMassageTimerSelect,
 )
+from custom_components.adjustable_bed.services import async_register_services
 from tests.state_helpers import state_writer
 
 
@@ -624,20 +624,16 @@ async def test_alarm_supported_selectors(
 async def test_alarm_sound_preflight_checks_all_targets(hass, controller) -> None:
     motionflex = MagicMock(capability_controller=SolaceController(MagicMock(ble_device_name="SealyMF")))
     woosa = MagicMock(capability_controller=controller)
-    call = ServiceCall(
-        hass,
-        DOMAIN,
-        "solace_set_alarm",
-        {
-            "device_id": ["motionflex", "woosa"],
-            "enabled": True,
-            "time": time(7, 30),
-            "weekdays": [],
-            "mode": "no_action",
-            "massage": False,
-            "sound": "music_1",
-        },
-    )
+    await async_register_services(hass)
+    data = {
+        "device_id": ["motionflex", "woosa"],
+        "enabled": True,
+        "time": "07:30:00",
+        "weekdays": [],
+        "wake_action": "none",
+        "massage": False,
+        "sound": "music_1",
+    }
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -648,7 +644,7 @@ async def test_alarm_sound_preflight_checks_all_targets(hass, controller) -> Non
         ) as execute,
         pytest.raises(ServiceValidationError, match="sound"),
     ):
-        await handle_solace_set_alarm(call)
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     execute.assert_not_awaited()
     controller.write_command.assert_not_awaited()
 
@@ -676,8 +672,8 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
     preset_labels = {
-        "woosa_love": "Anti-Snore",
-        "woosa_program_love": "Save Anti-Snore position",
+        "woosa_love": "Anti-snore",
+        "woosa_program_love": "Save anti-snore position",
     }
     existing_preset_ids = {
         key: registry.async_get_or_create(
@@ -777,13 +773,13 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     device = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)[0]
     await hass.services.async_call(
         DOMAIN,
-        "solace_set_alarm",
+        "set_alarm",
         {
             "device_id": [device.id],
             "enabled": True,
             "time": "07:30:00",
             "weekdays": ["monday", "wednesday"],
-            "mode": "zero_g",
+            "wake_action": "zero_g",
             "massage": True,
             "sound": "alarm",
         },

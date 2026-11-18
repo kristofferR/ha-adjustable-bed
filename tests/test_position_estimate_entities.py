@@ -101,7 +101,7 @@ async def call(hass: HomeAssistant, service: str, **data: Any) -> Any:
         service,
         {"device_id": device_id(hass), **data},
         blocking=True,
-        return_response=service == "save_position",
+        return_response=service == "estimate_save_position",
     )
 
 
@@ -121,9 +121,9 @@ async def test_restored_estimate_is_unconfirmed_until_the_user_confirms(
     assert head is not None and head.state == STATE_UNAVAILABLE
 
     with pytest.raises(ServiceValidationError):
-        await call(hass, "save_position", name="Reading")
+        await call(hass, "estimate_save_position", name="Reading")
 
-    await call(hass, "confirm_position_unchanged")
+    await call(hass, "estimate_confirm_unchanged")
     state = hass.states.get(back)
     assert state is not None and state.state == "40"
     assert hass.states.get(entity_id(hass, "sensor", "saved_positions")) is not None
@@ -139,7 +139,7 @@ async def test_cover_moves_are_timed_and_remote_use_invalidates(
         # Time the configured native movement, not a fixed one-second hold.
         clock[0] += 1.2
 
-    await call(hass, "set_position_reference", motors=["back"])
+    await call(hass, "estimate_set_reference", motors=["back"])
     with patch.object(OctoController, "move_back_up", move):
         await hass.services.async_call(
             "cover", "open_cover", {"entity_id": entity_id(hass, "cover", "back")}, blocking=True
@@ -192,7 +192,7 @@ async def test_tv_lift_estimate_slider_saved_position_and_reference(
     assert cover_state is not None
     assert cover_state.attributes["hold_lease_mode"] == "stream"
     assert cover_state.attributes["hold_lease_motor"] == "tv_lift"
-    await call(hass, "set_position_reference", motors=["tv_lift"])
+    await call(hass, "estimate_set_reference", motors=["tv_lift"])
 
     with (
         patch.object(OctoController, "hold_control", hold),
@@ -202,15 +202,15 @@ async def test_tv_lift_estimate_slider_saved_position_and_reference(
             "number", "set_value", {"entity_id": lift_id, "value": 50}, blocking=True
         )
         assert hass.states.get(lift_id).state == "50"
-        await call(hass, "save_position", name="TV open")
+        await call(hass, "estimate_save_position", name="TV open")
         await hass.services.async_call(
             "number", "set_value", {"entity_id": lift_id, "value": 0}, blocking=True
         )
-        await call(hass, "recall_position", position="TV open")
+        await call(hass, "estimate_recall_position", position="TV open")
 
     assert moves == [("tv_lift_up", 10000), ("tv_lift_down", 5000), ("tv_lift_up", 10000)]
     assert hass.states.get(lift_id).state == "50"
-    await call(hass, "mark_position_unknown")
+    await call(hass, "estimate_mark_unknown")
     assert hass.states.get(lift_id).state == STATE_UNKNOWN
     await hass.services.async_call(
         "button",
@@ -224,8 +224,8 @@ async def test_tv_lift_estimate_slider_saved_position_and_reference(
 async def test_saved_position_gets_an_optional_button(
     hass: HomeAssistant, octo_bed: MockConfigEntry
 ) -> None:
-    await call(hass, "set_position_reference")
-    response = await call(hass, "save_position", name="Reading")
+    await call(hass, "estimate_set_reference")
+    response = await call(hass, "estimate_save_position", name="Reading")
     position_id = response["position_id"]
     sensor = hass.states.get(entity_id(hass, "sensor", "saved_positions"))
     assert sensor.state == "1"
@@ -240,15 +240,15 @@ async def test_saved_position_gets_an_optional_button(
     button = entity_id(hass, "button", f"saved_position_{position_id}")
     assert hass.states.get(button).name == "Bedroom bed Reading"
 
-    await call(hass, "rename_position", position="Reading", name="Read", create_button=False)
+    await call(hass, "estimate_rename_position", position="Reading", name="Read", create_button=False)
     await hass.async_block_till_done()
     assert er.async_get(hass).async_get(button) is None
 
-    await call(hass, "rename_position", position="Read", name="Read", create_button=True)
+    await call(hass, "estimate_rename_position", position="Read", name="Read", create_button=True)
     await hass.async_block_till_done()
     assert entity_id(hass, "button", f"saved_position_{position_id}")
 
-    await call(hass, "delete_position", position=position_id)
+    await call(hass, "estimate_delete_position", position=position_id)
     await hass.async_block_till_done()
     assert hass.states.get(entity_id(hass, "sensor", "saved_positions")).state == "0"
     assert (
@@ -334,18 +334,18 @@ async def test_paired_sides_save_and_block_independently(hass: HomeAssistant) ->
             service,
             {"device_id": parent.id, **data},
             blocking=True,
-            return_response=service == "save_position",
+            return_response=service == "estimate_save_position",
         )
 
-    await call_pair("set_position_reference", side="left")
+    await call_pair("estimate_set_reference", side="left")
     assert manager.beds[left].tracking(["back"])
     assert not manager.beds[right].tracking(["back"])
     with pytest.raises(ServiceValidationError):
-        await call_pair("save_position", name="Reading")
+        await call_pair("estimate_save_position", name="Reading")
 
-    await call_pair("save_position", side="left", name="Snore")
-    await call_pair("set_position_reference", side="right")
-    await call_pair("save_position", name="Reading", create_button=False)
+    await call_pair("estimate_save_position", side="left", name="Snore")
+    await call_pair("estimate_set_reference", side="right")
+    await call_pair("estimate_save_position", name="Reading", create_button=False)
     assert {p.name: set(p.targets) for p in manager.positions} == {
         "Snore": {"left"},
         "Reading": {"left", "right"},
@@ -353,27 +353,27 @@ async def test_paired_sides_save_and_block_independently(hass: HomeAssistant) ->
 
     # A side selection cannot move or change a position that covers both sides.
     with pytest.raises(ServiceValidationError) as err:
-        await call_pair("delete_position", side="left", position="Reading")
+        await call_pair("estimate_delete_position", side="left", position="Reading")
     assert err.value.translation_key == "saved_position_other_side"
 
     # With one side no longer estimated, the whole bed still manages its positions.
     manager.beds[right].configure({})
-    await call_pair("rename_position", position="Reading", name="Read")
+    await call_pair("estimate_rename_position", position="Reading", name="Read")
     manager.beds[right].configure({"back": (20.0, 10.0)})
     manager.beds[right].set_reference()
 
     # A recall never silently skips a saved side that is no longer estimated.
     manager.beds[right].configure({})
     with pytest.raises(ServiceValidationError) as err:
-        await call_pair("recall_position", position="Read")
+        await call_pair("estimate_recall_position", position="Read")
     assert err.value.translation_key == "saved_position_unavailable"
     manager.beds[right].configure({"back": (20.0, 10.0)})
     manager.beds[right].set_reference()
 
-    await call_pair("mark_position_unknown", side="right")
+    await call_pair("estimate_mark_unknown", side="right")
     assert manager.beds[left].tracking(["back"])
     with pytest.raises(ServiceValidationError):
-        await call_pair("recall_position", position="Read")
+        await call_pair("estimate_recall_position", position="Read")
     await pe.async_unload_position_estimates(hass, entry.entry_id)
 
 
@@ -390,7 +390,7 @@ async def test_timed_move_times_only_the_hold(
     async def delay(seconds: float) -> None:
         clock[0] += seconds
 
-    await call(hass, "set_position_reference", motors=["back"])
+    await call(hass, "estimate_set_reference", motors=["back"])
     with (
         patch.object(OctoController, "hold_control", hold),
         patch("custom_components.adjustable_bed.services.asyncio.sleep", delay),

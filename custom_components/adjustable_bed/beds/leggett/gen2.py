@@ -16,10 +16,11 @@ Protocol details:
         "M {down}:{up}:{stop}").
 
 Connection note:
-    The ESP32 controller requires an OS-level BLE bond. This bed type continues
-    to use a persistent connection (it is never idle-disconnected) until bonded
-    reconnect behavior is confirmed on hardware. See
-    coordinator._uses_persistent_connection().
+    The ESP32 controller requires an OS-level BLE bond on every connection. It
+    follows the entry's connection mode (stay connected between commands by
+    default) and holds the link for the rest of the session once a reconnect
+    has stalled, since the box may refuse connections outside its pairing
+    window. See coordinator._uses_persistent_connection().
 
 Features (gated per model by the bundled capability profile — see
 leggett_gen2_profiles; the bed does not report its feature set over BLE):
@@ -213,7 +214,12 @@ class LeggettGen2Controller(BedController):
 
     @property
     def manual_disconnect_strands_connection(self) -> bool:
-        """Hide manual disconnect until bonded reconnects are hardware-confirmed."""
+        """Hide manual disconnect: a refused reconnect needs the pairing window."""
+        return True
+
+    @property
+    def holds_link_after_stalled_reconnect(self) -> bool:
+        """Keep the link once a reconnect stalls, so the bed is not stranded."""
         return True
 
     @property

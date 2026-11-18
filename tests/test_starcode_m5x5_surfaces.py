@@ -174,9 +174,9 @@ async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:
     sensors = _sensor_entities_for(hass, c)
     sensor_keys = {s.translation_key for s in sensors}
     assert {
-        "starcode_sonic_time_raw",
+        "starcode_sonic_head_level",
         "starcode_eq_volume",
-        "starcode_kneading_time_raw",
+        "starcode_kneading_mode",
         "starcode_alarm_0",
         "starcode_alarm_1",
     } <= sensor_keys
@@ -204,7 +204,7 @@ async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:
 
 async def test_cb25_always_exposes_distinct_sonic_feedback(hass: HomeAssistant) -> None:
     c = target(hass, 1, "cb25")
-    assert "sonic_time_raw" in {s.state_key for s in c.controller.controller_state_sensor_specs}
+    assert "sonic_head_level" in {s.state_key for s in c.controller.controller_state_sensor_specs}
     assert "sonic_active" in {
         s.state_key for s in c.controller.controller_state_binary_sensor_specs
     }

@@ -7,7 +7,7 @@ import logging
 import sys
 from collections.abc import Callable, Mapping
 from dataclasses import asdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -119,6 +119,22 @@ def _field_key(field: str) -> StateKey[str | int]:
     return StateKey[str | int](f"limoss_remote_{field}")
 
 
+_BUTTON_NAMES: Final[dict[str, str]] = {
+    "combined_up": "Combined motors up",
+    "combined_down": "Combined motors down",
+    "lift_up": "Lift up",
+    "lift_down": "Lift down",
+    "shift_up": "Shift up",
+    "shift_down": "Shift down",
+    "massage_back_plus": "Increase back massage",
+    "massage_back_minus": "Decrease back massage",
+    "massage_foot_plus": "Increase foot massage",
+    "massage_foot_minus": "Decrease foot massage",
+    "massage_both_plus": "Increase back and foot massage",
+    "massage_both_minus": "Decrease back and foot massage",
+    "light": "Toggle light",
+}
+
 class _ReplyWaitTimeout(TimeoutError):
     """No matching notification before the reply-wait deadline, excluding ATT errors."""
 
@@ -155,6 +171,7 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
         self.memories = session.memories
         self.sequence = sequence if sequence is not None else APP_SEQUENCE
         self._metadata = session.metadata
+        self._observed: dict[str, str | int] = {}
         self._parser = codec.StreamParser(verify=False)
         self._notify_client: BleakClient | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
@@ -279,33 +296,33 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # Motor channel covers already carry their up and down buttons.
         actions = [
-            (action, action.replace("_", " ").title()) for action in self.held_control_options
+            (action, _BUTTON_NAMES[action])
+            for action in self.held_control_options
+            if not action.startswith("motor_")
         ]
-        actions += [("refresh_info", "Refresh App Information")]
+        actions += [("refresh_info", "Refresh bed information")]
         if self.underbed_light:
-            actions += [("light_off", "Light Off")]
+            actions += [("light_off", "Light off")]
         if self.massage:
-            actions += [("massage_off", "Massage Off")]
+            actions += [("massage_off", "Massage off")]
         return tuple(
-            ControllerButtonSpec(f"limoss_remote_{action}", name, _action(action))
+            ControllerButtonSpec(
+                f"limoss_remote_{action}",
+                name,
+                _action(action),
+                # Versions and capabilities arrive on connect; this re-reads them.
+                diagnostic=action == "refresh_info",
+            )
             for action, name in actions
         )
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        fields = (
-            "hardware_version",
-            "software_version",
-            "serial",
-            "key_count",
-            "motor_count",
-            "configuration",
-            "memory_slots",
-            "reported_entry",
-            "calibration_result",
-        )
-        fields += tuple(f"motor_{index}_position_raw" for index in range(1, 5))
+        # Capability counts, calibration replies and raw positions without
+        # units stay in diagnostics.
+        fields = ("hardware_version", "software_version", "serial")
         return tuple(
             ControllerStateSensorSpec(
                 f"limoss_remote_{field}",
@@ -328,6 +345,8 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
             "theme": self.theme,
             "local_features": {"light": self.underbed_light, "massage": self.massage},
             "metadata": dict(self._metadata),
+            # Raw replies that are no entity: positions without units, calibration.
+            "observed": dict(self._observed),
             "memories": self.memories.serialize(),
             "sequence": self.sequence.value,
             "position_units": "opaque_signed_int32",
@@ -573,6 +592,7 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
                 else:
                     self._coordinator.remember_limoss_remote_capabilities(asdict(self.capabilities))
             elif opcode == codec.CALIBRATE:
+                self._observed["calibration_result"] = "reply_received"
                 self.forward_controller_state_update(
                     _field_key("calibration_result"), "reply_received"
                 )
@@ -582,9 +602,10 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
                 self._coordinator.save_app_state(self)
                 self.forward_controller_state_update(_field_key("serial"), value)
             elif opcode in codec.POSITION_OPCODES:
+                position = int.from_bytes(parameters, "big", signed=True)
+                self._observed[f"motor_{opcode // 16}_position_raw"] = position
                 self.forward_controller_state_update(
-                    _field_key(f"motor_{opcode // 16}_position_raw"),
-                    int.from_bytes(parameters, "big", signed=True),
+                    _field_key(f"motor_{opcode // 16}_position_raw"), position
                 )
             if self._request_reply is not None:
                 expected, future = self._request_reply

@@ -1,6 +1,6 @@
 """Nerum 1.0.8 (12): three independently proven carriers, no inferred firmware.
 
-All literals are checked against the accepted row103 builder corpus. Dormant
+All literals are checked against the app's builder vectors. Dormant
 builder branches remain encodable for that contract but are never HA actions.
 """
 

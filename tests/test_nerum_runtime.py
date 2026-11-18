@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -23,11 +24,18 @@ from custom_components.adjustable_bed.setup_questions import setup_profile_for
 from tests.hold_lease_wire import virtual_clock
 from tests.test_nerum import frames, gatt
 
-ALARMS = [
-    {"hour": 6, "minute": 30, "repeat": 130, "enabled": True, "action": "memory_1"},
-    {"hour": 8, "minute": 0, "repeat": 255, "enabled": False, "action": "none"},
-    {"hour": 9, "minute": 45, "repeat": 4, "enabled": True, "action": "light"},
-]
+ALARM = {"enabled": True, "time": "07:30:00", "weekdays": ["monday"], "slot": 2}
+P2_BANK = bytes.fromhex("ed8003061e8211082d0013173bff1200")
+BANK = (
+    app.Alarm(6, 30, 130, 17, True),
+    app.Alarm(8, 45, 0, 19, False),
+    app.Alarm(23, 59, 255, 18, True),
+)
+
+
+def seed(co):
+    """Give a receiver the bank its bed reported on this connection."""
+    co.controller._reported = list(BANK)
 
 
 async def receiver(hass, protocol="p2", address="AA:BB:CC:DD:01:03", layout="4"):
@@ -243,9 +251,10 @@ async def test_renewable_hold_expiry_and_stop_drain(hass, monkeypatch):
         await co.async_shutdown()
 
 
-async def test_bank_batch_validation_and_stop_before_import(hass, monkeypatch):
+async def test_set_alarm_rejects_a_batch_with_an_alarmless_receiver(hass, monkeypatch):
     left, lc = await receiver(hass)
     right, rc = await receiver(hass, "p1", "AA:BB:CC:DD:01:04")
+    seed(left)
     await async_register_services(hass)
     monkeypatch.setattr(
         "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -254,37 +263,48 @@ async def test_bank_batch_validation_and_stop_before_import(hass, monkeypatch):
     try:
         with virtual_clock(), pytest.raises(ServiceValidationError):
             await hass.services.async_call(
-                const.DOMAIN,
-                "nerum_set_alarms",
-                {"device_id": ["a", "b"], "alarms": ALARMS},
-                blocking=True,
+                const.DOMAIN, "set_alarm", {"device_id": ["a", "b"], **ALARM}, blocking=True
             )
         assert frames(lc) == frames(rc) == []
-        monkeypatch.setattr(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
-            lambda *_: ([(left, "both")], []),
-        )
-        original = runtime.NerumController
-
-        async def during_import(*_args):
-            await left.async_stop_command()
-
-        monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.nerum.services.async_import_modules",
-            during_import,
-        )
-        with virtual_clock():
-            await hass.services.async_call(
-                const.DOMAIN,
-                "nerum_set_alarms",
-                {"device_id": "a", "alarms": ALARMS},
-                blocking=True,
-            )
-        assert frames(lc) and all(f == app.build("p2", 6) for f in frames(lc))
-        assert isinstance(left.controller, original)
     finally:
         await left.async_shutdown()
         await right.async_shutdown()
+
+
+async def test_set_alarm_reads_the_bank_then_rewrites_it_whole(hass, monkeypatch):
+    co, client = await receiver(hass)
+    ctrl = co.controller
+
+    async def reply(_char, data, **_kwargs):
+        if data == app.query("p2", 1):
+            ctrl._receive(ctrl._live(), ctrl._live().notify, P2_BANK)
+
+    client.write_gatt_char.side_effect = reply
+    await async_register_services(hass)
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        lambda *_: ([(co, "both")], []),
+    )
+    try:
+        with virtual_clock():
+            await hass.services.async_call(
+                const.DOMAIN, "set_alarm", {"device_id": "a", **ALARM}, blocking=True
+            )
+            # Monday is bit 1, plus the repeating bit; the other two stay as reported.
+            wanted = (BANK[0], app.Alarm(7, 30, 0x82, 0, True), BANK[2])
+            assert frames(client)[0] == app.query("p2", 1)
+            assert frames(client)[-1] == app.alarms("p2", wanted)[0]
+            client.write_gatt_char.reset_mock()
+            await hass.services.async_call(
+                const.DOMAIN,
+                "set_alarm",
+                {"device_id": "a", "enabled": False, "slot": 1},
+                blocking=True,
+            )
+            off = (replace(BANK[0], on=False), BANK[1], BANK[2])
+            assert frames(client)[-1] == app.alarms("p2", off)[0]
+    finally:
+        await co.async_shutdown()
 
 
 async def test_paired_bank_and_movement_keep_physical_side(hass, monkeypatch):
@@ -300,13 +320,11 @@ async def test_paired_bank_and_movement_keep_physical_side(hass, monkeypatch):
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         lambda *_: ([(pair, "right")], []),
     )
+    seed(right)
     try:
         with virtual_clock():
             await hass.services.async_call(
-                const.DOMAIN,
-                "nerum_set_alarms",
-                {"device_id": "pair", "alarms": ALARMS},
-                blocking=True,
+                const.DOMAIN, "set_alarm", {"device_id": "pair", **ALARM}, blocking=True
             )
             assert not frames(lc)
             assert len(frames(rc)) == 7
@@ -385,14 +403,13 @@ async def test_stop_of_later_batch_target_during_first_target_prevents_alarm_wri
             stopped = True
             await right.async_stop_command()
 
+    seed(left)
+    seed(right)
     lc.write_gatt_char.side_effect = first_write
     try:
         with virtual_clock():
             await hass.services.async_call(
-                const.DOMAIN,
-                "nerum_set_alarms",
-                {"device_id": ["left", "right"], "alarms": ALARMS},
-                blocking=True,
+                const.DOMAIN, "set_alarm", {"device_id": ["left", "right"], **ALARM}, blocking=True
             )
         assert len(frames(lc)) == 2
         assert frames(rc) == [app.build("p3", 6)] * 2
