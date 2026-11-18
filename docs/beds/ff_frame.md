@@ -1066,20 +1066,21 @@ each side retains its own name, state and session.
 Back and legs have one start frame and one global release. Flat is a single
 write. TV, zero gravity and anti-snore recall their saved version when reported
 saved, or the built-in version otherwise. Memory 1/2 recall requires a saved
-report. Memory programming and the three named Save / clear buttons choose save
-or clear from the last report. Home Assistant exposes confirmed explicit actions
+report. Memory programming and the **Save or clear TV / zero gravity /
+anti-snore position** buttons choose save or clear from the last report, shown by
+the matching **… position saved** binary sensors. Home Assistant exposes confirmed explicit actions
 instead of delayed Android long-press callbacks that can survive cancellation.
 
 Massage has head and foot minus/plus, wave minus/plus and three timers. Selecting
 an already selected massage timer sends the reachable timer deselect/stop frame.
 The minus/plus labels describe app intent; physical stepping remains unverified.
-Brightness uses the shared literal levels after a brightness reply. Use Refresh
-brightness to send the app tab query when support is still unknown. Light timers are receiver commands;
+Brightness uses the shared literal levels after a brightness reply; the
+brightness query is part of every connection's startup. Light timers are receiver commands;
 Home Assistant does not invent countdown tasks or periodic writes.
 
-The movement / massage header action is exposed by its app label. Its unusual
-trailer is preserved and it is not presented as STOP. Use the normal motor STOP
-for release. The shared movement, massage and lighting command tables above
+The app's movement / massage header action (STOP's body with a different
+trailer) has no proven effect and is not exposed. Use the normal motor STOP for
+release. Bed synchronization is the **Controller Sync** switch. The shared movement, massage and lighting command tables above
 apply to Sophie; the additional rows and exact startup offsets follow.
 
 <!-- generated:sophie -->
@@ -1087,7 +1088,6 @@ apply to Sophie; the additional rows and exact startup offsets follow.
 
 | Sophie action | Frame |
 |---|---|
-| Movement / massage header action | `FF FF FF FF 05 00 00 00 00 D8 14` |
 | Synchronization off | `FF FF FF FF 01 00 09 0B 00 11 04` |
 | Synchronization on | `FF FF FF FF 01 00 09 0B 01 12 04` |
 | Synchronization query | `FF FF FF FF 01 00 0A 0B 0F 21 04` |
@@ -1158,7 +1158,9 @@ massage and ring. Every target must report support and allow the selected mode
 and massage option before any target is written. The side-specific alarm modes
 apply only to the alarm, and do not enable normal movement addressing.
 `adjustable_bed.sync_clock` sends the local Home Assistant clock. The
-synchronization select sends on/off only after synchronization support is known.
+**Controller Sync** switch (disabled by default) sends on/off only after the bed
+reports synchronization support. Its state resets to unknown on disconnect and
+updates after a report or a successful command.
 
 #### Evidence
 

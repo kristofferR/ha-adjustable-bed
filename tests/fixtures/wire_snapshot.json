@@ -28337,7 +28337,7 @@
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]}
 }},
 "solace:sophie": {
-"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10", "select:sophie_sync=off", "select:sophie_sync=on"], "module": "solace.sophie", "pulse": [10, 100]},
+"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10"], "module": "solace.sophie", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"0000ffe1","notify","",1,0],[300,"0000ffe1",true,"ffffffff03002800091f0e",1,0],[500,"0000ffe1",true,"ffffffff01000111030405052601024904",1,0],[800,"0000ffe1",true,"ffffffff0300310009cec9",1,0],[1000,"0000ffe1",true,"ffffffff01000a0b0f2104",1,0],[1007,"0000ffe1",true,"ffffffff050005ff23c728",1,0],[1300,"0000ffe1",true,"ffffffff03001600097ec2",1,0],[1800,"0000ffe1",true,"ffffffff03001f0009aec0",1,0],[2300,"0000ffe1",true,"ffffffff03003a0009bf0b",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000116c0",1,0],[5000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
@@ -28417,22 +28417,20 @@
 "hold_back_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
+"set_synchro_on": {"error":"ValueError","status":"error","writes":[]},
+"set_synchro_off": {"error":"ValueError","status":"error","writes":[]},
 "solace_music_1": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100130b011c04",1,0]]},
 "solace_volume_5": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100140b052104",1,0]]},
 "stop:back_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000039701",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
-"button:sophie_refresh_light": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050005ff23c728",1,0]]},
-"button:sophie_header": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000000d814",1,0]]},
 "button:sophie_program_tv": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000050052b03",1,0]]},
 "button:sophie_program_zero_g": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000090097b06",1,0]]},
-"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]},
-"select:sophie_sync=off": {"error":"ValueError","status":"error","writes":[]},
-"select:sophie_sync=on": {"error":"ValueError","status":"error","writes":[]}
+"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]}
 }},
 "solace:sophie:fallback": {
-"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10", "select:sophie_sync=off", "select:sophie_sync=on"], "module": "solace.sophie", "pulse": [10, 100]},
+"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10"], "module": "solace.sophie", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"0000ffe1","notify","",1,0],[300,"0000ffe1",true,"ffffffff03002800091f0e",1,0],[500,"0000ffe1",true,"ffffffff01000111030405052601024904",1,0],[800,"0000ffe1",true,"ffffffff0300310009cec9",1,0],[1000,"0000ffe1",true,"ffffffff01000a0b0f2104",1,0],[1007,"0000ffe1",true,"ffffffff050005ff23c728",1,0],[1300,"0000ffe1",true,"ffffffff03001600097ec2",1,0],[1800,"0000ffe1",true,"ffffffff03001f0009aec0",1,0],[2300,"0000ffe1",true,"ffffffff03003a0009bf0b",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000116c0",1,0],[5000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
@@ -28512,22 +28510,20 @@
 "hold_back_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
+"set_synchro_on": {"error":"ValueError","status":"error","writes":[]},
+"set_synchro_off": {"error":"ValueError","status":"error","writes":[]},
 "solace_music_1": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100130b011c04",1,0]]},
 "solace_volume_5": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100140b052104",1,0]]},
 "stop:back_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000039701",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
-"button:sophie_refresh_light": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050005ff23c728",1,0]]},
-"button:sophie_header": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000000d814",1,0]]},
 "button:sophie_program_tv": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000050052b03",1,0]]},
 "button:sophie_program_zero_g": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000090097b06",1,0]]},
-"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]},
-"select:sophie_sync=off": {"error":"ValueError","status":"error","writes":[]},
-"select:sophie_sync=on": {"error":"ValueError","status":"error","writes":[]}
+"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]}
 }},
 "solace:sophie:named": {
-"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10", "select:sophie_sync=off", "select:sophie_sync=on"], "module": "solace.sophie", "pulse": [10, 100]},
+"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10"], "module": "solace.sophie", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"0000ffe1","notify","",1,0],[300,"0000ffe1",true,"ffffffff03002800091f0e",1,0],[500,"0000ffe1",true,"ffffffff01000111030405052601024904",1,0],[800,"0000ffe1",true,"ffffffff0300310009cec9",1,0],[1000,"0000ffe1",true,"ffffffff01000a0b0f2104",1,0],[1007,"0000ffe1",true,"ffffffff050005ff23c728",1,0],[1300,"0000ffe1",true,"ffffffff03001600097ec2",1,0],[1800,"0000ffe1",true,"ffffffff03001f0009aec0",1,0],[2300,"0000ffe1",true,"ffffffff03003a0009bf0b",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000116c0",1,0],[5000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
@@ -28607,22 +28603,20 @@
 "hold_back_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
+"set_synchro_on": {"error":"ValueError","status":"error","writes":[]},
+"set_synchro_off": {"error":"ValueError","status":"error","writes":[]},
 "solace_music_1": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100130b011c04",1,0]]},
 "solace_volume_5": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100140b052104",1,0]]},
 "stop:back_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000039701",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
-"button:sophie_refresh_light": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050005ff23c728",1,0]]},
-"button:sophie_header": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000000d814",1,0]]},
 "button:sophie_program_tv": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000050052b03",1,0]]},
 "button:sophie_program_zero_g": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000090097b06",1,0]]},
-"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]},
-"select:sophie_sync=off": {"error":"ValueError","status":"error","writes":[]},
-"select:sophie_sync=on": {"error":"ValueError","status":"error","writes":[]}
+"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]}
 }},
 "solace:sophie:qms2": {
-"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10", "select:sophie_sync=off", "select:sophie_sync=on"], "module": "solace.sophie", "pulse": [10, 100]},
+"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10"], "module": "solace.sophie", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"0000ffe1","notify","",1,0],[300,"0000ffe1",true,"ffffffff03002800091f0e",1,0],[500,"0000ffe1",true,"ffffffff01000111030405052601024904",1,0],[800,"0000ffe1",true,"ffffffff0300310009cec9",1,0],[1000,"0000ffe1",true,"ffffffff01000a0b0f2104",1,0],[1007,"0000ffe1",true,"ffffffff050005ff23c728",1,0],[1300,"0000ffe1",true,"ffffffff03001600097ec2",1,0],[1800,"0000ffe1",true,"ffffffff03001f0009aec0",1,0],[2300,"0000ffe1",true,"ffffffff03003a0009bf0b",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000116c0",1,0],[5000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
@@ -28702,22 +28696,20 @@
 "hold_back_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
+"set_synchro_on": {"error":"ValueError","status":"error","writes":[]},
+"set_synchro_off": {"error":"ValueError","status":"error","writes":[]},
 "solace_music_1": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100130b011c04",1,0]]},
 "solace_volume_5": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100140b052104",1,0]]},
 "stop:back_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000039701",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
-"button:sophie_refresh_light": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050005ff23c728",1,0]]},
-"button:sophie_header": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000000d814",1,0]]},
 "button:sophie_program_tv": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000050052b03",1,0]]},
 "button:sophie_program_zero_g": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000090097b06",1,0]]},
-"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]},
-"select:sophie_sync=off": {"error":"ValueError","status":"error","writes":[]},
-"select:sophie_sync=on": {"error":"ValueError","status":"error","writes":[]}
+"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]}
 }},
 "solace:sophie:side_alarm": {
-"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10", "select:sophie_sync=off", "select:sophie_sync=on"], "module": "solace.sophie", "pulse": [10, 100]},
+"info": {"bed_type": "solace", "controller": "SophieController", "gaps": ["memory_recall_1", "lights_on", "lights_off", "memory_recall_2", "light_level_0", "light_level_1", "light_level_2", "light_level_3", "light_level_4", "light_level_5", "light_level_6", "light_level_7", "light_level_8", "light_level_9", "light_level_10"], "module": "solace.sophie", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"0000ffe1","notify","",1,0],[300,"0000ffe1",true,"ffffffff03002800091f0e",1,0],[500,"0000ffe1",true,"ffffffff01000111030405052601024904",1,0],[800,"0000ffe1",true,"ffffffff0300310009cec9",1,0],[1000,"0000ffe1",true,"ffffffff01000a0b0f2104",1,0],[1007,"0000ffe1",true,"ffffffff050005ff23c728",1,0],[1300,"0000ffe1",true,"ffffffff03001600097ec2",1,0],[1800,"0000ffe1",true,"ffffffff03001f0009aec0",1,0],[2300,"0000ffe1",true,"ffffffff03003a0009bf0b",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000116c0",1,0],[5000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
@@ -28797,19 +28789,17 @@
 "hold_back_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_up": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
 "hold_legs_down": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[1000,"0000ffe1",true,"ffffffff0500000000d700",1,0]]},
+"set_synchro_on": {"error":"ValueError","status":"error","writes":[]},
+"set_synchro_off": {"error":"ValueError","status":"error","writes":[]},
 "solace_music_1": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100130b011c04",1,0]]},
 "solace_volume_5": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0100140b052104",1,0]]},
 "stop:back_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000039701",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000004d6c3",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
-"button:sophie_refresh_light": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050005ff23c728",1,0]]},
-"button:sophie_header": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000000d814",1,0]]},
 "button:sophie_program_tv": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000050052b03",1,0]]},
 "button:sophie_program_zero_g": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000090097b06",1,0]]},
-"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]},
-"select:sophie_sync=off": {"error":"ValueError","status":"error","writes":[]},
-"select:sophie_sync=on": {"error":"ValueError","status":"error","writes":[]}
+"button:sophie_program_anti_snore": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000f00fd304",1,0]]}
 }},
 "solace:woosa": {
 "info": {"bed_type": "solace", "controller": "WoosaController", "gaps": ["memory_recall_1"], "module": "woosa", "pulse": [10, 100]},

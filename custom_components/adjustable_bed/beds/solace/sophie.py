@@ -6,14 +6,13 @@ import asyncio
 import logging
 from collections.abc import Callable, Collection
 from dataclasses import replace
-from functools import partial
 from typing import TYPE_CHECKING
 
 from bleak import BleakClient
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_LIGHTING, CARD_PRESETS
+from ...card import CARD_PRESETS
 from ...codec import ff_frame as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateUpdate
@@ -24,13 +23,13 @@ from ...state_keys import (
     LIGHT_LEVEL,
     LIGHT_TIMER_OPTION,
     MASSAGE_TIMER_MINUTES,
+    SYNCHRO_MODE,
     UNDER_BED_LIGHTS_ON,
 )
 from ..base import BedController, require_controller
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
-    ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
@@ -47,7 +46,6 @@ from .sophie_state import (
     ALARM_WEEKDAYS,
     FOOT_LEVEL,
     HEAD_LEVEL,
-    SYNC,
     SYNC_SUPPORTED,
     WAVE,
 )
@@ -60,16 +58,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-async def _button(controller: BedController, *, preset: str | None = None) -> None:
-    sophie = require_controller(controller, SophieController)
-    if preset is None:
-        await sophie.write_command(app.HEADER_ACTION)
-    else:
-        await sophie.save_preset(preset)
-
-
-async def _sync(controller: BedController, option: str) -> None:
-    await require_controller(controller, SophieController).set_sync(option)
+_PRESET_LABELS = {"tv": "TV", "zero_g": "zero gravity", "anti_snore": "anti-snore"}
 
 
 class SophieController(SolaceController):
@@ -139,41 +128,24 @@ class SophieController(SolaceController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        return (
+        # Brightness is queried on every connection. The app's movement/massage
+        # header literal has no proven effect, so it is not exposed.
+        return tuple(
             ControllerButtonSpec(
-                "sophie_refresh_light",
-                "Refresh brightness",
-                lambda controller: require_controller(controller, SophieController).write_command(
-                    C.LIGHT_STATUS_QUERY
-                ),
-                translation_key="sophie_refresh_light",
-                cancel_movement=False,
-                scheduler_resource="lighting",
-                card=CARD_LIGHTING,
-            ),
-            ControllerButtonSpec(
-                "sophie_header",
-                "Movement / massage header action",
-                _button,
-                translation_key="sophie_header",
-            ),
-            *(
-                ControllerButtonSpec(
-                    f"sophie_program_{key}",
-                    f"Save / clear {key.replace('_', ' ')}",
-                    partial(_button, preset=key),
-                    translation_key=f"sophie_program_{key}",
-                    requires_confirmation=True,
-                    card=CARD_PRESETS,
-                )
-                for key in ("tv", "zero_g", "anti_snore")
-            ),
+                f"sophie_program_{key}",
+                f"Save or clear {label} position",
+                lambda c, key=key: require_controller(c, SophieController).save_preset(key),
+                translation_key=f"sophie_program_{key}",
+                requires_confirmation=True,
+                card=CARD_PRESETS,
+            )
+            for key, label in _PRESET_LABELS.items()
         )
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        # Keep the entity stable before the support reply; execution is gated.
-        return (ControllerSelectSpec("sophie_sync", "sophie_sync", SYNC, ("off", "on"), _sync),)
+    def supports_synchro(self) -> bool:
+        # Keep the switch stable before the support reply; execution is gated.
+        return True
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -202,12 +174,6 @@ class SophieController(SolaceController):
                     ALARM_MASSAGE,
                     ALARM_RING,
                 ),
-            ),
-            ControllerStateBinarySensorSpec(
-                "sophie_sync_supported",
-                "sophie_sync_supported",
-                SYNC_SUPPORTED,
-                "mdi:sync",
             ),
             *(
                 ControllerStateBinarySensorSpec(
@@ -337,13 +303,11 @@ class SophieController(SolaceController):
         now = dt_util.now()
         await self.write_command(codec.clock(now, now.isoweekday()))
 
-    async def set_sync(self, option: str) -> None:
+    async def set_synchro(self, enabled: bool) -> None:
         if not self._coordinator.controller_state.get(SYNC_SUPPORTED, False):
             raise ValueError("Sophie synchronization support has not been reported")
-        if option not in ("on", "off"):
-            raise ValueError("Invalid Sophie synchronization option")
-        await self.write_command(app.SYNC_ON if option == "on" else app.SYNC_OFF)
-        self.forward_controller_state_updates(SYNC(option))
+        await self.write_command(app.SYNC_ON if enabled else app.SYNC_OFF)
+        self.forward_controller_state_updates(SYNCHRO_MODE(enabled))
 
     def validate_alarm(self, mode: str, massage: bool) -> None:
         if not self._coordinator.controller_state.get(ALARM_SUPPORTED, False):
@@ -406,7 +370,7 @@ class SophieController(SolaceController):
     async def set_light_level(self, level: int) -> None:
         if LIGHT_LEVEL not in self._coordinator.controller_state:
             raise ValueError(
-                "Sophie brightness support has not been reported; refresh brightness first"
+                "Sophie has not reported brightness support yet; try again in a moment"
             )
         await super().set_light_level(level)
         if 0 <= level <= 10:
@@ -507,7 +471,7 @@ class SophieController(SolaceController):
         self._notify_client = self._notify_char = None
         # Support replies describe this physical bed, not the lifetime of its
         # BLE link. Offline preflight must retain them across idle disconnects.
-        self.forward_controller_state_updates(SYNC(None))
+        self.forward_controller_state_updates(SYNCHRO_MODE(None))
 
     async def async_read_device_info(self, session: ControllerSession) -> bool:
         return True
@@ -579,6 +543,6 @@ class SophieController(SolaceController):
             and len(data) >= 9
             and any(data.startswith(codec.HEADER + bytes((1, 0, op, 0x0B))) for op in (9, 10))
         ):
-            updates += [SYNC_SUPPORTED(True), SYNC("on" if data[8] == 1 else "off")]
+            updates += [SYNC_SUPPORTED(True), SYNCHRO_MODE(data[8] == 1)]
         if updates:
             self.forward_controller_state_updates(*updates)

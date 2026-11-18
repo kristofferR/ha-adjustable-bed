@@ -3349,20 +3349,14 @@
       "sonicsleep_action": {
         "name": "{action}"
       },
-      "sophie_header": {
-        "name": "Movement / massage header action"
-      },
       "sophie_program_tv": {
-        "name": "Save / clear TV"
+        "name": "Save or clear TV position"
       },
       "sophie_program_zero_g": {
-        "name": "Save / clear zero gravity"
+        "name": "Save or clear zero gravity position"
       },
       "sophie_program_anti_snore": {
-        "name": "Save / clear anti-snore"
-      },
-      "sophie_refresh_light": {
-        "name": "Refresh brightness"
+        "name": "Save or clear anti-snore position"
       }
     },
     "cover": {
@@ -5617,9 +5611,6 @@
       "sophie_alarm_enabled": {
         "name": "Bed alarm"
       },
-      "sophie_sync_supported": {
-        "name": "Bed synchronization supported"
-      },
       "sophie_memory_1_saved": {
         "name": "Memory 1 saved"
       },
@@ -5627,13 +5618,13 @@
         "name": "Memory 2 saved"
       },
       "sophie_tv_saved": {
-        "name": "Tv saved"
+        "name": "TV position saved"
       },
       "sophie_zero_g_saved": {
-        "name": "Zero G saved"
+        "name": "Zero gravity position saved"
       },
       "sophie_anti_snore_saved": {
-        "name": "Anti Snore saved"
+        "name": "Anti-snore position saved"
       }
     },
     "number": {
@@ -6699,13 +6690,6 @@
       },
       "symphony_child_mode": {
         "name": "Local child mode"
-      },
-      "sophie_sync": {
-        "name": "Synchronize beds",
-        "state": {
-          "on": "On",
-          "off": "Off"
-        }
       }
     },
     "climate": {

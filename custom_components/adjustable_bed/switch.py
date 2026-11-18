@@ -339,7 +339,13 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 state_key = side_key
             if state_key not in state:
                 return
-            self._attr_is_on = bool(state[state_key])
+            value = state[state_key]
+            # A described setting published as None is unknown, not off.
+            self._attr_is_on = (
+                None
+                if value is None and self.entity_description.state_key is not None
+                else bool(value)
+            )
         self._state_update_generation += 1
         if self.entity_description.key != "under_bed_lights":
             self.async_write_ha_state()

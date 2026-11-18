@@ -22,7 +22,6 @@ from custom_components.adjustable_bed.beds.solace.sophie_state import (
     ALARM_TIME,
     FOOT_LEVEL,
     HEAD_LEVEL,
-    SYNC,
     SYNC_SUPPORTED,
     WAVE,
 )
@@ -33,7 +32,11 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_state import ControllerState
 from custom_components.adjustable_bed.profiles import sophie as app
 from custom_components.adjustable_bed.profiles.ff_frame import SolaceCommands as C
-from custom_components.adjustable_bed.state_keys import LIGHT_LEVEL, LIGHT_TIMER_OPTION
+from custom_components.adjustable_bed.state_keys import (
+    LIGHT_LEVEL,
+    LIGHT_TIMER_OPTION,
+    SYNCHRO_MODE,
+)
 from tests.state_helpers import state_writer
 
 FIXTURES = Path(__file__).parent / "fixtures/sophie"
@@ -86,7 +89,10 @@ def test_frozen_literals_and_dynamic_builders(row):
             sound=int(a["ring"]),
         )
     elif row["id"] == "V-C006":
-        actual = app.HEADER_ACTION
+        # The header action has no proven effect. Preserve its bytes, never expose it.
+        assert expected.hex() == "ffffffff0500000000d814"
+        assert expected[:-2] == codec.STOP[:-2]
+        return
     elif row["id"] == "V-C049":
         # The hidden switch is excluded. Preserve its distinct bytes, never expose it.
         assert expected.hex() == "ffffffff050000001cd9dd"
@@ -317,13 +323,13 @@ async def test_alarm_and_sync_gates_and_exact_wire(controller):
     for mode in ("zero_g_left", "zero_g_right", "zero_g_both", "no_action"):
         await controller.set_alarm(**{**args, "mode": mode})
     with pytest.raises(ValueError, match="support"):
-        await controller.set_sync("on")
+        await controller.set_synchro(True)
     controller._parse_notification(app.SYNC_ON)
-    await controller.set_sync("off")
+    await controller.set_synchro(False)
     assert written(controller)[-1] == VECTORS[35]["expected_bytes"]
     controller.on_disconnect()
     assert controller._coordinator.controller_state[SYNC_SUPPORTED]
-    assert controller._coordinator.controller_state[SYNC] is None
+    assert controller._coordinator.controller_state[SYNCHRO_MODE] is None
 
 
 async def test_stale_notify_callbacks_and_runtime_gatt_selection(controller):
@@ -331,7 +337,7 @@ async def test_stale_notify_callbacks_and_runtime_gatt_selection(controller):
     callback = controller.client.start_notify.await_args.args[1]
     controller.on_disconnect()
     callback(None, bytearray(app.SYNC_ON))
-    assert controller._coordinator.controller_state[SYNC] is None
+    assert controller._coordinator.controller_state[SYNCHRO_MODE] is None
     second = SimpleNamespace(
         uuid=SOLACE_CHAR_UUID, handle=99, properties=["write-without-response"]
     )
@@ -459,10 +465,6 @@ async def test_real_setup_entities_and_alarm_service(hass, connected_sophie):
         er.async_get(hass).async_get_entity_id("number", DOMAIN, "AA:BB:CC:DD:EE:FF_back_position")
         is None
     )
-    await hass.services.async_call(
-        "button", "press", {"entity_id": entity("button", "sophie_header")}, blocking=True
-    )
-    assert written(ctrl) == [VECTORS[5]["expected_bytes"]]
     ctrl._parse_notification(bytes.fromhex("FFFFFFFF05000100"))
     await hass.services.async_call(
         "number",
@@ -503,12 +505,10 @@ async def test_real_setup_entities_and_alarm_service(hass, connected_sophie):
     )
     assert written(ctrl)[-1] == VECTORS[-2]["expected_bytes"]
     ctrl._parse_notification(app.SYNC_ON)
-    await hass.services.async_call(
-        "select",
-        "select_option",
-        {"entity_id": entity("select", "controller_select_sophie_sync"), "option": "off"},
-        blocking=True,
-    )
+    # The shared Controller Sync switch is disabled by default; drive its command.
+    sync = er.async_get(hass).async_get(entity("switch", "synchro_mode"))
+    assert sync is not None and sync.disabled_by is not None
+    await coordinator.async_execute_controller_command(lambda c: c.set_synchro(False))
     assert written(ctrl)[-1] == VECTORS[35]["expected_bytes"]
 
 
@@ -762,7 +762,7 @@ async def test_proven_support_survives_idle_disconnect_and_reconnect_without_new
     assert not coordinator.is_connected
     assert coordinator.controller_state[ALARM_SUPPORTED] is True
     assert coordinator.controller_state[SYNC_SUPPORTED] is True
-    assert coordinator.controller_state[SYNC] is None
+    assert coordinator.controller_state[SYNCHRO_MODE] is None
     # The command must pass offline preflight and reconnect before any delayed
     # startup query could reply. Neither support fact is fabricated on reconnect.
     with patch.object(SophieController, "async_after_connect", new_callable=AsyncMock):
@@ -782,15 +782,7 @@ async def test_proven_support_survives_idle_disconnect_and_reconnect_without_new
             )
             expected = VECTORS[-2]["expected_bytes"]
         else:
-            await hass.services.async_call(
-                "select",
-                "select_option",
-                {
-                    "entity_id": entity("select", "controller_select_sophie_sync"),
-                    "option": "off",
-                },
-                blocking=True,
-            )
+            await coordinator.async_execute_controller_command(lambda c: c.set_synchro(False))
             expected = VECTORS[35]["expected_bytes"]
     assert coordinator.is_connected and coordinator.controller is not previous
     assert written(coordinator.controller) == [expected]
@@ -877,3 +869,18 @@ async def test_startup_query_preemption_preserves_only_current_session_work(
             assert queries.await_count == 1
             clock.assert_not_awaited()
             assert written(controller) == attempted
+
+
+async def test_sync_switch_reads_unknown_after_disconnect(hass, connected_sophie):
+    from custom_components.adjustable_bed.switch import SWITCH_DESCRIPTIONS, AdjustableBedSwitch
+
+    _, coordinator, _ = connected_sophie
+    description = next(d for d in SWITCH_DESCRIPTIONS if d.key == "synchro_mode")
+    switch = AdjustableBedSwitch(coordinator, description)
+    switch.async_write_ha_state = MagicMock()
+    coordinator.controller._parse_notification(app.SYNC_ON)
+    switch._handle_controller_state_update(coordinator.controller_state)
+    assert switch.is_on is True
+    coordinator.controller.on_disconnect()
+    switch._handle_controller_state_update(coordinator.controller_state)
+    assert switch.is_on is None

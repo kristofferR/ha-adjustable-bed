@@ -29,9 +29,6 @@ QUERY_SPACING_MS: Final = 500
 CLOCK_DELAY_MS: Final = 500
 SYNC_AFTER_CLOCK_MS: Final = 500
 LIGHT_QUERY_DELAY_MS: Final = 1000
-# This literal's trailer is deliberately not the codec CRC. It is a separate
-# app-labelled header action, with no proven STOP meaning.
-HEADER_ACTION: Final = codec.STOP[:-2] + b"\xd8\x14"
 SYNC_OFF: Final = codec.summed(1, 9, b"\x00")
 SYNC_ON: Final = codec.summed(1, 9, b"\x01")
 SYNC_QUERY: Final = codec.summed(1, 10, b"\x0f")

@@ -6,7 +6,6 @@ from scripts.codec_docs._common import _block, _hex, _table
 
 def render() -> str:
     rows = [
-        ("Movement / massage header action", app.HEADER_ACTION),
         ("Synchronization off", app.SYNC_OFF),
         ("Synchronization on", app.SYNC_ON),
         ("Synchronization query", app.SYNC_QUERY),
