@@ -42,6 +42,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`bedtech_app_command`](#bedtech_app_command) | BedTech: press button | Run an action using the selected BedTech 7.1.3 model and its app sleeper routing. Movement uses the configured finite pulse count. |
 | [`bedgear`](#bedgear) | Bedgear: settings | Configure supported Bedgear BED controls. Received values remain unknown until reported by the bed. |
 | [`casper_base`](#casper_base) | Casper Base: settings | Configure the selected Casper Base product or its separate sleep sensor. See the Casper Base guide for operation-specific fields. |
+| [`cheerssleep`](#cheerssleep) | CheersSleep: run bed action | Run direct BLE CheersSleep bed controls. All selected targets are validated before any control writes. |
 | [`comfort_enhancement3_start_massage`](#comfort_enhancement3_start_massage) | Comfort Enhancement 3: start massage | Start a relative massage program. Values are app choices, not measured bed state. |
 | [`customatic_hold_memory`](#customatic_hold_memory) | Customatic: hold memory buttons | Hold a nonempty combination of the Clarity or Remedy memory-page actions. Program combinations can change stored positions. |
 | [`customatic_move_simultaneously`](#customatic_move_simultaneously) | Customatic: move motors together | Moves up to three motors together, then stops them. |
@@ -584,6 +585,50 @@ external-detector, sleep sensor and remote-finder operations. Select a `device_i
 and `operation`; paired targets are validated together before sending commands.
 The [Casper Base guide](beds/casper-base.md#configuration-actions) lists each
 operation's fields and the separate sensor/remote entry types.
+
+## CheersSleep
+
+<a id="cheerssleep"></a>
+**`cheerssleep`**: Run direct BLE CheersSleep bed controls. All selected targets are validated before any control writes.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `operation` | Bed action | Select a model-supported bed action or a conditional P1 exported screen. |
+| `value` | Value | Model-specific level, memory slot, boolean or legacy delay setting. |
+| `rgb` | RGB | Three values from 0 to 255. |
+| `brightness` | Brightness | Legacy RGB brightness from 0 to 255. |
+| `duration_ms` | Duration or Yb timer parameter | Hold duration in milliseconds. Yb uses parameter 300 or 900, whose time selection is 5 or 15 minutes. |
+| `axis` | Axis |  |
+| `up` | Move up |  |
+| `position` | Position selector | Ten/NewTen position 1 all, 2 back, 3 feet, 4 waist. |
+| `side` | Side |  |
+| `sleeper` | Auxiliary sleeper | Seven screen local side selector. Must match a targeted paired child. |
+
+### CheersSleep bed controls
+
+`adjustable_bed.cheerssleep` targets one or more device IDs, including native
+paired child devices, and accepts `side` (`left`, `right`, `both`). Every target
+is validated before control writes. Choose a supported `operation`:
+
+- `query`, `query_shared`: B0/D0 state queries. `position_light_toggle` and
+  `color_light_toggle` retain the position-side and shared color-page callers.
+- `massage_head`, `massage_foot`, `massage_mode`: conventional cycles. P1 head/foot
+  `value`1–4 selects levels0–3; `value`0 cycles. P2 accepts cycles only.
+- `sonic_back`, `sonic_foot`, `sonic_toggle`, `sonic_mode_1`, `sonic_mode_2`,
+  `sonic_switch`, `sonic_increase`, `sonic_decrease`, `sonic_level`: model-specific
+  physical bed massage. Absolute `value` is0–100; holds use `duration_ms`.
+- Conditional legacy screens: `rgb_preview`, `rgb2_preview`, `rgb_commit`,
+  `rgb2_commit` use `rgb`, `brightness`0–255 and commit delay `value`10–120.
+  RGB2 uses white. `snore_setting` and `out_of_bed_setting` accept `value`0/1.
+  `yb_massage` uses speed `value`1–3 and timer parameter `duration_ms`300 or900.
+- `seven_motion` uses the conditional split axis (`axis`: all/back/legs/lumbar)
+  and optional local `sleeper` (left/right), which must agree with a targeted child.
+  `ten_motion`/`newten_motion` use `position`1–4 (all/back/legs/waist), `up` and
+  `duration_ms`. `ten_recall`/`newten_recall` and `ten_save`/`newten_save` use
+  memory `value`1/2. These screens remain P1 even where their class name says New.
+
+Model gates and shared versus side-specific packets are described in the
+[CheersSleep guide](beds/cheerssleep.md). Hardware remains unverified.
 
 ## Comfort Enhancement 3
 

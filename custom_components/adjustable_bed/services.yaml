@@ -3379,3 +3379,100 @@ personal_comfort_sequence:
             - left
             - right
             - both
+
+cheerssleep:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          translation_key: cheerssleep_operation
+          options:
+            - query
+            - query_shared
+            - position_light_toggle
+            - color_light_toggle
+            - massage_head
+            - massage_foot
+            - massage_mode
+            - sonic_back
+            - sonic_foot
+            - sonic_toggle
+            - sonic_mode_1
+            - sonic_mode_2
+            - sonic_switch
+            - sonic_increase
+            - sonic_decrease
+            - sonic_level
+            - rgb_preview
+            - rgb2_preview
+            - rgb_commit
+            - rgb2_commit
+            - snore_setting
+            - out_of_bed_setting
+            - yb_massage
+            - seven_motion
+            - ten_motion
+            - ten_recall
+            - ten_save
+            - newten_motion
+            - newten_recall
+            - newten_save
+    value:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 120
+          mode: box
+    rgb:
+      default: [255, 255, 255]
+      selector:
+        color_rgb:
+    brightness:
+      default: 255
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    duration_ms:
+      default: 1000
+      selector:
+        number:
+          min: 1
+          max: 30000
+          mode: box
+    axis:
+      default: all
+      selector:
+        select:
+          options: [all, back, legs, lumbar]
+          translation_key: cheerssleep_axis
+    up:
+      default: true
+      selector:
+        boolean:
+    position:
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 4
+          mode: box
+    sleeper:
+      selector:
+        select:
+          options: [left, right]
+          translation_key: side
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side

@@ -829,6 +829,7 @@
       "symphony_unpair_first": "Separate the combined bed first, then choose this product, which has no separate sides.",
       "bedgear_profile": "Enter the bed's Bluetooth name exactly as the Bedgear app shows it. It contains HHC.",
       "invalid_movement_per_tap": "Enter a number from 1 to 100.",
+      "cheerssleep_model_required": "Choose one of the CheersSleep model keys from the app catalog.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls.",
       "l2motion_profile": "Enter the bed's Bluetooth name exactly as L2 Motion shows it."
     }
@@ -1520,6 +1521,7 @@
       "invalid_movement_per_tap": "Enter a number from 1 to 100.",
       "rmcontrol_needs_reconfigure": "This product needs another bed model or remote. Change that in Reconfigure first, then choose the product here.",
       "rmcontrol_needs_reconfigure_paired": "This product needs another bed model or remote. Separate the combined bed, change the affected bed in Reconfigure, then combine them again.",
+      "cheerssleep_model_required": "Choose one of the CheersSleep model keys from the app catalog.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls."
     },
     "progress": {
@@ -3256,6 +3258,72 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "cheerssleep_refresh": {
+        "name": "Refresh bed state"
+      },
+      "cheerssleep_massage_head": {
+        "name": "Cycle head massage"
+      },
+      "cheerssleep_massage_foot": {
+        "name": "Cycle foot massage"
+      },
+      "cheerssleep_massage_mode": {
+        "name": "Cycle massage mode"
+      },
+      "cheerssleep_sonic_back": {
+        "name": "Sonic back zone"
+      },
+      "cheerssleep_sonic_foot": {
+        "name": "Sonic foot zone"
+      },
+      "cheerssleep_sonic_toggle": {
+        "name": "Toggle sonic massage"
+      },
+      "cheerssleep_sonic_mode_1": {
+        "name": "Sonic massage mode 1"
+      },
+      "cheerssleep_sonic_mode_2": {
+        "name": "Sonic massage mode 2"
+      },
+      "cheerssleep_sonic_switch": {
+        "name": "Switch sonic control mode"
+      },
+      "cheerssleep_sonic_increase": {
+        "name": "Increase sonic level"
+      },
+      "cheerssleep_sonic_decrease": {
+        "name": "Decrease sonic level"
+      },
+      "cheerssleep_combined_up": {
+        "name": "All sections up"
+      },
+      "cheerssleep_combined_down": {
+        "name": "All sections down"
+      },
+      "cheerssleep_all_up": {
+        "name": "Storage lift up"
+      },
+      "cheerssleep_all_down": {
+        "name": "Storage lift down"
+      },
+      "cheerssleep_lift_up": {
+        "name": "Bed lift up"
+      },
+      "cheerssleep_lift_down": {
+        "name": "Bed lift down"
+      },
+      "cheerssleep_lift_head_up": {
+        "name": "Head lift up"
+      },
+      "cheerssleep_lift_head_down": {
+        "name": "Head lift down"
+      },
+      "cheerssleep_lift_foot_up": {
+        "name": "Foot lift up"
+      },
+      "cheerssleep_lift_foot_down": {
+        "name": "Foot lift down"
+      },
       "okimiki_action": {
         "name": "{action}"
       },
@@ -3695,6 +3763,18 @@
       },
       "bedgear_combined": {
         "name": "Head and foot"
+      },
+      "cheerssleep_all": {
+        "name": "Storage lift"
+      },
+      "cheerssleep_lift": {
+        "name": "Bed lift"
+      },
+      "cheerssleep_lift_head": {
+        "name": "Head lift"
+      },
+      "cheerssleep_lift_foot": {
+        "name": "Foot lift"
       },
       "somos_head": {
         "name": "Head"
@@ -4790,6 +4870,39 @@
       "sonicsleep": {
         "name": "Model"
       },
+      "cheerssleep_head_massage": {
+        "name": "Head massage level"
+      },
+      "cheerssleep_foot_massage": {
+        "name": "Foot massage level"
+      },
+      "cheerssleep_massage_mode": {
+        "name": "Massage mode"
+      },
+      "cheerssleep_left_heart": {
+        "name": "Left heart rate"
+      },
+      "cheerssleep_left_breath": {
+        "name": "Left breath rate"
+      },
+      "cheerssleep_left_snore_count": {
+        "name": "Left snore count"
+      },
+      "cheerssleep_left_snore_power": {
+        "name": "Left snore power"
+      },
+      "cheerssleep_right_heart": {
+        "name": "Right heart rate"
+      },
+      "cheerssleep_right_breath": {
+        "name": "Right breath rate"
+      },
+      "cheerssleep_right_snore_count": {
+        "name": "Right snore count"
+      },
+      "cheerssleep_right_snore_power": {
+        "name": "Right snore power"
+      },
       "okimiki_alarms": {
         "name": "Alarms"
       },
@@ -5196,6 +5309,18 @@
       "richmat_mh_smart_set_lock": {
         "name": "Smart set lock"
       },
+      "cheerssleep_left_on_bed": {
+        "name": "Left in bed"
+      },
+      "cheerssleep_left_asleep": {
+        "name": "Left asleep"
+      },
+      "cheerssleep_right_on_bed": {
+        "name": "Right in bed"
+      },
+      "cheerssleep_right_asleep": {
+        "name": "Right asleep"
+      },
       "nerum_light": {
         "name": "Light"
       },
@@ -5506,6 +5631,9 @@
       },
       "richmat_resource_massage_timer": {
         "name": "Massage timer"
+      },
+      "cheerssleep_sonic_level": {
+        "name": "Sonic massage level"
       },
       "okimiki_light_seconds": {
         "name": "Light duration"
@@ -8673,6 +8801,52 @@
         }
       }
     },
+    "cheerssleep": {
+      "name": "CheersSleep: run bed action",
+      "description": "Run direct BLE CheersSleep bed controls. All selected targets are validated before any control writes.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "operation": {
+          "name": "Bed action",
+          "description": "Select a model-supported bed action or a conditional P1 exported screen."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Model-specific level, memory slot, boolean or legacy delay setting."
+        },
+        "rgb": {
+          "name": "RGB",
+          "description": "Three values from 0 to 255."
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Legacy RGB brightness from 0 to 255."
+        },
+        "duration_ms": {
+          "name": "Duration or Yb timer parameter",
+          "description": "Hold duration in milliseconds. Yb uses parameter 300 or 900, whose time selection is 5 or 15 minutes."
+        },
+        "axis": {
+          "name": "Axis"
+        },
+        "up": {
+          "name": "Move up"
+        },
+        "position": {
+          "name": "Position selector",
+          "description": "Ten/NewTen position 1 all, 2 back, 3 feet, 4 waist."
+        },
+        "side": {
+          "name": "Side"
+        },
+        "sleeper": {
+          "name": "Auxiliary sleeper",
+          "description": "Seven screen local side selector. Must match a targeted paired child."
+        }
+      }
+    },
     "okimiki": {
       "name": "Okimiki: controls and alarms",
       "description": "Press or save a control, set the light or clock, or read and set the selected Okimiki product's alarms.",
@@ -10863,6 +11037,48 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "cheerssleep_operation": {
+      "options": {
+        "query": "Read bed state",
+        "query_shared": "Read shared state",
+        "position_light_toggle": "Toggle light (position screen)",
+        "color_light_toggle": "Toggle light (color screen)",
+        "massage_head": "Cycle head massage",
+        "massage_foot": "Cycle foot massage",
+        "massage_mode": "Cycle massage mode",
+        "sonic_back": "Sonic back zone",
+        "sonic_foot": "Sonic foot zone",
+        "sonic_toggle": "Toggle sonic massage",
+        "sonic_mode_1": "Sonic massage mode 1",
+        "sonic_mode_2": "Sonic massage mode 2",
+        "sonic_switch": "Switch sonic control mode",
+        "sonic_increase": "Increase sonic level",
+        "sonic_decrease": "Decrease sonic level",
+        "sonic_level": "Set sonic level",
+        "rgb_preview": "Preview light color",
+        "rgb2_preview": "Preview white light",
+        "rgb_commit": "Save light color",
+        "rgb2_commit": "Save white light",
+        "snore_setting": "Snore response setting",
+        "out_of_bed_setting": "Out-of-bed setting",
+        "yb_massage": "Timed massage",
+        "seven_motion": "Move (Seven screen)",
+        "ten_motion": "Move (Ten screen)",
+        "ten_recall": "Recall memory (Ten screen)",
+        "ten_save": "Save memory (Ten screen)",
+        "newten_motion": "Move (NewTen screen)",
+        "newten_recall": "Recall memory (NewTen screen)",
+        "newten_save": "Save memory (NewTen screen)"
+      }
+    },
+    "cheerssleep_axis": {
+      "options": {
+        "all": "All",
+        "back": "Back",
+        "legs": "Legs",
+        "lumbar": "Lumbar"
       }
     },
     "okimiki_operation": {

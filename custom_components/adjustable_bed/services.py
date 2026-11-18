@@ -1168,6 +1168,7 @@ async def _timed_move_plan(
     svane_admission: SvaneHoldAdmission | None = None,
     *,
     hold_lease: bool = False,
+    shared_motors: set[int] | None = None,
 ) -> tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str]:
     """Validate one physical side and build its timed command."""
     async with _side_validation(parent, coordinator, preflighted) as controller:
@@ -1203,6 +1204,13 @@ async def _timed_move_plan(
             controller.validate_timed_movement(motor, direction, duration_ms)
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
+
+        if (
+            shared_motors is not None
+            and isinstance(coordinator, SingleAddressSideCoordinator)
+            and spec.shared_across_sides
+        ):
+            shared_motors.add(_plan_key(coordinator))
 
         if coordinator.bed_type == BED_TYPE_SVANE:
             # The factory imported the Svane controller module, off the event loop.
@@ -1555,6 +1563,7 @@ async def _async_timed_move(
         tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str],
     ] = {}
     stop_epoch_by_target: dict[int, int] = {}
+    shared_motors: set[int] = set()
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
@@ -1576,6 +1585,7 @@ async def _async_timed_move(
                     coordinator, target, preflighted, motor, direction, duration_ms,
                     svane_admissions.get(target_key),
                     hold_lease=lease is not None,
+                    shared_motors=shared_motors,
                 )
             admission = command_admissions[(id(coordinator), side)]
             actual_resources = {
@@ -1605,8 +1615,13 @@ async def _async_timed_move(
         for target in physical
     )
 
+    completed_shared_motors: set[int] = set()
+
     async def move(target: BedChild) -> None:
-        command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
+        target_key = _plan_key(target)
+        if target_key in completed_shared_motors:
+            return
+        command, pulse_count, pulse_delay_ms, resource = plans[target_key]
         if streamed:
             assert not isinstance(target, SingleAddressSideCoordinator)
             svane_admission = svane_admissions.get(_plan_key(target))
@@ -1645,14 +1660,16 @@ async def _async_timed_move(
                 expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
                 lease=lease,
             )
-            return
-        await target.async_execute_controller_command(
-            command,
-            resource=resource,
-            pulse_count=pulse_count,
-            pulse_delay_ms=pulse_delay_ms,
-            expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
-        )
+        else:
+            await target.async_execute_controller_command(
+                command,
+                resource=resource,
+                pulse_count=pulse_count,
+                pulse_delay_ms=pulse_delay_ms,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+            )
+        if target_key in shared_motors:
+            completed_shared_motors.add(target_key)
 
     try:
         for coordinator, side in targets:
@@ -2061,18 +2078,27 @@ async def _hold_targets(
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     _require_hold_topology(targets)
+    shared_receivers: set[int] = set()
 
     def check(target: BedChild, controller: BedController) -> None:
         _require_held_control(target, controller, control)
         if lease is not None:
             _require_hold_execution(target, controller, control)
         controller.validate_hold_control(control, duration_ms)
+        if isinstance(target, SingleAddressSideCoordinator) and any(
+            spec.shared_across_sides
+            and spec.hold is not None
+            and control in (spec.hold.up_control, spec.hold.down_control)
+            for spec in controller.motor_control_specs
+        ):
+            shared_receivers.add(_plan_key(target))
 
     # A STOP during any per-side capability/connect wait owns the event that
     # was current when the user pressed. Capture before _preflight_each awaits.
     if admissions is None:
         admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
+    completed_shared_receivers: set[int] = set()
 
     async def hold(controller: BedController) -> None:
         # Automatic link-slot fallback may have changed topology after admission.
@@ -2083,6 +2109,40 @@ async def _hold_targets(
 
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            if isinstance(coordinator, SingleAddressPairedCoordinator) and any(
+                _plan_key(target) in shared_receivers
+                for target in _command_targets(coordinator, side)
+            ):
+                stop_epochs = {
+                    id(child): admission.expected_stop_epochs.get(target_side)
+                    for target_side, child in coordinator._targets_for(side)
+                }
+
+                async def hold_shared(
+                    target: BedChild,
+                    _stop_epochs: dict[int, int | None] = stop_epochs,
+                ) -> None:
+                    receiver = _plan_key(target)
+                    # Skip the duplicate before its scheduler can reconnect the receiver.
+                    if receiver in completed_shared_receivers:
+                        return
+                    await target.async_execute_controller_command(
+                        track_held_control(getattr(target, "hass", None), control, hold),
+                        cancel_running=True,
+                        expected_stop_epoch=_stop_epochs[id(target)],
+                        lease=lease,
+                    )
+                    if receiver in shared_receivers:
+                        completed_shared_receivers.add(receiver)
+
+                await coordinator.async_run_child_operation(
+                    "hold control",
+                    hold_shared,
+                    side=side,
+                    expected_pair_generations=admission.expected_pair_generations,
+                    expected_stop_epochs=admission.expected_stop_epochs,
+                )
+                continue
             await _execute_sided(
                 coordinator,
                 side,
@@ -2698,6 +2758,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.bedgear.services import async_register_bedgear_services
     from .beds.bedtech.services import register_services as register_bedtech_services
     from .beds.casper_base.services import async_register_casper_base_services
+    from .beds.cheerssleep.services import register_services as register_cheerssleep_services
     from .beds.comfort_enhancement3.services import register_services as register_apex_services
     from .beds.customatic.services import async_register_customatic_services
     from .beds.doublesleep.services import async_register_doublesleep_services
@@ -2748,6 +2809,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_bedtech_services,
         register_linx_services,
         register_somos_services,
+        register_cheerssleep_services,
         register_symphony_sense_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,

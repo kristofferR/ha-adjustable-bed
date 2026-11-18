@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 from bleak.exc import BleakError
 
 from .app_families import FAMILY_STEP_ROUTES, family_member_rows, family_row_label
+from .beds.cheerssleep.catalog import advertisement as cheerssleep_advertisement
 from .beds.doublesleep.protocol import discover as discover_doublesleep
 from .beds.fsm_relax.discovery import matches_fsm_relax_candidate
 from .beds.galaxy.catalog import PROFILE_CHOICES as GALAXY_PROFILES
@@ -552,6 +553,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "nerum": "Nerum app",
+    "cheerssleep": "CheersSleep app",
     "smart_sleep": "OKIN Smart Sleep app",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY app",
     "smart_comfort_synergy": "Smart Comfort app (SYNERGY)",
@@ -1363,6 +1365,11 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_LINX:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_LINX]))
             result.signals.append("name:linx_app_candidate")
+    if REMACRO_SERVICE_UUID in {
+        uuid.lower() for uuid in service_info.service_uuids or ()
+    } and cheerssleep_advertisement(service_info.manufacturer_data or {}):
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "cheerssleep"]))
+        result.signals.append("manufacturer:cheerssleep_model_candidate")
     # The app's scan filter is wider than the manifest gate, so it refines
     # advertisements another matcher admitted; it declares no hint of its own.
     if galaxy_scan_matches(service_info.name) and result.bed_type != BED_TYPE_GALAXY and not any(

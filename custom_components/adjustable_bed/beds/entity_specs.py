@@ -176,6 +176,8 @@ class MotorControlSpec:
     max_angle: float = 68
     scheduler_resource: str | None = None
     hold: ControllerMotorHoldSpec | None = field(default=None, kw_only=True)
+    # Logical sides drive the same physical actuator on a single receiver.
+    shared_across_sides: bool = field(default=False, kw_only=True)
 
 
 # Units a position slider can be scaled in.

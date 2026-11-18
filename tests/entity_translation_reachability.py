@@ -198,6 +198,10 @@ async def factory_controllers() -> list[BedController]:
     from custom_components.adjustable_bed.profiles.smart_sleep import PROFILES as SMART_SLEEP
     for model in (8, 67):
         controllers.append(SmartSleepController(_FactoryCoordinator(), SMART_SLEEP["p1"], model))
+    from custom_components.adjustable_bed.beds.cheerssleep.controller import CheersSleepController
+    from custom_components.adjustable_bed.profiles.cheerssleep import MODELS as CHEERSSLEEP_MODELS
+    for model in CHEERSSLEEP_MODELS.values():
+        controllers.append(CheersSleepController(_FactoryCoordinator(), model))
     # A Sleep Number MCR foundation reports its per-side motors once connected.
     controller = await _create_controller_for_bed_type(BED_TYPE_SLEEP_NUMBER_MCR)
     assert isinstance(controller, SleepNumberMcrController)

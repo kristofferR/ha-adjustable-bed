@@ -1086,3 +1086,13 @@ route. Configure keeps this selection; a two-address pair stores each side's
 product separately. Shared Bluetooth names do not select a product. Lighting
 and alarms require the current connection's capability reply. See
 [Okimiki](beds/richmat.md#okimiki) for controls and qualification status.
+
+### CheersSleep
+
+Choose **CheersSleep app** and the exact model key in the app
+profile step. All 36 keys are selectable in new setup and Reconfigure. The key
+sets the wire format, actuators, presets and massage/lighting capabilities;
+shared UUIDs and device names do not establish an app identity. Imported entries
+retain their explicit `product_type`, and each paired physical side owns its
+model. The five split keys also support optional native Left/Right children on
+one Bluetooth address. See the [guide](beds/cheerssleep.md).

@@ -6032,6 +6032,22 @@
       ]
     }
   },
+  "cheerssleep": {
+    "services": {
+      "6e403587-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e403588-b5a3-f393-e0a9-e50e24dcca9e",
+        "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    },
+    "properties": {
+      "6e403588-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write"
+      ],
+      "6e403589-b5a3-f393-e0a9-e50e24dcca9e": [
+        "notify"
+      ]
+    }
+  },
   "okimiki": {
     "services": {
       "0000fee9-0000-1000-8000-00805f9b34fb": [

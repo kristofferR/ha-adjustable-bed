@@ -1270,6 +1270,8 @@ def default_scenario(bed_type: str) -> Scenario:
         # The exact name selects the panel: here panel One.
         data[const.CONF_BLE_DEVICE_NAME] = MOTOMOTION_NAMES[0]
         kwargs = {"device_name": MOTOMOTION_NAMES[0]}
+    if bed_type == "cheerssleep":
+        data[const.CONF_PRODUCT_TYPE] = "45"
     if bed_type == "smart_sleep":
         data[const.CONF_PRODUCT_TYPE] = "0"
         variant = "p1"
@@ -1808,6 +1810,8 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
             },
         )
     )
+    from custom_components.adjustable_bed.profiles.cheerssleep import MODELS as CHEERSSLEEP_MODELS
+    routes.extend(Scenario(id=f"cheerssleep:{model}", bed_type="cheerssleep", entry_data={"product_type": str(model)}, layout_id="cheerssleep") for model in CHEERSSLEEP_MODELS)
     # One accepted P1 outcome per numeric model; P2 scan selects only model80.
     from custom_components.adjustable_bed.profiles.smart_sleep import MODELS as SMART_SLEEP_MODELS
     for model in SMART_SLEEP_MODELS:
@@ -1975,7 +1979,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
-        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep"}:
+        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep", "cheerssleep"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return

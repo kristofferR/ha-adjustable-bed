@@ -1,0 +1,260 @@
+[
+  {
+    "id": "P1-head-up",
+    "protocol": "P1",
+    "action": "head/back up",
+    "builder": "p1",
+    "inputs": {
+      "serial": 2,
+      "pid": 1,
+      "command": 257
+    },
+    "expected_bytes": "0201010100000000"
+  },
+  {
+    "id": "P1-head-stop",
+    "protocol": "P1",
+    "action": "head/back stop",
+    "builder": "p1",
+    "inputs": {
+      "serial": 3,
+      "pid": 1,
+      "command": 256
+    },
+    "expected_bytes": "0301000100000000"
+  },
+  {
+    "id": "P1-right-mode-anomaly",
+    "protocol": "P1",
+    "action": "right head massage pattern intensity2",
+    "builder": "p1",
+    "inputs": {
+      "serial": 4,
+      "pid": 1,
+      "command": 9217
+    },
+    "expected_bytes": "0401012400000000"
+  },
+  {
+    "id": "P1-rgb-packing",
+    "protocol": "P1",
+    "action": "RGB and brightness parameter",
+    "builder": "p1",
+    "inputs": {
+      "serial": 5,
+      "pid": 1,
+      "command": 1281,
+      "parameter": 287454020
+    },
+    "expected_bytes": "0501010544332211"
+  },
+  {
+    "id": "P1-delay",
+    "protocol": "P1",
+    "action": "light delay setting10",
+    "builder": "p1",
+    "inputs": {
+      "serial": 1,
+      "pid": 3,
+      "command": 4353,
+      "parameter": 10
+    },
+    "expected_bytes": "010301110a000000"
+  },
+  {
+    "id": "P1-mac-query",
+    "protocol": "P1",
+    "action": "sleep MAC query ignores string",
+    "builder": "p1",
+    "inputs": {
+      "serial": 1,
+      "pid": 7,
+      "command": 0
+    },
+    "expected_bytes": "0107000000000000"
+  },
+  {
+    "id": "P2-head-up",
+    "protocol": "P2",
+    "action": "head/back up",
+    "builder": "normal",
+    "inputs": {
+      "key": 1
+    },
+    "expected_bytes": "ee01050000000100c0"
+  },
+  {
+    "id": "P2-all-three-left",
+    "protocol": "P2",
+    "action": "all three up left",
+    "builder": "normal",
+    "inputs": {
+      "key": 21,
+      "selected": 1
+    },
+    "expected_bytes": "ee010500000015aac0"
+  },
+  {
+    "id": "P2-release-actual",
+    "protocol": "P2",
+    "action": "shared held release ignores side",
+    "builder": "normal",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "ee01050000000000c0"
+  },
+  {
+    "id": "P2-flat-right",
+    "protocol": "P2",
+    "action": "flat right",
+    "builder": "normal",
+    "inputs": {
+      "key": 134217728,
+      "selected": 2
+    },
+    "expected_bytes": "ee010508000000bbc0"
+  },
+  {
+    "id": "P2-memory2-recall",
+    "protocol": "P2",
+    "action": "memory2 recall",
+    "builder": "normal",
+    "inputs": {
+      "key": 262144
+    },
+    "expected_bytes": "ee01050004000000c0"
+  },
+  {
+    "id": "P2-neck-sixth",
+    "protocol": "P2",
+    "action": "sixth actuator neck up",
+    "builder": "normal",
+    "inputs": {
+      "key": 1024
+    },
+    "expected_bytes": "ee01050000040000c0"
+  },
+  {
+    "id": "P2-lift-both",
+    "protocol": "P2",
+    "action": "combined bed lift up",
+    "builder": "normal",
+    "inputs": {
+      "key": 320
+    },
+    "expected_bytes": "ee01050000014000c0"
+  },
+  {
+    "id": "P2-massage-mode-switch",
+    "protocol": "P2",
+    "action": "sonic massage mode switch",
+    "builder": "normal",
+    "inputs": {
+      "key": 3084
+    },
+    "expected_bytes": "ee010500000c0c00c0"
+  },
+  {
+    "id": "P2-save1-right",
+    "protocol": "P2",
+    "action": "memory1 save right",
+    "builder": "setting",
+    "inputs": {
+      "opcode": 6,
+      "a": 5,
+      "selected": 2
+    },
+    "expected_bytes": "ee020506050000bbc0"
+  },
+  {
+    "id": "P2-save2",
+    "protocol": "P2",
+    "action": "memory2 save",
+    "builder": "setting",
+    "inputs": {
+      "opcode": 6,
+      "a": 6
+    },
+    "expected_bytes": "ee02050606000000c0"
+  },
+  {
+    "id": "P2-setting-release",
+    "protocol": "P2",
+    "action": "setting release",
+    "builder": "setting",
+    "inputs": {
+      "opcode": 170
+    },
+    "expected_bytes": "ee0205aa00000000c0"
+  },
+  {
+    "id": "P2-color",
+    "protocol": "P2",
+    "action": "RGB",
+    "builder": "setting",
+    "inputs": {
+      "opcode": 5,
+      "a": 17,
+      "b": 34,
+      "c": 51
+    },
+    "expected_bytes": "ee02050511223300c0"
+  },
+  {
+    "id": "P2-brightness",
+    "protocol": "P2",
+    "action": "brightness100",
+    "builder": "setting",
+    "inputs": {
+      "opcode": 10,
+      "a": 100
+    },
+    "expected_bytes": "ee02050a64000000c0"
+  },
+  {
+    "id": "P2-sonic-level",
+    "protocol": "P2",
+    "action": "sonic bed massage level60",
+    "builder": "setting",
+    "inputs": {
+      "opcode": 11,
+      "a": 3,
+      "b": 60
+    },
+    "expected_bytes": "ee02050b033c0000c0"
+  },
+  {
+    "id": "P2-sonic-increase",
+    "protocol": "P2",
+    "action": "sonic bed massage increase",
+    "builder": "setting",
+    "inputs": {
+      "opcode": 11,
+      "a": 2,
+      "b": 1
+    },
+    "expected_bytes": "ee02050b02010000c0"
+  },
+  {
+    "id": "P2-query-left",
+    "protocol": "P2",
+    "action": "state query left",
+    "builder": "query",
+    "inputs": {
+      "selected": 1
+    },
+    "expected_bytes": "eeb001aac0"
+  },
+  {
+    "id": "P2-query-music-right",
+    "protocol": "P2",
+    "action": "shared bed state query right",
+    "builder": "query",
+    "inputs": {
+      "music": true,
+      "selected": 2
+    },
+    "expected_bytes": "eed001bbc0"
+  }
+]

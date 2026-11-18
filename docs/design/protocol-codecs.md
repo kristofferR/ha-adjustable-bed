@@ -383,3 +383,11 @@ alarm getter despite sharing KWRN's menu body. Its shared catalog-controller
 extension owns the app's whole-buffer common parser, captured-session writes,
 strict elapsed deadlines, flat release, three-second save threshold and local
 alarm records. No existing wire builder or profile changes.
+
+CheersSleep 2.7.0 adds `codec/cheerssleep.py`: the serial/PID P1
+encoder is extracted from Remacro's existing `build_frame`, retaining that import
+API and all app-specific counters. The accepted P1 literals prove identical
+framing; CheersSleep's distinct counters and timing remain in its own profile.
+P2's EE normal/setting/query frames require a new encoder, since no existing
+codec reproduces them. Neither UI labels nor shared service identity establish
+byte equivalence. `tests/test_cheerssleep_vectors.py` covers both formats.

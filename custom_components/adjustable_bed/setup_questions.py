@@ -2142,6 +2142,30 @@ def _suta_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {} if profile is not None and profile.key != "MattressControllerDrawerFragment" else {CONF_BLE_DEVICE_NAME: "suta_name"}
 
 
+def _cheerssleep_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .beds.cheerssleep.catalog import MODELS
+    # Several app screens share a model name; the key tells them apart.
+    return {str(key): f"{model.label} ({key})" for key, model in MODELS.items()}
+
+
+def _cheerssleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .beds.cheerssleep.catalog import advertisement
+    result = dict(data)
+    if discovered and (found := advertisement(discovered.manufacturer_data or {})) and CONF_PRODUCT_TYPE not in result:
+        result[CONF_PRODUCT_TYPE] = str(found[0].key)
+    return result
+
+
+def _cheerssleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    return {} if str(data.get(CONF_PRODUCT_TYPE, "45")) in _cheerssleep_models(data) else {CONF_PRODUCT_TYPE: "cheerssleep_model_required"}
+
+
+def _cheerssleep_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .beds.cheerssleep.catalog import MODELS
+    model = MODELS.get(int(data.get(CONF_PRODUCT_TYPE, 45)), MODELS[45])
+    return {CONF_MOTOR_COUNT: min(4, max(2, len(model.axes))), CONF_HAS_MASSAGE: model.massage or model.sonic or model.as_layout}
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     "ormatek": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
@@ -2167,6 +2191,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=_nerum_seed,
         derive=lambda data: {CONF_MOTOR_COUNT: {"nerum": 2, "2": 2, "3": 3, "4": 4}.get(data.get(CONF_PRODUCT_TYPE, "nerum"), 2)},
         imports=("profiles.nerum",),
+    ),
+    "cheerssleep": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, _cheerssleep_models, "45", searchable=True),),
+        seed=_cheerssleep_seed, validate=_cheerssleep_errors, derive=_cheerssleep_settings, imports=("beds.cheerssleep.catalog",),
     ),
     "smart_sleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,

@@ -47,6 +47,7 @@ Each codec has one guide, with a section per profile:
 | [JMC400](beds/jmc.md) | Jensen JMC400 and the Svane Remote app's JMC400 route |
 | [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS |
 | [Vibradorm](beds/vibradorm.md) | Vibradorm, Caresse, Werkmeister, VMAT and V-MAT Basic |
+| [CheersSleep](beds/cheerssleep.md) | CheersSleep P1 and P2, all 36 model keys |
 | [OKIN Smart Sleep](beds/smart-sleep.md) | OKIN Smart Sleep legacy P1 and new P2 |
 | [Nerum](beds/nerum.md) | Nerum P1 ORE, P2 Okin and P3 Smartbed profiles |
 | [M Line](beds/mline.md) | M Line Sleep, Smart, Smart Sainuo, Okin and fallback selectors |

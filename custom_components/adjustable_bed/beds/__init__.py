@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .bf_cherish.controller import BfCherishController as BfCherishController
     from .casper_base.controller import CasperBaseController as CasperBaseController
     from .casper_sleep.controller import CasperSleepController as CasperSleepController
+    from .cheerssleep.controller import CheersSleepController as CheersSleepController
     from .comfort_enhancement3.controller import (
         ComfortEnhancement3Controller as ComfortEnhancement3Controller,
     )
@@ -154,6 +155,7 @@ _EXPORT_MODULES = {
     "SonicSleepController": "sonicsleep.controller",
     "ResidentController": "resident.controller",
     "NerumController": "nerum.controller",
+    "CheersSleepController": "cheerssleep.controller",
     "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",
     "SymphonyController": "symphony.controller",

@@ -28,7 +28,7 @@ STANDALONE: dict[str, str] = {
     "octo": "own wire format",
     "okin_ore": "one fixed command table over codec/okin_ore.py, which the BOX1220 routes of"
     " sleepys_elite_app and starcode_abm5_4 also send; no app profile",
-    "remacro": "own wire format",
+    "remacro": "legacy standalone app controller; P1 encoder shared with CheersSleep",
     "richmat_sleep_receiver": "sleep receiver without bed commands; own FA crc8 frames",
     "reverie": "own wire format",
     "reverie_nightstand": "own wire format",
