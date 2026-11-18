@@ -13,6 +13,7 @@ from custom_components.adjustable_bed.beds.diagnostic import DiagnosticBedContro
 from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerNumberSpec,
     ControllerSelectSpec,
+    ControllerSwitchSpec,
     build_position_number_spec,
 )
 from custom_components.adjustable_bed.const import BED_TYPE_DIAGNOSTIC, CONF_BED_TYPE, DOMAIN
@@ -35,6 +36,10 @@ from custom_components.adjustable_bed.select import (
 )
 from custom_components.adjustable_bed.select import (
     async_setup_entry as setup_selects,
+)
+from custom_components.adjustable_bed.switch import (
+    AdjustableBedControllerSwitch,
+    _switch_entities_for,
 )
 
 
@@ -429,3 +434,66 @@ async def test_two_address_proxy_routes_only_selected_physical_child(hass):
     children["left"].controller_state["mood_intent"] = "blue"
     assert select.current_option == "blue"
     assert number.native_value is None
+
+
+class SwitchController(DiagnosticBedController):
+    """Declare one read-back switch and one assumed switch."""
+
+    def __init__(self):
+        super().__init__(MagicMock(address="test"))
+        self.calls = []
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        return (
+            ControllerSwitchSpec(
+                "lock",
+                "child_lock",
+                lambda ctrl, on: ctrl.set_lock(on),
+                "lock_state",
+                on_value="on",
+            ),
+            ControllerSwitchSpec("sensor", "motion_sensor", lambda ctrl, on: ctrl.set_sensor(on)),
+        )
+
+    async def set_lock(self, enabled):
+        self.calls.append(("lock", enabled, self.command_side))
+
+    async def set_sensor(self, enabled):
+        self.calls.append(("sensor", enabled, self.command_side))
+
+
+async def test_controller_switch_reads_state_or_assumes_last_command(hass):
+    runtime = runtime_for(hass, SwitchController())
+    readback, assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    assert readback.unique_id == "bed_controller_switch_lock"
+    assert readback.is_on is None and not readback.assumed_state
+    runtime.controller_state = {"lock_state": "on"}
+    assert readback.is_on is True
+    runtime.controller_state = {"lock_state": "off"}
+    assert readback.is_on is False
+    await readback.async_turn_on()
+    # A read-back switch waits for the bed instead of assuming the command took.
+    assert readback.is_on is False
+
+    assert assumed.is_on is None and assumed.assumed_state
+    with patch.object(assumed, "async_write_ha_state"):
+        await assumed.async_turn_off()
+    assert assumed.is_on is False
+    assert runtime.controller.calls == [("lock", True, None), ("sensor", False, None)]
+
+
+async def test_controller_switch_rejects_withdrawn_setting(hass):
+    runtime = runtime_for(hass, SwitchController())
+    switch = next(
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    runtime.controller = DiagnosticBedController(MagicMock(address="test"))
+    with pytest.raises(ServiceValidationError):
+        await switch.async_turn_on()
