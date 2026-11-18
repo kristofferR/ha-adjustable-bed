@@ -29,7 +29,7 @@ async def test_actual_generic_memory_preflight_rejects_second_target_before_any_
             hass,
             **{
                 CONF_ADDRESS: f"AA:BB:CC:DD:EE:{index + 1:02X}",
-                const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
                 const.CONF_LIMOSS_REMOTE_STATE: {
                     "capabilities": {
                         "key_count": 8,

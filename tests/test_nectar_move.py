@@ -21,7 +21,6 @@ from custom_components.adjustable_bed.beds.okin_cst import OkinCstController
 from custom_components.adjustable_bed.binary_sensor import AdjustableBedControllerStateBinarySensor
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
 from custom_components.adjustable_bed.codec.okin_nframe import frame96
-from custom_components.adjustable_bed.config_flow import _apply_bed_type_choice
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CST,
     CONF_BED_TYPE,
@@ -139,21 +138,6 @@ def test_nectar_move_is_an_explicit_bed_choice(
     assert BED_TYPE_OKIN_CST in auto_detect.ambiguous_types
     assert bed_type_choice(auto_detect.bed_type, VARIANT_AUTO) != choice
 
-    # Bluetooth confirm, manual config, manual entry, and options all resolve
-    # app selector values through this shared helper.
-    selected = {CONF_BED_TYPE: choice}
-    _apply_bed_type_choice(selected, BED_TYPE_OKIN_CST)
-    assert selected == {
-        CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-        CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
-    }
-
-    unchanged = {
-        CONF_BED_TYPE: choice,
-        CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
-    }
-    _apply_bed_type_choice(unchanged, choice)
-    assert unchanged[CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_NECTAR_MOVE
 
 
 async def test_factory_profile_is_two_axes_without_position_feedback(

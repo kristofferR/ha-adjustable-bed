@@ -1,9 +1,7 @@
 """Frozen HHC ``$#`` frames, the vectors the codec must reproduce.
 
-``REPORT_VECTORS`` are the test vectors of the accepted MotoMotion 3.1.9 report
-(``com.HHC.MotoMotion``, row113; ``analysis.json`` SHA-256
-``b56fe6ab9dd878f3fc4c4937bf490653aa2308feb316c0a8305212201a7d0b5f``), split
-into their frames. The ledger is ``tests/fixtures/motomotion_ledger.json``.
+``REPORT_VECTORS`` are the test vectors of MotoMotion 3.1.9
+(``com.HHC.MotoMotion``), split into their frames.
 
 ``MOTOSLEEP_FRAMES`` are the MotoSleep 5.1.5 and Power Bob 2.0.3 profiles'
 frames. Their reports were not retained, so these are every fixed frame the

@@ -40,8 +40,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
@@ -706,7 +706,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
-                CONF_DISCONNECT_AFTER_COMMAND: True,
+                CONF_CONNECTION_MODE: "release",
             },
             unique_id="AA:BB:CC:DD:EE:52",
             entry_id="sleep_number_mcr_disconnect_after_command_test",
@@ -784,7 +784,7 @@ class TestSleepNumberMcrCoordinatorLifecycle:
                 CONF_MOTOR_COUNT: 2,
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_DISCONNECT_AFTER_COMMAND: True,
+                CONF_CONNECTION_MODE: "release",
                 CONF_PREFERRED_ADAPTER: "auto",
             },
             unique_id="AA:BB:CC:DD:EE:69",
@@ -1988,14 +1988,14 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_CST
         assert coordinator.disable_angle_sensing is True
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_cst_keeps_defaulted_angle_sensing_disabled(
         self,
         hass: HomeAssistant,
         mock_config_entry_data: dict,
     ):
-        """Legacy entries missing the angle key should retain the disabled default."""
+        """An entry without the key reads as its route does (schema 5.6 keeps older ones off)."""
         legacy_data = dict(mock_config_entry_data)
         legacy_data.pop(CONF_DISABLE_ANGLE_SENSING, None)
         coordinator = self._make_coordinator(
@@ -2005,7 +2005,7 @@ class TestRuntimeBedTypeCorrection:
             bed_type=BED_TYPE_OKIMAT,
         )
 
-        assert coordinator.disable_angle_sensing is True
+        assert coordinator.disable_angle_sensing is False
 
         coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
 
@@ -2032,7 +2032,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_CST
         assert coordinator.disable_angle_sensing is True
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_cst_same_type_keeps_angle_sensing_disabled(
         self,
@@ -2073,7 +2073,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_CST
         assert coordinator.disable_angle_sensing is True
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_rf_eco_bt_disables_angle_sensing(
         self,
@@ -2092,7 +2092,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_RF_ECO_BT
         assert coordinator.disable_angle_sensing is True
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_box25_repairs_stored_default_angle_sensing(
         self,
@@ -2118,7 +2118,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_SLEEPYS_BOX25
         assert coordinator.disable_angle_sensing is False
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_box25_preserves_enabled_position_feedback(
         self,
@@ -2137,7 +2137,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_SLEEPYS_BOX25
         assert coordinator.disable_angle_sensing is False
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_updates_richmat_to_okin_64bit(
         self,
@@ -2459,7 +2459,7 @@ class TestRuntimeBedTypeCorrection:
         assert coordinator.controller.__class__.__name__ == "LeggettOkinController"
         assert coordinator.disable_angle_sensing is True
         assert entry.data[CONF_BED_TYPE] == BED_TYPE_LEGGETT_OKIN
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in entry.data
         assert coordinator.motor_pulse_count == LEGGETT_OKIN_PULSE_DEFAULTS[0]
         assert coordinator.motor_pulse_delay_ms == LEGGETT_OKIN_PULSE_DEFAULTS[1]
         assert entry.data[CONF_MOTOR_PULSE_COUNT] == LEGGETT_OKIN_PULSE_DEFAULTS[0]
@@ -3405,7 +3405,7 @@ class TestStopAfterCancel:
             title=mock_config_entry.title,
             data={
                 **mock_config_entry.data,
-                CONF_DISCONNECT_AFTER_COMMAND: True,
+                CONF_CONNECTION_MODE: "release",
             },
             unique_id=mock_config_entry.unique_id,
             entry_id="group_connection_lease_test",
@@ -3577,7 +3577,6 @@ class TestStopAfterCancel:
 
         coordinator = AdjustableBedCoordinator(hass, entry)
         await coordinator.async_connect()
-        coordinator._position_mode = "accuracy"
 
         async def dummy_command(_controller) -> None:
             return None
@@ -3658,7 +3657,7 @@ class TestStopAfterCancel:
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
-                CONF_DISCONNECT_AFTER_COMMAND: True,
+                CONF_CONNECTION_MODE: "release",
             },
             unique_id=TEST_ADDRESS,
             entry_id="disconnect_stale_test",
@@ -3695,7 +3694,7 @@ class TestStopAfterCancel:
                 **mock_config_entry.data,
                 CONF_BED_TYPE: BED_TYPE_KEESON,
                 CONF_DISABLE_ANGLE_SENSING: False,
-                CONF_DISCONNECT_AFTER_COMMAND: True,
+                CONF_CONNECTION_MODE: "release",
             },
             unique_id=mock_config_entry.unique_id,
             entry_id="disconnect_after_position_read_test",
@@ -3760,7 +3759,7 @@ class TestStopAfterCancel:
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
-                CONF_DISCONNECT_AFTER_COMMAND: True,
+                CONF_CONNECTION_MODE: "release",
             },
             unique_id=TEST_ADDRESS,
             entry_id="disconnect_handoff_test",

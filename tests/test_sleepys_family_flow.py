@@ -14,7 +14,6 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.controller_factory import require_sleepys_route
 from custom_components.adjustable_bed.detection import get_bed_type_options
@@ -236,47 +235,6 @@ async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_c
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
     assert result["reason"] == "migration_kept"
     assert {k: v for k, v in entry.data.items() if k in before} == before
-
-
-async def test_configure_sends_a_dialect_change_to_the_guided_change(hass):
-    entry = entry_for(
-        hass, {const.CONF_BED_TYPE: const.BED_TYPE_SLEEPYS_BOX25, const.CONF_HAS_MASSAGE: True}
-    )
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    form = await flow._async_options_form(None, step_id="settings")
-    fields = {marker.schema for marker in form["data_schema"].schema}
-    # Routine settings stay; the dialect changes only through Reconfigure.
-    assert const.CONF_HAS_MASSAGE in fields
-    assert const.CONF_PROTOCOL_VARIANT not in fields
-    result = await flow._async_options_form(
-        {const.CONF_PROTOCOL_VARIANT: const.SLEEPYS_BOX25_VARIANT_LEGACY}, step_id="settings"
-    )
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert const.CONF_PROTOCOL_VARIANT not in entry.data
-
-
-async def test_configure_into_the_app_from_another_bed_type_asks_its_selector(hass):
-    entry = entry_for(
-        hass, {const.CONF_BED_TYPE: const.BED_TYPE_LINAK, const.CONF_MOTOR_COUNT: 2}
-    )
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    form = await flow._async_options_form(
-        {const.CONF_BED_TYPE: const.BED_TYPE_SLEEPYS_ELITE_APP}, step_id="settings"
-    )
-    # Only an entry already on the family leaves the selector to Reconfigure.
-    assert const.CONF_SLEEPYS_ELITE_SELECTOR in {
-        marker.schema for marker in form["data_schema"].schema
-    }
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await flow._async_options_form(
-            {const.CONF_SLEEPYS_ELITE_SELECTOR: "BOX25"}, step_id="settings"
-        )
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_SLEEPYS_ELITE_APP
-    assert entry.data[const.CONF_SLEEPYS_ELITE_SELECTOR] == "BOX25"
-    assert entry.data[const.CONF_HAS_MASSAGE] is True
 
 
 @pytest.mark.parametrize(

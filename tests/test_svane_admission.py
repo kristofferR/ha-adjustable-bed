@@ -294,7 +294,7 @@ async def test_later_session_replacement_aborts_all_targets_before_dispatch(hass
         patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], [])),
         patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._get_controller_for_service", live),
-        pytest.raises(ServiceValidationError, match="physical session changed"),
+        pytest.raises(ServiceValidationError, match="reconnected while the action"),
     ):
         await hass.services.async_call(DOMAIN, endpoint, data, blocking=True)
     one.client.write_gatt_char.assert_not_awaited()

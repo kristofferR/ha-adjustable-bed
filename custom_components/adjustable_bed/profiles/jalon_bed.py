@@ -1,4 +1,4 @@
-"""OkinComfortBed Ⅱ 1.4 (com.ore.jalon.neworebeding_android), row135.
+"""OkinComfortBed Ⅱ 1.4 (com.ore.jalon.neworebeding_android).
 
 Physical layouts change UI axes only. The wire model remains zero. No data
 here is inferred from other ORE apps, even where the Keeson codec matches.

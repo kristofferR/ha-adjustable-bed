@@ -231,7 +231,7 @@ OKIN_UUID_VARIANT_LABELS: dict[str, str] = {
     "92113": "92113 - RF-STYLE/BK/BK/14/2009 (Back/Legs, 4 Mem)",
     "92129": "92129 - TOPLINE-11-SL-2M (Back/Legs, 2 Mem, Massage)",
     "92428": "92428 - RF (Back/Legs, 2 Mem)",
-    "92461": "92461 - \n  RF-TOPLINE\n  SI (Back/Legs)",
+    "92461": "92461 - RF-TOPLINE SI (Back/Legs)",
     "92471": "92471 - RF (Back/Legs, 2 Mem)",
     "92535": "92535 - RF-LITELINE/07/ (Back/Legs)",
     "92591": "92591 - RF-FLASHLINE/09/WH/GY (Back/Legs, 2 Mem)",

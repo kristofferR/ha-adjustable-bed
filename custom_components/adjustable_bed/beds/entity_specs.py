@@ -71,6 +71,32 @@ class ControllerNumberSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class ControllerSwitchSpec:
+    """An immutable controller-declared on/off setting.
+
+    ``state_key`` holds a bool, or a string equal to ``on_value`` when on;
+    ``None`` (or a value of the wrong type) is unknown, so a controller clears
+    connection-scoped settings by publishing ``None``. Without a state key the
+    switch shows the last command it sent as assumed state until the link drops.
+    """
+
+    key: str
+    translation_key: str
+    set_fn: Callable[[BedController, bool], Awaitable[None]]
+    state_key: StateKey[bool | None] | StateKey[str | None] | None = None
+    on_value: bool | str = True
+    icon: str | None = None
+    # The published state echoes the last command rather than a bed readback.
+    assumed_state: bool = field(default=False, kw_only=True)
+    # A setting the integration keeps itself sends no frame: applied without connecting.
+    local_set_fn: Callable[[bool], None] | None = field(default=None, kw_only=True)
+    entity_registry_enabled_default: bool = field(default=True, kw_only=True)
+    # Fills a translated name template, e.g. ``{side}``.
+    translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
+    card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
+
+
+@dataclass(frozen=True, slots=True)
 class ProductButtonSpec(ControllerButtonSpec):
     """An optional product action with its own entity namespace."""
 
@@ -195,7 +221,8 @@ class ControllerStateSensorSpec:
     icon: str
     native_unit_of_measurement: str | None = None
     attribute_keys: tuple[AnyStateKey, ...] = ()
-    entity_registry_enabled_default: bool = True
+    # Hidden unless the controller opts a user-facing value in explicitly.
+    entity_registry_enabled_default: bool = False
     suggested_display_precision: int | None = None
     # Controller state is diagnostic; the card shows only what a spec places.
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
@@ -210,7 +237,8 @@ class ControllerStateBinarySensorSpec:
     state_key: AnyStateKey
     icon: str
     attribute_keys: tuple[AnyStateKey, ...] = ()
-    entity_registry_enabled_default: bool = True
+    # Hidden unless the controller opts a user-facing value in explicitly.
+    entity_registry_enabled_default: bool = False
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
 
 

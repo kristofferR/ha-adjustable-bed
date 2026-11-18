@@ -23,6 +23,7 @@ from ...services import (
     _command_targets,
     _execute_sided,
     _get_controller_for_service,
+    _invalid,
     _release_preflighted,
     _require_held_control,
 )
@@ -54,7 +55,9 @@ async def _preflight_live_svane(
             not isinstance(controller, SvaneController)
             or controller.session is not admission.session
         ):
-            raise ServiceValidationError("Svane physical session changed during preflight")
+            raise _invalid(
+                "bed_changed", "The bed reconnected while the action was being checked; try again"
+            )
         try:
             controller.validate_svane_hold_control(control, duration_ms)
         except ValueError as err:
@@ -107,7 +110,10 @@ async def _svane_live_targets(
                     not isinstance(controller, SvaneController)
                     or id(controller.session) not in admissions
                 ):
-                    raise ServiceValidationError("Svane physical session changed during preflight")
+                    raise _invalid(
+                        "bed_changed",
+                        "The bed reconnected while the action was being checked; try again",
+                    )
                 await _preflight_live_svane(
                     parent,
                     target,
