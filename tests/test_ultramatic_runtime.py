@@ -292,10 +292,15 @@ async def test_every_massage_button_writes_once_then_three_queries(runtime, acti
             at.append(round(clock.elapsed * 1000))
 
         client.write_gatt_char.side_effect = record
-        spec = next(
-            s for s in coord.controller.controller_button_specs if s.key == f"ultramatic_{action}"
-        )
-        await coord.async_execute_controller_command(spec.press_fn, resource="*")
+        if action == "massageOnOff":  # Sent by the generic massage toggle button.
+            press_fn = type(coord.controller).massage_toggle
+        else:
+            press_fn = next(
+                s
+                for s in coord.controller.controller_button_specs
+                if s.key == f"ultramatic_{action}"
+            ).press_fn
+        await coord.async_execute_controller_command(press_fn, resource="*")
     assert writes(client) == [app.control(action)] + [app.QUERY_MASSAGE] * 3
     assert at == [0, 300, 600, 900]
 

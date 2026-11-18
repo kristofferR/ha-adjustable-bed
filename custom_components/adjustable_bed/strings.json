@@ -3019,9 +3019,6 @@
       "ultramatic_wavereduce": {
         "name": "Decrease massage wave"
       },
-      "ultramatic_massageonoff": {
-        "name": "Toggle massage"
-      },
       "ultramatic_light": {
         "name": "Toggle light"
       },
