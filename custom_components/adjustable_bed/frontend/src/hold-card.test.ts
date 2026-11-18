@@ -330,9 +330,9 @@ function axisCover(hass: HomeAssistant, device: string, axis: string): MotorEnti
   hass.states[entity_id] = { entity_id, state: "open", last_changed: "", last_updated: "", attributes: {
     ...projections.standalone_cover, held_control_up: `${axis}_up`, held_control_down: `${axis}_down`,
   } };
-  // Older side-wide controls do not publish the new typed scope field.
+  // These controls stop the whole side, as their covers publish.
   if (axis.startsWith("starcode_m1x12_part_") || axis === "elevate_both") {
-    delete hass.states[entity_id].attributes.held_stop_scope;
+    hass.states[entity_id].attributes.held_stop_scope = "side";
   }
   return bedEntitiesForDevice(hass, device).motors.find((motor) => motor.key === axis)!;
 }

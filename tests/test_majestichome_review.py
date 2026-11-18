@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.beds.majestichome import services
 from custom_components.adjustable_bed.beds.majestichome.protocol import Alarm
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+from custom_components.adjustable_bed.paired_topology import PairedSideError
 from custom_components.adjustable_bed.profile_id import with_profile_ids
 from custom_components.adjustable_bed.services import (
     _resolve_sided_targets as resolve_native_targets,
@@ -868,8 +869,14 @@ async def test_fresh_settings_after_native_cover_stop(
         PairedSideProxy(live.pair, left, "left"),
         _build_cover_description(left.controller.motor_control_specs[0]),
     )
+    assert cover.entity_description.hold is not None
+    assert cover.entity_description.stop_scope is None
+    assert cover.extra_state_attributes["held_stop_scope"] == "side"
+    before_stops = {side: live.pair.stop_count(side) for side in live.children}
     cover.async_write_ha_state = MagicMock()
     await cover.async_stop_cover()
+    assert live.pair.stop_count("left") == before_stops["left"] + 1
+    assert live.pair.stop_count("right") == before_stops["right"]
     assert live.pair._pair_cancel_generation("left", ("*",)) != (0,)
     assert ("left", bytes.fromhex("6e01006edd")) in live.events
     live.events.clear()
@@ -978,19 +985,81 @@ async def test_pair_registration_rechecked_at_submission(
         with (
             patch.object(services, "_execute_preflighted", execute),
             patch.object(bed.MajesticHomeController, "_pace", pace),
-            pytest.raises(HomeAssistantError),
+            pytest.raises(ServiceValidationError) as raised,
         ):
             await hass.services.async_call(
                 const.DOMAIN, "majestichome",
                 {"device_id": getattr(live, target), "operation": "set", "alarm_id": 1},
                 blocking=True,
             )
+        assert raised.value.translation_key == "bed_changed"
         assert changed and not mutations(live.events)
         assert all(child._command_connection_holds == 0 for child in live.children.values())
     finally:
         hass.data[const.DOMAIN][live.pair.entry.entry_id] = live.pair
         for replacement in replacements:
             await replacement.async_shutdown()
+
+
+@pytest.mark.parametrize("mode", ("concurrent", "sequential"))
+async def test_registration_error_preserves_real_cleanup_failures(
+    hass, live_pair, protocol_time, mode
+):
+    live = await live_pair(mode)
+    original_execute, original_pace = (
+        services._execute_preflighted, bed.MajesticHomeController._pace
+    )
+    disconnect = live.children["left"].async_disconnect
+    stop = live.children["right"].async_stop_command
+    armed, fault = False, False
+
+    async def execute(*args, **kwargs):
+        nonlocal armed
+        armed = True
+        await original_execute(*args, **kwargs)
+
+    async def pace(ctrl, cleanup):
+        nonlocal armed, fault
+        result = await original_pace(ctrl, cleanup)
+        if armed and not cleanup:
+            armed, fault = False, True
+            assert hass.data[const.DOMAIN].pop(live.pair.entry.entry_id) is live.pair
+        return result
+
+    async def fail_disconnect(*args, **kwargs):
+        if fault and mode == "sequential":
+            raise ConnectionError("disconnect failed")
+        return await disconnect(*args, **kwargs)
+
+    async def fail_stop(*args, **kwargs):
+        if fault and mode == "concurrent":
+            raise ConnectionError("stop failed")
+        return await stop(*args, **kwargs)
+
+    try:
+        with (
+            patch.object(services, "_execute_preflighted", execute),
+            patch.object(bed.MajesticHomeController, "_pace", pace),
+            patch.object(live.children["left"], "async_disconnect", fail_disconnect),
+            patch.object(live.children["right"], "async_stop_command", fail_stop),
+            pytest.raises(PairedSideError) as raised,
+        ):
+            await hass.services.async_call(
+                const.DOMAIN, "majestichome",
+                {"device_id": live.parent, "operation": "set", "alarm_id": 1},
+                blocking=True,
+            )
+        assert fault and not mutations(live.events)
+        if mode == "concurrent":
+            assert str(raised.value.side_errors["right (stop)"]) == "stop failed"
+        else:
+            reason = raised.value.side_errors["left"]
+            assert "release also failed" in str(reason)
+            assert isinstance(reason.__cause__, ServiceValidationError)
+            assert reason.__cause__.translation_key == "bed_changed"
+        assert all(child._command_connection_holds == 0 for child in live.children.values())
+    finally:
+        hass.data[const.DOMAIN][live.pair.entry.entry_id] = live.pair
 
 
 async def test_disconnected_sequential_side_stop_quietly_drops_the_whole_call(

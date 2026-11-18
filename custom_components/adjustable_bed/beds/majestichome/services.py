@@ -21,6 +21,7 @@ from ...const import (
     DOMAIN,
 )
 from ...import_executor import async_import_modules
+from ...paired_topology import PairedSideError
 from ...services import (
     DEVICE_IDS,
     SIDE_FIELD,
@@ -223,6 +224,18 @@ async def handle_request(call: ServiceCall) -> ServiceResponse:
             admissions=admissions,
             resource=None,  # Match the all-resource scope captured before preflight.
         )
+    except PairedSideError as error:
+        changed = [
+            reason
+            for side, reason in error.side_errors.items()
+            if side in ("left", "right", "both")
+            and isinstance(reason, ServiceValidationError)
+            and reason.translation_key == "bed_changed"
+        ]
+        # Cleanup failures have their own entries, or retain a combined error.
+        if changed and len(changed) == len(error.side_errors):
+            raise changed[0] from error
+        raise
     finally:
         try:
             await _release_preflighted(preflighted)
