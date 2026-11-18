@@ -4836,12 +4836,6 @@
     "card_section": "motors",
     "card_motor": "pillow"
   },
-  "select:richmat_cluster022_group_type": {
-    "card_section": "utility"
-  },
-  "select:richmat_cluster022_transmit_mode": {
-    "card_section": "utility"
-  },
   "select:richmat_mh_motor_mode": {
     "card_section": "utility"
   },

@@ -23948,11 +23948,8 @@
 "button:richmat_mh_toggle_smart_set_lock": {"status":"ok","writes":[[0,"6e400002",true,"6e010084f3",1,0]]},
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
 "button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
-"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b02ff7a",1,0]]},
-"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b022ca7",1,0]]}
+"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b00ff78",1,0]]},
+"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b002ca5",1,0]]}
 }},
 "richmat_mlily_supreme:advanced": {
 "info": {"bed_type": "richmat_mlily_supreme", "controller": "Cluster022Controller", "module": "richmat_mh.cluster022", "pulse": [10, 100]},
@@ -24002,13 +23999,8 @@
 "select:richmat_mh_motor_mode=mode1": {"status":"ok","writes":[[0,"6e400002",true,"6e8814000a",1,0]]},
 "select:richmat_mh_motor_mode=mode2": {"status":"ok","writes":[[0,"6e400002",true,"6e8818000e",1,0]]},
 "select:richmat_mh_motor_mode=mode3": {"status":"ok","writes":[[0,"6e400002",true,"6e881c0012",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
-"select:richmat_cluster022_group_type=GROUP_SYNC": {"status":"no_writes"},
-"select:richmat_cluster022_group_type=GROUP_SPLIT": {"status":"no_writes"},
-"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b02ff7a",1,0]]},
-"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b022ca7",1,0]]}
+"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b00ff78",1,0]]},
+"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b002ca5",1,0]]}
 }},
 "richmat_mlily_supreme:cfrm": {
 "info": {"bed_type": "richmat_mlily_supreme", "controller": "Cluster022Controller", "module": "richmat_mh.cluster022", "pulse": [10, 100]},
@@ -24082,11 +24074,8 @@
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
 "button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
 "button:richmat_cluster022_smart_light_lock": {"status":"ok","writes":[[0,"6e400002",true,"6e0100c02f",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
-"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b02ff7a",1,0]]},
-"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b022ca7",1,0]]}
+"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b00ff78",1,0]]},
+"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b002ca5",1,0]]}
 }},
 "richmat_mlily_supreme:cfrm_mode2": {
 "info": {"bed_type": "richmat_mlily_supreme", "controller": "Cluster022Controller", "module": "richmat_mh.cluster022", "pulse": [10, 100]},
@@ -24160,9 +24149,6 @@
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
 "button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
 "button:richmat_cluster022_smart_light_lock": {"status":"ok","writes":[[0,"6e400002",true,"6e0100c02f",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
 "number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b02ff7a",1,0]]},
 "number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b022ca7",1,0]]}
 }},
@@ -24224,10 +24210,7 @@
 "button:richmat_mh_61": {"status":"ok","writes":[[0,"6e400002",true,"6e010061d0",1,0],[157,"6e400002",true,"6e01006edd",1,0]]},
 "button:richmat_mh_5e": {"status":"ok","writes":[[0,"6e400002",true,"6e01005ecd",1,0],[157,"6e400002",true,"6e01006edd",1,0]]},
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
-"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"}
+"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]}
 }},
 "richmat_mlily_supreme:model_3i": {
 "info": {"bed_type": "richmat_mlily_supreme", "controller": "Cluster022Controller", "module": "richmat_mh.cluster022", "pulse": [10, 100]},
@@ -24274,12 +24257,7 @@
 "stop:feet_close": {"status":"ok","writes":[[0,"6e400002",true,"6e01002796",3,100],[420,"6e400002",true,"6e01006edd",2,7]]},
 "button:richmat_mh_66": {"status":"ok","writes":[[0,"6e400002",true,"6e010066d5",1,0],[127,"6e400002",true,"6e01006edd",1,0]]},
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
-"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
-"select:richmat_cluster022_group_type=GROUP_SYNC": {"status":"no_writes"},
-"select:richmat_cluster022_group_type=GROUP_SPLIT": {"status":"no_writes"}
+"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]}
 }},
 "richmat_mlily_supreme:model_t2rm": {
 "info": {"bed_type": "richmat_mlily_supreme", "controller": "Cluster022Controller", "module": "richmat_mh.cluster022", "pulse": [10, 100]},
@@ -24321,10 +24299,7 @@
 "stop:pillow_open": {"status":"ok","writes":[[0,"6e400002",true,"6e01003fae",3,100],[420,"6e400002",true,"6e01006edd",2,7]]},
 "stop:pillow_close": {"status":"ok","writes":[[0,"6e400002",true,"6e010040af",3,100],[420,"6e400002",true,"6e01006edd",2,7]]},
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
-"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"}
+"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]}
 }},
 "richmat_mlily_supreme:normal": {
 "info": {"bed_type": "richmat_mlily_supreme", "controller": "Cluster022Controller", "module": "richmat_mh.cluster022", "pulse": [10, 100]},
@@ -24461,11 +24436,8 @@
 "select:ruf_richmat_mattress_right_sleep_duration=15_minutes": {"status":"ok","writes":[[0,"6e400002",true,"5e0209016a",1,0]]},
 "select:ruf_richmat_mattress_right_sleep_duration=20_minutes": {"status":"ok","writes":[[0,"6e400002",true,"5e0209026b",1,0]]},
 "select:ruf_richmat_mattress_right_sleep_duration=30_minutes": {"status":"ok","writes":[[0,"6e400002",true,"5e0209036c",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
-"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b02ff7a",1,0]]},
-"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b022ca7",1,0]]}
+"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b00ff78",1,0]]},
+"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b002ca5",1,0]]}
 }},
 "richmat_mlily_supreme:sleep": {
 "info": {"bed_type": "richmat_mlily_supreme", "controller": "Cluster022SleepController", "gaps": ["select:ruf_richmat_sleep_mode=single", "select:ruf_richmat_sleep_mode=double", "select:ruf_richmat_sleep_left_intervention=off", "select:ruf_richmat_sleep_left_intervention=on", "select:ruf_richmat_sleep_right_intervention=off", "select:ruf_richmat_sleep_right_intervention=on"], "module": "richmat_mh.cluster022_sleep", "pulse": [10, 100]},
@@ -24592,11 +24564,8 @@
 "select:richmat_mh_waist_both_duration=15_minutes": {"status":"ok","writes":[[0,"6e400002",true,"5e030a016c",1,0]]},
 "select:richmat_mh_waist_both_duration=20_minutes": {"status":"ok","writes":[[0,"6e400002",true,"5e030a026d",1,0]]},
 "select:richmat_mh_waist_both_duration=30_minutes": {"status":"ok","writes":[[0,"6e400002",true,"5e030a036e",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
-"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b02ff7a",1,0]]},
-"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b022ca7",1,0]]}
+"number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0b00ff78",1,0]]},
+"number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b002ca5",1,0]]}
 }},
 "richmat_nisco": {
 "info": {"bed_type": "richmat_nisco", "controller": "Cluster022Controller", "module": "richmat_mh.cluster022", "pulse": [10, 100]},
@@ -24668,9 +24637,6 @@
 "button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
 "select:richmat_mh_snore=off": {"status":"ok","writes":[[0,"6e400002",true,"6e13000081",1,0]]},
 "select:richmat_mh_snore=anti_snore": {"status":"ok","writes":[[0,"6e400002",true,"6e130046c7",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
 "number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0bffff77",1,0]]},
 "number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b012ca6",1,0]]}
 }},
@@ -24723,9 +24689,6 @@
 "stop:head_feet_close": {"status":"ok","writes":[[0,"6e400002",true,"6e01002a99",3,100],[420,"6e400002",true,"6e01006edd",2,7]]},
 "button:richmat_mh_64": {"status":"ok","writes":[[0,"6e400002",true,"6e010064d3",1,0],[127,"6e400002",true,"6e01006edd",1,0]]},
 "button:richmat_mh_66": {"status":"ok","writes":[[0,"6e400002",true,"6e010066d5",1,0],[127,"6e400002",true,"6e01006edd",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
 "number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0bffff77",1,0]]},
 "number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b012ca6",1,0]]},
 "number:richmat_mh_back_angle=0": {"status":"ok","writes":[[100,"6e400002",true,"6e88300026",1,0]]},
@@ -24805,9 +24768,6 @@
 "button:richmat_mh_toggle_smart_set_lock": {"status":"ok","writes":[[0,"6e400002",true,"6e010084f3",1,0]]},
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
 "button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
 "number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0bffff77",1,0]]},
 "number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b012ca6",1,0]]}
 }},
@@ -24883,9 +24843,6 @@
 "button:richmat_mh_toggle_smart_set_lock": {"status":"ok","writes":[[0,"6e400002",true,"6e010284f5",1,0]]},
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
 "button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"},
 "number:richmat_mh_light_timer=0": {"status":"ok","writes":[[0,"6e400002",true,"6e0bffff77",1,0]]},
 "number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b012ca6",1,0]]}
 }},
@@ -24947,10 +24904,7 @@
 "button:richmat_mh_61": {"status":"ok","writes":[[0,"6e400002",true,"6e010061d0",1,0],[157,"6e400002",true,"6e01006edd",1,0]]},
 "button:richmat_mh_5e": {"status":"ok","writes":[[0,"6e400002",true,"6e01005ecd",1,0],[157,"6e400002",true,"6e01006edd",1,0]]},
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
-"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"}
+"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]}
 }},
 "richmat_nisco:model_6brm": {
 "info": {"bed_type": "richmat_nisco", "controller": "Cluster022Controller", "module": "richmat_mh.cluster022", "pulse": [10, 100]},
@@ -24991,10 +24945,7 @@
 "stop:head_feet_open": {"status":"ok","writes":[[0,"6e400002",true,"6e01002998",2,150],[300,"6e400002",true,"6e01006edd",2,7]]},
 "stop:head_feet_close": {"status":"ok","writes":[[0,"6e400002",true,"6e01002a99",2,150],[300,"6e400002",true,"6e01006edd",2,7]]},
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
-"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"}
+"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]}
 }},
 "richmat_nisco:model_t5rm": {
 "info": {"bed_type": "richmat_nisco", "controller": "Cluster022Controller", "module": "richmat_mh.cluster022", "pulse": [10, 100]},
@@ -25044,10 +24995,7 @@
 "button:richmat_mh_48": {"status":"ok","writes":[[0,"6e400002",true,"6e010048b7",1,0],[127,"6e400002",true,"6e01006edd",1,0]]},
 "button:richmat_mh_5f": {"status":"ok","writes":[[0,"6e400002",true,"6e01005fce",1,0],[127,"6e400002",true,"6e01006edd",1,0]]},
 "button:richmat_mh_start_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c210c8",1,0]]},
-"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]},
-"select:richmat_cluster022_transmit_mode=0": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=1": {"status":"no_writes"},
-"select:richmat_cluster022_transmit_mode=2": {"status":"no_writes"}
+"button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]}
 }},
 "richmat_nisco:sleep": {
 "info": {"bed_type": "richmat_nisco", "controller": "Cluster022SleepController", "gaps": ["select:ruf_richmat_sleep_mode=single", "select:ruf_richmat_sleep_mode=double", "select:ruf_richmat_sleep_left_intervention=off", "select:ruf_richmat_sleep_left_intervention=on", "select:ruf_richmat_sleep_right_intervention=off", "select:ruf_richmat_sleep_right_intervention=on"], "module": "richmat_mh.cluster022_sleep", "pulse": [10, 100]},
