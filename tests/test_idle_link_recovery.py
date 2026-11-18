@@ -8,7 +8,7 @@ bed that drops idle links cannot be held connected forever.
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -227,9 +227,29 @@ async def test_recovery_connect_cannot_outlast_the_window(
         return True
 
     coordinator.async_connect = _slow_connect
-    with patch.object(coordinator, "_idle_window_allows_recovery", return_value=True):
+    with (
+        patch.object(coordinator, "_idle_window_allows_recovery", return_value=True),
+        patch.object(coordinator, "async_disconnect", AsyncMock()) as disconnect,
+    ):
         await coordinator._async_auto_reconnect()
 
+    assert not coordinator._recovered_link_window
+    # Releases a link a cancelled startup may have left half open.
+    disconnect.assert_awaited_once_with(reason="idle_timeout")
+
+
+async def test_internal_retry_teardown_keeps_the_recovered_window(
+    hass: HomeAssistant,
+) -> None:
+    """A teardown inside the recovery's own connect attempts keeps its window."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    coordinator._recovered_link_window = True
+
+    async with coordinator._lock:
+        await coordinator._async_disconnect_locked("authentication_failed")
+
+    assert coordinator._recovered_link_window
+    await coordinator.async_disconnect()
     assert not coordinator._recovered_link_window
 
 

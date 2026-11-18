@@ -2010,11 +2010,13 @@ class CoordinatorConnectionMixin:
             except TimeoutError:
                 if not window.expired():
                     raise
-                # The cancelled connect released whatever link it had opened.
                 _LOGGER.debug(
                     "Auto-reconnect for %s outlasted the idle window", self._address
                 )
                 self._recovered_link_window = False
+                if generation == self._command_link_generation:
+                    # A cancelled startup error handler can leave a half-open link.
+                    await self.async_disconnect(reason="idle_timeout")
                 return
             if connected:
                 _LOGGER.debug("Auto-reconnection successful for %s", self._address)
@@ -2077,6 +2079,7 @@ class CoordinatorConnectionMixin:
             self._reconnect_stalled = False
         # Stop recovery before waiting for the connection lane it may already own.
         self._cancel_auto_reconnect()
+        self._recovered_link_window = False
         if serialize_with_commands:
             # Without this, a disconnect requested while a connect is in flight
             # queues on self._lock and then tears the link down in the same tick
@@ -2288,7 +2291,6 @@ class CoordinatorConnectionMixin:
         await self._async_cancel_furnimove_bond_request()
         self._cancel_diagnostic_polling()
         self._cancel_disconnect_timer()
-        self._recovered_link_window = False
         self._cancel_controller_state_refresh_retry()
         if self._controller_state_refresh_task is not None:
             self._controller_state_refresh_task.cancel()
@@ -2453,6 +2455,7 @@ class CoordinatorConnectionMixin:
                     self._address,
                 )
                 return
+            self._recovered_link_window = False
             async with self._lock:
                 await self._async_disconnect_locked("idle_timeout")
 
