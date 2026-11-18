@@ -204,7 +204,9 @@ class MajesticHomeController(GoodVibeController):
                 "majestichome",
                 MODEL,
                 "mdi:bed",
+                # The product layout, carrying received bed replies and alarms as attributes.
                 attribute_keys=(OBSERVATIONS, ALARMS),
+                entity_registry_enabled_default=False,
             ),
         )
 
@@ -347,7 +349,10 @@ class MajesticHomeController(GoodVibeController):
             if control.held:
                 continue  # Native motor entities own these held controls.
             for save in (False, True) if control.save is not None else (False,):
-                label = ("Save " if save else "") + control.label
+                label = control.label
+                if save:
+                    # Match the shared "Save to Memory N" buttons.
+                    label = ("Save to " if control.key.startswith("memory_") else "Save ") + label
                 section = (
                     CardSection.MASSAGE
                     if control.group == "massage"

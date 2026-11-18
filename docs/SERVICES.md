@@ -1147,5 +1147,6 @@ Supply `alarm_id` explicitly for `new`, `set`, `toggle` or `delete`.
 Neither an empty nor a nonempty cache proves which IDs are free.
 Query `list` again after a mutation before
 using `toggle`; it preserves the received tuple and changes only the enable bit.
-The state sensor's attributes contain the received records. See the
+The received records are attributes of the diagnostic Model sensor, which is
+disabled by default: enable it to read them. See the
 [Majestic Home profile](beds/richmat.md#majestic-home).

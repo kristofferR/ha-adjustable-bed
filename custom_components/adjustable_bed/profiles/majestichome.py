@@ -41,60 +41,60 @@ class Layout:
 
 
 HEAD: Final = (
-    Control("head_up", "Head up", 0x24, "motor", held=True),
-    Control("head_down", "Head down", 0x25, "motor", held=True),
+    Control("head_up", "Head Up", 0x24, "motor", held=True),
+    Control("head_down", "Head Down", 0x25, "motor", held=True),
 )
 FOOT: Final = (
-    Control("foot_up", "Foot up", 0x26, "motor", held=True),
-    Control("foot_down", "Foot down", 0x27, "motor", held=True),
+    Control("foot_up", "Foot Up", 0x26, "motor", held=True),
+    Control("foot_down", "Foot Down", 0x27, "motor", held=True),
 )
 BOTH: Final = (
-    Control("both_up", "Head and foot up", 0x29, "motor", held=True),
-    Control("both_down", "Head and foot down", 0x2A, "motor", held=True),
+    Control("both_up", "Head and Foot Up", 0x29, "motor", held=True),
+    Control("both_down", "Head and Foot Down", 0x2A, "motor", held=True),
 )
 FLAT: Final = Control("flat", "Flat", 0x31, "preset")
-LIGHT: Final = Control("light", "Toggle bed light", 0x3C, "light")
+LIGHT: Final = Control("light", "Toggle Light", 0x3C, "light")
 PRESETS: Final = (
-    Control("zero_gravity", "Zero gravity", 0x45, "preset", 0x66),
-    Control("anti_snore", "Anti-snore", 0x46, "preset", 0x69),
+    Control("zero_gravity", "Zero Gravity", 0x45, "preset", 0x66),
+    Control("anti_snore", "Anti-Snore", 0x46, "preset", 0x69),
     Control("memory_1", "Memory 1", 0x2E, "preset", 0x2B),
     Control("memory_2", "Memory 2", 0x2F, "preset", 0x2C),
 )
 MASSAGE: Final = (
-    Control("head_massage_1", "Head massage 1", 0x99, "massage"),
-    Control("head_massage_2", "Head massage 2", 0x9A, "massage"),
-    Control("head_massage_3", "Head massage 3", 0x9B, "massage"),
-    Control("foot_massage_1", "Foot massage 1", 0x9D, "massage"),
-    Control("foot_massage_2", "Foot massage 2", 0x9E, "massage"),
-    Control("foot_massage_3", "Foot massage 3", 0x9F, "massage"),
-    Control("massage_constant", "Constant massage", 0x3A, "massage"),
-    Control("massage_pulse", "Pulse massage", 0x38, "massage"),
-    Control("massage_wave", "Wave massage", 0x39, "massage"),
-    Control("massage_off", "Stop massage", 0x5E, "massage"),
-    Control("massage_10", "Massage 10 minutes", 0x5F, "massage"),
-    Control("massage_20", "Massage 20 minutes", 0x63, "massage"),
-    Control("massage_30", "Massage 30 minutes", 0x61, "massage"),
+    Control("head_massage_1", "Massage: Head Level 1", 0x99, "massage"),
+    Control("head_massage_2", "Massage: Head Level 2", 0x9A, "massage"),
+    Control("head_massage_3", "Massage: Head Level 3", 0x9B, "massage"),
+    Control("foot_massage_1", "Massage: Foot Level 1", 0x9D, "massage"),
+    Control("foot_massage_2", "Massage: Foot Level 2", 0x9E, "massage"),
+    Control("foot_massage_3", "Massage: Foot Level 3", 0x9F, "massage"),
+    Control("massage_constant", "Massage: Constant", 0x3A, "massage"),
+    Control("massage_pulse", "Massage: Pulse", 0x38, "massage"),
+    Control("massage_wave", "Massage: Wave", 0x39, "massage"),
+    Control("massage_off", "Massage: Off", 0x5E, "massage"),
+    Control("massage_10", "Massage: Timer 10 Minutes", 0x5F, "massage"),
+    Control("massage_20", "Massage: Timer 20 Minutes", 0x63, "massage"),
+    Control("massage_30", "Massage: Timer 30 Minutes", 0x61, "massage"),
 )
 LAYOUTS: Final = {
     "none": Layout("none", ()),
     "JHRN": Layout(
         "JHRN",
         (
-            Control("foot_up", "Foot up", 0x29, "motor", held=True),
-            Control("foot_down", "Foot down", 0x2A, "motor", held=True),
+            Control("foot_up", "Foot Up", 0x29, "motor", held=True),
+            Control("foot_down", "Foot Down", 0x2A, "motor", held=True),
             FLAT,
         ),
     ),
     "JGRN": Layout(
-        "JGRN", (*HEAD, *FOOT, *BOTH, FLAT, Control("memory_1", "Memory", 0x2E, "preset", 0x2B))
+        "JGRN", (*HEAD, *FOOT, *BOTH, FLAT, Control("memory_1", "Memory 1", 0x2E, "preset", 0x2B))
     ),
     "JLRM": Layout(
         "JLRM",
         (
             *HEAD,
             *FOOT,
-            Control("lumbar_up", "Lumbar up", 0x3F, "motor", held=True),
-            Control("lumbar_down", "Lumbar down", 0x40, "motor", held=True),
+            Control("lumbar_up", "Lumbar Up", 0x3F, "motor", held=True),
+            Control("lumbar_down", "Lumbar Down", 0x40, "motor", held=True),
             FLAT,
             LIGHT,
             *MASSAGE,
@@ -110,8 +110,8 @@ LAYOUTS: Final = {
             *BOTH,
             FLAT,
             LIGHT,
-            Control("head_massage_off", "Stop head massage", 0x98, "massage"),
-            Control("foot_massage_off", "Stop foot massage", 0x9C, "massage"),
+            Control("head_massage_off", "Massage: Head Off", 0x98, "massage"),
+            Control("foot_massage_off", "Massage: Foot Off", 0x9C, "massage"),
             *MASSAGE,
             *PRESETS,
         ),

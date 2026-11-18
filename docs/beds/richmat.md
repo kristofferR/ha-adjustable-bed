@@ -6247,74 +6247,74 @@ extra memory slots, single-address split controls or factory reset.
 | Product | Held directions | Alarm presets |
 |---|---|---|
 | none | none | none |
-| JHRN | Foot up, Foot down | none |
-| JGRN | Head up, Head down, Foot up, Foot down, Head and foot up, Head and foot down | none |
-| JLRM | Head up, Head down, Foot up, Foot down, Lumbar up, Lumbar down | Zero gravity, Anti-snore, Memory 1, Memory 2 |
-| FARM | Head up, Head down, Foot up, Foot down, Head and foot up, Head and foot down | Zero gravity, Anti-snore, Memory 1, Memory 2 |
+| JHRN | Foot Up, Foot Down | none |
+| JGRN | Head Up, Head Down, Foot Up, Foot Down, Head and Foot Up, Head and Foot Down | none |
+| JLRM | Head Up, Head Down, Foot Up, Foot Down, Lumbar Up, Lumbar Down | Zero Gravity, Anti-Snore, Memory 1, Memory 2 |
+| FARM | Head Up, Head Down, Foot Up, Foot Down, Head and Foot Up, Head and Foot Down | Zero Gravity, Anti-Snore, Memory 1, Memory 2 |
 
 | Product | Action | Raw | Framed | Save raw | Save framed |
 |---|---|---|---|---|---|
-| JHRN | Foot up | `29` | `6E 01 00 29 98` | none | none |
-| JHRN | Foot down | `2A` | `6E 01 00 2A 99` | none | none |
+| JHRN | Foot Up | `29` | `6E 01 00 29 98` | none | none |
+| JHRN | Foot Down | `2A` | `6E 01 00 2A 99` | none | none |
 | JHRN | Flat | `31` | `6E 01 00 31 A0` | none | none |
-| JGRN | Head up | `24` | `6E 01 00 24 93` | none | none |
-| JGRN | Head down | `25` | `6E 01 00 25 94` | none | none |
-| JGRN | Foot up | `26` | `6E 01 00 26 95` | none | none |
-| JGRN | Foot down | `27` | `6E 01 00 27 96` | none | none |
-| JGRN | Head and foot up | `29` | `6E 01 00 29 98` | none | none |
-| JGRN | Head and foot down | `2A` | `6E 01 00 2A 99` | none | none |
+| JGRN | Head Up | `24` | `6E 01 00 24 93` | none | none |
+| JGRN | Head Down | `25` | `6E 01 00 25 94` | none | none |
+| JGRN | Foot Up | `26` | `6E 01 00 26 95` | none | none |
+| JGRN | Foot Down | `27` | `6E 01 00 27 96` | none | none |
+| JGRN | Head and Foot Up | `29` | `6E 01 00 29 98` | none | none |
+| JGRN | Head and Foot Down | `2A` | `6E 01 00 2A 99` | none | none |
 | JGRN | Flat | `31` | `6E 01 00 31 A0` | none | none |
-| JGRN | Memory | `2E` | `6E 01 00 2E 9D` | `2B` | `6E 01 00 2B 9A` |
-| JLRM | Head up | `24` | `6E 01 00 24 93` | none | none |
-| JLRM | Head down | `25` | `6E 01 00 25 94` | none | none |
-| JLRM | Foot up | `26` | `6E 01 00 26 95` | none | none |
-| JLRM | Foot down | `27` | `6E 01 00 27 96` | none | none |
-| JLRM | Lumbar up | `3F` | `6E 01 00 3F AE` | none | none |
-| JLRM | Lumbar down | `40` | `6E 01 00 40 AF` | none | none |
+| JGRN | Memory 1 | `2E` | `6E 01 00 2E 9D` | `2B` | `6E 01 00 2B 9A` |
+| JLRM | Head Up | `24` | `6E 01 00 24 93` | none | none |
+| JLRM | Head Down | `25` | `6E 01 00 25 94` | none | none |
+| JLRM | Foot Up | `26` | `6E 01 00 26 95` | none | none |
+| JLRM | Foot Down | `27` | `6E 01 00 27 96` | none | none |
+| JLRM | Lumbar Up | `3F` | `6E 01 00 3F AE` | none | none |
+| JLRM | Lumbar Down | `40` | `6E 01 00 40 AF` | none | none |
 | JLRM | Flat | `31` | `6E 01 00 31 A0` | none | none |
-| JLRM | Toggle bed light | `3C` | `6E 01 00 3C AB` | none | none |
-| JLRM | Head massage 1 | `99` | `6E 01 00 99 08` | none | none |
-| JLRM | Head massage 2 | `9A` | `6E 01 00 9A 09` | none | none |
-| JLRM | Head massage 3 | `9B` | `6E 01 00 9B 0A` | none | none |
-| JLRM | Foot massage 1 | `9D` | `6E 01 00 9D 0C` | none | none |
-| JLRM | Foot massage 2 | `9E` | `6E 01 00 9E 0D` | none | none |
-| JLRM | Foot massage 3 | `9F` | `6E 01 00 9F 0E` | none | none |
-| JLRM | Constant massage | `3A` | `6E 01 00 3A A9` | none | none |
-| JLRM | Pulse massage | `38` | `6E 01 00 38 A7` | none | none |
-| JLRM | Wave massage | `39` | `6E 01 00 39 A8` | none | none |
-| JLRM | Stop massage | `5E` | `6E 01 00 5E CD` | none | none |
-| JLRM | Massage 10 minutes | `5F` | `6E 01 00 5F CE` | none | none |
-| JLRM | Massage 20 minutes | `63` | `6E 01 00 63 D2` | none | none |
-| JLRM | Massage 30 minutes | `61` | `6E 01 00 61 D0` | none | none |
-| JLRM | Zero gravity | `45` | `6E 01 00 45 B4` | `66` | `6E 01 00 66 D5` |
-| JLRM | Anti-snore | `46` | `6E 01 00 46 B5` | `69` | `6E 01 00 69 D8` |
+| JLRM | Toggle Light | `3C` | `6E 01 00 3C AB` | none | none |
+| JLRM | Massage: Head Level 1 | `99` | `6E 01 00 99 08` | none | none |
+| JLRM | Massage: Head Level 2 | `9A` | `6E 01 00 9A 09` | none | none |
+| JLRM | Massage: Head Level 3 | `9B` | `6E 01 00 9B 0A` | none | none |
+| JLRM | Massage: Foot Level 1 | `9D` | `6E 01 00 9D 0C` | none | none |
+| JLRM | Massage: Foot Level 2 | `9E` | `6E 01 00 9E 0D` | none | none |
+| JLRM | Massage: Foot Level 3 | `9F` | `6E 01 00 9F 0E` | none | none |
+| JLRM | Massage: Constant | `3A` | `6E 01 00 3A A9` | none | none |
+| JLRM | Massage: Pulse | `38` | `6E 01 00 38 A7` | none | none |
+| JLRM | Massage: Wave | `39` | `6E 01 00 39 A8` | none | none |
+| JLRM | Massage: Off | `5E` | `6E 01 00 5E CD` | none | none |
+| JLRM | Massage: Timer 10 Minutes | `5F` | `6E 01 00 5F CE` | none | none |
+| JLRM | Massage: Timer 20 Minutes | `63` | `6E 01 00 63 D2` | none | none |
+| JLRM | Massage: Timer 30 Minutes | `61` | `6E 01 00 61 D0` | none | none |
+| JLRM | Zero Gravity | `45` | `6E 01 00 45 B4` | `66` | `6E 01 00 66 D5` |
+| JLRM | Anti-Snore | `46` | `6E 01 00 46 B5` | `69` | `6E 01 00 69 D8` |
 | JLRM | Memory 1 | `2E` | `6E 01 00 2E 9D` | `2B` | `6E 01 00 2B 9A` |
 | JLRM | Memory 2 | `2F` | `6E 01 00 2F 9E` | `2C` | `6E 01 00 2C 9B` |
-| FARM | Head up | `24` | `6E 01 00 24 93` | none | none |
-| FARM | Head down | `25` | `6E 01 00 25 94` | none | none |
-| FARM | Foot up | `26` | `6E 01 00 26 95` | none | none |
-| FARM | Foot down | `27` | `6E 01 00 27 96` | none | none |
-| FARM | Head and foot up | `29` | `6E 01 00 29 98` | none | none |
-| FARM | Head and foot down | `2A` | `6E 01 00 2A 99` | none | none |
+| FARM | Head Up | `24` | `6E 01 00 24 93` | none | none |
+| FARM | Head Down | `25` | `6E 01 00 25 94` | none | none |
+| FARM | Foot Up | `26` | `6E 01 00 26 95` | none | none |
+| FARM | Foot Down | `27` | `6E 01 00 27 96` | none | none |
+| FARM | Head and Foot Up | `29` | `6E 01 00 29 98` | none | none |
+| FARM | Head and Foot Down | `2A` | `6E 01 00 2A 99` | none | none |
 | FARM | Flat | `31` | `6E 01 00 31 A0` | none | none |
-| FARM | Toggle bed light | `3C` | `6E 01 00 3C AB` | none | none |
-| FARM | Stop head massage | `98` | `6E 01 00 98 07` | none | none |
-| FARM | Stop foot massage | `9C` | `6E 01 00 9C 0B` | none | none |
-| FARM | Head massage 1 | `99` | `6E 01 00 99 08` | none | none |
-| FARM | Head massage 2 | `9A` | `6E 01 00 9A 09` | none | none |
-| FARM | Head massage 3 | `9B` | `6E 01 00 9B 0A` | none | none |
-| FARM | Foot massage 1 | `9D` | `6E 01 00 9D 0C` | none | none |
-| FARM | Foot massage 2 | `9E` | `6E 01 00 9E 0D` | none | none |
-| FARM | Foot massage 3 | `9F` | `6E 01 00 9F 0E` | none | none |
-| FARM | Constant massage | `3A` | `6E 01 00 3A A9` | none | none |
-| FARM | Pulse massage | `38` | `6E 01 00 38 A7` | none | none |
-| FARM | Wave massage | `39` | `6E 01 00 39 A8` | none | none |
-| FARM | Stop massage | `5E` | `6E 01 00 5E CD` | none | none |
-| FARM | Massage 10 minutes | `5F` | `6E 01 00 5F CE` | none | none |
-| FARM | Massage 20 minutes | `63` | `6E 01 00 63 D2` | none | none |
-| FARM | Massage 30 minutes | `61` | `6E 01 00 61 D0` | none | none |
-| FARM | Zero gravity | `45` | `6E 01 00 45 B4` | `66` | `6E 01 00 66 D5` |
-| FARM | Anti-snore | `46` | `6E 01 00 46 B5` | `69` | `6E 01 00 69 D8` |
+| FARM | Toggle Light | `3C` | `6E 01 00 3C AB` | none | none |
+| FARM | Massage: Head Off | `98` | `6E 01 00 98 07` | none | none |
+| FARM | Massage: Foot Off | `9C` | `6E 01 00 9C 0B` | none | none |
+| FARM | Massage: Head Level 1 | `99` | `6E 01 00 99 08` | none | none |
+| FARM | Massage: Head Level 2 | `9A` | `6E 01 00 9A 09` | none | none |
+| FARM | Massage: Head Level 3 | `9B` | `6E 01 00 9B 0A` | none | none |
+| FARM | Massage: Foot Level 1 | `9D` | `6E 01 00 9D 0C` | none | none |
+| FARM | Massage: Foot Level 2 | `9E` | `6E 01 00 9E 0D` | none | none |
+| FARM | Massage: Foot Level 3 | `9F` | `6E 01 00 9F 0E` | none | none |
+| FARM | Massage: Constant | `3A` | `6E 01 00 3A A9` | none | none |
+| FARM | Massage: Pulse | `38` | `6E 01 00 38 A7` | none | none |
+| FARM | Massage: Wave | `39` | `6E 01 00 39 A8` | none | none |
+| FARM | Massage: Off | `5E` | `6E 01 00 5E CD` | none | none |
+| FARM | Massage: Timer 10 Minutes | `5F` | `6E 01 00 5F CE` | none | none |
+| FARM | Massage: Timer 20 Minutes | `63` | `6E 01 00 63 D2` | none | none |
+| FARM | Massage: Timer 30 Minutes | `61` | `6E 01 00 61 D0` | none | none |
+| FARM | Zero Gravity | `45` | `6E 01 00 45 B4` | `66` | `6E 01 00 66 D5` |
+| FARM | Anti-Snore | `46` | `6E 01 00 46 B5` | `69` | `6E 01 00 69 D8` |
 | FARM | Memory 1 | `2E` | `6E 01 00 2E 9D` | `2B` | `6E 01 00 2B 9A` |
 | FARM | Memory 2 | `2F` | `6E 01 00 2F 9E` | `2C` | `6E 01 00 2C 9B` |
 
@@ -6365,8 +6365,9 @@ the app's hang or indexing failure. Excluded OTA framing is consumed without an
 updater. Desk, accessory and audio branches have no bed actions; shared BED
 snore/out-of-bed and stop-music effects remain observations.
 
-The state sensor publishes observed motor travel/angle, massage, white/RGB light,
-alarm, lock, diagnostic and press/coupled/sync fields without inferring physical
+The diagnostic Model sensor (disabled by default) shows the product layout and
+carries observed motor travel/angle, massage, white/RGB light, alarm, lock,
+diagnostic and press/coupled/sync fields as attributes, without inferring physical
 axes, units, firmware capabilities or setters. V1 checksum omission, ignored
 extended motor index and raw diagnostic pass-through follow the source. All
 observations and alarm fields are cleared on disconnect; old callbacks cannot
