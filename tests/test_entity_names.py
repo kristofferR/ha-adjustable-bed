@@ -1,0 +1,108 @@
+"""Entity names describe the control in plain words (AGENTS.md, "Adding a New Bed Type").
+
+Home Assistant prefixes the device name, so an entity name never repeats a
+brand, app or controller, notes where a value came from, uses protocol
+vocabulary or shouts. The same rules apply to state labels and to the Motion
+Bed button names its controller builds at runtime.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+
+import pytest
+
+from custom_components.adjustable_bed.beds.motion_bed.actions import MOTION_BED_ACTIONS
+from custom_components.adjustable_bed.beds.motion_bed.controller import (
+    button_actions_for,
+    motion_bed_button_name,
+)
+
+STRINGS = Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json"
+
+BRANDS = (
+    "FurniMove", "FSM Relax", "Reverie", "Pairlink", "HJBed", "GM Control", "Good Vibe",
+    "MotoMotion", "Casper", "Galaxy", "Richmat", "Luuna", "SonicSleep", "Rize", "Smart Comfort",
+    "CheersSleep", "Lunio", "Power Bob", "Okimiki", "Majestic", "MLILY", "SUTA", "ELEVATE",
+    "Sleeptracker", "Okin", "OKIN", "Keeson", "Linak", "Jiecang", "Somos", "Nerum", "Sophie",
+    "Linx", "Ultramatic", "Symphony", "Yamada", "Bedgear", "Logicdata", "LOGICDATA", "Vibradorm",
+    "StarCode", "Starcode", "Leggett", "Malouf", "Limoss", "Octo", "Solace", "Svane", "Jensen",
+    "Ergomotion", "Tempur", "Eshine", "BedSense", "Hush", "Paramount", "Sleepy", "Comfy", "Apex",
+)
+# Where a value came from belongs in docs and code comments, not the name.
+PROVENANCE = re.compile(
+    r"\((?:app\b[^)]*|reported|raw|draft|observed|home assistant|[^)]*\bicon|fresh status|"
+    r"memory page|\d+ seconds?|wire unit[^)]*|physical effect unknown|signed)\)"
+    r"|^(?:app|observed|reported|raw|retained)\b|\bmetadata\b",
+    re.IGNORECASE,
+)
+PROTOCOL = re.compile(
+    r"0x[0-9a-f]+|\bfield\b|\bbits?\s*\d|\bflag\d|\bbytes?\b|\bmask\b|\bcodes?\b|\bselector\b|"
+    r"\bparser\b|\btransport\b|\bwire\b|\buart\b|\bprojection\b|\bparameter \d|\baxis \d|"
+    r"\bpart \d|\bmotor channel\b|memorytype|\bhall units\b|\baddress \d|\bunprovisioned\b|"
+    r"\benroll\b|\bgatem\b|\bgateo\b|\bkk\b|\baa\b|\bsn\b",
+    re.IGNORECASE,
+)
+ACRONYMS = {"TV", "USB", "RGB", "LED", "BLE", "AI", "MAC", "PIN", "ID", "HZ", "KHZ", "DSP", "PCB"}
+TITLE_ARTIFACTS = re.compile(r"\b(?:Tv|Ai|Eq|Usb|Rgb|Led|Ble|Mac)\b|\bAnti Snore\b|\bmac\b")
+
+
+def problems(name: str) -> list[str]:
+    """Return every naming rule ``name`` breaks."""
+    found = [f"brand {brand!r}" for brand in BRANDS if re.search(rf"\b{re.escape(brand)}", name)]
+    if PROVENANCE.search(name):
+        found.append("provenance note")
+    if match := PROTOCOL.search(name):
+        found.append(f"protocol word {match.group(0)!r}")
+    found += [
+        f"all-caps {word!r}"
+        for word in re.findall(r"\b[A-Z]{2,}\b", name)
+        if word.upper() not in ACRONYMS and not re.fullmatch(r"M\d", word)
+    ]
+    if match := TITLE_ARTIFACTS.search(name):
+        found.append(f"title() artifact {match.group(0)!r}")
+    if re.match(r"hold\b", name, re.IGNORECASE):
+        found.append("'Hold ...' phrasing")
+    return found
+
+
+def _translated_names() -> list[tuple[str, str]]:
+    entities = json.loads(STRINGS.read_text())["entity"]
+    return [
+        (f"{platform}.{key}{f' state {state}' if state else ''}", label)
+        for platform, keys in entities.items()
+        for key, entry in keys.items()
+        for state, label in [(None, entry.get("name") or ""), *(entry.get("state") or {}).items()]
+    ]
+
+
+@pytest.mark.parametrize(
+    ("label", "issues"),
+    [
+        ("Reverie: Wave Level", ["brand 'Reverie'"]),
+        ("App state field 0x0B", ["provenance note", "protocol word 'field'"]),
+        ("Part 16 Down", ["protocol word 'Part 1'"]),
+        ("BACK LEG", ["all-caps 'BACK'", "all-caps 'LEG'"]),
+        ("Usb on", ["title() artifact 'Usb'"]),
+        ("Hold to increase head massage", ["'Hold ...' phrasing"]),
+        ("Save M1 position on TV", []),
+    ],
+)
+def test_rules_flag_known_bad_names(label: str, issues: list[str]) -> None:
+    assert problems(label) == issues
+
+
+def test_translated_entity_names_and_states_follow_the_rules() -> None:
+    offenders = {ref: issues for ref, label in _translated_names() if (issues := problems(label))}
+    assert offenders == {}
+
+
+def test_motion_bed_runtime_button_names_follow_the_rules() -> None:
+    owners = frozenset(action.owner for action in MOTION_BED_ACTIONS)
+    names = {
+        key: motion_bed_button_name(key, action)
+        for key, action in button_actions_for(owners).items()
+    }
+    assert {key: problems(name) for key, name in names.items() if problems(name)} == {}
