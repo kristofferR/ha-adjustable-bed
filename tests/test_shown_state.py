@@ -165,7 +165,7 @@ async def test_cancelled_color_request_keeps_the_color_mode() -> None:
     assert light._attr_color_mode == ColorMode.RGBW
 
 
-async def test_controller_publishes_no_setting_it_did_not_send() -> None:
+async def test_controller_publishes_no_setting_after_its_command_was_cancelled() -> None:
     from custom_components.adjustable_bed.profiles import sophie as app
     from custom_components.adjustable_bed.state_keys import SYNCHRO_MODE
     from tests.test_sophie import controller as sophie
