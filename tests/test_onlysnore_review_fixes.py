@@ -63,24 +63,28 @@ async def connect(receiver: Receiver):
     try:
         coordinator._controller = await create_controller(coordinator, "onlysnore", None, client)
         coordinator._position_connection_generation += 1
+        coordinator._connection_creator_task = asyncio.current_task()
         await coordinator.controller.start_notify()
     except BaseException:
         await client.disconnect()
         if coordinator._client is client:
             coordinator._client = None
             coordinator._controller = None
+            coordinator._connection_creator_task = None
         raise
     return True
 
 
 @asynccontextmanager
-async def receivers(hass, *, topology="standalone", online=(True, False)):
+async def receivers(
+    hass, *, topology="standalone", online=(True, False), address_prefix="AA:BB:CC:DD:17"
+):
     app_services.register_services(hass)
     items = []
     registry = dr.async_get(hass)
     devices = []
     for index, connected in enumerate(online, 1):
-        address = f"AA:BB:CC:DD:17:{index:02X}"
+        address = f"{address_prefix}:{index:02X}"
         entry = MockConfigEntry(
             domain=DOMAIN,
             version=5,
@@ -146,6 +150,9 @@ async def receivers(hass, *, topology="standalone", online=(True, False)):
     finally:
         for item in items:
             await item.coordinator.async_shutdown()
+            assert item.coordinator._connection_creator_task is None
+        if pair is not None:
+            assert pair._sequential._cycle is None
 
 
 async def alarm(hass, ids, *, slot=1):
@@ -198,6 +205,178 @@ async def test_mixed_live_and_valid_offline_physical_receivers(hass, topology):
         # sequential topology may intentionally release its completed side.
         if topology != "sequential":
             assert items[0].coordinator.controller is admitted
+
+
+@pytest.mark.parametrize("left_connected", [False, True])
+async def test_sequential_alarm_switches_from_connected_right_to_both_receivers(
+    hass, left_connected
+):
+    async with receivers(hass, topology="sequential", online=(left_connected, True)) as (
+        items,
+        ids,
+        _pair,
+    ):
+        original_right = items[1].coordinator.controller
+        with virtual_clock():
+            await alarm(hass, ids)
+        assert items[0].mutations == items[1].mutations == [bytes.fromhex("07057f01071e000101")]
+        assert items[1].coordinator.last_disconnect_reason == "sequential_switch"
+        assert original_right is not items[1].coordinator.controller
+        assert len(items[0].clients) == 1 and len(items[1].clients) == 2
+        assert not items[1].clients[0].write_gatt_char.call_args_list
+        for item in items:
+            item.coordinator.async_connect.assert_awaited_once()
+        assert all(not client.is_connected for item in items for client in item.clients)
+
+
+@pytest.mark.parametrize(
+    "drift", ["disconnect", "reconnect", "replacement", "product", "address", "roster"]
+)
+async def test_sequential_alarm_rejects_external_session_or_selection_change(hass, drift):
+    async with receivers(hass, topology="sequential", online=(False, True)) as (items, ids, pair):
+        right = items[1].coordinator
+        entered, release = asyncio.Event(), asyncio.Event()
+        original = pair._topology._release_other_sides
+
+        async def paused_switch(keep):
+            entered.set()
+            await release.wait()
+            return await original(keep)
+
+        with patch.object(pair._topology, "_release_other_sides", paused_switch), virtual_clock():
+            task = asyncio.create_task(alarm(hass, ids))
+            try:
+                await entered.wait()
+                if drift in ("disconnect", "reconnect"):
+                    await right.async_disconnect()
+                    if drift == "reconnect":
+                        await connect(items[1])
+                elif drift == "replacement":
+                    right._controller = OnlySnoreController(right, "single")
+                elif drift == "product":
+                    hass.config_entries.async_update_entry(
+                        right.entry, data={**right.entry.data, "product_type": "double"}
+                    )
+                elif drift == "address":
+                    right._address = "AA:BB:CC:DD:17:99"
+                else:
+                    pair._children["right"] = items[0].coordinator
+                release.set()
+                with pytest.raises(PairedSideError) as error:
+                    async with asyncio.timeout(1):
+                        await task
+                assert error.value.side_errors
+                assert all(
+                    isinstance(cause, ServiceValidationError)
+                    for cause in error.value.side_errors.values()
+                )
+                assert all(not item.mutations for item in items)
+            finally:
+                release.set()
+                if not task.done():
+                    task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_sequential_alarm_stop_before_planned_switch_writes_no_alarm(hass):
+    async with receivers(hass, topology="sequential", online=(False, True)) as (items, ids, pair):
+        entered, release = asyncio.Event(), asyncio.Event()
+        original = pair._topology._release_other_sides
+
+        async def paused_switch(keep):
+            entered.set()
+            await release.wait()
+            return await original(keep)
+
+        with patch.object(pair._topology, "_release_other_sides", paused_switch), virtual_clock():
+            task = asyncio.create_task(alarm(hass, ids))
+            try:
+                await entered.wait()
+                await pair.async_stop_command()
+                release.set()
+                async with asyncio.timeout(1):
+                    await task
+                assert all(not item.mutations for item in items)
+            finally:
+                release.set()
+                if not task.done():
+                    task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_sequential_alarm_rejects_diagnostic_connect_after_planned_release(hass):
+    async with receivers(hass, topology="sequential", online=(False, True)) as (items, ids, _pair):
+        left, right = (item.coordinator for item in items)
+        original = OnlySnoreController.set_alarm
+
+        async def connect_peer(ctrl, **kwargs):
+            await original(ctrl, **kwargs)
+            if ctrl._coordinator is left:
+                # The diagnostic Connect button uses this same public method
+                # on its own task, outside the sequential operation.
+                await asyncio.create_task(right.async_connect())
+
+        with (
+            patch.object(OnlySnoreController, "set_alarm", connect_peer),
+            virtual_clock(),
+            pytest.raises(PairedSideError) as error,
+        ):
+            await alarm(hass, ids)
+        assert isinstance(error.value.side_errors["right"], ServiceValidationError)
+        assert items[0].mutations == [bytes.fromhex("07057f01071e000101")]
+        assert not items[1].mutations
+
+
+async def test_standalone_then_sequential_pair_retains_each_planned_release(hass):
+    async with (
+        receivers(hass, topology="sequential", online=(False, True)) as (items, ids, _pair),
+        receivers(hass, online=(True,), address_prefix="AA:BB:CC:DD:18") as (
+            standalone,
+            standalone_ids,
+            _unused,
+        ),
+    ):
+        with virtual_clock():
+            await alarm(hass, standalone_ids + ids)
+        assert all(
+            item.mutations == [bytes.fromhex("07057f01071e000101")]
+            for item in [*standalone, *items]
+        )
+
+
+async def test_right_only_stop_after_release_fences_left_before_alarm_write(hass):
+    async with receivers(hass, topology="sequential", online=(False, True)) as (items, ids, pair):
+        left, right = (item.coordinator for item in items)
+        entered, release = asyncio.Event(), asyncio.Event()
+        original = left.async_execute_controller_command
+
+        async def paused_command(command, **kwargs):
+            entered.set()
+            await release.wait()
+            await original(command, **kwargs)
+
+        with (
+            patch.object(left, "async_execute_controller_command", paused_command),
+            virtual_clock(),
+        ):
+            task = asyncio.create_task(alarm(hass, ids))
+            try:
+                await entered.wait()
+                assert not right.is_connected
+                epochs = (left.stop_epoch, right.stop_epoch)
+                await pair.async_stop_command(side="right")
+                assert (left.stop_epoch, right.stop_epoch) == epochs
+                release.set()
+                with pytest.raises(PairedSideError) as error:
+                    async with asyncio.timeout(1):
+                        await task
+                assert isinstance(error.value.side_errors["left"], ServiceValidationError)
+                assert all(not item.mutations for item in items)
+            finally:
+                release.set()
+                if not task.done():
+                    task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
 
 
 async def test_concurrent_alarm_waits_for_offline_construction_before_any_mutation(hass):

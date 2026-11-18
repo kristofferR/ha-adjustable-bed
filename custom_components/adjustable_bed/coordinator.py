@@ -429,6 +429,7 @@ class AdjustableBedCoordinator(
         )
 
         self._client: BleakClient | None = None
+        self._connection_creator_task: asyncio.Task[object] | None = None
         self._vmat_unready_client: BleakClient | None = None
         self._controller: BedController | None = None
         self._pairlink_runtime: PairlinkRuntime | None = None

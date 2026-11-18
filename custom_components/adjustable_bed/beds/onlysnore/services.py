@@ -11,7 +11,13 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from ...const import CONF_PRODUCT_TYPE, DOMAIN, PAIR_CONNECTION_MODE_CONCURRENT
+from ...command_scheduler import current_command_context
+from ...const import (
+    CONF_PRODUCT_TYPE,
+    DOMAIN,
+    PAIR_CONNECTION_MODE_CONCURRENT,
+    PAIR_CONNECTION_MODE_SEQUENTIAL,
+)
 from ...import_executor import async_import_modules
 from ...profile_id import profile_route_from_data
 
@@ -24,6 +30,7 @@ if TYPE_CHECKING:
 
     from ...command_scheduler import CommandHandle, CommandRecord
     from ...coordinator import AdjustableBedCoordinator
+    from ...paired_topology import _SequentialCycle
     from ..base import BedController
 
 
@@ -42,6 +49,7 @@ class _Session:
     controller: BedController | None
     generation: int
     notifications: object
+    live: bool
 
     @classmethod
     def capture(cls, receiver: AdjustableBedCoordinator) -> _Session:
@@ -50,6 +58,7 @@ class _Session:
             receiver.controller,
             receiver._position_connection_generation,
             getattr(receiver.controller, "_generation", None),
+            receiver.client is not None and receiver.client.is_connected,
         )
 
     def matches(self, receiver: AdjustableBedCoordinator) -> bool:
@@ -59,6 +68,7 @@ class _Session:
             and current.controller is self.controller
             and current.generation == self.generation
             and current.notifications == self.notifications
+            and current.live == self.live
         )
 
 
@@ -72,6 +82,7 @@ class _Owner:
     active: CommandHandle | None
     initial: _Session
     connected: _Session | None = None
+    released: _Session | None = None
 
     @classmethod
     def capture(cls, receiver: AdjustableBedCoordinator) -> _Owner:
@@ -94,20 +105,54 @@ class _Owner:
         ):
             raise ServiceValidationError("BED route, product or STOP ownership changed")
 
-    def check_session(self) -> None:
+    def check_session(
+        self,
+        *,
+        planned_switch: bool = False,
+        bind_switch: bool = False,
+        switch_task: asyncio.Task[object] | None = None,
+    ) -> None:
         self.check_route()
-        expected = self.connected or self.initial
+        expected = self.connected or self.released or self.initial
         if expected.matches(self.receiver):
             return
+        if (
+            planned_switch
+            and self.released is None
+            and self.connected is None
+            and expected.live
+            and expected.client is not None
+            and not expected.client.is_connected
+            and expected.controller is not None
+            and isinstance(expected.notifications, int)
+            and getattr(expected.controller, "_generation", 0) > expected.notifications
+            and self.receiver.client is None
+            and self.receiver.controller is None
+            and self.receiver._position_connection_generation == expected.generation
+            and self.receiver.last_disconnect_reason == "sequential_switch"
+        ):
+            # Only the native one-link cycle may retire this captured session.
+            self.released = _Session.capture(self.receiver)
+            return
+        baseline = self.released or self.initial
+        context = current_command_context()
+        prepared_switch = (
+            bind_switch
+            and self.released is not None
+            and context is not None
+            and context.scheduler_token is self.token
+            and switch_task is not None
+            and self.receiver._connection_creator_task is switch_task
+        )
         # An admitted offline receiver can construct its first live session.
         # Once bound, later reconnects/replacements are not the admitted owner.
         if (
-            self.initial.controller is None
+            (self.initial.controller is None or prepared_switch)
             and self.connected is None
             and self.receiver.controller is not None
             and self.receiver.client is not None
             and self.receiver.client.is_connected
-            and self.receiver._position_connection_generation == self.initial.generation + 1
+            and self.receiver._position_connection_generation == baseline.generation + 1
         ):
             self.connected = _Session.capture(self.receiver)
             return
@@ -127,12 +172,14 @@ def register_services(hass: HomeAssistant) -> None:
     )
 
     async def alarm(call: ServiceCall) -> None:
+        call_task = asyncio.current_task()
         targets = _call_targets(call)
         admissions = [_capture_command_admission(parent, side) for parent, side in targets]
         # Capture every physical connection/controller before the first await.
         owners: dict[AdjustableBedCoordinator, _Owner] = {}
         roster = []
         linked = []
+        sequential = {}
         for parent, side in targets:
             physical = tuple(_command_targets(parent, side))
             for child in physical:
@@ -148,6 +195,12 @@ def register_services(hass: HomeAssistant) -> None:
                 and len(physical) > 1
             ):
                 linked.append((parent, physical, asyncio.Event()))
+            elif (
+                isinstance(parent, PairedBedCoordinator)
+                and parent.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+                and len(physical) > 1
+            ):
+                sequential.update((child, parent) for child in physical)
         await async_import_modules(hass, "beds.onlysnore.controller")
         from .controller import AlarmArguments, OnlySnoreController
 
@@ -160,6 +213,13 @@ def register_services(hass: HomeAssistant) -> None:
             if any(
                 parent.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
                 for parent, _physical, _ready in linked
+            ):
+                raise ServiceValidationError(
+                    "BED connection topology changed during alarm admission"
+                )
+            if any(
+                parent.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL
+                for parent in sequential.values()
             ):
                 raise ServiceValidationError(
                     "BED connection topology changed during alarm admission"
@@ -201,11 +261,30 @@ def register_services(hass: HomeAssistant) -> None:
         prepared: set[AdjustableBedCoordinator] = set()
         mutation_started = False
 
-        def owner_for(ctrl: OnlySnoreController) -> _Owner:
+        def cycle_for(owner: _Owner) -> _SequentialCycle | None:
+            parent = sequential.get(owner.receiver)
+            if parent is None:
+                return None
+            cycle = parent._sequential._cycle
+            if cycle is None or cycle.task is not call_task:
+                return None
+            if not cycle.matches(parent._admission):
+                raise ServiceValidationError("BED pair STOP or ownership changed after preflight")
+            return cycle
+
+        def owner_for(ctrl: OnlySnoreController, *, bind_switch: bool = False) -> _Owner:
             owner = owners.get(ctrl._coordinator)
             if owner is None:
                 raise ServiceValidationError("BED controller belongs to another physical receiver")
-            owner.check_session()
+            parent = sequential.get(owner.receiver)
+            cycle = cycle_for(owner)
+            owner.check_session(
+                planned_switch=cycle is not None
+                and parent is not None
+                and owner.receiver in parent._admission.active_children,
+                bind_switch=bind_switch,
+                switch_task=cycle.task if cycle is not None else None,
+            )
             product = owner.route[3]
             if isinstance(product, str) and ctrl.model != product:
                 raise ServiceValidationError("BED controller product changed after alarm admission")
@@ -216,12 +295,26 @@ def register_services(hass: HomeAssistant) -> None:
             ctrl.alarm_frame(**args)
             validated[owner.receiver] = ctrl
 
+        def recheck(admitted: _Owner, *, bind_switch: bool = False) -> None:
+            candidate = admitted.receiver.controller or validated.get(admitted.receiver)
+            if not isinstance(candidate, OnlySnoreController):
+                raise ServiceValidationError("BED alarm preflight is incomplete")
+            if candidate._coordinator is not admitted.receiver:
+                raise ServiceValidationError("BED controller belongs to another physical receiver")
+            owner_for(candidate, bind_switch=bind_switch)
+            candidate.alarm_frame(**args)
+
         async def execute(ctrl: OnlySnoreController) -> None:
             nonlocal mutation_started
             check_roster()
-            owner = owner_for(ctrl)
+            owner = owner_for(ctrl, bind_switch=True)
             if owner.receiver.controller is not ctrl:
                 raise ServiceValidationError("BED controller changed after alarm preflight")
+            parent = sequential.get(owner.receiver)
+            if parent is not None and cycle_for(owner) is not None:
+                for peer in owners.values():
+                    if sequential.get(peer.receiver) is parent and peer.receiver not in prepared:
+                        recheck(peer, bind_switch=peer is owner)
             prepared.add(owner.receiver)
             for _parent, physical, ready in linked:
                 if owner.receiver not in physical:
@@ -232,21 +325,12 @@ def register_services(hass: HomeAssistant) -> None:
                     ready.set()
                 await ready.wait()
             check_roster()
-            owner_for(ctrl)
+            owner_for(ctrl, bind_switch=True)
             if not mutation_started:
                 # Recheck the whole immutable selection after scheduler/connect
                 # waits, before the first requested mutation on any receiver.
                 for admitted in owners.values():
-                    admitted.check_session()
-                    candidate = admitted.receiver.controller or validated.get(admitted.receiver)
-                    if not isinstance(candidate, OnlySnoreController):
-                        raise ServiceValidationError("BED alarm preflight is incomplete")
-                    if candidate._coordinator is not admitted.receiver:
-                        raise ServiceValidationError(
-                            "BED controller belongs to another physical receiver"
-                        )
-                    owner_for(candidate)
-                    candidate.alarm_frame(**args)
+                    recheck(admitted)
             mutation_started = True
             await ctrl.set_alarm(**args)
 
