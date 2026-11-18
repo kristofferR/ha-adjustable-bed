@@ -5419,7 +5419,9 @@ subscription; the Android app only enables it locally and writes no CCCD.
 The bed alarm uses [`set_alarm`](../SERVICES.md#set_alarm) with `enabled`,
 `time`, `weekdays` and `wake_action`. P1 offers `none`, `massage`, `memory_1`
 and `memory_2`; P2 offers `tv`, `massage` and `zero_g` (the app's alarm types
-0, 1 and 3; P2 type 2 sends the same TV record as 0). Weekdays set repeat bits
+0, 1 and 3; P2 type 2 sends the same TV record as 0). Turning the alarm on needs
+an explicit wake action, and every bed's live route is checked before any bed is
+written. Weekdays set repeat bits
 0..6, Sunday..Saturday, plus bit 7, as the app does when days are edited. No
 weekdays means once: today, or tomorrow when the requested hour/minute has
 passed; seconds do not change that comparison. P1 carries current clock fields in its query/alarm;

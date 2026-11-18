@@ -94,6 +94,7 @@ async def test_unknown_cached_route_rejects_all_targets_before_reconnect_or_writ
     ):
         await hass.services.async_call(const.DOMAIN, "set_alarm", {
             "device_id": ["first", "invalid"], "enabled": True, "time": "07:30:00",
+            "wake_action": "massage",
         }, blocking=True)
     mock_establish_connection.assert_not_awaited()
     assert not first_client.write_gatt_char.called
@@ -155,3 +156,38 @@ async def test_shared_diagnostics_captures_raw_frames_and_preserves_required_cha
     assert len(runner._notifications) == len(frames)
     assert coordinator.controller_state[state.TIMER] is None
     await runner._unsubscribe_from_notifications(services)
+
+
+@pytest.mark.parametrize("cached,live,wake", [("P1", "P2", "memory_1"), ("P2", "P1", "tv")])
+async def test_changed_live_route_rejects_every_target_before_any_alarm_write(
+    hass, target, mock_establish_connection, cached, live, wake,
+):
+    steady, steady_client = await target(cached, address="AA:BB:CC:DD:15:88")
+    changed, client = await target(cached, address="AA:BB:CC:DD:15:89")
+    await changed.async_disconnect(reason="idle")
+    await changed.async_prime_offline_controller()
+    client.services[0].uuid = app.SELECTOR if live == "P1" else "other"
+
+    async def reconnect(*args, **kwargs):
+        client.is_connected = True
+        return client
+
+    mock_establish_connection.side_effect = reconnect
+    steady_client.write_gatt_char.reset_mock()
+    client.write_gatt_char.reset_mock()
+    await async_register_services(hass)
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(steady, "both"), (changed, "both")], []),
+        ),
+        virtual_clock(),
+        pytest.raises(ServiceValidationError),
+    ):
+        await hass.services.async_call(const.DOMAIN, "set_alarm", {
+            "device_id": ["steady", "changed"], "enabled": True, "time": "07:30:00",
+            "wake_action": wake,
+        }, blocking=True)
+    # The first bed's route accepts the wake action, but nothing is written to it.
+    assert not steady_client.write_gatt_char.called
+    assert changed.controller.capability_snapshot() == {"ultramatic_route": live}

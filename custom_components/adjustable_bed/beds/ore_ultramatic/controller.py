@@ -11,7 +11,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
-from ...alarm import AlarmCapability, AlarmRequest
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...codec import keeson as codec
 from ...command_scheduler import current_command_context
@@ -379,30 +379,49 @@ class OreUltramaticController(OreComfortBedController):
     @property
     def alarm_capability(self) -> AlarmCapability:
         # The route, and so the wake actions, is known once the bed has connected.
+        # The live route is checked on every target before any write, and a wake
+        # action is explicit so a changed route cannot pick a different default.
+        # Before that, every route's choices pass so the route error is the one shown.
+        known = self._route is not None
         return AlarmCapability(
-            wake_actions=tuple(app.WAKE_KINDS[self._route]) if self._route else (),
+            wake_actions=tuple(app.WAKE_KINDS[self._route])
+            if self._route
+            else tuple(dict.fromkeys(k for kinds in app.WAKE_KINDS.values() for k in kinds)),
             weekdays=True,
+            requires_wake_action=known,
+            live_check=known,
             resource="*",
         )
 
     def _alarm_fields(self, alarm: AlarmRequest) -> tuple[app.Route, AlarmFields]:
         if self._route is None:
-            raise ValueError("Connect ORE Ultramatic once to discover its bed route")
+            raise AlarmError(
+                "alarm_route_unknown",
+                "Connect the bed once so Home Assistant can discover its bed route",
+            )
         kinds = app.WAKE_KINDS[self._route]
-        if alarm.wake_action not in kinds:
+        if alarm.enabled and alarm.wake_action not in kinds:
             # The live route differs from the one the request was checked against.
-            raise ValueError(f"This bed now wakes with one of: {', '.join(kinds)}")
+            raise AlarmError(
+                "alarm_route_changed",
+                f"The bed's controls changed; choose one of: {', '.join(kinds)}",
+                wake_actions=", ".join(kinds),
+            )
         return self._route, {
             "enabled": alarm.enabled,
             "hour": alarm.hour,
             "minute": alarm.minute,
             "repeat": app.repeat_mask(alarm.weekdays),
-            "kind": kinds[alarm.wake_action],
+            # A disabled alarm sends no alarm type.
+            "kind": kinds.get(alarm.wake_action, 0),
         }
 
     def validate_alarm(self, alarm: AlarmRequest) -> None:
         route, fields = self._alarm_fields(alarm)
         app.alarm(route, alarm.reference_time, **fields)
+
+    async def check_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_alarm(alarm)
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         await self.set_alarm(**self._alarm_fields(alarm)[1])

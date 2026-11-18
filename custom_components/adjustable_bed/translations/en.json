@@ -8638,6 +8638,12 @@
     "alarm_too_far": {
       "message": "This bed's alarm can be at most 24 hours ahead. Choose a nearer time."
     },
+    "alarm_route_unknown": {
+      "message": "Connect the bed once so Home Assistant can discover its bed route, then try again."
+    },
+    "alarm_route_changed": {
+      "message": "The bed's controls changed since the alarm was checked. Choose one of: {wake_actions}."
+    },
     "timer_minutes_required": {
       "message": "Choose how many minutes the timer runs."
     },
