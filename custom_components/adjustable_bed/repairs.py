@@ -161,6 +161,90 @@ def async_track_combine_beds_issue(
     refresh()
 
 
+OCTO_PIN_ISSUE_PREFIX = "octo_pin_required_"
+
+
+class OctoPinRepairFlow(RepairsFlow):
+    """Save the PIN a locked Octo receiver asks for, on the entry or its side."""
+
+    def __init__(self, entry_id: str, address: str) -> None:
+        self._entry_id = entry_id
+        self._address = address.upper()
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        """Ask for the PIN and save it where Configure keeps it."""
+        from homeassistant.helpers.selector import (
+            TextSelector,
+            TextSelectorConfig,
+            TextSelectorType,
+        )
+
+        from .const import (
+            BED_TYPE_OCTO,
+            CONF_BED_TYPE,
+            CONF_OCTO_PIN,
+            CONF_PROTOCOL_VARIANT,
+            CONF_SIDE,
+            OCTO_VARIANT_STAR2,
+        )
+        from .pairing import get_child, iter_children, with_updated_child
+        from .validators import is_valid_octo_pin, normalize_octo_pin
+
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        if entry is None:
+            return self.async_abort(reason="entry_missing")
+        side = next(
+            (
+                child.get(CONF_SIDE)
+                for child in iter_children(entry.data)
+                if str(child.get(CONF_ADDRESS, "")).upper() == self._address
+            ),
+            None,
+        )
+        if side is None and str(entry.data.get(CONF_ADDRESS, "")).upper() != self._address:
+            # The receiver this repair named is no longer part of the entry.
+            return self.async_abort(reason="entry_missing")
+        target = get_child(entry.data, side) if side is not None else entry.data
+        if (
+            target is None
+            or target.get(CONF_BED_TYPE) != BED_TYPE_OCTO
+            # Star2 receivers have no PIN.
+            or target.get(CONF_PROTOCOL_VARIANT) == OCTO_VARIANT_STAR2
+            or target.get(CONF_OCTO_PIN)
+        ):
+            # Configure saved a PIN, or the bed changed, since the repair opened.
+            return self.async_abort(reason="pin_saved")
+        errors: dict[str, str] = {}
+        # RepairsFlowManager passes {"issue_id": ...} to the first step.
+        if user_input is not None and CONF_OCTO_PIN in user_input:
+            pin = normalize_octo_pin(user_input[CONF_OCTO_PIN])
+            if not pin or not is_valid_octo_pin(pin):
+                errors[CONF_OCTO_PIN] = "invalid_pin"
+            else:
+                data = (
+                    with_updated_child(entry.data, side, {CONF_OCTO_PIN: pin})
+                    if side is not None
+                    else {**entry.data, CONF_OCTO_PIN: pin}
+                )
+                # The entry's update listener reloads it with the PIN.
+                self.hass.config_entries.async_update_entry(entry, data=data)
+                return self.async_create_entry(data={})
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_OCTO_PIN): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                    )
+                }
+            ),
+            errors=errors,
+            description_placeholders={"name": entry.title},
+        )
+
+
 class CombineBedsRepairFlow(RepairsFlow):
     """Route a Repairs suggestion through the canonical pairing config flow."""
 
@@ -1205,6 +1289,8 @@ async def async_create_fix_flow(
         return CombineBedsRepairFlow()
 
     payload = data or {}
+    if issue_id.startswith(OCTO_PIN_ISSUE_PREFIX):
+        return OctoPinRepairFlow(payload.get("entry_id", ""), payload.get("address", ""))
     from .profile_recommendations import (
         ISSUE_PREFIX as RECOMMENDATION_ISSUE_PREFIX,
     )

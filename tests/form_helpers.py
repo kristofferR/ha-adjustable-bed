@@ -54,6 +54,14 @@ async def answer_app(hass: Any, result: Mapping[str, Any], choice: str) -> Any:
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"bed_type": "not_listed"}
     )
+    from custom_components.adjustable_bed.config_flow import OKIN_RECEIVER_ROUTES
+
+    if choice in OKIN_RECEIVER_ROUTES:
+        # The brand list asks for an Okin receiver by the beds it came with.
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type": "okin_receivers"}
+        )
+        return await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": choice})
     return await hass.config_entries.flow.async_configure(result["flow_id"], {"bed_type": choice})
 
 

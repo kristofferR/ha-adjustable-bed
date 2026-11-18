@@ -97,7 +97,7 @@ async def test_keep_answers_the_woosa_review_for_good(hass: HomeAssistant) -> No
     with patch(_HISTORY, return_value=None):
         async_refresh_profile_review_issue(hass, entry)
         issue = _issue(hass, entry)
-        assert issue is not None and issue.translation_key == "app_profile_woosa"
+        assert issue is not None and issue.translation_key == "app_profile_review"
         flow, form = await _open(hass, entry)
         # Solace has a guided change: the repair offers it, or Keep.
         assert form["step_id"] == "managed"
@@ -198,7 +198,7 @@ async def test_a_kept_woosa_review_is_not_asked_again_by_a_recommendation(
         await async_watch_profile_recommendations(hass, entry, ((None, coord),))
     target = _watches(hass)[f"{ISSUE_PREFIX}{entry.entry_id}_standalone"]
     assert target.recommendation is not None
-    assert target.recommendation.choices == (WOOSA,)
+    assert target.recommendation.choices == ("solace:sophie", WOOSA)
     assert ir.async_get(hass).async_get_issue(DOMAIN, target.issue_id) is None
 
 
@@ -220,3 +220,42 @@ def test_a_split_pair_keeps_its_open_woosa_review_over_an_older_keep() -> None:
     target = dict(single)
     carry_profile_review(pair, target)
     assert target[CONF_PROFILE_REVIEW_PENDING] == "solace:auto"
+
+
+@pytest.mark.parametrize(
+    ("data", "app"),
+    [
+        ({CONF_BED_TYPE: BED_TYPE_SOLACE}, "solace:sophie"),
+        ({CONF_BED_TYPE: "keeson"}, "keeson:comfortfurniture"),
+        ({CONF_BED_TYPE: "keeson", CONF_PROTOCOL_VARIANT: "base"}, "keeson:ore_ultramatic"),
+        ({CONF_BED_TYPE: "keeson", CONF_PROTOCOL_VARIANT: "sino"}, "keeson:comfortfurniture"),
+        *(
+            ({CONF_BED_TYPE: "richmat"}, app)
+            for app in (
+                "luniosmart",
+                "okimiki",
+                "sleep_evolution",
+                "wsilver_legacy",
+                "mlily",
+                "mlily_remote",
+            )
+        ),
+    ],
+)
+def test_the_v5_review_offers_apps_v4_put_on_generic_routes(data: dict[str, Any], app: str) -> None:
+    from custom_components.adjustable_bed.profile_review import (
+        _V5_ROUTE_APPS,
+        related_app_choices,
+        v5_profile_review_mark,
+    )
+
+    assert v5_profile_review_mark(data) is not None
+    assert app in related_app_choices(
+        data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT), _V5_ROUTE_APPS
+    )
+
+
+def test_ksbt_keeson_entries_are_not_asked_about_the_ore_apps() -> None:
+    from custom_components.adjustable_bed.profile_review import v5_profile_review_mark
+
+    assert v5_profile_review_mark({CONF_BED_TYPE: "keeson", CONF_PROTOCOL_VARIANT: "ksbt"}) is None
