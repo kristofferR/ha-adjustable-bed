@@ -873,6 +873,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def exposes_assumed_toggle_light(self) -> bool:
+        """Offer the opt-in estimated on/off entity for a toggle-only light."""
+        return True
+
+    @property
     def supports_explicit_light_on_control(self) -> bool:
         """Return True if bed has a dedicated light-on command.
 

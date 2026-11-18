@@ -181,6 +181,8 @@ class _FactoryCoordinator(SimpleNamespace):
 
 def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
     """Return a deterministic protocol variant for factory-completeness tests."""
+    if bed_type == "personal_comfort":
+        return "anm3"
     if bed_type == const.BED_TYPE_ADJUSTABLE_BED:
         return "adjustable_bed_okin"
     if bed_type == BED_TYPE_RICHMAT:
@@ -221,6 +223,8 @@ async def _create_controller_for_bed_type(
     """Create a controller through the factory for a bed type and optional variant."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == "personal_comfort":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "other"
     if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "600E", const.CONF_PROTOCOL_VARIANT: variant or "box1"})
         return await create_controller(coordinator, bed_type, variant or "box1", client)

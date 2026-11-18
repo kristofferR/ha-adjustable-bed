@@ -577,6 +577,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "casper_base": "Casper Base app",
     "hush_base": "Hush Base app",
     "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
+    "personal_comfort": "Personal Comfort",
     "mline": "M Line app",
     "sonicsleep": "SonicSleep / 소닉슬립 app",
     "hush_remote": "Hush Base remote finder",
@@ -1357,6 +1358,27 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type is not None and result.bed_type != BED_TYPE_GOODVIBE:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_GOODVIBE]))
             result.signals[0:0] = hints
+    # The app's shared base services offer a candidate, never a route or
+    # capabilities for an existing Malouf/Reverie entry.
+    from .codec.personal_comfort import V1_SERVICE, bluetooth_uuid, reverie_uuid
+    from .profiles.personal_comfort import air_route
+
+    pc_services = {uuid.lower() for uuid in (service_info.service_uuids or ())}
+    pc_candidate = air_route(service_info.name or "", pc_services) is not None or bool(
+        pc_services & {bluetooth_uuid("fee9"), "fee9", V1_SERVICE, reverie_uuid("db801000")}
+    )
+    if not pc_candidate:
+        if result.bed_type == "personal_comfort":
+            result = DetectionResult(None, 0, ["personal_comfort:no_matching_air_service"])
+        elif result.ambiguous_types:
+            result.ambiguous_types = [key for key in result.ambiguous_types if key != "personal_comfort"]
+    # Shared services do not weaken an existing receiver/app identity or an
+    # explicit accessory exclusion. Personal Comfort remains selectable in setup.
+    if pc_candidate and result.bed_type is None and not any(
+        signal.startswith("excluded:") or signal == "name:suta_accessory"
+        for signal in result.signals
+    ):
+        result = DetectionResult("personal_comfort", 0.3, ["personal_comfort:app_candidate", *result.signals])
     # Resident's platform-name filter admits these shared receiver names. Keep
     # existing protocol detection and ask the user to identify the app.
     device_name = getattr(getattr(service_info, "device", None), "name", None)

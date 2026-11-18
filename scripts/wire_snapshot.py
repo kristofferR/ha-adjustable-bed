@@ -1015,6 +1015,7 @@ class Coordinator:
             bed_type, variant or VARIANT_AUTO
         )
         self.cancel_command = asyncio.Event()
+        self.stop_epoch = 0
         self._cancel_counter = 0
         self._command_scheduler = SimpleNamespace(token=object(), stop_epoch=0)
         self._command_lock = asyncio.Lock()
@@ -1282,6 +1283,9 @@ def default_scenario(bed_type: str) -> Scenario:
             "read:0000143d-0000-1000-8000-00805f9b34fb": "0102",
             "read:00001111-0000-1000-8000-00805f9b34fb": "000001020304",
         }
+    if bed_type == "personal_comfort":
+        data[const.CONF_PRODUCT_TYPE] = "pf4"
+        variant = "malouf"
     if bed_type == "mline":
         data[const.CONF_PRODUCT_TYPE] = "two"
         variant = "sleep"
@@ -1362,6 +1366,25 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed import const
 
     scenarios: list[Scenario] = []
+    from custom_components.adjustable_bed.profiles.personal_comfort import (
+        PROFILES as PERSONAL_COMFORT,
+    )
+
+    for key in PERSONAL_COMFORT:
+        if key == "malouf":
+            continue  # The default scenario.
+        replies = {
+            "anm3": {"write:550483": "550483002832000000aa", "write:550469": "550469",
+                     "write:550401": "550485", "write:550402": "550485"},
+            "anm5": {"write:523e53500a": "5245543e53503e3030303034323231343230303432"},
+            "ra": {"read:00002a26-0000-1000-8000-00805f9b34fb": "37315255323236352e3034",
+                   "read:a3cded49-47e6-4d77-8e10-3e2c5d6602df": "32",
+                   "read:0638f1b8-f242-4c47-b5b1-a07623cc02df": "32"},
+            "reverie_v2": {"read:db8010a0-f324-29c3-38d1-85c0c2e86885": "64"},
+        }.get(key, {})
+        scenarios.append(Scenario(id=f"personal_comfort:{key}", bed_type="personal_comfort",
+                         protocol_variant=key, entry_data={const.CONF_PRODUCT_TYPE: "pf4"},
+                         layout_id=f"personal_comfort:{key}", replies=replies))
     # Distinct Symphony carriers, fixed builders, split routes and fifth axis.
     # Model/selector dispatch itself is exhaustively checked in test_symphony.
     for product, selector in (("0", "3"), ("12", "9"), ("13", "4"), ("15", "4"), ("10", "6"), ("20", "7")):

@@ -534,7 +534,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -554,6 +554,7 @@ BED_TYPE_OKIN_MOTIONBED: Final = "okin_motionbed"
 BED_TYPE_COMFORT_ENHANCEMENT3: Final = "comfort_enhancement3"
 BED_TYPE_N32_MOTION_BED: Final = "n32_motion_bed"
 # Explicit Richmat MH app profiles: one shared library, five catalogs.
+BED_TYPE_PERSONAL_COMFORT: Final = "personal_comfort"
 BED_TYPE_LUUNA: Final = "luuna"
 BED_TYPE_MLINE: Final = "mline"
 CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
@@ -750,6 +751,7 @@ SUPPORTED_BED_TYPES: Final = [
     "hush_remote",
     BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_LUUNA,
+    BED_TYPE_PERSONAL_COMFORT,
     BED_TYPE_MLINE,
     BED_TYPE_SONICSLEEP,
     BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
@@ -916,6 +918,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_PERSONAL_COMFORT,
         BED_TYPE_BEDGEAR,
         BED_TYPE_SONICSLEEP,
         BED_TYPE_MOTOMOTION,

@@ -4349,6 +4349,8 @@ class TestOfflineSafeBedTypes:
                 child["furnimove_remote"] = "00000"
             elif bed_type == "richmat_classic_apps":
                 child.update({CONF_PROTOCOL_VARIANT: "avocadoecobase", "product_type": "6BRM"})
+            elif bed_type == "personal_comfort":
+                child.update({CONF_PROTOCOL_VARIANT: "malouf", "product_type": "pf4"})
             elif bed_type == BED_TYPE_VIBRADORM_APP:
                 child.update({
                     CONF_VIBRADORM_APP_PROFILE: "caresse",
