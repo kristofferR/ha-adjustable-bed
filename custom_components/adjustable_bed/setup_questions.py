@@ -33,10 +33,10 @@ from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .beds.leggett.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from .beds.richmat_app.catalog import ALL_CHOICES as RICHMAT_APP_PRODUCTS
 from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
-from .beds.sleeptracker.protocol import FOUNDATIONS as SLEEPTRACKER_FOUNDATIONS
 from .beds.sleeptracker.protocol import MODELS as SLEEPTRACKER_MODELS
 from .beds.starcode.m1x12_protocol import profile_from_name as m1x12_profile_from_name
 from .const import (
+    AUTOMATIC_LABEL,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -168,7 +168,6 @@ from .const import (
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
-    CONF_SLEEPTRACKER_FOUNDATION,
     CONF_SLEEPTRACKER_PROCESSOR_TYPE,
     CONF_SLEEPTRACKER_RESTRICTED,
     CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
@@ -1279,10 +1278,6 @@ def _sleeptracker_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     return {key: model.label for key, model in SLEEPTRACKER_MODELS.items()}
 
 
-def _sleeptracker_foundations(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    return {foundation: foundation for foundation in SLEEPTRACKER_FOUNDATIONS}
-
-
 # A signed 32-bit value, as the apps store their mesh and processor identities.
 _INT32_RANGE: Final = vol.Range(min=-(2**31), max=2**31 - 1)
 _INT32: Final = vol.All(int, _INT32_RANGE)
@@ -1304,8 +1299,6 @@ def _sleeptracker_errors(data: Mapping[str, Any]) -> dict[str, str]:
         return {CONF_SLEEPTRACKER_UNIT: "sleeptracker_profile"}
     if data.get(CONF_SLEEPTRACKER_RESTRICTED, False) and unit != 0:
         return {CONF_SLEEPTRACKER_UNIT: "sleeptracker_restricted_unit"}
-    if data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified") not in SLEEPTRACKER_FOUNDATIONS:
-        return {CONF_SLEEPTRACKER_FOUNDATION: "sleeptracker_profile"}
     if not isinstance(data.get(CONF_SLEEPTRACKER_RESTRICTED, False), bool):
         return {CONF_SLEEPTRACKER_RESTRICTED: "sleeptracker_profile"}
     return {}
@@ -1656,15 +1649,16 @@ def _discovered_name_seed(
 def _starcode_selectors(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     from .beds.starcode.abm5_4_profiles import SELECTORS
 
-    return {selector: selector for selector in SELECTORS}
+    # The app saves none until the control box classifies itself.
+    return {selector: AUTOMATIC_LABEL if selector == "none" else selector for selector in SELECTORS}
 
 
 _STARCODE_TRANSPORTS: Final[Mapping[Any, str]] = {
-    "auto": "From original Bluetooth device name",
-    "BOX1220": "BLE / 1000 service",
-    "BOX3633": "62741523 service",
-    "BOX25": "Star / Nordic UART",
-    "BOX25_STAR": "Exact star manufacturer / Nordic UART",
+    "auto": AUTOMATIC_LABEL,
+    "BOX1220": "BOX1220 control box",
+    "BOX3633": "BOX3633 control box",
+    "BOX25": "BOX25 control box",
+    "BOX25_STAR": "BOX25 Star control box",
 }
 
 
@@ -1885,14 +1879,22 @@ def _app_layout_profile(bed_type: str) -> SetupProfile:
         Question(CONF_PRODUCT_TYPE, _app_layouts(bed_type), _app_layout_default(bed_type)),
     )
     if bed_type == "ergomotion_4":
-        # Other catalog product's fields stay visible so switching the product
-        # takes one submission; they apply only to it.
+        # The Other product's fields apply only to it, so they show only for it.
+        other: FieldCondition = {"field": CONF_PRODUCT_TYPE, "value": "custom"}
         questions += (
-            Question("ergomotion4_model_keys", _ergomotion4_keys("model"), [], multiple=True),
-            Question("ergomotion4_massage_keys", _ergomotion4_keys("massage"), [], multiple=True),
-            Question("ergomotion4_product_name", default="Custom", text=True),
-            Question(CONF_HAS_LIGHT, default=False),
-            Question("ergomotion4_rgb", default=False),
+            Question(
+                "ergomotion4_model_keys", _ergomotion4_keys("model"), [], multiple=True, when=other
+            ),
+            Question(
+                "ergomotion4_massage_keys",
+                _ergomotion4_keys("massage"),
+                [],
+                multiple=True,
+                when=other,
+            ),
+            Question("ergomotion4_product_name", default="Custom", text=True, when=other),
+            Question(CONF_HAS_LIGHT, default=False, when=other),
+            Question("ergomotion4_rgb", default=False, when=other),
         )
     if bed_type == "qplus_app":
         questions += (
@@ -1904,6 +1906,8 @@ def _app_layout_profile(bed_type: str) -> SetupProfile:
                 f"serta_mp_memory_{slot}_{axis}",
                 default=15 if axis == "head" else 0 if slot == 4 else 35,
                 validator=vol.All(int, vol.Range(min=0, max=maximum)),
+                # The app's own defaults; only someone who changed them in the app needs these.
+                advanced=True,
             )
             for slot in range(1, 5)
             for axis, maximum in (("head", 60), ("foot", 45))
@@ -2549,8 +2553,10 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                 Question(CONF_PRODUCT_TYPE, _comfy_products, 129),
                 Question(CONF_KAIDI_ROOM_ID, default=REQUIRED,
                          validator=vol.All(vol.Coerce(int), _INT32_RANGE)),
+                # The bed advertises it; the seed fills it in.
                 Question(CONF_KAIDI_SOFA_ACU_NO, default=0,
-                         validator=vol.All(vol.Coerce(int), vol.Range(min=0, max=65535))),
+                         validator=vol.All(vol.Coerce(int), vol.Range(min=0, max=65535)),
+                         advanced=True),
             ),
             validate=_comfy_errors, seed=_comfy_seed, imports=("profiles.comfy",),
         ) for bed_type in (BED_TYPE_KOMFYD, BED_TYPE_COMFYDS)
@@ -2572,6 +2578,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                 CONF_KAIDI_SOFA_ACU_NO,
                 default=2,
                 validator=vol.All(vol.Coerce(int), vol.Range(min=0, max=65535)),
+                advanced=True,
             ),
         ),
         validate=_isleep_errors,
@@ -2590,7 +2597,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_PRODUCT_TYPE, _rize_products, 129),
             Question(CONF_KAIDI_ROOM_ID, default=10000, validator=vol.All(vol.Coerce(int), _INT32_RANGE)),
             Question(CONF_KAIDI_SOFA_ACU_NO, default=2,
-                     validator=vol.All(vol.Coerce(int), vol.Range(min=0, max=65535))),
+                     validator=vol.All(vol.Coerce(int), vol.Range(min=0, max=65535)),
+                     advanced=True),
         ),
         validate=_rize_errors, derive=_rize_layout, seed=_rize_seed,
     ),
@@ -2630,16 +2638,19 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_DISABLE_ANGLE_SENSING: True,
         },
         questions=(
-            Question(CONF_SLEEPTRACKER_FOUNDATION, _sleeptracker_foundations, "Unspecified"),
             Question(CONF_PRODUCT_TYPE, _sleeptracker_models, "unknown"),
-            Question(CONF_SLEEPTRACKER_UNIT, default=0, validator=_INT32),
+            # The defaults suit one processor per bed; the rest is for split setups.
+            Question(CONF_SLEEPTRACKER_UNIT, default=0, validator=_INT32, advanced=True),
             Question(
                 CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
                 default=0,
                 validator=vol.All(int, vol.Range(min=0, max=3)),
+                advanced=True,
             ),
-            Question(CONF_SLEEPTRACKER_RESTRICTED, default=False),
-            Question(CONF_SLEEPTRACKER_PROCESSOR_TYPE, default=0, validator=_INT32),
+            Question(CONF_SLEEPTRACKER_RESTRICTED, default=False, advanced=True),
+            Question(
+                CONF_SLEEPTRACKER_PROCESSOR_TYPE, default=0, validator=_INT32, advanced=True
+            ),
         ),
         validate=_sleeptracker_errors,
         derive=_sleeptracker_layout,
@@ -2737,8 +2748,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
         },
         questions=(
-            Question(CONF_STARCODE_COMMAND_SELECTOR, _starcode_selectors, "none"),
-            Question(CONF_STARCODE_TRANSPORT_SELECTOR, _STARCODE_TRANSPORTS, "auto"),
+            # Both follow the bed by default; they are for a bed that answers wrongly.
+            Question(CONF_STARCODE_COMMAND_SELECTOR, _starcode_selectors, "none", advanced=True),
+            Question(
+                CONF_STARCODE_TRANSPORT_SELECTOR, _STARCODE_TRANSPORTS, "auto", advanced=True
+            ),
         ),
         normalize=_starcode_app_normalize,
         validate=_starcode_app_errors,

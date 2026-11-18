@@ -1,12 +1,12 @@
 """The Casper Base 1.0.8 app's products as profiles over ``codec/richmat.py``.
 
-The app (``com.richmat.casperbase``, row101) offers two products of its own,
+The app (``com.richmat.casperbase``) offers two products of its own,
 PRO and MAX. It also restores products a phone saved under its shared catalog;
 those are explicit choices, never inferred from an advertisement. Each row of
 ``beds/casper_base/catalog.py``, generated from the accepted catalog, names the
 product, its control groups as indices into the action list and its page flags.
 
-The app's Richmat library, which Hush Base 1.0.5 (row126) also ships, sets the
+The app's Richmat library, which Hush Base 1.0.5 also ships, sets the
 transports, connect queries and fixed opcodes below. This module stays free of
 codec imports, so setup and pairing can read its products without the codec.
 """
@@ -68,7 +68,7 @@ class CasperProfile:
 
     key: str
     row: ProductRow
-    # No hold yet: see docs/design/execution-capabilities.md.
+    # The app does not prove a hold.
     execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
 
     @property

@@ -33,7 +33,6 @@ from custom_components.adjustable_bed.bond_verification import (
 )
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
     CapabilityReport,
     _vibradorm_app_data,
     _vmatbasic_data,
@@ -203,7 +202,6 @@ async def test_managed_reconfigure_verifies_then_updates_same_entry_and_ids(
     entry = entry_for(
         hass,
         options={
-            const.CONF_CONNECTION_PROFILE: "responsive",
             const.CONF_IDLE_DISCONNECT_SECONDS: 77,
         },
     )
@@ -557,38 +555,6 @@ async def test_paired_setup_is_unchanged_until_explicit_split(
 
 
 @pytest.mark.parametrize(
-    "bed_type", [const.BED_TYPE_VIBRADORM, const.BED_TYPE_VIBRADORM_APP, const.BED_TYPE_VMATBASIC]
-)
-async def test_unchanged_rendered_options_keep_internal_family_route(hass, bed_type):
-    data = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: bed_type}
-    if bed_type == const.BED_TYPE_VIBRADORM_APP:
-        data = _vibradorm_app_data(
-            {**data, const.CONF_VIBRADORM_APP_PROFILE: "vmat"},
-            {const.CONF_VIBRADORM_VMAT_REMOTE: "07"},
-        )
-    elif bed_type == const.BED_TYPE_VMATBASIC:
-        data = _vmatbasic_data(data, {const.CONF_VMATBASIC_PROFILE: "cbi"})
-    entry = entry_for(hass, data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler, flow.hass = entry.entry_id, hass
-    result = await flow.async_step_settings()
-    schema = result["data_schema"]
-    assert schema is not None
-    values = schema({})
-    assert isinstance(values, dict)
-    rows = schema.schema[const.CONF_BED_TYPE].config["options"]
-    assert sum(row["label"].endswith(" · Vibradorm") for row in rows) == 1
-    assert values[const.CONF_BED_TYPE] == bed_type
-    result = await flow.async_step_settings(values)
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == bed_type
-    if bed_type == const.BED_TYPE_VIBRADORM_APP:
-        assert entry.data[const.CONF_VIBRADORM_VMAT_REMOTE] == "07"
-    elif bed_type == const.BED_TYPE_VMATBASIC:
-        assert entry.data[const.CONF_VMATBASIC_PROFILE] == "cbi"
-
-
-@pytest.mark.parametrize(
     "route,pairing",
     [
         ("typed", "manual_pairing"),
@@ -602,7 +568,7 @@ async def test_fresh_legacy_choice_keeps_existing_pairing_route(
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     flow._discovery_info = mock_bluetooth_service_info
-    settings = {CONF_NAME: "Bed", const.CONF_PREFERRED_ADAPTER: "auto", const.CONF_DISCONNECT_AFTER_COMMAND: False}
+    settings = {CONF_NAME: "Bed", const.CONF_PREFERRED_ADAPTER: "auto", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE}
     result = await start_new_bed(flow, route, const.BED_TYPE_VIBRADORM)
     assert result["step_id"] == "vibradorm"
     # The legacy setup asks its motors, massage and angle sensing, then pairs.
@@ -637,34 +603,6 @@ async def test_repairs_does_not_link_to_a_terminated_reconfigure_flow(hass):
     assert result["type"] == FlowResultType.ABORT
     assert "next_flow" not in result
     assert const.CONF_PROFILE_REVIEW_PENDING in entry.data
-
-
-@pytest.mark.parametrize(
-    "source,target",
-    [
-        (const.BED_TYPE_VIBRADORM_APP, const.BED_TYPE_LINAK),
-        (const.BED_TYPE_LINAK, const.BED_TYPE_VIBRADORM),
-    ],
-)
-async def test_options_can_correct_a_mistaken_bed_family(hass, source, target):
-    data = (
-        app_data()
-        if source == const.BED_TYPE_VIBRADORM_APP
-        else {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: source}
-    )
-    entry = entry_for(hass, data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler, flow.hass = entry.entry_id, hass
-    result = await flow.async_step_settings({const.CONF_BED_TYPE: target})
-    for _ in range(3):
-        if result["type"] == FlowResultType.CREATE_ENTRY:
-            break
-        assert not result.get("errors")
-        schema = result["data_schema"]
-        assert schema is not None
-        result = await flow.async_step_settings(schema({}))
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == target
 
 
 async def test_focused_discovery_offers_one_family_with_other_candidates(

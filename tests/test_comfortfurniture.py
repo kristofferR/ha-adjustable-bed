@@ -1,4 +1,4 @@
-"""Accepted unit085 through the production factory and session, on virtual time."""
+"""ComfortFurniture 2.3 through the production factory and session, on virtual time."""
 
 from __future__ import annotations
 

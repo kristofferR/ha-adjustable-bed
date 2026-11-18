@@ -1,15 +1,12 @@
 """ORE comfort-bed app controller for explicitly verified app profiles.
 
-Implements the accepted clean-room reports for com.ore.maxcoil 1.1.0 (5) and
-com.ore.Dynasty 1.0.2 (3), formal cluster-013 (row056), and for
-com.ore.sfmc2bedsence 1.1 (3), formal cluster-015 (row059). MaxCoil Una and
-Dynasty Bases ship the same ``com.ore.okincomfortbed`` code base. Bedsense Bases
-is a separate package whose accepted report proves byte-identical frames,
-screens, timing, release and reply handling. Avanti Bases 1.0.5 (7),
-com.ore.AvantiBases, independently proves the same behavior (row065).
-AMERICANSTAR 1.0 (1) independently proves the same behavior (row062).
-OKIN Comfort Bed 1.1.6 (8), com.ore.okincomfortbed, independently proves the
-same behavior with 104 literal command/variant vectors (unit152).
+Implements com.ore.maxcoil 1.1.0 (5), com.ore.Dynasty 1.0.2 (3) and
+com.ore.sfmc2bedsence 1.1 (3). MaxCoil Una and Dynasty Bases ship the same
+``com.ore.okincomfortbed`` code base. Bedsense Bases is a separate package with
+byte-identical frames, screens, timing, release and reply handling. Avanti
+Bases 1.0.5 (7, com.ore.AvantiBases), AMERICANSTAR 1.0 (1) and OKIN Comfort Bed
+1.1.6 (8, com.ore.okincomfortbed) show the same behavior; the last with 104
+literal command/variant vectors.
 
 Every command is ``E5 FE 16`` + a big-endian 32-bit word + the complement of the
 byte sum, written to the last FFE9 characteristic found in any service. The app
@@ -31,7 +28,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.exceptions import HomeAssistantError
 
-from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESET_SAVE, CARD_UTILITY
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -76,8 +73,12 @@ ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
     KEESON_VARIANT_OKIN_COMFORT_BED: OreComfortBedApp(
         "OKIN Comfort Bed", "com.ore.okincomfortbed", "1.1.6 (8)"
     ),
-    KEESON_VARIANT_AVANTI_BASES: OreComfortBedApp("Avanti Bases", "com.ore.AvantiBases", "1.0.5 (7)"),
-    KEESON_VARIANT_AMERICANSTAR: OreComfortBedApp("AMERICANSTAR", "com.ore.americanstar", "1.0 (1)"),
+    KEESON_VARIANT_AVANTI_BASES: OreComfortBedApp(
+        "Avanti Bases", "com.ore.AvantiBases", "1.0.5 (7)"
+    ),
+    KEESON_VARIANT_AMERICANSTAR: OreComfortBedApp(
+        "AMERICANSTAR", "com.ore.americanstar", "1.0 (1)"
+    ),
     KEESON_VARIANT_MAXCOIL_UNA: OreComfortBedApp("MaxCoil Una", "com.ore.maxcoil", "1.1.0 (5)"),
     KEESON_VARIANT_DYNASTY_BASES: OreComfortBedApp("Dynasty Bases", "com.ore.Dynasty", "1.0.2 (3)"),
     KEESON_VARIANT_BEDSENSE_BASES: OreComfortBedApp(
@@ -481,19 +482,25 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
                 lambda ctrl: press(cast(OreComfortBedController, ctrl)),
                 icon,
                 translation_key=key,
-                card=CARD_MASSAGE if key == "ore_comfort_massage_start" else CARD_UTILITY,
+                # Saving overwrites the stored preset, so the card asks first.
+                requires_confirmation=key.startswith("ore_comfort_program_"),
+                card=CARD_MASSAGE
+                if key == "ore_comfort_massage_start"
+                else CARD_PRESET_SAVE
+                if key.startswith("ore_comfort_program_")
+                else CARD_UTILITY,
             )
 
         return (
             spec(
                 "ore_comfort_program_flat",
-                "Save Flat",
+                "Save flat",
                 "mdi:content-save",
                 lambda c: c.program_flat(),
             ),
             spec(
                 "ore_comfort_program_zero_g",
-                "Save Zero G",
+                "Save zero gravity",
                 "mdi:content-save",
                 lambda c: c.program_zero_g(),
             ),

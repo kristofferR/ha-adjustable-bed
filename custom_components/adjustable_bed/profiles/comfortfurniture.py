@@ -1,7 +1,7 @@
-"""ComfortFurniture 2.3 (10), unit085: fixed bedding profile over Keeson K1.
+"""ComfortFurniture 2.3 (10): fixed bedding profile over Keeson K1.
 
 No name/service selector, model query or seating/accessory capability is proven.
-Words, labels and cadence are this app's accepted evidence, E02-E13.
+Words, labels and cadence come from this app.
 """
 
 from __future__ import annotations

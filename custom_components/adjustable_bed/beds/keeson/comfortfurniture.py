@@ -1,6 +1,6 @@
 """ComfortFurniture's fixed BED pages, over the shared ORE Keeson transport.
 
-The accepted unit085 report establishes intended bytes and local app effects,
+ComfortFurniture 2.3 establishes intended bytes and local app effects,
 not captures or physical reset/bin meanings. HA owns serialization, immutable
 writes and cancellation cleanup instead of copying the app's mutable queue.
 """
@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
 from ...codec.keeson import comfortfurniture_cancels_hold
 from ...const import KEESON_BASE_NOTIFY_CHAR_UUID, KEESON_VARIANT_COMFORTFURNITURE
 from ...controller_state import StateKey
@@ -406,6 +406,7 @@ class ComfortFurnitureController(OreComfortBedController):
                     requires_confirmation=True,
                     translation_key="comfortfurniture_save",
                     translation_placeholders={"action": label},
+                    card=CARD_PRESET_SAVE,
                 )
                 for name, label in SAVE_LABELS.items()
             ),

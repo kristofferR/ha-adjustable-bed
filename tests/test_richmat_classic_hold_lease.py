@@ -227,7 +227,7 @@ def _runtime(hass: HomeAssistant, layout: str) -> AdjustableBedCoordinator:
     entry = MockConfigEntry(domain=DOMAIN, data={
         "address": "AA:BB:CC:DD:EE:18", "bed_type": "richmat_classic_apps",
         "protocol_variant": "avocadoecobase", "product_type": layout,
-        "disconnect_after_command": False,
+        "connection_mode": "idle",
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)

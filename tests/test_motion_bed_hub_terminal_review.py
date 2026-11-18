@@ -72,7 +72,7 @@ async def test_unknown_hub_inventory_preserves_customized_module_and_foreign_con
     shared_spec = next(
         s
         for s in ctrl.controller_button_specs
-        if s.key == "motion_bed_audio_preview_1"
+        if s.key == "motion_bed_brightness_1"
     )
     ctrl._state = replace(ctrl._state, air_module_present=None, motor_module_present=None)
     registry = er.async_get(hass)
@@ -86,7 +86,7 @@ async def test_unknown_hub_inventory_preserves_customized_module_and_foreign_con
         "button", DOMAIN, coord.entity_unique_id(shared_spec.key), config_entry=coord.entry
     )
     shared = registry.async_update_entity(
-        shared.entity_id, name="My shared alarm action", disabled_by=er.RegistryEntryDisabler.USER
+        shared.entity_id, name="My shared light action", disabled_by=er.RegistryEntryDisabler.USER
     )
     other = MockConfigEntry(domain=DOMAIN, data={})
     other.add_to_hass(hass)

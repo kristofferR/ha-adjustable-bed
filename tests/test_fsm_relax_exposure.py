@@ -132,7 +132,7 @@ async def _actual_memory_target(hass: HomeAssistant, address: str) -> Adjustable
         CONF_ADDRESS: address,
         const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
         const.CONF_PRODUCT_TYPE: "bed",
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_MOTOR_PULSE_COUNT: 1,
     })
     entry.add_to_hass(hass)

@@ -1,6 +1,6 @@
 # Adjustable Comfort M1X12 app
 
-**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -27,10 +27,10 @@ current behavior until the user reconfigures them.
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ Raw Parts 1, 2, 4, 8 and 16, plus the Part 1+2 union |
-| Position Feedback | ⚠️ Read-only Part percentages (no degree sliders or physical axis names) |
+| Motor Control | ✅ Head (Part 1), foot (Part 2), lumbar (Part 4) and head and foot together; Parts 8 and 16 through `hold_control` only |
+| Position Feedback | ⚠️ Read-only head, foot and lumbar percentages (no degree sliders) |
 | Presets | ✅ Flat, TV, zero gravity, anti-snore, lounge |
-| Memory Presets | ✅ Memory 1/2 recall and save, raw MemoryType 8 recall, reset |
+| Memory Presets | ✅ Memory 1/2 recall and save, reset (MemoryType 8 recall through the memory action only) |
 | Massage | ✅ Toggle/off, 10/20/30-minute timer, held wave and head/foot/both intensity |
 | Lights | ✅ On/off/cycle, model-gated light modes 0/1, brightness 1–6 |
 | Alarm, EQ, USB, sonic and kneading state | ⚠️ Read-only |
@@ -246,8 +246,9 @@ Part feedback uses the accepted byte mapping and clamps values to 0–100%:
 | 1, 2, 4, 8 | 4, 6, 8, 10 |
 | 16, 32 | 5, 7 |
 
-- These appear as separately named Part state sensors. The main controller does
-  not assign physical names to Parts 8 or 16.
+- Parts 1, 2 and 4 appear as head, foot and lumbar position sensors, the app
+  Home screen's labels. Parts 8, 16 and 32 have no physical label, so their
+  feedback stays in diagnostics.
 - The notification's motor-stopped flag is byte 17 equal to zero.
 - No generic degree-position sliders or invented physical axes are exposed.
   Part state is not mapped to standard angle sensors.
@@ -264,17 +265,19 @@ protocol behavior and is not presented as a Home Assistant control.
 
 The main profile exposes:
 
-- Flat, TV, zero gravity, anti-snore, lounge, memory 1/2 recall, raw MemoryType
-  8 recall, memory 1/2 save and reset.
-- Per-Part movement, Part 1+2 union, interrupt, STOP and continuous held
-  controls for wave and head/foot/both massage intensity.
+- Flat, TV, zero gravity, anti-snore, lounge, memory 1/2 recall, memory 1/2
+  save and reset. MemoryType 8 has no app caller, so it is not a button.
+- Head, foot and lumbar movement, head and foot together, interrupt, STOP and
+  continuous held controls for wave and head/foot/both massage intensity.
+  Parts 8 and 16 have no physical label and are held controls only.
 - Massage toggle/off and 10/20/30-minute timer choices.
 - Light on/off/cycle, model-gated light modes 0/1 and brightness 1–6. The
   three accepted model IDs are `252201`, `254202` and `352201`; other or empty
   models keep their distinct behavior. F23 and kneading use their accepted S
   lighting overrides.
-- Read-only Part percentages, motor state, massage state, light state/RGB and
-  sonic state. CB25 exposes its basic alarm state. F23 and kneading expose the
+- Read-only head, foot and lumbar percentages, massage state, light color and
+  sonic state. Raw timer counts, motor-stopped and demo flags stay in
+  diagnostics, and the status query is a diagnostic button. CB25 exposes its basic alarm state. F23 and kneading expose the
   advanced alarm, EQ and USB state; kneading additionally exposes kneading
   on/demo/mode/time state. These notifications do not imply setters that the
   app does not provide.
@@ -285,8 +288,8 @@ ELEVATE keeps the existing two-actuator surface plus the combined action. Its
 three covers publish the same bounded hold metadata, with paired-side ownership
 preserved. It does not gain massage, light, preset or model controls.
 
-The native card includes the Part covers, read-only state and held massage
-actions. Translation files and the shipped card bundle are updated with the
+The native card includes the head, foot and lumbar covers, read-only state
+and held massage actions. Translation files and the shipped card bundle are updated with the
 integration.
 
 ## Notes
@@ -294,25 +297,17 @@ integration.
 ### Scope and validation
 
 - Nordic DFU transfer/bootloader, cloud/account services, Wi-Fi provisioning
-  and network administration remain excluded at the accepted source rows.
+  and network administration are out of scope.
   Normal 2A28 version state and ordinary BLE session readiness remain
   implemented.
-- The machine-local accepted report and comparison are sealed; this task does
-  not reopen the APK or create a new analysis claim. The implementation ledger
-  preserves all 126 accepted exclusions with their original evidence and
-  reasons.
 - Focused validation covers the 165 command rows, 151 literal packet vectors,
   notification/parser guards, startup ordering and version-read failures,
   explicit ELEVATE selection, app profile capabilities, group validation,
   paired-side ownership, card hold/release, and actual cover/button/service STOP
-  paths. Full-suite scheduling and independent conformance review belong to the
-  root task owner.
+  paths.
 - Hardware operation remains unverified. Real-user checks are deferred until a
   beta or release.
 
 ### Analysis provenance
 
-- This implementation follows accepted artifact evidence, including the frozen
-  report SHA-256 `ed4d010495b70c6ceb31ef7c2f896b872e67b95b14e44c6f8844bc9f46ff6ae1`.
-- The machine-local M1X12 implementation ledger holds the full 970-ID mapping,
-  including all exclusions.
+Based on AdjustableM1X12 1.1.3 (`com.starcode.adjustablem1x12`).

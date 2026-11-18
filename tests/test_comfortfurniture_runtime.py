@@ -1,4 +1,4 @@
-"""Unit085 in HA setup/Configure, entity/service scheduling and paired runtimes."""
+"""ComfortFurniture in HA setup/Configure, entity/service scheduling and paired runtimes."""
 
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
-"""OKIN SleepEase 1.2.24 BLE formats, from the accepted row107 artifact.
+"""OKIN SleepEase 1.2.24 BLE formats.
 
 P1, P2 and P3 are independent driver paths. They share GATT roles, not commands.
-Evidence: APK Protocol Audit row 107, including its safety corrections.
+HA deliberately corrects some unsafe app behavior.
 """
 
 from __future__ import annotations

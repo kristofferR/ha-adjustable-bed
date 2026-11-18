@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { bedEntitiesForDevice, hasLightingControls } from "./discovery";
-import { presentSections } from "./editor-sections";
+import { presentSections } from "./sections";
 import type { BedEntities, HassEntity, HomeAssistant } from "./types";
 import { placed } from "./test-placements";
 
@@ -8,6 +8,7 @@ const emptyBed = (): BedEntities => ({
   motors: [],
   firmness: [],
   presets: [],
+  presetSaves: [],
   memory: [],
   presence: [],
   lights: {},
@@ -92,4 +93,25 @@ test("visual editor offers the graphic for degree and percentage panel groups", 
   expect(presentSections(bed, hass).graphic).toBe(true);
   bed.motors.pop();
   expect(presentSections(bed, hass).graphic).toBe(false);
+});
+
+test("utility and motors count every row the card renders", () => {
+  const hass = { states: {} } as HomeAssistant;
+  for (const fill of [
+    (b: BedEntities) => { b.utilityNumbers = ["number.bed_timer"]; },
+    (b: BedEntities) => { b.utilitySelects = ["select.bed_mode"]; },
+    (b: BedEntities) => { b.utilityStates = ["sensor.bed_status"]; },
+    (b: BedEntities) => { b.utilitySwitches = ["switch.bed_beep"]; },
+  ]) {
+    const bed = emptyBed();
+    fill(bed);
+    expect(presentSections(bed, hass).utility).toBe(true);
+  }
+  const sideOnly = emptyBed();
+  sideOnly.controlSide = "select.bed_side";
+  expect(presentSections(sideOnly, hass).motors).toBe(true);
+  const positionOnly = emptyBed();
+  positionOnly.motors = [{ key: "back", position: "number.bed_back" }];
+  expect(presentSections(positionOnly, hass).motors).toBe(true);
+  expect(presentSections(emptyBed(), hass).motors).toBe(false);
 });

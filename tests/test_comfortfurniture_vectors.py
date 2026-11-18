@@ -1,4 +1,4 @@
-"""Unit085 literals from the accepted report, never hardware captures."""
+"""ComfortFurniture 2.3 frame literals, never hardware captures."""
 
 from __future__ import annotations
 
