@@ -10401,7 +10401,7 @@
         "step": {
           "init": {
             "title": "Review the profile for {name}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Reconfigure with **{suggested}** preselected. It shows which controls change before anything is saved. Closing it keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }

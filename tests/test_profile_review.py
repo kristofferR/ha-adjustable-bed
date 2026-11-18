@@ -262,9 +262,13 @@ async def test_switch_applies_the_app_through_reconfigure(
     result = await manager.async_configure(flow_id)
     assert result["step_id"] == "reconfigure_bed_type"
     with patch.object(hass.config_entries, "async_schedule_reload") as reload:
-        result = await manager.async_configure(flow_id, result["data_schema"]({}))
+        schema = result["data_schema"]
+        assert schema is not None
+        result = await manager.async_configure(flow_id, schema({}))
         while result["type"] == "form" and result["step_id"] != "migration_confirm":
-            result = await manager.async_configure(flow_id, result["data_schema"]({}))
+            schema = result["data_schema"]
+            assert schema is not None
+            result = await manager.async_configure(flow_id, schema({}))
         result = await manager.async_configure(flow_id, {"action": "apply"})
 
     assert result["reason"] == "migration_applied"
@@ -464,7 +468,7 @@ def test_review_text_is_translated_identically() -> None:
         issue = strings["issues"][key]
         assert issue == english["issues"][key]
         # Solace has a guided change, so the Woosa review opens only its managed step.
-        steps = {"managed"} if key == "app_profile_woosa" else {"init", "configure", "unpair", "managed"}
+        steps = {"managed"} if key == "app_profile_woosa" else {"init", "unpair", "managed"}
         assert set(issue["fix_flow"]["step"]) == steps
         assert "entry_missing" in issue["fix_flow"]["abort"]
         assert "—" not in json.dumps(issue, ensure_ascii=False)
