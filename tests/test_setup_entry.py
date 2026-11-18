@@ -44,7 +44,7 @@ def app_rows(result) -> dict[str, str]:
 async def test_the_start_screen_offers_the_app_first_routes(hass, enable_custom_integrations):
     result = await start(hass)
     options = select_options(result, CONF_ADDRESS)
-    assert list(options) == ["select_by_app", "scan", "manual", "diagnostic"]
+    assert list(options) == ["select_by_app", "scan", "manual", "diagnostic", "discovery"]
     # Translated through the selector, never hard-coded English.
     marker = next(iter(result["data_schema"].schema))
     assert result["data_schema"].schema[marker].config["translation_key"] == "setup_start"
@@ -375,8 +375,8 @@ async def test_the_final_settings_come_after_the_apps_questions(hass, enable_cus
     assert result["step_id"] == "finish_settings"
     top = {marker.schema for marker in result["data_schema"].schema}
     assert {CONF_NAME, const.CONF_PREFERRED_ADAPTER, const.CONF_CONNECTION_MODE} <= top
-    # What the app sets is not asked, its route least of all; timing is
-    # collapsed under Advanced connection and timing.
+    # What the app sets is not asked, its route least of all; Movement per tap
+    # is collapsed under Movement.
     from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
 
     owned = hidden_generic_fields(const.BED_TYPE_KEESON, const.KEESON_VARIANT_RESTONIC_B)
@@ -385,18 +385,17 @@ async def test_the_final_settings_come_after_the_apps_questions(hass, enable_cus
         next(marker for marker in result["data_schema"].schema if marker == "timing")
     ]
     assert timing.options == {"collapsed": True}
-    assert {marker.schema for marker in timing.schema.schema} >= {
-        const.CONF_MOTOR_PULSE_COUNT,
-        const.CONF_IDLE_DISCONNECT_SECONDS,
-    }
+    assert {marker.schema for marker in timing.schema.schema} == {const.CONF_MOTOR_PULSE_COUNT}
+    # The connection mode's seconds sit beside it, shown for its own mode.
+    assert const.CONF_IDLE_DISCONNECT_SECONDS in top
     sections = _STRINGS["config"]["step"]["finish_settings"]["sections"]
-    assert sections["timing"]["name"] == "Advanced connection and timing"
+    assert sections["timing"]["name"] == "Movement"
     with (
         patch("homeassistant.config_entries.ConfigEntries.async_setup", new=AsyncMock(return_value=True)),
         patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
     ):
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_NAME: "Bedroom bed", "timing": {const.CONF_MOTOR_PULSE_COUNT: "7"}}
+            result["flow_id"], {CONF_NAME: "Bedroom bed", "timing": {const.CONF_MOTOR_PULSE_COUNT: 7}}
         )
     assert result["title"] == "Bedroom bed"
     assert result["data"][const.CONF_PROTOCOL_VARIANT] == const.KEESON_VARIANT_RESTONIC_B
