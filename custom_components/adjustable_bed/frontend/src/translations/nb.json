@@ -170,5 +170,6 @@
   "card.memory_slot": "Minne {slot}",
   "card.picker_name": "Adjustable Bed-kort",
   "card.picker_description": "Styr en justerbar seng: posisjon, forhåndsvalg, minne, lys og massasje.",
-  "motor.tv_lift": "TV-heis"
+  "motor.tv_lift": "TV-heis",
+  "editor.graphic_group": "Sengegrafikk"
 }

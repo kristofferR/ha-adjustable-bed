@@ -170,5 +170,6 @@
   "action.motor_stop": "Stop {motor}",
   "card.memory_slot": "Memory {slot}",
   "card.picker_name": "Adjustable Bed Card",
-  "card.picker_description": "Control an adjustable bed: position, presets, memory, lighting and massage."
+  "card.picker_description": "Control an adjustable bed: position, presets, memory, lighting and massage.",
+  "editor.graphic_group": "Bed graphic"
 }

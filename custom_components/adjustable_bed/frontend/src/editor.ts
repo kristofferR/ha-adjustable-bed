@@ -441,12 +441,29 @@ export class AdjustableBedCardEditor
     </div>`;
   }
 
-  private _graphicOptions(): TemplateResult {
+  // Graphic options only when the card can draw a graphic and shows it. The
+  // percentage option can itself make the graphic available, so it counts.
+  private _graphicOptions(): TemplateResult | typeof nothing {
+    const c = this._config!;
+    if (!this.hass || c.show_graphic === false) return nothing;
+    const beds = compactTargets(this.hass, c.device_id).map((t) => t.bed);
+    const drawable = beds.some((bed) =>
+      presentSections(bed, this.hass!, { ...c, show_percentage_graphic: true }).graphic);
+    if (!drawable) return nothing;
+    const lumbar = beds.some((bed) => bed.motors.some((m) => m.key === "lumbar"));
     return html`
       ${this._compactToggle("show_graphic_labels", true)}
       ${this._compactToggle("show_percentage_graphic", false)}
-      ${this._compactToggle("show_lumbar_graphic", false)}
+      ${lumbar || c.show_lumbar_graphic ? this._compactToggle("show_lumbar_graphic", false) : nothing}
     `;
+  }
+
+  private _graphicGroup(): TemplateResult | typeof nothing {
+    const options = this._graphicOptions();
+    return options === nothing ? nothing : html`<div class="group">
+      <div class="group-title">${localize(this.hass, "editor.graphic_group")}</div>
+      ${options}
+    </div>`;
   }
 
   protected override render(): TemplateResult | typeof nothing {
@@ -469,7 +486,7 @@ export class AdjustableBedCardEditor
       ></ha-form>
       ${this._editingDialog ? nothing : this._layoutGroup()}
       ${this._config.layout === "compact" ? this._compactGroup() : html`
-        ${this._graphicOptions()}
+        ${this._graphicGroup()}
         ${bed ? this._motorsGroup(bed) : nothing}
         ${bed ? this._sectionsGroup(bed) : nothing}
         ${bed ? this._memoryGroup(bed) : nothing}

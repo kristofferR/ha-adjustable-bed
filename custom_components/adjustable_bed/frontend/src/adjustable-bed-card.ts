@@ -254,7 +254,7 @@ export class AdjustableBedCard extends LitElement {
     if (!c || !hass) return 8;
     const beds = compactTargets(hass, c.device_id).map((target) => target.bed);
     const shown = (key: string): boolean =>
-      (c as Record<string, unknown>)[`show_${key}`] !== false &&
+      (c as unknown as Record<string, unknown>)[`show_${key}`] !== false &&
       beds.some((bed) => presentSections(bed, hass, c)[key]);
     const motorRows = Math.max(0, ...beds.map((bed) => bed.motors.length));
     return SECTION_ORDER.filter(shown).reduce((size, key) =>
