@@ -2156,10 +2156,12 @@ export class AdjustableBedCard extends LitElement {
     const key = `motor.${m.key}`;
     const translated = localize(this.hass, key);
     if (translated !== key) return translated;
-    return m.key
+    const fallback = m.key
       .split("_")
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ");
+    // A bed-specific motor key has no card label; its cover's name is the right one.
+    return m.cover ? entityLabel(this.hass, m.cover, fallback) : fallback;
   }
 
   private _angle(m: MotorEntity): number | undefined {

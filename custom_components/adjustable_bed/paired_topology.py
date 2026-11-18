@@ -27,6 +27,7 @@ import contextlib
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Iterator, Mapping
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -187,6 +188,19 @@ class PairAdmission:
 
 
 # ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class _SequentialCycle:
+    task: asyncio.Task[object] | None
+    generations: tuple[tuple[str, tuple[int, ...]], ...]
+    resources: frozenset[str]
+
+    def matches(self, admission: PairAdmission) -> bool:
+        return all(
+            admission.generation(side, self.resources) == generation
+            for side, generation in self.generations
+        )
+
+
 # Child capability probes shared by the strategies
 # ---------------------------------------------------------------------------
 
@@ -1108,6 +1122,7 @@ class SequentialTwoLinkTopology(PairTopology):
         super().__init__(pair)
         # Orders connection switching; one command cycle owns the link lane.
         self.command_lock = asyncio.Lock()
+        self._cycle: _SequentialCycle | None = None
 
     def check_admission(self, targets: Collection[PairTarget]) -> None:
         if len(targets) > 1 and linked_readiness_required(targets):
@@ -1148,6 +1163,9 @@ class SequentialTwoLinkTopology(PairTopology):
                 return
 
             admission.active_children = {child for _, child in targets}
+            self._cycle = _SequentialCycle(
+                asyncio.current_task(), tuple(entry_cancel.items()), resources
+            )
             try:
                 try:
                     await self._run_cycle(action, targets, op, entry_cancel, resources)
@@ -1164,6 +1182,7 @@ class SequentialTwoLinkTopology(PairTopology):
                     await self._pair._stop_children(targets)
                     raise
             finally:
+                self._cycle = None
                 admission.active_children = set()
 
     async def _run_cycle(

@@ -174,6 +174,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
     devices,
     language: "en",
     locale: { language: "en" },
+    formatEntityName: (stateObj) => stateObj.entity_id,
     callService(domain, service, data) {
       calls.push({ at: clock.now, domain, service, data });
       if (service === "hold_control" ||

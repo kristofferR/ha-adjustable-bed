@@ -1,0 +1,9 @@
+[
+  {"mode": 0, "level": 0, "expected_bytes": "02 0b 00 00 01 00 00", "source": "SetAntiSnorePage disable callback, E11"},
+  {"mode": 1, "level": 1, "expected_bytes": "02 0b 01 01 01 00 00", "source": "SetAntiSnorePage level 1 callback, E11"},
+  {"mode": 1, "level": 3, "expected_bytes": "02 0b 01 03 01 00 00", "source": "SetAntiSnorePage level 3 callback 0x624da0, E11"},
+  {"mode": 1, "level": 6, "expected_bytes": "02 0b 01 06 01 00 00", "source": "SetAntiSnorePage level 6 callback 0x624d04, E11"},
+  {"mode": 2, "level": 1, "expected_bytes": "02 0b 02 01 01 00 00", "source": "SetAntiSnorePage demonstration caller, E11"},
+  {"mode": 2, "level": 3, "expected_bytes": "02 0b 02 03 01 00 00", "source": "SetAntiSnorePage selected level and setDemoAntiSnoring unboxed parameter, E11"},
+  {"mode": 2, "level": 6, "expected_bytes": "02 0b 02 06 01 00 00", "source": "SetAntiSnorePage selected level and setDemoAntiSnoring unboxed parameter, E11"}
+]

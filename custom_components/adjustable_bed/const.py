@@ -360,6 +360,10 @@ SIDE_BOTH: Final = "both"
 
 # Motors the timed_move action can name, and so the card can hold through it.
 TIMED_MOVE_MOTOR_OPTIONS: Final = (
+    "axis_1",
+    "axis_2",
+    "axis_3",
+    "lumbar_tilt",
     "neck",
     "tv_lift",
     "back",
@@ -437,10 +441,14 @@ BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
+BED_TYPE_NERUM: Final = "nerum"
+BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
+BED_TYPE_ONLYSNORE: Final = "onlysnore"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
 BED_TYPE_SYMPHONY_SLEEP: Final = "symphony_sleep"
 BED_TYPE_SYMPHONY: Final = "symphony"
+BED_TYPE_ORMATEK: Final = "ormatek"
 CONF_SYMPHONY_SIDE: Final = "symphony_side"
 BED_TYPE_BF: Final = "bf"
 BED_TYPE_CHERISH: Final = "cherish"
@@ -495,10 +503,14 @@ BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 BED_TYPE_GALAXY: Final = "galaxy"
 BED_TYPE_GOODVIBE: Final = "goodvibe"
 BED_TYPE_MLILY: Final = "mlily"
+BED_TYPE_OKIMIKI: Final = "okimiki"
+BED_TYPE_BOBPOWERBASE: Final = "bobpowerbase"
+BED_TYPE_MLILY_REMOTE: Final = "mlily_remote"
 BED_TYPE_RICHMAT_CLASSIC_APPS: Final = "richmat_classic_apps"
 # Opt-in to the classic apps' third-service fallback when no fixed service exists.
 CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
 BED_TYPE_BEDGEAR: Final = "bedgear"
+BED_TYPE_L2MOTION: Final = "l2motion"
 BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
 BED_TYPE_RICHMAT_APP: Final = "richmat_app"
@@ -525,7 +537,9 @@ ZSERIES_VARIANTS: Final = {
 }
 # Bed types whose variant is a user choice with no automatic default.
 BED_TYPE_YAMADA: Final = "yamada"
+BED_TYPE_SOMOS: Final = "somos"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
+BED_TYPE_LINX: Final = "linx"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc2": "MC2: AC-1/BC3, Massage Plus / Comfort Position",
@@ -534,8 +548,13 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 )
+# Aging in Place / Dawn House has one fixed profile; these filter observations.
+BED_TYPE_AGINGPLACE: Final = "agingplace"
+CONF_AGINGPLACE_BED_MODE: Final = "agingplace_bed_mode"
+CONF_AGINGPLACE_BED_SIDE: Final = "agingplace_bed_side"
+CONF_AGINGPLACE_SELECTED_SIDE: Final = "agingplace_selected_side"
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
     {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}
@@ -549,15 +568,20 @@ BED_TYPE_ADJUSTABLE_BED: Final = "adjustable_bed"
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
 # Resident Adjustable Base 1.0.0, com.okin.resident.release, fixed 36_33_01a table.
 BED_TYPE_RESIDENT: Final = "resident"
+BED_TYPE_ULTRAMATIC_SMART_BED: Final = "ultramatic_smart_bed"
 BED_TYPE_RIZE_HOME: Final = "rize_home"
 BED_TYPE_OKIN_MOTIONBED: Final = "okin_motionbed"
 BED_TYPE_COMFORT_ENHANCEMENT3: Final = "comfort_enhancement3"
 BED_TYPE_N32_MOTION_BED: Final = "n32_motion_bed"
 # Explicit Richmat MH app profiles: one shared library, five catalogs.
+BED_TYPE_PERSONAL_COMFORT: Final = "personal_comfort"
 BED_TYPE_LUUNA: Final = "luuna"
 BED_TYPE_MLINE: Final = "mline"
 CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
+BED_TYPE_SLEEP_EVOLUTION: Final = "sleep_evolution"
+BED_TYPE_WSILVER_LEGACY: Final = "wsilver_legacy"
 BED_TYPE_SONICSLEEP: Final = "sonicsleep"
+BED_TYPE_LUNIOSMART: Final = "luniosmart"
 BED_TYPE_HUSH_BASE: Final = "hush_base"
 BED_TYPE_HUSH_SLEEP_MM: Final = "hush_sleep_mm"
 BED_TYPE_HUSH_SLEEP_SXB: Final = "hush_sleep_sxb"
@@ -580,6 +604,12 @@ RUF_RICHMAT_APPS: Final[dict[str, str]] = {
     "bailey_bed_control": "bailey2",
     "richmat_tx": "tx",
 }
+BED_TYPE_RICHMAT_NISCO: Final = "richmat_nisco"
+BED_TYPE_RICHMAT_MLILY_SUPREME: Final = "richmat_mlily_supreme"
+RICHMAT_MH_APP_CATALOGS: Final[dict[str, str]] = {
+    BED_TYPE_RICHMAT_NISCO: "nisco",
+    BED_TYPE_RICHMAT_MLILY_SUPREME: "mlily_supreme",
+}
 RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_REVIVE: "revive",
     BED_TYPE_RICHMAT_BEST_MATTRESS: "best_mattress",
@@ -587,6 +617,7 @@ RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_HARMONY: "harmony",
     BED_TYPE_RICHMAT_IDEALBED: "idealbed",
     **RUF_RICHMAT_APPS,
+    **RICHMAT_MH_APP_CATALOGS,
 }
 RICHMAT_MH_BED_TYPES: Final = frozenset(RICHMAT_MH_APPS)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
@@ -723,9 +754,14 @@ BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
 KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_NERUM,
+    BED_TYPE_CHEERSSLEEP,
+    BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
+    BED_TYPE_ONLYSNORE,
     BED_TYPE_YAMADA,
     BED_TYPE_BEDGEAR,
+    BED_TYPE_L2MOTION,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_ERGOMOTION_4,
@@ -734,6 +770,9 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_GALAXY,
     BED_TYPE_GOODVIBE,
     BED_TYPE_MLILY,
+    BED_TYPE_OKIMIKI,
+    BED_TYPE_BOBPOWERBASE,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_HJBED,
     BED_TYPE_JALON,
@@ -743,15 +782,21 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
     BED_TYPE_JALON_BED,
+    BED_TYPE_LINX,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_SYMPHONY,
+    BED_TYPE_ORMATEK,
     BED_TYPE_CHERISH,
     "casper_remote",
     "hush_remote",
     BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_LUUNA,
+    BED_TYPE_PERSONAL_COMFORT,
     BED_TYPE_MLINE,
+    BED_TYPE_SLEEP_EVOLUTION,
+    BED_TYPE_WSILVER_LEGACY,
     BED_TYPE_SONICSLEEP,
+    BED_TYPE_LUNIOSMART,
     BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
@@ -795,10 +840,12 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_RESIDENT,
     BED_TYPE_RIZE_HOME,
+    BED_TYPE_ULTRAMATIC_SMART_BED,
     BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_SOMOS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
@@ -809,6 +856,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
     *RUF_RICHMAT_APPS,
+    *RICHMAT_MH_APP_CATALOGS,
     "richmat_sleep_receiver",
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES,
@@ -916,8 +964,13 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_PERSONAL_COMFORT,
         BED_TYPE_BEDGEAR,
+        BED_TYPE_L2MOTION,
+        BED_TYPE_SLEEP_EVOLUTION,
+        BED_TYPE_WSILVER_LEGACY,
         BED_TYPE_SONICSLEEP,
+        BED_TYPE_LUNIOSMART,
         BED_TYPE_MOTOMOTION,
         BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_ERGOMOTION_4,
@@ -963,6 +1016,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_ADJUSTABLE_LUMBAR,
         BED_TYPE_RESIDENT,
         BED_TYPE_RIZE_HOME,
+        BED_TYPE_ULTRAMATIC_SMART_BED,
         BED_TYPE_OKIN_MOTIONBED,
         BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_N32_MOTION_BED,
@@ -1636,16 +1690,7 @@ JENSEN_NAME_FRAGMENT: Final = "jmc400"
 # Note: The integration currently targets the bed-frame AT protocol (FFF0 service).
 # Accessory/mattress subtypes use a different binary protocol and are excluded.
 SUTA_NAME_PATTERNS: Final = ("suta-",)
-SUTA_UNSUPPORTED_NAME_PREFIXES: Final = (
-    "suta-moon",
-    "suta-temp",
-    "suta-rbhc",
-    "suta-drawer",
-    "suta-storage",
-    "suta-sofa",
-    "suta-yogabed",
-    "suta-rollsofa",
-)
+SUTA_UNSUPPORTED_NAME_PREFIXES: Final = ("suta-draw",)
 
 # BedJet PowerLayer advertised local names. "BEDJET_BF" is the factory name of the
 # frame; the climate blower advertises its own BEDJET_* name on the same service,
@@ -1819,6 +1864,7 @@ ADJUSTABLE_BED_VARIANTS: Final = {
 }
 
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_SOLACE: frozenset({"sophie"}),
     BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
     BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS: frozenset({VARIANT_AUTO}),
@@ -1827,10 +1873,12 @@ NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_STARCODE_M1X12: frozenset({VARIANT_AUTO}),
     **{bed_type: frozenset({VARIANT_AUTO}) for bed_type in RICHMAT_MH_APPS},
 }
+SOLACE_VARIANT_SOPHIE: Final = "sophie"
 SOLACE_VARIANT_WOOSA: Final = "woosa"
 SOLACE_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
     SOLACE_VARIANT_WOOSA: "Woosa Sleep app",
+    SOLACE_VARIANT_SOPHIE: "Sophie app",
 }
 # The multi-service profile is stored as ``auto``, as v4.0.2 entries hold it.
 # A new setup whose scanned name contains ``JMC`` stores the JMC profile.
@@ -1983,6 +2031,8 @@ KEESON_VARIANT_INNOVA: Final = "innova"
 # Accepted ORE comfort-bed app profiles: explicit, never auto-selected.
 KEESON_VARIANT_AVANTI_BASES: Final = "avanti_bases"
 KEESON_VARIANT_OKIN_COMFORT_BED: Final = "okin_comfort_bed"
+KEESON_VARIANT_COMFORTFURNITURE: Final = "comfortfurniture"
+KEESON_VARIANT_ORE_ULTRAMATIC: Final = "ore_ultramatic"
 # ORE comfort-bed apps (com.ore.okincomfortbed code base): explicit, never auto-selected.
 KEESON_VARIANT_AMERICANSTAR: Final = "americanstar"
 KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
@@ -1994,13 +2044,16 @@ ORE_COMFORT_BED_VARIANTS: Final = frozenset(
         KEESON_VARIANT_BEDSENSE_BASES,
         KEESON_VARIANT_AVANTI_BASES,
         KEESON_VARIANT_OKIN_COMFORT_BED,
+        KEESON_VARIANT_COMFORTFURNITURE,
+        KEESON_VARIANT_ORE_ULTRAMATIC,
         KEESON_VARIANT_AMERICANSTAR,
     }
 )
 # Keeson's share of ``pairing.OFFLINE_CAPABILITY_SAFE_VARIANTS``: variants whose
 # capabilities come only from stored config ("auto" detects its variant live).
 OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
-    ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
+    (ORE_COMFORT_BED_VARIANTS - {KEESON_VARIANT_ORE_ULTRAMATIC})
+    | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
 )
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
@@ -2019,6 +2072,8 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_OKIN_SEATING: "OKIN-Seating app",
     KEESON_VARIANT_AVANTI_BASES: "Avanti Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_OKIN_COMFORT_BED: "OKIN Comfort Bed app (2M / 3M / 4M motor count)",
+    KEESON_VARIANT_COMFORTFURNITURE: "ComfortFurniture app (bedding only)",
+    KEESON_VARIANT_ORE_ULTRAMATIC: "ORE Ultramatic app (2M / 3M / 4M; automatic GATT route)",
     KEESON_VARIANT_AMERICANSTAR: "AMERICANSTAR app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_BEDSENSE_BASES: "Bedsense Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_INNOVA: "INNOVA app (2M / 3M / 4M motor count)",
@@ -2981,7 +3036,9 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.
     BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
+    BED_TYPE_SOMOS: (10, 300),
     BED_TYPE_COMFORTBASE: (10, 100),
+    BED_TYPE_AGINGPLACE: (5, 200),
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
     BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
@@ -2991,9 +3048,11 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_OKIN_MOTIONBED: (5, 200),  # Fixed 200 ms app refresh, ~1 s HA tap.
     BED_TYPE_COMFORT_ENHANCEMENT3: (10, 100),
     BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
+    BED_TYPE_LINX: (334, 3),  # HA finite tap bound; Linx attempts held refresh every 3 ms.
     BED_TYPE_SYMPHONY_SLEEP: (4, 300),
     BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.
     BED_TYPE_RESIDENT: (4, 300),  # Resident 300 ms refresh; four pulses bound an HA tap.
+    BED_TYPE_ULTRAMATIC_SMART_BED: (4, 300),  # HA finite tap; app held refresh is 300 ms.
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for
     # every motor); the count bounds an HA hold.

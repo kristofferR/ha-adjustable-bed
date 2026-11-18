@@ -280,7 +280,7 @@ def _cst(variant: str) -> str:
         ("ComfyDS", {const.BED_TYPE_COMFYDS}),
         ("Bed Connect", {const.BED_TYPE_LINAK}),
         # POWER BOB ULTRA-O is the app of the Rize Bob product on Okin CST.
-        ("Power Bob", {const.BED_TYPE_MOTOSLEEP, _cst(const.OKIN_CST_VARIANT_BOB)}),
+        ("Power Bob", {const.BED_TYPE_MOTOSLEEP, _cst(const.OKIN_CST_VARIANT_BOB), const.BED_TYPE_BOBPOWERBASE}),
         *(
             (name, {_cst(variant)})
             # The full app names of their accepted reports.

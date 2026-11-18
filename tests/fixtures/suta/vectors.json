@@ -1,0 +1,1626 @@
+[
+  {
+    "id": "P2-1",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020101"
+    },
+    "expected_bytes": "5359960100020101475443"
+  },
+  {
+    "id": "P2-2",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020201"
+    },
+    "expected_bytes": "5359960100020201485443"
+  },
+  {
+    "id": "P2-3",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020102"
+    },
+    "expected_bytes": "5359960100020102485443"
+  },
+  {
+    "id": "P2-4",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020202"
+    },
+    "expected_bytes": "5359960100020202495443"
+  },
+  {
+    "id": "P2-5",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020105"
+    },
+    "expected_bytes": "53599601000201054b5443"
+  },
+  {
+    "id": "P2-6",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020205"
+    },
+    "expected_bytes": "53599601000202054c5443"
+  },
+  {
+    "id": "P2-7",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020103"
+    },
+    "expected_bytes": "5359960100020103495443"
+  },
+  {
+    "id": "P2-8",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020203"
+    },
+    "expected_bytes": "53599601000202034a5443"
+  },
+  {
+    "id": "P2-9",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020104"
+    },
+    "expected_bytes": "53599601000201044a5443"
+  },
+  {
+    "id": "P2-10",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960100020204"
+    },
+    "expected_bytes": "53599601000202044b5443"
+  },
+  {
+    "id": "P2-11",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "535996020002010a"
+    },
+    "expected_bytes": "535996020002010a515443"
+  },
+  {
+    "id": "P2-12",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "535996020002020a"
+    },
+    "expected_bytes": "535996020002020a525443"
+  },
+  {
+    "id": "P2-13",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960200020114"
+    },
+    "expected_bytes": "53599602000201145b5443"
+  },
+  {
+    "id": "P2-14",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960200020214"
+    },
+    "expected_bytes": "53599602000202145c5443"
+  },
+  {
+    "id": "P2-15",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "535996020002011e"
+    },
+    "expected_bytes": "535996020002011e655443"
+  },
+  {
+    "id": "P2-16",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "535996020002021e"
+    },
+    "expected_bytes": "535996020002021e665443"
+  },
+  {
+    "id": "P2-17",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960300020101"
+    },
+    "expected_bytes": "5359960300020101495443"
+  },
+  {
+    "id": "P2-18",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960300020201"
+    },
+    "expected_bytes": "53599603000202014a5443"
+  },
+  {
+    "id": "P2-19",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960300020102"
+    },
+    "expected_bytes": "53599603000201024a5443"
+  },
+  {
+    "id": "P2-20",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960300020202"
+    },
+    "expected_bytes": "53599603000202024b5443"
+  },
+  {
+    "id": "P2-21",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960300020103"
+    },
+    "expected_bytes": "53599603000201034b5443"
+  },
+  {
+    "id": "P2-22",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359960300020203"
+    },
+    "expected_bytes": "53599603000202034c5443"
+  },
+  {
+    "id": "P2-23",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970400020101"
+    },
+    "expected_bytes": "53599704000201014b5443"
+  },
+  {
+    "id": "P2-24",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970400020201"
+    },
+    "expected_bytes": "53599704000202014c5443"
+  },
+  {
+    "id": "P2-25",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970400020102"
+    },
+    "expected_bytes": "53599704000201024c5443"
+  },
+  {
+    "id": "P2-26",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970400020202"
+    },
+    "expected_bytes": "53599704000202024d5443"
+  },
+  {
+    "id": "P2-27",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970400020103"
+    },
+    "expected_bytes": "53599704000201034d5443"
+  },
+  {
+    "id": "P2-28",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970400020203"
+    },
+    "expected_bytes": "53599704000202034e5443"
+  },
+  {
+    "id": "P2-29",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970500020101"
+    },
+    "expected_bytes": "53599705000201014c5443"
+  },
+  {
+    "id": "P2-30",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970500020201"
+    },
+    "expected_bytes": "53599705000202014d5443"
+  },
+  {
+    "id": "P2-31",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970500020102"
+    },
+    "expected_bytes": "53599705000201024d5443"
+  },
+  {
+    "id": "P2-32",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970500020202"
+    },
+    "expected_bytes": "53599705000202024e5443"
+  },
+  {
+    "id": "P2-33",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970500020103"
+    },
+    "expected_bytes": "53599705000201034e5443"
+  },
+  {
+    "id": "P2-34",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970500020203"
+    },
+    "expected_bytes": "53599705000202034f5443"
+  },
+  {
+    "id": "P2-35",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970600020101"
+    },
+    "expected_bytes": "53599706000201014d5443"
+  },
+  {
+    "id": "P2-36",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970600020201"
+    },
+    "expected_bytes": "53599706000202014e5443"
+  },
+  {
+    "id": "P2-37",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970600020102"
+    },
+    "expected_bytes": "53599706000201024e5443"
+  },
+  {
+    "id": "P2-38",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970600020202"
+    },
+    "expected_bytes": "53599706000202024f5443"
+  },
+  {
+    "id": "P2-39",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970600020103"
+    },
+    "expected_bytes": "53599706000201034f5443"
+  },
+  {
+    "id": "P2-40",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970600020203"
+    },
+    "expected_bytes": "5359970600020203505443"
+  },
+  {
+    "id": "P2-41",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970700020101"
+    },
+    "expected_bytes": "53599707000201014e5443"
+  },
+  {
+    "id": "P2-42",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970700020201"
+    },
+    "expected_bytes": "53599707000202014f5443"
+  },
+  {
+    "id": "P2-43",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970700020102"
+    },
+    "expected_bytes": "53599707000201024f5443"
+  },
+  {
+    "id": "P2-44",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970700020202"
+    },
+    "expected_bytes": "5359970700020202505443"
+  },
+  {
+    "id": "P2-45",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970700020103"
+    },
+    "expected_bytes": "5359970700020103505443"
+  },
+  {
+    "id": "P2-46",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970700020203"
+    },
+    "expected_bytes": "5359970700020203515443"
+  },
+  {
+    "id": "P2-47",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970e00020101"
+    },
+    "expected_bytes": "5359970e00020101555443"
+  },
+  {
+    "id": "P2-48",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970e00020201"
+    },
+    "expected_bytes": "5359970e00020201565443"
+  },
+  {
+    "id": "P2-49",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970e00020102"
+    },
+    "expected_bytes": "5359970e00020102565443"
+  },
+  {
+    "id": "P2-50",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970e00020202"
+    },
+    "expected_bytes": "5359970e00020202575443"
+  },
+  {
+    "id": "P2-51",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970e00020103"
+    },
+    "expected_bytes": "5359970e00020103575443"
+  },
+  {
+    "id": "P2-52",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970e00020203"
+    },
+    "expected_bytes": "5359970e00020203585443"
+  },
+  {
+    "id": "P2-53",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970b00020100"
+    },
+    "expected_bytes": "5359970b00020100515443"
+  },
+  {
+    "id": "P2-54",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970b00020101"
+    },
+    "expected_bytes": "5359970b00020101525443"
+  },
+  {
+    "id": "P2-55",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970b00020200"
+    },
+    "expected_bytes": "5359970b00020200525443"
+  },
+  {
+    "id": "P2-56",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970b00020201"
+    },
+    "expected_bytes": "5359970b00020201535443"
+  },
+  {
+    "id": "P2-57",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970d00010f"
+    },
+    "expected_bytes": "5359970d00010f605443"
+  },
+  {
+    "id": "P2-58",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359970a00010f"
+    },
+    "expected_bytes": "5359970a00010f5d5443"
+  },
+  {
+    "id": "P2-59",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a00100010f"
+    },
+    "expected_bytes": "5359a00100010f5d5443"
+  },
+  {
+    "id": "P2-60",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10500010f"
+    },
+    "expected_bytes": "5359a10500010f625443"
+  },
+  {
+    "id": "P2-61",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a101000100"
+    },
+    "expected_bytes": "5359a1010001004f5443"
+  },
+  {
+    "id": "P2-62",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a101000101"
+    },
+    "expected_bytes": "5359a101000101505443"
+  },
+  {
+    "id": "P2-63",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a102000100"
+    },
+    "expected_bytes": "5359a102000100505443"
+  },
+  {
+    "id": "P2-64",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a102000101"
+    },
+    "expected_bytes": "5359a102000101515443"
+  },
+  {
+    "id": "P2-65",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020116"
+    },
+    "expected_bytes": "5359a10300020116695443"
+  },
+  {
+    "id": "P2-66",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020117"
+    },
+    "expected_bytes": "5359a103000201176a5443"
+  },
+  {
+    "id": "P2-67",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020118"
+    },
+    "expected_bytes": "5359a103000201186b5443"
+  },
+  {
+    "id": "P2-68",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020119"
+    },
+    "expected_bytes": "5359a103000201196c5443"
+  },
+  {
+    "id": "P2-69",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002011a"
+    },
+    "expected_bytes": "5359a1030002011a6d5443"
+  },
+  {
+    "id": "P2-70",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002011b"
+    },
+    "expected_bytes": "5359a1030002011b6e5443"
+  },
+  {
+    "id": "P2-71",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002011c"
+    },
+    "expected_bytes": "5359a1030002011c6f5443"
+  },
+  {
+    "id": "P2-72",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002011d"
+    },
+    "expected_bytes": "5359a1030002011d705443"
+  },
+  {
+    "id": "P2-73",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002011e"
+    },
+    "expected_bytes": "5359a1030002011e715443"
+  },
+  {
+    "id": "P2-74",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002011f"
+    },
+    "expected_bytes": "5359a1030002011f725443"
+  },
+  {
+    "id": "P2-75",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020120"
+    },
+    "expected_bytes": "5359a10300020120735443"
+  },
+  {
+    "id": "P2-76",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020121"
+    },
+    "expected_bytes": "5359a10300020121745443"
+  },
+  {
+    "id": "P2-77",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020122"
+    },
+    "expected_bytes": "5359a10300020122755443"
+  },
+  {
+    "id": "P2-78",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020123"
+    },
+    "expected_bytes": "5359a10300020123765443"
+  },
+  {
+    "id": "P2-79",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020124"
+    },
+    "expected_bytes": "5359a10300020124775443"
+  },
+  {
+    "id": "P2-80",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020125"
+    },
+    "expected_bytes": "5359a10300020125785443"
+  },
+  {
+    "id": "P2-81",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020126"
+    },
+    "expected_bytes": "5359a10300020126795443"
+  },
+  {
+    "id": "P2-82",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020127"
+    },
+    "expected_bytes": "5359a103000201277a5443"
+  },
+  {
+    "id": "P2-83",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020128"
+    },
+    "expected_bytes": "5359a103000201287b5443"
+  },
+  {
+    "id": "P2-84",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020216"
+    },
+    "expected_bytes": "5359a103000202166a5443"
+  },
+  {
+    "id": "P2-85",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020217"
+    },
+    "expected_bytes": "5359a103000202176b5443"
+  },
+  {
+    "id": "P2-86",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020218"
+    },
+    "expected_bytes": "5359a103000202186c5443"
+  },
+  {
+    "id": "P2-87",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020219"
+    },
+    "expected_bytes": "5359a103000202196d5443"
+  },
+  {
+    "id": "P2-88",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002021a"
+    },
+    "expected_bytes": "5359a1030002021a6e5443"
+  },
+  {
+    "id": "P2-89",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002021b"
+    },
+    "expected_bytes": "5359a1030002021b6f5443"
+  },
+  {
+    "id": "P2-90",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002021c"
+    },
+    "expected_bytes": "5359a1030002021c705443"
+  },
+  {
+    "id": "P2-91",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002021d"
+    },
+    "expected_bytes": "5359a1030002021d715443"
+  },
+  {
+    "id": "P2-92",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002021e"
+    },
+    "expected_bytes": "5359a1030002021e725443"
+  },
+  {
+    "id": "P2-93",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1030002021f"
+    },
+    "expected_bytes": "5359a1030002021f735443"
+  },
+  {
+    "id": "P2-94",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020220"
+    },
+    "expected_bytes": "5359a10300020220745443"
+  },
+  {
+    "id": "P2-95",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020221"
+    },
+    "expected_bytes": "5359a10300020221755443"
+  },
+  {
+    "id": "P2-96",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020222"
+    },
+    "expected_bytes": "5359a10300020222765443"
+  },
+  {
+    "id": "P2-97",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020223"
+    },
+    "expected_bytes": "5359a10300020223775443"
+  },
+  {
+    "id": "P2-98",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020224"
+    },
+    "expected_bytes": "5359a10300020224785443"
+  },
+  {
+    "id": "P2-99",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020225"
+    },
+    "expected_bytes": "5359a10300020225795443"
+  },
+  {
+    "id": "P2-100",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020226"
+    },
+    "expected_bytes": "5359a103000202267a5443"
+  },
+  {
+    "id": "P2-101",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020227"
+    },
+    "expected_bytes": "5359a103000202277b5443"
+  },
+  {
+    "id": "P2-102",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10300020228"
+    },
+    "expected_bytes": "5359a103000202287c5443"
+  },
+  {
+    "id": "P2-103",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10400020106"
+    },
+    "expected_bytes": "5359a104000201065a5443"
+  },
+  {
+    "id": "P2-104",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10400020108"
+    },
+    "expected_bytes": "5359a104000201085c5443"
+  },
+  {
+    "id": "P2-105",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1040002010a"
+    },
+    "expected_bytes": "5359a1040002010a5e5443"
+  },
+  {
+    "id": "P2-106",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10400020206"
+    },
+    "expected_bytes": "5359a104000202065b5443"
+  },
+  {
+    "id": "P2-107",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a10400020208"
+    },
+    "expected_bytes": "5359a104000202085d5443"
+  },
+  {
+    "id": "P2-108",
+    "protocol": "P2",
+    "inputs": {
+      "prefix": "5359a1040002020a"
+    },
+    "expected_bytes": "5359a1040002020a5f5443"
+  },
+  {
+    "id": "P1-angle_off",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+ANGLE_OFF"
+    },
+    "expected_bytes": "41542b414e474c455f4f46460d0a"
+  },
+  {
+    "id": "P1-angle_on",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+ANGLE_ON"
+    },
+    "expected_bytes": "41542b414e474c455f4f4e0d0a"
+  },
+  {
+    "id": "P1-beep_enable",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+ENABLE=BEEP"
+    },
+    "expected_bytes": "41542b454e41424c453d424545500d0a"
+  },
+  {
+    "id": "P1-both_close_all",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH CLOSEALL"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820434c4f5345414c4c0d0a"
+  },
+  {
+    "id": "P1-both_open_all",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH OPENALL"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204f50454e414c4c0d0a"
+  },
+  {
+    "id": "P1-both_set_snore",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH SNORE"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f544820534e4f52450d0a"
+  },
+  {
+    "id": "P1-both_set_tv",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH TV"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f54482054560d0a"
+  },
+  {
+    "id": "P1-both_snore",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH SNORE"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820534e4f52450d0a"
+  },
+  {
+    "id": "P1-both_stop",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH STOP"
+    },
+    "expected_bytes": "41542b4354524c3d424f54482053544f500d0a"
+  },
+  {
+    "id": "P1-both_tv",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH TV"
+    },
+    "expected_bytes": "41542b4d4f44453d424f54482054560d0a"
+  },
+  {
+    "id": "P1-ctrl_back_down",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH BACK DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f5448204241434b20444f574e0d0a"
+  },
+  {
+    "id": "P1-ctrl_back_up",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH BACK UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f5448204241434b2055500d0a"
+  },
+  {
+    "id": "P1-ctrl_bott_down",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH BOTT DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f544820424f545420444f574e0d0a"
+  },
+  {
+    "id": "P1-ctrl_bott_up",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH BOTT UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f544820424f54542055500d0a"
+  },
+  {
+    "id": "P1-ctrl_foot_down",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH FOOT DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f544820464f4f5420444f574e0d0a"
+  },
+  {
+    "id": "P1-ctrl_foot_up",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH FOOT UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f544820464f4f542055500d0a"
+  },
+  {
+    "id": "P1-ctrl_head_down",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH HEAD DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f5448204845414420444f574e0d0a"
+  },
+  {
+    "id": "P1-ctrl_head_up",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH HEAD UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f544820484541442055500d0a"
+  },
+  {
+    "id": "P1-ctrl_htwo_down",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH HTWO DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f5448204854574f20444f574e0d0a"
+  },
+  {
+    "id": "P1-ctrl_htwo_up",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH HTWO UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f5448204854574f2055500d0a"
+  },
+  {
+    "id": "P1-ctrl_tl_down",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH T/L DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f544820542f4c20444f574e0d0a"
+  },
+  {
+    "id": "P1-ctrl_tl_up",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH T/L UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f544820542f4c2055500d0a"
+  },
+  {
+    "id": "P1-ctrl_two_down",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH TWO DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f54482054574f20444f574e0d0a"
+  },
+  {
+    "id": "P1-ctrl_two_up",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+CTRL=BOTH TWO UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f54482054574f2055500d0a"
+  },
+  {
+    "id": "P1-get_alarm",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+GA"
+    },
+    "expected_bytes": "41542b47410d0a"
+  },
+  {
+    "id": "P1-get_date",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+GD"
+    },
+    "expected_bytes": "41542b47440d0a"
+  },
+  {
+    "id": "P1-get_sys_version",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+GETSYSTEM=VERSION"
+    },
+    "expected_bytes": "41542b47455453595354454d3d56455253494f4e0d0a"
+  },
+  {
+    "id": "P1-light_disable",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+DISABLE=LIGHT"
+    },
+    "expected_bytes": "41542b44495341424c453d4c494748540d0a"
+  },
+  {
+    "id": "P1-light_enable",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+ENABLE=LIGHT"
+    },
+    "expected_bytes": "41542b454e41424c453d4c494748540d0a"
+  },
+  {
+    "id": "P1-mass_foot_dt-00",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT DT00"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f5420445430300d0a"
+  },
+  {
+    "id": "P1-mass_foot_dt-20",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT DT20"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f5420445432300d0a"
+  },
+  {
+    "id": "P1-mass_foot_dt-33",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT DT33"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f5420445433330d0a"
+  },
+  {
+    "id": "P1-mass_foot_dt-50",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT DT50"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f5420445435300d0a"
+  },
+  {
+    "id": "P1-mass_foot_lv-00",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT LV00"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f54204c5630300d0a"
+  },
+  {
+    "id": "P1-mass_foot_lv-10",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT LV10"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f54204c5631300d0a"
+  },
+  {
+    "id": "P1-mass_foot_lv-20",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT LV20"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f54204c5632300d0a"
+  },
+  {
+    "id": "P1-mass_foot_lv-30",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT LV30"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f54204c5633300d0a"
+  },
+  {
+    "id": "P1-mass_head_dt-00",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD DT00"
+    },
+    "expected_bytes": "41542b4d4153533d424f5448204845414420445430300d0a"
+  },
+  {
+    "id": "P1-mass_head_dt-20",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD DT20"
+    },
+    "expected_bytes": "41542b4d4153533d424f5448204845414420445432300d0a"
+  },
+  {
+    "id": "P1-mass_head_dt-33",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD DT33"
+    },
+    "expected_bytes": "41542b4d4153533d424f5448204845414420445433330d0a"
+  },
+  {
+    "id": "P1-mass_head_dt-50",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD DT50"
+    },
+    "expected_bytes": "41542b4d4153533d424f5448204845414420445435300d0a"
+  },
+  {
+    "id": "P1-mass_head_lv-00",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD LV00"
+    },
+    "expected_bytes": "41542b4d4153533d424f54482048454144204c5630300d0a"
+  },
+  {
+    "id": "P1-mass_head_lv-10",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD LV10"
+    },
+    "expected_bytes": "41542b4d4153533d424f54482048454144204c5631300d0a"
+  },
+  {
+    "id": "P1-mass_head_lv-20",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD LV20"
+    },
+    "expected_bytes": "41542b4d4153533d424f54482048454144204c5632300d0a"
+  },
+  {
+    "id": "P1-mass_head_lv-30",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD LV30"
+    },
+    "expected_bytes": "41542b4d4153533d424f54482048454144204c5633300d0a"
+  },
+  {
+    "id": "P1-mode_bed",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH BED"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204245440d0a"
+  },
+  {
+    "id": "P1-mode_bed_flat",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH BED FLAT"
+    },
+    "expected_bytes": "41542b4d4f44453d424f54482042454420464c41540d0a"
+  },
+  {
+    "id": "P1-mode_both_m1",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH M1"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204d310d0a"
+  },
+  {
+    "id": "P1-mode_both_m2",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH M2"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204d320d0a"
+  },
+  {
+    "id": "P1-mode_both_m3",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH M3"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204d330d0a"
+  },
+  {
+    "id": "P1-mode_both_m4",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH M4"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204d340d0a"
+  },
+  {
+    "id": "P1-mode_both_pull",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH PULL"
+    },
+    "expected_bytes": "41542b4d4f44453d424f54482050554c4c0d0a"
+  },
+  {
+    "id": "P1-mode_both_yoga",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH YOGA"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820594f47410d0a"
+  },
+  {
+    "id": "P1-mode_chair",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH CHAIR"
+    },
+    "expected_bytes": "41542b4d4f44453d424f54482043484149520d0a"
+  },
+  {
+    "id": "P1-mode_close_bk",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH CLOSEBK"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820434c4f5345424b0d0a"
+  },
+  {
+    "id": "P1-mode_close_ft",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH CLOSEFT"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820434c4f534546540d0a"
+  },
+  {
+    "id": "P1-mode_close_hd",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH CLOSEHD"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820434c4f534548440d0a"
+  },
+  {
+    "id": "P1-mode_fans_all_on_dt-00",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH ALL DT00"
+    },
+    "expected_bytes": "41542b46554e3d424f544820414c4c20445430300d0a"
+  },
+  {
+    "id": "P1-mode_fans_all_on_dt-01",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH ALL DT01"
+    },
+    "expected_bytes": "41542b46554e3d424f544820414c4c20445430310d0a"
+  },
+  {
+    "id": "P1-mode_fans_all_on_dt-02",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH ALL DT02"
+    },
+    "expected_bytes": "41542b46554e3d424f544820414c4c20445430320d0a"
+  },
+  {
+    "id": "P1-mode_fans_all_on_dt-03",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH ALL DT03"
+    },
+    "expected_bytes": "41542b46554e3d424f544820414c4c20445430330d0a"
+  },
+  {
+    "id": "P1-mode_fans_bottom_dt-00",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH THREE DT00"
+    },
+    "expected_bytes": "41542b46554e3d424f544820544852454520445430300d0a"
+  },
+  {
+    "id": "P1-mode_fans_bottom_dt-01",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH THREE DT01"
+    },
+    "expected_bytes": "41542b46554e3d424f544820544852454520445430310d0a"
+  },
+  {
+    "id": "P1-mode_fans_bottom_dt-02",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH THREE DT02"
+    },
+    "expected_bytes": "41542b46554e3d424f544820544852454520445430320d0a"
+  },
+  {
+    "id": "P1-mode_fans_bottom_dt-03",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH THREE DT03"
+    },
+    "expected_bytes": "41542b46554e3d424f544820544852454520445430330d0a"
+  },
+  {
+    "id": "P1-mode_fans_middle_dt-00",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH TWO DT00"
+    },
+    "expected_bytes": "41542b46554e3d424f54482054574f20445430300d0a"
+  },
+  {
+    "id": "P1-mode_fans_middle_dt-01",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH TWO DT01"
+    },
+    "expected_bytes": "41542b46554e3d424f54482054574f20445430310d0a"
+  },
+  {
+    "id": "P1-mode_fans_middle_dt-02",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH TWO DT02"
+    },
+    "expected_bytes": "41542b46554e3d424f54482054574f20445430320d0a"
+  },
+  {
+    "id": "P1-mode_fans_middle_dt-03",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH TWO DT03"
+    },
+    "expected_bytes": "41542b46554e3d424f54482054574f20445430330d0a"
+  },
+  {
+    "id": "P1-mode_fans_top_dt-00",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH ONE DT00"
+    },
+    "expected_bytes": "41542b46554e3d424f5448204f4e4520445430300d0a"
+  },
+  {
+    "id": "P1-mode_fans_top_dt-01",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH ONE DT01"
+    },
+    "expected_bytes": "41542b46554e3d424f5448204f4e4520445430310d0a"
+  },
+  {
+    "id": "P1-mode_fans_top_dt-02",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH ONE DT02"
+    },
+    "expected_bytes": "41542b46554e3d424f5448204f4e4520445430320d0a"
+  },
+  {
+    "id": "P1-mode_fans_top_dt-03",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+FUN=BOTH ONE DT03"
+    },
+    "expected_bytes": "41542b46554e3d424f5448204f4e4520445430330d0a"
+  },
+  {
+    "id": "P1-mode_flat",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH FLAT"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820464c41540d0a"
+  },
+  {
+    "id": "P1-mode_m8",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH M8"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204d380d0a"
+  },
+  {
+    "id": "P1-mode_open_bk",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH OPENBK"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204f50454e424b0d0a"
+  },
+  {
+    "id": "P1-mode_open_ft",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH OPENFT"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204f50454e46540d0a"
+  },
+  {
+    "id": "P1-mode_open_hd",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH OPENHD"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204f50454e48440d0a"
+  },
+  {
+    "id": "P1-mode_pilates",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH PILATES"
+    },
+    "expected_bytes": "41542b4d4f44453d424f54482050494c415445530d0a"
+  },
+  {
+    "id": "P1-mode_read",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH READ"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820524541440d0a"
+  },
+  {
+    "id": "P1-mode_set_pilates",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH PILATES"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f54482050494c415445530d0a"
+  },
+  {
+    "id": "P1-mode_set_read",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH READ"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f544820524541440d0a"
+  },
+  {
+    "id": "P1-mode_sofa",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH SOFA"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820534f46410d0a"
+  },
+  {
+    "id": "P1-mode_sofa_bed",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH SBED"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820534245440d0a"
+  },
+  {
+    "id": "P1-mode_swing",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH SWING"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448205357494e470d0a"
+  },
+  {
+    "id": "P1-mode_zerog",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+MODE=BOTH ZEROG"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448205a45524f470d0a"
+  },
+  {
+    "id": "P1-reset_on",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+RESET=ON"
+    },
+    "expected_bytes": "41542b52455345543d4f4e0d0a"
+  },
+  {
+    "id": "P1-set_date-2611161200",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SD=2611161200"
+    },
+    "expected_bytes": "41542b53443d323631313136313230300d0a"
+  },
+  {
+    "id": "P1-set_lock_off",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETLOCK=OFF"
+    },
+    "expected_bytes": "41542b5345544c4f434b3d4f46460d0a"
+  },
+  {
+    "id": "P1-set_lock_on",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETLOCK=ON"
+    },
+    "expected_bytes": "41542b5345544c4f434b3d4f4e0d0a"
+  },
+  {
+    "id": "P1-set_mode_both_m1",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH M1"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f5448204d310d0a"
+  },
+  {
+    "id": "P1-set_mode_both_m2",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH M2"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f5448204d320d0a"
+  },
+  {
+    "id": "P1-set_mode_both_m3",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH M3"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f5448204d330d0a"
+  },
+  {
+    "id": "P1-set_mode_both_m4",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH M4"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f5448204d340d0a"
+  },
+  {
+    "id": "P1-set_mode_zerog",
+    "protocol": "P1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH ZEROG"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f5448205a45524f470d0a"
+  }
+]

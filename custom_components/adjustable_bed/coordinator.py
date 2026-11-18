@@ -155,6 +155,7 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     IDLE_DISCONNECT_KEEP_CONNECTED,
+    KEESON_VARIANT_ORE_ULTRAMATIC,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_OKIN,
     LINAK_VARIANT_PERFORMANCE,
@@ -429,6 +430,7 @@ class AdjustableBedCoordinator(
         )
 
         self._client: BleakClient | None = None
+        self._connection_creator_task: asyncio.Task[object] | None = None
         self._vmat_unready_client: BleakClient | None = None
         self._controller: BedController | None = None
         self._pairlink_runtime: PairlinkRuntime | None = None
@@ -1115,6 +1117,17 @@ class AdjustableBedCoordinator(
             if bed_type in RICHMAT_MH_BED_TYPES and isinstance(capabilities, dict)
             else None
         )
+        # Ultramatic's route is discovered live, then stored on this entry/side.
+        ultramatic_snapshot = (
+            capabilities.get(BED_TYPE_KEESON) if isinstance(capabilities, dict) else None
+        )
+        ultramatic_mintable = (
+            bed_type == BED_TYPE_KEESON
+            and self._protocol_variant == KEESON_VARIANT_ORE_ULTRAMATIC
+            and isinstance(ultramatic_snapshot, dict)
+            and set(ultramatic_snapshot) == {"ultramatic_route"}
+            and ultramatic_snapshot.get("ultramatic_route") in ("P1", "P2")
+        )
         # Octo Remote Star2 is a different protocol with FIXED capabilities and no
         # PIN/snapshot, so it IS statically offline-mintable (like Linak) — its
         # controller builds without a client.
@@ -1138,6 +1151,7 @@ class AdjustableBedCoordinator(
         mintable = (
             statically_mintable
             or variant_mintable
+            or ultramatic_mintable
             or remacro
             # FSM Relax mints from its exact stored capability body (entry data).
             # With no snapshot its action/memory descriptors remain empty.
@@ -1283,7 +1297,9 @@ class AdjustableBedCoordinator(
         if self._pending_internal_bond_marker is not None:
             self._pending_capability_reload = True
         self._async_persist_config({**self.entry.data, "capabilities": capabilities})
-        self._offline_controller = self._controller
+        # Disconnected, the offline controller saved this snapshot: keep it.
+        if self._controller is not None:
+            self._offline_controller = self._controller
         self._schedule_pending_capability_reload()
 
     def remember_fsm_relax_capabilities(self, body: bytes) -> None:

@@ -212,6 +212,13 @@ class RufRichmatController(RichmatMhController):
     """One physical receiver, explicit app/model, and response-gated extra controls."""
 
     _app_groups = dict.fromkeys(("ruf", "wsilver2", "americanstar", "bailey2", "tx"), "revive")
+    normal_requires_legacy_version = True
+
+    @property
+    def normal_settings(self) -> dict[str, tuple[int, dict[str, int]]]:
+        from .protocol import NORMAL_SETTINGS
+
+        return NORMAL_SETTINGS
 
     def __init__(
         self,
@@ -646,7 +653,11 @@ class RufRichmatController(RichmatMhController):
     # A fresh model or a waist reply alone never grants these controls.
     def _normal_init(self, raw: bytes) -> None:
         version = self._pending.version if self._pending else self._version
-        if not self._normal_selected or version in ("0001", VER2) or len(raw) != 28 or raw[3] != 1:
+        if (
+            not self._normal_selected
+            or self.normal_requires_legacy_version and version in ("0001", VER2)
+            or len(raw) != 28 or raw[3] != 1
+        ):
             return
         body = raw[2:-1]
         side = body[17]
@@ -671,11 +682,9 @@ class RufRichmatController(RichmatMhController):
         self._publish_normal()
 
     def _publish_normal(self) -> None:
-        from .protocol import NORMAL_SETTINGS
-
         values: list[StateUpdate] = []
         for side, side_no in (("left", 1), ("right", 2)):
-            for setting, (code, options) in NORMAL_SETTINGS.items():
+            for setting, (code, options) in self.normal_settings.items():
                 raw = self._normal_values.get((side_no, code))
                 values.append(
                     _mattress_setting_key(side, setting)(
@@ -721,12 +730,10 @@ class RufRichmatController(RichmatMhController):
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        from .protocol import NORMAL_SETTINGS
-
         specs = list(super().controller_select_specs)
         if self._normal_ready:
             for side in ("left", "right"):
-                for setting, (_code, options) in NORMAL_SETTINGS.items():
+                for setting, (_code, options) in self.normal_settings.items():
                     key = _mattress_setting_key(side, setting)
                     specs.append(
                         ControllerSelectSpec(
@@ -761,9 +768,7 @@ class RufRichmatController(RichmatMhController):
         )
 
     async def normal_setting(self, side: str, setting: str, option: str) -> None:
-        from .protocol import NORMAL_SETTINGS
-
-        spec = NORMAL_SETTINGS.get(setting)
+        spec = self.normal_settings.get(setting)
         if (
             not self._normal_ready
             or side not in ("left", "right")

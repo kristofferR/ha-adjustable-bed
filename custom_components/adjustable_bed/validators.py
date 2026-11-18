@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
@@ -62,6 +63,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
+    BED_TYPE_SOMOS,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_SVANE,
     BED_TYPE_YAMADA,
@@ -97,13 +99,21 @@ from .const import (
     VARIANT_REQUIRED_BED_TYPES,
     ZSERIES_VARIANTS,
 )
+from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.hush import HUSH_BASE_VARIANTS
+from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
+from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
+from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
 from .profiles.richmat import BEDTECH_VARIANTS
+from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
+from .profiles.richmat_legacy import choices as legacy_choices
+from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
 _LOGGER = logging.getLogger(__name__)
@@ -134,6 +144,10 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    "ormatek": {"okin15": "Okin", "okin24": "SmartBed"},
+    "linx": LINX_TRANSPORTS,
+    "nerum": {"p1": "P1: ORE / 1000", "p2": "P2: Okin / FFE5", "p3": "P3: Smartbed / Nordic"},
+    **{app: legacy_choices(app) for app in LEGACY_APPS},
     "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
     "comfort_enhancement3": APEX_CHOICES,
     "symphony_sleep": {"box1": "Box 1 (P1)", "box2": "Box 2 (P2)", "fallback": "Box 1, without position readings"},
@@ -141,6 +155,8 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_GALAXY: GALAXY_PROFILES,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
     BED_TYPE_MLILY: MLILY_PROFILES,
+    BED_TYPE_OKIMIKI: OKIMIKI_PROFILES,
+    "bobpowerbase": BOB_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
     BED_TYPE_RICHMAT_APP: RICHMAT_APP_PRODUCTS,
@@ -154,6 +170,8 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_CASPER_BASE: CASPER_BASE_VARIANTS,
     "hush_base": HUSH_BASE_VARIANTS,
     "luuna": LUUNA_VARIANTS,
+    "personal_comfort": PERSONAL_COMFORT_ROUTES,
+    "mlily_remote": MLILY_REMOTE_PROFILES,
     "mline": {"auto": AUTOMATIC_LABEL, **{key: key.title() for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")}},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,
@@ -173,6 +191,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ADJUSTABLE_BED: ADJUSTABLE_BED_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
+    BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
     BED_TYPE_YAMADA: {"p1": "P1 control box", "p2": "P2 control box"},
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},

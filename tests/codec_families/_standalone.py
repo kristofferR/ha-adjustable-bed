@@ -28,7 +28,7 @@ STANDALONE: dict[str, str] = {
     "octo": "own wire format",
     "okin_ore": "one fixed command table over codec/okin_ore.py, which the BOX1220 routes of"
     " sleepys_elite_app and starcode_abm5_4 also send; no app profile",
-    "remacro": "own wire format",
+    "remacro": "legacy standalone app controller; P1 encoder shared with CheersSleep",
     "richmat_sleep_receiver": "sleep receiver without bed commands; own FA crc8 frames",
     "reverie": "own wire format",
     "reverie_nightstand": "own wire format",
@@ -49,7 +49,6 @@ STANDALONE: dict[str, str] = {
     "starcode_m5x5": "each connection picks codec/okin_5a.py StarCode or codec/okin_nframe.py"
     " legacy frames from the Device Information manufacturer; the app's key catalog, sender"
     " session and notification parsers stay controller code",
-    "suta": "own wire format",
     "svane": "the default Svane Remote route writes LinonPI multi-service frames and the"
     " jensen_linon route the Jensen app's one-byte frames; the JMC400 route and the lamp"
     " frames are built by codec/jmc.py from the SVANE_REMOTE profile",

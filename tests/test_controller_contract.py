@@ -181,6 +181,8 @@ class _FactoryCoordinator(SimpleNamespace):
 
 def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
     """Return a deterministic protocol variant for factory-completeness tests."""
+    if bed_type == "personal_comfort":
+        return "anm3"
     if bed_type == const.BED_TYPE_ADJUSTABLE_BED:
         return "adjustable_bed_okin"
     if bed_type == BED_TYPE_RICHMAT:
@@ -193,6 +195,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return OCTO_VARIANT_STANDARD
     if bed_type == const.BED_TYPE_CASPER_BASE:
         return "casperpro"
+    if bed_type == const.BED_TYPE_SOMOS:
+        return "a"
     if bed_type == const.BED_TYPE_YAMADA:
         return "p1"
     if bed_type == const.BED_TYPE_COMFORTBASE:
@@ -221,13 +225,26 @@ async def _create_controller_for_bed_type(
     """Create a controller through the factory for a bed type and optional variant."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == const.BED_TYPE_ORMATEK:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "new"
+        variant = "okin15" if not variant or variant == VARIANT_AUTO else variant
+    if bed_type == "personal_comfort":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "other"
+    if bed_type == const.BED_TYPE_LINX:
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: "a00a", const.CONF_BLE_DEVICE_NAME: "KSWF07D00000000"})
+        return await create_controller(coordinator, bed_type, variant or "a00a", client)
     if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "600E", const.CONF_PROTOCOL_VARIANT: variant or "box1"})
         return await create_controller(coordinator, bed_type, variant or "box1", client)
     if bed_type == const.BED_TYPE_SYMPHONY:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_PROTOCOL_VARIANT: "0"})
-    if bed_type == const.BED_TYPE_BEDGEAR:
+    if bed_type in (const.BED_TYPE_BEDGEAR, const.BED_TYPE_L2MOTION):
         coordinator.entry.data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
+    if bed_type == "cheerssleep":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "45"
+    if bed_type in ("sleep_evolution", "wsilver_legacy"):
+        coordinator.entry.data.update({const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: variant or "A1"})
+        variant = variant or "A1"
     if bed_type == const.BED_TYPE_SONICSLEEP:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type == const.BED_TYPE_JALON:
@@ -236,9 +253,14 @@ async def _create_controller_for_bed_type(
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
     if bed_type == "smart_sleep":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "0"
+    if bed_type == "onlysnore":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unKnow"
 
     if bed_type == "mline":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"
+    if bed_type == "nerum":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "nerum"
+
     if bed_type == const.BED_TYPE_JALON_BED:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
@@ -295,8 +317,16 @@ async def _create_controller_for_bed_type(
         coordinator.entry.options = {}
         coordinator.entry.entry_id = "contract-fsm-relax"
         return await create_controller(coordinator, bed_type, variant, client)
+    if bed_type == const.BED_TYPE_MLILY_REMOTE:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "single"
+        return await create_controller(coordinator, bed_type, variant or "ms200", client)
     if bed_type == const.BED_TYPE_MLILY:
         return await create_controller(coordinator, bed_type, variant or "6brm", client)
+    if bed_type == const.BED_TYPE_OKIMIKI:
+        return await create_controller(coordinator, bed_type, variant or "HCRN", client)
+    if bed_type == const.BED_TYPE_BOBPOWERBASE:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "standard"
+        return await create_controller(coordinator, bed_type, variant or "elite", client)
     if bed_type == const.BED_TYPE_GALAXY:
         selected = variant or "6BRM"
         return await create_controller(coordinator, bed_type, selected, client)
@@ -540,6 +570,8 @@ async def test_registry_entries_resolve_to_controller_classes(bed_type: str) -> 
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
     if bed_type == const.BED_TYPE_JALON_BED:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
+    if bed_type in ("sleep_evolution", "wsilver_legacy"):
+        coordinator.entry.data.update({const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: "A1"})
     if bed_type == const.BED_TYPE_SONICSLEEP:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "one"
     controller = await _create_from_registry(coordinator, bed_type)

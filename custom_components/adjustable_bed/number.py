@@ -538,7 +538,14 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
         """Respect Octo's PIN gate for live settings."""
         controller = self._coordinator.capability_controller
         octo = octo_controller(controller)
-        return super().available and (octo is None or octo.normal_controls_available)
+        return (
+            super().available
+            and (octo is None or octo.normal_controls_available)
+            and (
+                controller is None
+                or self.entity_description.key not in controller.unavailable_controller_entity_keys
+            )
+        )
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()

@@ -27,7 +27,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
@@ -153,8 +153,38 @@ def json_command(word: int, device_id: str, *, ctrm: int, km: int, keykt: int) -
     return json.dumps(payload, separators=(",", ":")).encode()
 
 
+def json_packet(code: int, command: Mapping[str, int | str], device_id: str | None) -> bytes:
+    """Encode Dawn House's typed JSON envelope, retaining declared zero fields.
+
+    Member order follows its frozen canonical vectors. Those vectors reconstruct
+    Gson/JSONObject values, rather than recording Android reflection order.
+    Existing Juna/Linx serialization above remains byte-for-byte unchanged.
+    """
+    payload: dict[str, object] = {"cmd": dict(command), "code": code}
+    if device_id is not None:
+        payload["dvid"] = device_id
+    return json.dumps(payload, separators=(",", ":"), sort_keys=True, ensure_ascii=False).encode("utf-8")
+
+
+def parse_json_indication(data: bytes) -> Mapping[str, object] | None:
+    """Dawn House treats each indication as a complete UTF-8 JSON document.
+
+    A truncated document is refused independently; it cannot poison the next
+    indication. There is no source-proven reassembly or identity/ACK filter.
+    """
+    try:
+        decoded: object = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return None
+    if not isinstance(decoded, dict):
+        return None
+    return cast("Mapping[str, object]", decoded)
+
+
 # Two-byte status request of the direct P2 remotes; not a STOP.
 STATUS_QUERY: Final = b"\x00\xb0"
+# Somos Ultra Split Head (E); a query, never a movement release.
+SOMOS_SPLIT_STATUS_QUERY: Final = b"\x01\xb0\x00"
 
 
 def custom_massage(program: int) -> bytes:
@@ -340,6 +370,85 @@ JALON_NOTIFY: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 JALON_PREFIX: Final = bytes.fromhex("f4fe16")
 
 
+@dataclass(slots=True)
+class UltramaticState:
+    """Raw app values, including signed repeat and unconverted P2 action."""
+
+    hour: int = 0
+    minute: int = 0
+    repeat: int = 0
+    type: int = 0
+    timer: int = 0
+    intensity: int = 0
+    true_hour: int = 0
+    true_minute: int = 0
+    true_repeat: int = 0
+    true_type: int = 0
+
+
+class UltramaticParser:
+    """Row158's corrected preflight and decoder, without unsafe indexing.
+
+    Fresh 4..20-byte F4 fragments cache and RETURN. The cache
+    survives continuations and exact 10/16 or >20-byte decoding. Its owner
+    resets it on session changes, unlike the app's activity-wide lifetime.
+    Truncated alarm fields are ignored instead of raising Java bounds errors.
+    No checksum, header validation or action normalization is invented.
+    """
+
+    def __init__(self) -> None:
+        self.state = UltramaticState()
+        self.pending: bytes | None = None
+
+    @staticmethod
+    def _signed(value: int) -> int:
+        return value if value < 128 else value - 256
+
+    def feed(self, data: bytes) -> tuple[str, ...]:
+        s = self.state
+        if not data:
+            return ()
+        if data[:2] == b"\xe2\xfe":
+            if len(data) < 10:
+                return ()
+            s.minute, s.hour, s.repeat = (self._signed(data[i]) for i in (3, 4, 6))
+            if data[9] & 15 in (8, 9):
+                s.type = 2 if data[9] & 15 == 8 else 3
+            if 1 <= self._signed(data[7]) <= 5 and 1 <= self._signed(data[8]) <= 5:
+                s.type = 1
+            return ("alarm",)
+        if len(data) <= 20:
+            if len(data) > 3 and data[:3] == JALON_PREFIX:
+                self.pending = data
+                return ()
+            if len(data) not in (10, 16):
+                if self.pending is None:
+                    return ()
+                data = self.pending + data
+        if len(data) > 3 and data[:2] == b"\xed\x80":
+            if len(data) < 7:
+                return ()
+            hour, minute, repeat, kind = (self._signed(data[i]) for i in (3, 4, 5, 6))
+            if repeat == -128:
+                repeat = s.true_repeat
+            s.hour, s.minute, s.repeat, s.type = hour, minute, repeat, kind
+            changed = (hour, minute, repeat, kind) != (
+                s.true_hour, s.true_minute, s.true_repeat, s.true_type
+            )
+            s.true_hour, s.true_minute, s.true_repeat, s.true_type = hour, minute, repeat, kind
+            return ("alarm",) if changed else ()
+        intensity = timer = 0
+        if len(data) == 23:
+            intensity, timer = data[11] & 15, self._signed(data[19])
+        elif len(data) == 16:
+            intensity, timer = data[7] & 15, data[14] & 15
+        elif len(data) == 10:
+            timer = self._signed(data[8])
+        s.intensity = (intensity + 1) // 2 if 1 <= intensity <= 6 else 0
+        s.timer = timer
+        return ("massage",)
+
+
 @dataclass(frozen=True, slots=True)
 class SymphonyTimer:
     """The source UI's massage minutes, including its P1 comparison quirk."""
@@ -415,3 +524,17 @@ class SymphonyParser:
             if code is not None:
                 return SymphonyTimer(0 if code == 255 else code * 10 if current_minutes != code else current_minutes)
         return alarm if alarm is not None and 0 <= alarm.hour <= 23 and 0 <= alarm.minute <= 59 else None
+
+
+def comfortfurniture_cancels_hold(data: bytes) -> bool:
+    """ComfortFurniture 2.3 BED branch: length nine only, accessory dispatch takes precedence.
+
+    No header/checksum/terminator validation or position meaning is established.
+    Accessory replies are ignored rather than reproducing the app's wrong-view
+    casts. Only the remaining 07/06/0A byte7 cases cancel a held BED refresh.
+    """
+    if len(data) != 9 or data[3] == 0x30:
+        return False
+    if data[3] == 0xF0 and (data[7] & 3 == 3 or data[7] & 12 == 12):
+        return False
+    return data[7] in (7, 6, 10)

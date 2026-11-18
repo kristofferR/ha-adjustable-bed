@@ -14,6 +14,7 @@ from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.okin_nframe_vectors import FIELD_FRAMES, FROZEN_FRAMES, GATEWAY_FRAMES
 from tests.rize_home_vectors import FROZEN_FRAMES as RIZE_HOME_FRAMES
 from tests.starcode_abm5_4_vectors import BUILDER_VECTORS
+from tests.ultramatic_vectors import FROZEN_FRAMES as ULTRAMATIC_FRAMES
 
 
 def _variant(key: str, bed_type: str) -> str | None:
@@ -38,7 +39,7 @@ def _variant(key: str, bed_type: str) -> str | None:
 
 FAMILY = CodecFamily(
     profiles={
-        OkinNFrameProfile: FROZEN_FRAMES,
+        OkinNFrameProfile: {**FROZEN_FRAMES, **ULTRAMATIC_FRAMES},
         AdjustableAppProfile: ADJUSTABLE_BED_FRAMES,
         RizeHomeProfile: RIZE_HOME_FRAMES,
     },
@@ -57,6 +58,7 @@ FAMILY = CodecFamily(
             "leggett_platt",
             "okimat",
             "resident",
+            "ultramatic_smart_bed",
             "rize_home",
             "okin_motionbed",
             "comfort_enhancement3",
@@ -94,6 +96,7 @@ FAMILY = CodecFamily(
         # AdjustableM5X4's BOX15 selector moves with its app's frozen Keeson E6 frames.
         frozen=frozenset().union(
             *FROZEN_FRAMES.values(),
+            *ULTRAMATIC_FRAMES.values(),
             *ADJUSTABLE_BED_FRAMES.values(),
             *RIZE_HOME_FRAMES.values(),
             *FIELD_FRAMES.values(),

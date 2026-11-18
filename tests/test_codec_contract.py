@@ -114,4 +114,5 @@ async def test_every_app_choice_is_a_profile_over_its_codec(bed_type: str, choic
         coordinator, bed_type, VARIANT_AUTO, _make_connected_client()
     )
     family = FAMILIES[CODEC_BACKED[bed_type]]
-    assert _codec_profile(controller, family.profiles) == choice
+    expected = f"{bed_type}:{choice}" if bed_type in ("sleep_evolution", "wsilver_legacy") else choice
+    assert _codec_profile(controller, family.profiles) == expected

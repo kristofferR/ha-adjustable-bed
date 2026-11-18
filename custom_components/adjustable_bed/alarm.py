@@ -23,6 +23,9 @@ WAKE_ACTIONS: Final = (
     "all_up",
     "zero_g",
     "zero_g_2",
+    # Beds whose two halves wake separately.
+    "zero_g_left",
+    "zero_g_right",
     "anti_snore",
     "lounge",
     "tv",
@@ -109,6 +112,8 @@ class AlarmCapability:
     confirm_actions: frozenset[str] = field(default_factory=frozenset)
     # Run ``check_alarm`` on every target over Bluetooth before the first write.
     live_check: bool = False
+    # The bed finds the alarm to turn off by its time, so turning one off needs a time too.
+    time_to_turn_off: bool = False
     cancel_running: bool = False
     resource: str | None = "configuration"
 

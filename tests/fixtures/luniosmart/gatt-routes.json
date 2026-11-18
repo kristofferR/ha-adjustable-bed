@@ -1,0 +1,86 @@
+[
+  {
+    "id": "S1",
+    "name": "bleServiceUUIDNordic",
+    "service": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+    "write": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "declared_notify": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+    "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
+    "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
+    "query": "00",
+    "evidence": [
+      "E-GATT"
+    ],
+    "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
+  },
+  {
+    "id": "S2",
+    "name": "bleServiceUUIDW1",
+    "service": "0000FEE9-0000-1000-8000-00805F9B34FB",
+    "write": "D44BC439-ABFD-45A2-B575-925416129600",
+    "declared_notify": "D44BC439-ABFD-45A2-B575-925416129601",
+    "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
+    "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
+    "query": "6e02010071",
+    "evidence": [
+      "E-GATT"
+    ],
+    "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
+  },
+  {
+    "id": "S3",
+    "name": "bleServiceUUIDW2",
+    "service": "0000FEE9-0000-1000-8000-00805F9B34BB",
+    "write": "D44BC439-ABFD-45A2-B575-925416129622",
+    "declared_notify": "D44BC439-ABFD-45A2-B575-925416129611",
+    "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
+    "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
+    "query": "6e02010071",
+    "evidence": [
+      "E-GATT"
+    ],
+    "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
+  },
+  {
+    "id": "S4",
+    "name": "bleServiceUUIDW3",
+    "service": "0000FFE0-0000-1000-8000-00805F9B34FB",
+    "write": "0000FFE2-0000-1000-8000-00805F9B34FB",
+    "declared_notify": "0000FFE1-0000-1000-8000-00805F9B34FB",
+    "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
+    "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
+    "query": "6e02010071",
+    "evidence": [
+      "E-GATT"
+    ],
+    "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
+  },
+  {
+    "id": "S5",
+    "name": "bleServiceUUIDW4",
+    "service": "0000FFF0-0000-1000-8000-00805F9B34FB",
+    "write": "0000FFF2-0000-1000-8000-00805F9B34FB",
+    "declared_notify": "0000FFF1-0000-1000-8000-00805F9B34FB",
+    "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
+    "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
+    "query": "6e02010071",
+    "evidence": [
+      "E-GATT"
+    ],
+    "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
+  },
+  {
+    "id": "S6",
+    "name": "bleServiceUUIDW5",
+    "service": "0000e0ff-3c17-d293-8e48-14fe2e4da212",
+    "write": "00000002-3c17-d293-8e48-14fe2e4da212",
+    "declared_notify": "00000003-3c17-d293-8e48-14fe2e4da212",
+    "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
+    "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
+    "query": "6e02010071",
+    "evidence": [
+      "E-GATT"
+    ],
+    "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
+  }
+]

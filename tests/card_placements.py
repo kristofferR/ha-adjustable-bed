@@ -150,6 +150,11 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     Some controls exist only for a reported model, layout or page, which no
     offline configuration reaches.
     """
+    from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
+    from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
+    from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
+        OreUltramaticController,
+    )
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
     from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
@@ -157,6 +162,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     )
     from custom_components.adjustable_bed.beds.richmat_classic.resource_receive import (
         ResourceReceiveState,
+    )
+    from custom_components.adjustable_bed.beds.richmat_mh.app_controller import (
+        RichmatMHAppController,
     )
     from custom_components.adjustable_bed.beds.ruf_richmat.controller import RufRichmatController
     from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
@@ -171,9 +179,12 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         _POSITIVE_SELECTORS,
         StarcodeAbm5_4Controller,
     )
+    from custom_components.adjustable_bed.beds.suta.controller import SutaController
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
+    from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
+    from custom_components.adjustable_bed.profiles.suta import ROUTES as SUTA_ROUTES
 
     def variant(controller: BedController, **attributes: object) -> BedController:
         clone = copy.copy(controller)
@@ -183,8 +194,19 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     for controller in controllers:
         yield controller
-        if isinstance(controller, ParamountController):
+        if isinstance(controller, SutaController):
+            for route in SUTA_ROUTES:
+                name = "SUTA-unknown" if route == "fallback" else "SUTA" if route == "short-name" else route.split("*")[0]
+                yield SutaController(controller._coordinator, name=name)
+        elif isinstance(controller, OreUltramaticController):
+            for route in ("P1", "P2"):
+                yield variant(controller, _route=route, profile=ultramatic.profile(route))
+        elif isinstance(controller, OnlySnoreController):
+            yield variant(controller, _alarm_count=3)
+        elif isinstance(controller, ParamountController):
             yield variant(controller, _mask=31, _height_bounds=(20, 70))
+        elif isinstance(controller, OkimikiController):
+            yield variant(controller, _menus={"light", "alarm"})
         elif isinstance(controller, SleeptrackerController):
             for model in sleeptracker_protocol.MODELS.values():
                 for restricted in (False, True):
@@ -206,6 +228,17 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                 yield variant(controller, command_selector=selector)
         elif isinstance(controller, SmartComfortController):
             yield variant(controller, _model=0x89, _flags=(7, 7, 7), _ready=True)
+        elif isinstance(controller, RichmatMHAppController):
+            for version in ("0000", "0001"):
+                reported = variant(
+                    controller, _version=version, _call_page=version == "0001",
+                    _dev={"led": True, "alarm": True, "snore": True},
+                    _detection=True, _waist=controller.app == "mlily_supreme",
+                )
+                for group in controller._mode_groups or (None,):
+                    yield variant(reported, _group_type=group)
+                if controller.app == "mlily_supreme" and controller._normal_selected:
+                    yield variant(reported, _normal_ready=True)
         elif isinstance(controller, RufRichmatController):
             yield variant(controller, _normal_ready=True)
         elif isinstance(controller, ResourceBedController):

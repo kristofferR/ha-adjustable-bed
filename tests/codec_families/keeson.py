@@ -9,6 +9,10 @@ from pathlib import Path
 from custom_components.adjustable_bed.profiles.keeson import AppProfile, KeesonProfile
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.keeson_vectors import FROZEN_FRAMES
+from tests.ormatek_vectors import VECTORS as ORMATEK_VECTORS
+from tests.somos_vectors import FROZEN_FRAMES as SOMOS_FRAMES
+
+_SOMOS = {f"somos_{key}": value for key, value in SOMOS_FRAMES.items()}
 
 # The guide's AdjustaMattress section also spells its P3/P4 Okin N-frames, which
 # its accepted report (row067) freezes in this fixture.
@@ -29,15 +33,19 @@ _SYMPHONY_FRAMES = {
 
 FAMILY = CodecFamily(
     # The Keeson layout apps: one AppProfile per layout, vectors per app.
-    profiles={KeesonProfile: {**FROZEN_FRAMES, **_SYMPHONY_FRAMES}, AppProfile: FROZEN_FRAMES},
+    profiles={KeesonProfile: {**FROZEN_FRAMES, **_SYMPHONY_FRAMES, **{f"ormatek_{wire}": frozenset(v[3] for v in ORMATEK_VECTORS if v[0] == wire) for wire in ("okin15", "okin24")}, **_SOMOS,
+        "agingplace": frozenset(row["expected_bytes"] for row in json.loads(
+            (Path(__file__).parents[1] / "fixtures/agingplace/vectors.json").read_text()))}, AppProfile: FROZEN_FRAMES},
     bed_types=frozenset(
         {
             "symphony_sleep",
+            "ormatek",
             "jalon",
             "ergomotion",
             "keeson",
             "jalon_bed",
             "yamada",
+            "somos",
             "okin_ffe",
             "serta",
             "ergo_slim",
@@ -60,6 +68,7 @@ FAMILY = CodecFamily(
             "cherish",
             "comfort_enhancements",
             "comfortbase",
+            "agingplace",
             "ergomotion_4",
         }
     ),
@@ -68,6 +77,6 @@ FAMILY = CodecFamily(
         spelled=spelled_frames(
             r"`((?:E[56] ?FE ?16|0[45] ?02)(?: ?[0-9A-F]{2}){4,})`", re.IGNORECASE
         ),
-        frozen=frozenset().union(*FROZEN_FRAMES.values(), *_SYMPHONY_FRAMES.values(), _ADJUSTAMATTRESS),
+        frozen=frozenset().union(*FROZEN_FRAMES.values(), *_SYMPHONY_FRAMES.values(), *_SOMOS.values(), (v[3] for v in ORMATEK_VECTORS), _ADJUSTAMATTRESS),
     ),
 )

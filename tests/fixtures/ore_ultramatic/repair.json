@@ -1,0 +1,394 @@
+{
+  "observations": [
+    {
+      "case": "A001-cache20-return",
+      "input": "F4 FE 16 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": "F4 FE 16 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "callbacks": [],
+      "callback_total": 1,
+      "exception": null
+    },
+    {
+      "case": "A001-uncached9-return",
+      "input": "00 00 00 00 00 00 00 00 00",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": null,
+      "callbacks": [],
+      "callback_total": 1,
+      "exception": null
+    },
+    {
+      "case": "A001-uncached-short-ED80-return",
+      "input": "ED 80 03 07 1E",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": null,
+      "callbacks": [],
+      "callback_total": 1,
+      "exception": null
+    },
+    {
+      "case": "A001-prefix-exactly3-is-not-cached",
+      "input": "F4 FE 16",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": null,
+      "callbacks": [],
+      "callback_total": 1,
+      "exception": null
+    },
+    {
+      "case": "A001-prefix10-cache-precedes-decode",
+      "input": "F4 FE 16 00 00 00 00 00 00 00",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": "F4 FE 16 00 00 00 00 00 00 00",
+      "callbacks": [],
+      "callback_total": 1,
+      "exception": null
+    },
+    {
+      "case": "A001-prefix16-cache-precedes-decode",
+      "input": "F4 FE 16 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": "F4 FE 16 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "callbacks": [],
+      "callback_total": 1,
+      "exception": null
+    },
+    {
+      "case": "A001-cached-unknown/cache",
+      "input": "F4 FE 16 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": "F4 FE 16 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "callbacks": [],
+      "callback_total": 1,
+      "exception": null
+    },
+    {
+      "case": "A001-cached-unknown/decode29",
+      "input": "00 00 00 00 00 00 00 00 00",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 0,
+        "intensity": 0,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": "F4 FE 16 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "callbacks": [
+        "massage"
+      ],
+      "callback_total": 2,
+      "exception": null
+    },
+    {
+      "case": "A001-over20-preserves-original-decoder",
+      "input": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 0,
+        "intensity": 0,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": null,
+      "callbacks": [
+        "massage"
+      ],
+      "callback_total": 2,
+      "exception": null
+    },
+    {
+      "case": "V088/step1",
+      "input": "F4 FE 16 00 00 00 00 00 00 00 00 04 00 00 00 00 00 00 00 02",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": "F4 FE 16 00 00 00 00 00 00 00 00 04 00 00 00 00 00 00 00 02",
+      "callbacks": [],
+      "callback_total": 1,
+      "exception": null
+    },
+    {
+      "case": "V088/step2",
+      "input": "00 00 00",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 2,
+        "intensity": 2,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": "F4 FE 16 00 00 00 00 00 00 00 00 04 00 00 00 00 00 00 00 02",
+      "callbacks": [
+        "massage"
+      ],
+      "callback_total": 2,
+      "exception": null
+    },
+    {
+      "case": "V089/step1",
+      "input": "00 00 00 00 00 00 00 00 00",
+      "state_before": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "state_after": {
+        "repeat": 0,
+        "hour": 0,
+        "minute": 0,
+        "type": 0,
+        "timer": 3,
+        "intensity": 3,
+        "true_hour": 0,
+        "true_minute": 0,
+        "true_repeat": 0,
+        "true_type": 0
+      },
+      "cache": null,
+      "callbacks": [],
+      "callback_total": 1,
+      "exception": null
+    }
+  ]
+}

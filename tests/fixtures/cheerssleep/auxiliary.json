@@ -1,0 +1,79 @@
+[
+  {
+    "id": "Yb-1-300",
+    "builder": "p1",
+    "inputs": {
+      "serial": 2,
+      "pid": 1,
+      "command": 513,
+      "parameter": 300
+    },
+    "expected_bytes": "020101022c010000"
+  },
+  {
+    "id": "Yb-1-900",
+    "builder": "p1",
+    "inputs": {
+      "serial": 2,
+      "pid": 1,
+      "command": 513,
+      "parameter": 900
+    },
+    "expected_bytes": "0201010284030000"
+  },
+  {
+    "id": "Yb-2-300",
+    "builder": "p1",
+    "inputs": {
+      "serial": 2,
+      "pid": 1,
+      "command": 514,
+      "parameter": 300
+    },
+    "expected_bytes": "020102022c010000"
+  },
+  {
+    "id": "Yb-2-900",
+    "builder": "p1",
+    "inputs": {
+      "serial": 2,
+      "pid": 1,
+      "command": 514,
+      "parameter": 900
+    },
+    "expected_bytes": "0201020284030000"
+  },
+  {
+    "id": "Yb-3-300",
+    "builder": "p1",
+    "inputs": {
+      "serial": 2,
+      "pid": 1,
+      "command": 515,
+      "parameter": 300
+    },
+    "expected_bytes": "020103022c010000"
+  },
+  {
+    "id": "Yb-3-900",
+    "builder": "p1",
+    "inputs": {
+      "serial": 2,
+      "pid": 1,
+      "command": 515,
+      "parameter": 900
+    },
+    "expected_bytes": "0201030284030000"
+  },
+  {
+    "id": "RGB-save-packed",
+    "builder": "p1",
+    "inputs": {
+      "serial": 2,
+      "pid": 1,
+      "command": 1295,
+      "parameter": 287454020
+    },
+    "expected_bytes": "02010f0544332211"
+  }
+]
