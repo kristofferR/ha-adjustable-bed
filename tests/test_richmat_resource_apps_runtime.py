@@ -22,8 +22,8 @@ from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordin
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS
 from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
 from tests.test_richmat_classic_transport import Services, route
-from tests.test_richmat_resource_apps import clock as clock
 from tests.test_richmat_family_flow import answer, fields, setup_flow
+from tests.test_richmat_resource_apps import clock as clock
 
 
 @pytest.mark.parametrize("app", APPS)

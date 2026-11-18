@@ -12,9 +12,9 @@ from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import _timed_move_plan, async_register_services
+from tests.hold_lease_wire import virtual_clock
 from tests.test_starcode_abm5_4 import make_controller
 from tests.test_starcode_abm5_4_public_presets import literal_frame
-from tests.hold_lease_wire import virtual_clock
 
 
 async def connected_child(hass, address, delay):

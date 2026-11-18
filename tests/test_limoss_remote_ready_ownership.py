@@ -19,8 +19,8 @@ from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
-from tests.test_limoss_remote_preflight import prepare_live
 from tests.test_limoss_remote_entity_reloads import CAPS
+from tests.test_limoss_remote_preflight import prepare_live
 
 
 @pytest.mark.parametrize("retire", [False, True])
