@@ -520,14 +520,16 @@ class BetterLiving2Controller(KeesonController):
             async with phase:
                 pending = self._notify_stop
                 if pending is not None:
-                    if deadline is None:
-                        await drain(pending)
-                    else:
-                        # This cleanup belongs to the previous observer. An
-                        # expired, unadmitted hold neither cancels nor owns it.
-                        await asyncio.shield(pending)
-                    if self._notify_stop is pending:
-                        self._notify_stop = None
+                    try:
+                        if deadline is None:
+                            await drain(pending)
+                        else:
+                            # This cleanup belongs to the previous observer. An
+                            # expired, unadmitted hold neither cancels nor owns it.
+                            await asyncio.shield(pending)
+                    finally:
+                        if pending.done() and self._notify_stop is pending:
+                            self._notify_stop = None
                 await self._operation_lock.acquire()
                 acquired = True
                 self._live(link)

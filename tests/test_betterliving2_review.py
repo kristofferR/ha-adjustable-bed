@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
@@ -499,6 +500,42 @@ async def test_public_expired_hold_does_not_cancel_prior_notification_cleanup(ha
             await prior
             assert writes(client) == [app.command("P2", 0)]
             assert child.controller_state[runtime.ALARM] == "selected"
+    finally:
+        await child.async_shutdown()
+
+
+@pytest.mark.parametrize("wire", ("p2", "p3"))
+@pytest.mark.parametrize("failure", (BleakError, TimeoutError))
+@pytest.mark.parametrize("operation", ("hold", "stop"))
+async def test_failed_notification_cleanup_retires_before_next_command(
+    hass, wire, failure, operation
+):
+    child, controller, client, _ = await bed(hass, wire)
+    try:
+        with ready(child), virtual_clock():
+            client.write_gatt_char.side_effect = failure("notification STOP failed")
+            sender, callback = client.start_notify.call_args.args
+            callback(sender, bytearray.fromhex(PACKETS[wire]))
+            prior = controller._notify_stop
+            assert prior is not None
+            with pytest.raises(failure, match="notification STOP failed"):
+                await prior
+
+            with pytest.raises(failure, match="notification STOP failed"):
+                if operation == "hold":
+                    await hold(controller)
+                else:
+                    await controller.stop_all()
+            assert controller._notify_stop is None
+
+            client.write_gatt_char.reset_mock(side_effect=True)
+            await controller.stop_all()
+            await controller.lights_toggle()
+            assert writes(client) == [
+                app.command(wire.upper(), 0),
+                app.command(wire.upper(), 0),
+                app.command(wire.upper(), app.STEP_LIGHT),
+            ]
     finally:
         await child.async_shutdown()
 
