@@ -314,4 +314,5 @@ async def test_massage_switch_starts_and_stops_with_unknown_state(
     assert _written(mock_bleak_client)[-4:] == [
         "e5fe1610000011e5", "e5fe1610000022d4", "e5fe1610000012e4", "e5fe1610000010e6",
     ]
+    assert massage.state_key is not None
     assert c._coordinator.controller_state.get(massage.state_key) is None
