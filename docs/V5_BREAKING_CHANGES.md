@@ -19,6 +19,7 @@ what each beta ships.
 - [Before You Upgrade](#before-you-upgrade)
 - [Config Entry Migration (Schema 5.5)](#config-entry-migration-schema-55)
 - [Removed or Renamed Options, Bed Types and Entities](#removed-or-renamed-options-bed-types-and-entities)
+- [Removed or Renamed Actions](#removed-or-renamed-actions)
 - [New Entities, Attributes and Actions](#new-entities-attributes-and-actions)
 - [Behavior Changes](#behavior-changes)
 - [Moved Documentation](#moved-documentation)
@@ -166,6 +167,59 @@ moved the bed. Configure no longer offers Massage on these layouts. Every
 other layout, including a FurniMove handset with massage rows, BOX25 and the
 other Comfort Enhancements layouts, keeps its massage controls.
 
+## Removed or Renamed Actions
+
+Update scripts and automations that call these actions. See
+[Actions and Automations](SERVICES.md).
+
+**One alarm action.** Every bed alarm now uses
+[`adjustable_bed.set_alarm`](SERVICES.md#set_alarm), with weekday names, a
+time, a named `wake_action` and the options the bed offers. It replaces
+`configure_alarm_schedule`, `bf_cherish_set_alarm`, `comfort_enhancements_set_alarm`,
+`comfort_enhancement3_set_wakeup`, `comfort_enhancement3_delete_wakeup`,
+`comfortbase_set_alarm`, `eshine_set_alarm`, `glideaway_set_alarm`,
+`jalon_bed_set_alarm`, `jalon_set_alarm`, `jiecang_set_alarm`, `leggett_alarm_timer`,
+`linak_set_alarm`, `logicdata_set_alarm`, `malouf_set_alarm`, `mline_set_alarm`,
+`motion_bed_alarm`, `n32_motion_bed_alarm`, `richmat_app_alarm`, `richmat_mh_alarm`,
+`richmat_mh_waist_alarm`, `rmcontrol_alarm`, `simmons_set_alarm`, `smart_sleep_set_alarm`,
+`solace_set_alarm`, `symphony_sense_set_alarm`, `symphony_set_alarm`, `yamada_set_alarm`
+and `zseries_set_alarm`. Field changes:
+
+- `weekdays` takes `monday` … `sunday` everywhere (no numbers, abbreviations or bitmasks).
+- `wake_mode`, `preset`, `memory`, `mode` and `position` become `wake_action`, with
+  shared names such as `zero_g`, `memory_1` and `none`.
+- `head_level` and `foot_level` become `head_massage_level` and `foot_massage_level`;
+  `intensity` becomes `massage_intensity`; `duration` (Comfort Enhancement 3) becomes
+  `massage_duration`; `kind` becomes `massage_zone`; `alarm_id` becomes `slot`.
+- Countdown alarms (Leggett & Platt, Linak, Richmat app, RMControl single alarms)
+  take a clock `time`; Home Assistant counts down to it. `minutes` and `seconds` are gone.
+- Waist and normal-mattress alarms use `mattress_side` (Richmat app beds); "once or
+  daily" is an empty or full `weekdays` list.
+- Turning an alarm off is `enabled: false`. It disables an N32 slot, deletes a
+  Comfort Enhancement 3 program or an RMControl repeating alarm, and clears both
+  Keeson app alarm tables.
+- No longer offered: Linak snooze repeats (`recurrence_count`, `recurrence_minutes`),
+  N32 delete and query, RMControl query, Smart Sleep `week_mask` and `flexible_wake`,
+  Motion Bed split zero-gravity modes and the raw `switch` value, Keeson app tables
+  with more than one weekly or one-time alarm, and Comfort Enhancement 3 program
+  numbers above 10. RMControl clock setting moved to `sync_clock`.
+
+**Removed aliases.** `linak_rename`, `logicdata_rename` and `jiecang_rename` →
+`rename`; `leggett_hold_control` → `hold_control`; `malouf_sync_clock` → `sync_clock`.
+Each bed still applies its own name and control rules.
+
+**Renamed estimated-position actions.** `save_position`, `rename_position`,
+`update_position`, `delete_position`, `recall_position`, `set_position_reference`,
+`confirm_position_unchanged` and `mark_position_unknown` are now
+`estimate_save_position`, `estimate_rename_position`, `estimate_update_position`,
+`estimate_delete_position`, `estimate_recall_position`, `estimate_set_reference`,
+`estimate_confirm_unchanged` and `estimate_mark_unknown`.
+
+**Removed actions and fields.** `reverie_test` (a factory bed test) is removed.
+`furnimove_action` no longer takes `consumer`. `sleep_number_command` no longer
+accepts service, firmware and diagnostic commands such as `reboot_system`,
+`software_versions` or the internal heating and cooling mode commands.
+
 ## New Entities, Attributes and Actions
 
 These are additions. Existing entities keep their names, states and attributes.
@@ -178,7 +232,7 @@ These are additions. Existing entities keep their names, states and attributes.
 | `hold_owner` and `hold_generation` fields | `timed_move` and `hold_control` | Always listed. Beds that declare no renewable hold reject them before anything moves; calls without them behave as before. See [Renewable holds](SERVICES.md#renewable-holds) |
 | **Estimated positions** menu | **Configure**, one entry per side on a paired bed with two addresses | Only on beds whose protocol supports [estimated positions](ESTIMATED_POSITIONS.md). Not on single-address paired beds yet |
 | Estimated position, set-reference, "I used the remote", saved-position and "Saved positions" entities | `number`, `button` and `sensor` | Only after you enable estimated positions for a motor |
-| Saved-position actions (`save_position`, `recall_position`, `set_position_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
+| Saved-position actions (`estimate_save_position`, `estimate_recall_position`, `estimate_set_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
 | **Tap to start and stop movement** card option (`tap_to_move`) | Dashboard card editor, **Motors** | Off by default. With it on, a tap on a motor arrow starts the motor and the next tap stops it ([#609](https://github.com/kristofferR/ha-adjustable-bed/issues/609)). See [Tap to move](DASHBOARD_CARD.md#tap-to-move) |
 | Percentage graphic, lumbar graphic and full-card dialog card options (`show_percentage_graphic`, `show_lumbar_graphic`, `show_graphic_labels`, `open_dialog`, `dialog_config`) | Dashboard card editor | Off by default, so existing cards are unchanged. They draw percentage feedback and every estimate state as a schematic pose, add a lumbar section, and open the full card in a dialog from a compact card ([#713](https://github.com/kristofferR/ha-adjustable-bed/pull/713)). See [Dashboard Card Graphics and Dialog](CONFIGURATION.md#dashboard-card-graphics-and-dialog) |
 | **Change app or layout** menu item | **Configure** | On entries of a family with a guided change: Vibradorm, Jiecang, Okin, Keeson, Solace, Leggett & Platt, Sleepy's Elite, Customatic, Jordan's, Malouf / Lucid, LOGICDATA, Jensen / Svane and Limoss, and on Okin CST, L&P legacy app and L&P QRRM remote entries, whose family question also chooses their route ([#889](https://github.com/kristofferR/ha-adjustable-bed/pull/889)). It replaces Vibradorm's **Choose Vibradorm app and remote** item and points to **Reconfigure** |

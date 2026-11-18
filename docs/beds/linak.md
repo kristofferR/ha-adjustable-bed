@@ -199,10 +199,10 @@ Axes are ordered Base, Feet, Head, Legs, Back; the earlier axis is "first".
 | Alarm commit | `20` | Timer |
 
 - Rename writes to `2a00`, then disconnects so advertising can refresh. Use
-  `adjustable_bed.rename` (`linak_rename` still works).
+  `adjustable_bed.rename` (`rename` still works).
 - Alarm setup first enables automatic drive, writes an event with one to four
   actions, writes packed recurrence, then commits with `20`. Use
-  `adjustable_bed.linak_set_alarm`; it appears only on an alarm-capable model.
+  `adjustable_bed.set_alarm`; it appears only on an alarm-capable model.
 
 ### Performance Series
 
@@ -396,8 +396,8 @@ tables above remain exhaustive.
 | AUX/light toggle | Implemented | Native controller action; legacy toggle button, modern on/off entity |
 | Defaults reset and configuration factory reset | Implemented | Separate buttons; factory reset disabled by default |
 | Automatic drive configuration | Implemented | Assumed-state switch, disabled by default |
-| Device rename | Implemented | `rename` action (or `linak_rename`) plus advertising refresh disconnect |
-| Alarm event, recurrence, commit and notification states | Implemented | `linak_set_alarm` service and diagnostic sensor |
+| Device rename | Implemented | `rename` action (or `rename`) plus advertising refresh disconnect |
+| Alarm event, recurrence, commit and notification states | Implemented | `set_alarm` service and diagnostic sensor |
 | Reference extension, flags and reported speed | Implemented | Position entities, speed sensors and fault diagnostic |
 | All 104 modern error values | Implemented | Diagnostic sensor with raw code/payload attributes |
 | Double/synchronized bed targeting | Already implemented | Generic paired-bed routing sends the same frames per side |

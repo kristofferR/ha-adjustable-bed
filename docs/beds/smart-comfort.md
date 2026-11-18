@@ -84,7 +84,7 @@ RGB: `E5 FE 16 blue green red (mask | 10) checksum`.
 
 Rename is raw, without checksum, padding, terminator or framing. The Java app
 uses its default charset; only ASCII is portable enough to expose here. Use the
-standard `adjustable_bed.rename_device` action.
+standard `adjustable_bed.rename` action.
 
 ### Write Mode
 

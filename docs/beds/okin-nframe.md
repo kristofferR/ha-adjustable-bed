@@ -1699,7 +1699,7 @@ See the [Leggett Okin table](#leggett-okin-keys). Held keys combine into one fra
 
 **Hold control:** `adjustable_bed.hold_control` exposes bounded holds for flat,
 Snore, lighting and massage; U Series also permits memory 1, memory 2 and SET.
-The released `leggett_hold_control` name still works with the same list. The
+The released `hold_control` name still works with the same list. The
 movement services cover motor holds.
 
 #### Timing
@@ -1746,7 +1746,7 @@ low-byte suppression to the indicators while keeping the raw mask.
 
 #### Services
 
-`adjustable_bed.leggett_sleep_timer` and `adjustable_bed.leggett_alarm_timer`
+`adjustable_bed.leggett_sleep_timer` and `adjustable_bed.set_alarm`
 start or cancel native timers. The services validate the profile's actions and
 ranges before writing; see their action descriptions for fields.
 
@@ -2318,7 +2318,7 @@ zero gravity.
 During connection setup, after notifications start and before any command runs,
 HA writes the local clock and repeats the alarm page's queries at 0, 300 and
 600 ms, so even a quick-disconnect session gets them. If that clock write fails,
-`simmons_set_alarm` writes the clock first, because the alarm fires on the bed's
+`set_alarm` writes the clock first, because the alarm fires on the bed's
 clock. **Sync Clock** and **Refresh Alarms** buttons repeat these.
 
 ###### Alarm frames
@@ -2367,7 +2367,7 @@ clock. **Sync Clock** and **Refresh Alarms** buttons repeat these.
   until the bed confirms it, so a later write on the same connection queries
   first and never resends an unconfirmed value.
 
-###### `simmons_set_alarm` rules
+###### `set_alarm` rules
 
 - Follows the app's rules: Custom Mode needs `confirm_custom_mode` (the app warns
   that extreme custom angles can cause injury), and an enabled alarm cannot share
@@ -3540,7 +3540,7 @@ correction.
 | Enable alarm | `07 05 days action hh mm 00 01 01` | `days` is one next-occurrence day bit, Sunday bit0 |
 | Alarm action | `01` / `09` / `08` | Zero Gravity / Flat / Massage; Massage unavailable on E2000 |
 
-`adjustable_bed.eshine_set_alarm` accepts `enabled`, minute-precision `time` and
+`adjustable_bed.set_alarm` accepts `enabled`, minute-precision `time` and
 `wake_mode` (`zero_g`, `flat`, `massage`). A time at or before now selects tomorrow.
 An enabled alarm synchronizes the local clock first. Setting writes the same
 snapshot twice with a query between them and after them, spaced 200 ms. Disabling
@@ -3548,7 +3548,7 @@ writes the nine-byte zero form and queries after 200 ms. No arbitrary weekday
 schedule, massage intensity or alarm slot is inferred.
 
 ```yaml
-action: adjustable_bed.eshine_set_alarm
+action: adjustable_bed.set_alarm
 data:
   device_id: YOUR_DEVICE_ID
   enabled: true
@@ -4583,7 +4583,7 @@ massage releases both end in that global STOP in HA.
 
 ###### Alarm actions
 
-- `zseries_set_alarm` mirrors opening the alarm page and tapping its switch:
+- `set_alarm` mirrors opening the alarm page and tapping its switch:
   clock frame, alarm frame, then two queries at +500 and +800 ms. Enabling
   requires both a time and a wake mode.
 - In the app the clock is sent when the page opens and the alarm only after a
@@ -5461,7 +5461,7 @@ Only actual callback reports update sensor values.
 
 #### Services
 
-`adjustable_bed.n32_motion_bed_alarm` supports `set`, `disable`, `delete` and
+`adjustable_bed.set_alarm` supports `set`, `disable`, `delete` and
 `query` on slots 1 through 3. Set requires a minute-precision time, weekdays
 (empty for once), and mode `none`, `m1`, `m2`, `m3` or `flat`. All targets pass
 profile/session admission before a requested mutation. Each write rechecks its
@@ -5919,9 +5919,9 @@ and ACKs establish no actuator, light or massage telemetry.
 #### Services
 
 `comfort_enhancement3_start_massage` takes duration, intensity and Head/Feet/HF/Wave.
-`comfort_enhancement3_set_wakeup` selects the current or next day, a slot,
+`set_alarm` selects the current or next day, a slot,
 optional massage/light and an exact supported preset. It removes the old slot
-before rebuilding. `comfort_enhancement3_delete_wakeup` removes one slot.
+before rebuilding. `set_alarm` removes one slot.
 There is no proven read/list operation or physical slot maximum.
 
 The schedule encoder concatenates `0B0D`, decimal slot/step text padded to two

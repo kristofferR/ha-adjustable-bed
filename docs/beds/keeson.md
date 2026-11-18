@@ -1568,7 +1568,7 @@ feedback and direct pulse targets. Hardware behavior remains unverified.
 
 #### Alarm tables
 
-Use [`adjustable_bed.configure_alarm_schedule`](../SERVICES.md#configure_alarm_schedule).
+Use [`adjustable_bed.set_alarm`](../SERVICES.md#set_alarm).
 The encoder is `alarm_table.py`; its per-app wake byte, weekday marker and
 capacity are in the table above.
 
@@ -2221,13 +2221,13 @@ pair with fresh cancel events and keeps the command lane until it finishes.
 
 #### Alarm and clock
 
-`adjustable_bed.glideaway_set_alarm` takes `device_id`, `enabled`, optional
+`adjustable_bed.set_alarm` takes `device_id`, `enabled`, optional
 `side`, `time` (required when enabling) and `wake_mode` (`none`, `memory_1`,
 `memory_2`). Disabling needs no time, and every target must be this profile.
 `adjustable_bed.sync_clock` sends only the clock.
 
 ```yaml
-action: adjustable_bed.glideaway_set_alarm
+action: adjustable_bed.set_alarm
 data:
   device_id: YOUR_DEVICE_ID
   enabled: true
@@ -2981,7 +2981,7 @@ command.
 #### Alarm action
 
 ```yaml
-action: adjustable_bed.bf_cherish_set_alarm
+action: adjustable_bed.set_alarm
 data:
   device_id: YOUR_DEVICE_ID
   enabled: true
@@ -3135,7 +3135,7 @@ reconciliation seals.
 | Massage | ✅ MC2/MC4/MC5 (head, foot, wave/mode, timer; local assumed state) |
 | Lights | ✅ MC2/MC4/MC5 On/Off (assumed state) |
 | Clock Sync | ✅ (`adjustable_bed.sync_clock`) |
-| Alarm | ✅ (`adjustable_bed.comfort_enhancements_set_alarm`) |
+| Alarm | ✅ (`adjustable_bed.set_alarm`) |
 | One-address Left/Right | ❌ |
 
 #### Protocol Details
@@ -3260,7 +3260,7 @@ The massage controls match the app:
 
 `adjustable_bed.sync_clock` sends the local HA time and the app's alarm query
 (one `E2 FE 16` clock/query frame).
-`adjustable_bed.comfort_enhancements_set_alarm` programs or disables the BLE
+`adjustable_bed.set_alarm` programs or disables the BLE
 alarm. It accepts the usual `device_id` and optional paired `side`, plus:
 
 | Field | Meaning |
@@ -3964,8 +3964,8 @@ physical/parent target once when configuring shared state.
 |--------|-------|-------------|
 | Rename | 18 bytes `EF 02` + 15 name bytes + complement checksum | `rename` action |
 | Clock | `E7 80 01 year_minus_1900 month_minus_1 day hour24 minute second checksum` | `sync_clock` action |
-| Weekly alarms | `ED 80 03` + 3 × `[hour minute weekday_bits wake]` + checksum | `configure_alarm_schedule` |
-| One-time alarms | `ED 80 02` + 3 × `[delta_hours delta_minutes delta_seconds wake]` + checksum | `configure_alarm_schedule` |
+| Weekly alarms | `ED 80 03` + 3 × `[hour minute weekday_bits wake]` + checksum | `set_alarm` |
+| One-time alarms | `ED 80 02` + 3 × `[delta_hours delta_minutes delta_seconds wake]` + checksum | `set_alarm` |
 | Wake vibration dismissal | `E1 80 04 9A`, once | Dismiss wake vibration button |
 | Meditation start, M14 or Flex3 Massage | `04 02 48 00 00 00`, wait 200 ms, query ×3 | Start meditation button |
 | Meditation start, M21 or 20th Anniversary | `04 02 00 01 10 00`, wait 200 ms, query ×3 | Start meditation button |
@@ -4619,7 +4619,7 @@ An F4 FE 16 prefix of 7 to 20 bytes begins a fragmented reply. Home Assistant bo
 
 #### Services
 
-`adjustable_bed.comfortbase_set_alarm` enables a bed alarm for Memory A (1) or B (2), or cancels it. Enabling sends local wall-clock sync twice, waits, then writes the selected time and preset. The third alarm parameter stays opaque; no weekday controls are offered. `adjustable_bed.sync_clock` performs the two clock writes independently. The alarm is available on every product, including Freestyle. Two-address HA pairs preserve their physical target; this app provides no single-address side controls.
+`adjustable_bed.set_alarm` enables a bed alarm for Memory A (1) or B (2), or cancels it. Enabling sends local wall-clock sync twice, waits, then writes the selected time and preset. The third alarm parameter stays opaque; no weekday controls are offered. `adjustable_bed.sync_clock` performs the two clock writes independently. The alarm is available on every product, including Freestyle. Two-address HA pairs preserve their physical target; this app provides no single-address side controls.
 
 #### Evidence
 
@@ -4828,7 +4828,7 @@ all reported state when the session ends.
 
 #### Services
 
-`jalon_set_alarm` supports P2 and P3: `device_id`, `enabled`, minute-precision
+`set_alarm` supports P2 and P3: `device_id`, `enabled`, minute-precision
 `time`, optional `weekdays` (`mon` through `sun`) and `wake_mode` from the generated
 table. Empty weekdays means the next occurrence, as in the app. Sunday is bit 0,
 Monday bit 1 through Saturday bit 6; bit 7 marks a recurring selection. P2 disables by zeroing its record; P3 retains
@@ -4969,7 +4969,7 @@ The app does not validate reply checksums or prove ACK correlation.
 
 #### Services
 
-`adjustable_bed.jalon_bed_set_alarm` accepts `enabled`, minute-precision `time`,
+`adjustable_bed.set_alarm` accepts `enabled`, minute-precision `time`,
 `weekdays` (Monday 0 through Sunday 6) and `wake_mode` (`none`, `memory_1`,
 `memory_2`, `massage`), plus the standard device/side target. Empty weekdays
 chooses today if the selected hour/minute is later, otherwise tomorrow.
@@ -5136,7 +5136,7 @@ alarm does not establish the bed's complete alarm capacity.
 
 #### Services
 
-`symphony_set_alarm` accepts `enabled`, minute-precision `time` when enabling,
+`set_alarm` accepts `enabled`, minute-precision `time` when enabling,
 and `wake_mode` of `none`, `memory_1` or `memory_2`. Every target is validated
 and admitted before the first requested write, so STOP on a later target wins.
 It sets a daily bed alarm, with fixed day FF. P1 clock fields use year since
@@ -5272,7 +5272,7 @@ are per session and cleared on reconnect; no old observation authorizes a write.
 
 #### Services
 
-- `yamada_set_alarm`: explicit slot 1 or 2, enabled state, local time to minute
+- `set_alarm`: explicit slot 1 or 2, enabled state, local time to minute
   precision, weekday mask and preset. Refresh alarms on each current connection
   first. P1 also requires the other slot's observed record so it can preserve it.
   It never allocates a first-free slot or infers a complete inventory.
