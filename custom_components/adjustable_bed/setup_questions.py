@@ -2081,7 +2081,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
               CONF_MOTOR_PULSE_COUNT: 5, CONF_MOTOR_PULSE_DELAY_MS: 200, CONF_PROTOCOL_VARIANT: "auto"},
         questions=(
             Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_BLE_DEVICE_NAME, ""), text=True),
-            Question(CONF_AGINGPLACE_BED_MODE, {"auto": "From observed sensor count", "0": "Single sensor (mode 0)", "1": "Two sensors (mode 1)", "2": "Restored single display (mode 2)"}, "auto"),
+            Question(CONF_AGINGPLACE_BED_MODE, {"auto": "Automatic (recommended)", "0": "Single sensor", "1": "Two sensors", "2": "Single display"}, "auto", advanced=True),
             Question(CONF_AGINGPLACE_BED_SIDE, {0: "Left", 1: "Right", 2: "Selectable side"}, 0),
             Question(CONF_AGINGPLACE_SELECTED_SIDE, {0: "Left", 1: "Right"}, 0,
                      when={"field": CONF_AGINGPLACE_BED_SIDE, "value": 2}),

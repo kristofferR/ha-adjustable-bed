@@ -1,4 +1,4 @@
-"""App-scoped metadata contracts, independent of the row069 runtime receipts."""
+"""Aging in Place app metadata: translations, setup questions, detection and guide."""
 
 import json
 import re
@@ -117,7 +117,7 @@ def test_source_case_sensitive_substrings_reach_the_app(name):
         assert "adjustable_bed" in gate.match_domains(info)
 
 
-def test_only_registered_row069_guide_blocks_are_current():
+def test_only_registered_guide_blocks_are_current():
     for guide, name, renderer in BLOCKS:
         text = (Path(__file__).parents[1] / guide).read_text()
         assert text.count(f"<!-- generated:{name} -->") == 1

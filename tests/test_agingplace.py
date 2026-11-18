@@ -1,4 +1,4 @@
-"""Accepted row069 profile, parser, factory and public HA command behavior."""
+"""Aging in Place profile, parser, factory and public HA command behavior."""
 
 from __future__ import annotations
 
@@ -455,13 +455,14 @@ async def test_single_address_pair_cannot_invent_command_sides(hass, monkeypatch
     hass.data[DOMAIN][coordinator.entry.entry_id] = pair
     await async_register_services(hass)
     try:
-        with pytest.raises(ServiceValidationError, match="no command-side selector"):
+        with pytest.raises(ServiceValidationError) as err:
             await hass.services.async_call(
                 DOMAIN,
                 "agingplace_action",
                 {"device_id": [device], "side": "right", "action": "read"},
                 blocking=True,
             )
+        assert err.value.translation_key == "single_address_pair_unsupported"
         assert not packets(client)
     finally:
         await pair.async_shutdown()

@@ -5271,13 +5271,8 @@ or 2. The telemetry side choices are Left, Right or a separately selected side.
 They affect incoming observations only. Two physical addresses can form an HA
 pair. A single-address pair has no source-proven command selector and is refused.
 
-No account, Wi-Fi setup, firmware check, PIN or application handshake is needed.
-The source's Boolean `IsAbove113` reads never equal boxed Integer 0, so advanced
-controls are visible for a configured bed even when that cache is missing or
-false. HA has no corresponding firmware threshold or cloud lookup. Without a
-configured local bed there are no bed entities. The separate phone swipe uses
-decoded Integer `IsLatestVersion != 0` and a strictly less than -400-pixel delta;
-it is phone navigation, not an additional BED capability or firmware gate.
+No account, Wi-Fi setup, firmware check, PIN or application handshake is needed,
+and every control is available regardless of firmware version.
 
 #### Controls
 
@@ -5420,12 +5415,6 @@ preflight; every target must validate before any writes. Native child devices ke
 their physical side in concurrent or sequential two-link pairs. Single-link side
 commands are rejected rather than converted into invented wire selectors.
 
-#### Evidence
+#### Analysis provenance
 
-Row069, com.keeson.agingplace 1.1.0 (87), frozen 2026-07-14 acquisition. The accepted
-29 canonical UTF-8 literals and 14 independent action assignments reproduce through
-the existing Keeson JSON codec extension. Canonical field order is reconstructed,
-not captured Android Gson reflection order or hardware traffic. No fresh
-latest-version attestation or maintainer hardware task is claimed. GATT properties,
-MTU/chunk acceptance, physical movement and raw sensor meanings need external
-beta/release qualification.
+Based on Aging in Place 1.1.0 (87) (`com.keeson.agingplace`).

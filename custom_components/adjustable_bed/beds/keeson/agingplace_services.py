@@ -33,7 +33,7 @@ def _admit(call: ServiceCall, resource: str | None):
     targets = _call_targets(call)
     if any(isinstance(parent, SingleAddressPairedCoordinator) for parent, _side in targets):
         raise ServiceValidationError(
-            "Dawn House has no command-side selector; configure one standalone bed"
+            translation_domain=DOMAIN, translation_key="single_address_pair_unsupported"
         )
     resources = (resource,) if resource else ALL_COMMAND_RESOURCES
     admissions = [_capture_command_admission(parent, side, resources) for parent, side in targets]
@@ -95,7 +95,11 @@ async def handle_setting(call: ServiceCall) -> None:
     try:
         app.setting(name, value, None)
     except ValueError as err:
-        raise ServiceValidationError(str(err)) from err
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="agingplace_setting_out_of_range",
+            translation_placeholders={"setting": name},
+        ) from err
     await async_import_modules(call.hass, "beds.keeson.agingplace")
     from .agingplace import AgingPlaceController
 

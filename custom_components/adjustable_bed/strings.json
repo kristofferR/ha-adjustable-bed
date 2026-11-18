@@ -8740,6 +8740,9 @@
     },
     "whole_number_required": {
       "message": "Use a whole number instead of \"{value}\"."
+    },
+    "agingplace_setting_out_of_range": {
+      "message": "That value is out of range for {setting}. Brightness takes 0-100, massage duration 1-60 minutes and motion light duration 1-30 minutes."
     }
   },
   "issues": {
