@@ -723,7 +723,9 @@ class AdjustaMattressController(
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        definitions = [("alarm_draft_type", ("0", "9", "17", "19"), True)]
+        definitions: list[tuple[str, tuple[str, ...], bool]] = [
+            ("alarm_draft_type", ("0", "9", "17", "19"), True)
+        ]
         if self._snore:
             definitions += [("strength_setting", ("0", "1", "2"), True)]
         if self._dedicated:

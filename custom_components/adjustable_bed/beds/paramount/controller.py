@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable, Mapping
+from functools import partial
 from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -369,7 +370,7 @@ class ParamountController(ProfileExecution, BedController):
                     key,
                     "enabled",
                     # An integration movement preference: no frame, no connection.
-                    local_set_fn=lambda on, name=axis: self._set_range_enabled(name, on),
+                    local_set_fn=partial(self._set_range_enabled, axis),
                 )
             )
         return tuple(specs)
