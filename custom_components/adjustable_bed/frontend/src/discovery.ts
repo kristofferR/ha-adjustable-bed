@@ -69,8 +69,6 @@ const SIDE_WIDE_STOP_KEYS = new Set([
   "starcode_m1x12_part_1",
   "starcode_m1x12_part_2",
   "starcode_m1x12_part_4",
-  "starcode_m1x12_part_8",
-  "starcode_m1x12_part_16",
 ]);
 
 const domainOf = (entityId: string): string => entityId.split(".", 1)[0];

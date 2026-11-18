@@ -1840,32 +1840,17 @@
       "vmatbasic_massage_program_3": {
         "name": "Massage program 3"
       },
-      "starcode_abm5_4_wake": {
-        "name": "Wake controller"
-      },
       "starcode_abm5_4_refresh": {
-        "name": "Refresh app state"
-      },
-      "starcode_abm5_4_firmware": {
-        "name": "Read firmware version"
+        "name": "Refresh massage state"
       },
       "starcode_abm5_4_use_detected_profile": {
-        "name": "Use detected transport profile"
-      },
-      "starcode_abm5_4_massage_release": {
-        "name": "Release massage control"
+        "name": "Use detected controls"
       },
       "starcode_abm5_4_union_up": {
-        "name": "Raise both control axes"
+        "name": "Raise head and foot"
       },
       "starcode_abm5_4_union_down": {
-        "name": "Lower both control axes"
-      },
-      "starcode_abm5_4_light_on": {
-        "name": "Turn floor light on"
-      },
-      "starcode_abm5_4_light_off": {
-        "name": "Turn floor light off"
+        "name": "Lower head and foot"
       },
       "starcode_abm5_4_light_plus": {
         "name": "Increase floor light"
@@ -1922,13 +1907,13 @@
         "name": "ZZZ"
       },
       "starcode_save_tv": {
-        "name": "Save Ascent"
+        "name": "Save TV position"
       },
       "starcode_save_zero_g": {
-        "name": "Save Zero Gravity"
+        "name": "Save zero gravity position"
       },
       "starcode_save_lounge": {
-        "name": "Save Lounge"
+        "name": "Save lounge position"
       },
       "starcode_reset": {
         "name": "Reset saved positions"
@@ -1940,10 +1925,7 @@
         "name": "Cycle light color"
       },
       "starcode_query": {
-        "name": "Refresh massage and RGB"
-      },
-      "starcode_m1x12_memory_8": {
-        "name": "Recall MemoryType 8"
+        "name": "Refresh massage and light state"
       },
       "starcode_m1x12_save_tv": {
         "name": "Save TV position"
@@ -1973,28 +1955,28 @@
         "name": "Refresh bed state"
       },
       "starcode_m1x12_hold_massage_wave_up": {
-        "name": "Hold to increase massage wave"
+        "name": "Increase massage wave"
       },
       "starcode_m1x12_hold_massage_wave_down": {
-        "name": "Hold to decrease massage wave"
+        "name": "Decrease massage wave"
       },
       "starcode_m1x12_hold_massage_head_up": {
-        "name": "Hold to increase head massage"
+        "name": "Increase head massage"
       },
       "starcode_m1x12_hold_massage_head_down": {
-        "name": "Hold to decrease head massage"
+        "name": "Decrease head massage"
       },
       "starcode_m1x12_hold_massage_foot_up": {
-        "name": "Hold to increase foot massage"
+        "name": "Increase foot massage"
       },
       "starcode_m1x12_hold_massage_foot_down": {
-        "name": "Hold to decrease foot massage"
+        "name": "Decrease foot massage"
       },
       "starcode_m1x12_hold_massage_both_up": {
-        "name": "Hold to increase both-zone massage"
+        "name": "Increase head and foot massage"
       },
       "starcode_m1x12_hold_massage_both_down": {
-        "name": "Hold to decrease both-zone massage"
+        "name": "Decrease head and foot massage"
       },
       "simmons_inclined_left": {
         "name": "Inclined left"
@@ -2500,9 +2482,6 @@
       "bedsense_back_up": {
         "name": "Back Up"
       },
-      "starcode_m1x12_part_16_down": {
-        "name": "Part 16 Down"
-      },
       "motion_bed_right_back_down": {
         "name": "Right back Down"
       },
@@ -2510,7 +2489,7 @@
         "name": "Stair Down"
       },
       "starcode_m1x12_part_2_down": {
-        "name": "Part 2 Down"
+        "name": "Foot Down"
       },
       "motion_bed_right_legs_down": {
         "name": "Right legs Down"
@@ -2525,7 +2504,7 @@
         "name": "Right back Up"
       },
       "elevate_actuator_1_up": {
-        "name": "ELEVATE Actuator 1 Up"
+        "name": "Lift actuator 1 Up"
       },
       "auxiliary_2_up": {
         "name": "Auxiliary 2 Up"
@@ -2549,7 +2528,7 @@
         "name": "Head Down"
       },
       "elevate_actuator_1_down": {
-        "name": "ELEVATE Actuator 1 Down"
+        "name": "Lift actuator 1 Down"
       },
       "bedsense_legs_down": {
         "name": "Legs Down"
@@ -2561,7 +2540,7 @@
         "name": "Back and legs Up"
       },
       "starcode_m1x12_part_2_up": {
-        "name": "Part 2 Up"
+        "name": "Foot Up"
       },
       "motion_bed_right_legs_up": {
         "name": "Right legs Up"
@@ -2570,19 +2549,19 @@
         "name": "Head End Tilt Down"
       },
       "starcode_m1x12_part_1_down": {
-        "name": "Part 1 Down"
+        "name": "Head Down"
       },
       "both_down": {
         "name": "Back and legs Down"
       },
       "starcode_m1x12_part_1_up": {
-        "name": "Part 1 Up"
+        "name": "Head Up"
       },
       "motion_bed_lift_up": {
         "name": "Lift Up"
       },
       "starcode_m1x12_part_4_down": {
-        "name": "Part 4 Down"
+        "name": "Lumbar Down"
       },
       "head_end_tilt_up": {
         "name": "Head End Tilt Up"
@@ -2627,16 +2606,16 @@
         "name": "Head + Feet Down"
       },
       "elevate_actuator_2_down": {
-        "name": "ELEVATE Actuator 2 Down"
+        "name": "Lift actuator 2 Down"
       },
       "motion_bed_legs_up": {
         "name": "Legs Up"
       },
       "starcode_m1x12_part_4_up": {
-        "name": "Part 4 Up"
+        "name": "Lumbar Up"
       },
       "elevate_both_down": {
-        "name": "ELEVATE Both Actuators Down"
+        "name": "Lift Down"
       },
       "all_motors_down": {
         "name": "All motors Down"
@@ -2647,23 +2626,14 @@
       "motion_bed_legs_down": {
         "name": "Legs Down"
       },
-      "starcode_m1x12_part_8_up": {
-        "name": "Part 8 Up"
-      },
       "neck_up": {
         "name": "Neck Up"
-      },
-      "starcode_m1x12_part_8_down": {
-        "name": "Part 8 Down"
       },
       "neck_down": {
         "name": "Neck Down"
       },
       "keeson_legs_up": {
         "name": "Legs Up"
-      },
-      "starcode_m1x12_part_16_up": {
-        "name": "Part 16 Up"
       },
       "motion_bed_lumbar_up": {
         "name": "Lumbar Up"
@@ -2693,10 +2663,10 @@
         "name": "Auxiliary 1 Up"
       },
       "elevate_actuator_2_up": {
-        "name": "ELEVATE Actuator 2 Up"
+        "name": "Lift actuator 2 Up"
       },
       "elevate_both_up": {
-        "name": "ELEVATE Both Actuators Up"
+        "name": "Lift Up"
       },
       "waist_down": {
         "name": "Waist Down"
@@ -3348,6 +3318,12 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
+      },
+      "starcode_abm5_4_light_on": {
+        "name": "Turn floor light on"
+      },
+      "starcode_abm5_4_light_off": {
+        "name": "Turn floor light off"
       }
     },
     "cover": {
@@ -3358,13 +3334,13 @@
         "name": "Head"
       },
       "elevate_actuator_1": {
-        "name": "ELEVATE Actuator 1"
+        "name": "Lift actuator 1"
       },
       "elevate_actuator_2": {
-        "name": "ELEVATE Actuator 2"
+        "name": "Lift actuator 2"
       },
       "elevate_both": {
-        "name": "ELEVATE Both Actuators"
+        "name": "Lift"
       },
       "back": {
         "name": "Back"
@@ -3538,19 +3514,13 @@
         "name": "Pillow and lumbar"
       },
       "starcode_m1x12_part_1": {
-        "name": "Part 1"
+        "name": "Head"
       },
       "starcode_m1x12_part_2": {
-        "name": "Part 2"
+        "name": "Foot"
       },
       "starcode_m1x12_part_4": {
-        "name": "Part 4"
-      },
-      "starcode_m1x12_part_8": {
-        "name": "Part 8"
-      },
-      "starcode_m1x12_part_16": {
-        "name": "Part 16"
+        "name": "Lumbar"
       },
       "bedsense_back": {
         "name": "Back"
@@ -3930,15 +3900,6 @@
       "vmatbasic_rssi": {
         "name": "Advertisement signal strength"
       },
-      "starcode_abm5_4_command_selector": {
-        "name": "Command/parser selector"
-      },
-      "starcode_abm5_4_transport_selector": {
-        "name": "Bluetooth transport selector"
-      },
-      "starcode_abm5_4_ui_selector": {
-        "name": "Retained app UI selector"
-      },
       "starcode_abm5_4_manufacturer": {
         "name": "Manufacturer"
       },
@@ -3946,76 +3907,16 @@
         "name": "Firmware version"
       },
       "starcode_abm5_4_massage_timer": {
-        "name": "Massage timer minutes"
+        "name": "Massage timer"
       },
       "starcode_abm5_4_light_level": {
         "name": "Floor light level"
       },
-      "starcode_abm5_4_massage_on": {
-        "name": "App massage active"
-      },
-      "starcode_abm5_4_light_on": {
-        "name": "App floor light active"
-      },
       "starcode_abm5_4_wave": {
-        "name": "App wave value"
+        "name": "Massage wave"
       },
       "starcode_abm5_4_head_intensity": {
-        "name": "App displayed head intensity"
-      },
-      "starcode_abm5_4_low_4b": {
-        "name": "App field 4b value"
-      },
-      "starcode_abm5_4_automatic_white_flag": {
-        "name": "App automatic-white flag"
-      },
-      "starcode_abm5_4_raw_b": {
-        "name": "Raw app field b"
-      },
-      "starcode_abm5_4_raw_13": {
-        "name": "Raw app field 13"
-      },
-      "starcode_abm5_4_raw_1b": {
-        "name": "Raw app field 1b"
-      },
-      "starcode_abm5_4_raw_23": {
-        "name": "Raw app field 23"
-      },
-      "starcode_abm5_4_raw_2b": {
-        "name": "Raw app field 2b"
-      },
-      "starcode_abm5_4_raw_33": {
-        "name": "Raw app field 33"
-      },
-      "starcode_abm5_4_raw_3b": {
-        "name": "Raw app field 3b"
-      },
-      "starcode_abm5_4_raw_43": {
-        "name": "Raw app field 43"
-      },
-      "starcode_abm5_4_raw_47": {
-        "name": "Raw app field 47"
-      },
-      "starcode_abm5_4_raw_4b": {
-        "name": "Raw app field 4b"
-      },
-      "starcode_abm5_4_raw_53": {
-        "name": "Raw app field 53"
-      },
-      "starcode_abm5_4_raw_5f": {
-        "name": "Raw app field 5f"
-      },
-      "starcode_abm5_4_raw_67": {
-        "name": "Raw app field 67"
-      },
-      "starcode_abm5_4_raw_6f": {
-        "name": "Raw app field 6f"
-      },
-      "starcode_abm5_4_raw_77": {
-        "name": "Raw app field 77"
-      },
-      "starcode_abm5_4_raw_7f": {
-        "name": "Raw app field 7f"
+        "name": "Head massage intensity"
       },
       "motion_bed_audio_volume": {
         "name": "Audio volume"
@@ -4084,37 +3985,34 @@
         "name": "Left fan level"
       },
       "starcode_eq_band_1": {
-        "name": "Eq band 1"
+        "name": "Equalizer 64 Hz"
       },
       "starcode_eq_band_6": {
-        "name": "Eq band 6"
+        "name": "Equalizer 2 kHz"
       },
       "starcode_firmware": {
-        "name": "Firmware"
-      },
-      "starcode_massage_time_raw": {
-        "name": "Massage time raw"
+        "name": "Firmware version"
       },
       "starcode_kneading_mode": {
         "name": "Kneading mode"
       },
       "starcode_eq_preset": {
-        "name": "Eq preset"
+        "name": "Equalizer preset"
       },
       "starcode_sonic_foot_level": {
-        "name": "Sonic foot level"
+        "name": "Foot sonic level"
       },
       "starcode_eq_low_frequency": {
-        "name": "Eq low frequency"
+        "name": "Equalizer low frequency"
       },
       "starcode_sonic_massage_type": {
         "name": "Sonic massage type"
       },
       "starcode_eq_volume": {
-        "name": "Eq volume"
+        "name": "Equalizer volume"
       },
       "starcode_alarm_0": {
-        "name": "Alarm 0"
+        "name": "Alarm 1 enabled"
       },
       "starcode_sonic_frequency": {
         "name": "Sonic frequency"
@@ -4123,67 +4021,46 @@
         "name": "Massage mode"
       },
       "starcode_eq_band_7": {
-        "name": "Eq band 7"
+        "name": "Equalizer 4 kHz"
       },
       "starcode_sonic_head_level": {
-        "name": "Sonic head level"
+        "name": "Head sonic level"
       },
       "starcode_light_color_index": {
         "name": "Light color index"
       },
       "starcode_eq_band_3": {
-        "name": "Eq band 3"
+        "name": "Equalizer 250 Hz"
       },
       "starcode_eq_band_0": {
-        "name": "Eq band 0"
-      },
-      "starcode_light_rgb_mode": {
-        "name": "Light rgb mode"
-      },
-      "starcode_motor_part4": {
-        "name": "Motor part4"
+        "name": "Equalizer 32 Hz"
       },
       "starcode_massage_head_level": {
-        "name": "Massage head level"
-      },
-      "starcode_light_brightness": {
-        "name": "Light brightness"
-      },
-      "starcode_sonic_time_raw": {
-        "name": "Sonic time raw"
+        "name": "Head massage level"
       },
       "starcode_eq_band_5": {
-        "name": "Eq band 5"
-      },
-      "starcode_motor_part6": {
-        "name": "Motor part6"
+        "name": "Equalizer 1 kHz"
       },
       "starcode_eq_band_2": {
-        "name": "Eq band 2"
-      },
-      "starcode_motor_part5": {
-        "name": "Motor part5"
+        "name": "Equalizer 125 Hz"
       },
       "starcode_eq_high_frequency": {
-        "name": "Eq high frequency"
+        "name": "Equalizer high frequency"
       },
       "starcode_massage_foot_level": {
-        "name": "Massage foot level"
+        "name": "Foot massage level"
       },
       "starcode_eq_band_4": {
-        "name": "Eq band 4"
+        "name": "Equalizer 500 Hz"
       },
       "starcode_light_mode": {
         "name": "Light mode"
       },
       "starcode_alarm_1": {
-        "name": "Alarm 1"
+        "name": "Alarm 2 enabled"
       },
       "starcode_sonic_mode": {
         "name": "Sonic mode"
-      },
-      "starcode_kneading_time_raw": {
-        "name": "Kneading time raw"
       },
       "adjustable_lite_massage_timer": {
         "name": "Massage timer"
@@ -4359,10 +4236,7 @@
         "name": "Firmware version"
       },
       "starcode_m1x12_elevate_firmware": {
-        "name": "ELEVATE firmware version"
-      },
-      "starcode_m1x12_massage_time_raw": {
-        "name": "Massage time (raw)"
+        "name": "Firmware version"
       },
       "starcode_m1x12_massage_head_level": {
         "name": "Head massage level"
@@ -4373,20 +4247,11 @@
       "starcode_m1x12_massage_mode": {
         "name": "Massage mode"
       },
-      "starcode_m1x12_light_brightness": {
-        "name": "Light brightness (raw)"
-      },
       "starcode_m1x12_light_color_index": {
         "name": "Light color index"
       },
-      "starcode_m1x12_light_rgb_mode": {
-        "name": "Direct RGB mode"
-      },
       "starcode_m1x12_light_mode": {
         "name": "Light mode"
-      },
-      "starcode_m1x12_sonic_time_raw": {
-        "name": "Sonic time (raw)"
       },
       "starcode_m1x12_sonic_frequency": {
         "name": "Sonic frequency"
@@ -4404,22 +4269,13 @@
         "name": "Sonic massage type"
       },
       "starcode_m1x12_part_1_position": {
-        "name": "Part 1 position (%)"
+        "name": "Head position"
       },
       "starcode_m1x12_part_2_position": {
-        "name": "Part 2 position (%)"
+        "name": "Foot position"
       },
       "starcode_m1x12_part_4_position": {
-        "name": "Part 4 position (%)"
-      },
-      "starcode_m1x12_part_8_position": {
-        "name": "Part 8 position (%)"
-      },
-      "starcode_m1x12_part_16_position": {
-        "name": "Part 16 position (%)"
-      },
-      "starcode_m1x12_part_32_position": {
-        "name": "Part 32 position (%)"
+        "name": "Lumbar position"
       },
       "starcode_m1x12_alarm_0": {
         "name": "Alarm 1 enabled"
@@ -4462,9 +4318,6 @@
       },
       "starcode_m1x12_eq_band_7": {
         "name": "Equalizer 4 kHz"
-      },
-      "starcode_m1x12_kneading_time_raw": {
-        "name": "Kneading time (raw)"
       },
       "starcode_m1x12_kneading_mode": {
         "name": "Kneading mode"
@@ -5186,25 +5039,13 @@
         "name": "Massage active"
       },
       "starcode_kneading_on": {
-        "name": "Kneading on"
-      },
-      "starcode_motor_stopped": {
-        "name": "Motor stopped"
-      },
-      "starcode_light_on": {
-        "name": "Light on"
+        "name": "Kneading active"
       },
       "starcode_usb_on": {
-        "name": "Usb on"
+        "name": "USB on"
       },
       "starcode_sonic_active": {
         "name": "Sonic active"
-      },
-      "starcode_kneading_demo": {
-        "name": "Kneading demo"
-      },
-      "starcode_firmware_read_ok": {
-        "name": "Firmware read ok"
       },
       "adjustable_lite_light": {
         "name": "Light"
@@ -5224,14 +5065,8 @@
       "sleeptracker_wind_down_running": {
         "name": "Wind-down running (reported)"
       },
-      "starcode_m1x12_motor_stopped": {
-        "name": "Motor stopped"
-      },
       "starcode_m1x12_massage_active": {
         "name": "Massage active"
-      },
-      "starcode_m1x12_light_on": {
-        "name": "Light on"
       },
       "starcode_m1x12_sonic_active": {
         "name": "Sonic active"
@@ -5241,9 +5076,6 @@
       },
       "starcode_m1x12_kneading_on": {
         "name": "Kneading active"
-      },
-      "starcode_m1x12_kneading_demo": {
-        "name": "Kneading demo available"
       },
       "bedsense_m1_saved": {
         "name": "M1 saved (app indicator)"
@@ -5340,6 +5172,9 @@
       },
       "mline_anti_enabled": {
         "name": "Anti-snore enabled"
+      },
+      "starcode_abm5_4_massage_active": {
+        "name": "Massage"
       }
     },
     "number": {
@@ -5449,7 +5284,7 @@
         "name": "Floor light level"
       },
       "starcode_brightness": {
-        "name": "RGB brightness"
+        "name": "Light brightness"
       },
       "richmat_mh_light_timer": {
         "name": "Light timeout"
@@ -5482,7 +5317,7 @@
         "name": "Right ActiveBreeze level"
       },
       "starcode_m1x12_brightness": {
-        "name": "RGB brightness level"
+        "name": "Light brightness"
       },
       "sleepys_app_target_axis_0": {
         "name": "App target axis 0"
@@ -5758,7 +5593,7 @@
         }
       },
       "starcode_color": {
-        "name": "RGB palette index",
+        "name": "Light color",
         "state": {
           "0": "Off",
           "1": "White",

@@ -157,7 +157,7 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
         descriptors[1][CONF_NAME] = "BLE display alias"
     entry.add_to_hass(hass)
     er.async_get(hass).async_get_or_create(
-        "button", const.DOMAIN, right + "_starcode_abm5_4_wake", config_entry=entry
+        "button", const.DOMAIN, right + "_starcode_abm5_4_save_tv", config_entry=entry
     )
 
     async def connect(child: AdjustableBedCoordinator) -> bool:
@@ -189,7 +189,7 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
             for row in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
             if row.unique_id.startswith(right)
         }
-        assert any("_starcode_abm5_4_wake" in key for key in first)
+        assert any("_starcode_abm5_4_save_tv" in key for key in first)
         assert any("controller_number_starcode_abm5_4_light_level" in key for key in first) == (
             offline_command in POSITIVE
         )
@@ -204,15 +204,18 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
         controls = [
             entity_id
             for key, entity_id in first.items()
-            if "starcode_abm5_4" in key and not entity_id.startswith("sensor.")
+            if "starcode_abm5_4" in key
+            and not entity_id.startswith("sensor.")
+            # The diagnostic query is disabled by default, so it has no state.
+            and not key.endswith("_starcode_abm5_4_refresh")
         ]
         assert controls
         for entity_id in controls:
             state = hass.states.get(entity_id)
             assert state is not None and state.state in ("unknown", "unavailable")
-        wake_id = next(
-            entity_id for key, entity_id in first.items() if key.endswith("_starcode_abm5_4_wake")
+        save_id = next(
+            entity_id for key, entity_id in first.items() if key.endswith("_starcode_abm5_4_save_tv")
         )
         with pytest.raises(ConnectionError, match="Not connected"):
-            await hass.services.async_call("button", "press", {"entity_id": wake_id}, blocking=True)
+            await hass.services.async_call("button", "press", {"entity_id": save_id}, blocking=True)
         assert await hass.config_entries.async_unload(entry.entry_id)

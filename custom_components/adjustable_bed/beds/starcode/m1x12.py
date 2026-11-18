@@ -88,15 +88,15 @@ MANUFACTURER: Final = "00002a29-0000-1000-8000-00805f9b34fb"
 SENDER_INTERVAL = 0.1
 MAX_HOLD_MS = 60_000
 
-# The accepted app selects independent parts. Only Parts 1, 2, and 4 have
-# artifact-proven Home labels; the remaining labels stay as raw Part numbers.
+# The accepted app selects independent parts. Its Home screen labels Parts 1,
+# 2 and 4 head, foot and lumbar; Parts 8 and 16 have no physical label, so
+# they stay held controls for the hold action rather than entities.
 _PARTS: Final = (
     (1, "starcode_m1x12_part_1", "part_1_up", "part_1_down"),
     (2, "starcode_m1x12_part_2", "part_2_up", "part_2_down"),
     (4, "starcode_m1x12_part_4", "part_4_up", "part_4_down"),
-    (8, "starcode_m1x12_part_8", "part_8_up", "part_8_down"),
-    (16, "starcode_m1x12_part_16", "part_16_up", "part_16_down"),
 )
+_UNLABELLED_PARTS: Final = (8, 16)
 _KEYS: Final[dict[str, tuple[int, int]]] = {
     "part_1_up": (0x00000001, 0x03103000),
     "part_1_down": (0x00000002, 0x03103001),
@@ -160,7 +160,11 @@ _PRESET_ACTIONS: Final = {
     "memory_2",
 }
 _HELD_ACTIONS: Final = tuple(
-    [f"part_{part}_{direction}" for part, *_ in _PARTS for direction in ("up", "down")]
+    [
+        f"part_{part}_{direction}"
+        for part in (*(part for part, *_ in _PARTS), *_UNLABELLED_PARTS)
+        for direction in ("up", "down")
+    ]
     + [
         "union_up",
         "union_down",
@@ -183,6 +187,22 @@ def _action(name: str) -> Callable[[BedController], Coroutine[object, object, No
         await controller.app_action(name)
 
     return run
+
+
+# Reported values a typical user wants on a dashboard.
+_ENABLED_STATE: Final = frozenset(
+    {
+        "massage_head_level",
+        "massage_foot_level",
+        "massage_mode",
+        "sonic_head_level",
+        "sonic_foot_level",
+        "massage_active",
+        "sonic_active",
+        "kneading_on",
+        *(f"part_{part}_position" for part, *_ in _PARTS),
+    }
+)
 
 
 def _state_card(key: str) -> CardPlacement:
@@ -392,8 +412,9 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # MemoryType 8 has no app caller. The bed reports its state itself, so
+        # the status query is a diagnostic fallback.
         buttons = (
-            ("memory_8", "MemoryType 8"),
             ("save_tv", "Save TV"),
             ("save_zero_g", "Save zero gravity"),
             ("save_lounge", "Save reading/lounge"),
@@ -408,18 +429,19 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 name=name,
                 press_fn=_action(key),
                 translation_key=f"starcode_m1x12_{key}",
+                diagnostic=key == "query",
             )
             for key, name in buttons
         )
         held = (
-            ("massage_wave_up", "Hold to increase massage wave"),
-            ("massage_wave_down", "Hold to decrease massage wave"),
-            ("massage_head_up", "Hold to increase head massage"),
-            ("massage_head_down", "Hold to decrease head massage"),
-            ("massage_foot_up", "Hold to increase foot massage"),
-            ("massage_foot_down", "Hold to decrease foot massage"),
-            ("massage_both_up", "Hold to increase both-zone massage"),
-            ("massage_both_down", "Hold to decrease both-zone massage"),
+            ("massage_wave_up", "Increase massage wave"),
+            ("massage_wave_down", "Decrease massage wave"),
+            ("massage_head_up", "Increase head massage"),
+            ("massage_head_down", "Decrease head massage"),
+            ("massage_foot_up", "Increase foot massage"),
+            ("massage_foot_down", "Decrease foot massage"),
+            ("massage_both_up", "Increase head and foot massage"),
+            ("massage_both_down", "Decrease head and foot massage"),
         )
         return one_shot + tuple(
             ControllerButtonSpec(
@@ -462,23 +484,21 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        # Raw timer counts, the brightness the number shows, the RGB flag (an
+        # attribute) and the unlabelled Parts' feedback stay in diagnostics.
         keys: tuple[str, ...] = (
             "firmware",
-            "massage_time_raw",
             "massage_head_level",
             "massage_foot_level",
             "massage_mode",
-            "light_brightness",
             "light_color_index",
-            "light_rgb_mode",
             "light_mode",
-            "sonic_time_raw",
             "sonic_frequency",
             "sonic_head_level",
             "sonic_foot_level",
             "sonic_mode",
             "sonic_massage_type",
-            *(f"part_{part}_position" for part in (1, 2, 4, 8, 16, 32)),
+            *(f"part_{part}_position" for part, *_ in _PARTS),
         )
         if self.profile == "cb25":
             keys += ("alarm_0", "alarm_1")
@@ -493,7 +513,7 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 *(f"eq_band_{index}" for index in range(8)),
             )
         if self.profile == "kneading":
-            keys += ("kneading_time_raw", "kneading_mode")
+            keys += ("kneading_mode",)
         return tuple(
             ControllerStateSensorSpec(
                 key=f"starcode_m1x12_{key}",
@@ -506,6 +526,7 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 attribute_keys=(field_key("light_rgb"), field_key("light_rgb_mode"))
                 if key == "light_color_index"
                 else ((field_key(key + "_details"),) if key.startswith("alarm_") else ()),
+                entity_registry_enabled_default=key in _ENABLED_STATE,
                 card=_state_card(key),
             )
             for key in keys
@@ -513,22 +534,19 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        keys: tuple[str, ...] = (
-            "motor_stopped",
-            "massage_active",
-            "light_on",
-            "sonic_active",
-        )
+        # The light entity shows the light; motor-stopped and demo flags are protocol state.
+        keys: tuple[str, ...] = ("massage_active", "sonic_active")
         if self.profile != "cb25":
             keys += ("usb_on",)
         if self.profile == "kneading":
-            keys += ("kneading_on", "kneading_demo")
+            keys += ("kneading_on",)
         return tuple(
             ControllerStateBinarySensorSpec(
                 key=f"starcode_m1x12_{key}",
                 translation_key=f"starcode_m1x12_{key}",
                 state_key=spec_key(key),
                 icon="mdi:information-outline",
+                entity_registry_enabled_default=key in _ENABLED_STATE,
                 card=_state_card(key),
             )
             for key in keys
@@ -1221,6 +1239,7 @@ class StarElevateM1X12Controller(StarElevateController):
                 "starcode_m1x12_elevate_firmware",
                 FIRMWARE_VERSION,
                 "mdi:information-outline",
+                entity_registry_enabled_default=False,
                 card=CARD_UTILITY,
             ),
         )
