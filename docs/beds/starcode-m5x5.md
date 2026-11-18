@@ -1,6 +1,6 @@
 # AdjustableM5X5 app
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

@@ -1,6 +1,6 @@
 # Okin 5A
 
-**Status:** ✅ Tested on the Sealy Posturematic CB35 profile; the other profiles need testing
+**Status:** Tested on the Sealy Posturematic CB35 profile; the other profiles need testing
 
 **Credit:** Reverse engineering by [MaximumWorf](https://github.com/MaximumWorf) ([homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar)), [David Delahoz](https://github.com/daviddelahoz) ([BLEAdjustableBase](https://github.com/daviddelahoz/BLEAdjustableBase)) and [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -316,7 +316,7 @@ same test rebuilds each one from its fields.
 
 ### Nectar
 
-**Status:** 🧪 Needs testing (legacy seven-byte protocol)
+**Status:** Not yet tested (legacy seven-byte protocol)
 
 These details apply only to the legacy seven-byte profile. The
 [Nectar Move profile](okin-nframe.md#nectar-move-profile) uses the separate Okin CST
@@ -369,7 +369,7 @@ only its frozen frames, the ones the pre-v5 controller sent, from MaximumWorf's
 
 ### Mattress Firm 900 / iFlex
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -416,7 +416,7 @@ Delahoz in 2020 from the M900 app, with discovery from Zrau5454 in
 
 **App:** [Sealy Posturematic](https://play.google.com/store/apps/details?id=com.okin.sealy) v1.1.1, `com.okin.sealy`
 
-**Status:** ✅ Tested (Sealy Element, ESPHome Bluetooth proxy, 2026-09)
+**Status:** Tested (Sealy Element, ESPHome Bluetooth proxy, 2026-09)
 
 Protocol version CB.35.22.01 ("star code new protocol"). The Android app is a
 Flutter app with the protocol defined in a JSON asset; it is also on iOS (App
@@ -524,7 +524,7 @@ protocol definition at
 
 **App:** [Adjustable Comfort M1X12](https://play.google.com/store/apps/details?id=com.starcode.adjustablem1x12) 1.1.3, `com.starcode.adjustablem1x12`; [AdjustableM5X5](https://play.google.com/store/apps/details?id=com.starcode.abm5_5) 1.2.3, `com.starcode.abm5_5`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 ELEVATE is a separate accessory, not a BOX25 bed variant, even though it uses the
 same Nordic UART service and StarCode envelope. It always uses these Star frames;

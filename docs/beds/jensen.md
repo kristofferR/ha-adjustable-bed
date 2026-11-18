@@ -1,6 +1,6 @@
 # Jensen
 
-**Status:** ✅ Tested on JMC400 (motion, position reports, massage and memory
+**Status:** Tested on JMC400 (motion, position reports, massage and memory
 recall, [#146](https://github.com/kristofferR/ha-adjustable-bed/issues/146) and [#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631)); JMC400 lights and fan, and every LinOn control,
 need testing.
 

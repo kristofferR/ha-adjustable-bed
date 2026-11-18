@@ -1,6 +1,6 @@
 # HHC `$#` frames (MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion)
 
-**Status:** ⚠️ Partially tested (existing MotoSleep HHC support user tested in [#51](https://github.com/kristofferR/ha-adjustable-bed/issues/51) and [#445](https://github.com/kristofferR/ha-adjustable-bed/issues/445); MotoMotion, Power Bob and the other MotoSleep models need testing)
+**Status:** Partly tested (existing MotoSleep HHC support user tested in [#51](https://github.com/kristofferR/ha-adjustable-bed/issues/51) and [#445](https://github.com/kristofferR/ha-adjustable-bed/issues/445); MotoMotion, Power Bob and the other MotoSleep models need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), waynebowie99 and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -169,7 +169,7 @@ notifications and report no positions.
 
 **App:** [MotoMotion](https://play.google.com/store/apps/details?id=com.HHC.MotoMotion) 3.1.9 (code 2026051101), `com.HHC.MotoMotion`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -302,7 +302,7 @@ MotoMotion 3.1.9: its test vectors round-trip through the codec.
 
 ### MotoSleep and Power Bob family
 
-**Status:** ⚠️ Partially tested (the original HHC models are tested; the other models need testing)
+**Status:** Partly tested (the original HHC models are tested; the other models need testing)
 
 This integration follows the controller routing in the two shipped Android
 apps. It does not treat every device using the shared HHC UUID as one universal
@@ -453,7 +453,7 @@ MotoSleep, Power Bob and the legacy route send only their frozen frames.
 
 **App:** [MotoSleep](https://play.google.com/store/apps/details?id=com.HHC.MotoSleep) 5.1.5 (`2026071001`), `com.HHC.MotoSleep`
 
-**Status:** ⚠️ Partially tested (the original HHC models are tested; the other profiles and MOTO binary pages need testing)
+**Status:** Partly tested (the original HHC models are tested; the other profiles and MOTO binary pages need testing)
 
 Behaves as the [MotoSleep and Power Bob family](#motosleep-and-power-bob-family), except as below.
 
@@ -539,7 +539,7 @@ Normal MOTO movement release sends command/data `0x0000/0x0000` five times at
 
 **App:** [Power Bob for Adjustable Bed](https://play.google.com/store/apps/details?id=com.HHC.PowerBob) 2.0.3 (`2025061101`), `com.HHC.PowerBob`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [MotoSleep and Power Bob family](#motosleep-and-power-bob-family), except as below.
 
@@ -586,7 +586,7 @@ only its root `$A` light toggle.
 
 ### Legacy route
 
-**Status:** ⚠️ Conservative fallback for manual entries without a usable advertised name
+**Status:** Not yet tested (the fallback for manual entries without a usable advertised name)
 
 Behaves as the [MotoSleep and Power Bob family](#motosleep-and-power-bob-family), except as below.
 
@@ -606,7 +606,7 @@ schedule.
 
 **App:** [Bedgear](https://play.google.com/store/apps/details?id=com.Bedgear.AdjustableBed) 2.0.1 (`2024031901`), `com.Bedgear.AdjustableBed`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -777,7 +777,7 @@ qualify those behaviors with timestamps, GATT details and physical observations.
 
 **App:** [Leon's L2Motion](https://play.google.com/store/apps/details?id=com.leon.l2motion)
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

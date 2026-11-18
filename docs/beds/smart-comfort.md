@@ -1,6 +1,6 @@
 # Smart Comfort seats
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -192,7 +192,7 @@ profiles independently.
 
 **App:** [Smart Comfort by SYNARGY](https://play.google.com/store/apps/details?id=com.synargy.okin) 1.1.0 (12), `com.synargy.okin`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -247,7 +247,7 @@ onboarding password stays in the app and is never sent over Bluetooth.
 
 **App:** [Smart Comfort](https://play.google.com/store/apps/details?id=com.synergy.okin) 2.2.0 (16), `com.synergy.okin`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [SYNARGY profile](#synargy) for proved BLE controls, except as below.
 

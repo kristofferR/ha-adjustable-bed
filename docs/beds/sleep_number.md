@@ -1,6 +1,6 @@
 # Sleep Number
 
-**Status:** ✅ Tested on Climate 360 (Fuzion) beds in [#318](https://github.com/kristofferR/ha-adjustable-bed/issues/318), [#574](https://github.com/kristofferR/ha-adjustable-bed/issues/574) and [#623](https://github.com/kristofferR/ha-adjustable-bed/issues/623), and i8 / FlexFit 2 (BAM/MCR) beds in [#322](https://github.com/kristofferR/ha-adjustable-bed/issues/322) and [#565](https://github.com/kristofferR/ha-adjustable-bed/issues/565); the controls added from SleepIQ 5.4.11 need testing
+**Status:** Tested on Climate 360 (Fuzion) beds in [#318](https://github.com/kristofferR/ha-adjustable-bed/issues/318), [#574](https://github.com/kristofferR/ha-adjustable-bed/issues/574) and [#623](https://github.com/kristofferR/ha-adjustable-bed/issues/623), and i8 / FlexFit 2 (BAM/MCR) beds in [#322](https://github.com/kristofferR/ha-adjustable-bed/issues/322) and [#565](https://github.com/kristofferR/ha-adjustable-bed/issues/565); the controls added from SleepIQ 5.4.11 need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) with protocol detail and field testing from [@homer-aty](https://github.com/homer-aty) and [@JonGilmore](https://github.com/JonGilmore)
 

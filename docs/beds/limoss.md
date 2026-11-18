@@ -1,6 +1,6 @@
 # Limoss
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -311,7 +311,7 @@ the Limoss Remote key tables match an independent fixture.
 
 ### Legacy route
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -367,7 +367,7 @@ controller's.
 
 **App:** [Limoss Remote](https://play.google.com/store/apps/details?id=com.limoss.limossremote) 7.1.8 (44), `com.limoss.limossremote`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -602,7 +602,7 @@ bodies, and its key tables match the report's rendered tables.
 
 **App:** [FSM Relax](https://play.google.com/store/apps/details?id=com.limoss.fsmrelax) 1.9 (20), `com.limoss.fsmrelax`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

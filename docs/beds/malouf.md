@@ -1,6 +1,6 @@
 # Malouf/Lucid
 
-**Status:** ✅ Tested on the NEW_OKIN and legacy FFE5 routes; the Malouf Base and Lucid Base app profiles need testing
+**Status:** Tested on the NEW_OKIN and legacy FFE5 routes; the Malouf Base and Lucid Base app profiles need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -262,7 +262,7 @@ its frozen frames.
 
 ### NEW_OKIN
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 The `malouf_new_okin` bed type: OKIN new frames over Nordic UART.
 
@@ -312,7 +312,7 @@ frames.
 
 ### Malouf Base / Lucid Base family
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The `malouf_app` bed type. Retail model, GATT transport and physical role are
 independent choices. Controls follow the selected model and its reachable app
@@ -475,7 +475,7 @@ Both app profiles send only their frozen frames.
 
 **App:** [Malouf Base](https://play.google.com/store/apps/details?id=com.malouf.bedbase) 2.4.3, `com.malouf.bedbase`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Malouf Base / Lucid Base family](#malouf-base--lucid-base-family),
 except as below.
@@ -492,7 +492,7 @@ except as below.
 
 **App:** [Lucid Base](https://play.google.com/store/apps/details?id=com.lucid.bedbase) 1.3.3, `com.lucid.bedbase`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Malouf Base / Lucid Base family](#malouf-base--lucid-base-family),
 except as below.
@@ -513,7 +513,7 @@ except as below.
 
 ### Legacy FFE5 route
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 The `malouf_legacy_okin` bed type sends the Keeson E6 frame
 (`E6 FE 16 01 00 00 00 00 04` is head up) to write characteristic

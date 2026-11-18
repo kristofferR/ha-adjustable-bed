@@ -1,6 +1,6 @@
 # Paramount
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -186,7 +186,7 @@ in the existing v5 families, so it has its own codec and typed profile.
 
 **App:** [Bed Operation](https://play.google.com/store/apps/details?id=com.paramount.bedcontrol) 3.0.4, `com.paramount.bedcontrol`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

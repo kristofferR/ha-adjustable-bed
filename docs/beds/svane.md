@@ -1,6 +1,6 @@
 # Svane Remote
 
-**Status:** ⚠️ Partially tested (a LinON Pro bed moved and recalled memory with the earlier LinonPI implementation in [#152](https://github.com/kristofferR/ha-adjustable-bed/issues/152); the Svane Remote 1.8 profiles need testing)
+**Status:** Partly tested (a LinON Pro bed moved and recalled memory with the earlier LinonPI implementation in [#152](https://github.com/kristofferR/ha-adjustable-bed/issues/152); the Svane Remote 1.8 profiles need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

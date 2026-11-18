@@ -1,6 +1,6 @@
 # CheersSleep
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -378,7 +378,7 @@ sent, because the integration has no side picker.
 
 **App:** [CheersSleep](https://play.google.com/store/apps/details?id=com.cheers.sleep) v2.7.0 (40), `com.cheers.sleep`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

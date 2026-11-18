@@ -1,6 +1,6 @@
 # Linak
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), jascdk and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 

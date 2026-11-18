@@ -1,6 +1,6 @@
 # Jiecang
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -524,7 +524,7 @@ data cannot express.
 
 ### Legacy route
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The frames are those the original controller sent, taken from earlier decompiles of Comfort Motion 2.1.6
 ([#127](https://github.com/kristofferR/ha-adjustable-bed/issues/127)) and
@@ -608,7 +608,7 @@ Reconfigure's bed-type list, which then asks the app, packet family and layout.
 **App:** [Comfort Motion](https://play.google.com/store/apps/details?id=com.jiecang.app.android.jiecangbed)
 2.2.1 (28), `com.jiecang.app.android.jiecangbed`.
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -722,7 +722,7 @@ names and whether renames persist still need testing by owners.
 
 ### Dream app family
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 ERGOBALANCE, Dream Motion and Dream Motion HD share the behavior below. Their own
 sections list what differs.
@@ -867,7 +867,7 @@ preset replaces the memory recall.
 **App:** [ERGOBALANCE](https://play.google.com/store/apps/details?id=com.jiecang.dreamask.app.android.bed)
 1.0.8 (8), `com.jiecang.dreamask.app.android.bed`.
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Dream app family](#dream-app-family), except as below.
 
@@ -887,7 +887,7 @@ See the [generated tables](#hold-and-release-timing).
 **App:** [Dream Motion](https://play.google.com/store/apps/details?id=com.jiecang.dreamotion.app.android.bed)
 1.0.5 (11), `com.jiecang.dreamotion.app.android.bed`.
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Dream app family](#dream-app-family), except as below.
 
@@ -907,7 +907,7 @@ See the [generated tables](#hold-and-release-timing).
 **App:** [Dream Motion HD](https://play.google.com/store/apps/details?id=com.dreamhd.jiecang.android.pad.bed)
 1.0.4 (4), `com.dreamhd.jiecang.android.pad.bed`.
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Dream app family](#dream-app-family), except as below.
 
@@ -982,7 +982,7 @@ queries, without a light-status query.
 
 ### LOGICDATA app family
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The `logicdata_app` bed type selects one of three app profiles in
 `profiles/logicdata.py`: `phone`, `tablet` or `sleep_smart`. Each drives two packet
@@ -1176,7 +1176,7 @@ Every LOGICDATA profile sends only its frozen frames
 [MOTIONrelax tablet](https://play.google.com/store/apps/details?id=com.logicdata.app.android.pad.bed)
 1.0.4 (5), `com.logicdata.app.android.pad.bed`.
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [LOGICDATA app family](#logicdata-app-family), except as below.
 
@@ -1262,7 +1262,7 @@ Both profiles send only their frozen frames.
 also drives a separate air mattress pump, configured as its own
 [`logicdata_air_pump` entry](logicdata-sleep-smart.md).
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [LOGICDATA app family](#logicdata-app-family), except as below.
 

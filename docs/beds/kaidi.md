@@ -1,6 +1,6 @@
 # Kaidi
 
-**Status:** ✅ Tested (a Rize Remedy III with a Mouselet controller in [#247](https://github.com/kristofferR/ha-adjustable-bed/issues/247)); other Kaidi product families, Floyd Home, ISleep, KomfyD and ComfyDS need testing
+**Status:** Tested (a Rize Remedy III with a Mouselet controller in [#247](https://github.com/kristofferR/ha-adjustable-bed/issues/247)); other Kaidi product families, Floyd Home, ISleep, KomfyD and ComfyDS need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -221,7 +221,7 @@ Other incoming routes have no bed-state consumer; raw diagnostics retain them.
 
 **App:** [Rize](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.3.0, `com.kaidi_test4.rize`; the same tables ship in ISleep 1.6.3 and Floyd 1.0.7
 
-**Status:** ✅ Tested on a Rize Remedy III ([#247](https://github.com/kristofferR/ha-adjustable-bed/issues/247)); other product families need testing
+**Status:** Tested on a Rize Remedy III ([#247](https://github.com/kristofferR/ha-adjustable-bed/issues/247)); other product families need testing
 
 #### Setup
 
@@ -432,7 +432,7 @@ implementation, not new physical validation.
 
 **App:** [Floyd Home](https://play.google.com/store/apps/details?id=com.kaidi_test4.floyd) 1.0.7 (7), `com.kaidi_test4.floyd`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -606,7 +606,7 @@ only the transport is shared with the Seat profiles.
 
 **App:** [ISleep](https://play.google.com/store/apps/details?id=com.kaidi_test4) 1.6.3 (45), `com.kaidi_test4`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -837,7 +837,7 @@ payloads. HA never resets an existing room.
 
 **App:** [Rize Beds](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.4.2 (57), `com.kaidi_test4.rize`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1037,7 +1037,7 @@ table. How the bed responds still needs testing by owners.
 
 **App:** [KomfyD](https://play.google.com/store/apps/details?id=com.pairlink.kaidi.komfyD) 1.0.9 (8), `com.pairlink.kaidi.komfyD`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1238,7 +1238,7 @@ validation belongs to reports from owners.
 
 **App:** [ComfyDS](https://play.google.com/store/apps/details?id=com.pairlink.kaidi.ComfyDS) 1.0.0 (1), `com.pairlink.kaidi.ComfyDS`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Uses the [KomfyD and ComfyDS](#komfyd-and-comfyds) controls with its own frozen
 command table and the following individually established differences.

@@ -1,6 +1,6 @@
 # RUF, W.Silver, AMERICANSTAR, Bailey and TX apps
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

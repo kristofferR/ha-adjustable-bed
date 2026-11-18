@@ -117,11 +117,8 @@ def test_rows_name_no_app_versions() -> None:
     assert not versions, f"Keep app versions in the bed guides, not this table: {versions}"
 
 
-def test_every_app_has_one_status_mark() -> None:
+def test_rows_carry_no_status_marks() -> None:
+    """Testing status lives in each guide's Status line, not in this table."""
     text = README.read_text(encoding="utf-8")
     section = text.split("\n## Supported Beds\n", 1)[1].split("\n## ", 1)[0]
-    for line in section.splitlines():
-        if not line.startswith("| ") or line.startswith(("| Family ", "|---")):
-            continue
-        apps = line.split(" | ")[1]
-        assert len(re.findall(r"\]\([^)]*\) (?:✅|🧪|⚠️)(?:,|$)", apps)) == apps.count("]("), line
+    assert not re.search("✅|🧪|⚠️|❓", section)

@@ -1,6 +1,6 @@
 # Linx
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -230,7 +230,7 @@ needed.
 
 **App:** [Linx](https://play.google.com/store/apps/details?id=com.keeson.connectedbed) 1.0.7 (27), `com.keeson.connectedbed`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -296,7 +296,7 @@ belong to the physical receiver, including in a two-address pair.
 
 **App:** [Linx](https://play.google.com/store/apps/details?id=com.keeson.connectedbed) 1.0.7 (27), `com.keeson.connectedbed`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

@@ -1,6 +1,6 @@
 # Sleeptracker Smart Bed processor
 
-**Status:** ⚠️ Partially tested (partly confirmed on an ActiveBreeze STS-60; other hardware needs testing)
+**Status:** Partly tested (partly confirmed on an ActiveBreeze STS-60; other hardware needs testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

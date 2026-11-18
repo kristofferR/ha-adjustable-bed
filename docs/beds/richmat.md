@@ -1,6 +1,6 @@
 # Richmat
 
-**Status:** ⚠️ Partially tested (the Richmat remotes and legacy BedTech controls are tested; the app profiles need testing). Each profile states its own status.
+**Status:** Partly tested (the Richmat remotes and legacy BedTech controls are tested; the app profiles need testing). Each profile states its own status.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), getrav, [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [Josh Pearce](https://github.com/joshpearce) (L&P MlRM)
 
@@ -527,7 +527,7 @@ every product's catalog codes are frozen.
 
 ### Richmat remotes
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 The `richmat` bed type. Its protocol variant picks the framing (one
 [profile](#choosing-a-profile) each); its Richmat remote code picks the motors,
@@ -701,7 +701,7 @@ its 120 ms delay); the other frames are the pre-v5 controller's.
 
 **App:** [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) 7.1.3 (14), `com.bedtech`
 
-**Status:** ⚠️ Partially tested (the legacy controls are tested; the app models need testing)
+**Status:** Partly tested (the legacy controls are tested; the app models need testing)
 
 #### Setup
 
@@ -852,7 +852,7 @@ remains available independently of the explicit app profiles.
 
 **App:** [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) 2.3.25, `com.richmat.lp2`
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 Behaves as the Richmat remotes route with WiLinke framing on W1, except as below.
 
@@ -889,7 +889,7 @@ L&P MlRM sends only its frozen frames, the pre-v5 controller's.
 
 **App:** [RMControl](https://play.google.com/store/apps/details?id=com.richmat.rmcontrol2) 21.3.7, `com.richmat.rmcontrol2`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 These opt-in profiles preserve the app's exact product choices and individual
 button commands. Movement, preset, memory, massage, light and extra-action
@@ -1082,7 +1082,7 @@ be worked around by choosing an unrelated product.
 
 **App:** Revive Control 1.0.26, Best Mattress 1.1.1, Blvd Home 1.0.1, HARMONY 1.0.0 and Idealbed 2.4.2 (see [Apps](#apps))
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1351,7 +1351,7 @@ and reports missing inputs instead of failing with a traceback.
 
 **App:** [HJBed](https://play.google.com/store/apps/details?id=com.richmat.hjbed) 2.1.2 (code 21200), `com.richmat.hjbed`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1730,7 +1730,7 @@ effects, ATT behavior and firmware acceptance still need testing by owners.
 
 **App:** [Eshine](https://play.google.com/store/apps/details?id=com.richmat.eshinesleep) 1.0.1 (code 10100), `com.richmat.eshinesleep`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The `eshine` bed type drives the E6000 (metadata H3RN), the only product the
 app offers, from one fixed table: head, feet, lumbar and pillow motors, presets,
@@ -1877,7 +1877,7 @@ notification captures.
 
 **App:** Avocado Eco Base 1.0.4 (5), CoasterSleep 1.0.10 (10), Forty Winks 1.0.1, Milemont 1.0.4 and Superior 1.0.9 (see [Apps](#apps))
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 These older resource-driven apps have an independent profile per app. Existing
 Richmat and RMControl entries retain their own behavior, and no capability is
@@ -2239,7 +2239,7 @@ behavior is unverified.
 
 **App:** [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103), `com.richmat.goodvibesleep`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 A per-product catalog app over this codec, plus independent sleep sensors that
 speak their own JSON envelope. Its product catalog stays controller data; the
@@ -2533,7 +2533,7 @@ physiological interpretation still need testing by owners.
 
 **App:** [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp) 2.2.1 (13), `com.richmat.lp`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The `leggett_lp_legacy` bed type follows the legacy app's 122 remote layouts,
 each selected by the four-character code used in that app's manual or QR setup
@@ -2669,7 +2669,7 @@ protocol verification.
 
 ### Casper and Hush family
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The Casper Base and Hush Base apps ship one Richmat library: its transports,
 connect queries, fixed codes, receive parser and settings records are the same
@@ -2831,7 +2831,7 @@ captures.
 
 **App:** [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (version code 10800), `com.richmat.casperbase`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Casper and Hush family](#casper-and-hush-family), except as below.
 
@@ -2930,7 +2930,7 @@ Casper Base sends only the frames frozen from its app: its builder vectors
 
 **App:** [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501), `com.richmat.hushbase`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Casper and Hush family](#casper-and-hush-family), except as below.
 
@@ -3061,7 +3061,7 @@ products, shared builders and auxiliary shards are listed in
 
 **App:** [Lunio Smart+](https://play.google.com/store/apps/details?id=com.richmat.luniosmart) 1.0.4 (10400), `com.richmat.luniosmart`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -3198,7 +3198,7 @@ Based on Lunio Smart+ 1.0.4 (`com.richmat.luniosmart`).
 
 **App:** [SonicSleep / 소닉슬립](https://play.google.com/store/apps/details?id=com.richmat.sonicsleep) 1.0.4 (10400), `com.richmat.sonicsleep`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -3367,7 +3367,7 @@ validation belongs to owners with existing beds.
 
 **App:** [Luuna +](https://play.google.com/store/apps/details?id=com.richmat.luuna) 2.0.1 (20102), `com.richmat.luuna`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -3507,7 +3507,7 @@ MTU remain for owners to validate.
 
 **App:** [MLILY Remote](https://play.google.com/store/apps/details?id=com.richmat.mlilyremote) 1.0.1 (10103), `com.richmat.mlilyremote`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -3670,7 +3670,7 @@ Based on MLILY Remote 1.0.1 (10103).
 
 **App:** [MLILY Control](https://play.google.com/store/apps/details?id=com.richmat.mlily2) 5.0.2 (50200), `com.richmat.mlily2`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4953,7 +4953,7 @@ physical effects, over-air delivery, alarm accuracy or persistence.
 
 **App:** [Richmat](https://play.google.com/store/apps/details?id=com.richmat.richmat) 4.2.0 (42006), `com.richmat.richmat`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -6497,7 +6497,7 @@ Physical validation is for owners and is not implied here.
 
 **App:** [Power Bob Base](https://play.google.com/store/apps/details?id=com.richmat.bobpowerbase) 1.0.9 (10900), `com.richmat.bobpowerbase`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -6652,7 +6652,7 @@ Legacy BedTech and L&P MlRM routes send the pre-v5 controllers' frames.
 
 **App:** [Galaxy Bed Control](https://play.google.com/store/apps/details?id=nl.starinternational.galaxy) 3.3.0 (330002), `nl.starinternational.galaxy`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -8008,7 +8008,7 @@ Based on Galaxy 3.3.0 (`nl.starinternational.galaxy`).
 
 ## Luuna Rise / Power Cool
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 ### Known Models
 
@@ -8639,7 +8639,7 @@ Based on Luuna Rise 1.0.13 (`com.richmat.luunarise2`) and Power Cool Sleep Syste
 
 ### Lady Americana / ACAA / STA Homecare / Zero Gravity family
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -9047,7 +9047,7 @@ motion, physical axes, memory effects and optional features remain unverified.
 
 **App:** [Lady Americana](https://play.google.com/store/apps/details?id=com.richmat.lady_americana) 1.0.2 (3), `com.richmat.lady_americana`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [resource app family](#lady-americana--acaa--sta-homecare--zero-gravity-family).
 
@@ -9067,7 +9067,7 @@ Based on Lady Americana 1.0.2 (3).
 
 **App:** [ACAA](https://play.google.com/store/apps/details?id=com.richmat.acaa) 1.0.4 (5), `com.richmat.acaa`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [resource app family](#lady-americana--acaa--sta-homecare--zero-gravity-family).
 
@@ -9087,7 +9087,7 @@ Based on ACAA 1.0.4 (5).
 
 **App:** [STA Homecare](https://play.google.com/store/apps/details?id=com.richmat.sta2) 1.0.5 (6), `com.richmat.sta2`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [resource app family](#lady-americana--acaa--sta-homecare--zero-gravity-family).
 
@@ -9107,7 +9107,7 @@ Based on STA Homecare 1.0.5 (6).
 
 **App:** [Zero Gravity](https://play.google.com/store/apps/details?id=com.richmat.zerogravity) 1.0.3 (4), `com.richmat.zerogravity`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [resource app family](#lady-americana--acaa--sta-homecare--zero-gravity-family).
 
@@ -9130,7 +9130,7 @@ Based on Zero Gravity 1.0.3 (4).
 **App:** [Okimiki](https://play.google.com/store/apps/details?id=com.richmat.okimiki)
 1.0.1 (10101), `com.richmat.okimiki`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -9267,7 +9267,7 @@ Based on Okimiki 1.0.1 (`com.richmat.okimiki`).
 
 **App:** Nisco 1.1.1 (code 3), `com.richmat.nisco`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -9365,7 +9365,7 @@ Based on Nisco 1.1.1 (3).
 
 **App:** MLILY Supreme 1.3.1 (code 5), `com.richmat.mlily_supreme`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -10396,7 +10396,7 @@ Based on MLILY Supreme 1.3.1 (5).
 
 ### SleepEvolution / W.Silver Products 3.x
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 | App | Version (code) | Package ID |
 |---|---|---|

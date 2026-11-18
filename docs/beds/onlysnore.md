@@ -1,6 +1,6 @@
 # Snore Monitor BED
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -155,7 +155,7 @@ codecs cannot produce this app's frames.
 
 **App:** [Snore Monitor](https://play.google.com/store/apps/details?id=com.okin.sleepMonitor.onlySnore) 2.3.8, `com.okin.sleepMonitor.onlySnore`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

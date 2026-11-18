@@ -1,6 +1,6 @@
 # SUTA Smart Home
 
-**Status:** ⚠️ Partially tested (the bed frame controls from 4.x are tested; the controls added from SUTA Smart Home 3.20.0 need testing)
+**Status:** Partly tested (the bed frame controls from 4.x are tested; the controls added from SUTA Smart Home 3.20.0 need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed).
 
@@ -942,7 +942,7 @@ literals through the production codec.
 
 **App:** SUTA Smart Home 3.20.0 (80), `com.shuta.smart_home`.
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

@@ -1,6 +1,6 @@
 # Okin N-frame
 
-**Status:** ⚠️ Mixed: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
+**Status:** Partly tested: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), david_nagy, corne, PT, MarcusW and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -1051,7 +1051,7 @@ builders.
 
 ### Okimat
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 #### Setup
 
@@ -1228,7 +1228,7 @@ FurniMove 2.2.0.
 
 ### DewertOkin
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1326,7 +1326,7 @@ The complete app listing was `disassembly/output/OKIN_MASTER_ANALYSIS.md`.
 
 **App:** [OKIN Smart Remote / FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) 2.2.0 (19), `com.okin.okinsmartcomfort`
 
-**Status:** ✅ Tested (reporter hardware in [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344))
+**Status:** Tested (reporter hardware in [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344))
 
 > [!WARNING]
 > This controls a moving staircase, not a bed. It exposes one cover entity named
@@ -1425,7 +1425,7 @@ evidence.
 
 ### Customatic family
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The three apps share one frame, transport and timing; each is its own bed type.
 The Clarity and Remedy packages publish their apps as **Rize Clarity** and
@@ -1587,7 +1587,7 @@ write-property compatibility is deferred to users after release.
 
 **App:** [Customatic Clarity](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticclarity) 1.0.1, `com.okin.bedding.customaticclarity`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Customatic family](#customatic-family), except as below.
 
@@ -1599,7 +1599,7 @@ Flat sends the Flat word once.
 
 **App:** [Customatic Jerome's](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticjeromes) 1.0.1, `com.okin.bedding.customaticjeromes`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Customatic family](#customatic-family), except as below.
 
@@ -1616,7 +1616,7 @@ Behaves as the [Customatic family](#customatic-family), except as below.
 
 **App:** [Customatic Remedy](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticremedy) 1.0.1, `com.okin.bedding.customaticremedy`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Customatic family](#customatic-family), except as below.
 
@@ -1626,7 +1626,7 @@ Adds the lumbar motor. Flat sends the Flat word once.
 
 ### Leggett Okin family
 
-**Status:** ⚠️ Partially tested (Prodigy CE / CU170 tested in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368); the other app profiles need testing)
+**Status:** Partly tested (Prodigy CE / CU170 tested in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368); the other app profiles need testing)
 
 #### Setup
 
@@ -1776,7 +1776,7 @@ CE.
 
 **App:** [Prodigy 2L](https://play.google.com/store/apps/details?id=com.leggett.prodigy2L) 1.2 (15), `com.leggett.prodigy2L`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 
@@ -1800,7 +1800,7 @@ settings initialization write.
 
 **App:** [Prodigy 2](https://play.google.com/store/apps/details?id=com.leggett.prodigy2) 2.2.0 (44), `com.leggett.prodigy2`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as [Prodigy 2L](#prodigy-2l), except that the third motor is the pillow
 instead of lumbar.
@@ -1809,7 +1809,7 @@ instead of lumbar.
 
 **App:** [Prodigy CE / Prodigy 4](https://play.google.com/store/apps/details?id=com.leggett.prodigy4) 1.2.0 (18), `com.leggett.prodigy4`
 
-**Status:** ✅ Tested on two CU170 controllers in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368) (movement, Flat, presets and the light); recall of saved favorites is not yet confirmed
+**Status:** Tested on two CU170 controllers in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368) (movement, Flat, presets and the light); recall of saved favorites is not yet confirmed
 
 Behaves as [Prodigy 2L](#prodigy-2l), with head, feet, pillow and lumbar, except
 as below.
@@ -1884,7 +1884,7 @@ removed; `light.toggle` stays available, as does the physical remote.
 
 **App:** [U / Ultra Series](https://play.google.com/store/apps/details?id=com.leggett.useries) 2.1 (16), `com.leggett.useries`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 
@@ -1903,7 +1903,7 @@ Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 
 **App:** [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi), `com.okin.bedding.smartbedwifi`
 
-**Status:** ✅ Tested (Lucid L600 beds in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) and [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309); presets on the Amada bed in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) were not confirmed after the last fix)
+**Status:** Tested (Lucid L600 beds in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) and [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309); presets on the Amada bed in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) were not confirmed after the last fix)
 
 #### Setup
 
@@ -1948,7 +1948,7 @@ Frames are the pre-v5 controller's, frozen in `tests/okin_nframe_vectors.py`;
 
 **App:** [FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) (earlier analysis; accepted 2.2.0 audit), `com.okin.okinsmartcomfort`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 All keycodes come live from the DewertOkin handset backend
 (`GET /mobile-data/button/{code}`); the snapshot lives in
@@ -2136,7 +2136,7 @@ one of the reasons these codes must not be driven with the Okimat profile.
 
 **App:** [SIMMONS](https://play.google.com/store/apps/details?id=com.okin.simmons) 1.12.9 (code 99), `com.okin.simmons`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -2429,7 +2429,7 @@ Based on SIMMONS 1.12.9 (`com.okin.simmons`).
 
 **App:** [OKIN SleepEase / DoubleSleep](https://play.google.com/store/apps/details?id=com.okin.doublesleep) 1.2.24 (code 109), `com.okin.doublesleep`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Select **OKIN SleepEase (DoubleSleep / XiaoBao)** for the `com.okin.doublesleep`
 app. Support is based on the independently accepted 1.2.24 / code 109 artifact.
@@ -2869,7 +2869,7 @@ Based on OKIN SleepEase / DoubleSleep 1.2.24 (`com.okin.doublesleep`).
 
 **App:** [MFRM Sleepy's Elite](https://play.google.com/store/apps/details?id=com.okin.bedding.sleepy), `com.okin.bedding.sleepy`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -2902,7 +2902,7 @@ Frames are the pre-v5 translation table's, frozen in
 
 **App:** [AdjustableM5X4](https://play.google.com/store/apps/details?id=com.starcode.abm5_4) 1.0.1 (3), `com.starcode.abm5_4`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 This profile belongs to `com.starcode.abm5_4` 1.0.1 (3), delivered as five APK
 members. It preserves this app's commands and state rules separately from other
@@ -3385,7 +3385,7 @@ Based on AdjustableM5X4 1.0.1 (`com.starcode.abm5_4`).
 
 **App:** [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22), `com.okin.eshine`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 One profile per product selector in the app: E2000 (`eshine_e2000`),
 E3000/E3100 (`eshine_e30003100`, one selector) and E5000 (`eshine_e5000`). They
@@ -3558,7 +3558,7 @@ Based on eShine 1.1.8 (`com.okin.eshine`).
 
 **Apps:** the Rize, MFirm 900, Support and Nectar Motion apps in [Apps](#apps)
 
-**Status:** ⚠️ Partially tested (the MFirm 900 - O profile works on a CB3633A in [#501](https://github.com/kristofferR/ha-adjustable-bed/issues/501); Okin CST movement worked on an MFirm 900-O, a Jordan's Serenity bed and a Nectar Premium in [#365](https://github.com/kristofferR/ha-adjustable-bed/issues/365), [#573](https://github.com/kristofferR/ha-adjustable-bed/issues/573) and [#605](https://github.com/kristofferR/ha-adjustable-bed/issues/605); the other app profiles need testing)
+**Status:** Partly tested (the MFirm 900 - O profile works on a CB3633A in [#501](https://github.com/kristofferR/ha-adjustable-bed/issues/501); Okin CST movement worked on an MFirm 900-O, a Jordan's Serenity bed and a Nectar Premium in [#365](https://github.com/kristofferR/ha-adjustable-bed/issues/365), [#573](https://github.com/kristofferR/ha-adjustable-bed/issues/573) and [#605](https://github.com/kristofferR/ha-adjustable-bed/issues/605); the other app profiles need testing)
 
 **Android:** all ten analyzed packages are Android apps, listed under
 [Analysis provenance](#cst-analysis-provenance).
@@ -3880,7 +3880,7 @@ Nectar Motion apps.
 
 **App:** [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2), `com.okin.bedding.serenity`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4158,7 +4158,7 @@ Based on Serenity 1.0.1 (`com.okin.bedding.serenity`).
 
 **App:** [Jordan's Tranquil](https://play.google.com/store/apps/details?id=com.okin.bedding.tranquil) 1.0.2 (code 3), `com.okin.bedding.tranquil`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4354,7 +4354,7 @@ Based on Jordan's Tranquil 1.0.2 (`com.okin.bedding.tranquil`).
 
 **App:** [Customatic Z-Series](https://play.google.com/store/apps/details?id=com.okin.bedding.glory) 1.0.4 (code 5), `com.okin.bedding.glory`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4575,7 +4575,7 @@ Based on Customatic Z-Series 1.0.4 (`com.okin.bedding.glory`).
 
 **App:** Adjustable bed, `com.okin.bedding.adjustbed`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Ref:** Reverse-engineered from the `com.okin.bedding.adjustbed` APK
 
@@ -4725,7 +4725,7 @@ a held frame repeated about every 300 ms followed by STOP.
 
 **App:** [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33), `com.okin.bedding.adjustbed`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4873,7 +4873,7 @@ Hardware effects, watchdogs, retail compatibility, real replies and preset stora
 
 **App:** [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33), `com.okin.bedding.adjustablelumbar`
 
-**Status:** ⚠️ Partially tested (a BOX25 Star control box ran this profile's controls, memory included, before 4.1.0 in [#670](https://github.com/kristofferR/ha-adjustable-bed/issues/670); the current profile needs testing)
+**Status:** Partly tested (a BOX25 Star control box ran this profile's controls, memory included, before 4.1.0 in [#670](https://github.com/kristofferR/ha-adjustable-bed/issues/670); the current profile needs testing)
 
 Select **Adjustable bed (Lumbar) app** manually when the bed uses the Android
 app `com.okin.bedding.adjustablelumbar` (shown as "Adjustable bed(Lumbar)").
@@ -5060,7 +5060,7 @@ Based on Adjustable bed (Lumbar) 1.2.2.
 
 **App:** [Rize Home](https://play.google.com/store/apps/details?id=com.okin.rize) 1.1.2 (12), `com.okin.rize`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5213,7 +5213,7 @@ the direct BLE bed product boundary.
 
 **App:** [OKIN Motion Bed](https://apkpure.com/okin-motion-bed/com.okin.motionbed) 1.0 (2), `com.okin.motionbed`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5316,7 +5316,7 @@ physical captures; no static proven bed control is waiting on hardware.
 
 **App:** [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38), `com.okin.simmonskorea`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5434,7 +5434,7 @@ and firmware save/stop effects await testing by owners.
 
 **App:** [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1), `com.okin.resident.release`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5554,7 +5554,7 @@ This profile's own startup and controls have not yet run on that hardware.
 
 **App:** [Ultramatic Smart Bed](https://play.google.com/store/apps/details?id=com.okin.ultramaticSmartBed) 1.1.2 (5), `com.okin.ultramaticSmartBed`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5749,7 +5749,7 @@ Other Okin formats, which share roots but not frames: [Nectar](okin-5a.md#nectar
 
 **App:** Rize Remedy II 1.0.1 (2), `com.okin.bedding.rizeii`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5897,7 +5897,7 @@ persistence need testing by owners.
 **App:** [Comfort Enhancement 3](https://play.google.com/store/apps/details?id=com.okin.apex)
 1.4.0 (5), `com.okin.apex`. Acquisition name: Comfort Plus3.
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

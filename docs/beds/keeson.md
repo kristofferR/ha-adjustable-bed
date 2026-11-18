@@ -1,6 +1,6 @@
 # Keeson
 
-**Status:** ✅ Tested (Base, KSBT, KSBT03C, Ergomotion, Sino / BetterLiving and Cool Base routes; Adjustable Lite partly; the other app profiles need testing)
+**Status:** Tested (Base, KSBT, KSBT03C, Ergomotion, Sino / BetterLiving and Cool Base routes; Adjustable Lite partly; the other app profiles need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [alanbixby](https://github.com/alanbixby), [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [MangoScango](https://github.com/MangoScango)
 
@@ -585,7 +585,7 @@ is one of those vectors and that the generated tables are current.
 
 ### Base (BaseI4/I5)
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 #### Setup
 
@@ -634,7 +634,7 @@ See [Hold and release timing](#hold-and-release-timing) (Member's Mark scheduler
 
 ### Ergomotion
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 Behaves as [Base](#base-basei4i5), except as below.
 
@@ -656,7 +656,7 @@ Subscribes to FFE4 and reports head and foot positions as percentage sliders
 
 ### Serta
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as [Base](#base-basei4i5), except as below.
 
@@ -679,7 +679,7 @@ The Serta MP Remote app repeats held keys from a handler loop; see
 
 ### OKIN FFE
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as [Serta](#serta), except as below.
 
@@ -695,7 +695,7 @@ bed type stores its own default cadence, which is kept as configured.
 
 ### Sino and BetterLiving
 
-**Status:** ✅ Tested (a BetterLiving bed in [#229](https://github.com/kristofferR/ha-adjustable-bed/issues/229); a Dynasty Bases DM9000 on the older `ore` alias in [#180](https://github.com/kristofferR/ha-adjustable-bed/issues/180))
+**Status:** Tested (a BetterLiving bed in [#229](https://github.com/kristofferR/ha-adjustable-bed/issues/229); a Dynasty Bases DM9000 on the older `ore` alias in [#180](https://github.com/kristofferR/ha-adjustable-bed/issues/180))
 
 #### Setup
 
@@ -728,7 +728,7 @@ For the independently verified Linx 1.0.7 app controls, select the explicit
 [Linx profile](linx.md). This legacy JSON route remains unchanged for existing
 entries and other remotes.
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -753,7 +753,7 @@ burst until an on-air capture provides a device-independent interval.
 
 ### KSBT family
 
-**Status:** ✅ Tested (KSBT on an Ergomotion Rio 6.0 in [#297](https://github.com/kristofferR/ha-adjustable-bed/issues/297); KSBT03C on an Ergomotion Rio 5.0 in [#408](https://github.com/kristofferR/ha-adjustable-bed/issues/408)); KSBT03CR and KSBT04C need testing
+**Status:** Tested (KSBT on an Ergomotion Rio 6.0 in [#297](https://github.com/kristofferR/ha-adjustable-bed/issues/297); KSBT03C on an Ergomotion Rio 5.0 in [#408](https://github.com/kristofferR/ha-adjustable-bed/issues/408)); KSBT03CR and KSBT04C need testing
 
 Profiles: KSBT, KSBT03C, KSBT03CR and KSBT04C.
 
@@ -819,7 +819,7 @@ hardware capture.
 
 **App:** [Sleep Harmony](https://play.google.com/store/apps/details?id=com.keeson.ssbaudio) 1.0.1, `com.keeson.ssbaudio`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -844,7 +844,7 @@ but keeps the safety `stop_all` service immediate.
 
 **App:** [Purple Smart Base](https://play.google.com/store/apps/details?id=com.keeson.purpleBase) 1.0.8, `com.keeson.purpleBase`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -878,7 +878,7 @@ profile does not subscribe.
 
 **App:** [Adjustable Lite](https://play.google.com/store/apps/details?id=com.keeson.adjustablelite) 1.0.2 (5), `com.keeson.adjustablelite`
 
-**Status:** ⚠️ Partially tested (two Keeson MC232SC / KSSF05C beds in [#669](https://github.com/kristofferR/ha-adjustable-bed/issues/669); their TV, Lounge and Anti-Snore presets are tracked in [#681](https://github.com/kristofferR/ha-adjustable-bed/issues/681))
+**Status:** Partly tested (two Keeson MC232SC / KSSF05C beds in [#669](https://github.com/kristofferR/ha-adjustable-bed/issues/669); their TV, Lounge and Anti-Snore presets are tracked in [#681](https://github.com/kristofferR/ha-adjustable-bed/issues/681))
 
 #### Setup
 
@@ -976,7 +976,7 @@ be confirmed on hardware.
 
 **App:** Simon Li 1.0.1 (2), `com.okin.simon`; Heal Every Night 1.0 (1), `com.okin.healeverynight`; OKIN-Seating 1.0.1 (2), `com.okin.minghua.R`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1117,7 +1117,7 @@ Heal massage and light semantics, and the GATT layout.
 
 **App:** INNOVA 2.0 (3), `com.ore.sfm`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1220,7 +1220,7 @@ timer cycling, and the lamp bit.
 
 **App:** Restonic BT Remote 1.2.0 (3), `com.keeson.restonicBT`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1295,7 +1295,7 @@ stops motion and presets.
 
 **App:** OKIN Comfort Bed 1.1.6 (8), `com.ore.okincomfortbed`; MaxCoil Una 1.1.0 (5), `com.ore.maxcoil`; Dynasty Bases 1.0.2 (3), `com.ore.Dynasty`; Bedsense Bases 1.1 (3), `com.ore.sfmc2bedsence`; Avanti Bases 1.0.5 (7), `com.ore.AvantiBases`; AMERICANSTAR 1.0 (1), `com.ore.americanstar`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 - MaxCoil Una and Dynasty Bases ship the same `com.ore.okincomfortbed` code base.
 - Bedsense Bases is a separate package, but its app has the same
@@ -1417,7 +1417,7 @@ durations, and the actual write type.
 
 **App:** [ComfortFurniture](https://apkpure.com/comfortfurniture/com.ore.comfortfurniture) 2.3 (10), `com.ore.comfortfurniture`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1555,7 +1555,7 @@ Based on ComfortFurniture 2.3 (`com.ore.comfortfurniture`).
 
 **App:** [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), `com.ore.okincomfortbed`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Behaves as the [ORE comfort-bed profiles](#ore-comfort-bed-profiles), including
 all three layouts, four recall/save destinations, massage and discrete light.
@@ -1800,7 +1800,7 @@ Actual bed effects and firmware interpretation are unverified.
 
 **App:** [Tempur Curve](https://play.google.com/store/apps/details?id=com.ore.tempur) 1.7, `com.ore.tempur`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Bed type `tempur_curve`, one layout. Shared behavior is in the
 [Keeson layout app family](#keeson-layout-app-family).
@@ -1832,7 +1832,7 @@ Bed type `tempur_curve`, one layout. Shared behavior is in the
 
 **App:** [Q-Plus Adjustable Remote](https://play.google.com/store/apps/details?id=com.sbi.costco) 1.8, `com.sbi.costco`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Bed type `qplus_app`. The generic `sbi` bed type is a separate route over the
 same frame.
@@ -1929,7 +1929,7 @@ alarm scheduling stays outside the integration.
 
 **App:** [Serta MP Remote](https://play.google.com/store/apps/details?id=com.ore.serta330) 1.1, `com.ore.serta330`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Bed type `serta_mp_remote`, one layout. `SertaMPRemoteController` adds
 calibrated position feedback, pulse targets and four local memories to the
@@ -2050,7 +2050,7 @@ physical meaning is assumed for it.
 
 **App:** [Omazz Adjusto III](https://play.google.com/store/apps/details?id=com.sfd.Omazz) 1.0.5, `com.sfd.Omazz`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Bed type `omazz_adjusto_iii`, one layout. The app has no reachable name writer,
 so rename is unavailable.
@@ -2083,7 +2083,7 @@ so rename is unavailable.
 
 **App:** [Ergomotion](https://play.google.com/store/apps/details?id=com.sfd.ergomotion) 1.6.4, `com.sfd.ergomotion`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Bed type `ergomotion_app` (setup label **Ergomotion app**). It is separate from
 the `ergomotion` bed type, which uses the [Ergomotion](#ergomotion) profile.
@@ -2124,7 +2124,7 @@ the `ergomotion` bed type, which uses the [Ergomotion](#ergomotion) profile.
 
 **App:** [ROW Control](https://play.google.com/store/apps/details?id=com.sfd.row) 2.0, `com.sfd.row`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Bed type `row_control`. The Zero-G Box layout has no **Massage timer** sensor.
 
@@ -2158,7 +2158,7 @@ Bed type `row_control`. The Zero-G Box layout has no **Massage timer** sensor.
 
 **App:** [Ergo Slim](https://play.google.com/store/apps/details?id=com.sfd.slim) 1.3, `com.sfd.slim`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Bed type `ergo_slim`. The report proves a clock write when the session starts but
 no delay before it, so the clock is written at connect.
@@ -2201,7 +2201,7 @@ no delay before it, so the clock is written at connect.
 
 **App:** [TEMPUR AU](https://play.google.com/store/apps/details?id=com.sfd.tempur_au) 1.6, `com.sfd.tempur_au`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Bed type `tempur_au`. Memory Level 1-3 on B2 are opaque keys.
 
@@ -2278,7 +2278,7 @@ frames of other families and keep it.
 
 **App:** [Glideaway Motion](https://play.google.com/store/apps/details?id=com.ore.bedding.glideawaymontion) 1.0.3 (code 11), `com.ore.bedding.glideawaymontion`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Choose **Glideaway Motion / Montion app** and the model selected in the Android
 app (the archive label misspells Motion as "Montion"). It is separate from the
@@ -2423,7 +2423,7 @@ with the same zero frame.
 
 **App:** Scott Living, `com.keeson.scottlivingrelease`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 Bed type `scott_living`, selected manually: it shares the FFE5 service with
 other Keeson beds and has no distinct name. It writes FFE9 and subscribes to
@@ -2489,7 +2489,7 @@ keeps its [own guide](furnimove.md), because its handset catalog is its profile.
 
 ### SBI / Q-Plus (Costco)
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -2667,7 +2667,7 @@ Pulse values >= 32768 are inverted: `pulse = 65535 - pulse`
 
 ### Rondure
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -2810,7 +2810,7 @@ For split-king beds, configure the protocol variant:
 
 ### Cool Base
 
-**Status:** ✅ Tested (a DewertOkin bed on this route in [discussion #341](https://github.com/kristofferR/ha-adjustable-bed/discussions/341))
+**Status:** Tested (a DewertOkin bed on this route in [discussion #341](https://github.com/kristofferR/ha-adjustable-bed/discussions/341))
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -2957,7 +2957,7 @@ massage option because the app always shows them.
 
 ### BF and Cherish
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -3245,7 +3245,7 @@ Based on BF 1.2.3 (`com.BF`) and Cherish 1.0.4 (`com.okin.ore.cherish`).
 
 ### Comfort Enhancements
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -3473,7 +3473,7 @@ Based on Comfort Enhancements 1.0.3 (`com.okin.enhancements`).
 
 **App:** [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) 3.7 (65), `com.sfd.hump`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -4202,7 +4202,7 @@ Based on Ergomotion 4.0 3.7 (`com.sfd.hump`). Ref [#558](https://github.com/kris
 
 **App:** [AdjustaMattress](https://play.google.com/store/apps/details?id=com.okin.adjustamattress) 1.6.0 (version code 10), `com.okin.adjustamattress`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -4663,7 +4663,7 @@ Based on AdjustaMattress 1.6.0 (`com.okin.adjustamattress`).
 
 **App:** [ComfortBaseForBluetooth](https://play.google.com/store/apps/details?id=com.ore.yorkfeng.comfortbaseble2) 1.1.2 (6), `com.ore.yorkfeng.comfortbaseble2`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4791,7 +4791,7 @@ types store their own defaults and are left unchanged.
 
 **App:** [Okin Comfortbed II N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) 2.0.2 (9), `com.ore.jalon.neworebeding`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4958,7 +4958,7 @@ P1 clock fallback, massage interpretation and bed-local alarms.
 
 **App:** [OkinComfortBed Ⅱ](https://apkpure.com/okin-comfortbed-%E2%85%B1/com.ore.jalon.neworebeding_android) 1.4 (4), `com.ore.jalon.neworebeding_android`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5104,7 +5104,7 @@ them through the shared codec and verifies gestures, layout gates and alarms.
 
 **App:** [Symphony Sleep](https://play.google.com/store/apps/details?id=com.ore.bedding.symphony) 1.1.0 (14), `com.ore.bedding.symphony`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5262,7 +5262,7 @@ All five models and fifteen dispatch outcomes are implemented; physical checks s
 **App:** [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada)
 1.0.1 (6), `com.okin.yamada`
 
-**Status:** 🧪 Needs testing (P1 and P2)
+**Status:** Not yet tested (P1 and P2)
 
 #### Setup
 
@@ -5408,7 +5408,7 @@ hardware testing remains testing by owners.
 
 ### Ormatek TechnoSmart
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup and models
 
@@ -5528,7 +5528,7 @@ Based on OrmatekTechnoSmart 1.2.0 (`com.okin.ormatek`).
 
 **App:** Somos 1.0.0 (code 1), `cn.com.somos`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 ### Configuration
 
@@ -5674,7 +5674,7 @@ Based on Somos 1.0.0 (`cn.com.somos`).
 
 **App:** [Ultramatic](https://play.google.com/store/apps/details?id=com.ore.ultramatic) 1.0.5 (9), `com.ore.ultramatic`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5866,7 +5866,7 @@ and reply semantics still need testing on hardware.
 
 **App:** [Aging in Place](https://play.google.com/store/apps/details?id=com.keeson.agingplace) 1.1.0 (87), `com.keeson.agingplace`. The installed app is named Dawn House.
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

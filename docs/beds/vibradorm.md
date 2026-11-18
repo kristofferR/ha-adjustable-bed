@@ -1,6 +1,6 @@
 # Vibradorm
 
-**Status:** ✅ Tested (generic controller); the Caresse, Werkmeister, VMAT and V-MAT Basic app profiles need testing
+**Status:** Tested (generic controller); the Caresse, Werkmeister, VMAT and V-MAT Basic app profiles need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -252,7 +252,7 @@ sends exactly its frozen fixed frames.
 
 ### Generic controller
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 This is the existing generic Vibradorm route (`legacy` profile, bed type
 `vibradorm`). Existing entries keep that controller unless you explicitly select an
@@ -417,7 +417,7 @@ on hardware.
 
 **App:** [Caresse Remote](https://play.google.com/store/apps/details?id=de.vibradorm.diamant) 0.3, code 3, `de.vibradorm.diamant`; [Werkmeister Unterfederung](https://play.google.com/store/apps/details?id=de.vibradorm.werkmeister) 0.2, code 2, `de.vibradorm.werkmeister`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The bed type is `vibradorm_app` with app profile `caresse` or `werkmeister`. The
 independently verified [VMAT](#vmat) profile shares the explicit app configuration
@@ -976,7 +976,7 @@ the last column.
 
 **App:** [VIBRADORM Remote](https://play.google.com/store/apps/details?id=de.vibradorm.vmat) (VMAT) 1.11 (49), `de.vibradorm.vmat`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The bed type is `vibradorm_app` with app profile `vmat`. Generic entries keep
 their existing controller. [Caresse / Werkmeister](#caresse-and-werkmeister) and
@@ -1294,7 +1294,7 @@ or that a particular controller reports positions.
 
 **App:** [VIBRADORM Remote for Beds](https://play.google.com/store/apps/details?id=com.vibradorm.vmatbasic) (V-MAT Basic) 2.4.3 (code 14), `com.vibradorm.vmatbasic`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 The bed type is `vmatbasic` with profile `basic`, `cbi` or `xtbox` (see the
 [product table](#features)). Sibling Vibradorm apps: [VMAT](#vmat) and

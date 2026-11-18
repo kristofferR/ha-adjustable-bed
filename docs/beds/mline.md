@@ -1,6 +1,6 @@
 # M Line
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed).
 
@@ -214,7 +214,7 @@ frame examples. `tests/test_mline.py` exercises the production encoders and HA c
 
 **App:** [M Line](https://play.google.com/store/apps/details?id=com.okin.mline) 1.2.2 (38).
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 

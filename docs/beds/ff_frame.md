@@ -1,6 +1,6 @@
 # FFFF frame (Solace, Woosa Sleep, BedSense, Motion Bed)
 
-**Status:** ⚠️ Partially tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed, Woosa in [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606); the other profiles need testing)
+**Status:** Partly tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed, Woosa in [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606); the other profiles need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), Bonopaws and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -493,7 +493,7 @@ profile can send is among its frozen literals.
 
 **App:** [HomeKobo](https://play.google.com/store/apps/details?id=com.ly.homekobo) 1.4, `com.ly.homekobo`; [Sealy MotionFlex](https://play.google.com/store/apps/details?id=com.sealy.motionflex) 1.0.3, `com.sealy.motionflex`; [Sweet Night](https://play.google.com/store/apps/details?id=com.sn.dianqi) 1.0.6, `com.sn.dianqi`
 
-**Status:** ⚠️ Partially tested (the legacy S4-Y layout is user-confirmed; the app routes need testing)
+**Status:** Partly tested (the legacy S4-Y layout is user-confirmed; the app routes need testing)
 
 #### Setup
 
@@ -579,7 +579,7 @@ short press.
 
 **App:** [Woosa Sleep](https://play.google.com/store/apps/details?id=com.sn.woosa) 1.1.9 (13), `com.sn.woosa`
 
-**Status:** ✅ Tested ([the reporter confirmed working controls](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-5982450770) with v4.0.1 after selecting Woosa, and [everything but the unused alarm](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-6610197925) later)
+**Status:** Tested ([the reporter confirmed working controls](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-5982450770) with v4.0.1 after selecting Woosa, and [everything but the unused alarm](https://github.com/kristofferR/ha-adjustable-bed/issues/606#issuecomment-6610197925) later)
 
 Behaves as the [Solace name routes](#solace-name-routes), except as below.
 
@@ -659,7 +659,7 @@ properties.
 
 **App:** [BedSense](https://play.google.com/store/apps/details?id=com.fenmenbielei.bedsense) 1.8 (18), `com.fenmenbielei.bedsense`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -829,7 +829,7 @@ replies, lift hold versus click, background taps, massage and light durations.
 
 **App:** [Motion Bed](https://play.google.com/store/apps/details?id=com.sn.blackdianqi) 1.24 (34), `com.sn.blackdianqi`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1043,7 +1043,7 @@ controls are out of scope.
 
 **App:** [Sophie](https://play.google.com/store/apps/details?id=com.sddq.sophienew) 1.0.6 (8), `com.sddq.sophienew`
 
-**Status:** 🧪 Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
