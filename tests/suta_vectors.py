@@ -1,4 +1,4 @@
-"""Frozen production codec literals from accepted SUTA 3.20.0, unit128.
+"""Frozen production codec literals from accepted SUTA 3.20.0.
 
 This harness builds through production codecs. It does not invoke the artifact
 audit oracle, import APK tooling, or require the private acquisition corpus.

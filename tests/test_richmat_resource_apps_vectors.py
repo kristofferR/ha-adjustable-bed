@@ -1,4 +1,4 @@
-"""Frozen literal operands from all four independently accepted row071 apps."""
+"""Frozen literal operands from all four independently accepted ACAA, Lady Americana, STA2 and Zero Gravity apps."""
 
 import gzip
 import json
@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.beds.richmat_classic.resource_receive impo
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS
 
-FIXTURES = Path(__file__).parent / "fixtures/richmat_cluster017"
+FIXTURES = Path(__file__).parent / "fixtures/richmat_resource_apps"
 
 
 def records(name):

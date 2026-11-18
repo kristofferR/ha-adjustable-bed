@@ -1,6 +1,6 @@
 """Restonic BT Remote (com.keeson.restonicBT 1.2.0) Keeson app profiles.
 
-Every frame literal comes from the accepted clean-room report (row058). Remote A
+Every frame literal comes from the accepted clean-room report. Remote A
 and remote B are the app's user-selected remote styles.
 """
 

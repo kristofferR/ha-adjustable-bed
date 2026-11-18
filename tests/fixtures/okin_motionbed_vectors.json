@@ -9,13 +9,7 @@
     },
     "expected_bytes": "E5FE1621000002E3",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E10"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_Light_off",
@@ -27,13 +21,7 @@
     },
     "expected_bytes": "E5FE1631000001D4",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E10"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_Light_on",
@@ -45,13 +33,7 @@
     },
     "expected_bytes": "E5FE1631000000D5",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E10"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_MemoryA_call",
@@ -63,13 +45,7 @@
     },
     "expected_bytes": "E5FE1621000004E1",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E10"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_MemoryA_save",
@@ -81,13 +57,7 @@
     },
     "expected_bytes": "E5FE1620000014D2",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E10"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_MemoryB_call",
@@ -99,13 +69,7 @@
     },
     "expected_bytes": "E5FE1621000006DF",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E10"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_MemoryB_save",
@@ -117,13 +81,7 @@
     },
     "expected_bytes": "E5FE1620000016D0",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E10"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_QUIETSLEEP_call",
@@ -135,12 +93,7 @@
     },
     "expected_bytes": "E5FE1621000004E1",
     "kind": "dead-helper-arithmetic-only",
-    "reachability": "DEAD/UNUSED",
-    "evidence": [
-      "E03",
-      "E04",
-      "E15"
-    ]
+    "reachability": "DEAD/UNUSED"
   },
   {
     "id": "V.cmd_ZEROG_call",
@@ -152,13 +105,7 @@
     },
     "expected_bytes": "E5FE1621000001E4",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E10"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_back_off",
@@ -170,13 +117,7 @@
     },
     "expected_bytes": "E5FE160000000204",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E09"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_back_on",
@@ -188,13 +129,7 @@
     },
     "expected_bytes": "E5FE160000000105",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E09"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_getAM_Data",
@@ -206,12 +141,7 @@
     },
     "expected_bytes": "E5FE16FFFFFFFF0A",
     "kind": "dead-helper-arithmetic-only",
-    "reachability": "DEAD/UNUSED",
-    "evidence": [
-      "E03",
-      "E04",
-      "E15"
-    ]
+    "reachability": "DEAD/UNUSED"
   },
   {
     "id": "V.cmd_head_off",
@@ -223,13 +153,7 @@
     },
     "expected_bytes": "E5FE160000000AFC",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E09"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_head_on",
@@ -241,13 +165,7 @@
     },
     "expected_bytes": "E5FE160000000501",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E09"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_leg_off",
@@ -259,13 +177,7 @@
     },
     "expected_bytes": "E5FE1600000008FE",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E09"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_leg_on",
@@ -277,13 +189,7 @@
     },
     "expected_bytes": "E5FE160000000402",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E09"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_position_STOP",
@@ -295,13 +201,7 @@
     },
     "expected_bytes": "E5FE1621000000E5",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E10"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "V.cmd_stop",
@@ -313,13 +213,7 @@
     },
     "expected_bytes": "E5FE160000000006",
     "kind": "outgoing-command",
-    "reachability": "REACHABLE",
-    "evidence": [
-      "E03",
-      "E04",
-      "E05",
-      "E09"
-    ]
+    "reachability": "REACHABLE"
   },
   {
     "id": "H1",
@@ -332,11 +226,7 @@
     },
     "expected_bytes": "E5FE160000800086",
     "kind": "synthetic-dead-helper-only",
-    "reachability": "DEAD/UNUSED",
-    "evidence": [
-      "E04",
-      "E15"
-    ]
+    "reachability": "DEAD/UNUSED"
   },
   {
     "id": "H2",
@@ -349,11 +239,7 @@
     },
     "expected_bytes": "E5FE16000000FF07",
     "kind": "synthetic-dead-helper-only",
-    "reachability": "DEAD/UNUSED",
-    "evidence": [
-      "E04",
-      "E15"
-    ]
+    "reachability": "DEAD/UNUSED"
   },
   {
     "id": "H3",
@@ -368,11 +254,7 @@
     },
     "expected_bytes": "E5FE162100800065",
     "kind": "synthetic-dead-helper-only",
-    "reachability": "DEAD/UNUSED",
-    "evidence": [
-      "E04",
-      "E15"
-    ]
+    "reachability": "DEAD/UNUSED"
   },
   {
     "id": "H4",
@@ -389,11 +271,7 @@
     },
     "expected_bytes": "E5FE1601020304FC",
     "kind": "synthetic-dead-helper-only",
-    "reachability": "DEAD/UNUSED",
-    "evidence": [
-      "E04",
-      "E15"
-    ]
+    "reachability": "DEAD/UNUSED"
   },
   {
     "id": "H5",
@@ -404,11 +282,7 @@
     },
     "expected_bytes": "E5FE169ABCDEF0E2",
     "kind": "synthetic-dead-helper-only",
-    "reachability": "DEAD/UNUSED",
-    "evidence": [
-      "E04",
-      "E15"
-    ]
+    "reachability": "DEAD/UNUSED"
   },
   {
     "id": "H6",
@@ -422,11 +296,7 @@
     },
     "expected_bytes": "E2FE160000000009",
     "kind": "synthetic-dead-helper-only",
-    "reachability": "DEAD/UNUSED",
-    "evidence": [
-      "E04",
-      "E15"
-    ]
+    "reachability": "DEAD/UNUSED"
   },
   {
     "id": "H7",
@@ -440,11 +310,7 @@
     },
     "expected_bytes": "E2FE163B3B170676",
     "kind": "synthetic-dead-helper-only",
-    "reachability": "DEAD/UNUSED",
-    "evidence": [
-      "E04",
-      "E15"
-    ]
+    "reachability": "DEAD/UNUSED"
   },
   {
     "id": "N1",
@@ -457,10 +323,7 @@
     },
     "expected_bytes": "E2FE16",
     "expected_result": "Forward raw bytes to unused ALARM_REFRASH event",
-    "kind": "incoming-input-not-a-write",
-    "evidence": [
-      "E11"
-    ]
+    "kind": "incoming-input-not-a-write"
   },
   {
     "id": "N2",
@@ -473,10 +336,7 @@
     },
     "expected_bytes": "E2FE160000000000",
     "expected_result": "Forward despite absent valid checksum",
-    "kind": "incoming-input-not-a-write",
-    "evidence": [
-      "E11"
-    ]
+    "kind": "incoming-input-not-a-write"
   },
   {
     "id": "N3",
@@ -489,10 +349,7 @@
     },
     "expected_bytes": "E5FE160000000006",
     "expected_result": "Ignore, different prefix",
-    "kind": "incoming-input-not-a-write",
-    "evidence": [
-      "E11"
-    ]
+    "kind": "incoming-input-not-a-write"
   },
   {
     "id": "N4",
@@ -505,10 +362,7 @@
     },
     "expected_bytes": "E2FE",
     "expected_result": "String substring bounds exception",
-    "kind": "incoming-input-not-a-write",
-    "evidence": [
-      "E11"
-    ]
+    "kind": "incoming-input-not-a-write"
   },
   {
     "id": "R.F2.A.initial",
@@ -529,8 +383,7 @@
           "kind": "same-slot-tap",
           "slot": 9
         }
-      ],
-      "initial_state_origin": "fresh adapter"
+      ]
     },
     "expected_bytes": "E5FE1620000014D2",
     "expected_writes_by_event": [
@@ -549,11 +402,7 @@
         "count": -1
       }
     ],
-    "kind": "audit001-memory-sequence",
-    "evidence": [
-      "E10",
-      "E23"
-    ]
+    "kind": "audit001-memory-sequence"
   },
   {
     "id": "R.F2.A.count0",
@@ -574,8 +423,7 @@
           "kind": "same-slot-tap",
           "slot": 9
         }
-      ],
-      "initial_state_origin": "Prior ZG recall then same ZG tap STOP establishes the listed state; not replayed in events"
+      ]
     },
     "expected_bytes": "E5FE1620000014D2 E5FE1621000004E1",
     "expected_writes_by_event": [
@@ -596,11 +444,7 @@
         "count": 1
       }
     ],
-    "kind": "audit001-memory-sequence",
-    "evidence": [
-      "E10",
-      "E23"
-    ]
+    "kind": "audit001-memory-sequence"
   },
   {
     "id": "R.F2.A.count1",
@@ -625,8 +469,7 @@
           "kind": "same-slot-tap",
           "slot": 9
         }
-      ],
-      "initial_state_origin": "Prior ZG recall from fresh establishes the listed state; not replayed in events"
+      ]
     },
     "expected_bytes": "E5FE1620000014D2 E5FE1621000000E5 E5FE1621000004E1",
     "expected_writes_by_event": [
@@ -654,11 +497,7 @@
         "count": 1
       }
     ],
-    "kind": "audit001-memory-sequence",
-    "evidence": [
-      "E10",
-      "E23"
-    ]
+    "kind": "audit001-memory-sequence"
   },
   {
     "id": "R.F2.B.initial",
@@ -679,8 +518,7 @@
           "kind": "same-slot-tap",
           "slot": 11
         }
-      ],
-      "initial_state_origin": "fresh adapter"
+      ]
     },
     "expected_bytes": "E5FE1620000016D0",
     "expected_writes_by_event": [
@@ -699,11 +537,7 @@
         "count": -1
       }
     ],
-    "kind": "audit001-memory-sequence",
-    "evidence": [
-      "E10",
-      "E23"
-    ]
+    "kind": "audit001-memory-sequence"
   },
   {
     "id": "R.F2.B.count0",
@@ -724,8 +558,7 @@
           "kind": "same-slot-tap",
           "slot": 11
         }
-      ],
-      "initial_state_origin": "Prior ZG recall then same ZG tap STOP establishes the listed state; not replayed in events"
+      ]
     },
     "expected_bytes": "E5FE1620000016D0 E5FE1621000006DF",
     "expected_writes_by_event": [
@@ -746,11 +579,7 @@
         "count": 1
       }
     ],
-    "kind": "audit001-memory-sequence",
-    "evidence": [
-      "E10",
-      "E23"
-    ]
+    "kind": "audit001-memory-sequence"
   },
   {
     "id": "R.F2.B.count1",
@@ -775,8 +604,7 @@
           "kind": "same-slot-tap",
           "slot": 11
         }
-      ],
-      "initial_state_origin": "Prior ZG recall from fresh establishes the listed state; not replayed in events"
+      ]
     },
     "expected_bytes": "E5FE1620000016D0 E5FE1621000000E5 E5FE1621000006DF",
     "expected_writes_by_event": [
@@ -804,10 +632,6 @@
         "count": 1
       }
     ],
-    "kind": "audit001-memory-sequence",
-    "evidence": [
-      "E10",
-      "E23"
-    ]
+    "kind": "audit001-memory-sequence"
   }
 ]

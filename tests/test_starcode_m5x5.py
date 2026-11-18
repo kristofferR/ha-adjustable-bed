@@ -64,7 +64,7 @@ def make_controller(
     )
     coordinator = MagicMock()
     coordinator.hass = hass
-    coordinator.entry = SimpleNamespace(entry_id="row005", data={})
+    coordinator.entry = SimpleNamespace(entry_id="m5x5", data={})
     coordinator.name = "STAR252201123456"
     coordinator.address = "AA:00:00:00:00:05"
     coordinator.client = client

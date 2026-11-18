@@ -7,10 +7,7 @@
     "inputs": {
       "action": "head_up"
     },
-    "expected_bytes": "05 02 00 00 00 01 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 00 01 00 00"
   },
   {
     "id": "head_down",
@@ -20,10 +17,7 @@
     "inputs": {
       "action": "head_down"
     },
-    "expected_bytes": "05 02 00 00 00 02 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 00 02 00 00"
   },
   {
     "id": "foot_up",
@@ -33,10 +27,7 @@
     "inputs": {
       "action": "foot_up"
     },
-    "expected_bytes": "05 02 00 00 00 04 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 00 04 00 00"
   },
   {
     "id": "foot_down",
@@ -46,10 +37,7 @@
     "inputs": {
       "action": "foot_down"
     },
-    "expected_bytes": "05 02 00 00 00 08 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 00 08 00 00"
   },
   {
     "id": "headrest_up",
@@ -59,10 +47,7 @@
     "inputs": {
       "action": "headrest_up"
     },
-    "expected_bytes": "05 02 00 00 00 10 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 00 10 00 00"
   },
   {
     "id": "headrest_down",
@@ -72,10 +57,7 @@
     "inputs": {
       "action": "headrest_down"
     },
-    "expected_bytes": "05 02 00 00 00 20 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 00 20 00 00"
   },
   {
     "id": "lumbar_up",
@@ -85,10 +67,7 @@
     "inputs": {
       "action": "lumbar_up"
     },
-    "expected_bytes": "05 02 00 00 00 40 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 00 40 00 00"
   },
   {
     "id": "lumbar_down",
@@ -98,10 +77,7 @@
     "inputs": {
       "action": "lumbar_down"
     },
-    "expected_bytes": "05 02 00 00 00 80 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 00 80 00 00"
   },
   {
     "id": "hips_up",
@@ -111,10 +87,7 @@
     "inputs": {
       "action": "hips_up"
     },
-    "expected_bytes": "05 02 40 00 00 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 40 00 00 00 00 00"
   },
   {
     "id": "hips_down",
@@ -124,10 +97,7 @@
     "inputs": {
       "action": "hips_down"
     },
-    "expected_bytes": "05 02 80 00 00 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 80 00 00 00 00 00"
   },
   {
     "id": "flat",
@@ -137,10 +107,7 @@
     "inputs": {
       "action": "flat"
     },
-    "expected_bytes": "05 02 08 00 00 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 08 00 00 00 00 00"
   },
   {
     "id": "reading",
@@ -150,10 +117,7 @@
     "inputs": {
       "action": "reading"
     },
-    "expected_bytes": "05 02 00 00 20 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 20 00 00 00"
   },
   {
     "id": "tv",
@@ -163,10 +127,7 @@
     "inputs": {
       "action": "tv"
     },
-    "expected_bytes": "05 02 00 00 40 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 40 00 00 00"
   },
   {
     "id": "zero_gravity",
@@ -176,10 +137,7 @@
     "inputs": {
       "action": "zero_gravity"
     },
-    "expected_bytes": "05 02 00 00 10 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 10 00 00 00"
   },
   {
     "id": "anti_snore_preset",
@@ -189,10 +147,7 @@
     "inputs": {
       "action": "anti_snore_preset"
     },
-    "expected_bytes": "05 02 00 00 80 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 80 00 00 00"
   },
   {
     "id": "memory_1",
@@ -202,10 +157,7 @@
     "inputs": {
       "action": "memory_1"
     },
-    "expected_bytes": "05 02 00 01 00 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 01 00 00 00 00"
   },
   {
     "id": "memory_2",
@@ -215,10 +167,7 @@
     "inputs": {
       "action": "memory_2"
     },
-    "expected_bytes": "05 02 00 04 00 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 04 00 00 00 00"
   },
   {
     "id": "massage_all",
@@ -228,10 +177,7 @@
     "inputs": {
       "action": "massage_all"
     },
-    "expected_bytes": "05 02 00 00 01 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 01 00 00 00"
   },
   {
     "id": "massage_stop_all",
@@ -241,10 +187,7 @@
     "inputs": {
       "action": "massage_stop_all"
     },
-    "expected_bytes": "05 02 02 00 00 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 02 00 00 00 00 00"
   },
   {
     "id": "massage_wave_next",
@@ -254,10 +197,7 @@
     "inputs": {
       "action": "massage_wave_next"
     },
-    "expected_bytes": "05 02 10 00 00 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 10 00 00 00 00 00"
   },
   {
     "id": "massage_timer_next",
@@ -267,10 +207,7 @@
     "inputs": {
       "action": "massage_timer_next"
     },
-    "expected_bytes": "05 02 00 00 02 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 02 00 00 00"
   },
   {
     "id": "massage_foot_strength_next",
@@ -280,10 +217,7 @@
     "inputs": {
       "action": "massage_foot_strength_next"
     },
-    "expected_bytes": "05 02 00 00 04 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 04 00 00 00"
   },
   {
     "id": "massage_head_strength_next",
@@ -293,10 +227,7 @@
     "inputs": {
       "action": "massage_head_strength_next"
     },
-    "expected_bytes": "05 02 00 00 08 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 08 00 00 00"
   },
   {
     "id": "light",
@@ -306,10 +237,7 @@
     "inputs": {
       "action": "light"
     },
-    "expected_bytes": "05 02 00 02 00 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 02 00 00 00 00"
   },
   {
     "id": "stop",
@@ -319,10 +247,7 @@
     "inputs": {
       "action": "stop"
     },
-    "expected_bytes": "05 02 00 00 00 00 00 00",
-    "evidence": [
-      "bleManager.dart command arrays 0x5feee8\u20130x67ad38; UI mappings bed_position_page.dart 0x6789cc\u20130x67a7a0"
-    ]
+    "expected_bytes": "05 02 00 00 00 00 00 00"
   },
   {
     "id": "reading_program",
@@ -333,10 +258,7 @@
       "action": "reading",
       "save": true
     },
-    "expected_bytes": "05 02 00 00 20 00 00 0f",
-    "evidence": [
-      "bleManager.dart isSetted branches 0x67960c\u20130x67a0e0, stopCommand 0x5ff144"
-    ]
+    "expected_bytes": "05 02 00 00 20 00 00 0f"
   },
   {
     "id": "tv_program",
@@ -347,10 +269,7 @@
       "action": "tv",
       "save": true
     },
-    "expected_bytes": "05 02 00 00 40 00 00 0f",
-    "evidence": [
-      "bleManager.dart isSetted branches 0x67960c\u20130x67a0e0, stopCommand 0x5ff144"
-    ]
+    "expected_bytes": "05 02 00 00 40 00 00 0f"
   },
   {
     "id": "zero_gravity_program",
@@ -361,10 +280,7 @@
       "action": "zero_gravity",
       "save": true
     },
-    "expected_bytes": "05 02 00 00 10 00 00 0f",
-    "evidence": [
-      "bleManager.dart isSetted branches 0x67960c\u20130x67a0e0, stopCommand 0x5ff144"
-    ]
+    "expected_bytes": "05 02 00 00 10 00 00 0f"
   },
   {
     "id": "anti_snore_preset_program",
@@ -375,10 +291,7 @@
       "action": "anti_snore_preset",
       "save": true
     },
-    "expected_bytes": "05 02 00 00 80 00 00 0f",
-    "evidence": [
-      "bleManager.dart isSetted branches 0x67960c\u20130x67a0e0, stopCommand 0x5ff144"
-    ]
+    "expected_bytes": "05 02 00 00 80 00 00 0f"
   },
   {
     "id": "memory_1_program",
@@ -389,10 +302,7 @@
       "action": "memory_1",
       "save": true
     },
-    "expected_bytes": "05 02 00 01 00 00 00 0f",
-    "evidence": [
-      "bleManager.dart isSetted branches 0x67960c\u20130x67a0e0, stopCommand 0x5ff144"
-    ]
+    "expected_bytes": "05 02 00 01 00 00 00 0f"
   },
   {
     "id": "memory_2_program",
@@ -403,10 +313,7 @@
       "action": "memory_2",
       "save": true
     },
-    "expected_bytes": "05 02 00 04 00 00 00 0f",
-    "evidence": [
-      "bleManager.dart isSetted branches 0x67960c\u20130x67a0e0, stopCommand 0x5ff144"
-    ]
+    "expected_bytes": "05 02 00 04 00 00 00 0f"
   },
   {
     "id": "stop_program",
@@ -417,10 +324,7 @@
       "action": "stop",
       "save": true
     },
-    "expected_bytes": "05 02 00 00 00 00 00 0f",
-    "evidence": [
-      "bleManager.dart isSetted branches 0x67960c\u20130x67a0e0, stopCommand 0x5ff144"
-    ]
+    "expected_bytes": "05 02 00 00 00 00 00 0f"
   },
   {
     "id": "configuration_query",
@@ -430,10 +334,7 @@
     "inputs": {
       "opcode": 160
     },
-    "expected_bytes": "00 a0",
-    "evidence": [
-      "bleManager.dart 0x588e20/0x554c14/0x555874; bed_alarm_list_page.dart 0x5f795c"
-    ]
+    "expected_bytes": "00 a0"
   },
   {
     "id": "status_query",
@@ -443,10 +344,7 @@
     "inputs": {
       "opcode": 176
     },
-    "expected_bytes": "00 b0",
-    "evidence": [
-      "bleManager.dart 0x588e20/0x554c14/0x555874; bed_alarm_list_page.dart 0x5f795c"
-    ]
+    "expected_bytes": "00 b0"
   },
   {
     "id": "alarm_0_query",
@@ -456,10 +354,7 @@
     "inputs": {
       "opcode": 192
     },
-    "expected_bytes": "00 c0",
-    "evidence": [
-      "bleManager.dart 0x588e20/0x554c14/0x555874; bed_alarm_list_page.dart 0x5f795c"
-    ]
+    "expected_bytes": "00 c0"
   },
   {
     "id": "alarm_1_query",
@@ -469,10 +364,7 @@
     "inputs": {
       "opcode": 208
     },
-    "expected_bytes": "00 d0",
-    "evidence": [
-      "bleManager.dart 0x588e20/0x554c14/0x555874; bed_alarm_list_page.dart 0x5f795c"
-    ]
+    "expected_bytes": "00 d0"
   },
   {
     "id": "alarm_2_query",
@@ -482,10 +374,7 @@
     "inputs": {
       "opcode": 224
     },
-    "expected_bytes": "00 e0",
-    "evidence": [
-      "bleManager.dart 0x588e20/0x554c14/0x555874; bed_alarm_list_page.dart 0x5f795c"
-    ]
+    "expected_bytes": "00 e0"
   },
   {
     "id": "setting_177_1",
@@ -496,10 +385,7 @@
       "opcode": 177,
       "value": 1
     },
-    "expected_bytes": "01 b1 01",
-    "evidence": [
-      "bleManager.dart 0x5823a8\u20130x61ff98/0x629898\u20130x6299ec"
-    ]
+    "expected_bytes": "01 b1 01"
   },
   {
     "id": "setting_177_2",
@@ -510,10 +396,7 @@
       "opcode": 177,
       "value": 2
     },
-    "expected_bytes": "01 b1 02",
-    "evidence": [
-      "bleManager.dart 0x5823a8\u20130x61ff98/0x629898\u20130x6299ec"
-    ]
+    "expected_bytes": "01 b1 02"
   },
   {
     "id": "setting_178_0",
@@ -524,10 +407,7 @@
       "opcode": 178,
       "value": 0
     },
-    "expected_bytes": "01 b2 00",
-    "evidence": [
-      "bleManager.dart 0x5823a8\u20130x61ff98/0x629898\u20130x6299ec"
-    ]
+    "expected_bytes": "01 b2 00"
   },
   {
     "id": "setting_178_1",
@@ -538,10 +418,7 @@
       "opcode": 178,
       "value": 1
     },
-    "expected_bytes": "01 b2 01",
-    "evidence": [
-      "bleManager.dart 0x5823a8\u20130x61ff98/0x629898\u20130x6299ec"
-    ]
+    "expected_bytes": "01 b2 01"
   },
   {
     "id": "setting_180_1",
@@ -552,10 +429,7 @@
       "opcode": 180,
       "value": 1
     },
-    "expected_bytes": "01 b4 01",
-    "evidence": [
-      "bleManager.dart 0x5823a8\u20130x61ff98/0x629898\u20130x6299ec"
-    ]
+    "expected_bytes": "01 b4 01"
   },
   {
     "id": "setting_181_0",
@@ -566,10 +440,7 @@
       "opcode": 181,
       "value": 0
     },
-    "expected_bytes": "01 b5 00",
-    "evidence": [
-      "bleManager.dart 0x5823a8\u20130x61ff98/0x629898\u20130x6299ec"
-    ]
+    "expected_bytes": "01 b5 00"
   },
   {
     "id": "setting_181_1",
@@ -580,10 +451,7 @@
       "opcode": 181,
       "value": 1
     },
-    "expected_bytes": "01 b5 01",
-    "evidence": [
-      "bleManager.dart 0x5823a8\u20130x61ff98/0x629898\u20130x6299ec"
-    ]
+    "expected_bytes": "01 b5 01"
   },
   {
     "id": "history_confirm",
@@ -594,10 +462,7 @@
       "opcode": 179,
       "value": 1
     },
-    "expected_bytes": "01 b3 01",
-    "evidence": [
-      "bleManager.dart 0x5823a8"
-    ]
+    "expected_bytes": "01 b3 01"
   },
   {
     "id": "intervention_0_1",
@@ -608,10 +473,7 @@
       "mode": 0,
       "level": 1
     },
-    "expected_bytes": "02 0b 00 01 01 00 00",
-    "evidence": [
-      "bleManager.dart 0x625500/0x625650"
-    ]
+    "expected_bytes": "02 0b 00 01 01 00 00"
   },
   {
     "id": "intervention_1_3",
@@ -622,10 +484,7 @@
       "mode": 1,
       "level": 3
     },
-    "expected_bytes": "02 0b 01 03 01 00 00",
-    "evidence": [
-      "bleManager.dart 0x625500/0x625650"
-    ]
+    "expected_bytes": "02 0b 01 03 01 00 00"
   },
   {
     "id": "intervention_2_7",
@@ -636,10 +495,7 @@
       "mode": 2,
       "level": 7
     },
-    "expected_bytes": "02 0b 02 07 01 00 00",
-    "evidence": [
-      "bleManager.dart 0x625500/0x625650"
-    ]
+    "expected_bytes": "02 0b 02 07 01 00 00"
   },
   {
     "id": "intervention_stop",
@@ -647,10 +503,7 @@
     "action": "intervention_stop",
     "kind": "intervention_stop",
     "inputs": {},
-    "expected_bytes": "02 0b 00 01",
-    "evidence": [
-      "bleManager.dart 0x62540c"
-    ]
+    "expected_bytes": "02 0b 00 01"
   },
   {
     "id": "clock_1",
@@ -660,10 +513,7 @@
     "inputs": {
       "datetime": "2026-11-17T12:34:56"
     },
-    "expected_bytes": "07 04 7e 0a 11 01 0c 22 38",
-    "evidence": [
-      "bleManager.dart 0x5553b4; intl date_format.dart formatYear/Month/DayOfMonth/DayOfWeek/Minutes/Seconds"
-    ]
+    "expected_bytes": "07 04 7e 0a 11 01 0c 22 38"
   },
   {
     "id": "clock_2",
@@ -673,10 +523,7 @@
     "inputs": {
       "datetime": "2025-01-01T00:01:02"
     },
-    "expected_bytes": "07 04 7d 00 01 02 00 01 02",
-    "evidence": [
-      "same clock builder, independent date-field inputs"
-    ]
+    "expected_bytes": "07 04 7d 00 01 02 00 01 02"
   },
   {
     "id": "alarm_type_0",
@@ -689,10 +536,7 @@
       "hour": 7,
       "minute": 30
     },
-    "expected_bytes": "07 05 7f 01 07 1e 00 01 01",
-    "evidence": [
-      "bleManager.dart 0x5f7374"
-    ]
+    "expected_bytes": "07 05 7f 01 07 1e 00 01 01"
   },
   {
     "id": "alarm_type_1",
@@ -705,10 +549,7 @@
       "hour": 7,
       "minute": 30
     },
-    "expected_bytes": "07 05 7f 09 07 1e 00 01 01",
-    "evidence": [
-      "bleManager.dart 0x5f7374"
-    ]
+    "expected_bytes": "07 05 7f 09 07 1e 00 01 01"
   },
   {
     "id": "alarm_type_2",
@@ -721,10 +562,7 @@
       "hour": 7,
       "minute": 30
     },
-    "expected_bytes": "07 05 7f 05 07 1e 00 01 01",
-    "evidence": [
-      "bleManager.dart 0x5f7374"
-    ]
+    "expected_bytes": "07 05 7f 05 07 1e 00 01 01"
   },
   {
     "id": "alarm_type_3",
@@ -737,10 +575,7 @@
       "hour": 7,
       "minute": 30
     },
-    "expected_bytes": "07 05 7f 06 07 1e 00 01 01",
-    "evidence": [
-      "bleManager.dart 0x5f7374"
-    ]
+    "expected_bytes": "07 05 7f 06 07 1e 00 01 01"
   },
   {
     "id": "alarm_type_4",
@@ -753,10 +588,7 @@
       "hour": 7,
       "minute": 30
     },
-    "expected_bytes": "07 05 7f 08 07 1e 00 01 01",
-    "evidence": [
-      "bleManager.dart 0x5f7374"
-    ]
+    "expected_bytes": "07 05 7f 08 07 1e 00 01 01"
   },
   {
     "id": "alarm_close",
@@ -764,10 +596,7 @@
     "action": "alarm_close",
     "kind": "alarm_close",
     "inputs": {},
-    "expected_bytes": "07 05 00 00 00 00 00 00 00",
-    "evidence": [
-      "bleManager.dart 0x5f76ac"
-    ]
+    "expected_bytes": "07 05 00 00 00 00 00 00 00"
   },
   {
     "id": "alarm3_0",
@@ -783,10 +612,7 @@
       "open": 1,
       "soft": 1
     },
-    "expected_bytes": "07 05 7f 05 08 0f 00 01 00 01",
-    "evidence": [
-      "AlarmController.setup 0x5f813c; caller 0x5f7ab0"
-    ]
+    "expected_bytes": "07 05 7f 05 08 0f 00 01 00 01"
   },
   {
     "id": "alarm3_2",
@@ -802,9 +628,6 @@
       "open": 0,
       "soft": 0
     },
-    "expected_bytes": "07 07 02 08 17 3b 00 00 00 00",
-    "evidence": [
-      "AlarmController.setup 0x5f813c; caller 0x5f7ab0"
-    ]
+    "expected_bytes": "07 07 02 08 17 3b 00 00 00 00"
   }
 ]

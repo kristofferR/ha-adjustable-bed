@@ -1,4 +1,4 @@
-"""Accepted row161 literal vectors and actual HA controller/service behavior."""
+"""Accepted Comfort Base BLE 2 literal vectors and actual HA controller/service behavior."""
 
 from __future__ import annotations
 

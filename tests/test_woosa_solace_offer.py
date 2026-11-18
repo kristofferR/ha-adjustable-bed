@@ -38,9 +38,9 @@ from custom_components.adjustable_bed.profile_review import (
     carry_profile_review,
     profile_review_mark,
 )
+from tests.test_profile_offer import _HISTORY, ADDRESS, _issue, _open
 from tests.test_profile_recommendations import HISTORY as RECOMMENDATION_HISTORY
 from tests.test_profile_recommendations import REGISTER, coordinator
-from tests.test_profile_review import _HISTORY, ADDRESS, _issue, _open
 
 WOOSA = f"{BED_TYPE_SOLACE}:{SOLACE_VARIANT_WOOSA}"
 

@@ -14,9 +14,6 @@
       "massage_foot_index": 3,
       "massage_shared_index": 3
     },
-    "evidence": [
-      "bleManager.dart 0x431404/0x4325f4; alarm-list 0x5560bc; DataReader 0x57f800/0x5839a0; scan 0x42e188 and DeskModel.protocol 0x430fc8"
-    ],
     "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
   },
   {
@@ -34,9 +31,6 @@
       "massage_foot_index": 1,
       "massage_shared_index": 1
     },
-    "evidence": [
-      "bleManager.dart 0x431404/0x4325f4; alarm-list 0x5560bc; DataReader 0x57f800/0x5839a0; scan 0x42e188 and DeskModel.protocol 0x430fc8"
-    ],
     "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
   },
   {
@@ -52,9 +46,6 @@
       "open": 1,
       "soft": 1
     },
-    "evidence": [
-      "bleManager.dart 0x431404/0x4325f4; alarm-list 0x5560bc; DataReader 0x57f800/0x5839a0; scan 0x42e188 and DeskModel.protocol 0x430fc8"
-    ],
     "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
   },
   {
@@ -70,9 +61,6 @@
       "open": 0,
       "soft": 0
     },
-    "evidence": [
-      "bleManager.dart 0x431404/0x4325f4; alarm-list 0x5560bc; DataReader 0x57f800/0x5839a0; scan 0x42e188 and DeskModel.protocol 0x430fc8"
-    ],
     "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
   },
   {
@@ -83,9 +71,6 @@
       "mac": "ab8967452301",
       "model": "double"
     },
-    "evidence": [
-      "bleManager.dart 0x431404/0x4325f4; alarm-list 0x5560bc; DataReader 0x57f800/0x5839a0; scan 0x42e188 and DeskModel.protocol 0x430fc8"
-    ],
     "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
   },
   {
@@ -96,9 +81,6 @@
       "mac": "ffeeddccbbaa",
       "model": "single"
     },
-    "evidence": [
-      "bleManager.dart 0x431404/0x4325f4; alarm-list 0x5560bc; DataReader 0x57f800/0x5839a0; scan 0x42e188 and DeskModel.protocol 0x430fc8"
-    ],
     "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
   },
   {
@@ -112,9 +94,6 @@
       7,
       30
     ],
-    "evidence": [
-      "bleManager.dart 0x431404/0x4325f4; alarm-list 0x5560bc; DataReader 0x57f800/0x5839a0; scan 0x42e188 and DeskModel.protocol 0x430fc8"
-    ],
     "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
   },
   {
@@ -126,9 +105,6 @@
       "a6 01 00 00 00 00 00 7e 0a 11 07 1e",
       "a6 01 00 00 00 00 00 7e 0a 11 07 1f"
     ],
-    "evidence": [
-      "bleManager.dart 0x431404/0x4325f4; alarm-list 0x5560bc; DataReader 0x57f800/0x5839a0; scan 0x42e188 and DeskModel.protocol 0x430fc8"
-    ],
     "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
   },
   {
@@ -137,9 +113,6 @@
     "double": true,
     "input_hex": "a6 01 00",
     "expected": [],
-    "evidence": [
-      "bleManager.dart 0x431404/0x4325f4; alarm-list 0x5560bc; DataReader 0x57f800/0x5839a0; scan 0x42e188 and DeskModel.protocol 0x430fc8"
-    ],
     "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
   }
 ]

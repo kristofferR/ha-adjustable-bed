@@ -14,7 +14,7 @@ from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.profiles import ultramatic as app
 from tests.hold_lease_wire import virtual_clock
-from tests.test_ultramatic_review_changes import native_pair
+from tests.test_ultramatic_public_routes import native_pair
 from tests.test_ultramatic_runtime import connected, runtime, writes  # noqa: F401 - pytest fixture
 
 SET = {"time": "21:09:00", "weekdays": ["monday"], "wake_action": "zero_g", "enabled": False}

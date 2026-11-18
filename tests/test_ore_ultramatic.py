@@ -1,4 +1,4 @@
-"""Row158 factory, HA callers, sessions and bounded/renewable control paths."""
+"""ORE Ultramatic factory, HA callers, sessions and bounded/renewable control paths."""
 
 from __future__ import annotations
 

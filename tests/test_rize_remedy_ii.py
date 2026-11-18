@@ -1,4 +1,4 @@
-"""Row180 literal, session, execution and Home Assistant exposure contracts."""
+"""Rize Remedy II literal, session, execution and Home Assistant exposure contracts."""
 
 from __future__ import annotations
 

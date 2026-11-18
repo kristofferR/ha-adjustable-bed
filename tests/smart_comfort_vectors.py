@@ -1,4 +1,4 @@
-"""Frozen accepted cluster-024 vectors. Synthetic app evaluation, not captures.
+"""Frozen accepted Synergy OKIN app vectors. Synthetic app evaluation, not captures.
 
 SYNARGY 1.1.0 (12) manifest ce2654f40fac0668f18dd81f5f8c438af63b75af8a0bf796a8143c985901cfbe.
 SYNERGY 2.2.0 (16) manifest 6fde29082854f1fd03d4d77ddc7650124a6771a6096c45f4ed9400a40894c26c.

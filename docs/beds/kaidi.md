@@ -213,7 +213,7 @@ Other incoming routes have no bed-state consumer; raw diagnostics retain them.
   session frames and replies; `tests/test_kaidi_vectors.py` proves that each
   round-trips through the codec and that each profile sends exactly its frozen
   payloads.
-- ISleep's opcodes come from `tests/fixtures/isleep_row064_commands.json`.
+- ISleep's opcodes come from `tests/fixtures/isleep_commands.json`.
 
 ## Profiles
 

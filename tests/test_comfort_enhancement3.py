@@ -1,4 +1,4 @@
-"""Row083's frozen bytes, complete remote gates and HA execution boundaries."""
+"""Apex app frozen bytes, complete remote gates and HA execution boundaries."""
 
 from __future__ import annotations
 
@@ -671,7 +671,7 @@ async def test_two_address_card_release_stays_on_original_side(hass):
                 patch.object(child, "_async_refresh_controller_auth", AsyncMock())
             )
             children[side], clients[side] = child, client
-        pair_entry = MockConfigEntry(domain=const.DOMAIN, data={const.CONF_PAIR_ID: "unit083"})
+        pair_entry = MockConfigEntry(domain=const.DOMAIN, data={const.CONF_PAIR_ID: "apex-pair"})
         paired = PairedBedCoordinator(hass, pair_entry, children)
         patches.enter_context(
             patch(

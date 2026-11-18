@@ -7,12 +7,7 @@
       "builder": "control",
       "key": 36
     },
-    "expected_bytes": "6e01002493",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e01002493"
   },
   {
     "id": "V-head_down",
@@ -22,12 +17,7 @@
       "builder": "control",
       "key": 37
     },
-    "expected_bytes": "6e01002594",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e01002594"
   },
   {
     "id": "V-foot_up",
@@ -37,12 +27,7 @@
       "builder": "control",
       "key": 38
     },
-    "expected_bytes": "6e01002695",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e01002695"
   },
   {
     "id": "V-foot_down",
@@ -52,12 +37,7 @@
       "builder": "control",
       "key": 39
     },
-    "expected_bytes": "6e01002796",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e01002796"
   },
   {
     "id": "V-flat",
@@ -67,12 +47,7 @@
       "builder": "control",
       "key": 49
     },
-    "expected_bytes": "6e010031a0",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e010031a0"
   },
   {
     "id": "V-memory_recall_1",
@@ -82,12 +57,7 @@
       "builder": "control",
       "key": 46
     },
-    "expected_bytes": "6e01002e9d",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e01002e9d"
   },
   {
     "id": "V-memory_save_1",
@@ -97,12 +67,7 @@
       "builder": "control",
       "key": 43
     },
-    "expected_bytes": "6e01002b9a",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e01002b9a"
   },
   {
     "id": "V-zero_gravity",
@@ -112,12 +77,7 @@
       "builder": "control",
       "key": 69
     },
-    "expected_bytes": "6e010045b4",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e010045b4"
   },
   {
     "id": "V-anti_snore",
@@ -127,12 +87,7 @@
       "builder": "control",
       "key": 70
     },
-    "expected_bytes": "6e010046b5",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e010046b5"
   },
   {
     "id": "V-release",
@@ -142,12 +97,7 @@
       "builder": "control",
       "key": 110
     },
-    "expected_bytes": "6e01006edd",
-    "evidence": [
-      "E-CONTROLS",
-      "E-BUILDER",
-      "E-TRANSPORT"
-    ]
+    "expected_bytes": "6e01006edd"
   },
   {
     "id": "V-query-True",
@@ -157,10 +107,7 @@
       "builder": "capability_query",
       "nordic": true
     },
-    "expected_bytes": "00",
-    "evidence": [
-      "E-QUERY"
-    ]
+    "expected_bytes": "00"
   },
   {
     "id": "V-query-False",
@@ -170,10 +117,7 @@
       "builder": "capability_query",
       "nordic": false
     },
-    "expected_bytes": "6e02010071",
-    "evidence": [
-      "E-QUERY"
-    ]
+    "expected_bytes": "6e02010071"
   },
   {
     "id": "V-clock-1",
@@ -190,10 +134,7 @@
         0
       ]
     },
-    "expected_bytes": "6e200d080301000101000000a9",
-    "evidence": [
-      "E-CLOCK"
-    ]
+    "expected_bytes": "6e200d080301000101000000a9"
   },
   {
     "id": "V-clock-2",
@@ -210,10 +151,7 @@
         56
       ]
     },
-    "expected_bytes": "6e200d080301380b110c223861",
-    "evidence": [
-      "E-CLOCK"
-    ]
+    "expected_bytes": "6e200d080301380b110c223861"
   },
   {
     "id": "V-literal-0",
@@ -223,10 +161,7 @@
       "builder": "literal_notification",
       "event": "deviceCharacteristicsSubscriptionClockEvent"
     },
-    "expected_bytes": "6e09010078",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d6e50"
-    ]
+    "expected_bytes": "6e09010078"
   },
   {
     "id": "V-literal-1",
@@ -236,10 +171,7 @@
       "builder": "literal_notification",
       "event": "deviceCharacteristicsSubscriptionLightEvent"
     },
-    "expected_bytes": "6e0e00037f",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d6eb8"
-    ]
+    "expected_bytes": "6e0e00037f"
   },
   {
     "id": "V-literal-2",
@@ -249,10 +181,7 @@
       "builder": "literal_notification",
       "event": "deviceCharacteristicsSubscriptionAromatherapyEvent"
     },
-    "expected_bytes": "6e1a000189",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d6f20"
-    ]
+    "expected_bytes": "6e1a000189"
   },
   {
     "id": "V-literal-3",
@@ -262,10 +191,7 @@
       "builder": "literal_notification",
       "event": "deviceAddAlarmSuccessEvent"
     },
-    "expected_bytes": "6e07010177",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d6f88"
-    ]
+    "expected_bytes": "6e07010177"
   },
   {
     "id": "V-literal-4",
@@ -275,10 +201,7 @@
       "builder": "literal_notification",
       "event": "deviceCancelAlarmSuccessEvent"
     },
-    "expected_bytes": "6e07010278",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d6ff0"
-    ]
+    "expected_bytes": "6e07010278"
   },
   {
     "id": "V-literal-5",
@@ -288,10 +211,7 @@
       "builder": "literal_notification",
       "event": "deviceCharacteristicsSubscriptionMusicEvent"
     },
-    "expected_bytes": "6e16010186",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d7058"
-    ]
+    "expected_bytes": "6e16010186"
   },
   {
     "id": "V-literal-6",
@@ -301,10 +221,7 @@
       "builder": "literal_notification",
       "event": "deviceCharacteristicsSubscriptionDetectionEvent"
     },
-    "expected_bytes": "6e90c101c0",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d70c0"
-    ]
+    "expected_bytes": "6e90c101c0"
   },
   {
     "id": "V-literal-7",
@@ -314,10 +231,7 @@
       "builder": "literal_notification",
       "event": "deviceCharacteristicsSubscriptionSnoreEvent"
     },
-    "expected_bytes": "6e2100008f",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d7128"
-    ]
+    "expected_bytes": "6e2100008f"
   },
   {
     "id": "V-literal-8",
@@ -327,10 +241,7 @@
       "builder": "literal_notification",
       "event": "deviceCharacteristicsSubscriptionBoxLockEvent"
     },
-    "expected_bytes": "6e23018416",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d7190"
-    ]
+    "expected_bytes": "6e23018416"
   },
   {
     "id": "V-literal-9",
@@ -340,10 +251,7 @@
       "builder": "literal_notification",
       "event": "deviceCharacteristicsSubscriptionCancelBoxLockEvent"
     },
-    "expected_bytes": "6e23008415",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d71f8"
-    ]
+    "expected_bytes": "6e23008415"
   },
   {
     "id": "V-literal-10",
@@ -353,9 +261,6 @@
       "builder": "literal_notification",
       "event": "deviceCharacteristicsSubscriptionSnoreStopPlayMusicEvent"
     },
-    "expected_bytes": "6e23a06e9f",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart RMBlueToothUtil::_handleCommonProtocolNotify 0x3d7260"
-    ]
+    "expected_bytes": "6e23a06e9f"
   }
 ]

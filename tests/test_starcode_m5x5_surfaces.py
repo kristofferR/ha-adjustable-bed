@@ -79,7 +79,7 @@ async def test_paired_generic_settings_preserve_child_app_profiles(hass: HomeAss
 async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, name: str) -> None:
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
-    flow.flow_id = "row005_setup"
+    flow.flow_id = "m5x5_setup"
     flow._manual_data = {
         CONF_ADDRESS: "AA:00:00:00:00:05",
         CONF_NAME: "Friendly name",
