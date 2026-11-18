@@ -1,6 +1,6 @@
 # Hush Base
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -50,7 +50,7 @@ Frames contain the 14-byte envelope, sequence and compact ordered JSON, built by
 
 1. Choose **Hush Base app (select product)** in the app list, then the exact model on the profile setup step; the app's own twelve come first. There is no automatic Hush profile selection from an app name or shared UUID.
 2. The twelve models above are fresh Hush setup choices. Labels marked **restored profile** represent the app's wider saved-index domain, not additional fresh Hush setup models.
-3. Enabling native Left/Right controls (Configure → Enable Left / Right / Both controls) connects to the bed to read its transport. Nordic has no side byte; one-address pairing is rejected there. Two-address pairs keep independent profile and connection ownership.
+3. Enabling native Left/Right controls (Configure → **Add Left, Right and Both controls**) connects to the bed to read its transport. Nordic has no side byte; one-address pairing is rejected there. Two-address pairs keep independent profile and connection ownership.
 4. Add a separate **Hush Base sleep sensor** entry for each sensor. Choose RM/MM or HJ/SXB explicitly. Sensor partitions and actuator sides are different concepts.
 5. Add **Hush Base remote finder (RCRM handset)** to connect to the handset (see [Remote finder](#remote-finder)).
 
@@ -126,7 +126,7 @@ HA operations retain their admitted target, cancel callbacks on connection teard
 
 ## Notes
 
-Hardware validation is deferred to real users after beta/release. No maintainer hardware acquisition is required.
+Hardware validation is deferred.
 
 ### Analysis provenance
 

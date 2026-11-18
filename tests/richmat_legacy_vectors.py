@@ -1,4 +1,4 @@
-"""Accepted row086 DATA, adapted to production codec and action phases."""
+"""Accepted Richmat NU503/Silver app data, adapted to production codec and action phases."""
 
 import gzip
 import json

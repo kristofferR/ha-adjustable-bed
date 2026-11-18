@@ -1,6 +1,6 @@
 # M Line
 
-**Status:** ❓ Needs testing. Static app behavior is verified; hardware is unverified.
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed).
 
@@ -86,8 +86,8 @@ normal connection-failure cleanup for both.
 P1 carries four raw control bytes followed by a zero byte. P2 reverses those
 four bytes into an E6 envelope, with a zero selector and ones-complement checksum.
 The complete checked frame sums to 255 modulo 256. This zero is not a side selector.
-The proven control carriers reuse the existing N-frame and Keeson encoders;
-M Line owns its auxiliary builders and receive contracts.
+The control frames reuse the N-frame and Keeson encoders; the extra actions and
+the replies have M Line's own code.
 
 ### Command encoders
 
@@ -122,8 +122,8 @@ M Line owns its auxiliary builders and receive contracts.
 | zeroGravity | `05 02 00 00 10 00 00` | `E6 FE 16 00 10 00 00 00 F5` |
 <!-- /generated -->
 
-The inactive `massageStopAll` builder is retained for byte verification. It is
-not exposed as a working off command. The light sends once on app release or
+The app's `massageStopAll` frame is kept only for byte checks; no screen sends
+it, so there is no massage off command. The light sends once on app release or
 cancel; its down callback does nothing. HA exposes one button press. Massage
 commands send once on down and query state, with no release frame or held refresh.
 The app's intensity, wave and timer choices are cycles, not direct set values.
@@ -150,13 +150,14 @@ The app's intensity, wave and timer choices are cycles, not direct set values.
 
 Anti-snore settings carry enabled, angle (1, 3 or 6), then position (head 1 or
 elevation 2). Demo carries mode 2, fixed 1 and position. Disable clears all fields.
-These writes repeat after 300 ms, then refresh state. Privacy sends a Boolean
-write and refreshes state. There is no read-modify-write inferred from a label.
+These writes repeat after 300 ms, then the state is read. Privacy sends on or
+off and reads the state. Settings are written whole, not merged with the
+current values.
 
-Alarm mode encoding is source-specific: Sleep/Smart/fallback use Zero G 1,
+Each app family encodes the alarm mode differently: Sleep/Smart/fallback use Zero G 1,
 flat 9, memory 1/2 as 5/6, vibration 8 and anti-snore 4. Smart Sainuo uses
 memory 1/2 as 2/3 and zero for the other modes; Okin uses 17/19 and zero for
-the others. The API preserves these mappings, including zero-valued modes.
+the others. The integration keeps these values, including the zeros.
 The normal app icon picker offers five positions, not vibration. Smart Sainuo
 converts **minute**, not hour, to BCD. Repeated weekdays use Sunday bit 0 plus
 the high recurrence bit. A one-shot uses today's selected weekday or tomorrow
@@ -171,46 +172,41 @@ and writes the same clock twice immediately.
 
 ### Responses
 
-The original 20-byte fragment predicate examines bytes 1 and 2 of the incoming
-fragment, even when an earlier fragment was pending; a new matching fragment
-replaces the pending one. HA bounds assembly and clears it on session changes.
-Only the A5 alarm consumer publishes alarm state; ED replies are ignored as in
-the source UI. Alarm response mode maps are asymmetric with the write maps,
-and the source does not BCD-decode received minute values. HA preserves the raw
-mode and mask in the diagnostic alarm state and rejects invalid clock values.
+A 20-byte fragment is recognised by its bytes 1 and 2, even when an earlier
+fragment is still waiting; a new matching fragment replaces the waiting one. The
+integration limits reassembly and clears it when the connection changes. Only A5
+replies update the alarm; ED replies are ignored, as in the app. Reply mode
+values do not match the values written, and received minutes are not BCD. The
+alarm keeps the raw mode and day mask as attributes, and invalid clock values
+are rejected.
 
-Live frames publish heart, breath, state==6 motion and the source Boolean
-projection (false for states 3, 5 and 6). These are not motor positions, battery
-or medical measurements. HA admits a live update only after more than 500 ms.
-The APK commits that timestamp before payload indexing and callback execution,
-so a malformed frame or throwing callback can suppress the next valid frame.
-HA validates before the timestamp and rejects stale callbacks, an intentional
-safe adaptation. No checksum guard is attributed to the APK.
+Live frames report heart rate, breath rate and motion (state 6). They are not
+motor positions, battery or medical readings. A live update is accepted only
+more than 500 ms after the previous one. The app records that time before
+checking the frame, so a bad frame can hide the next good one; the integration
+checks the frame first and ignores late callbacks. Live frames have no checksum.
 
 For Sleep status, anti-snore feedback reads enabled and the angle byte only,
 not a separate position. Privacy reads byte 19 bit 1 only with observed protocol
 string SENSOR_VOICE and valid firmware major >1 or major 1/minor >0, otherwise
-byte 18 equals 1 for valid observed legacy values. Unknown or malformed strings
-leave privacy unknown. The APK registers the privacy continuation asynchronously
-before synchronous anti-snore handling; it does not atomically update both.
-HA projects validated fields within the current session. Cached/default values
-are never treated as observed readiness.
+byte 18 equals 1 for valid observed legacy values. Unknown or malformed strings leave privacy unknown. The app updates privacy and
+anti-snore separately, not together. The integration publishes only checked
+values from the current connection; cached or default values never count as
+reported.
 
 ### STOP and release behavior
 
-Movement, presets and recalls send immediately and refresh while held. Release
-and cancellation send zero control after the profile's delay. HA captures command,
-connection and physical side, drains in-flight writes before release and keeps the
-scheduler lane through cleanup. Missed refresh slots are skipped; finite holds
-cannot start writes after their deadline. This intentionally removes the APK's
-mutable-buffer/selected-device race, where another action can overwrite a pending
-STOP or retry. Reconnect discards parser state and callbacks. No background polling
-is inferred from the app's null-return periodic callback.
+Movement, presets and recalls send at once and repeat while held. Release and
+cancellation send the zero control after the profile's delay, on the same
+connection and side, after writes already in flight finish. Missed repeats are
+skipped, and a timed hold never starts a write after its time limit. Unlike the
+app, another action cannot overwrite a pending STOP. A reconnect clears the
+reply parser and callbacks. There is no background polling.
 
 ### Vectors
 
-`tests/fixtures/mline/controls.json` and `parameters.json` preserve all 96 accepted
-packet cases. `tests/test_mline.py` exercises the production encoders and HA callers.
+`tests/fixtures/mline/controls.json` and `parameters.json` hold the app's 96
+frame examples. `tests/test_mline.py` exercises the production encoders and HA callers.
 
 ## Profiles
 
@@ -218,30 +214,33 @@ packet cases. `tests/test_mline.py` exercises the production encoders and HA cal
 
 **App:** [M Line](https://play.google.com/store/apps/details?id=com.okin.mline) 1.2.2 (38).
 
-**Status:** ❓ Hardware unverified.
+**Status:** Not yet tested
 
 #### Setup
 
-Choose **M Line app**, then its protocol and physical motor layout. Auto resolves
-from the raw Bluetooth name and manufacturer bytes. Cached explicit selection
-wins; otherwise SLEEP selects Sleep, SMART selects Smart, key 89 with exactly
+1. Choose **M Line app**.
+2. Choose the protocol (Automatic reads it from the bed) and the motor layout:
+   two motors (head and foot), three (adds neck) or four (adds neck and lumbar).
+3. Turn on massage only if your bed has it.
+
+**Local child mode** blocks movement, presets, light, massage and alarm changes
+from Home Assistant. It does not lock the bed or its remote. On a bed with two
+receivers, each side keeps its own settings.
+
+**Automatic** picks the protocol from the Bluetooth name and manufacturer
+data. A protocol you chose wins; otherwise SLEEP selects Sleep, SMART selects Smart, key 89 with exactly
 five bytes ending in 5 refines Smart to Smart Sainuo, and a final OKIN match
 wins. Empty names fall back to Sleep; unmatched names use the P1 fallback.
-The app scan inspects only the first result in each batch, rejects empty names,
-deduplicates by device ID and compares a requested platform name exactly. HA
-uses its supported discovery infrastructure and offers an app candidate rather
-than applying this lossy scan filter to all advertisements.
+Home Assistant's discovery offers the app for matching beds; it does not copy
+the app's narrower scan filter.
 
-The layout is independent of the protocol. Imported app type metadata uses its
-last decimal digit (2, 3 or 4); the unknown four-axis UI is a fallback, not proof
-of a four-motor product. No network metadata is required for setup. Enable massage
-only when the conditional named route applies. Local child mode blocks control
-writes in HA; it is not a hardware child-lock command. It deliberately enforces
-admission even when the app has no registered warning callback.
+The layout does not depend on the protocol. An imported app type uses its last
+digit (2, 3 or 4); the app's four-motor screen for unknown types does not mean
+the bed has four motors. No network details are needed.
 
-Each receiver in a two-address pair keeps its own settings. No one-address
-Left/Right routing is proven. Sequential Both renewable holds are rejected
-before any claim or motion by the generic scheduler.
+Left and Right controls on one receiver are not supported. A Both hold on a
+combined bed that connects one side at a time is refused before anything
+moves.
 
 #### Commands
 
@@ -250,11 +249,10 @@ and clock alarm actions use the integration's scheduler. All axes share a
 side-wide release. Optional one-shot buttons cover light and massage.
 
 `adjustable_bed.mline_command` exposes privacy, anti-snore settings/demo,
-settings/alarm refresh, live query and raw history. `settings_refresh` preserves
-the Settings page's initial unconditional state write, distinct from the normal
-protocol-gated state query. Startup subscribes, reads the app's firmware/protocol
-roles, then syncs clock and checks state. It does not automatically start phone
-analytics history transfers.
+settings/alarm refresh, live query and raw history. `settings_refresh` sends the state write the app's Settings page sends when it
+opens, which differs from the normal state query. On connect the integration
+turns on notifications, reads the firmware and protocol, then sets the clock
+and reads the state. It never starts a history transfer by itself.
 
 #### State and feedback
 
@@ -263,27 +261,21 @@ after 300 ms. Collection ends after one second without a received payload, with
 a 30-second total ceiling and 8192-record limit. The response carries a transfer
 token and raw groups. No ACK is sent automatically; after consuming the result,
 call `history_ack` with that token within 30 seconds and before the connection changes.
-The active transfer owns the normal scheduler/connection lane only while collecting;
-Home Assistant's configured connection policy resumes at completion. No background
-transfer task or persistent history connection is created. Cancellation,
+The transfer holds the connection only while it collects; after that the
+**Bluetooth connection** setting applies again. Nothing runs in the background. Cancellation,
 failure or reconnect invalidates the transfer. Repeating a token cannot ACK again.
 
-The Reader consumes complete payloads as 12-byte records, discards each callback's
-short tail, filters legality/state and age, sorts and deduplicates timestamps,
-and groups with the source's strict night/day gap limits. No source upper-time
-bound is invented. Empty input produces one empty group. Scoring, interpolation,
-report charts, SQL and cloud uploads remain outside this integration. In the APK,
-zero assembled groups installs a no-op callback without ACK; normal empty input
-is `[[]]` and its no-report path ACKs. Otherwise ACK follows no generated reports
-or successful SQL insertion. HA's explicit raw-consumer acknowledgement is a
-separate boundary; it does not claim SQL completion or issue unconditional ACKs.
+The reply is read as 12-byte records; a short tail is dropped. Invalid, old or
+duplicate records are removed, and the rest are sorted and grouped into nights
+and days with the app's gap limits. No input gives one empty group (`[[]]`).
+Scoring, charts, the app's database and cloud uploads are outside this
+integration. The ACK is sent only when you call `history_ack`.
 
 ## Notes
 
-Hardware qualification belongs to external beta/release users. Capture the exact
+Hardware testing belongs to owners. Capture the exact
 advertisement, GATT table, firmware and protocol strings before reporting a
-selector, optional feature or history issue. No maintainer hardware acquisition
-is required. Wi-Fi/network setup, accounts/cloud, OTA, phone audio, other products
+selector, optional feature or history issue. Wi-Fi/network setup, accounts/cloud, OTA, phone audio, other products
 and unused generic plugin APIs are outside the direct BLE BED integration.
 
 ### Analysis provenance

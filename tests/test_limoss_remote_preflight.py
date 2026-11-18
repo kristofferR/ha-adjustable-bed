@@ -21,7 +21,7 @@ from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordin
 from tests.coordinator_patches import patch_coordinator_global
 from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 from tests.test_coordinator_limoss_remote import actual_coordinator
-from tests.test_limoss_remote_review_lifecycle import (
+from tests.test_limoss_remote_entity_reloads import (
     CAPS,
     live_controller,
     pair_runtime,

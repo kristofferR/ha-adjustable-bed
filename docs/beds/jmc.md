@@ -1,6 +1,6 @@
 # JMC400
 
-**Status:** ✅ Tested with the Jensen app profile on a JMC400 (motion, position reports, massage and memory recall); its lights, fan and device memory, and the Svane Remote profile, await user confirmation
+**Status:** Tested with the Jensen app profile on a JMC400 (motion, position reports, massage and memory recall); its lights, fan and device memory, and the Svane Remote profile, await user confirmation
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -166,7 +166,7 @@ A position report has at least six bytes. `state` is the active motion code:
 
 **App:** Adjustable Sleep 2.0.37 (106) and 2.0.29 (98), `air.no.jensen.adjustablesleep`
 
-**Status:** ✅ Tested on JMC400 (motion, position reports, massage and memory recall, [#146](https://github.com/kristofferR/ha-adjustable-bed/issues/146) and [#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631)); lights, fan and device memory await user confirmation
+**Status:** Tested on JMC400 (motion, position reports, massage and memory recall, [#146](https://github.com/kristofferR/ha-adjustable-bed/issues/146) and [#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631)); lights, fan and device memory await user confirmation
 
 The `jensen` bed type. The [Jensen guide](jensen.md) covers setup, the PIN
 option, features, memory and movement feedback.
@@ -266,7 +266,7 @@ rejection is logged as a warning.
 
 **App:** [Svane Remote](https://play.google.com/store/apps/details?id=com.svane.svaneremote) Version 1.8 (8), `com.svane.svaneremote`
 
-**Status:** ⚠️ Artifact-verified; physical hardware unverified
+**Status:** Not yet tested
 
 The `svane` bed type's `svane_remote_jmc` variant, shown as **Svane Remote app
 (JMC400)**. The [Svane Remote guide](svane.md) covers both of the app's

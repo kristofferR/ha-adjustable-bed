@@ -15,8 +15,8 @@ notification requirements, or preset semantics of other beds.
 | --- | --- | --- |
 | Reconnecting between taps repeatedly pays startup cost | One-second renewable handoff when Bluetooth connection is "Release right after each command" | Consecutive commands reuse the link, then the idle lane releases it; explicit disconnect remains immediate |
 | One side finishes while its partner is still running | Concurrent groups hold both links through completion and failure/STOP cleanup, then start their configured idle timeout together | Nested connection holds and paired success/failure cleanup |
-| Background work takes back the remote's link | Quick handoff disables periodic reconciliation; a queued light refresh rechecks whether the live link still needs hydration | No connection attempt after a queued refresh loses its link |
-| Missing initial feedback keeps the connection reserved for retries | Quick handoff permits one initial position/light-state read attempt; longer hydration retries remain available when quick disconnect is off | Missing-feedback tests read once and arm the short handoff timer |
+| Background work takes back the remote's link | "Release right after each command" disables periodic reconciliation; a queued light refresh rechecks whether the live link still needs hydration | No connection attempt after a queued refresh loses its link |
+| Missing initial feedback keeps the connection reserved for retries | "Release right after each command" permits one initial position/light-state read attempt; longer hydration retries remain available with the other connection choices | Missing-feedback tests read once and arm the short handoff timer |
 | Reads delay STOP | Final and background position reads are preemptible; queued user commands skip redundant final reads | A blocked read releases the wire before STOP, without consuming its three-second timeout |
 | Cancellation races with a write or an error | Shared writes recheck cancellation after acquiring the GATT lock; simultaneous cancellation does not hide operation failure | Cancelled queued write sends nothing and cannot invoke the successful-write callback; fresh release events still write |
 | Shared movement helpers silently discard a failed release | Base movement/preset helpers propagate cleanup failures, retaining the original movement exception as context | Successful, failed, and cancelled movement all report a failed STOP |
@@ -100,7 +100,7 @@ finite pulses. The device scheduler owns the lease:
   delayed release frames still go out.
 - While leased, a declaring controller refreshes its app's own held frame at the
   app's own interval (`BedController.leased_hold_refreshes`), not at the entry's
-  motor pulse settings.
+  **Movement per tap**.
 - STOP, replacement, a dropped link, disconnect and unload end the generation.
   An ended, older or superseded generation is refused, including a renewal that
   arrives while cleanup is still running. Leases live only in memory and are

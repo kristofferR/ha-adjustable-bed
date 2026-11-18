@@ -1,4 +1,4 @@
-"""Row176 through real setup/factory/entity/service and coordinator admission."""
+"""Ultramatic Smart Bed through real setup/factory/entity/service and coordinator admission."""
 
 from __future__ import annotations
 

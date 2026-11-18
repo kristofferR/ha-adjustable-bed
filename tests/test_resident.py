@@ -1,4 +1,4 @@
-"""Resident unit160: frozen wire vectors and the reachable app lifecycle."""
+"""Resident app: frozen wire vectors and the reachable app lifecycle."""
 
 from __future__ import annotations
 

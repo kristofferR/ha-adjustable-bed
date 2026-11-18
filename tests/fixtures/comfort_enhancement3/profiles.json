@@ -27,14 +27,12 @@
     "Zzz_alias_QS": false,
     "massage": false,
     "wake_up_massage": false,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
       "M2",
       "Zero Gravity"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -64,14 +62,12 @@
     "Zzz_alias_QS": false,
     "massage": false,
     "wake_up_massage": false,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
       "M2",
       "Zero Gravity"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -102,14 +98,12 @@
     "Zzz_alias_QS": false,
     "massage": false,
     "wake_up_massage": false,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
       "M2",
       "Zero Gravity"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -140,7 +134,6 @@
     "Zzz_alias_QS": true,
     "massage": true,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
@@ -148,7 +141,6 @@
       "Zero Gravity",
       "TV"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -179,14 +171,12 @@
     "Zzz_alias_QS": false,
     "massage": true,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
       "Zero Gravity",
       "QS"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -216,14 +206,12 @@
     "Zzz_alias_QS": false,
     "massage": true,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
       "Zero Gravity",
       "QS"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -255,13 +243,11 @@
     "Zzz_alias_QS": false,
     "massage": true,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
       "Zero Gravity"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": false
   },
   {
@@ -291,7 +277,6 @@
     "Zzz_alias_QS": true,
     "massage": false,
     "wake_up_massage": false,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
@@ -299,7 +284,6 @@
       "Zero Gravity",
       "TV"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -329,7 +313,6 @@
     "Zzz_alias_QS": true,
     "massage": true,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
@@ -337,7 +320,6 @@
       "Zero Gravity",
       "TV"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -367,7 +349,6 @@
     "Zzz_alias_QS": true,
     "massage": true,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
@@ -375,7 +356,6 @@
       "Zero Gravity",
       "TV"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -406,7 +386,6 @@
     "Zzz_alias_QS": true,
     "massage": true,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
@@ -414,7 +393,6 @@
       "Zero Gravity",
       "TV"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -444,13 +422,11 @@
     "Zzz_alias_QS": false,
     "massage": false,
     "wake_up_massage": false,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
       "M2"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -480,13 +456,11 @@
     "Zzz_alias_QS": false,
     "massage": false,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
       "M2"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -517,7 +491,6 @@
     "Zzz_alias_QS": true,
     "massage": true,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
@@ -525,7 +498,6 @@
       "Zero Gravity",
       "TV"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   },
   {
@@ -556,7 +528,6 @@
     "Zzz_alias_QS": true,
     "massage": true,
     "wake_up_massage": true,
-    "wake_up_massage_evidence": "package:apex/pages/extras/wake-ups/wake_up_clock_page.dart:isShowMassageItem@4e581c",
     "wake_up_memory_options": [
       "None",
       "M1",
@@ -564,7 +535,6 @@
       "Zero Gravity",
       "TV"
     ],
-    "mapping_evidence": "GDTstringequalitycid94/95targets612f38/612d54;use_id_page4d4cb8case-sensitiveexacttext;no trim/caseconversioninonChanged4d1344/4d12f4.",
     "system_bottom_phone_flashlight": true
   }
 ]

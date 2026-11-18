@@ -8,9 +8,6 @@
     "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
     "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
     "query": "00",
-    "evidence": [
-      "E-GATT"
-    ],
     "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
   },
   {
@@ -22,9 +19,6 @@
     "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
     "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
     "query": "6e02010071",
-    "evidence": [
-      "E-GATT"
-    ],
     "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
   },
   {
@@ -36,9 +30,6 @@
     "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
     "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
     "query": "6e02010071",
-    "evidence": [
-      "E-GATT"
-    ],
     "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
   },
   {
@@ -50,9 +41,6 @@
     "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
     "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
     "query": "6e02010071",
-    "evidence": [
-      "E-GATT"
-    ],
     "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
   },
   {
@@ -64,9 +52,6 @@
     "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
     "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
     "query": "6e02010071",
-    "evidence": [
-      "E-GATT"
-    ],
     "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
   },
   {
@@ -78,9 +63,6 @@
     "actual_notify": "First characteristic with notify=true encountered among the matched services; declared notify UUID is not checked by the app.",
     "write_selection": "First characteristic with write=true AND matching write UUID (case-insensitive); WNR-only property is insufficient.",
     "query": "6e02010071",
-    "evidence": [
-      "E-GATT"
-    ],
     "query_applicability": "Isolated/final-query-selector route value only; runtime query uses last matched service,writer first and notify first independently. Later writerless matched services still select query. E-A004."
   }
 ]

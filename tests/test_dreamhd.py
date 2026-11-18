@@ -1,4 +1,4 @@
-"""Row105 Dream Motion HD 1.0.4 vectors, accepted report 2bc0c2799d86.
+"""Dream Motion HD 1.0.4 vectors, accepted report 2bc0c2799d86.
 
 Expected literals come from this package's frozen census, not another app.
 """

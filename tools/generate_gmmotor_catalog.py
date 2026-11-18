@@ -1,4 +1,4 @@
-"""Generate runtime GM Control catalogs from the exact accepted row102 evidence.
+"""Generate runtime GM Control catalogs from the exact accepted GM Control evidence.
 
 Usage: uv run --no-sync python tools/generate_gmmotor_catalog.py REPORT_DIR
 Raw artifacts and audit reports stay outside Git. This emits only the compact

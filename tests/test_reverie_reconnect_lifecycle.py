@@ -202,7 +202,7 @@ async def test_sequential_pair_stop_cancels_ready_local_routine_without_central_
 ):
     from custom_components.adjustable_bed.const import CONF_PAIR_ID
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
-    from tests.test_reverie_review_regressions import _ready_local
+    from tests.test_reverie_component_boundaries import _ready_local
 
     async with _ready_local(hass, monkeypatch, "R510L") as (_, left, _sock):
         entry = MockConfigEntry(domain=DOMAIN, data={

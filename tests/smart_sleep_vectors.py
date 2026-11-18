@@ -1,4 +1,4 @@
-"""Portable command/formula literals from accepted row094, not hardware captures.
+"""Portable command/formula literals from the accepted Sleep Monitor app, not hardware captures.
 
 Report pin d47425720850f2b0d44f77c4bca0c4f7d0bdd28ed891c13483d2665f44192c32.
 All126 original vector IDs, inputs and bytes retained. Four out-of-scope

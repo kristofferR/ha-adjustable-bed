@@ -1,4 +1,4 @@
-"""Smart Comfort seat protocol, both accepted cluster-024 apps."""
+"""Smart Comfort seat protocol, both accepted Synergy OKIN apps."""
 
 from custom_components.adjustable_bed.profiles.smart_comfort import SmartComfortProfile
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames

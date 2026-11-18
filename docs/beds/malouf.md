@@ -1,6 +1,6 @@
 # Malouf/Lucid
 
-**Status:** ✅ Tested on the NEW_OKIN and legacy FFE5 routes; the Malouf Base and Lucid Base app profiles are artifact-verified and need hardware testing
+**Status:** Tested on the NEW_OKIN and legacy FFE5 routes; the Malouf Base and Lucid Base app profiles need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -78,7 +78,7 @@ The tables below come from the profile data.
 
 | Profile | Bed type | Transports | Held movement | Release | Hold until release |
 |---|---|---|---|---|---|
-| NEW_OKIN | `malouf_new_okin` | OKIN new | motor pulse settings (default 10 × 100 ms) | STOP at once | renewable lease |
+| NEW_OKIN | `malouf_new_okin` | OKIN new | Movement per tap (default 10, every 100 ms) | STOP at once | renewable lease |
 | Malouf Base | `malouf_app` | Richmat single, Richmat framed, OKIN legacy, OKIN custom, OKIN new | pulse count × 150 ms | STOP 150 ms after release | renewable lease |
 | Lucid Base | `malouf_app` | Richmat single, Richmat framed, OKIN legacy, OKIN custom, OKIN new | pulse count × 150 ms | STOP 150 ms after release | renewable lease |
 
@@ -246,7 +246,7 @@ profile's [timing table](#timing-per-transport).
 
 A [renewable hold](../SERVICES.md#renewable-holds) keeps refreshing the movement
 frame at the same interval (the app's hold cadence for Malouf Base and Lucid
-Base, the entry's pulse delay for `malouf_new_okin`) until the lease ends or a
+Base, the entry's repeat interval for `malouf_new_okin`) until the lease ends or a
 STOP arrives, up to 30 s, then sends the same STOP. The Keeson-framed
 `malouf_legacy_okin` route does the same with its zero frame.
 
@@ -262,7 +262,7 @@ its frozen frames.
 
 ### NEW_OKIN
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 The `malouf_new_okin` bed type: OKIN new frames over Nordic UART.
 
@@ -300,7 +300,7 @@ toggle; light on and off send the toggle too.
 
 #### Timing
 
-Movement repeats at the entry's motor pulse settings, then STOP; see
+Movement repeats for the entry's **Movement per tap**, then STOP; see
 [Profile summary](#profile-summary) and [Timing per transport](#timing-per-transport).
 A STOP that fails during cleanup is logged, not raised.
 
@@ -312,7 +312,7 @@ frames.
 
 ### Malouf Base / Lucid Base family
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 The `malouf_app` bed type. Retail model, GATT transport and physical role are
 independent choices. Controls follow the selected model and its reachable app
@@ -328,7 +328,7 @@ its exact model. Detection: none, this is an explicit choice.
   models are only reachable through the apps' persisted model selection; options
   keep an existing persisted-only model for that same app. The app changes only
   through Reconfigure, which offers the new app's models. An entry of another
-  bed type that Configure switches to the app answers the app and model on one
+  bed type that Reconfigure switches to the app answers the app and model on one
   form; it lists every app's models and refuses a model the chosen app lacks.
 - Choose the physical primary/secondary role used in the app. Home Assistant's
   Left/Right names do not prove that role.
@@ -475,7 +475,7 @@ Both app profiles send only their frozen frames.
 
 **App:** [Malouf Base](https://play.google.com/store/apps/details?id=com.malouf.bedbase) 2.4.3, `com.malouf.bedbase`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Malouf Base / Lucid Base family](#malouf-base--lucid-base-family),
 except as below.
@@ -492,7 +492,7 @@ except as below.
 
 **App:** [Lucid Base](https://play.google.com/store/apps/details?id=com.lucid.bedbase) 1.3.3, `com.lucid.bedbase`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Malouf Base / Lucid Base family](#malouf-base--lucid-base-family),
 except as below.
@@ -513,7 +513,7 @@ except as below.
 
 ### Legacy FFE5 route
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 The `malouf_legacy_okin` bed type sends the Keeson E6 frame
 (`E6 FE 16 01 00 00 00 00 04` is head up) to write characteristic
@@ -532,7 +532,7 @@ Those devices are treated as this route.
 
 | Operation | Timing |
 |-----------|--------|
-| Held motor command | Motor pulse settings, then STOP |
+| Held motor command | **Movement per tap**, then STOP |
 | Preset recall | 3 queued acknowledged writes, no STOP |
 | Save memory | 85 writes at 150 ms after one interval, no STOP |
 
@@ -542,7 +542,7 @@ Those devices are treated as this route.
 
 The APKs establish command construction, app reachability, timing and parsing.
 Physical motion directions, firmware acceptance and app/remote coexistence of the
-app profiles still need reports from real users after a beta or release.
+app profiles still need reports from real users.
 
 ### Analysis provenance
 

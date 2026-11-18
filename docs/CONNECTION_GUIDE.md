@@ -29,7 +29,7 @@ still reports an error. See [Bluetooth best practices](https://developers.home-a
 
 ### Does Your Bed Have Bluetooth?
 
-Not all adjustable beds include Bluetooth — some use only radio frequency (RF) to communicate with their remote. If your bed doesn't have a companion app for your phone, or doesn't appear in any BLE scanner (like [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile)), it likely doesn't have Bluetooth at all. Check with your manufacturer to confirm. Known non-Bluetooth models include the GhostBed adjustable base with the Okin CB1522 controller ([discussion](https://github.com/kristofferR/ha-adjustable-bed/discussions/248)).
+Not all adjustable beds include Bluetooth: some use only radio frequency (RF) to communicate with their remote. If your bed doesn't have a companion app for your phone, or doesn't appear in any BLE scanner (like [nRF Connect](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile)), it likely doesn't have Bluetooth at all. Check with your manufacturer to confirm. Known non-Bluetooth models include the GhostBed adjustable base with the Okin CB1522 controller ([discussion](https://github.com/kristofferR/ha-adjustable-bed/discussions/248)).
 
 ### Beds Requiring Bluetooth Pairing
 
@@ -39,7 +39,7 @@ Some beds require OS-level Bluetooth pairing before the integration can communic
 >
 > - **Okimat/Okin** refers to Okimat-branded beds that use the Okin protocol (requires pairing).
 > - **Leggett & Platt** appears in multiple rows because different models use different protocols/generations (Gen2, Okin variant, MlRM/WiLinke).
-> - **Sleep Number** includes both newer Climate 360 / FlexFit Fuzion bases and older BAM/MCR bases such as some i8 / 360 FlexFit 2 beds. Fuzion bases typically appear as `Smart bed *` in OS Bluetooth menus, but the integration itself identifies them by their GATT service UUID — the device name is only a human hint to help you pick the right row in this table during pairing.
+> - **Sleep Number** includes both newer Climate 360 / FlexFit Fuzion bases and older BAM/MCR bases such as some i8 / 360 FlexFit 2 beds. Fuzion bases typically appear as `Smart bed *` in OS Bluetooth menus, but the integration itself identifies them by their GATT service UUID; the device name is only a human hint to help you pick the right row in this table during pairing.
 >
 > To determine which row applies to your bed, check the label on your bed frame or controller, look at your remote's branding, or consult your manufacturer's manual.
 
@@ -108,7 +108,7 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 
 ### What Does NOT Work
 
-**Shelly devices** (Pro 3 EM, Plus series, etc.) can act as passive BLE scanners for Home Assistant — they will discover nearby Bluetooth devices, so your bed may appear in the Bluetooth integration. However, Shelly devices **cannot establish active BLE connections**, which means the Adjustable Bed integration cannot use them to send commands. You need an ESPHome Bluetooth Proxy or a local Bluetooth adapter instead.
+**Shelly devices** (Pro 3 EM, Plus series, etc.) can act as passive BLE scanners for Home Assistant: they will discover nearby Bluetooth devices, so your bed may appear in the Bluetooth integration. However, Shelly devices **cannot establish active BLE connections**, which means the Adjustable Bed integration cannot use them to send commands. You need an ESPHome Bluetooth Proxy or a local Bluetooth adapter instead.
 
 ---
 
@@ -156,7 +156,7 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 
 3. **Place Near Your Bed** (within 5-10 meters, avoid metal obstructions)
 
-4. **Add to Home Assistant** - The ESP32 should be auto-discovered in Settings → Devices & Services
+4. **Add to Home Assistant** - The ESP32 should be auto-discovered in **Settings > Devices & services**
 
 ---
 
@@ -164,7 +164,7 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
 
 1. **Power on your bed** and disconnect any manufacturer apps or remove batteries from remotes
 
-2. **Add the integration**: Settings → Devices & Services → Add Integration → "Adjustable Bed"
+2. **Add the integration**: **Settings > Devices & services > Add Integration > Adjustable Bed**
 
 3. **Discovery or Manual Entry**
    - **Automatic:** Select your bed from the discovered list
@@ -178,12 +178,13 @@ If your Home Assistant host has a Bluetooth adapter (built-in or USB dongle).
      controller name. The app then asks its own questions; see
      [Initial Setup](CONFIGURATION.md#initial-setup)
    - **Name**: Friendly name for your bed
-   - **Motor Count** and **Has Massage**: Shown when the app does not set them; see below
-   - **Advanced: receiver route** (only for bed types with several routes): Usually leave as Auto-detect
-   - **Advanced connection and timing**: Pulse count, pulse delay and idle timeout; usually leave as they are
+   - **Number of motors** and **Has massage feature**: Shown when the app does not set them
+   - **Bluetooth connection**: How long Home Assistant keeps the link after a command; usually leave the default
+   - **Advanced: bed model or remote** (only for bed types with several): Usually leave on **Automatic (recommended)**
+   - **Movement**: **Movement per tap**; usually leave the default
 
    The final settings also show which Bluetooth path Home Assistant is likely to
-   use — a direct adapter on the Home Assistant host, or a Bluetooth proxy —
+   use (a direct adapter on the Home Assistant host, or a Bluetooth proxy),
    along with the scanner name and signal strength. It is a prediction, not a
    promise: Home Assistant re-ranks every adapter and proxy at the moment it
    connects, so a stronger signal appearing elsewhere can change the outcome.
@@ -210,12 +211,13 @@ then use [Combine two beds into one](CONFIGURATION.md#two-independent-frames).
 
 ## Advanced Options
 
-After setup, you can adjust additional settings via **Settings → Devices & services → Adjustable Bed → Configure** (gear icon), then **Change settings**:
+After setup, you can adjust additional settings via **Settings > Devices & services > Adjustable Bed > Configure** (gear icon), then **Change settings**:
 
 - **Bed type, app or route** - Change it with
   [Reconfigure](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
-  in the entry's three-dot menu if auto-detection picked the wrong one
+  in the entry's three-dots menu if the detected one is wrong
 - **Movement per tap** - How far a tap moves
+- **Bluetooth connection** - Release the link after each command, keep it for a while, or always
 - **Bluetooth adapter** - Choose a specific adapter or proxy
 - **Read bed position** - Turn it off only if position monitoring interferes
   with the physical remote; it removes position feedback
@@ -225,8 +227,7 @@ names the bed and the adapter the bond is stored on before asking you to
 confirm, disconnects the bed first, and only reports success once it has
 confirmed the bond is really gone. It does not delete the device or its
 settings. If the bed paired through a Bluetooth proxy, the bond lives on the
-proxy and Home Assistant cannot remove it — the action explains that instead of
-pretending to.
+proxy and Home Assistant cannot remove it; the action says so instead.
 
 See the [Configuration Guide](CONFIGURATION.md) for detailed explanations of all options.
 
@@ -237,7 +238,7 @@ See the [Configuration Guide](CONFIGURATION.md) for detailed explanations of all
 If your bed isn't auto-discovered:
 
 **Using the Integration (Recommended):**
-1. Go to Settings → Integrations → Add Integration → Adjustable Bed
+1. Go to **Settings > Devices & services > Add Integration > Adjustable Bed**
 2. Choose **Pick any Bluetooth device** (or **Browse unsupported BLE devices** for inspection only)
 3. The integration displays all discovered Bluetooth devices with their MAC addresses
 4. Find your bed in the list (look for names like "Desk XXXXX", "HHC...", your bed brand, etc.)
@@ -273,4 +274,4 @@ explicit app profiles use their own layout settings; see [Configuration](CONFIGU
 ## Next Steps
 
 - **Having issues?** See [Troubleshooting](TROUBLESHOOTING.md)
-- **Want to know more about your bed?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
+- **Want to know more about your bed?** Find its guide in the [documentation index](README.md#bed-guides)

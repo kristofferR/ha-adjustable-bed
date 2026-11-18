@@ -1,4 +1,4 @@
-"""Frozen unit087 literals, extracted from the accepted report, never the codec."""
+"""Frozen Adjustable bed app literals, extracted from its app report, never the codec."""
 
 import json
 from pathlib import Path
