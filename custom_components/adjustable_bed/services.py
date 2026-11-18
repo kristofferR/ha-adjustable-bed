@@ -2516,7 +2516,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.bedtech.services import register_services as register_bedtech_services
     from .beds.casper_base.services import async_register_casper_base_services
     from .beds.comfort_enhancement3.services import register_services as register_apex_services
-    from .beds.comfort_enhancements.services import async_register_comfort_enhancements_services
     from .beds.customatic.services import async_register_customatic_services
     from .beds.doublesleep.services import async_register_doublesleep_services
     from .beds.fsm_relax.services import async_register_fsm_relax_services
@@ -2528,7 +2527,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.kaidi.comfy_services import async_register_comfy_services
     from .beds.kaidi.floyd_services import async_register_floyd_services
     from .beds.kaidi.rize_services import async_register_rize_services
-    from .beds.keeson.comfortbase_services import async_register_comfortbase_services
     from .beds.keeson.jalon_services import async_register_jalon_services
     from .beds.keeson.yamada_services import async_register_yamada_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
@@ -2600,8 +2598,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_apex_services,
         async_register_jalon_services,
         async_register_simmons_services,
-        async_register_comfort_enhancements_services,
-        async_register_comfortbase_services,
         async_register_yamada_services,
         async_register_malouf_app_services,
         async_register_logicdata_app_services,
