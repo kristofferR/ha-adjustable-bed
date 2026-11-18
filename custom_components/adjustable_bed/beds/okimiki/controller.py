@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN, CARD_PRESETS, CARD_UTILITY, CardPlacement, CardSection
+from ...card import CARD_HIDDEN, CARD_PRESETS, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateKey
@@ -44,6 +44,7 @@ OBSERVATIONS: Final = StateKey[dict[str, object]]("okimiki_observations")
 ALARMS: Final = StateKey[list[dict[str, int]]]("okimiki_alarms")
 REQUESTS: Final = StateKey[dict[str, object]]("okimiki_requests")
 DURATION: Final = StateKey[int | None]("okimiki_light_seconds")
+_SAVE_LABELS: Final = {"lounge": "Save lounge position", "zero_gravity": "Save zero-gravity position"}
 _SCOPE: ContextVar[tuple[object, Link, float | None, list[BleakError]] | None] = ContextVar(
     "okimiki_session", default=None
 )
@@ -389,13 +390,15 @@ class OkimikiController(GoodVibeController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
+            # The state is the last decoded event name; the alarms and
+            # observations are attributes, so the sensor is off by default.
             ControllerStateSensorSpec(
                 "okimiki_status",
                 "okimiki_status",
                 STATUS,
                 "mdi:bed",
                 attribute_keys=(OBSERVATIONS, ALARMS, REQUESTS),
-                card=CARD_UTILITY,
+                entity_registry_enabled_default=False,
             ),
         )
 
@@ -438,13 +441,14 @@ class OkimikiController(GoodVibeController):
             control = CONTROLS[key]
             # Standard platforms own motors, combined movement, flat and recalls.
             if control.save is not None and key in ("lounge", "zero_gravity"):
+                label = _SAVE_LABELS[key]
                 buttons.append(
                     ControllerButtonSpec(
                         "okimiki_save_" + key,
-                        "Save " + key.replace("_", " "),
+                        label,
                         partial(_press, control=key, save=True),
                         translation_key="okimiki_action",
-                        translation_placeholders={"action": "Save " + key.replace("_", " ")},
+                        translation_placeholders={"action": label},
                         requires_confirmation=True,
                         card=CARD_PRESETS,
                     )

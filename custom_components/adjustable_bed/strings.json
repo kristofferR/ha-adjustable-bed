@@ -5243,7 +5243,7 @@
         "name": "SonicSleep state"
       },
       "okimiki_status": {
-        "name": "Okimiki status"
+        "name": "Status"
       }
     },
     "light": {
@@ -5884,7 +5884,7 @@
         "name": "Massage timer request"
       },
       "okimiki_light_seconds": {
-        "name": "Light duration request"
+        "name": "Light duration"
       }
     },
     "select": {

@@ -506,3 +506,20 @@ def test_source_numeric_conversion_and_clock_first_digits():
     assert [p.color_byte(value) for value in (0, 0.5, 1, -0.5)] == [0, 128, 255, 128]
     now = datetime.fromtimestamp(0x123456789, UTC)
     assert p.sync_time(now, now)[0] == codec.record(8, 2, 1, (0x12, 0x34, 0x56, 0x78, 0))
+
+
+@pytest.mark.parametrize("code", PRODUCTS)
+def test_save_labels_and_status_is_opt_in(coordinator, code):
+    obj = bed.OkimikiController(coordinator, code)
+    labels = {
+        spec.key: spec.translation_placeholders["action"]
+        for spec in obj.controller_button_specs
+        if spec.translation_placeholders
+    }
+    saves = {
+        "okimiki_save_lounge": "Save lounge position",
+        "okimiki_save_zero_gravity": "Save zero-gravity position",
+    }
+    assert labels == ({} if code == "IPRM" else saves)
+    (status,) = obj.controller_state_sensor_specs
+    assert not status.entity_registry_enabled_default

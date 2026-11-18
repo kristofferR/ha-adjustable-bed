@@ -4816,6 +4816,6 @@
     "card_section": "lighting"
   },
   "sensor:okimiki_status": {
-    "card_section": "utility"
+    "card_section": "hidden"
   }
 }

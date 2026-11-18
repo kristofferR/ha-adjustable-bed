@@ -8752,7 +8752,9 @@ All four products expose head/back, foot/legs, combined movement and flat. The
 product table and command table describe their memory and preset controls.
 Lighting appears only after the connected bed reports its light capability.
 The native RGB light and duration number show requested values; they do not
-claim confirmed light-state feedback. Zero duration means always on.
+claim confirmed light-state feedback. Zero duration means always on. The Status
+diagnostic sensor (disabled by default) carries the received alarms, observations
+and requests as attributes.
 
 After discovery, the light and duration entities keep their registry identities
 and customizations through an idle disconnect. They remain unavailable until

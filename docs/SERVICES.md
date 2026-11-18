@@ -1141,7 +1141,9 @@ Lighting operations are `light_color` (`rgb_color`), `light_duration` (`seconds`
 0 to 900, zero always on), and `light_off`, after a light capability reply.
 IQRM offers `single` (`datetime`, lounge) and `cancel_single`. KWRN offers
 `alarms`, `repeat` (`datetime`, `mode`, optional `weekdays` and `enabled`),
-`enable` and `delete`. Query the current list before editing with `alarm_id`;
+`enable` and `delete`. Query the current list before editing with `alarm_id`
+(`alarms`; the received list is the `okimiki_alarms` attribute of the Status
+diagnostic sensor, which is disabled by default);
 an edit preserves omitted received fields and the reserved byte. Weekdays are
 Monday 0 to Sunday 6; an empty list means once. `sync` sends the product's clock
 frames. Alarm operations require the current session's clock capability reply.
