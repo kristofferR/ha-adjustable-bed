@@ -217,7 +217,7 @@ async def test_routine_service_uses_selected_target_queue_without_scheduler(
     controller.async_start_routine.assert_awaited_once_with(expected_steps)
 
 
-@pytest.mark.parametrize("service", ["reverie_run_routine", "reverie_test"])
+@pytest.mark.parametrize("service", ["reverie_run_routine"])
 @pytest.mark.parametrize("mode", ["sequential", "concurrent"])
 @pytest.mark.parametrize("local_role", [False, True])
 @pytest.mark.parametrize("side", [SIDE_BOTH, SIDE_LEFT])

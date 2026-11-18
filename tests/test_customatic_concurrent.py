@@ -29,8 +29,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -69,7 +69,7 @@ class Bed:
                 CONF_NAME: "Customatic bed",
                 CONF_BED_TYPE: BED_TYPES[profile],
                 CONF_DISABLE_ANGLE_SENSING: True,
-                CONF_DISCONNECT_AFTER_COMMAND: False,
+                CONF_CONNECTION_MODE: "idle",
             },
         )
         entry.add_to_hass(hass)

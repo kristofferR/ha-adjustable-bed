@@ -30,7 +30,7 @@
 - **Position control** - Position sliders in degrees or percentages, according to the controller
 - **Estimated positions** - Calibrated travel-time estimates and saved positions for beds without position feedback ([details](docs/ESTIMATED_POSITIONS.md))
 - **Memory presets** - Jump to saved positions with one tap
-- **Guided changes** - Switch an existing bed to another app or layout through **Reconfigure** ([details](docs/CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed))
+- **Guided changes** - Switch an existing bed to another app or layout through **Reconfigure** ([details](docs/CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed))
 - **Under-bed lights** - RGB color control on supported beds, on and off on others
 - **Climate controls** - Cooling, heating and foot warming on supported beds
 - **Massage control** - Adjust massage intensity and patterns
@@ -134,7 +134,7 @@ Each linked guide has a Status line with the details.
 | [Okin CST](docs/beds/okin-nframe.md#okin-cst) | [MFirm 900 - O app](docs/beds/okin-nframe.md#okin-cst) ✅, [Jordan's Sanctuary - O, Resident Adjustable Bed, Rize Aviada - O, POWER BOB ULTRA-O, Rize Contemporary III - O, Carefree, Rize Clarity II - O and Support 挺你 科技調整床 apps](docs/beds/okin-nframe.md#okin-cst) 🧪, [Nectar Move](docs/beds/okin-nframe.md#okin-cst) 🧪, [Rize Remedy II app](docs/beds/okin-nframe.md#rize-remedy-ii) 🧪, [Okin CST controls without an app profile](docs/beds/okin-nframe.md#okin-cst) ⚠️ | Rize (Sanctuary, Aviada, Bob, Contempo, II Carefree, II Clarity), Resident, Mattress Firm 900-O, Power Bob, Nectar |
 | [Remacro](docs/beds/remacro.md) | [Slumberland, The Brick and Jerome's apps](docs/beds/remacro.md) 🧪 | Slumberland, The Brick, Jerome's |
 | [Reverie](docs/beds/reverie.md) | [Reverie Nightstand app (Protocol 110)](docs/beds/reverie.md#protocol-110-and-stk) 🧪, [Reverie app (Protocol 108)](docs/beds/reverie.md#protocol-108) 🧪, [Reverie Pairlink (R510L / Harmoniq)](docs/beds/reverie-pairlink-sdk.md) 🧪 | Reverie, Harmoniq |
-| [Richmat](docs/beds/richmat.md) | [Richmat 4.2.0 app and Richmat 4.2.0 sleep device](docs/beds/richmat.md#richmat-420) 🧪, [Richmat remotes, SleepFunction and SVEN & SON apps](docs/beds/richmat.md#richmat-remotes) ✅, [Richmat / RMControl app](docs/beds/richmat.md#rmcontrol) 🧪, [Luuna + (Rise, Rise Pro, Rise Pro Light)](docs/beds/richmat.md#luuna-) 🧪, [SonicSleep / 소닉슬립 (IQRM)](docs/beds/richmat.md#sonicsleep) 🧪, [Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed](docs/beds/richmat.md#richmat-mh-apps) 🧪, [RUF Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX apps, and the W.Silver / AMERICANSTAR / Bailey / TX separate sleep receiver](docs/beds/ruf-richmat-apps.md) 🧪, [Avocado Eco Base, CoasterSleep, Forty Winks, Milemont and Superior](docs/beds/richmat.md#classic-richmat-apps) 🧪, [Luuna Rise and Power Cool Sleep System](docs/beds/richmat.md#luuna-rise--power-cool) 🧪, [Lady Americana, ACAA, STA Homecare and Zero Gravity](docs/beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family) 🧪 | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's |
+| [Richmat](docs/beds/richmat.md) | [Richmat app (4.2.0) and Richmat app sleep sensor](docs/beds/richmat.md#richmat-420) 🧪, [Richmat remotes, SleepFunction and SVEN & SON apps](docs/beds/richmat.md#richmat-remotes) ✅, [Richmat / RMControl app](docs/beds/richmat.md#rmcontrol) 🧪, [Luuna + (Rise, Rise Pro, Rise Pro Light)](docs/beds/richmat.md#luuna-) 🧪, [SonicSleep / 소닉슬립 (IQRM)](docs/beds/richmat.md#sonicsleep) 🧪, [Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed](docs/beds/richmat.md#richmat-mh-apps) 🧪, [RUF Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX apps, and the W.Silver / AMERICANSTAR / Bailey / TX separate sleep receiver](docs/beds/ruf-richmat-apps.md) 🧪, [Avocado Eco Base, CoasterSleep, Forty Winks, Milemont and Superior](docs/beds/richmat.md#classic-richmat-apps) 🧪, [Luuna Rise and Power Cool Sleep System](docs/beds/richmat.md#luuna-rise--power-cool) 🧪, [Lady Americana, ACAA, STA Homecare and Zero Gravity](docs/beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family) 🧪 | Casper, MLILY, Sven & Son, Avocado, Luuna, Jerome's |
 | [Sleep Number](docs/beds/sleep_number.md) | [SleepIQ app, Sleep Number Fuzion (Climate 360, FlexFit, FlexFit Smart)](docs/beds/sleep_number.md#fuzion--climate-360--flexfit) ✅, [Sleep Number BAM/MCR (i8, 360 FlexFit 2)](docs/beds/sleep_number.md#bam--mcr-older-i8--360-flexfit-2) ✅ | Sleep Number |
 | [SleepSpa S9000AI](docs/beds/sleepstar.md) | [SleepSpa S9000AI (SLEEPSTAR)](docs/beds/sleepstar.md) 🧪 | SleepSpa |
 | [Sleepy's Elite](docs/beds/sleepys.md) | [MFRM Sleepy's Elite app](docs/beds/sleepys.md#explicit-sleepys-elite-app-profile) 🧪, [Sleepy's Elite BOX25 (STAR) receiver](docs/beds/sleepys.md#box25-protocol-nordic-uart) ✅, [Sleepy's Elite BOX15 and BOX24 receivers](docs/beds/sleepys.md#protocol-variants) 🧪 | Sleepy's, Mattress Firm |
@@ -204,25 +204,23 @@ such as a layout or handset ID. The final settings come last. See
 
 To adjust settings after setup, click **Configure** (the gear icon) for the
 integration entry in Settings → Devices & Services, then **Change settings**.
-Families with a guided change, such as Okin, Keeson or Leggett & Platt, change
-their app or layout through **Reconfigure** in the entry's three-dot menu
-instead; see [Changing the app or layout](docs/CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
-for the list.
+To change the bed type, app or layout, use **Reconfigure** in the entry's
+three-dot menu; see [Changing the bed type, app or layout](docs/CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed).
 
 <details>
 <summary><b>Quick reference</b></summary>
 
 | Setting | Description |
 |---------|-------------|
-| App or remote | Asked first. It decides the commands, layout and features. Change it later with **Reconfigure** where the family has a guided change |
+| App or remote | Asked first. It decides the commands, layout and features. Change it later with **Reconfigure** |
 | App questions | The layout, product, handset ID or remote style the app shows |
 | Name, Bluetooth adapter | The entry's name, and a preferred adapter or proxy. Home Assistant may still reroute |
-| Disconnect after each command | Release the connection one second after operations finish, so the remote or app can connect |
+| Bluetooth connection | Release right after each command, stay connected for a while (with its seconds), or always stay connected |
 | Motor count, massage | Asked only when the app or remote does not set them |
 | Bed-specific fields | Fields one bed type needs, such as a PIN |
 | Advanced: receiver route | For a bed type with several receiver routes. An app sets its own route |
-| Advanced connection and timing | Motor pulse count and delay, and the idle disconnect timeout |
-| Disable angle sensing | Turn off position feedback if monitoring conflicts with the remote |
+| Movement per tap | How many times a tap repeats its command |
+| Read bed position | Turn off position feedback if monitoring conflicts with the remote |
 | Estimated positions | Calibrate travel-time estimates on beds without position feedback |
 
 See the [Configuration Guide](docs/CONFIGURATION.md) for all options.

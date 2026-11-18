@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability
+from ...card import CARD_PRESET_SAVE
 from ...codec import malouf as codec
 from ...codec.malouf import TRANSPORTS, TransportKey
 from ...const import (
@@ -526,7 +528,12 @@ class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
         if self._has_oz_memory_editor:
             return (
                 ControllerButtonSpec(
-                    "malouf_oz_save_memory_2", "Save Memory 2", _app_callback("save_oz_memory_2")
+                    "malouf_oz_save_memory_2",
+                    "Save Memory 2",
+                    _app_callback("save_oz_memory_2"),
+                    translation_key="malouf_oz_save_memory_2",
+                    requires_confirmation=True,
+                    card=CARD_PRESET_SAVE,
                 ),
             )
         return ()
@@ -725,6 +732,12 @@ class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
             repeat_count=self.profile.routes[transport].settings_repeats,
             repeat_delay_ms=0,
         )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if not self.supports_clock_alarm:
+            return None
+        return AlarmCapability(wake_actions=self.clock_alarm_preset_options, weekdays=True)
 
     async def configure_clock_alarm(
         self,

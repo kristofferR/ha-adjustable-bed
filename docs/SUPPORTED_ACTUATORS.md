@@ -121,7 +121,7 @@ Several bed brands use Okin-based BLE controllers. While they share common roots
   handles differ by device/firmware and must not be hardcoded
 - **Nordic UART**: Many newer beds use the Nordic UART service
 
-**If auto-detection picks the wrong type:** Go to Settings → Devices & Services → Adjustable Bed → Configure and change the bed type. To move between the Okin family's own routes (FurniMove, Okimat or Okin UUID, DOT and RF ECO BT), use **Reconfigure** in the entry's three-dot menu instead; Configure refuses that change (see [Okin setup](beds/okin-nframe.md#home-assistant-setup)).
+**If auto-detection picks the wrong type:** Go to Settings → Devices & Services → Adjustable Bed, open the entry's three-dot menu and choose **Reconfigure**. It changes the bed type, app or route, including between the Okin family's own routes (FurniMove, Okimat or Okin UUID, DOT and RF ECO BT; see [Okin setup](beds/okin-nframe.md#home-assistant-setup)).
 
 **Shared identifiers:** Generic `OKIN-*` and receiver names can require a
 protocol-selection prompt. An `OKIN-BLE` name alone does not distinguish

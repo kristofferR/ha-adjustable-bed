@@ -10,7 +10,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.bed_traits import bed_traits, reads_positions
 from custom_components.adjustable_bed.beds.fsm_relax.controller import FsmRelaxController
 from custom_components.adjustable_bed.beds.limoss.controller import LimossController
 from custom_components.adjustable_bed.config_flow import (
@@ -71,7 +71,7 @@ async def test_explicit_profile_step_validates_and_persists_all_values(hass):
     await flow.async_step_profile_questions(data())
     assert flow._manual_data[const.CONF_PRODUCT_TYPE] == "bed"
     assert flow._manual_data[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
-    assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(flow._manual_data)
     # The app step's massage choice is the entry's has_massage, never overwritten.
     assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
     flow._finish_with_verify.assert_awaited_once_with(flow._manual_data, "Adjustable Bed")
@@ -144,34 +144,6 @@ def test_physical_profile_fields_never_inherit_from_paired_parent():
     for key in (const.CONF_PRODUCT_TYPE, const.CONF_FSM_RELAX_MEMORY_NAMES, *const.CONF_REVERSE_MOTORS):
         assert key not in inherited
     assert inherited[const.CONF_MOTOR_PULSE_COUNT] == 4
-
-
-@pytest.mark.parametrize("existing_fsm", (False, True))
-async def test_pair_options_requires_unpair_for_new_route_or_physical_profile_edit(hass, existing_fsm):
-    from homeassistant.const import CONF_ADDRESS
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.pairing import build_pair_entry_data
-
-    left = {**data(), CONF_ADDRESS: "AA:BB:CC:DD:EE:FF"}
-    right = {**data(), CONF_ADDRESS: "11:22:33:44:55:66", const.CONF_PRODUCT_TYPE: "chair"}
-    if not existing_fsm:
-        left[const.CONF_BED_TYPE] = right[const.CONF_BED_TYPE] = const.BED_TYPE_LIMOSS
-    entry = MockConfigEntry(domain=const.DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    shown = await flow.async_step_settings()
-    fields = {marker.schema for marker in shown["data_schema"].schema}
-    assert const.CONF_PRODUCT_TYPE not in fields
-    submitted = {const.CONF_PRODUCT_TYPE: "bed"} if existing_fsm else {const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX}
-    result = await flow.async_step_settings(submitted)
-    field = "base" if existing_fsm else const.CONF_BED_TYPE
-    assert result["errors"] == {field: "app_profile_unpair_first"}
-    assert result["description_placeholders"]["profile"] == "FSM Relax"
-    assert [child[const.CONF_PRODUCT_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == ["bed", "chair"]
-    assert [child[const.CONF_BED_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == [left[const.CONF_BED_TYPE], right[const.CONF_BED_TYPE]]
 
 
 @pytest.mark.parametrize("name,chooser", [("limossBed", True), ("LimossBed", False)])
@@ -256,7 +228,7 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
             user_input={
                 CONF_NAME: "App profile",
                 const.CONF_PREFERRED_ADAPTER: const.ADAPTER_AUTO,
-                const.CONF_DISCONNECT_AFTER_COMMAND: True,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_RELEASE,
             },
         )
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -265,7 +237,7 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
         assert saved[const.CONF_PRODUCT_TYPE] == "bed"
         assert saved[const.CONF_REVERSE_MOTORS[0]] is True
         assert saved[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
-        assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True
+        assert not reads_positions(saved)
         assert const.BED_TYPE_FSM_RELAX not in const.BEDS_REQUIRING_PAIRING
         connect.assert_not_called()
         await hass.async_block_till_done()

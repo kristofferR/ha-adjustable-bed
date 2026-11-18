@@ -1,4 +1,4 @@
-"""Symphony Sleep 1.1.0 (14), row078: independent UI models and BLE routes.
+"""Symphony Sleep 1.1.0 (14): independent UI models and BLE routes.
 
 The normal literals reproduce Keeson K1/P2 and Okin frame40. Alarm and clock
 fields below belong to this app, including P2's Sunday-zero weekday.

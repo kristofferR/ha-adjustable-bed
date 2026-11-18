@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import partial
 from typing import TYPE_CHECKING, ClassVar, Final, Protocol
@@ -29,6 +28,7 @@ from ...profiles.casper import (
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorControlSpec
+from ..richmat.labels import function_label
 from .protocol import (
     RGB_TIMERS,
     CasperBaseActions,
@@ -77,12 +77,7 @@ class ProductProfile(ExecutionProfile, Protocol):
 
 
 def action_label(name: str) -> str:
-    return (
-        re.sub(r"(?<=[a-z])(?=[A-Z0-9])", " ", name)
-        .replace("Lumber", "Lumbar")
-        .replace("Instensity", "Intensity")
-        .replace("Volumu", "Volume")
-    )
+    return function_label(name)
 
 
 async def invoke(
@@ -315,6 +310,7 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
                     CASPER_BASE_ERROR,
                     CASPER_BASE_MUSIC_BLUETOOTH,
                 ),
+                entity_registry_enabled_default=False,
             ),
         )
 

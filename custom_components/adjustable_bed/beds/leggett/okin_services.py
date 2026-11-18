@@ -25,28 +25,27 @@ from ...services import (
 from ..base import BedController, controller_as
 
 SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
-SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 
 
-async def _handle_leggett_timer(call: ServiceCall, *, alarm: bool) -> None:
-    """Validate all timer targets, then program or cancel each through its queue."""
+async def handle_leggett_sleep_timer(call: ServiceCall) -> None:
+    """Start or cancel the profile's delayed-preset timer on every validated target."""
     await async_import_modules(call.hass, "beds.leggett.okin")
     from .okin import LeggettOkinController
 
     start = call.data[ATTR_ACTION] == "start"
     minutes = call.data.get(ATTR_MINUTES)
     if start and minutes is None:
-        raise ServiceValidationError("Starting a timer requires minutes")
+        from ...services import _invalid
+
+        raise _invalid("timer_minutes_required", "Starting a timer requires minutes")
     memory_num = call.data.get(ATTR_PRESET, 1)
-    label = "Leggett alarm timers" if alarm else "Leggett sleep timers"
+    label = "Leggett sleep timers"
 
     def check(target: BedChild, controller: BedController) -> None:
         leggett = controller_as(controller, LeggettOkinController)
-        if leggett is None or not (
-            leggett.supports_alarm_timer if alarm else leggett.supports_sleep_timer
-        ):
+        if leggett is None or not leggett.supports_sleep_timer:
             raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
-        if not start or alarm:
+        if not start:
             return
         if memory_num not in leggett.sleep_timer_memory_options:
             raise ServiceValidationError(
@@ -61,12 +60,7 @@ async def _handle_leggett_timer(call: ServiceCall, *, alarm: bool) -> None:
     async def timer(controller: LeggettOkinController) -> None:
         if start:
             assert minutes is not None
-            if alarm:
-                await controller.set_alarm_timer(minutes)
-            else:
-                await controller.set_sleep_timer(minutes, memory_num)
-        elif alarm:
-            await controller.cancel_alarm_timer()
+            await controller.set_sleep_timer(minutes, memory_num)
         else:
             await controller.cancel_sleep_timer()
 
@@ -77,18 +71,8 @@ async def _handle_leggett_timer(call: ServiceCall, *, alarm: bool) -> None:
     )
 
 
-async def handle_leggett_sleep_timer(call: ServiceCall) -> None:
-    """Start or cancel the profile's delayed-preset timer."""
-    await _handle_leggett_timer(call, alarm=False)
-
-
-async def handle_leggett_alarm_timer(call: ServiceCall) -> None:
-    """Start or cancel the profile's alarm delay."""
-    await _handle_leggett_timer(call, alarm=True)
-
-
 def async_register_leggett_okin_services(hass: HomeAssistant) -> None:
-    """Register the Leggett Okin sleep and alarm timer actions."""
+    """Register the Leggett Okin sleep timer action."""
     hass.services.async_register(
         DOMAIN,
         SERVICE_LEGGETT_SLEEP_TIMER,
@@ -101,19 +85,6 @@ def async_register_leggett_okin_services(hass: HomeAssistant) -> None:
                 vol.Optional(ATTR_PRESET, default=1): vol.All(
                     _leggett_integer, vol.Range(min=0, max=4)
                 ),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LEGGETT_ALARM_TIMER,
-        handle_leggett_alarm_timer,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                vol.Required(ATTR_ACTION): vol.In(("start", "cancel")),
-                vol.Optional(ATTR_MINUTES): vol.All(_leggett_integer, vol.Range(min=1, max=1440)),
                 **SIDE_FIELD,
             }
         ),

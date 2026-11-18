@@ -1,7 +1,7 @@
 """HJBed receive leaves, preserving ordered event effects and exact guards.
 
 Malformed-leaf IndexError is caught by the controller after prior event effects.
-Desk/firmware-only leaves are excluded in the durable row121 ledger.
+Desk/firmware-only leaves are not handled.
 """
 
 from __future__ import annotations

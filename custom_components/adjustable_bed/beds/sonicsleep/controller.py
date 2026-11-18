@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_PRESETS
+from ...card import CARD_PRESET_SAVE, CARD_PRESETS
 from ...codec import richmat as codec
 from ...const import CONF_PRODUCT_TYPE
 from ...controller_state import StateKey
@@ -169,15 +169,17 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        names = {"zero_gravity": "Zero Gravity", "lounge": "Lounge", "tv": "TV", "anti_snore": "Anti-snore"}
         return tuple(
             ControllerButtonSpec(
                 "sonicsleep_" + action + ("_save" if save else ""),
-                ("Save " if save else "") + action.replace("_", " ").title(),
+                ("Save " if save else "") + names[action],
                 partial(_action, action=action, save=save),
                 icon="mdi:content-save" if save else "mdi:bed",
-                translation_key="sonicsleep_action",
-                translation_placeholders={"action": ("Save " if save else "") + action.replace("_", " ").title()},
-                card=CARD_PRESETS,
+                # Saves overwrite a preset: the card lists them as saves, never recalls.
+                translation_key="sonicsleep_save" if save else "sonicsleep_action",
+                translation_placeholders={"action": ("Save " if save else "") + names[action]},
+                card=CARD_PRESET_SAVE if save else CARD_PRESETS,
                 requires_confirmation=save,
             )
             for action in PRESETS if not action.startswith("memory_") for save in (False, True)
@@ -188,7 +190,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (ControllerStateSensorSpec("sonicsleep", "sonicsleep", MODEL, "mdi:bed", attribute_keys=(OBSERVATIONS, ALARMS, LINK_NAME_STATE)),)
+        return (ControllerStateSensorSpec("sonicsleep", "sonicsleep", MODEL, "mdi:bed", attribute_keys=(OBSERVATIONS, ALARMS, LINK_NAME_STATE), entity_registry_enabled_default=False),)
 
     def _live(self, link: Link | None = None) -> Link:
         current = self._link

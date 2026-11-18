@@ -43,6 +43,16 @@ SYNC = StateKey[int | None]("bedgear_sync_type")
 BIND = StateKey[str | None]("bedgear_sync_state")
 
 
+def _control_name(key: str) -> str:
+    """``massage_head_up`` reads as "Head massage up", ``massage_stop`` as "Stop massage"."""
+    if key == "light_toggle":
+        return "Toggle light"
+    parts = key.removeprefix("massage_").split("_")
+    if parts[-1] == "stop":
+        return " ".join(("Stop", *parts[:-1], "massage"))
+    return " ".join((parts[0].capitalize(), "massage", *parts[1:]))
+
+
 @dataclass(frozen=True, eq=False)
 class Link:
     client: BleakClient
@@ -137,30 +147,34 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         specs = []
         if self.profile.rgb:
             specs.append(
-                ControllerStateSensorSpec("bedgear_rgb", "bedgear_rgb", RGB, "mdi:palette")
+                ControllerStateSensorSpec("bedgear_rgb", "bedgear_rgb", RGB, "mdi:palette", entity_registry_enabled_default=True)
             )
         if self.profile.timer:
             specs.append(
                 ControllerStateSensorSpec(
-                    "bedgear_light_minutes", "bedgear_light_minutes", TIMER, "mdi:timer", "min"
+                    "bedgear_light_minutes", "bedgear_light_minutes", TIMER, "mdi:timer", "min",
+                    entity_registry_enabled_default=True,
                 )
             )
         if self.profile.alarm:
             specs.extend(
                 (
-                    ControllerStateSensorSpec("bedgear_alarm", "bedgear_alarm", ALARM, "mdi:alarm"),
+                    ControllerStateSensorSpec("bedgear_alarm", "bedgear_alarm", ALARM, "mdi:alarm", entity_registry_enabled_default=True),
                     ControllerStateSensorSpec(
-                        "bedgear_alarm_strength", "bedgear_alarm_strength", STRENGTH, "mdi:vibrate"
+                        "bedgear_alarm_strength", "bedgear_alarm_strength", STRENGTH, "mdi:vibrate",
+                        entity_registry_enabled_default=True,
                     ),
                 )
             )
         specs.extend(
             (
                 ControllerStateSensorSpec(
-                    "bedgear_sync_type", "bedgear_sync_type", SYNC, "mdi:sync"
+                    "bedgear_sync_type", "bedgear_sync_type", SYNC, "mdi:sync",
+                    entity_registry_enabled_default=False,
                 ),
                 ControllerStateSensorSpec(
-                    "bedgear_sync_state", "bedgear_sync_state", BIND, "mdi:link"
+                    "bedgear_sync_state", "bedgear_sync_state", BIND, "mdi:link",
+                    entity_registry_enabled_default=False,
                 ),
             )
         )
@@ -487,12 +501,12 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         return tuple(
             ControllerButtonSpec(
                 "bedgear_" + c.key,
-                c.key.replace("_", " ").capitalize(),
+                _control_name(c.key),
                 partial(press, key=c.key),
                 translation_key="bedgear_massage"
                 if c.key.startswith("massage_")
                 else "bedgear_light_toggle",
-                translation_placeholders={"action": c.key.replace("_", " ").capitalize()},
+                translation_placeholders={"action": _control_name(c.key)},
                 hold=ControllerHoldSpec("bedgear_" + c.key, release_button_key="bedgear_release")
                 if c.held
                 else None,
@@ -503,7 +517,7 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         ) + (
             ControllerButtonSpec(
                 "bedgear_release",
-                "Release control",
+                "Release held control",
                 lambda ctrl: ctrl.stop_all(),
                 translation_key="bedgear_release",
                 release_only=True,

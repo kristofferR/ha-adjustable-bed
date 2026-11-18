@@ -19,6 +19,8 @@ what each beta ships.
 - [Before You Upgrade](#before-you-upgrade)
 - [Config Entry Migration (Schema 5.5)](#config-entry-migration-schema-55)
 - [Removed or Renamed Options, Bed Types and Entities](#removed-or-renamed-options-bed-types-and-entities)
+- [Removed or Renamed Actions](#removed-or-renamed-actions)
+- [Entity Cleanup](#entity-cleanup)
 - [New Entities, Attributes and Actions](#new-entities-attributes-and-actions)
 - [Behavior Changes](#behavior-changes)
 - [Moved Documentation](#moved-documentation)
@@ -70,7 +72,8 @@ format.
 | Paired side descriptors (`pair_children`) | Unchanged, except that each side gains its own `profile_id`, loses the dropped keys above and has Massage turned off on the layouts above |
 | `profile_id` | **Added.** Derived from the saved fields above, for example `keeson:sino` or `jiecang_app@dreamask`. A paired side's id comes from that side's own settings and never from the parent |
 | `profile_migration` | **Added.** A record of the migration: `from_version`, `from_minor_version`, `resolver_version`, the new `profile_id`, the saved `fields` it was derived from and, for a paired entry, the same for each side under `sides`. When the 5.2 step drops a key, `dropped_keys` lists it by where it was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so on). When the 5.3 step turns Massage off, `massage_off` lists where the same way (`data`, `data.left`, `data.left.origin_data`), and so does `octo_motor_count_override` for the 5.5 step |
-| Schema version | Becomes 5.5 |
+| `position_mode`, `connection_profile`, `pair_connection_mode`, `disconnect_after_command`, `idle_disconnect_seconds`, `disable_angle_sensing` | Rewritten by the 5.6 step; see [Simplified Settings](#simplified-settings-schema-56) |
+| Schema version | Becomes 5.6 |
 
 The migration changes no entry, device or entity identity, so dashboards,
 automations and actions keep their targets. The only entities it removes are
@@ -83,8 +86,8 @@ pairing changes keep them current.
 A v5 beta entry already at 5.1 or later runs only the steps after it, and gains
 a `profile_migration` record only if one of them drops a key, turns Massage
 off or writes an Octo motor layout. Like the rest of schema 5, these steps are one way. The
-[config key audit](design/config-keys.md) records every saved key, why the two
-dropped keys are obsolete and why the 5.3 step turns Massage off.
+[profile id migration notes](design/profile-id.md#migration-51-to-52) explain why
+the two dropped keys are obsolete and why the 5.3 step turns Massage off.
 
 The migration record appears in two places:
 
@@ -96,10 +99,11 @@ The migration record appears in two places:
 
 ## Removed or Renamed Options, Bed Types and Entities
 
-**One removal: the massage buttons of three layouts without massage** (see
-below). No bed type, option, action or action field is removed or renamed in
-v5, no other entity is removed, and no saved config key a setting reads is
-removed. The classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks,
+**Two removals: the massage buttons of three layouts without massage** (see
+below) **and the [entity cleanup](#entity-cleanup)** of app-derived entities. No
+bed type or option is removed or renamed in v5. Actions and action fields changed:
+see [Removed or Renamed Actions](#removed-or-renamed-actions). No saved config key a
+setting reads is removed. The classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks,
 Milemont and Superior) shipped in 4.4 with an internal audit name in their
 unique IDs, translation keys, status sensor attributes and the
 `cluster018_third_service` key. The 5.4 step renames them to
@@ -166,6 +170,150 @@ moved the bed. Configure no longer offers Massage on these layouts. Every
 other layout, including a FurniMove handset with massage rows, BOX25 and the
 other Comfort Enhancements layouts, keeps its massage controls.
 
+### Simplified Settings (Schema 5.6)
+
+The bed settings were cut down to the ones that change something. The 5.6
+step rewrites saved entries (data, options, each paired side and the original
+settings a side restores on unpair), and `profile_migration.settings_5_6`
+lists what it changed where.
+
+| Before | Now |
+|--------|-----|
+| **Position update mode** (`position_mode`) | Removed. Every bed reads its position in the background after a command, as the default "Speed" did |
+| **Connection profile** (`connection_profile`) | Removed. Every bed uses the former "Reliable" timing: a 25 s connect timeout, 3 and 6 s backoff and a 1 s settle after connecting |
+| **Disconnect after each command** (`disconnect_after_command`), **Idle disconnect timeout** (`idle_disconnect_seconds`) and its hidden `0` | One **Bluetooth connection** select (`connection_mode`): release right after each command (was Disconnect after each command on), stay connected for a while with **Seconds to stay connected** (was off, with its timeout), or always stay connected (was a timeout of `0`). It is hidden for beds that always hold their link |
+| LP Comfort Connect (Leggett & Platt Gen2, and Leggett & Platt on Auto) held its link permanently | Follows **Bluetooth connection**, staying connected for a while by default, and holds the link for the session once a reconnect stalls. "Always stay connected" restores the old behavior |
+| **Disable angle sensing** (`disable_angle_sensing`) | **Read bed position**, on by default and shown only for beds that report a position. A saved value equal to the bed's default is dropped. A standalone bed saved with no value at all, which only very old entries are, now reads its position where its bed type reports one |
+| **Motor pulse count** and **Motor pulse delay (ms)** | **Movement per tap** (the pulse count, 1-100, now enforced). The delay is no longer shown; a saved delay still applies. Saving Configure no longer marks the timing as yours unless Movement per tap changed |
+| **Stop discovering new Bluetooth devices**, in every bed's Configure | **Add Integration → Adjustable Bed → Find new beds automatically** |
+| **Bed type** and **Protocol variant** in Configure, and **Change app or layout** | **Reconfigure**, which now works for every bed type |
+| Explicit pair connection modes (`pair_connection_mode`) | Removed; nothing could set them. Pairs start concurrent and fall back to one link at a time when the adapter cannot hold both |
+| **Has massage feature**, maximum angles and a one-choice motor count shown for beds that ignore them | Hidden |
+| A bed added from **Pick any Bluetooth device** saved the scanner that listed it as its adapter | Saves **Automatic**, like a discovered bed |
+| **Combine two beds** suggested in Repairs for any two beds | Suggested, and offered in Add Integration, only for beds of one protocol |
+| App suggestions in Repairs switched the app through Configure | They open **Reconfigure** with the suggested app preselected, which reviews the change before saving. Suggestions without one app to switch to, such as checking a Richmat remote, still open Configure |
+| Connection log lines at warning: "NOT FOUND" on every attempt, each failed attempt, an idle drop, and a final error | Debug, except one warning when the bed stays unreachable (once per outage) and a drop during a command |
+
+## Removed or Renamed Actions
+
+Update scripts and automations that call these actions. See
+[Actions and Automations](SERVICES.md).
+
+**One alarm action.** Every bed alarm now uses
+[`adjustable_bed.set_alarm`](SERVICES.md#set_alarm), with weekday names, a
+time, a named `wake_action` and the options the bed offers. It replaces
+`configure_alarm_schedule`, `bf_cherish_set_alarm`, `comfort_enhancements_set_alarm`,
+`comfort_enhancement3_set_wakeup`, `comfort_enhancement3_delete_wakeup`,
+`comfortbase_set_alarm`, `eshine_set_alarm`, `glideaway_set_alarm`,
+`jalon_bed_set_alarm`, `jalon_set_alarm`, `jiecang_set_alarm`, `leggett_alarm_timer`,
+`linak_set_alarm`, `logicdata_set_alarm`, `malouf_set_alarm`, `mline_set_alarm`,
+`motion_bed_alarm`, `n32_motion_bed_alarm`, `richmat_app_alarm`, `richmat_mh_alarm`,
+`richmat_mh_waist_alarm`, `rmcontrol_alarm`, `simmons_set_alarm`, `smart_sleep_set_alarm`,
+`solace_set_alarm`, `symphony_sense_set_alarm`, `symphony_set_alarm`, `yamada_set_alarm`
+and `zseries_set_alarm`. Field changes:
+
+- `weekdays` takes `monday` … `sunday` everywhere (no numbers, abbreviations or bitmasks).
+- `wake_mode`, `preset`, `memory`, `mode` and `position` become `wake_action`, with
+  shared names such as `zero_g`, `memory_1` and `none`.
+- `head_level` and `foot_level` become `head_massage_level` and `foot_massage_level`;
+  `intensity` becomes `massage_intensity`; `duration` (Comfort Enhancement 3) becomes
+  `massage_duration`; `kind` becomes `massage_zone`; `alarm_id` becomes `slot`.
+- Countdown alarms (Leggett & Platt, Linak, Richmat app, RMControl single alarms)
+  take a clock `time`; Home Assistant counts down to it. `minutes` and `seconds` are gone.
+- Waist and normal-mattress alarms use `mattress_side` (Richmat app beds); "once or
+  daily" is an empty or full `weekdays` list.
+- Turning an alarm off is `enabled: false`. It disables an N32 slot, deletes a
+  Comfort Enhancement 3 program or an RMControl repeating alarm, and clears both
+  Keeson app alarm tables.
+- No longer offered: Linak snooze repeats (`recurrence_count`, `recurrence_minutes`) and
+  per-step `actions` with `lifetime` and `pause` (a Linak alarm now runs, in order, the
+  wake memory, a massage toggle and a light toggle, each with the default timing),
+  N32 delete and query, RMControl query, Smart Sleep `week_mask`, `flexible_wake` and the
+  `app_*` action labels (`app_zero_g` is now `zero_g`; `app_memory_1`, `app_memory_2` and
+  `app_vibration` send the same values as `lounge`, `tv` and `anti_snore`; `app_flat` has no
+  replacement),
+  Motion Bed split zero-gravity modes, the raw `switch` value and the `confirmed`
+  flag (a Motion Bed alarm without a `wake_action` now rings without moving the bed), Keeson app tables
+  with more than one weekly or one-time alarm, Comfort Enhancement 3
+  `next_day` (a Comfort Enhancement 3 wake-up now runs at the next occurrence of the time,
+  so it cannot be set for tomorrow while that time is still ahead today), Richmat
+  app calendar alarm deletion (`enabled: false` disables the slot instead) and calendar
+  positions without a shared wake action name. RMControl clock setting moved to `sync_clock`.
+
+**Removed aliases.** `linak_rename`, `logicdata_rename` and `jiecang_rename` →
+`rename`; `leggett_hold_control` → `hold_control`; `malouf_sync_clock` → `sync_clock`.
+Each bed still applies its own name and control rules.
+
+**Renamed estimated-position actions.** `save_position`, `rename_position`,
+`update_position`, `delete_position`, `recall_position`, `set_position_reference`,
+`confirm_position_unchanged` and `mark_position_unknown` are now
+`estimate_save_position`, `estimate_rename_position`, `estimate_update_position`,
+`estimate_delete_position`, `estimate_recall_position`, `estimate_set_reference`,
+`estimate_confirm_unchanged` and `estimate_mark_unknown`.
+
+**Removed actions and fields.** `reverie_test` (a factory bed test) is removed.
+`furnimove_action` no longer takes `consumer`. `sleep_number_command` no longer
+accepts service, firmware and diagnostic commands such as `reboot_system`,
+`software_versions` or the internal heating and cooling mode commands.
+
+## Entity Cleanup
+
+v5 gives every entity a name a person understands and removes entities that
+only mirrored the phone app's internals. What to know:
+
+- **Renamed entities keep their entity IDs, history and settings.** Only the
+  displayed name changes: brand and app names, notes such as "(app)" or
+  "(raw)", protocol words (hex values, "field", "axis N", "Part N", "code")
+  and ALL-CAPS app labels are gone. An entity you renamed yourself keeps your
+  name.
+- **Removed entities disappear by themselves** once the bed has connected and
+  reported its capabilities. Remove them from dashboards, automations and
+  scripts. Their values stay in diagnostics and support bundles.
+- **On/off button pairs became switches** with a new entity ID
+  (`switch.<bed>_<name>`). Point automations at the switch. A switch whose bed
+  never reports the setting shows separate on and off controls and forgets its
+  last command when the connection drops.
+- **Raw and protocol state sensors are disabled by default** for new
+  installations. Existing ones keep their enabled state.
+- **Refresh, query and clock-sync buttons are diagnostic** and disabled by
+  default where the bed reports the value itself.
+- **Preset save buttons ask for confirmation** in the dashboard card, and the
+  card never offers them as a compact quick action.
+
+Removed and replaced entities by bed:
+
+| Bed or app | Removed | Replaced |
+|------------|---------|----------|
+| Motion Bed app | 83 state sensors (preset-selected flags, raw positions, calibration samples, day and month report arrays, module and pressure readbacks); alarm-sound preview buttons | Alarm, climate timer, fault and sleep report details became attributes of their sensors |
+| StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still available through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time and brightness sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
+| StarCode AdjustableM5X5 | Raw time, brightness, RGB-mode and motor part 4-6 sensors, motor-stopped, light-on, firmware-read and kneading-demo binary sensors | |
+| StarCode AdjustableM5X4 | 19 raw field sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor became the **Massage** binary sensor |
+| Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons | Motion sensor on/off buttons became the **Motion sensor** switch; axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
+| Limoss Remote | Repeated motor channel buttons, capability count, calibration reply and raw position sensors | |
+| Reverie, Pairlink | Wave sensor, Pairlink massage mode and timer sensors (the select and number show them) | Pairlink massage rhythm select became the **Massage rhythm** switch |
+| RMControl | Protocol version, bed mode and last alarm record sensors | |
+| MP Remote | Memory request sensor | |
+| AdjustaMattress | Privacy-agreement select, reported alarm and strength sensors, sleeping, alarm, anti-snore and auxiliary status binary sensors, clock sync, alarm query and massage query buttons | Alarm commit and anti-snore selects and the sleep button became the **Alarm**, **Intelligent anti-snore** and **Sleep mode** switches |
+| KomfyD | Bed side select, lock status query | Lock and unlock buttons became the **Control lock** switch; timer start and stop became the **Timer** switch |
+| Smart Sleep | App preset buttons (the standard presets remain), massage binary sensor | Child mode and privacy selects and massage all/off buttons became switches |
+| DoubleSleep | Four flag binary sensors, parser-error and privacy sensors | Child lock select and privacy buttons became switches |
+| Paramount | Session-state and registration-result sensors | Call button, bed switch and the four movement selects became switches |
+| Symphony | | Child mode, privacy, light, massage and sonic on/off controls became switches |
+| Rize, Rize Home | | Motion sensor on/off buttons became the **Motion sensor** switch |
+| OKIN Motion Bed app | | "Bed light parameter 0/1" buttons became the **Bed light** switch |
+| FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | |
+| Sleeptracker | Massage pattern and strength sensors | |
+| FSM Relax | 11 count, acknowledgement, calibration, quarantine, information and raw motor sensors | |
+| Svane | Head, feet and position byte sensors | |
+| M Line | Boolean projection binary sensor | |
+| OKIN bedding apps | Status, timer and save-event code sensors | |
+| eShine OKIN | Alarm refresh button | |
+| Smart Comfort | Base light on/off buttons (the light entity drives it), raw feedback counters | Cup holder and reading light on/off buttons became the **Cup holder light** and **Reading light** switches |
+| Richmat sleep receiver | | Left and right intervention selects became **snore intervention** switches |
+| Richmat resource apps | 13 disabled "App ..." request buttons (the `richmat_resource_bed` action still sends every command) | |
+| BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons | |
+| V-MAT Basic | ED motor status binary sensor | |
+
 ## New Entities, Attributes and Actions
 
 These are additions. Existing entities keep their names, states and attributes.
@@ -178,10 +326,9 @@ These are additions. Existing entities keep their names, states and attributes.
 | `hold_owner` and `hold_generation` fields | `timed_move` and `hold_control` | Always listed. Beds that declare no renewable hold reject them before anything moves; calls without them behave as before. See [Renewable holds](SERVICES.md#renewable-holds) |
 | **Estimated positions** menu | **Configure**, one entry per side on a paired bed with two addresses | Only on beds whose protocol supports [estimated positions](ESTIMATED_POSITIONS.md). Not on single-address paired beds yet |
 | Estimated position, set-reference, "I used the remote", saved-position and "Saved positions" entities | `number`, `button` and `sensor` | Only after you enable estimated positions for a motor |
-| Saved-position actions (`save_position`, `recall_position`, `set_position_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
+| Saved-position actions (`estimate_save_position`, `estimate_recall_position`, `estimate_set_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
 | **Tap to start and stop movement** card option (`tap_to_move`) | Dashboard card editor, **Motors** | Off by default. With it on, a tap on a motor arrow starts the motor and the next tap stops it ([#609](https://github.com/kristofferR/ha-adjustable-bed/issues/609)). See [Tap to move](DASHBOARD_CARD.md#tap-to-move) |
 | Percentage graphic, lumbar graphic and full-card dialog card options (`show_percentage_graphic`, `show_lumbar_graphic`, `show_graphic_labels`, `open_dialog`, `dialog_config`) | Dashboard card editor | Off by default, so existing cards are unchanged. They draw percentage feedback and every estimate state as a schematic pose, add a lumbar section, and open the full card in a dialog from a compact card ([#713](https://github.com/kristofferR/ha-adjustable-bed/pull/713)). See [Dashboard Card Graphics and Dialog](CONFIGURATION.md#dashboard-card-graphics-and-dialog) |
-| **Change app or layout** menu item | **Configure** | On entries of a family with a guided change: Vibradorm, Jiecang, Okin, Keeson, Solace, Leggett & Platt, Sleepy's Elite, Customatic, Jordan's, Malouf / Lucid, LOGICDATA, Jensen / Svane and Limoss, and on Okin CST, L&P legacy app and L&P QRRM remote entries, whose family question also chooses their route ([#889](https://github.com/kristofferR/ha-adjustable-bed/pull/889)). It replaces Vibradorm's **Choose Vibradorm app and remote** item and points to **Reconfigure** |
 | Beta feedback notification | Home Assistant notifications | 24 hours after Home Assistant first loads a beta of a major version. For v5 it links the feedback issue [#914](https://github.com/kristofferR/ha-adjustable-bed/issues/914). It shows again after each restart until you dismiss it; after that, later betas of the same major do not ask again. Stable versions never ask |
 | Profile id and migration record | Diagnostics and support bundles | Diagnostics: `profile` for a standalone entry, `profile_migration` and each side's `profile_id` for a paired entry. Support bundles of a configured bed: `profile` (empty for a raw-address capture). The support bundle's `report_version` is now 2.6 |
 
@@ -199,16 +346,14 @@ hold after 10 s, however often it is renewed. The ceiling runs on the clock
 from the hold's start, so latency no longer adds up across refreshes; a write
 already in flight at the ceiling completes before the release
 ([#865](https://github.com/kristofferR/ha-adjustable-bed/pull/865)). See
-[Renewable holds](SERVICES.md#renewable-holds), the
-[command lifecycle](COMMAND_LIFECYCLE.md#renewable-hold-leases) and the
-[evidence matrix](design/execution-capabilities.md#evidence-matrix) for each
-row's evidence.
+[Renewable holds](SERVICES.md#renewable-holds) and the
+[command lifecycle](COMMAND_LIFECYCLE.md#renewable-hold-leases).
 
 | Hold | Beds |
 |------|------|
 | `stream` | Okin N-frame: Leggett Okin (Prodigy 2L, Prodigy 2, Prodigy CE, U Series), Customatic (Clarity, Jerome's, Remedy, Z-230, Z-280), the Okin CST apps including Nectar Move, Jordan's Serenity and Tranquil, SIMMONS, AdjustableM5X4, Adjustable bed (Lumbar) and Sleepy's BOX25 ([#800](https://github.com/kristofferR/ha-adjustable-bed/pull/800), [#820](https://github.com/kristofferR/ha-adjustable-bed/pull/820)) |
 | `stream` | Jiecang: ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD and the three LOGICDATA apps ([#799](https://github.com/kristofferR/ha-adjustable-bed/pull/799)) |
-| `stream` | Keeson: the K1 profiles with stream evidence, such as Ergomotion, Serta, Restonic, INNOVA, the ORE apps, SBI, Cool Base, Glideaway Motion and AdjustaMattress P1/P2, plus every cluster033 app layout and every Ergomotion 4.0 style ([#819](https://github.com/kristofferR/ha-adjustable-bed/pull/819)) |
+| `stream` | Keeson: the K1 profiles with stream evidence, such as Ergomotion, Serta, Restonic, INNOVA, the ORE apps, SBI, Cool Base, Glideaway Motion and AdjustaMattress P1/P2, plus every Keeson layout app layout and every Ergomotion 4.0 style ([#819](https://github.com/kristofferR/ha-adjustable-bed/pull/819)) |
 | `stream` | Richmat: every `richmat` remote-code route, the Richmat MH apps, L&P MlRM, HJBed, and RMControl products whose motor controls all sustain ([#822](https://github.com/kristofferR/ha-adjustable-bed/pull/822)) |
 | `stream` | Malouf and Lucid apps and the Malouf new and legacy Okin routes ([#823](https://github.com/kristofferR/ha-adjustable-bed/pull/823)); Limoss Remote and FSM Relax ([#802](https://github.com/kristofferR/ha-adjustable-bed/pull/802)); Okin 5A ELEVATE ([#813](https://github.com/kristofferR/ha-adjustable-bed/pull/813)) |
 | `stream` | Linak, OCTO Standard, eShine, the eShine E2000/E3000/E3100/E5000 app, TiMOTION AHF, the Vibradorm app profiles, V-MAT Basic, StarCode M1X12 and M5X5, L&P Gen2, Jensen JMC400, FurniMove, the Sleepy's Elite app ([#815](https://github.com/kristofferR/ha-adjustable-bed/pull/815), [#831](https://github.com/kristofferR/ha-adjustable-bed/pull/831)); Good Vibe Sleep's sustained-press controls ([#860](https://github.com/kristofferR/ha-adjustable-bed/pull/860)) and the classic Richmat apps' keep buttons ([#870](https://github.com/kristofferR/ha-adjustable-bed/pull/870)), declared per control because the same buttons also send short and long presses; Svane Remote on both its routes ([#827](https://github.com/kristofferR/ha-adjustable-bed/pull/827)); Jensen LinOn, the Svane `jensen_linon` route ([#843](https://github.com/kristofferR/ha-adjustable-bed/pull/843)) |
@@ -377,7 +522,7 @@ For existing beds ([#792](https://github.com/kristofferR/ha-adjustable-bed/pull/
   **Apply this change** and **Keep current setup** as equal answers, a failed
   check says **Nothing was changed** and offers **Try again** or **Keep**, and
   an applied change names the new setup and the way back.
-  [Changing the app or layout](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
+  [Changing the app or layout](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
   describes the steps.
 - **Reconfigure** also reaches routes that had no way in ([#889](https://github.com/kristofferR/ha-adjustable-bed/pull/889)). An Okin
   CST entry answers the Okin question, so it can move to another Okin route

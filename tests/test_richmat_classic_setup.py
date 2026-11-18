@@ -48,11 +48,10 @@ def _setup(data: dict) -> dict:
 
 
 def test_all_five_app_choices_are_findable_and_model_inventories_are_distinct():
-    # Each app is an answer of the one Richmat row, which names it.
-    richmat_row = next(o for o in get_bed_type_options() if o['value'] == 'richmat')
+    # Each app is an answer of the Richmat question and has its own searchable row.
+    rows = {o['value']: o['label'] for o in get_bed_type_options()}
     for app, name in APP_NAMES.items():
-        assert name in richmat_row['label']
-        assert not any(o['value'] == 'richmat_classic_apps:' + app for o in get_bed_type_options())
+        assert rows['richmat_classic_apps:' + app] == f'{name} app'
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
         'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
         'luunarise2': 604, 'powercool': 586,
@@ -197,7 +196,7 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import (
         CONF_BED_TYPE,
-        CONF_DISCONNECT_AFTER_COMMAND,
+        CONF_CONNECTION_MODE,
         CONF_PRODUCT_TYPE,
         CONF_PROTOCOL_VARIANT,
     )
@@ -216,16 +215,15 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
         result = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: "ZRS6:CORN"})
         assert result["step_id"] == "finish_settings"
         result = await flow.async_step_finish_settings(
-            {CONF_NAME: "Classic bed", CONF_DISCONNECT_AFTER_COMMAND: False}
+            {CONF_NAME: "Classic bed", CONF_CONNECTION_MODE: "idle"}
         )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     data = result["data"]
     assert (data[CONF_BED_TYPE], data[CONF_PROTOCOL_VARIANT], data[CONF_PRODUCT_TYPE]) == (
         BED_TYPE_RICHMAT_CLASSIC_APPS, "fortywinks", "CORN",
     )
-    assert (data[CONF_MOTOR_COUNT], data[CONF_HAS_MASSAGE], data[CONF_DISABLE_ANGLE_SENSING]) == (
-        2, False, True,
-    )
+    assert (data[CONF_MOTOR_COUNT], data[CONF_HAS_MASSAGE]) == (2, False)
+    assert CONF_DISABLE_ANGLE_SENSING not in data
     assert data[CONF_RICHMAT_CLASSIC_THIRD_SERVICE] is False
     from custom_components.adjustable_bed.profile_id import resolve_profile_id
 
