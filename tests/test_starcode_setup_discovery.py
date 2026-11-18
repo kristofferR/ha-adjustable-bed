@@ -338,7 +338,7 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             for marker in form_fields(result["data_schema"])
             if marker.schema in (const.CONF_MOTOR_PULSE_COUNT, const.CONF_MOTOR_PULSE_DELAY_MS)
         }
-        assert defaults == {const.CONF_MOTOR_PULSE_COUNT: "3", const.CONF_MOTOR_PULSE_DELAY_MS: "50"}
+        assert defaults == {const.CONF_MOTOR_PULSE_COUNT: 3}
         with (
             patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
             patch(

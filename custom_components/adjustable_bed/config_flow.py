@@ -7708,6 +7708,10 @@ class AdjustableBedOptionsFlow(
             schema_dict.update(fields(*_ANGLE_LIMITS))
 
         if user_input is not None:
+            # Only fields this form shows are saved: the bed type, route and a
+            # guided family's app questions change in Reconfigure.
+            asked_keys = {marker.schema for marker in schema_dict}
+            user_input = {key: value for key, value in user_input.items() if key in asked_keys}
             # HA's select control uses string values; keep persisted counts numeric.
             if CONF_MOTOR_COUNT in user_input:
                 user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}

@@ -129,25 +129,6 @@ async def test_restored_basic_features_and_no_motor_branch_are_explicit(hass):
         assert controller.memory_slot_count == (0 if control == "2" else 6)
 
 
-async def test_app_change_in_options_requires_guided_verification(hass):
-    entry = MockConfigEntry(domain=const.DOMAIN, data=app_data(**{
-        const.CONF_VIBRADORM_RESTORED: True,
-        const.CONF_VIBRADORM_RGB: True,
-        const.CONF_HAS_MASSAGE: True,
-        const.CONF_VIBRADORM_APP_METADATA: {"model": "old metadata"},
-    }))
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({const.CONF_VIBRADORM_APP_PROFILE: "werkmeister"})
-    assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[const.CONF_VIBRADORM_APP_PROFILE] == "caresse"
-    assert entry.data[const.CONF_HAS_MASSAGE] is True
-    assert entry.data[const.CONF_VIBRADORM_APP_METADATA] == {"model": "old metadata"}
-
-
 @pytest.mark.parametrize("options", [False, True])
 @pytest.mark.parametrize("old_app", ["caresse", "werkmeister"])
 async def test_app_switch_in_the_family_step_discards_old_app_fields(hass, options, old_app):
@@ -787,21 +768,6 @@ async def test_guided_retained_setup_persists_literal_remote_and_independent_fea
     assert entry.data[const.CONF_VIBRADORM_LIGHT_EXTENSION] is True
     assert entry.data[const.CONF_MOTOR_PULSE_USER_SET] is False
     assert (const.CONF_VIBRADORM_APP_METADATA in entry.data) == (control == "2")
-
-
-async def test_options_cannot_silently_reset_app_to_legacy(hass):
-    entry = MockConfigEntry(domain=const.DOMAIN, data=app_data(**{
-        const.CONF_VIBRADORM_APP_METADATA: {"model": "old profile"},
-    }))
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM})
-    assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM_APP
-    assert entry.data[const.CONF_VIBRADORM_APP_METADATA] == {"model": "old profile"}
 
 
 @pytest.mark.parametrize("app,control,field", [

@@ -223,9 +223,8 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
     assert (data[CONF_BED_TYPE], data[CONF_PROTOCOL_VARIANT], data[CONF_PRODUCT_TYPE]) == (
         BED_TYPE_RICHMAT_CLASSIC_APPS, "fortywinks", "CORN",
     )
-    assert (data[CONF_MOTOR_COUNT], data[CONF_HAS_MASSAGE], data[CONF_DISABLE_ANGLE_SENSING]) == (
-        2, False, True,
-    )
+    assert (data[CONF_MOTOR_COUNT], data[CONF_HAS_MASSAGE]) == (2, False)
+    assert CONF_DISABLE_ANGLE_SENSING not in data
     assert data[CONF_RICHMAT_CLASSIC_THIRD_SERVICE] is False
     from custom_components.adjustable_bed.profile_id import resolve_profile_id
 

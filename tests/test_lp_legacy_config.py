@@ -199,19 +199,3 @@ async def test_paired_options_preserve_each_sides_profile_and_endpoints(
     assert set(entry.data).isdisjoint(_settings())
 
 
-async def test_paired_type_change_cannot_create_unconfigured_lp_sides(hass: HomeAssistant) -> None:
-    data = build_pair_entry_data(
-        {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_RICHMAT},
-        {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", CONF_BED_TYPE: BED_TYPE_RICHMAT},
-        name="Pair",
-    )
-    entry = MockConfigEntry(domain=DOMAIN, data=data)
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LEGGETT_LP_LEGACY})
-
-    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert entry.data == data

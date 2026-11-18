@@ -556,38 +556,6 @@ async def test_paired_setup_is_unchanged_until_explicit_split(
 
 
 @pytest.mark.parametrize(
-    "bed_type", [const.BED_TYPE_VIBRADORM, const.BED_TYPE_VIBRADORM_APP, const.BED_TYPE_VMATBASIC]
-)
-async def test_unchanged_rendered_options_keep_internal_family_route(hass, bed_type):
-    data = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: bed_type}
-    if bed_type == const.BED_TYPE_VIBRADORM_APP:
-        data = _vibradorm_app_data(
-            {**data, const.CONF_VIBRADORM_APP_PROFILE: "vmat"},
-            {const.CONF_VIBRADORM_VMAT_REMOTE: "07"},
-        )
-    elif bed_type == const.BED_TYPE_VMATBASIC:
-        data = _vmatbasic_data(data, {const.CONF_VMATBASIC_PROFILE: "cbi"})
-    entry = entry_for(hass, data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler, flow.hass = entry.entry_id, hass
-    result = await flow.async_step_settings()
-    schema = result["data_schema"]
-    assert schema is not None
-    values = schema({})
-    assert isinstance(values, dict)
-    rows = schema.schema[const.CONF_BED_TYPE].config["options"]
-    assert sum(row["label"].endswith(" · Vibradorm") for row in rows) == 1
-    assert values[const.CONF_BED_TYPE] == bed_type
-    result = await flow.async_step_settings(values)
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == bed_type
-    if bed_type == const.BED_TYPE_VIBRADORM_APP:
-        assert entry.data[const.CONF_VIBRADORM_VMAT_REMOTE] == "07"
-    elif bed_type == const.BED_TYPE_VMATBASIC:
-        assert entry.data[const.CONF_VMATBASIC_PROFILE] == "cbi"
-
-
-@pytest.mark.parametrize(
     "route,pairing",
     [
         ("typed", "manual_pairing"),

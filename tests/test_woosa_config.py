@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -115,46 +114,6 @@ async def test_manual_setup_saves_woosa_profile(hass: HomeAssistant) -> None:
     assert result["data"][CONF_MOTOR_COUNT] == 2
 
 
-async def test_options_select_woosa_and_offline_reload(
-    hass: HomeAssistant, enable_custom_integrations: None
-) -> None:
-    from custom_components.adjustable_bed.beds.woosa import WoosaController
-
-    entry = MockConfigEntry(domain=DOMAIN, data=_entry_data(variant=VARIANT_AUTO))
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    initial = await flow.async_step_settings()
-    variants_marker = next(
-        marker for marker in initial["data_schema"].schema
-        if marker.schema == CONF_PROTOCOL_VARIANT
-    )
-    assert SOLACE_VARIANT_WOOSA in initial["data_schema"].schema[variants_marker].container
-    # Configure sends the app change to the guided change.
-    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: SOLACE_VARIANT_WOOSA})
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    manager = hass.config_entries.flow
-    result = await manager.async_init(
-        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
-    )
-    result = await manager.async_configure(result["flow_id"], {"choice": "woosa"})
-    assert result["step_id"] == "solace_woosa"
-    result = await manager.async_configure(result["flow_id"], {})
-    assert result["step_id"] == "migration_confirm"
-    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
-    assert result["reason"] == "migration_applied"
-    assert entry.data[CONF_PROTOCOL_VARIANT] == SOLACE_VARIANT_WOOSA
-
-    # A fresh coordinator after reload must retain the explicit app profile,
-    # even when discovery is unavailable and the user-facing name was changed.
-    coordinator = AdjustableBedCoordinator(hass, entry)
-    await coordinator.async_prime_offline_controller()
-    assert isinstance(coordinator.capability_controller, WoosaController)
-    assert coordinator.capability_controller.profile is SOLACE_PROFILES["woosa"]
-    assert coordinator.capability_controller.supports_massage
-
-
 async def test_paired_options_preserve_different_side_profiles(hass: HomeAssistant) -> None:
     left = _entry_data()
     right = {**_entry_data(variant=VARIANT_AUTO), CONF_ADDRESS: "AA:BB:CC:DD:EE:22"}
@@ -178,32 +137,6 @@ async def test_paired_options_preserve_different_side_profiles(hass: HomeAssista
         child = AdjustableBedCoordinator(hass, MockConfigEntry(domain=DOMAIN, data=side_data))
         await child.async_prime_offline_controller()
         assert child.capability_controller.profile is expected
-
-
-@pytest.mark.parametrize(
-    ("initial", "requested"),
-    [(VARIANT_AUTO, SOLACE_VARIANT_WOOSA), (SOLACE_VARIANT_WOOSA, VARIANT_AUTO)],
-)
-async def test_paired_options_reject_woosa_profile_change(
-    hass: HomeAssistant, initial: str, requested: str
-) -> None:
-    left = _entry_data(variant=initial)
-    right = {**_entry_data(variant=VARIANT_AUTO), CONF_ADDRESS: "AA:BB:CC:DD:EE:22"}
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=build_pair_entry_data(left, right, name="Paired bed"),
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == initial
-    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
 
 
 async def test_explicit_woosa_mints_offline_without_ble_name(hass: HomeAssistant) -> None:

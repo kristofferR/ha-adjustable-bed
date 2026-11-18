@@ -146,34 +146,6 @@ def test_physical_profile_fields_never_inherit_from_paired_parent():
     assert inherited[const.CONF_MOTOR_PULSE_COUNT] == 4
 
 
-@pytest.mark.parametrize("existing_fsm", (False, True))
-async def test_pair_options_requires_unpair_for_new_route_or_physical_profile_edit(hass, existing_fsm):
-    from homeassistant.const import CONF_ADDRESS
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.pairing import build_pair_entry_data
-
-    left = {**data(), CONF_ADDRESS: "AA:BB:CC:DD:EE:FF"}
-    right = {**data(), CONF_ADDRESS: "11:22:33:44:55:66", const.CONF_PRODUCT_TYPE: "chair"}
-    if not existing_fsm:
-        left[const.CONF_BED_TYPE] = right[const.CONF_BED_TYPE] = const.BED_TYPE_LIMOSS
-    entry = MockConfigEntry(domain=const.DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    shown = await flow.async_step_settings()
-    fields = {marker.schema for marker in shown["data_schema"].schema}
-    assert const.CONF_PRODUCT_TYPE not in fields
-    submitted = {const.CONF_PRODUCT_TYPE: "bed"} if existing_fsm else {const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX}
-    result = await flow.async_step_settings(submitted)
-    field = "base" if existing_fsm else const.CONF_BED_TYPE
-    assert result["errors"] == {field: "app_profile_unpair_first"}
-    assert result["description_placeholders"]["profile"] == "FSM Relax"
-    assert [child[const.CONF_PRODUCT_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == ["bed", "chair"]
-    assert [child[const.CONF_BED_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == [left[const.CONF_BED_TYPE], right[const.CONF_BED_TYPE]]
-
-
 @pytest.mark.parametrize("name,chooser", [("limossBed", True), ("LimossBed", False)])
 async def test_public_ffe0_discovery_requires_choice_only_for_exact_app_candidate(
     hass, enable_custom_integrations, mock_bluetooth_service_info, name, chooser,

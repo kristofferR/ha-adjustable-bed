@@ -15,7 +15,6 @@ from custom_components.adjustable_bed.config_flow import (
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     CONF_BED_TYPE,
     CONF_CONNECTION_MODE,
@@ -119,7 +118,7 @@ async def test_options_keep_app_layout_and_transport(hass):
     assert CONF_JIECANG_APP_LAYOUT not in defaults
     assert CONF_JIECANG_APP_TRANSPORT not in defaults
     assert defaults[CONF_HAS_LIGHT] is False
-    # Layout and transport change through the guided change, never Configure.
+    # The layout changes through the guided change, never Configure.
     result = await flow.async_step_settings(
         {
             CONF_JIECANG_APP_PROFILE: "dreamotion",
@@ -128,7 +127,8 @@ async def test_options_keep_app_layout_and_transport(hass):
             CONF_HAS_LIGHT: True,
         }
     )
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
+    # The layout is not on the form, so it stays as saved.
+    assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_JIECANG_APP_LAYOUT] == "standard_4_bilateral"
     # A preference still saves in Configure.
     result = await flow.async_step_settings(
@@ -143,20 +143,6 @@ async def test_options_keep_app_layout_and_transport(hass):
     assert entry.data[CONF_JIECANG_APP_LAYOUT] == "standard_4_bilateral"
     assert entry.data[CONF_JIECANG_APP_TRANSPORT] == "g3"
     assert entry.data[CONF_HAS_LIGHT] is True
-
-
-async def test_options_switch_from_legacy_uses_the_guided_change(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_JIECANG, CONF_MOTOR_COUNT: 2}
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_JIECANG_APP})
-    assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_JIECANG
 
 
 async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
@@ -226,22 +212,6 @@ async def test_paired_options_preserve_each_sides_app_profile(hass):
         assert {key: child[key] for key in app_fields} == {key: original[key] for key in app_fields}
         assert child[CONF_MOTOR_PULSE_COUNT] == 20
     assert set(entry.data).isdisjoint(app_fields)
-
-
-async def test_paired_options_cannot_create_unconfigured_app_sides(hass):
-    data = build_pair_entry_data(
-        {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_JIECANG},
-        {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", CONF_BED_TYPE: BED_TYPE_JIECANG},
-        name="Pair",
-    )
-    entry = MockConfigEntry(domain=DOMAIN, data=data)
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_JIECANG_APP})
-    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert entry.data == data
 
 
 @pytest.mark.parametrize("layout", ["standard_4_bilateral", "split_after_bilateral"])

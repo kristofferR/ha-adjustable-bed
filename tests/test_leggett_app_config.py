@@ -15,7 +15,6 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_LINAK,
     CONF_BED_TYPE,
     CONF_CONNECTION_MODE,
     CONF_HAS_MASSAGE,
@@ -62,26 +61,6 @@ async def test_setup_collects_app_then_preserves_pairing(
     assert flow._manual_data[CONF_LEGGETT_APP_PROFILE] == "prodigy2l"
     assert flow._manual_data[CONF_MOTOR_COUNT] == 3
     assert requires_pairing(BED_TYPE_LEGGETT_OKIN)
-
-
-@pytest.mark.parametrize("profile", LEGGETT_APP_MOTOR_COUNTS)
-async def test_options_send_a_profile_change_to_the_guided_change(hass, profile):
-    entry = MockConfigEntry(
-        domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN, CONF_MOTOR_COUNT: 2}
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings(
-        {CONF_LEGGETT_APP_PROFILE: profile, CONF_MOTOR_COUNT: 2}
-    )
-    if profile == LEGGETT_APP_DEFAULT_PROFILE:
-        # An entry saved before app profiles already runs the default one.
-        assert result["type"] == FlowResultType.CREATE_ENTRY
-    else:
-        assert result["errors"] == {"base": "migration_reconfigure_required"}
-        assert CONF_LEGGETT_APP_PROFILE not in entry.data
 
 
 async def test_legacy_options_without_profile_keep_existing_motor_count(hass):
@@ -134,40 +113,6 @@ async def test_pair_common_options_preserve_distinct_profiles(hass):
         "useries",
     ]
     assert CONF_LEGGETT_APP_PROFILE not in entry.data
-
-
-async def test_pair_cannot_switch_to_leggett_app_without_unpairing(hass):
-    left = {CONF_ADDRESS: "11:22:33:44:55:66", CONF_BED_TYPE: BED_TYPE_LINAK, CONF_MOTOR_COUNT: 2}
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=build_pair_entry_data(left, {**left, CONF_ADDRESS: "11:22:33:44:55:77"}, name="Pair"),
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN})
-    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
-    assert flow._pending_data == {}
-
-
-async def test_legacy_umbrella_variant_change_uses_the_guided_change(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
-            CONF_PROTOCOL_VARIANT: "gen2",
-            CONF_MOTOR_COUNT: 2,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_OKIN})
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[CONF_PROTOCOL_VARIANT] == "gen2"
 
 
 async def test_stored_explicit_profile_keeps_its_motor_count(hass):

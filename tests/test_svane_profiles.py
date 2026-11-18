@@ -18,7 +18,6 @@ from custom_components.adjustable_bed.beds.svane.state import get_svane_session
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
@@ -162,21 +161,6 @@ async def test_explicit_jmc_change_persists_with_its_own_session(hass, enable_cu
     await change_profile(hass, entry, SVANE_VARIANT_JMC)
     assert entry.data[CONF_PROTOCOL_VARIANT] == SVANE_VARIANT_JMC
     assert not get_svane_session(hass, entry.data[CONF_ADDRESS], "jmc").light_on
-
-
-async def test_configure_sends_a_profile_change_to_reconfigure(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_SVANE},
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    result = await flow._async_options_form(
-        {CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC}, step_id="settings"
-    )
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert CONF_PROTOCOL_VARIANT not in entry.data
 
 
 @pytest.mark.parametrize(

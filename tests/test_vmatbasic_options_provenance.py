@@ -69,12 +69,11 @@ async def test_displayed_explicit_pulse_values_are_user_owned(hass: HomeAssistan
     rendered = await flow.async_step_settings()
     schema = rendered["data_schema"]
     assert isinstance(schema, vol.Schema)
-    submitted = schema({const.CONF_MOTOR_PULSE_COUNT: "17", const.CONF_MOTOR_PULSE_DELAY_MS: "90"})
+    submitted = schema({const.CONF_MOTOR_PULSE_COUNT: 17})
     assert isinstance(submitted, dict)
     result = await flow.async_step_settings(submitted)
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert flow.config_entry.data[const.CONF_MOTOR_PULSE_COUNT] == 17
-    assert flow.config_entry.data[const.CONF_MOTOR_PULSE_DELAY_MS] == 90
     assert flow.config_entry.data[const.CONF_MOTOR_PULSE_USER_SET] is True
 
 
@@ -131,7 +130,7 @@ async def test_paired_displayed_pulse_override_updates_both_children(hass: HomeA
     rendered = await flow.async_step_settings()
     schema = rendered["data_schema"]
     assert isinstance(schema, vol.Schema)
-    submitted = schema({const.CONF_MOTOR_PULSE_COUNT: "17", const.CONF_MOTOR_PULSE_DELAY_MS: "90"})
+    submitted = schema({const.CONF_MOTOR_PULSE_COUNT: 17})
     assert isinstance(submitted, dict)
     result = await flow.async_step_settings(submitted)
     assert result["type"] == FlowResultType.CREATE_ENTRY

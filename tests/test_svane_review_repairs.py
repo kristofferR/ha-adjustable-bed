@@ -1,6 +1,5 @@
 """Actual public boundaries for the four scoped PR648 findings."""
 
-from copy import deepcopy
 from unittest.mock import AsyncMock
 
 import pytest
@@ -85,29 +84,6 @@ async def test_registered_save_does_not_overwrite_slot_with_stale_read(hass, pro
     assert controller.session.multi_slots == multi_before
     controller._coordinator.save_app_state.assert_not_called()
     controller.client.write_gatt_char.assert_not_awaited()
-
-
-@pytest.mark.parametrize("requested", [SVANE_VARIANT_MULTI, SVANE_VARIANT_JMC])
-async def test_shared_pair_profile_edit_preserves_each_physical_descriptor(hass, requested):
-    first = {
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_SVANE,
-        CONF_SIDE: SIDE_LEFT, CONF_PROTOCOL_VARIANT: (
-            SVANE_VARIANT_JMC if requested == SVANE_VARIANT_MULTI else SVANE_VARIANT_MULTI
-        ),
-    }
-    second = {**first, CONF_ADDRESS: "AA:BB:CC:DD:EE:02", CONF_SIDE: SIDE_RIGHT,
-              CONF_PROTOCOL_VARIANT: requested}
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_PAIR_ID: "pair",
-        CONF_PAIR_CHILDREN: [first, second], CONF_NAME: "Pair"})
-    entry.add_to_hass(hass)
-    before = deepcopy(dict(entry.data))
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    result = await flow._async_options_form({CONF_PROTOCOL_VARIANT: requested}, step_id="settings")
-    if result.get("type") == "form" and not result.get("errors"):
-        result = await flow._async_options_form({CONF_PROTOCOL_VARIANT: requested}, step_id="settings")
-    assert result.get("errors", {}).get(CONF_PROTOCOL_VARIANT) == "app_profile_unpair_first"
-    assert entry.data == before
 
 
 @pytest.mark.parametrize("profile,control", [
@@ -325,7 +301,7 @@ async def test_shared_common_option_and_rendered_profile_keep_mixed_routes(hass,
     # The flow manager validates the rendered values before the step sees them.
     assert form["data_schema"] is not None
     rendered = form["data_schema"]({})
-    rendered[CONF_PROTOCOL_VARIANT] = representative
+
     rendered[CONF_IDLE_DISCONNECT_SECONDS] = 50
     result = await flow._async_options_form(rendered, step_id="settings")
     assert result["type"] == "create_entry"
