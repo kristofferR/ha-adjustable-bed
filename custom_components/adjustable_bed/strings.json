@@ -3350,16 +3350,16 @@
         "name": "{action}"
       },
       "somos_head_massage": {
-        "name": "Head massage button"
+        "name": "Head massage"
       },
       "somos_foot_massage": {
-        "name": "Foot massage button"
+        "name": "Foot massage"
       },
       "somos_massage_timer_cycle": {
         "name": "Cycle massage timer"
       },
       "somos_light": {
-        "name": "Light button"
+        "name": "Light"
       },
       "somos_head_up": {
         "name": "Head up"
@@ -3380,22 +3380,22 @@
         "name": "Lumbar / tilt down"
       },
       "somos_axis_1_up": {
-        "name": "Axis 1 up"
+        "name": "Lift 1 up"
       },
       "somos_axis_1_down": {
-        "name": "Axis 1 down"
+        "name": "Lift 1 down"
       },
       "somos_axis_2_up": {
-        "name": "Axis 2 up"
+        "name": "Lift 2 up"
       },
       "somos_axis_2_down": {
-        "name": "Axis 2 down"
+        "name": "Lift 2 down"
       },
       "somos_axis_3_up": {
-        "name": "Axis 3 up"
+        "name": "Lift 3 up"
       },
       "somos_axis_3_down": {
-        "name": "Axis 3 down"
+        "name": "Lift 3 down"
       }
     },
     "cover": {
@@ -3736,13 +3736,13 @@
         "name": "Lumbar / tilt"
       },
       "somos_axis_1": {
-        "name": "Axis 1"
+        "name": "Lift 1"
       },
       "somos_axis_2": {
-        "name": "Axis 2"
+        "name": "Lift 2"
       },
       "somos_axis_3": {
-        "name": "Axis 3"
+        "name": "Lift 3"
       }
     },
     "sensor": {
@@ -5306,7 +5306,7 @@
         "name": "SonicSleep state"
       },
       "somos_timer": {
-        "name": "Massage timer indicator"
+        "name": "Massage timer"
       }
     },
     "light": {

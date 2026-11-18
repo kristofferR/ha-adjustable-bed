@@ -5322,18 +5322,20 @@ D/E do not support single-address left/right pairing.
 ### Capabilities
 
 A/C expose head and feet. B additionally exposes the app's lumbar/tilt control.
-D/E expose **Axis 1**, **Axis 2** and **Axis 3**. These are neutral app control
-identities: physical anatomy and side are unverified. Both first rockers use
-head artwork; the third uses separate leg-arrow artwork. Neither the product
-name nor a Java field name assigns an axis to a side or body part.
+D/E expose **Lift 1**, **Lift 2** and **Lift 3** (actions and `hold_control`
+use `axis_1`–`axis_3`). These are neutral app control identities: physical
+anatomy and side are unverified. Both first rockers use head artwork; the third
+uses separate leg-arrow artwork. Neither the product name nor a Java field name
+assigns an axis to a side or body part.
 
 Native covers, bounded moves and renewable held controls use only the selected
 product's axes. Preset and memory buttons are single writes; memory programming
 is unavailable. D's star/M favorite is memory button 1. B's `iv_light` is memory
-button 2, while B's bed light is `v_snore`. Massage head, foot and timer buttons
-are opaque app actions, with no inferred levels, timer values or cycle order.
-The timer sensor reports the app's 10/20/30-minute indicator and a remaining
-seconds attribute. No position or light-state feedback is established.
+button 2, while B's bed light is `v_snore`. The **Head massage**, **Foot massage**,
+**Cycle massage timer** and **Light** buttons are opaque app actions, with no
+inferred levels, timer values, cycle order or light state. The **Massage timer**
+sensor reports the app's 10/20/30-minute indicator and a remaining seconds
+attribute. No position or light-state feedback is established.
 
 ### Commands and timing
 
