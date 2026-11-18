@@ -1334,6 +1334,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_icon = spec.icon
+        if spec.diagnostic:
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+            self._attr_entity_registry_enabled_default = False
         # Home Assistant prefers any _attr_name, even None, over the translation,
         # so only set it when the name is not translated.
         if spec.translation_key is None or spec.key.startswith(

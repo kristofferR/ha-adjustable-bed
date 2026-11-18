@@ -27,7 +27,6 @@ from ..entity_specs import (
 )
 from ..lifecycle import ControllerSession
 from . import state
-from .state import ALARM_1, ALARM_2, ALARM_3
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -357,7 +356,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
         specs = [
             ControllerButtonSpec(
                 "nerum_light",
-                "Light",
+                "Toggle light",
                 lambda c: require(c)._press("light"),
                 hold=ControllerHoldSpec("light"),
                 translation_key="nerum_light",
@@ -371,6 +370,8 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                     "Refresh alarms",
                     lambda c: require(c).refresh_alarms(),
                     translation_key="nerum_alarm_refresh",
+                    # Alarms are only reported in reply to a query.
+                    diagnostic=True,
                 )
             )
         return tuple(specs)
@@ -463,40 +464,42 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                 self.forward_controller_state_updates(state.MASSAGE(reply.massage))
             if reply.light is not None:
                 self.forward_controller_state_updates(state.LIGHT(reply.light))
-        elif isinstance(reply, state.Operation):
-            self.forward_controller_state_updates(state.OPERATE(reply.value))
-        elif reply is not None:
+        elif reply is not None and not isinstance(reply, state.Operation):
+            # P1 operation replies only echo which app control ran; not state.
             for slot, alarm in reply:
-                value = (
-                    f"{alarm.hour:02}:{alarm.minute:02};{alarm.repeat};{alarm.kind};{int(alarm.on)}"
+                self.forward_controller_state_updates(
+                    state.ALARM_KEYS[slot - 1](f"{alarm.hour:02}:{alarm.minute:02}"),
+                    state.ALARM_DETAIL_KEYS[slot - 1](state.alarm_detail(alarm)),
                 )
-                if slot == 1:
-                    self.forward_controller_state_updates(ALARM_1(value))
-                elif slot == 2:
-                    self.forward_controller_state_updates(ALARM_2(value))
-                else:
-                    self.forward_controller_state_updates(ALARM_3(value))
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         specs = (
             [
-                ControllerStateSensorSpec(str(key), str(key), key, "mdi:information-outline")
+                ControllerStateSensorSpec(
+                    str(key),
+                    str(key),
+                    key,
+                    "mdi:information-outline",
+                    native_unit_of_measurement="min" if key is state.MINUTES else None,
+                )
                 for key in (state.HEAD, state.FOOT, state.MINUTES, state.WAVE)
             ]
             if self.profile.key != "p3"
             else []
         )
-        if self.profile.key == "p1":
-            specs.append(
-                ControllerStateSensorSpec(
-                    str(state.OPERATE), str(state.OPERATE), state.OPERATE, "mdi:information-outline"
-                )
-            )
         if self.profile.key != "p1":
             specs.extend(
-                ControllerStateSensorSpec(str(key), str(key), key, "mdi:alarm")
-                for key in state.ALARM_KEYS
+                ControllerStateSensorSpec(
+                    str(key),
+                    str(key),
+                    key,
+                    "mdi:alarm",
+                    attribute_keys=(detail,),
+                    # Filled by the alarm refresh or a P3 alarm write.
+                    entity_registry_enabled_default=False,
+                )
+                for key, detail in zip(state.ALARM_KEYS, state.ALARM_DETAIL_KEYS, strict=True)
             )
         return tuple(specs)
 

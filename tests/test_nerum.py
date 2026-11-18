@@ -78,6 +78,17 @@ def test_r1_and_safe_session_owned_fragment_admission():
             assert alarm.repeat == row["expected"]["repeat"] & 255
 
 
+
+def test_alarm_detail_names_days_and_wake_action():
+    alarm = app.Alarm(7, 30, 0b1000_0011, app.WAKE["memory_2"], True)
+    assert state.alarm_detail(alarm) == {
+        "enabled": True,
+        "days": ["sunday", "monday"],
+        "recurring": True,
+        "action": "memory_2",
+    }
+    assert state.alarm_detail(app.Alarm(kind=9))["action"] is None
+
 def test_exact_discovery_literals_and_truncation_safety():
     for row in PARSERS:
         if row["parser"] != "discovery":

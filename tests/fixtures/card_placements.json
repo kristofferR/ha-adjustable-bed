@@ -4839,9 +4839,6 @@
   "sensor:nerum_minutes": {
     "card_section": "hidden"
   },
-  "sensor:nerum_operate": {
-    "card_section": "hidden"
-  },
   "sensor:nerum_wave": {
     "card_section": "hidden"
   }

@@ -3350,7 +3350,7 @@
         "name": "{action}"
       },
       "nerum_light": {
-        "name": "Light action"
+        "name": "Toggle light"
       },
       "nerum_alarm_refresh": {
         "name": "Refresh alarms"
@@ -5252,22 +5252,19 @@
         "name": "Foot massage level"
       },
       "nerum_minutes": {
-        "name": "Massage remaining minutes"
+        "name": "Massage timer"
       },
       "nerum_wave": {
         "name": "Massage wave"
       },
-      "nerum_operate": {
-        "name": "Reported operation"
-      },
       "nerum_alarm_1": {
-        "name": "Alarm 1 fields"
+        "name": "Alarm 1"
       },
       "nerum_alarm_2": {
-        "name": "Alarm 2 fields"
+        "name": "Alarm 2"
       },
       "nerum_alarm_3": {
-        "name": "Alarm 3 fields"
+        "name": "Alarm 3"
       }
     },
     "light": {

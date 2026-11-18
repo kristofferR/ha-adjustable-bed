@@ -36,6 +36,8 @@ class ControllerButtonSpec:
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
+    # A maintenance action (e.g. a refresh): diagnostic and disabled by default.
+    diagnostic: bool = field(default=False, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)

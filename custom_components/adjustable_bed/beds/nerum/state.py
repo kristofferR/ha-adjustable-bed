@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Final
 
 from ...controller_state import StateKey
-from ...profiles.nerum import Alarm, Protocol
+from ...profiles.nerum import WAKE, Alarm, Protocol
 
 HEAD: Final = StateKey[int]("nerum_head_massage")
 FOOT: Final = StateKey[int]("nerum_foot_massage")
@@ -12,11 +12,23 @@ MINUTES: Final = StateKey[int]("nerum_minutes")
 WAVE: Final = StateKey[int]("nerum_wave")
 LIGHT: Final = StateKey[bool]("nerum_light")
 MASSAGE: Final = StateKey[bool]("nerum_massage")
-OPERATE: Final = StateKey[int]("nerum_operate")
-ALARM_1: Final = StateKey[str]("nerum_alarm_1")
-ALARM_2: Final = StateKey[str]("nerum_alarm_2")
-ALARM_3: Final = StateKey[str]("nerum_alarm_3")
-ALARM_KEYS: Final = (ALARM_1, ALARM_2, ALARM_3)
+# Each alarm sensor shows its HH:MM time; the rest of the record is attributes.
+ALARM_KEYS: Final = tuple(StateKey[str](f"nerum_alarm_{slot}") for slot in (1, 2, 3))
+ALARM_DETAIL_KEYS: Final = tuple(
+    StateKey[dict[str, object]](f"nerum_alarm_{slot}_detail") for slot in (1, 2, 3)
+)
+_DAYS: Final = ("sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday")
+_ACTIONS: Final = {code: action for action, code in WAKE.items()}
+
+
+def alarm_detail(alarm: Alarm) -> dict[str, object]:
+    """Describe a received alarm record in user terms."""
+    return {
+        "enabled": alarm.on,
+        "days": [day for bit, day in enumerate(_DAYS) if alarm.repeat & (1 << bit)],
+        "recurring": bool(alarm.repeat & 0x80),
+        "action": _ACTIONS.get(alarm.kind),
+    }
 
 
 def signed(value: int) -> int:

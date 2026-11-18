@@ -24,7 +24,7 @@ Nerum app profiles, with Bluetooth names beginning `okin` or `smartbed`
 | Memory Presets | P1: M1; P2/P3: M1 and M2 |
 | Programming | No proven SAVE command |
 | Massage | Read-only reported state on P1/P2; no ordinary BLE massage page |
-| Lights | Held toggle action; P1 reported state |
+| Lights | Toggle light button; P1 light state sensor |
 | Clock and alarms | P2/P3 clock sync and three complete alarm records |
 | Paired beds | Independent two-address sides; no single-address side selector |
 
@@ -179,8 +179,9 @@ vectors. They have no ordinary reachable BLE page and do not create controls.
 
 ### Lights
 
-Light is a held toggle, with the same bytes for the Android on/off wrappers.
-It does not provide discrete on/off, brightness or color.
+**Toggle light** sends the held light key, with the same bytes for the Android
+on/off wrappers. It does not provide discrete on/off, brightness or color. P1
+reports the light state as the **Light** binary sensor.
 
 ### Alarms
 
@@ -194,19 +195,22 @@ sound is configured. Dormant wake type 9 is not an offered action.
 
 The bank action syncs RTC immediately. P2 writes its complete bank at 300 ms.
 P3 writes slots at 100/200/300 ms and queries them at 400/600/800 ms. Standalone
-refresh queries P2 once or P3 slots at 0/200/400 ms. Clock fields are raw numbers:
+refresh (the disabled-by-default **Refresh alarms** diagnostic button) queries P2
+once or P3 slots at 0/200/400 ms. Clock fields are raw numbers:
 P2 year minus 1900 and zero-based month; P3 year minus 2000, one-based month,
 Sunday-zero weekday. No BCD conversion is applied.
 
 ## Position Feedback / Notifications
 
 There is no position feedback. P1 reports signed massage levels, timer, wave,
-light and operation. Preserve its signed opcode dispatch: canonical low bytes
+light and operation. The operation reply only echoes which app control ran and
+is not exposed. Preserve its signed opcode dispatch: canonical low bytes
 80 through 95 do not reach the apparent single-field cases. P2 reports massage
 state for complete 10/16/23-byte status shapes and three alarm records. A first
 F4/FE/16 fragment stores the exact prefix and publishes nothing; an unbuffered
 short non-10/16 fragment also publishes nothing. P3 reports three alarm slots.
-Alarm sensors show `HH:MM;repeat;wake_type;enabled` using unsigned wire masks.
+The disabled-by-default **Alarm 1–3** sensors show the alarm's `HH:MM` time,
+with `enabled`, `days`, `recurring` and the wake `action` as attributes.
 
 The Android parser retains a global uncleared fragment buffer and can index
 short admitted alarms out of bounds. Android also retains old connections and
