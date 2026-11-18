@@ -38,8 +38,6 @@ if TYPE_CHECKING:
 # The app's sliders send three bins (progress 0-9, 10-19, 20-29); entities show bins 1-3.
 LEVEL: Final = {s: StateKey[int | None](f"comfortfurniture_{s}_level") for s in PROFILE.slider_bases}
 TIMER: Final = StateKey[str | None]("comfortfurniture_massage_timer")
-# The bed never reports massage, and its timer ends it unseen, so this stays unknown.
-MASSAGE: Final = StateKey[bool | None]("comfortfurniture_massage")
 SAVE_LABELS: Final = {
     "zero_g": "Save zero-gravity position",
     "flat": "Save flat position",
@@ -231,7 +229,7 @@ class ComfortFurnitureController(OreComfortBedController):
         self._held_cancel = None
         self._notify_char = self._notify_client = self._write_char = None
         self._selected_preset = None
-        self.forward_controller_state_updates(TIMER(None), MASSAGE(None))
+        self.forward_controller_state_updates(TIMER(None))
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -396,7 +394,6 @@ class ComfortFurnitureController(OreComfortBedController):
                 "comfortfurniture_massage",
                 "comfortfurniture_massage",
                 _set_massage,
-                state_key=MASSAGE,
                 icon="mdi:vibrate",
                 card=CARD_MASSAGE,
             ),

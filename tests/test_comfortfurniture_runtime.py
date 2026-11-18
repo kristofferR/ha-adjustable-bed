@@ -304,3 +304,70 @@ async def test_disconnect_clears_timer_selection(runtime):
     assert timer.current_option is None
     assert await coord.async_connect()
     assert timer.current_option is None
+
+
+async def _massage_switch(hass, coord):
+    from custom_components.adjustable_bed.switch import (
+        AdjustableBedControllerSwitch,
+        _switch_entities_for,
+    )
+
+    (switch,) = [e for e in _switch_entities_for(hass, coord) if isinstance(e, AdjustableBedControllerSwitch)]
+    switch.hass = hass
+    switch.entity_id = "switch.massage"
+    switch.async_write_ha_state = MagicMock()
+    await switch.async_added_to_hass()
+    return switch
+
+
+async def test_massage_switch_shows_the_last_sent_command(runtime):
+    hass, coord, client = runtime
+    assert not coord.controller.supports_massage_off_control  # the switch replaces it
+    switch = await _massage_switch(hass, coord)
+    try:
+        # The bed never reports massage, so the switch shows what it sent.
+        assert switch.is_on is None and switch.assumed_state
+        client.write_gatt_char.reset_mock()
+        with virtual_clock():
+            await switch.async_turn_on()
+        assert _written(client) == ["e5fe1610000011e5", "e5fe1610000022d4", "e5fe1610000012e4"]
+        assert switch.is_on is True
+        with virtual_clock():
+            await switch.async_turn_off()
+        assert _written(client)[-1] == "e5fe1610000010e6"
+        assert switch.is_on is False
+        await coord.async_disconnect()
+        assert switch.is_on is None
+    finally:
+        await switch.async_will_remove_from_hass()
+
+
+async def test_massage_switch_keeps_its_state_when_nothing_was_sent(runtime):
+    from bleak.exc import BleakError
+
+    from custom_components.adjustable_bed.command_scheduler import current_command_context
+
+    hass, coord, client = runtime
+    switch = await _massage_switch(hass, coord)
+    try:
+        with virtual_clock():
+            await switch.async_turn_on()
+        assert switch.is_on is True
+        # A write the bed rejects leaves the shown state unchanged.
+        client.write_gatt_char.side_effect = BleakError("rejected")
+        with virtual_clock(), pytest.raises(BleakError):
+            await switch.async_turn_off()
+        assert switch.is_on is True
+        client.write_gatt_char.side_effect = None
+
+        # STOP before the frame goes out: the writer returns quietly, nothing is recorded.
+        async def cancelled(*_args):
+            context = current_command_context()
+            assert context is not None
+            context.cancel_event.set()
+
+        with patch.object(type(coord.controller), "massage_off", cancelled), virtual_clock():
+            await switch.async_turn_off()
+        assert switch.is_on is True
+    finally:
+        await switch.async_will_remove_from_hass()
