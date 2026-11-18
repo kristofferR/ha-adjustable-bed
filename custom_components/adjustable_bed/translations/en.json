@@ -3264,6 +3264,9 @@
       },
       "richmat_legacy_utility": {
         "name": "{action}"
+      },
+      "richmat_legacy_save": {
+        "name": "{action}"
       }
     },
     "cover": {

@@ -10,7 +10,7 @@ from math import floor
 from time import monotonic
 from typing import TYPE_CHECKING, Final
 
-from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
 from ...command_scheduler import current_command_context
 from ...const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
 from ...profiles.richmat_legacy import Action, LegacyProfile, profiles
@@ -37,9 +37,9 @@ from ...codec.richmat import TRANSPORTS
 _NAMES: Final = {
     "head up pictogram": "Head Up", "head down pictogram": "Head Down",
     "foot up pictogram": "Foot Up", "foot down pictogram": "Foot Down",
-    "head and foot up pictogram": "Head and Foot Up",
-    "head and foot down pictogram": "Head and Foot Down",
-    "double up arrows": "Head and Foot Up", "double down arrows": "Head and Foot Down",
+    "head and foot up pictogram": "Head and foot up",
+    "head and foot down pictogram": "Head and foot down",
+    "double up arrows": "Head and foot up", "double down arrows": "Head and foot down",
     "upper-bed segment up pictogram": "Upper Section Up",
     "upper-bed segment down pictogram": "Upper Section Down",
     "lower-bed segment up pictogram": "Lower Section Up",
@@ -103,6 +103,19 @@ _VARIANT_NAMES: Final = {
     "massage power pictogram": "Massage: {} Toggle",
     "pos up": "{} Up", "pos down": "{} Down",
     "selected axis up": "{} Up", "selected axis down": "{} Down",
+}
+# The same controls on the Richmat MH apps read this way.
+_MH_WORDING: Final = {
+    "Massage: Head Toggle": "Head On/Off",
+    "Massage: Foot Toggle": "Foot On/Off",
+    "Massage: Toggle": "Massage on/off",
+    "Massage: Off": "All Off",
+    "Massage: Mode": "Massage mode",
+    "Massage: Pulse": "Pulse",
+    "Massage: Wave": "Wave",
+    "Massage: Constant": "Constant",
+    "Massage: Intensity Level 1": "Intensity 1",
+    "Massage: Intensity Level 3": "Intensity 3",
 }
 _PRESET_NAMES: Final = frozenset({
     "Flat", "Lounge", "TV", "Read/TV", "Relax", "Zero Gravity", "Anti-Snore",
@@ -305,17 +318,20 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
             for variant in _variants(action):
                 control = _control_id(action.key, variant)
                 name = _button_name(action, variant)
+                shown = _MH_WORDING.get(name, name)
                 for program in (False, True) if action.programmable else (False,):
-                    label = name
+                    label = shown
                     if program:
-                        label = ("Save to " if name.startswith("Memory") else "Save ") + name
+                        label = ("Save to " if name.startswith("Memory") else "Save ") + shown
                     section = (
-                        CARD_PRESETS
+                        CARD_PRESET_SAVE
+                        if program
+                        else CARD_PRESETS
                         if action.programmable or name in _PRESET_NAMES
                         else CARD_LIGHTING
                         if label == "Toggle Light"
                         else CARD_MASSAGE
-                        if label.startswith("Massage")
+                        if name.startswith("Massage")
                         else CARD_UTILITY
                     )
                     specs.append(
@@ -325,7 +341,8 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                             + ("_save" if program else ""),
                             label,
                             partial(_press, control=control, program=program),
-                            translation_key="richmat_legacy_" + section.section.value,
+                            translation_key="richmat_legacy_"
+                            + ("save" if program else section.section.value),
                             translation_placeholders={"action": label},
                             hold=ControllerHoldSpec(control) if action.motion else None,
                             requires_confirmation=program or label == "Factory Reset",

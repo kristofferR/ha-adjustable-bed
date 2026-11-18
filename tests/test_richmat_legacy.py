@@ -381,7 +381,7 @@ def test_button_names_are_readable_and_unique(key):
         ("GV", {"Flat", "TV", "Lounge", "Zero Gravity"}),
         ("TH", {"Position 1", "Position 2", "Position 3"}),
         ("LP", {"Memory 1", "Memory 2", "Memory 3"}),
-        ("T3", {"Zero Gravity", "Save Zero Gravity"}),
+        ("T3", {"Zero Gravity"}),
     ),
 )
 def test_preset_buttons_have_preset_placement(app, code, names):
@@ -390,6 +390,10 @@ def test_preset_buttons_have_preset_placement(app, code, names):
     for name in names:
         assert specs[name].card == bed.CARD_PRESETS
         assert specs[name].translation_key == "richmat_legacy_presets"
+    for name, spec in specs.items():
+        if name.startswith("Save"):
+            assert spec.card == bed.CARD_PRESET_SAVE and spec.requires_confirmation
+            assert spec.translation_key == "richmat_legacy_save"
     for name, spec in specs.items():
         if name == "Toggle Light":
             assert spec.card == bed.CARD_LIGHTING
@@ -401,7 +405,7 @@ async def test_axis_and_mode_buttons_choose_then_press(clock):
     ctrl, c = make(code="GV")
     await ctrl.start_notify()
     names = {spec.name: spec for spec in ctrl.controller_button_specs}
-    assert {"Head Up", "Foot Up", "Massage: Head Toggle", "Massage: Foot Toggle"} <= set(names)
+    assert {"Head Up", "Foot Up", "Head On/Off", "Foot On/Off"} <= set(names)
     # Leased holds accept the per-axis ids; a malformed or unoffered suffix is refused.
     assert ctrl.execution.hold_for("btn_posup@1") == "stream"
     for bad in ("btn_posup@-1", "btn_posup@2", "btn_posup@01", "btn_tv@0"):

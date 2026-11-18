@@ -40,29 +40,21 @@ async def test_actual_new_install(app, route, hass, mock_bluetooth_service_info)
     assert saved[const.CONF_BED_TYPE] == app
     assert saved[const.CONF_PROTOCOL_VARIANT] == "GV"
     assert resolve_profile_id(saved) == f"{app}:GV"
-    assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True
+    # No position feedback: angle sensing stays off, stored only when it differs.
+    assert saved.get(const.CONF_DISABLE_ANGLE_SENSING, True) is True
 
 
 @pytest.mark.parametrize("app", ("sleep_evolution", "wsilver_legacy"))
-async def test_configure_explicit_app_prefix_and_invalid_routes(app, hass):
-    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
+async def test_configure_keeps_the_app_and_prefix_and_routes_validate(app, hass):
+    # The app and prefix change in Reconfigure; Configure keeps them.
+    entry = entry_for(
+        hass, **{const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: "Ml", const.CONF_RMCONTROL_PRODUCT: ""}
+    )
     flow = AdjustableBedOptionsFlow(entry)
     flow.hass, flow.handler = hass, entry.entry_id
     result = await flow.async_step_settings()
-    selector = result["data_schema"].schema[const.CONF_BED_TYPE]
-    assert app in selector.rows().values()
-    result = await flow.async_step_settings({const.CONF_BED_TYPE: app})
-    assert const.CONF_PROTOCOL_VARIANT in form_fields(result["data_schema"])
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await flow.async_step_settings({const.CONF_PROTOCOL_VARIANT: "Ml"})
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == app
-    assert entry.data[const.CONF_PROTOCOL_VARIANT] == "Ml"
-    from custom_components.adjustable_bed import _async_sync_profile_ids
-
-    _async_sync_profile_ids(hass, entry)  # Normal reload synchronizes the stored route.
-    assert entry.data[const.CONF_PROFILE_ID] == f"{app}:Ml"
+    assert const.CONF_BED_TYPE not in form_fields(result["data_schema"])
+    assert const.CONF_PROTOCOL_VARIANT not in form_fields(result["data_schema"])
     assert _bed_type_selector(app, show_saved_id=True)(app) == app
     profile = setup_profile_for({const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: "Ml"})
     assert profile is not None and profile.validate is not None

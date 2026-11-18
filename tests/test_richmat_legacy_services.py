@@ -215,4 +215,4 @@ async def test_action_editor_fields(enable_custom_integrations, hass):
     assert duration["default"] == 1000
     assert duration["selector"]["number"]["min"] == 1
     assert duration["selector"]["number"]["max"] == 60000
-    assert fields["side"]["selector"]["select"]["options"] == ["left", "right", "both"]
+    assert fields["side"]["selector"]["select"]["options"] == ["both", "left", "right"]

@@ -8691,7 +8691,7 @@ adapter/proxy discovery, connection admission and handoff.
 
 | Feature | Availability |
 |---|---|
-| Movement | Paired head/foot direction graphics are covers. Other direction graphics are held buttons named for what they show (Head and Foot Up, Upper Section Up, ...), without inferring physical motor count. |
+| Movement | Paired head/foot direction graphics are covers. Other direction graphics are held buttons named for what they show (Head and foot up, Upper Section Up, ...), without inferring physical motor count. |
 | Presets and memory | Exact named actions in the selected profile, including separate Save buttons where programming is proven. No universal slot count or numeric memory namespace. |
 | Massage and bed light | Profile-specific request buttons; local icon/flag changes do not confirm remote state. |
 | Factory Reset | Only where listed; requires confirmation in the native card, as do Save buttons. |
