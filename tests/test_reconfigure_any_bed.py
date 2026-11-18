@@ -13,6 +13,12 @@ from custom_components.adjustable_bed.discovery_settings import async_is_discove
 from custom_components.adjustable_bed.profile_migration import reconfigure_context
 
 
+def _schema(result):
+    schema = result["data_schema"]
+    assert schema is not None
+    return schema
+
+
 def _entry(hass: HomeAssistant, bed_type: str) -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=const.DOMAIN,
@@ -56,9 +62,9 @@ async def test_reconfigure_to_the_same_bed_changes_nothing(
 
     result = await manager.async_init(const.DOMAIN, context=reconfigure_context(entry))
     # The current bed is preselected.
-    result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
+    result = await manager.async_configure(result["flow_id"], _schema(result)({}))
     if result.get("step_id") == "reconfigure_route":
-        result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
+        result = await manager.async_configure(result["flow_id"], _schema(result)({}))
 
     assert result.get("reason") == "migration_unchanged", result
     assert dict(entry.data) == before
@@ -74,7 +80,7 @@ async def test_reconfigure_preselects_a_suggested_app(
         const.DOMAIN, context=reconfigure_context(entry, const.BED_TYPE_SERTA)
     )
 
-    assert result["data_schema"]({})[const.CONF_BED_TYPE] == const.BED_TYPE_SERTA
+    assert _schema(result)({})[const.CONF_BED_TYPE] == const.BED_TYPE_SERTA
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 
@@ -86,8 +92,8 @@ async def test_add_integration_turns_discovery_off_and_on(
     manager = hass.config_entries.flow
     result = await manager.async_init(const.DOMAIN, context={"source": "user"})
     result = await manager.async_configure(result["flow_id"], {CONF_ADDRESS: "discovery"})
-    assert result["step_id"] == "discovery"
-    assert result["data_schema"]({})["discover_new_beds"] is True
+    assert result["step_id"] == "discovery_settings"
+    assert _schema(result)({})["discover_new_beds"] is True
 
     result = await manager.async_configure(result["flow_id"], {"discover_new_beds": False})
 

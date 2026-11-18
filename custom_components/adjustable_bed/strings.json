@@ -682,13 +682,6 @@
           "not_sure": "Not sure: run diagnostics or browse unsupported devices"
         }
       },
-      "discovery": {
-        "title": "Find new beds automatically",
-        "description": "Home Assistant can suggest nearby beds as it sees them. Adding a bed from this list still works either way.",
-        "data": {
-          "discover_new_beds": "Suggest newly found beds"
-        }
-      },
       "reconfigure_bed_type": {
         "title": "Change the bed type or app",
         "description": "Currently: **{current}**.\n\nChoose the app or remote that controls this bed. Nothing changes until you review and apply the change.",
@@ -701,6 +694,13 @@
         "description": "**{bed_type}** connects in more than one way. Auto-detect, where offered, is right for most beds.",
         "data": {
           "protocol_variant": "Connection type"
+        }
+      },
+      "discovery_settings": {
+        "title": "Find new beds automatically",
+        "description": "Home Assistant can suggest nearby beds as it sees them. Adding a bed from this list still works either way.",
+        "data": {
+          "discover_new_beds": "Suggest newly found beds"
         }
       }
     },

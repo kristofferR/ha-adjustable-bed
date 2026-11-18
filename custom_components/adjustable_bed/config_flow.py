@@ -4228,7 +4228,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 _LOGGER.debug("User selected combine two beds")
                 return await self.async_step_pair_beds()
             if address == "discovery":
-                return await self.async_step_discovery()
+                return await self.async_step_discovery_settings()
 
             _LOGGER.info("User selected device: %s", address)
             # Normalize address to uppercase to match Bluetooth discovery
@@ -4419,7 +4419,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self.async_step_manual_entry()
         return await self.async_step_manual()
 
-    async def async_step_discovery(
+    async def async_step_discovery_settings(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Turn automatic discovery of new beds on or off for the whole integration.
@@ -4431,7 +4431,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             await async_set_discovery_disabled(self.hass, not user_input["discover_new_beds"])
             return self.async_abort(reason="discovery_saved")
         return self.async_show_form(
-            step_id="discovery",
+            step_id="discovery_settings",
             data_schema=vol.Schema(
                 {
                     vol.Required(
