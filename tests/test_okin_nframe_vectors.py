@@ -197,7 +197,7 @@ def test_eshine_sends_only_frozen_frames(key):
 
 
 def test_adjustamattress_nframes_round_trip_through_codec():
-    """AdjustaMattress's lifts and P3/P4 frames (row067 fixture) are Okin N-frames.
+    """AdjustaMattress's lifts and P3/P4 frames (AdjustaMattress fixture) are Okin N-frames.
 
     Only the P4 anti-snore (``05 0B``) and sleep (``01 B5``) frames have no builder.
     """

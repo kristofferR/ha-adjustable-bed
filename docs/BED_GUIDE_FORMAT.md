@@ -17,7 +17,7 @@ totals and exclusions.
 ```markdown
 # <Bed, actuator or app name>
 
-**Status:** <✅ Tested | ❓ Needs testing | ⚠️ Partially tested> (<optional short qualifier>)
+**Status:** <Tested | Partly tested | Not yet tested> (<optional short qualifier>)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)<, other contributors>
 
@@ -142,7 +142,7 @@ these headings in this order. Omit a heading that does not apply.
 
 **App:** [<App name>](<store link>) <version>, `<package>`   <!-- omit for a non-app route -->
 
-**Status:** <✅ | ❓ | ⚠️> <short qualifier>
+**Status:** <Tested | Partly tested | Not yet tested> <short qualifier>
 
 Behaves as the [<family>](#<family>-family), except as below.   <!-- family members only -->
 
@@ -166,8 +166,12 @@ Behaves as the [<family>](#<family>-family), except as below.   <!-- family memb
 
 ## Rules
 
-- **Status** is one short line starting with ✅, ❓ or ⚠️. Static (APK) evidence
-  without hardware confirmation is ❓ Needs testing. Put longer caveats in the body.
+- **Status** is one short line starting with Tested, Partly tested or Not yet
+  tested, in words, without an emoji. Not yet tested means the support is
+  built from app evidence and not yet tested on hardware. The README table
+  carries no status; the guide's Status line is the one place for it. Keep
+  the qualifier short and plain ("the app profiles need testing"); put longer
+  caveats in the body.
 - **Apps** and **Features** are tables. A guide that covers several variants may
   use one column per variant (`| Feature | <variant A> | <variant B> |`).
 - **Commands** are tables with the exact values the controller sends, taken from
@@ -178,7 +182,7 @@ Behaves as the [<family>](#<family>-family), except as below.   <!-- family memb
 - Use `> [!NOTE]` and `> [!WARNING]` callouts sparingly, for corrections and
   safety caveats.
 - Keep headings that other docs link to. Renaming one breaks its `#anchor`.
-- When rewriting a guide, keep every fact, caveat, version, hash, link and issue
+- When rewriting a guide, keep every fact, caveat, version, link and issue
   reference. Restructure the wording, not the content.
 
 `tests/test_bed_guide_format.py` checks the Status and Credit lines and the Known

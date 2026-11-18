@@ -37,6 +37,7 @@ from custom_components.adjustable_bed.profiles.kaidi import (
     resolve_kaidi_variant,
 )
 from custom_components.adjustable_bed.state_keys import MASSAGE_TIMER_MINUTES
+from tests.hold_lease_wire import virtual_clock
 
 BROADCAST_MANUFACTURER_DATA = {
     0xFFFF: bytes.fromhex("c0ff0278563412ffeeddccbbaa0000810100a004030201")
@@ -109,7 +110,10 @@ async def _prepare_controller(
     mock_bleak_client.start_notify = AsyncMock(side_effect=start_notify)
     mock_bleak_client.write_gatt_char = AsyncMock(side_effect=write_side_effect)
 
-    await controller._ensure_session_ready()
+    # The bed never reports its own address here, so priming waits out that
+    # one-second timeout and falls back to broadcast; on virtual time it is instant.
+    with virtual_clock():
+        await controller._ensure_session_ready()
     mock_bleak_client.write_gatt_char = AsyncMock()
     return controller
 

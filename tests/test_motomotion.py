@@ -1,4 +1,4 @@
-"""Accepted row113 vectors through live controller and receive/action boundaries."""
+"""Accepted MotoMotion app vectors through live controller and receive/action boundaries."""
 
 from __future__ import annotations
 

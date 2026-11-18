@@ -1,4 +1,4 @@
-"""Registered row084 actions, real entity builders, setup and service preflight."""
+"""Registered Comfy actions, real entity builders, setup and service preflight."""
 
 from __future__ import annotations
 

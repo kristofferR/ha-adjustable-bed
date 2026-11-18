@@ -1,4 +1,4 @@
-"""Row178 frozen literals and actual Yamada production paths, no APK replay."""
+"""Yamada frozen literals and actual Yamada production paths, no APK replay."""
 
 from __future__ import annotations
 

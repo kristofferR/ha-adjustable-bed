@@ -1,7 +1,7 @@
 """Row 050 Remacro app profiles: artifact frames, timing and model routing.
 
 Literal vectors come from the accepted com.cheers.slumber / com.cheers.brick /
-com.cheers.jewmes reports (TV*/T* ids) and the cluster-002 reconciliation's
+com.cheers.jewmes reports (TV*/T* ids) and the Brick/Jewmes/Slumber reconciliation's
 decisive sequences. Hardware is unverified.
 """
 

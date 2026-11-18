@@ -14,7 +14,7 @@ Need help with the Adjustable Bed integration? This guide explains how to get su
 | Suggest a feature | [Feature Request](https://github.com/kristofferR/ha-adjustable-bed/issues/new?template=feature-request.yml) |
 | Fix a common issue | [Troubleshooting Guide](TROUBLESHOOTING.md) |
 | Set up Bluetooth | [Connection Guide](CONNECTION_GUIDE.md) |
-| Find my bed's actuator brand | [Supported Actuators](SUPPORTED_ACTUATORS.md) |
+| Find which app or family my bed uses | [Brand lookup](SUPPORTED_ACTUATORS.md) |
 
 ---
 
@@ -22,7 +22,7 @@ Need help with the Adjustable Bed integration? This guide explains how to get su
 
 For configuration help or general "how do I..." questions, ask in **[Help & questions](https://github.com/kristofferR/ha-adjustable-bed/discussions/new?category=help-questions)**. The community can help with:
 
-- Identifying which bed type or actuator brand to select
+- Identifying which app or remote to choose
 - Choosing a Bluetooth adapter or proxy
 - ESPHome proxy configuration
 - Automations and scripts using the integration
@@ -86,7 +86,7 @@ updated if later replies show it is wrong or the problem has returned.
 Please check these resources first:
 
 1. **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Covers most common issues with connection, commands, and position feedback
-2. **[Supported Actuators](SUPPORTED_ACTUATORS.md)** - Your bed might already be supported under a different actuator brand
+2. **[Brand lookup](SUPPORTED_ACTUATORS.md)** - Your bed might already be supported under another family or app
 3. **[Existing Issues](https://github.com/kristofferR/ha-adjustable-bed/issues)** - Someone may have already reported the same issue
 
 ---
@@ -112,7 +112,7 @@ The support bundle includes everything we need in one file:
 3. For a control problem, first try the failing Home Assistant command so it is present in the command trace.
 4. Select that same bed device, or leave the device empty and enter `target_address` for an unconfigured device, then click **Perform action**.
 5. (Optional) Adjust `capture_duration` to change how long notifications are captured (default: 120 seconds). Operate the physical remote during capture to generate useful traffic.
-6. A notification will appear with a **download link** — click it to save the file.
+6. A notification will appear with a **download link**; click it to save the file.
 7. Attach the JSON file to your GitHub issue. Check its `evidence.warnings` section for anything that could not be captured.
 
 A saved bundle or a successful action means the report was generated, even when
@@ -166,14 +166,14 @@ directory. See [download-link details](TROUBLESHOOTING.md#support-bundle-downloa
 
 If you prefer to gather information separately:
 
-1. Go to **Settings** → **Devices & Services** → **Adjustable Bed**
-2. Click the **⋮** menu → **Download diagnostics**
+1. Go to **Settings > Devices & services > Adjustable Bed**
+2. In the entry's three-dots menu, choose **Download diagnostics**
 3. Attach the downloaded JSON file to your issue
 
 ### Debug Logging
 
-1. Go to **Settings** → **Devices & Services** → **Adjustable Bed**
-2. Click the **⋮** menu → **Enable debug logging**
+1. Go to **Settings > Devices & services > Adjustable Bed**
+2. In the entry's three-dots menu, choose **Enable debug logging**
 3. Reproduce the issue (use the bed controls, trigger the problem)
 4. Return to the same menu → **Disable debug logging**
 5. Your browser will automatically download the log file
@@ -190,16 +190,16 @@ Start by generating a support bundle if possible. It captures BLE details needed
 to investigate compatibility. If capture fails, include the bed model, official
 app, and capture error so we can track the request and identify what is missing.
 
-You don't need to configure anything first — the support bundle action works directly on any BLE device your Home Assistant can see:
+You don't need to configure anything first: the support bundle action works directly on any BLE device your Home Assistant can see:
 
-1. **Find your bed's MAC address:** go to **Settings** → **Devices & Services** → **Add Integration** → **Adjustable Bed**, choose **"Browse unsupported BLE devices"**, and select your bed from the list (or pick **"Enter address manually"** if you already know the address). The wizard shows the device's MAC address and scanner details — note the address. This step only inspects the device; it doesn't add anything.
+1. **Find your bed's MAC address:** go to **Settings > Devices & services > Add Integration > Adjustable Bed**, choose **"Browse unsupported BLE devices"**, and select your bed from the list (or pick **"Enter address manually"** if you already know the address). The wizard shows the device's MAC address and scanner details; note the address. This step only inspects the device; it doesn't add anything.
 2. Go to **Developer Tools** → **Actions** → `adjustable_bed.generate_support_bundle`
 3. Leave the **Device** field empty and enter the MAC address in **Target Address**
 4. Click **Perform action**, then operate your physical remote during the capture (120 seconds by default) so the bundle records useful traffic
-5. A notification will appear with a **download link** — click it to save the file. The same JSON file is also written to your Home Assistant config folder as `adjustable_bed_support_bundle_*.json`.
+5. A notification will appear with a **download link**; click it to save the file. The same JSON file is also written to your Home Assistant config folder as `adjustable_bed_support_bundle_*.json`.
 6. Attach the JSON file to your issue
 
-**Alternative — add the bed as a diagnostic device:** if you'd rather have a persistent entry (for example, to re-run captures easily), open the same wizard, choose **"Pick any Bluetooth device"**, select your bed, and choose **"Diagnostic (unknown bed)"** as its app or remote. You can then run `generate_support_bundle` with that device selected in the **Device** field. "Diagnostic (unknown bed)" appears in the app question, which a discovered bed reaches through **"Another app or remote"**. The brand list, reached through **"My app isn't listed, or I don't know"**, does not offer it; its **"Not sure"** answer opens the diagnostics browser instead.
+**Alternative: add the bed as a diagnostic device:** if you'd rather have a persistent entry (for example, to re-run captures easily), open the same wizard, choose **"Pick any Bluetooth device"**, select your bed, and choose **"Unsupported bed (diagnostics only)"** as its app or remote. You can then run `generate_support_bundle` with that device selected in the **Device** field. "Unsupported bed (diagnostics only)" appears in the app question, which a discovered bed reaches through **"Another app or remote"**. The brand list, reached through **"My app isn't listed, or I don't know"**, does not offer it; its **"Not sure"** answer opens the diagnostics browser instead.
 
 Then fill in the rest of the template with your bed manufacturer/model, remote model number, and any other details.
 

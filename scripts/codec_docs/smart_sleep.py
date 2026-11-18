@@ -23,7 +23,7 @@ def profiles() -> str:
                     "Subscribe, "
                     + ("opaque initialization, " if key == "p2" else "")
                     + "settings, massage, alarm queries",
-                    str(p.save_ms) if key == "p2" else "No proven SAVE",
+                    str(p.save_ms) if key == "p2" else "No save frame",
                 )
                 for key, p in app.PROFILES.items()
             ),

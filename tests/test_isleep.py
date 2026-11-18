@@ -1,4 +1,4 @@
-"""Accepted row064 artifact vectors and action lifecycles (no hardware claims)."""
+"""Accepted ISleep artifact vectors and action lifecycles (no hardware claims)."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ from custom_components.adjustable_bed.profiles.kaidi import (
 from custom_components.adjustable_bed.state_keys import massage_intensity
 from tests.state_helpers import state_writer
 
-ROWS = json.loads((Path(__file__).parent / "fixtures/isleep_row064_commands.json").read_text())
+ROWS = json.loads((Path(__file__).parent / "fixtures/isleep_commands.json").read_text())
 OWN = 0x90ABCDEF
 TARGET = 0x12345678
 MAC = "AA:BB:CC:DD:EE:FF"

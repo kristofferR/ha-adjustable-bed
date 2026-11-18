@@ -7,11 +7,7 @@
       "command_mask": 4096
     },
     "expected_bytes": "040200001000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:3694 function0x4609a8",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "stopCommand",
@@ -21,11 +17,7 @@
       "command_mask": 0
     },
     "expected_bytes": "040200000000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:3863 function0x462d00",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "TV",
@@ -35,11 +27,7 @@
       "command_mask": 12288
     },
     "expected_bytes": "040200003000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:3984 function0x46d41c",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "massageStop-0",
@@ -49,11 +37,7 @@
       "command_mask": 1024
     },
     "expected_bytes": "040200000400",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:4273 function0x4704bc",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "massageStop-1",
@@ -68,11 +52,7 @@
       "literal_only": true
     },
     "expected_bytes": "0b0d0000000000000000040005",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:4321 function0x4704bc",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "QS",
@@ -82,11 +62,7 @@
       "command_mask": 32768
     },
     "expected_bytes": "040200008000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:4484 function0x4828e4",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "m3Down",
@@ -96,11 +72,7 @@
       "command_mask": 32
     },
     "expected_bytes": "040200000020",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:4561 function0x48e344",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "m3Up",
@@ -110,11 +82,7 @@
       "command_mask": 16
     },
     "expected_bytes": "040200000010",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:4638 function0x48ec68",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "m2",
@@ -124,11 +92,7 @@
       "command_mask": 8192
     },
     "expected_bytes": "040200002000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:4777 function0x4ed150",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "storeMemoryPosition",
@@ -138,11 +102,7 @@
       "command_mask": 65536
     },
     "expected_bytes": "040200010000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:4854 function0x4ed264",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "zeroGravity",
@@ -152,11 +112,7 @@
       "command_mask": 16384
     },
     "expected_bytes": "040200004000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:4931 function0x4ef2b0",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "ubl",
@@ -166,11 +122,7 @@
       "command_mask": 131072
     },
     "expected_bytes": "040200020000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5008 function0x4fad60",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "massageFootPlus",
@@ -180,11 +132,7 @@
       "command_mask": 4194304
     },
     "expected_bytes": "040200400000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5085 function0x4fb9bc",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "massageHeadPlus",
@@ -194,11 +142,7 @@
       "command_mask": 2048
     },
     "expected_bytes": "040200000800",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5167 function0x4fba7c",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "massageWave3",
@@ -208,11 +152,7 @@
       "command_mask": 2147483648
     },
     "expected_bytes": "040280000000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5244 function0x4fbb44",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "massageStopCommand",
@@ -222,11 +162,7 @@
       "command_mask": 0
     },
     "expected_bytes": "040200000000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5321 function0x4fbc5c",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "tilt",
@@ -236,11 +172,7 @@
       "command_mask": 144
     },
     "expected_bytes": "040200000090",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5396 function0x4ff884",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "flat",
@@ -250,11 +182,7 @@
       "command_mask": 268435456
     },
     "expected_bytes": "040210000000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5473 function0x4ffcb0",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "m4Down",
@@ -264,11 +192,7 @@
       "command_mask": 128
     },
     "expected_bytes": "040200000080",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5550 function0x5009d0",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "m3m4Down",
@@ -278,11 +202,7 @@
       "command_mask": 160
     },
     "expected_bytes": "0402000000a0",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5627 function0x500a90",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "m4Up",
@@ -292,11 +212,7 @@
       "command_mask": 64
     },
     "expected_bytes": "040200000040",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5704 function0x500d08",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "m3m4Up",
@@ -306,11 +222,7 @@
       "command_mask": 80
     },
     "expected_bytes": "040200000050",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5781 function0x500dc8",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "m1m2Down",
@@ -320,11 +232,7 @@
       "command_mask": 10
     },
     "expected_bytes": "04020000000a",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5858 function0x501cf8",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "m1m2Up",
@@ -334,11 +242,7 @@
       "command_mask": 5
     },
     "expected_bytes": "040200000005",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:5935 function0x501f30",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "footDown",
@@ -348,11 +252,7 @@
       "command_mask": 8
     },
     "expected_bytes": "040200000008",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:6012 function0x5026ec",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "footUp",
@@ -362,11 +262,7 @@
       "command_mask": 4
     },
     "expected_bytes": "040200000004",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:6089 function0x5028dc",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "headDown",
@@ -376,11 +272,7 @@
       "command_mask": 2
     },
     "expected_bytes": "040200000002",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:6166 function0x502c4c",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "headUp",
@@ -390,11 +282,7 @@
       "command_mask": 1
     },
     "expected_bytes": "040200000001",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/tools/ble_manager.dart:6243 function0x502e3c",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   },
   {
     "id": "duration-cycle",
@@ -404,10 +292,6 @@
       "command_mask": 33554432
     },
     "expected_bytes": "040202000000",
-    "confidence": "VERIFIED",
-    "evidence": [
-      "blutter372/asm/apex/pages/remote/widgets/Massage.dart:2849-2905;0x4fb1ec-0x4fb264",
-      "BleManager.writeData@460a68 -> BluetoothCharacteristic.write@460b38 -> toMap@46111c -> Android smali onMethodCall write"
-    ]
+    "confidence": "VERIFIED"
   }
 ]

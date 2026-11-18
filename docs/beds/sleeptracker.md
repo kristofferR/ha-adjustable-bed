@@ -1,6 +1,6 @@
 # Sleeptracker Smart Bed processor
 
-**Status:** ⚠️ Partially tested (artifact-proven; partly user-confirmed on an ActiveBreeze STS-60, other hardware behavior unverified)
+**Status:** Partly tested (partly confirmed on an ActiveBreeze STS-60; other hardware needs testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -375,12 +375,11 @@ help/media, speaker/audio and synchronization controls are excluded. This
 includes speaker statements in the shipped animation and speaker state fields.
 Dead enum mappings and unused UUID/read paths are excluded too.
 
-After a beta or release, real users can validate the selected processor address,
+Owners can help confirm the selected processor address,
 negotiated transport and framing, unit/snapshot physical mapping, climate
 heat/cool levels and timer expiry, massage frequencies/durations, local sequence
 effects and stop delivery under release, cancel, timeout and disconnect. Captures
-must redact challenges and tokens. These are external hardware checks, not
-missing static evidence or a requirement for the maintainer to obtain a bed.
+must redact challenges and tokens. 
 
 ### Analysis provenance
 

@@ -1,6 +1,6 @@
 # Snore Monitor BED
 
-**Status:** ❓ Needs testing (static app evidence only, hardware UNVERIFIED)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -59,10 +59,10 @@ This app has its own profile. Shared UUIDs do not select it.
 
 ### Framing and checksum
 
-The control prefix declares five despite carrying six payload octets. The final
-octet is the save/release flag. Triple alarms likewise retain their source's
-declared length rather than being normalized. No checksum, sequence,
-authentication or side selector is added.
+The control frame's length byte says 5, but six payload bytes follow; the last
+one is the save/release flag. The triple-alarm frame also keeps the length byte
+the app sends. The integration sends both exactly as the app does. There is no
+checksum, sequence number, authentication or side byte.
 
 ### Command encoders
 
@@ -143,11 +143,11 @@ STOP and missing disposal cleanup are not safety guarantees.
 
 ### Vectors
 
-Frozen command, parameter, receive and corrected alarm cases live in
-`tests/fixtures/onlysnore/`; `tests/test_onlysnore_vectors.py` calls production code.
-The distinct control and receive formats require their own minimal codec,
-reusing the shared parameter-record encoder. Existing N-frame and Smart Sleep
-carriers do not reproduce this app's complete literals.
+The app's command, setting, reply and alarm examples are in
+`tests/fixtures/onlysnore/`, and `tests/test_onlysnore_vectors.py` checks the
+integration against them. The control and reply formats have their own small
+codec, which reuses the shared setting encoder; the N-frame and Smart Sleep
+codecs cannot produce this app's frames.
 
 ## Profiles
 
@@ -155,16 +155,15 @@ carriers do not reproduce this app's complete literals.
 
 **App:** [Snore Monitor](https://play.google.com/store/apps/details?id=com.okin.sleepMonitor.onlySnore) 2.3.8, `com.okin.sleepMonitor.onlySnore`
 
-**Status:** ❓ Hardware unverified
+**Status:** Not yet tested
 
 #### Setup
 
-Choose **Snore Monitor** in manual setup and select the app's model label.
-Discovery requires the app's case-insensitive `SLEEP_V` prefix, manufacturer
-company 89, and the reversed manufacturer identity matching the selected address.
-The model getter reads original byte six; the scanner's double-only fast path
-does not change the other labels. Wi-Fi selection is excluded. Configure and
-restored entries retain the per-physical-bed model. Two-address pairs keep each
+Choose **Snore Monitor** in manual setup and select the model the app shows.
+Discovery needs a name starting with `SLEEP_V` (any case), manufacturer
+company 89, and manufacturer data that holds the bed's address reversed.
+The model comes from byte 6 of that data. Wi-Fi setup is not supported. Reconfigure and
+restored entries keep the model of each physical bed. Two-address pairs keep each
 side's settings; there is no single-address side selector.
 
 #### Movement and presets
@@ -172,8 +171,9 @@ side's settings; there is no single-address side selector.
 Use the covers or dashboard holds for app-labelled actuators. The Flat, Reading,
 TV, Zero Gravity and Anti-Snore preset buttons recall with a finite hold, and the
 save buttons save only the selected non-flat preset. Holding a programmable preset
-through the source threshold changes to its save frame. Renewable holds use Home Assistant's admitted lease; sequential paired
-Both holds are refused before motion.
+past the app's long-press time sends its save frame instead. Renewable holds use
+Home Assistant's hold limits. A Both hold on a combined bed that connects one
+side at a time is refused before anything moves.
 
 #### Massage and lights
 

@@ -1,6 +1,6 @@
 # Jiecang
 
-**Status:** ❓ Needs testing (the app profiles are APK-verified with hardware unverified; the legacy route is unverified)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -524,8 +524,9 @@ data cannot express.
 
 ### Legacy route
 
-**Status:** ❓ Needs testing. The frames are those the
-original controller sent, taken from earlier decompiles of Comfort Motion 2.1.6
+**Status:** Not yet tested
+
+The frames are those the original controller sent, taken from earlier decompiles of Comfort Motion 2.1.6
 ([#127](https://github.com/kristofferR/ha-adjustable-bed/issues/127)) and
 `com.logicdata.motionrelax` ([#260](https://github.com/kristofferR/ha-adjustable-bed/issues/260)).
 smartbed-mqtt has no Jiecang implementation.
@@ -600,14 +601,14 @@ missing from the advertisement, differs from the apps. This route:
 - subscribes to no notifications.
 
 Set such a bed up with the LOGICDATA row, or choose the LOGICDATA app in
-Configure's bed-type list, which then asks the app, packet family and layout.
+Reconfigure's bed-type list, which then asks the app, packet family and layout.
 
 ### Comfort Motion app
 
 **App:** [Comfort Motion](https://play.google.com/store/apps/details?id=com.jiecang.app.android.jiecangbed)
 2.2.1 (28), `com.jiecang.app.android.jiecangbed`.
 
-**Status:** ❓ Needs testing (APK-verified, hardware not yet verified by real users)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -717,12 +718,11 @@ not change HA's local device name.
 #### Evidence
 
 Physical actuator effects, ATT properties, release effects, mode
-names and rename persistence remain validation for real users after beta or
-release; maintainers need not acquire a bed.
+names and whether renames persist still need testing by owners.
 
 ### Dream app family
 
-**Status:** ❓ Needs testing. Static verified, hardware unverified for all three.
+**Status:** Not yet tested
 
 ERGOBALANCE, Dream Motion and Dream Motion HD share the behavior below. Their own
 sections list what differs.
@@ -867,7 +867,7 @@ preset replaces the memory recall.
 **App:** [ERGOBALANCE](https://play.google.com/store/apps/details?id=com.jiecang.dreamask.app.android.bed)
 1.0.8 (8), `com.jiecang.dreamask.app.android.bed`.
 
-**Status:** ❓ Needs testing. Static verified, hardware unverified.
+**Status:** Not yet tested
 
 Behaves as the [Dream app family](#dream-app-family), except as below.
 
@@ -887,7 +887,7 @@ See the [generated tables](#hold-and-release-timing).
 **App:** [Dream Motion](https://play.google.com/store/apps/details?id=com.jiecang.dreamotion.app.android.bed)
 1.0.5 (11), `com.jiecang.dreamotion.app.android.bed`.
 
-**Status:** ❓ Needs testing. Static verified, hardware unverified.
+**Status:** Not yet tested
 
 Behaves as the [Dream app family](#dream-app-family), except as below.
 
@@ -907,8 +907,7 @@ See the [generated tables](#hold-and-release-timing).
 **App:** [Dream Motion HD](https://play.google.com/store/apps/details?id=com.dreamhd.jiecang.android.pad.bed)
 1.0.4 (4), `com.dreamhd.jiecang.android.pad.bed`.
 
-**Status:** ❓ Needs testing. Static behavior is verified; physical effects
-remain unverified.
+**Status:** Not yet tested
 
 Behaves as the [Dream app family](#dream-app-family), except as below.
 
@@ -983,7 +982,7 @@ queries, without a light-status query.
 
 ### LOGICDATA app family
 
-**Status:** ❓ Needs testing. Static verified, hardware unverified for all three.
+**Status:** Not yet tested
 
 The `logicdata_app` bed type selects one of three app profiles in
 `profiles/logicdata.py`: `phone`, `tablet` or `sleep_smart`. Each drives two packet
@@ -1028,7 +1027,7 @@ configurations retain their previous behavior.
   write-without-response. No PIN or pairing flow is inferred from these artifacts.
 - For two separately addressed beds, configure each side before combining them.
   Shared paired-bed options preserve each side's app, packet family, layout and
-  transport. Unpair temporarily to change those per-side settings.
+  transport. Separate the combined bed temporarily to change those per-side settings.
 
 #### Controls
 
@@ -1177,7 +1176,7 @@ Every LOGICDATA profile sends only its frozen frames
 [MOTIONrelax tablet](https://play.google.com/store/apps/details?id=com.logicdata.app.android.pad.bed)
 1.0.4 (5), `com.logicdata.app.android.pad.bed`.
 
-**Status:** ❓ Needs testing. Static verified, hardware unverified.
+**Status:** Not yet tested
 
 Behaves as the [LOGICDATA app family](#logicdata-app-family), except as below.
 
@@ -1263,7 +1262,7 @@ Both profiles send only their frozen frames.
 also drives a separate air mattress pump, configured as its own
 [`logicdata_air_pump` entry](logicdata-sleep-smart.md).
 
-**Status:** ❓ Needs testing. Static verified, hardware unverified.
+**Status:** Not yet tested
 
 Behaves as the [LOGICDATA app family](#logicdata-app-family), except as below.
 

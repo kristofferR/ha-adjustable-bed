@@ -99,7 +99,7 @@ def render_malouf_profiles() -> str:
                 _MALOUF_NAMES[new.key],
                 f"`{BED_TYPE_MALOUF_NEW_OKIN}`",
                 _MALOUF_TRANSPORT_NAMES[new.transport],
-                f"motor pulse settings (default {count} × {delay} ms)",
+                f"Movement per tap (default {count}, every {delay} ms)",
                 "STOP at once",
                 _lease(new),
             ),

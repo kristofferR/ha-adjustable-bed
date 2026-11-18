@@ -1,6 +1,6 @@
 # BedJet PowerLayer
 
-**Status:** ✅ Tested (confirmed working on a BedJet PowerLayer by @rluengen)
+**Status:** Tested (confirmed working on a BedJet PowerLayer by @rluengen)
 
 **Credit:** GATT layout and command values ported from the MIT-licensed
 [`powerlayer` branch of natekspencer/ha-bedjet](https://github.com/natekspencer/ha-bedjet/tree/powerlayer).
