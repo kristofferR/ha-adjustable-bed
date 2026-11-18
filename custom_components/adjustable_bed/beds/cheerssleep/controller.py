@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from time import monotonic
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -26,7 +26,7 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
-    ControllerSelectSpec,
+    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
@@ -38,11 +38,15 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
 
+# Standalone split entries control the left side, like the app's initial selection.
+# Native Left/Right side devices target each side.
+STANDALONE_SIDE: Final = 1
+
+
 @dataclass(slots=True)
 class LocalState:
     counters: codec.Counters = field(default_factory=codec.Counters)
     burst: codec.Burst = field(default_factory=codec.Burst)
-    selected: int = 1
     light: bool = False
     presets: dict[int, str | None] = field(default_factory=dict)
     massage: dict[int, list[int]] = field(default_factory=lambda: {1: [0, 0, 0], 2: [0, 0, 0]})
@@ -93,10 +97,6 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
         self._light_feedback: dict[int, bool] = {}
         self._light_pending: dict[int, bool | None] = {}
         self._mac: str | None = None
-        self.forward_controller_state_updates(
-            keys.MODEL(model.key),
-            keys.SIDE({1: "left", 2: "right"}[self.local.selected] if model.split else None),
-        )
         if model.format == "p2" and model.light:
             self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
             if model.split and not model.rgb:
@@ -204,7 +204,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
     def _side(self) -> int:
         if not self.model.split:
             return 0
-        return {"left": 1, "right": 2}.get(self.command_side or "", self.local.selected)
+        return {"left": 1, "right": 2}.get(self.command_side or "", STANDALONE_SIDE)
 
     def _invalidate_preset(self, selected: int) -> None:
         if selected == 0:
@@ -522,7 +522,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             if selected
             else []
         )
-        if not selected or selected == self.local.selected:
+        if not selected or selected == STANDALONE_SIDE:
             updates.append(UNDER_BED_LIGHTS_ON(enabled))
         self.forward_controller_state_updates(*updates)
 
@@ -601,7 +601,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             sided(key, side)(value)
             for key, value in zip((keys.HEAD, keys.FOOT, keys.MODE), state, strict=True)
         ]
-        if not selected or selected == self.local.selected:
+        if not selected or selected == STANDALONE_SIDE:
             updates.extend(
                 key(value)
                 for key, value in zip((keys.HEAD, keys.FOOT, keys.MODE), state, strict=True)
@@ -658,44 +658,17 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
         else:
             raise ValueError("This sonic control is unavailable on the chosen model")
 
-    async def select_side(self, option: str) -> None:
-        self.local.selected = {"left": 1, "right": 2}[option]
-        self.forward_controller_state_updates(keys.SIDE(option))
-        if self.model.format == "p2" and not self.model.rgb:
-            self.forward_controller_state_updates(
-                UNDER_BED_LIGHTS_ON(self._light_feedback.get(self.local.selected))
-            )
-        if self.model.key in (141, 172):
-            await self.refresh_state()
-
-    @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        return (
-            (
-                ControllerSelectSpec(
-                    "cheerssleep_side",
-                    "cheerssleep_side",
-                    keys.SIDE,
-                    ("left", "right"),
-                    lambda ctrl, value: require_controller(ctrl, CheersSleepController).select_side(
-                        value
-                    ),
-                ),
-            )
-            if self.model.split
-            else ()
-        )
-
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         result = []
-        if self.model.light and self.model.format == "p2" or self.model.key in (45, 53):
+        if self.model.light and self.model.format == "p2":
             result.append(
                 ControllerButtonSpec(
                     "cheerssleep_refresh",
                     "Refresh bed state",
                     lambda ctrl: require_controller(ctrl, CheersSleepController).refresh_state(),
                     translation_key="cheerssleep_refresh",
+                    diagnostic=True,
                 )
             )
         if self.model.combined and "all" not in self.model.axes:
@@ -987,7 +960,6 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
         if self.model.format == "p1":
             if (mac := codec.sleep_mac(raw)) is not None:
                 self._mac = mac
-                self.forward_controller_state_updates(keys.MAC(mac))
             if (sleep := codec.sleep_state(raw)) is not None:
                 self.forward_controller_state_updates(
                     *(
@@ -1015,7 +987,6 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             return
         shared = codec.shared_state(raw, as_layout=self.model.as_layout)
         if shared:
-            self.forward_controller_state_updates(keys.POSITION_LIGHT(shared.light))
             if self.model.rgb:
                 color = codec.shared_state(raw)
                 assert color is not None
@@ -1024,24 +995,20 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                 self.forward_controller_state_updates(
                     UNDER_BED_LIGHTS_RGB(color.rgb),
                     LIGHT_LEVEL(color.brightness if 0 <= color.brightness <= 100 else None),
-                    keys.COLOR_LIGHT(color.light),
-                    keys.BRIGHTNESS(color.brightness),
                 )
             else:
                 selected = {0xAA: 1, 0xBB: 2}.get(raw[3]) if self.model.split else 0
                 if selected is not None:
                     self._observe_light(selected, shared.light)
             if self.model.sonic:
-                self.forward_controller_state_updates(
-                    keys.SONIC_LEVEL(shared.level), keys.SONIC_MODE(shared.music)
-                )
+                self.forward_controller_state_updates(keys.SONIC_LEVEL(shared.level))
                 for selected in (1, 2) if self.model.split else (0,):
                     state = codec.shared_state(raw, selected=selected)
                     if state:
                         self.forward_controller_state_updates(
                             sided(keys.MODE, {1: "left", 2: "right"}.get(selected))(state.mode)
                         )
-                        if selected == self.local.selected:
+                        if selected == STANDALONE_SIDE:
                             self.forward_controller_state_updates(keys.MODE(state.mode))
 
     def on_disconnect(self) -> None:
@@ -1060,12 +1027,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             UNDER_BED_LIGHTS_ON(None),
             UNDER_BED_LIGHTS_RGB(None),
             LIGHT_LEVEL(None),
-            keys.MAC(None),
-            keys.BRIGHTNESS(None),
             keys.SONIC_LEVEL(None),
-            keys.SONIC_MODE(None),
-            keys.POSITION_LIGHT(None),
-            keys.COLOR_LIGHT(None),
         )
         for side in (None, "left", "right"):
             self.forward_controller_state_updates(
@@ -1083,17 +1045,6 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        state: list[AnyStateKey] = [keys.MODEL]
-        if self.model.format == "p1":
-            state.append(keys.MAC)
-        if self.model.massage:
-            state.extend(sided(key, self.command_side) for key in (keys.HEAD, keys.FOOT, keys.MODE))
-        if self.model.shared:
-            state.append(keys.POSITION_LIGHT)
-        if self.model.rgb:
-            state.extend((keys.BRIGHTNESS, keys.COLOR_LIGHT))
-        if self.model.sonic:
-            state.extend((keys.SONIC_LEVEL, keys.SONIC_MODE, sided(keys.MODE, self.command_side)))
         result = [
             ControllerStateSensorSpec(
                 str(key),
@@ -1101,20 +1052,36 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                 key,
                 "mdi:information-outline",
             )
-            for key in state
+            for key in (
+                (keys.HEAD, keys.FOOT, keys.MODE)
+                if self.model.massage
+                else (keys.MODE,)
+                if self.model.sonic
+                else ()
+            )
+            for key in (sided(key, self.command_side),)
         ]
-        for _side, fields in keys.SLEEP_KEYS.items() if self.model.format == "p1" else ():
+        # Sleep notifications name their side, so each side keeps its own sensors.
+        for fields in keys.SLEEP_KEYS.values() if self.model.format == "p1" else ():
             result.extend(
                 ControllerStateSensorSpec(
-                    str(key),
-                    f"cheerssleep_{name}",
-                    key,
-                    "mdi:bed",
-                    entity_registry_enabled_default=False,
+                    str(key), str(key), key, "mdi:bed", entity_registry_enabled_default=False
                 )
                 for name, key in fields.items()
+                if name not in keys.SLEEP_FLAGS
             )
         return tuple(result)
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        return tuple(
+            ControllerStateBinarySensorSpec(
+                str(key), str(key), key, "mdi:bed", entity_registry_enabled_default=False
+            )
+            for fields in (keys.SLEEP_KEYS.values() if self.model.format == "p1" else ())
+            for name, key in fields.items()
+            if name in keys.SLEEP_FLAGS
+        )
 
 
 async def _pause(seconds: float, cancel: asyncio.Event) -> bool:

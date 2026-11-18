@@ -3388,34 +3388,34 @@
         "name": "Decrease sonic level"
       },
       "cheerssleep_combined_up": {
-        "name": "All up"
+        "name": "All sections up"
       },
       "cheerssleep_combined_down": {
-        "name": "All down"
+        "name": "All sections down"
       },
       "cheerssleep_all_up": {
-        "name": "Raise bed"
+        "name": "Storage lift up"
       },
       "cheerssleep_all_down": {
-        "name": "Lower bed"
+        "name": "Storage lift down"
       },
       "cheerssleep_lift_up": {
-        "name": "Raise bed height"
+        "name": "Bed lift up"
       },
       "cheerssleep_lift_down": {
-        "name": "Lower bed height"
+        "name": "Bed lift down"
       },
       "cheerssleep_lift_head_up": {
-        "name": "Raise head lift"
+        "name": "Head lift up"
       },
       "cheerssleep_lift_head_down": {
-        "name": "Lower head lift"
+        "name": "Head lift down"
       },
       "cheerssleep_lift_foot_up": {
-        "name": "Raise foot lift"
+        "name": "Foot lift up"
       },
       "cheerssleep_lift_foot_down": {
-        "name": "Lower foot lift"
+        "name": "Foot lift down"
       }
     },
     "cover": {
@@ -5319,12 +5319,6 @@
       "sonicsleep": {
         "name": "SonicSleep state"
       },
-      "cheerssleep_model": {
-        "name": "CheersSleep model key"
-      },
-      "cheerssleep_sleep_mac": {
-        "name": "Sleep sensor MAC"
-      },
       "cheerssleep_head_massage": {
         "name": "Head massage level"
       },
@@ -5334,47 +5328,29 @@
       "cheerssleep_massage_mode": {
         "name": "Massage mode"
       },
-      "cheerssleep_brightness": {
-        "name": "Reported brightness"
+      "cheerssleep_left_heart": {
+        "name": "Left heart rate"
       },
-      "cheerssleep_sonic_level": {
-        "name": "Reported sonic level"
+      "cheerssleep_left_breath": {
+        "name": "Left breath rate"
       },
-      "cheerssleep_sonic_mode": {
-        "name": "Sonic control mode"
+      "cheerssleep_left_snore_count": {
+        "name": "Left snore count"
       },
-      "cheerssleep_snore": {
-        "name": "Snore flags"
+      "cheerssleep_left_snore_power": {
+        "name": "Left snore power"
       },
-      "cheerssleep_on_bed": {
-        "name": "On bed"
+      "cheerssleep_right_heart": {
+        "name": "Right heart rate"
       },
-      "cheerssleep_asleep": {
-        "name": "Asleep"
+      "cheerssleep_right_breath": {
+        "name": "Right breath rate"
       },
-      "cheerssleep_heart": {
-        "name": "Heart rate"
+      "cheerssleep_right_snore_count": {
+        "name": "Right snore count"
       },
-      "cheerssleep_breath": {
-        "name": "Breath rate"
-      },
-      "cheerssleep_gatem": {
-        "name": "Raw gatem"
-      },
-      "cheerssleep_gateo": {
-        "name": "Raw gateo"
-      },
-      "cheerssleep_snore_count": {
-        "name": "Snore count"
-      },
-      "cheerssleep_snore_power": {
-        "name": "Snore power"
-      },
-      "cheerssleep_position_light": {
-        "name": "Position-page light state"
-      },
-      "cheerssleep_color_light": {
-        "name": "Color-page light state"
+      "cheerssleep_right_snore_power": {
+        "name": "Right snore power"
       }
     },
     "light": {
@@ -5726,6 +5702,18 @@
       },
       "mline_anti_enabled": {
         "name": "Anti-snore enabled"
+      },
+      "cheerssleep_left_on_bed": {
+        "name": "Left in bed"
+      },
+      "cheerssleep_left_asleep": {
+        "name": "Left asleep"
+      },
+      "cheerssleep_right_on_bed": {
+        "name": "Right in bed"
+      },
+      "cheerssleep_right_asleep": {
+        "name": "Right asleep"
       }
     },
     "number": {
@@ -6794,13 +6782,6 @@
       },
       "symphony_child_mode": {
         "name": "Local child mode"
-      },
-      "cheerssleep_side": {
-        "name": "Selected bed side",
-        "state": {
-          "left": "Left",
-          "right": "Right"
-        }
       }
     },
     "climate": {

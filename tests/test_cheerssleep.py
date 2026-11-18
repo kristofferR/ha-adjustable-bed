@@ -302,20 +302,19 @@ async def test_shared_legacy_movement_clears_both_preset_selections(clock, movem
 async def test_legacy_irregular_massage_local_state_survives_reconnect(clock):
     ctrl, c = make(52)
     await ctrl.start_notify()
-    await ctrl.select_side("right")
-    await ctrl.massage_action("mode")
-    await ctrl.massage_action("head")
+    with ctrl.side_scope("right"):
+        await ctrl.massage_action("mode")
+        await ctrl.massage_action("head")
     assert frames(c)[-1] == "0301012400000000"
     ctrl.on_disconnect()
     replacement = bed.CheersSleepController(c, app.MODELS[52])
-    assert replacement.local.selected == 2
     assert replacement._massage[2] == [2, 1, 1]
     assert replacement._counters is ctrl._counters
     assert replacement._burst is ctrl._burst
 
 
 @pytest.mark.parametrize("key,query", [(171, True), (172, False), (179, True)])
-async def test_sonic_mode_split_exception_and_separate_side_query(clock, key, query):
+async def test_sonic_mode_split_exception_skips_follow_up_query(clock, key, query):
     ctrl, c = make(key)
     await ctrl.start_notify()
     await ctrl.hold_control("sonic_switch", 50)
@@ -324,18 +323,6 @@ async def test_sonic_mode_split_exception_and_separate_side_query(clock, key, qu
         codec.normal(0).hex(),
     ]
     assert (codec.query(True).hex() in frames(c)) == query
-    if key == 172:
-        c.client.write_gatt_char.reset_mock()
-        await ctrl.select_side("right")
-        assert frames(c) == ["eed001bbc0"]
-
-
-@pytest.mark.parametrize("key", [140, 141, 172])
-async def test_side_toggle_query_gate(clock, key):
-    ctrl, c = make(key)
-    await ctrl.start_notify()
-    await ctrl.select_side("right")
-    assert frames(c) == ([codec.query(key == 172, 2).hex()] if key in (141, 172) else [])
 
 
 async def test_shared_settings_do_not_inherit_split_side(clock):
@@ -359,12 +346,11 @@ async def test_shared_settings_do_not_inherit_split_side(clock):
 async def test_callback_link_ownership_live_state_and_teardown(clock):
     ctrl, c = make(141)
     await ctrl.start_notify()
-    await ctrl.select_side("right")
     callback = c.client.start_notify.call_args.args[1]
-    callback(None, bytearray.fromhex("eeb000bb000002020301"))
+    callback(None, bytearray.fromhex("eeb000aa000002020301"))
     assert c.controller_state[UNDER_BED_LIGHTS_ON] is True
-    assert c.controller_state[sided(keys.MODE, "right")] == 1
-    assert c.controller_state.get(sided(keys.MODE, "left")) is None
+    assert c.controller_state[sided(keys.MODE, "left")] == 1
+    assert c.controller_state.get(sided(keys.MODE, "right")) is None
     ctrl.on_disconnect()
     callback(None, bytearray.fromhex("eeb000aa000002020301"))
     assert c.controller_state.get(UNDER_BED_LIGHTS_ON) is None
@@ -491,13 +477,12 @@ async def test_real_scheduler_lease_expiry_keeps_release(clock, key):
     assert frames(c)[-1] == ("0301000100000000" if key == 45 else "ee01050000000000c0")
 
 
-async def test_as_position_and_color_light_consumers_keep_distinct_offsets(clock):
+async def test_as_rgb_light_uses_color_page_offset(clock):
     ctrl, c = make(153)
     await ctrl.start_notify()
     callback = c.client.start_notify.call_args.args[1]
+    # The position page reads byte8 (set here); the RGB light follows byte16.
     callback(None, bytearray.fromhex("eed00000112233640100003c0100000000"))
-    assert c.controller_state[keys.POSITION_LIGHT] is True
-    assert c.controller_state[keys.COLOR_LIGHT] is False
     assert c.controller_state[UNDER_BED_LIGHTS_ON] is False
     assert c.controller_state.get(keys.SONIC_LEVEL) is None
 
@@ -898,8 +883,6 @@ async def test_native_p2_light_desired_state_requires_current_feedback(hass, clo
 
     ctrl, c = make(key)
     await ctrl.start_notify()
-    if ctrl.model.split:
-        await ctrl.select_side("right")
     c.client.write_gatt_char.reset_mock()
     runtime = entity_runtime(ctrl, c)
     light = _light_entities_for(hass, runtime)[0]
@@ -909,7 +892,7 @@ async def test_native_p2_light_desired_state_requires_current_feedback(hass, clo
     await light.async_added_to_hass()
     callback = c.client.start_notify.call_args.args[1]
 
-    def report(enabled, selected=2):
+    def report(enabled, selected=1):
         data = bytearray.fromhex("eeb00000000002020300")
         data[3] = 0xBB if selected == 2 else 0xAA
         data[9] = int(enabled)
@@ -921,7 +904,7 @@ async def test_native_p2_light_desired_state_requires_current_feedback(hass, clo
             await action()
         assert frames(c) == []
         if ctrl.model.split:
-            report(not desired, selected=1)
+            report(not desired, selected=2)
             with pytest.raises(ServiceValidationError, match="unknown"):
                 await action()
             assert light.is_on is None
@@ -930,7 +913,7 @@ async def test_native_p2_light_desired_state_requires_current_feedback(hass, clo
         assert frames(c) == [] and light.is_on is desired
         report(not desired)
         await action()
-        selected = 2 if ctrl.model.split else 0
+        selected = 1 if ctrl.model.split else 0
         expected = [codec.normal(0x20000, selected).hex()] * 3 + [
             codec.normal(0, selected).hex()
         ] * 4
@@ -956,32 +939,15 @@ async def test_native_p2_light_desired_state_requires_current_feedback(hass, clo
 
 
 @pytest.mark.parametrize("key", [51, 52, 172])
-async def test_native_side_selector_and_reconstructed_movement_agree(hass, clock, key):
-    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
-
+async def test_standalone_split_movement_targets_left_side(clock, key):
     ctrl, c = make(key)
     await ctrl.start_notify()
-    runtime = entity_runtime(ctrl, c)
-    selector = AdjustableBedControllerSelect(runtime, ctrl.controller_select_specs[0])
-    selector.hass = hass
-    selector.async_write_ha_state = MagicMock()
-    await selector.async_added_to_hass()
-    try:
-        await selector.async_select_option("right")
-        assert selector.current_option == "right"
-        await ctrl.stop_notify()
-        replacement = bed.CheersSleepController(c, app.MODELS[key])
-        c.controller = runtime.controller = runtime.capability_controller = replacement
-        await replacement.start_notify()
-        assert selector.current_option == "right"
-        c.client.write_gatt_char.reset_mock()
-        await replacement.move_back_up()
-        if key == 172:
-            assert frames(c)[0] == "ee010500000001bbc0"
-        else:
-            assert frames(c) == ["0201046400000000", "0301036400000000"]
-    finally:
-        await selector.async_will_remove_from_hass()
+    c.client.write_gatt_char.reset_mock()
+    await ctrl.move_back_up()
+    if key == 172:
+        assert frames(c)[0] == "ee010500000001aac0"
+    else:
+        assert frames(c) == ["0201016400000000", "0301006400000000"]
 
 
 @pytest.mark.parametrize("key", [153, 172])
@@ -1005,11 +971,10 @@ async def test_d0_remote_feedback_reaches_native_rgb_light_and_invalidates(hass,
         assert light.rgb_color == (17, 34, 51)
         assert light.brightness == 127  # Accepted percent50 -> HA0..255, no raw scaling guess.
         assert c.controller_state[UNDER_BED_LIGHTS_RGB] == (17, 34, 51)
-        assert c.controller_state[LIGHT_LEVEL] == c.controller_state[keys.BRIGHTNESS] == 50
+        assert c.controller_state[LIGHT_LEVEL] == 50
         data[4:8] = bytes((255, 0, 128, 201))
         callback(None, data)
         assert light.rgb_color == (255, 0, 128)
-        assert c.controller_state[keys.BRIGHTNESS] == -55  # Retain signed raw diagnostic.
         assert c.controller_state[LIGHT_LEVEL] is None and light.brightness is None
         data[7] = 0
         callback(None, data)
@@ -1055,7 +1020,6 @@ async def test_registered_ten_services_keep_ordinary_arrays_on_split_models(
 
     ctrl, c = make(key)
     await ctrl.start_notify()
-    await ctrl.select_side("right")
     target = MagicMock(spec=AdjustableBedCoordinator)
     target.name = "CheersSleep"
     target.controller_side = None
@@ -1201,8 +1165,6 @@ async def test_native_paired_lights_keep_independent_feedback_and_action_sides(h
         report(0xBB, True)
         assert lights["left"].is_on is False and lights["right"].is_on is True
         assert inner.controller_state[UNDER_BED_LIGHTS_ON] is False
-        await ctrl.select_side("right")
-        assert inner.controller_state[UNDER_BED_LIGHTS_ON] is True
         assert lights["left"].is_on is False and lights["right"].is_on is True
         report(0, False)  # An unowned/wrong-side report cannot overwrite either child.
         assert lights["left"].is_on is False and lights["right"].is_on is True

@@ -68,7 +68,7 @@ All 36 catalog keys remain distinct, including aliases that select the same scre
 | Massage | Conventional vibration, AS relative sonic controls, I/HI sonic zones/modes/level |
 | Lighting | On/off on P1, toggle on P2, RGB and brightness on RGB layouts |
 | Split sides | Five catalog keys, one receiver; P1 foot is shared |
-| Bed sensors | Signed sleep fields and sleep MAC, no invented firmware units |
+| Bed sensors | Per-side in bed, asleep, heart, breath and snore readings, no invented firmware units |
 
 ## Choosing a profile
 
@@ -283,7 +283,7 @@ P1 MAC consumes PID89 bytes2–7. Sleep PID87/88 chooses left/right; flag byte2 
 
 B0 requires ten bytes. Light byte9 updates before side/mode filtering; massage mode is byte6 minus1, accepted only0–2, with signed head/foot levels7/8. NewNine filters only massage by selected side. The simple light-only pages do not gain massage from unused constants.
 
-D0 requires seventeen bytes for all consumed fields. RGB4–6 is unsigned; brightness7 is signed. AS position light is byte8, I/HI light is byte16. The color-page consumer always uses byte16; separate position/color state sensors preserve both projections. RGB light entities use the color-page state. Mode uses byte12, or its low/high side nibble for Position500i. The shared control mode is bit0 of byte8. On I/HI models, physical sonic level11 is signed and clamped0–100. AS models expose their position/color light consumers and do not acquire I/HI mode/level observations. No audio fields, positions or new capabilities are inferred. Disconnect clears live observations; stale callbacks cannot update the next physical session.
+D0 requires seventeen bytes for all consumed fields. RGB4–6 is unsigned; brightness7 is signed. AS position light is byte8, I/HI light is byte16. The color-page consumer always uses byte16, and RGB light entities use that color-page state. Mode uses byte12, or its low/high side nibble for Position500i. The shared control mode is bit0 of byte8. On I/HI models, physical sonic level11 is signed and clamped0–100. AS models expose their position/color light consumers and do not acquire I/HI mode/level observations. No audio fields, positions or new capabilities are inferred. Disconnect clears live observations; stale callbacks cannot update the next physical session.
 
 ### STOP and release behavior
 
@@ -291,7 +291,7 @@ Every held operation has an elapsed deadline and cancellation-independent cleanu
 
 Explicit STOP sends the distinct motor-stop action once, including during automatic preset or memory movement. P2 targets the selected side; P1 uses its shared motor-stop action. These writes remain independent of command cancellation.
 
-Non-split I/HI sonic mode holds schedule a D0 query200ms after release. **Position500i omits this follow-up.** Its separate side-toggle D0 query remains; NewNine queries on side change, NewEight and P1 split screens do not.
+Non-split I/HI sonic mode holds schedule a D0 query200ms after release. **Position500i omits this follow-up.** The app's side-toggle queries have no counterpart: the integration has no side picker.
 
 ### Vectors
 
@@ -309,11 +309,20 @@ Non-split I/HI sonic mode holds schedule a D0 query200ms after release. **Positi
 
 Discovery requires the advertised service and the first manufacturer entry in sorted numeric order. ID89 adds89 to signed payload byte2; every other first ID is the direct model key. Short/unknown records are ignored. New installation, Configure and imported entries store the selected `product_type`; each side of a two-address pair owns its model setting.
 
-For supported split keys, optional native Left/Right child devices retain side targeting. Standalone side selection initially defaults left and survives controller reconstruction. P1 shared foot and global flat remain shared. A timed foot move targeting both P1 children runs once per receiver for the requested duration; back and lumbar moves retain separate side execution. The P2 common release can affect either/both sides according to firmware; its exact physical effect remains unverified.
+For supported split keys, optional native Left/Right child devices retain side targeting. A standalone split entry controls the left side, the app's initial selection; enable side controls to get separate Left and Right devices. P1 shared foot and global flat remain shared. A timed foot move targeting both P1 children runs once per receiver for the requested duration; back and lumbar moves retain separate side execution. The P2 common release can affect either/both sides according to firmware; its exact physical effect remains unverified.
 
 #### Controls
 
-Native covers expose only the model's axes, with timed/held controls and the integration's renewable lease limits. Preset and memory entities use the actual command paths; saves require confirmation. Massage buttons, sonic level, RGB light controls, state sensors and a side select appear where the model supports them. Sleep sensors are disabled by default.
+Native covers expose only the model's axes, with timed/held controls and the integration's renewable lease limits. Preset and memory entities use the actual command paths; saves require confirmation. Massage buttons, sonic level, RGB light controls and massage state sensors appear where the model supports them.
+
+| Axis | Cover | Buttons |
+|------|-------|---------|
+| Storage model `all` | Storage lift | Storage lift up / down |
+| Combined back, legs (and lumbar) | | All sections up / down |
+| `lift` (both lifts) | Bed lift | Bed lift up / down |
+| `lift_head`, `lift_foot` | Head lift, Foot lift | Head lift up / down, Foot lift up / down |
+
+P1 sleep reports name their side, so each side has its own sensors: Left/Right in bed and asleep (binary sensors), heart rate, breath rate, snore count and snore power. They are disabled by default because only beds with the sleep module report them. The snore flags, the gatem/gateo fields, the sleep module MAC and the shared control-mode bit are parsed but not exposed. P2 **Refresh bed state** is a diagnostic button, disabled by default; the integration already queries on connect.
 
 Movement, flat, memory recall and STOP clear the affected preset selection so its next press recalls the preset. A shared color-light toggle runs once per receiver per action, including when targeting both native children; position-light toggles retain per-side execution.
 
@@ -325,7 +334,7 @@ P2 light on/off requires current feedback for the targeted light. A matching sta
 
 Live state is published through declared keys. P1 massage levels are local app counters; they are not hardware feedback. P2 state comes from the active bed parsers. No firmware units are invented for raw sleep fields or the legacy delay setting.
 
-D0 RGB feedback updates the native light immediately. Valid brightness percentages0–100 map to HA brightness0–255; out-of-domain signed bytes remain available in the raw brightness diagnostic. RGB and brightness observations are cleared when the physical session ends.
+D0 RGB feedback updates the native light immediately. Valid brightness percentages0–100 map to HA brightness0–255; out-of-domain signed bytes leave brightness unknown. RGB and brightness observations are cleared when the physical session ends.
 
 #### Limitations
 
