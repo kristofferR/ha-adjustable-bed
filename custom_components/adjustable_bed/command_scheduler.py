@@ -694,6 +694,16 @@ def current_command_context() -> CommandContext | None:
     return context if context is None or context.active else None
 
 
+def command_was_sent() -> bool:
+    """Return False inside a command that STOP or a replacing command cancelled.
+
+    A cancelled writer returns quietly instead of raising, so an entity checks
+    this before it shows the state it asked for.
+    """
+    context = current_command_context()
+    return context is None or not context.cancel_event.is_set()
+
+
 def copy_context_without_command() -> Context:
     """Keep tracing and HA context, without a parent's command reservation."""
     context = copy_context()

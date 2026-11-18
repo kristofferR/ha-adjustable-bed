@@ -555,7 +555,8 @@ async def test_controller_switch_ignores_a_command_stop_cancelled_before_writing
     cancelled = MagicMock()
     cancelled.cancel_event.is_set.return_value = True
     with patch(
-        "custom_components.adjustable_bed.switch.current_command_context", return_value=cancelled
+        "custom_components.adjustable_bed.command_scheduler.current_command_context",
+        return_value=cancelled,
     ):
         await assumed.async_turn_on()
     assert assumed.is_on is None

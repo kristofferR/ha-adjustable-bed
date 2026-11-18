@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Coroutine, Iterable
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Self
 
@@ -10,6 +10,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
 from .card import CARD_ATTRIBUTES, CardPlacement
+from .command_scheduler import command_was_sent
 from .const import TIMED_MOVE_MOTOR_OPTIONS
 from .entity_runtime import controller_side_scope
 from .execution import ExecutionCapabilities
@@ -107,6 +108,24 @@ class AdjustableBedEntity(RenamesInPlace, PlacedInCard):
     def _side_scope(self) -> AbstractContextManager[None]:
         """Bind this entity's side to a shared controller around a direct read."""
         return controller_side_scope(self._coordinator)
+
+    async def _async_send(
+        self, command: Callable[[BedController], Coroutine[Any, Any, None]], **kwargs: Any
+    ) -> bool:
+        """Run ``command`` and return whether it reached the bed.
+
+        STOP or a replacing command settles a cancelled command without an
+        error, and the entity then keeps showing its previous state.
+        """
+        sent = False
+
+        async def run(controller: BedController) -> None:
+            nonlocal sent
+            await command(controller)
+            sent = command_was_sent()
+
+        await self._coordinator.async_execute_controller_command(run, **kwargs)
+        return sent
 
     def _async_write_ha_state(self) -> None:
         """Read state with a shared controller bound to this entity's side."""
