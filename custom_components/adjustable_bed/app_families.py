@@ -1505,8 +1505,8 @@ def _remacro_placeholders(visit: Visit) -> dict[str, str]:
     from .beds.remacro.protocol import MODELS
 
     model_id = _remacro_model(visit)
-    if model_id in MODELS:
-        return {"model": MODELS[model_id].name}
+    if model_id is not None and (model := MODELS.get(model_id)) is not None:
+        return {"model": model.name}
     key, default = ("unknown", "Not reported yet") if model_id is None else ("unlisted", "Unknown model")
     try:
         words = async_get_cached_translations(visit.hass, visit.hass.config.language, "selector", DOMAIN)
