@@ -6,6 +6,8 @@ import asyncio
 import re
 from typing import TYPE_CHECKING, Final
 
+from ...alarm import AlarmCapability
+from ...alarm import AlarmRequest as SharedAlarm
 from ...card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
 from ...codec import richmat as codec
 from ...controller_state import StateKey, StateUpdate
@@ -16,6 +18,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..richmat_mh.controller import (
+    _ALARM_POSITIONS,
     ANGLE_KEYS,
     INTENSITY_KEYS,
     LIGHT_TIMER_KEY,
@@ -30,6 +33,7 @@ from ..richmat_mh.controller import (
     _invoke,
 )
 from ..richmat_mh.protocol import (
+    ALARM_OPTION_CODES,
     INIT_VER0,
     INIT_VER1,
     MOTOR_MODE_BITS,
@@ -803,6 +807,81 @@ class RufRichmatController(RichmatMhController):
             and _feature(self._app, self.model.model_id, "hasNewAlarm")
             and _feature(self._app, self.model.model_id, "alarmList")
         )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        inherited = super().alarm_capability
+        calendar, mattress = self._calendar_page(), self._normal_ready
+        if not calendar and not mattress:
+            return inherited
+        if calendar:
+            # The calendar page replaces the single bed alarm on these models.
+            codes = set(_ints(_feature(self._app, self.model.model_id, "alarmList")))
+            wake_actions = tuple(
+                action
+                for action, option in _ALARM_POSITIONS.items()
+                if ALARM_OPTION_CODES[option] in codes
+            )
+            bed: dict[str, object] = {"wake_actions": wake_actions, "slots": 7}
+        elif inherited is not None:
+            bed = {
+                "wake_actions": inherited.wake_actions,
+                "slots": inherited.slots,
+                "massage": inherited.massage,
+                "massage_zones": inherited.massage_zones,
+            }
+        else:
+            bed = {}
+        sides = ("left", "right") if mattress else inherited.mattress_sides if inherited else ()
+        return AlarmCapability(
+            **bed,  # type: ignore[arg-type]
+            weekdays=True,
+            mattress_sides=sides,
+            massage_intensities=3 if sides else 0,
+        )
+
+    def _app_alarm(self, alarm: SharedAlarm) -> AlarmRequest | None:
+        """Return this app's own request, or None for the inherited bed alarm."""
+        if alarm.mattress_side is not None:
+            if not self._normal_ready:
+                return None
+            return AlarmRequest(
+                family="mattress",
+                enabled=alarm.enabled,
+                hour=alarm.hour,
+                minute=alarm.minute,
+                mattress_side="left" if alarm.mattress_side == "left" else "right",
+                repeat=self._waist_repeat(alarm),  # type: ignore[arg-type]
+                intensity=alarm.massage_intensity,
+            )
+        if not self._calendar_page():
+            return None
+        option = _ALARM_POSITIONS.get(alarm.wake_action)
+        if option is None:
+            raise ValueError("Choose a wake position from this bed's alarm list")
+        return AlarmRequest(
+            family="calendar",
+            enabled=alarm.enabled,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            slot=alarm.slot,
+            mode=ALARM_OPTION_CODES[option],
+            weekdays=alarm.weekdays,
+        )
+
+    def validate_alarm(self, alarm: SharedAlarm) -> None:
+        request = self._app_alarm(alarm)
+        if request is None:
+            super().validate_alarm(alarm)
+        else:
+            self.validate_ruf_richmat_alarm(request)
+
+    async def configure_alarm(self, alarm: SharedAlarm) -> None:
+        request = self._app_alarm(alarm)
+        if request is None:
+            await super().configure_alarm(alarm)
+        else:
+            await self.ruf_richmat_alarm(request)
 
     def validate_ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         request.validate()

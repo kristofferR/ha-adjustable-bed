@@ -467,26 +467,45 @@ def test_calendar_capability_and_position_gates_are_model_specific():
     assert not c.supports_ruf_richmat_alarms
 
 
-async def test_alarm_service_schema_and_validation(hass, monkeypatch):
-    from homeassistant.core import ServiceCall
-
-    from custom_components.adjustable_bed.beds.ruf_richmat import services as service
+async def test_set_alarm_writes_the_mattress_alarm(hass):
+    from tests.alarm_helpers import call_set_alarm
 
     c = make("wsilver2", "bfrm_mattress")
     c._normal_ready = True
-
-    async def execute(targets, interface, label, command, *, supported, validate):
-        assert isinstance(c, interface) and supported(c)
-        validate(c)
-        await command(c)
-
-    monkeypatch.setattr(service, "_call_targets", lambda _call: [])
-    monkeypatch.setattr(service, "_preflight_and_execute", execute)
-    data = service.SCHEMA(
-        {"device_id": ["bed"], "family": "mattress", "time": "07:30:00", "mattress_side": "right"}
+    await call_set_alarm(
+        hass,
+        c,
+        {"enabled": True, "time": "07:30:00", "mattress_side": "right"},
     )
-    await service.handle_alarm(ServiceCall(hass, "adjustable_bed", service.SERVICE, data))
     assert frames(c)[0].startswith("5e020b0101071e")
+
+
+async def test_set_alarm_writes_a_named_calendar_alarm(hass):
+    from tests.alarm_helpers import call_set_alarm
+
+    model = next(
+        m
+        for m, p in profiles("wsilver2").items()
+        if p["fields"].get("hasNewAlarm") and p["fields"].get("alarmList")
+    )
+    c = make("wsilver2", model)
+    c._dev = {}
+    capability = c.alarm_capability
+    assert capability is not None and capability.slots == 7 and capability.wake_actions
+    c.ruf_richmat_alarm = AsyncMock()
+    await call_set_alarm(
+        hass,
+        c,
+        {
+            "enabled": True,
+            "time": "07:30:00",
+            "slot": 2,
+            "weekdays": ["monday"],
+            "wake_action": capability.wake_actions[0],
+        },
+    )
+    request = c.ruf_richmat_alarm.await_args.args[0]
+    assert (request.family, request.slot, request.weekdays) == ("calendar", 2, (0,))
 
 
 @pytest.mark.parametrize("app", MODEL_IDS)
