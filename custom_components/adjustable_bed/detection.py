@@ -1351,7 +1351,7 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     platform_name = device_name if isinstance(device_name, str) and device_name else service_info.name
     # This app checks the first manufacturer VALUE, without a company-id gate.
     # Its shared name/UART route offers an explicit app choice, never an ORE alias.
-    manufacturer_value = next(iter(service_info.manufacturer_data.values()), b"")
+    manufacturer_value = next(iter((service_info.manufacturer_data or {}).values()), b"")
     if (
         isinstance(platform_name, str) and platform_name.lower().startswith("smartbed")
         and manufacturer_value.startswith(bytes.fromhex("44 4f 54 01 05"))

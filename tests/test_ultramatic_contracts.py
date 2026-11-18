@@ -5,6 +5,9 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 from custom_components.adjustable_bed.profiles import ultramatic as app
 from scripts.codec_docs import okin_nframe as docs
@@ -13,7 +16,7 @@ from scripts.generate_codec_docs import _rendered, family_modules
 from tests.card_placements import FIXTURE, controller_entities, placements
 from tests.entity_translation_reachability import entity_strings, missing_translations
 from tests.hold_lease_wire import virtual_clock
-from tests.test_ultramatic_runtime import runtime, writes  # noqa: F401
+from tests.test_ultramatic_runtime import ALARM_REPORT, runtime, writes  # noqa: F401
 
 ROOT = Path(__file__).resolve().parents[1]
 BED = "ultramatic_smart_bed"
@@ -83,12 +86,49 @@ def test_wire_app_scenarios_schema_aliases_and_exact_gatt():
         assert not data["scenarios"][key]["info"].get("gaps"), key
         assert data["scenarios"][key]["commands"]["connect"]["status"] == "ok"
         assert data["scenarios"][key]["info"]["bed_type"] == BED
+        toggle = data["scenarios"][key]["commands"]["ultramatic_alarm_toggle"]
+        if key == BED or key.startswith(BED + ":AB:"):
+            assert toggle == {"status": "no_writes"}
+        else:
+            assert toggle["status"] == "ok"
     layouts = json.loads((ROOT / "tests/fixtures/wire_snapshot_layouts.json").read_text())
     for key, notify in ((BED, "notify"), (BED + ":indicate", "indicate")):
         assert layouts[key] == {
             "services": {app.SERVICE_UUID: [app.WRITE_UUID, app.NOTIFY_UUID]},
             "properties": {app.WRITE_UUID: ["write-without-response"], app.NOTIFY_UUID: [notify]},
         }
+
+
+async def test_app_wire_plan_records_unequal_combined_toggle_as_safe_no_writes(
+    runtime,  # noqa: F811 - pytest fixture
+):
+    from scripts.wire_snapshot import plan_commands
+
+    _, coordinator, client = runtime
+    client.start_notify.await_args.args[1](None, bytearray(ALARM_REPORT))
+    command = next(
+        c for c in plan_commands(coordinator.controller) if c.name == "ultramatic_alarm_toggle"
+    )
+    await command.call(coordinator.controller)
+    assert command.declared and not command.is_gap("no_writes")
+    assert writes(client) == []
+
+
+async def test_app_wire_plan_does_not_mask_an_unsafe_combined_toggle_regression(
+    runtime,  # noqa: F811 - pytest fixture
+):
+    from scripts.wire_snapshot import plan_commands
+
+    _, coordinator, client = runtime
+    command = next(
+        c for c in plan_commands(coordinator.controller) if c.name == "ultramatic_alarm_toggle"
+    )
+    with (
+        patch.object(coordinator.controller, "prepare_alarm", return_value=object()),
+        pytest.raises(AssertionError, match="Unequal Ultramatic records"),
+    ):
+        await command.call(coordinator.controller)
+    assert writes(client) == []
 
 
 def test_only_changed_guide_outputs_are_current():

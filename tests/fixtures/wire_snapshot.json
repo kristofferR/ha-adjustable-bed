@@ -31903,7 +31903,7 @@
 "ultramatic_alarm_type_1": {"status":"ok","writes":[[0,"6e400002",false,"07057f010630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_2": {"status":"ok","writes":[[0,"6e400002",false,"07057f020630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_3": {"status":"ok","writes":[[0,"6e400002",false,"07057f030630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
-"ultramatic_alarm_toggle": {"status":"ok","writes":[[0,"6e400002",false,"0705ff010305000100",2,300],[500,"6e400002",false,"00c0",3,100]]}
+"ultramatic_alarm_toggle": {"status":"no_writes"}
 }},
 "ultramatic_smart_bed:A:indicate:a5": {
 "info": {"bed_type": "ultramatic_smart_bed", "controller": "UltramaticController", "module": "ultramatic.controller", "pulse": [4, 300]},
@@ -32348,7 +32348,7 @@
 "ultramatic_alarm_type_1": {"status":"ok","writes":[[0,"6e400002",false,"07057f010630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_2": {"status":"ok","writes":[[0,"6e400002",false,"07057f020630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_3": {"status":"ok","writes":[[0,"6e400002",false,"07057f030630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
-"ultramatic_alarm_toggle": {"status":"ok","writes":[[0,"6e400002",false,"0705ff010305000100",2,300],[500,"6e400002",false,"00c0",3,100]]}
+"ultramatic_alarm_toggle": {"status":"no_writes"}
 }},
 "ultramatic_smart_bed:AB:indicate:ed": {
 "info": {"bed_type": "ultramatic_smart_bed", "controller": "UltramaticController", "module": "ultramatic.controller", "pulse": [4, 300]},
@@ -32437,7 +32437,7 @@
 "ultramatic_alarm_type_1": {"status":"ok","writes":[[0,"6e400002",false,"07057f010630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_2": {"status":"ok","writes":[[0,"6e400002",false,"07057f020630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_3": {"status":"ok","writes":[[0,"6e400002",false,"07057f030630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
-"ultramatic_alarm_toggle": {"status":"ok","writes":[[0,"6e400002",false,"0705ff010305000100",2,300],[500,"6e400002",false,"00c0",3,100]]}
+"ultramatic_alarm_toggle": {"status":"no_writes"}
 }},
 "ultramatic_smart_bed:AB:notify:a5": {
 "info": {"bed_type": "ultramatic_smart_bed", "controller": "UltramaticController", "module": "ultramatic.controller", "pulse": [4, 300]},
@@ -32526,7 +32526,7 @@
 "ultramatic_alarm_type_1": {"status":"ok","writes":[[0,"6e400002",false,"07057f010630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_2": {"status":"ok","writes":[[0,"6e400002",false,"07057f020630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_3": {"status":"ok","writes":[[0,"6e400002",false,"07057f030630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
-"ultramatic_alarm_toggle": {"status":"ok","writes":[[0,"6e400002",false,"0705ff010305000100",2,300],[500,"6e400002",false,"00c0",3,100]]}
+"ultramatic_alarm_toggle": {"status":"no_writes"}
 }},
 "ultramatic_smart_bed:AB:notify:ed": {
 "info": {"bed_type": "ultramatic_smart_bed", "controller": "UltramaticController", "module": "ultramatic.controller", "pulse": [4, 300]},
@@ -32615,7 +32615,7 @@
 "ultramatic_alarm_type_1": {"status":"ok","writes":[[0,"6e400002",false,"07057f010630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_2": {"status":"ok","writes":[[0,"6e400002",false,"07057f020630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
 "ultramatic_alarm_type_3": {"status":"ok","writes":[[0,"6e400002",false,"07057f030630000100",2,300],[500,"6e400002",false,"00c0",3,100]]},
-"ultramatic_alarm_toggle": {"status":"ok","writes":[[0,"6e400002",false,"0705ff010305000100",2,300],[500,"6e400002",false,"00c0",3,100]]}
+"ultramatic_alarm_toggle": {"status":"no_writes"}
 }},
 "ultramatic_smart_bed:B:indicate:a5": {
 "info": {"bed_type": "ultramatic_smart_bed", "controller": "UltramaticController", "module": "ultramatic.controller", "pulse": [4, 300]},

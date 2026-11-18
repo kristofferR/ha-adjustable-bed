@@ -411,6 +411,16 @@ def plan_commands(controller: Any) -> list[Command]:
             plan.append(Command(f"ultramatic_alarm_type_{wake_type}", set_ultramatic_alarm, True))
 
         async def toggle_ultramatic_alarm(ctrl: Any) -> None:
+            if ctrl._side() == "AB":
+                # These frozen replies contain unequal A/B alarm records.
+                # A display fallback must never authorize a combined overwrite.
+                try:
+                    ctrl.prepare_alarm(None, toggle=True)
+                except ValueError as error:
+                    if str(error) == "Refresh alarms on this connection before toggling":
+                        return
+                    raise
+                raise AssertionError("Unequal Ultramatic records authorized a combined toggle")
             await ctrl.set_alarm(ctrl.prepare_alarm(None, toggle=True))
 
         plan.append(Command("ultramatic_alarm_toggle", toggle_ultramatic_alarm, True))

@@ -41,8 +41,8 @@ test("Ultramatic SmartBed publishes five neutral motors and its app controls", (
   const hass = hassWith([
     ...motors.map((motor) => entry(`cover.${motor}`, `ultramatic_${motor}`)),
     entry("button.light", "ultramatic_light"),
-    entry("button.massage", "ultramatic_massageOnOff"),
-    entry("button.timer", "ultramatic_timerSwitch"),
+    entry("button.massage", "ultramatic_massageonoff"),
+    entry("button.timer", "ultramatic_timerswitch"),
     entry("button.save", "ultramatic_save_zg"),
     entry("button.reset", "ultramatic_reset_memory"),
     entry("button.clock", "ultramatic_clock"),

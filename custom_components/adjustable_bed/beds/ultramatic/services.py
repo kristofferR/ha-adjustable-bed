@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from contextlib import ExitStack
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -10,7 +12,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from ...const import DOMAIN, PAIR_CONNECTION_MODE_SEQUENTIAL
+from ...const import BED_TYPE_ULTRAMATIC_SMART_BED, DOMAIN, PAIR_CONNECTION_MODE_SEQUENTIAL
 from ...entity_runtime import controller_side_scope
 from ...paired_coordinator import PairedBedCoordinator
 from ...profiles import ultramatic as app
@@ -25,8 +27,10 @@ from ...services import (
     _preflight_capability,
     _release_preflighted,
 )
-from .controller import AlarmPlan, Link, UltramaticController
 from .state import AlarmSettings
+
+if TYPE_CHECKING:
+    from .controller import AlarmPlan, Link, UltramaticController
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,11 +58,20 @@ def _integer(value: object) -> int:
 
 
 async def handle_alarm(call: ServiceCall) -> None:
-    # Every target and generation is captured before the first await. The module
-    # is loaded by the registration import executor, not lazily after admission.
+    # Every target and generation is captured before the first await. Registration
+    # loads only this light action module; target controllers already exist.
     targets = _call_targets(call)
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
     physical = [child for parent, side in targets for child in _command_targets(parent, side)]
+    if not physical or any(
+        child.bed_type != BED_TYPE_ULTRAMATIC_SMART_BED or child.capability_controller is None
+        for child in physical
+    ):
+        raise ServiceValidationError("Every target must use the Ultramatic Smart Bed app profile")
+    # A configured capability instance already loaded its class in the factory.
+    # This cached import belongs to the call, never service registration.
+    from .controller import UltramaticController
+
     initial: list[_Fence] = []
     modes = [
         parent.connection_mode if isinstance(parent, PairedBedCoordinator) else None
@@ -186,89 +199,106 @@ async def handle_alarm(call: ServiceCall) -> None:
         if id(child) in sequential:
             child.cache_capability_controller()
 
-    # Capability validation is offline-safe; link-bound plans must use the live
-    # physical controller, never the client-free capability instance.
-    preflighted = await _preflight_capability(targets, UltramaticController, "Ultramatic alarms")
-    try:
-        check_initial()
-        for parent, side in targets:
-            for child in _command_targets(parent, side):
-                if id(child) in sequential:
-                    continue  # The shared one-link topology connects each side in its turn.
-                check_initial()
-                preflighted.append((parent, child))
-                if not await child.async_ensure_connected(reset_timer=False):
-                    raise ServiceValidationError("Ultramatic receiver is unavailable")
-                check_initial()
-                controller = child.controller
-                if not isinstance(controller, UltramaticController):
-                    raise ServiceValidationError("Ultramatic live controller is unavailable")
-                await controller.async_validate_linked_readiness()
-                check_initial()
-                with controller_side_scope(child):
-                    prepare(controller)
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
-
-    def check_all() -> None:
-        check_owners()
+    # Earlier targets must remain live while later targets execute. The shared
+    # hold pauses only idle disconnects and restores normal timers on every exit.
+    with ExitStack() as connections:
+        held: set[int] = set()
         for child in physical:
-            if id(child) in sequential:
-                continue
-            controller = child.controller
-            if not isinstance(controller, UltramaticController) or controller not in ready:
-                raise ServiceValidationError("Ultramatic controller was replaced after validation")
-            ready[controller].check()
-            if operation != "query":
-                with controller_side_scope(child):
-                    plan = plans.get((controller, controller._side()))
-                    if plan is None:
-                        raise ServiceValidationError(
-                            "Ultramatic target side changed after validation"
-                        )
-                    controller.validate_plan(plan)
+            if id(child) not in sequential and child.operation_identity not in held:
+                connections.enter_context(child.hold_command_connection())
+                held.add(child.operation_identity)
 
-    async def apply(controller: UltramaticController) -> None:
-        check_all()
-        if controller not in ready:
-            if not any(
-                id(child) in sequential and child.controller is controller for child in physical
-            ):
-                raise ServiceValidationError("Ultramatic command reached an unvalidated receiver")
-            await controller.async_validate_linked_readiness()
-            check_all()
-            prepare(controller)
-        # _sequence advances once synchronously before its first await. Admit
-        # precisely that increment so concurrent siblings cannot invalidate one
-        # another, without adopting any external command's generation.
-        fence = ready[controller]
-        fence.check()
-        ready[controller] = _Fence(controller, fence.link, fence.generation + 1)
-        if operation == "query":
-            await controller.query("alarm", validate=check_all)
-        else:
-            plan = plans.get((controller, controller._side()))
-            if plan is None:
-                raise ServiceValidationError("Ultramatic alarm plan no longer matches the target")
-            await controller.set_alarm(plan, validate=check_all)
-        ready[controller].check()
-
-    try:
-        check_all()
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
-    for index, (target, admission) in enumerate(zip(targets, admissions, strict=True)):
-        dispatch_index = index
-        await _execute_preflighted(
-            [target],
-            preflighted,
-            _family_command(UltramaticController, "Ultramatic alarms", apply),
-            cancel_running=True,
-            resource="*",
-            admissions=[admission],
+        # Capability validation is offline-safe; link-bound plans must use the live
+        # physical controller, never the client-free capability instance.
+        preflighted = await _preflight_capability(
+            targets, UltramaticController, "Ultramatic alarms"
         )
+        try:
+            check_initial()
+            for parent, side in targets:
+                for child in _command_targets(parent, side):
+                    if id(child) in sequential:
+                        continue  # The shared one-link topology connects each side in its turn.
+                    check_initial()
+                    preflighted.append((parent, child))
+                    if not await child.async_ensure_connected(reset_timer=False):
+                        raise ServiceValidationError("Ultramatic receiver is unavailable")
+                    check_initial()
+                    controller = child.controller
+                    if not isinstance(controller, UltramaticController):
+                        raise ServiceValidationError("Ultramatic live controller is unavailable")
+                    await controller.async_validate_linked_readiness()
+                    check_initial()
+                    with controller_side_scope(child):
+                        prepare(controller)
+        except BaseException:
+            await _release_preflighted(preflighted)
+            raise
+
+        def check_all() -> None:
+            check_owners()
+            for child in physical:
+                if id(child) in sequential:
+                    continue
+                controller = child.controller
+                if not isinstance(controller, UltramaticController) or controller not in ready:
+                    raise ServiceValidationError(
+                        "Ultramatic controller was replaced after validation"
+                    )
+                ready[controller].check()
+                if operation != "query":
+                    with controller_side_scope(child):
+                        plan = plans.get((controller, controller._side()))
+                        if plan is None:
+                            raise ServiceValidationError(
+                                "Ultramatic target side changed after validation"
+                            )
+                        controller.validate_plan(plan)
+
+        async def apply(controller: UltramaticController) -> None:
+            check_all()
+            if controller not in ready:
+                if not any(
+                    id(child) in sequential and child.controller is controller for child in physical
+                ):
+                    raise ServiceValidationError(
+                        "Ultramatic command reached an unvalidated receiver"
+                    )
+                await controller.async_validate_linked_readiness()
+                check_all()
+                prepare(controller)
+            # _sequence advances once synchronously before its first await. Admit
+            # precisely that increment so concurrent siblings cannot invalidate one
+            # another, without adopting any external command's generation.
+            fence = ready[controller]
+            fence.check()
+            ready[controller] = _Fence(controller, fence.link, fence.generation + 1)
+            if operation == "query":
+                await controller.query("alarm", validate=check_all)
+            else:
+                plan = plans.get((controller, controller._side()))
+                if plan is None:
+                    raise ServiceValidationError(
+                        "Ultramatic alarm plan no longer matches the target"
+                    )
+                await controller.set_alarm(plan, validate=check_all)
+            ready[controller].check()
+
+        try:
+            check_all()
+        except BaseException:
+            await _release_preflighted(preflighted)
+            raise
+        for index, (target, admission) in enumerate(zip(targets, admissions, strict=True)):
+            dispatch_index = index
+            await _execute_preflighted(
+                [target],
+                preflighted,
+                _family_command(UltramaticController, "Ultramatic alarms", apply),
+                cancel_running=True,
+                resource="*",
+                admissions=[admission],
+            )
 
 
 def register_services(hass: HomeAssistant) -> None:
