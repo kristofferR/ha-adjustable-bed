@@ -206,6 +206,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "bedgear": BedTraits(no_angle_feedback=True, connection_scoped_state=True),
     "l2motion": BedTraits(no_angle_feedback=True, connection_scoped_state=True),
     "paramount": BedTraits(position_feedback=True, connection_scoped_state=True, max_angles={"head": 75, "back": 75, "legs": 30, "feet": 30}),
+    "ormatek": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "smart_sleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "smart_comfort_synargy": _NO_ANGLES_SCOPED,
     "smart_comfort_synergy": _NO_ANGLES_SCOPED,
@@ -489,7 +490,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "smart_comfort_synergy", "solace", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
-     "wsilver_products", "yamada",
+     "wsilver_products", "yamada", "ormatek",
     }
 )
 

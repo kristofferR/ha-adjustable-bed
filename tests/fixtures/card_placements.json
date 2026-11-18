@@ -110,6 +110,9 @@
  "binary_sensor:motion_bed_thermal_timer_enabled": {
   "card_section": "hidden"
  },
+ "binary_sensor:ormatek_massage": {
+  "card_section": "massage"
+ },
  "binary_sensor:reverie_pairlink_low_battery": {
   "card_section": "utility"
  },
@@ -1207,6 +1210,22 @@
  "button:ore_comfort_program_zero_g": {
   "card_section": "presets",
   "card_role": "save"
+ },
+ "button:ormatek_action": {
+  "card_section": "massage"
+ },
+ "button:ormatek_both_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ormatek_both"
+ },
+ "button:ormatek_both_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ormatek_both"
+ },
+ "button:ormatek_light": {
+  "card_section": "lighting"
  },
  "button:paramount_gearing_down": {
   "card_section": "motors",
@@ -2498,6 +2517,10 @@
   "card_section": "motors",
   "card_motor": "neck"
  },
+ "cover:ormatek_both": {
+  "card_section": "motors",
+  "card_motor": "ormatek_both"
+ },
  "cover:paramount_gearing": {
   "card_section": "motors",
   "card_motor": "paramount_gearing"
@@ -3727,6 +3750,9 @@
  },
  "sensor:okin_bedding_app_massage_timer_minutes": {
   "card_section": "hidden"
+ },
+ "sensor:ormatek_alarm_time": {
+  "card_section": "utility"
  },
  "sensor:paramount_capabilities": {
   "card_section": "hidden"

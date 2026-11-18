@@ -2050,6 +2050,14 @@ def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+    "ormatek": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_PRODUCT_TYPE, {"new": "Techno Smart New", "lite": "Techno Smart Lite"}, "new"),
+                   Question(CONF_PROTOCOL_VARIANT, {"okin15": "Okin", "okin24": "SmartBed"}, "okin15")),
+        derive=lambda data: {CONF_HAS_MASSAGE: data.get(CONF_PRODUCT_TYPE, "new") == "new"},
+        title=lambda _data: "OrmatekTechnoSmart",
+    ),
     "smart_sleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},

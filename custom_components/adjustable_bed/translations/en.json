@@ -3254,6 +3254,18 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "ormatek_action": {
+        "name": "{action}"
+      },
+      "ormatek_light": {
+        "name": "Toggle light"
+      },
+      "ormatek_both_up": {
+        "name": "Head and feet up"
+      },
+      "ormatek_both_down": {
+        "name": "Head and feet down"
+      },
       "l2motion_save_snore": {
         "name": "Save anti-snore position"
       }
@@ -3579,6 +3591,9 @@
       },
       "bedgear_combined": {
         "name": "Head and foot"
+      },
+      "ormatek_both": {
+        "name": "Head and feet"
       }
     },
     "sensor": {
@@ -4652,6 +4667,9 @@
       },
       "sonicsleep": {
         "name": "Model"
+      },
+      "ormatek_alarm_time": {
+        "name": "Alarm time"
       }
     },
     "light": {
@@ -4967,6 +4985,9 @@
       },
       "richmat_mh_smart_set_lock": {
         "name": "Smart set lock"
+      },
+      "ormatek_massage": {
+        "name": "Massage"
       }
     },
     "number": {
