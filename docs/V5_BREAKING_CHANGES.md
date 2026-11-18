@@ -307,6 +307,16 @@ The same control now looks the same on every bed:
   Lite and the KSBT remotes) still have none.
 - **Logicdata beds show their two memory slots** (recall and save), which the
   guide and controller always supported.
+- **One massage timer and one light timer select.** Where the bed can set a
+  duration directly, fixed-duration buttons ("Massage 20 minutes") and
+  bed-specific timer selects became the shared **Massage timer** and
+  **Light timer** selects. A bed without an off command offers only its
+  durations. A bed that can only step through its timers keeps one "Cycle
+  massage timer" button.
+- **A settable massage level is a number.** Where a bed has an intensity
+  number, the up and down step buttons for the same zone are gone; beds that
+  can only step keep the buttons. Sensors that only mirrored a control start
+  disabled or are gone.
 
 Removed and replaced entities by bed:
 
@@ -346,6 +356,17 @@ Removed and replaced entities by bed:
 | Under-bed light on CheersSleep, SUTA, Cherish, Comfort Enhancements, KomfyD, ComfyDS, iSleep, Kaidi, Keeson, Logicdata, MattressFirm, Nectar, OKIN 64-bit, 7-byte, CB24, CB35, CST and Nordic, Remacro, Rize, Rize Remedy II, Serenity, Tranquil, Sleep Number, SleepStar, Sleepy's Box25 and Elite app, Solace, Svane, Vibradorm and Vibradorm app | `switch.<bed>_under_bed_lights` | `light.<bed>_under_bed_lights` |
 | Heal Every Night (OKIN apps) | | Installation and actuator direction selects became the **Reversed installation**, **Reverse actuator 1** and **Reverse actuator 2** switches |
 | Snore Monitor | Alarm enabled binary sensors | Whether each alarm is on is an attribute of its alarm time sensor |
+| StarCode ABM5-4, ORE comfort-bed apps (Avanti, Bedsense, Dynasty), ComfortFurniture, ORE Ultramatic P1 | Bed-specific massage timer select | Shared **Massage timer** select (durations only) |
+| eShine | Massage 10, 20 and 30 minute buttons | Shared **Massage timer** select, with Off |
+| BedTech | Massage 20 minutes button | Shared **Massage timer** select |
+| AdjustaMattress | Timer 10, 20 and 30 buttons; head, foot and wave selector selects | Shared **Massage timer** select; head, foot and wave massage numbers (1-4) |
+| Sleepy's Elite app | Massage timer code select, cycle massage timer button | Shared **Massage timer** select (10, 20, 30 min) |
+| Comfort Enhancements | Cycle massage timer button (the timer select already sets it) | |
+| Smart Sleep (P2) | Wave, timer, head and foot strength cycle buttons (their selects set them directly) | |
+| BedSense | Massage timer and cancel buttons, light 10 min, 8 h and 10 h buttons, massage timer and light duration sensors | Shared **Massage timer** and **Light timer** selects |
+| Motion Bed app | Massage timer, light timer and brightness 0-10 buttons, massage timer and brightness sensors, five mirror binary sensors | Shared timer selects, **Light brightness** number; night light, smart sleep, module light, module massage, climate timer and adaptive air toggles or on/off pairs became switches |
+| DoubleSleep (SleepEase) | Massage and sonic running sensors | Massage and sonic on/off buttons became the **Massage** and **Sonic massage** switches |
+| Reverie, Reverie Nightstand, Pairlink, Jiecang app | Head and foot massage up/down buttons where an intensity number exists | |
 
 ## New Entities, Attributes and Actions
 
