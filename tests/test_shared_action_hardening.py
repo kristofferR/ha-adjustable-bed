@@ -1,7 +1,7 @@
-"""The shared set_alarm checks every selected side before it writes any.
+"""Shared actions: STOP wins, and only what was checked is written.
 
 Real coordinators, schedulers and pair topologies; only the radio connection
-and the controller's alarm frames are replaced.
+and the controller's frames are replaced.
 """
 
 from __future__ import annotations
@@ -37,6 +37,25 @@ class AlarmController(_ContractController):
         super().__init__(coordinator)  # type: ignore[arg-type]
         self._capability = capability
         self.bed = coordinator
+        self._slots = coordinator.slots
+
+    @property
+    def supports_memory_presets(self) -> bool:
+        return True
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        return True
+
+    @property
+    def memory_slot_count(self) -> int:
+        return self._slots
+
+    async def preset_memory(self, memory_num: int) -> None:
+        self.bed.recalls.append(memory_num)
+
+    async def program_memory(self, memory_num: int) -> None:
+        self.bed.recalls.append(memory_num)
 
     @property
     def alarm_capability(self) -> AlarmCapability:
@@ -61,6 +80,10 @@ class Bed(AdjustableBedCoordinator):
     writes: list[AlarmController]
     stops: int
     connect_ok: bool
+    slots: int
+    recalls: list[int]
+    # Holds the next connect until set, to press STOP while it waits.
+    connect_gate: tuple[asyncio.Event, asyncio.Event] | None
 
     async def on_check(self, controller: AlarmController) -> None:
         del controller
@@ -68,6 +91,13 @@ class Bed(AdjustableBedCoordinator):
     async def fake_connect(self, **_kwargs: Any) -> bool:
         if self._controller is not None and self.is_connected:
             return True
+        if self.connect_gate is not None:
+            entered, release = self.connect_gate
+            self.connect_gate = None
+            entered.set()
+            await release.wait()
+            if self._controller is not None and self.is_connected:
+                return True
         if not self.connect_ok:
             return False
         client = MagicMock(is_connected=True)
@@ -114,7 +144,7 @@ async def beds(hass, count=2, *, capability=LIVE, topology=None, connected=True)
         entry.mock_state(hass, ConfigEntryState.LOADED)
         bed = Bed(hass, entry)
         bed.capability, bed.checks, bed.writes, bed.stops = capability, [], [], 0
-        bed.connect_ok = True
+        bed.connect_ok, bed.slots, bed.recalls, bed.connect_gate = True, 4, [], None
         bed.async_ensure_connected = AsyncMock(side_effect=bed.fake_connect)
         bed.async_connect = AsyncMock(side_effect=bed.fake_connect)
         bed._async_refresh_controller_auth = AsyncMock()
@@ -309,3 +339,63 @@ async def test_sequential_side_reconnected_outside_the_call_is_not_written(hass)
                 await task
         assert raised.value.translation_key == "bed_changed"
         assert left.writes == right.writes == []
+
+
+@pytest.mark.parametrize("topology", [None, "concurrent", "sequential"])
+async def test_stop_while_set_position_connects_moves_no_bed(hass, topology) -> None:
+    async with beds(hass, topology=topology, connected=False) as made:
+        for bed in made.items:
+            # Nothing to check offline, so preflight has to connect.
+            bed._offline_controller = None
+            bed.async_seek_position = AsyncMock()  # type: ignore[method-assign]
+        first = made.items[0]
+        entered, release = asyncio.Event(), asyncio.Event()
+        first.connect_gate = (entered, release)
+        target = (made.pair, "both") if made.pair is not None else (first, "both")
+        config = {
+            "position_key": "back",
+            "move_up_fn": AsyncMock(),
+            "move_down_fn": AsyncMock(),
+            "move_stop_fn": AsyncMock(),
+            "max_value": 60.0,
+        }
+        with (
+            patch.object(services, "_position_config", return_value=config),
+            patch.object(services, "_resolve_sided_targets", return_value=([target], [])),
+            virtual_clock(),
+        ):
+            task = asyncio.create_task(
+                hass.services.async_call(
+                    DOMAIN,
+                    "set_position",
+                    {"device_id": "bed", "motor": "back", "position": 30},
+                    blocking=True,
+                )
+            )
+            await entered.wait()
+            if made.pair is not None:
+                await made.pair.async_stop_command()
+            else:
+                await first.async_stop_command()
+            release.set()
+            await task
+        for bed in made.items:
+            bed.async_seek_position.assert_not_awaited()
+
+
+@pytest.mark.parametrize("action", ["goto_preset", "save_preset"])
+async def test_preset_checked_offline_is_refused_by_the_live_controller(hass, action) -> None:
+    async with beds(hass, 1, connected=False) as made:
+        bed = made.items[0]
+        # Checked offline with four slots; the bed that connects has two.
+        bed.slots = 2
+        with (
+            virtual_clock(),
+            patch.object(services, "_resolve_sided_targets", return_value=([(bed, "both")], [])),
+            pytest.raises(ServiceValidationError) as raised,
+        ):
+            await hass.services.async_call(
+                DOMAIN, action, {"device_id": "bed", "preset": 4}, blocking=True
+            )
+        assert raised.value.translation_key == "invalid_preset_number"
+        assert bed.recalls == []
