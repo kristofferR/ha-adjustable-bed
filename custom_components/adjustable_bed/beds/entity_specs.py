@@ -192,7 +192,8 @@ class ControllerStateSensorSpec:
     icon: str
     native_unit_of_measurement: str | None = None
     attribute_keys: tuple[AnyStateKey, ...] = ()
-    entity_registry_enabled_default: bool = True
+    # Hidden unless the controller opts a user-facing value in explicitly.
+    entity_registry_enabled_default: bool = False
     suggested_display_precision: int | None = None
     # Controller state is diagnostic; the card shows only what a spec places.
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
@@ -207,7 +208,8 @@ class ControllerStateBinarySensorSpec:
     state_key: AnyStateKey
     icon: str
     attribute_keys: tuple[AnyStateKey, ...] = ()
-    entity_registry_enabled_default: bool = True
+    # Hidden unless the controller opts a user-facing value in explicitly.
+    entity_registry_enabled_default: bool = False
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
 
 
