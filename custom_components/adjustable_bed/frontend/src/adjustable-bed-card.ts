@@ -253,13 +253,13 @@ export class AdjustableBedCard extends LitElement {
     const hass = this.hass;
     if (!c || !hass) return 8;
     const beds = compactTargets(hass, c.device_id).map((target) => target.bed);
-    const shown = (key: string): boolean =>
-      (c as unknown as Record<string, unknown>)[`show_${key}`] !== false &&
-      beds.some((bed) => presentSections(bed, hass, c)[key]);
-    const motorRows = Math.max(0, ...beds.map((bed) => bed.motors.length));
-    return SECTION_ORDER.filter(shown).reduce((size, key) =>
-      size + (key === "graphic" ? 3 : key === "motors" ? 1 + motorRows : 2),
-      beds.length > 1 ? 2 : 1);
+    // A paired card shows one side's tab at a time: size it for the tallest.
+    const paneSize = (bed: BedEntities): number => SECTION_ORDER
+      .filter((key) => (c as unknown as Record<string, unknown>)[`show_${key}`] !== false &&
+        presentSections(bed, hass, c)[key])
+      .reduce((size, key) =>
+        size + (key === "graphic" ? 3 : key === "motors" ? 1 + bed.motors.length : 2), 0);
+    return (beds.length > 1 ? 2 : 1) + Math.max(0, ...beds.map(paneSize));
   }
 
   public getGridOptions() {
@@ -1885,6 +1885,11 @@ export class AdjustableBedCard extends LitElement {
   };
 
   private _closeEstimateDialog = (): void => {
+    // Closing the element itself lets the browser return focus to the control
+    // that opened it. Its close event comes back here once the state is gone.
+    const element = this.renderRoot?.querySelector?.("dialog.estimate-dialog") as
+      | HTMLDialogElement | null | undefined;
+    if (element?.open) element.close();
     const dialog = this._estimateDialog;
     // Closing never leaves a lowering running: the dialog covers the Stop controls.
     if (dialog?.kind === "reference" && dialog.phase === "lowering") this._stopEstimate(dialog.ctx);
@@ -1929,7 +1934,7 @@ export class AdjustableBedCard extends LitElement {
       <div class="dialog-actions">
         <button class="dialog-btn" @click=${this._closeEstimateDialog}>${this._t("memory.cancel")}</button>
         <button class="dialog-btn primary" @click=${() => {
-          this._estimateDialog = undefined;
+          this._closeEstimateDialog();
           this._sendPress(entityId);
         }}>${action}</button>
       </div>`;

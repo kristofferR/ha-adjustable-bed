@@ -10,6 +10,7 @@ function fixture(): HomeAssistant {
     states: {}, entities: {}, devices: {}, themes: {},
     locale: { language: "en" }, language: "en", callService: async () => undefined,
   });
+  hass.formatEntityName = (stateObj) => hass.entities[stateObj.entity_id]?.name ?? "";
   for (const [device, keys] of Object.entries({
     pair: ["preset_flat", "preset_memory_1", "program_memory_2", "stop_both"],
     left: ["preset_flat", "preset_memory_1", "preset_tv", "stop"],
@@ -108,7 +109,6 @@ test("presets sharing a translation key stay separate and follow their name to t
         last_changed: "", last_updated: "" };
     });
   }
-  hass.formatEntityName = (stateObj) => hass.entities[stateObj.entity_id]?.name ?? "";
   const left = bedEntitiesForDevice(hass, "left");
   const right = bedEntitiesForDevice(hass, "right");
   expect(compactActionOptions(hass, left).filter((a) => a.key === "app_preset")).toHaveLength(2);
@@ -117,6 +117,22 @@ test("presets sharing a translation key stay separate and follow their name to t
     .toEqual(["button.left_app_1", "button.left_app_0"]);
   expect(compactActions(hass, right, selection).map((a) => a.entityId))
     .toEqual(["button.right_app_0", "button.right_app_1"]);
+  // A preset only one side has is left out there, never swapped for another.
+  hass.entities["button.right_app_0"].translation_key = "other";
+  expect(compactActions(hass, right, selection).map((a) => a.entityId))
+    .toEqual(["button.right_app_1"]);
+  expect(compactActions(hass, right, ["button.left_app_1"])).toEqual([]);
+  // Older cards keep the action they always resolved: the last with the key.
+  expect(compactActions(hass, left, ["app_preset"]).map((a) => a.entityId))
+    .toEqual(["button.left_app_1"]);
+});
+
+test("buttons that overwrite a saved position are never quick actions", () => {
+  const hass = fixture();
+  hass.states["button.left_preset_tv"] = { entity_id: "button.left_preset_tv", state: "unknown",
+    attributes: { requires_confirmation: true }, last_changed: "", last_updated: "" };
+  const left = bedEntitiesForDevice(hass, "left");
+  expect(compactActionOptions(hass, left).some((a) => a.entityId === "button.left_preset_tv")).toBe(false);
 });
 
 test("cards saved with translation keys keep their quick actions", () => {

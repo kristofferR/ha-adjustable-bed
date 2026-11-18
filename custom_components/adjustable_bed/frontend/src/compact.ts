@@ -66,32 +66,46 @@ export interface CompactAction {
   entityId: string;
 }
 
+// Recalls only: a button that overwrites a saved position is never a quick action.
 export function compactActionOptions(hass: HomeAssistant, bed: BedEntities): CompactAction[] {
   return [...bed.presets, ...bed.memory.flatMap((slot) => slot.goto ? [slot.goto] : [])]
     .flatMap((entityId) => {
       const key = hass.entities[entityId]?.translation_key;
-      return key ? [{ key, entityId }] : [];
+      const overwrites = hass.states[entityId]?.attributes.requires_confirmation === true;
+      return key && !overwrites ? [{ key, entityId }] : [];
     });
+}
+
+// True when another control on the same bed or side uses this translation key.
+function keyIsShared(hass: HomeAssistant, entityId: string): boolean {
+  const entry = hass.entities[entityId];
+  const side = hass.states[entityId]?.attributes.bed_side;
+  return Object.values(hass.entities).some((other) => other.entity_id !== entityId &&
+    other.device_id === entry?.device_id && other.translation_key === entry?.translation_key &&
+    hass.states[other.entity_id]?.attributes.bed_side === side);
 }
 
 // `compact_actions` stores entity ids, because several presets can share one
 // translation key (app-labelled presets). A side resolves an id saved from
 // another side to its counterpart: the same key and, when the key is shared,
 // the same name. Older cards stored translation keys; those still resolve to
-// the first action with that key.
+// the last action with that key, as they always did.
 export function resolveCompactAction(
   hass: HomeAssistant,
   options: CompactAction[],
   saved: string,
 ): CompactAction | undefined {
-  if (!saved.includes(".")) return options.find((a) => a.key === saved);
+  if (!saved.includes(".")) return [...options].reverse().find((a) => a.key === saved);
   const exact = options.find((a) => a.entityId === saved);
   if (exact) return exact;
   const key = hass.entities[saved]?.translation_key;
   const sameKey = options.filter((a) => a.key === key);
-  if (sameKey.length <= 1) return sameKey[0];
   const name = entityLabel(hass, saved);
-  return sameKey.find((a) => entityLabel(hass, a.entityId) === name);
+  const named = sameKey.find((a) => entityLabel(hass, a.entityId) === name);
+  if (named) return named;
+  // A renamed counterpart still matches when its key names one control only.
+  return sameKey.length === 1 && !keyIsShared(hass, saved) &&
+    !keyIsShared(hass, sameKey[0].entityId) ? sameKey[0] : undefined;
 }
 
 export function compactActions(

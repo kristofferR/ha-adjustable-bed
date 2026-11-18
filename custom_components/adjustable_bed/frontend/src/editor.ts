@@ -104,9 +104,25 @@ export class AdjustableBedCardEditor
 
   // ---- config emit --------------------------------------------------------
 
+  // Any edit migrates quick actions saved as translation keys to entity ids,
+  // once every saved key resolves on this bed.
+  private _savedActionIds(next: Record<string, unknown>): unknown {
+    const saved = next.compact_actions;
+    if (!this.hass || !Array.isArray(saved) ||
+      saved.every((value) => typeof value !== "string" || value.includes("."))) return saved;
+    const targets = compactTargets(this.hass, next.device_id as string | undefined);
+    const target = targets.find((t) => t.key === ((next.default_target as string | undefined) ?? "both"));
+    const resolves = (value: string) =>
+      compactActionChoices(this.hass!, targets, target, [value]).selected.length === 1;
+    return saved.every((value) => typeof value === "string" && resolves(value))
+      ? compactActionChoices(this.hass, targets, target, saved as string[]).selected : saved;
+  }
+
   private _emit(next: Record<string, unknown>): void {
     next.type = next.type ?? "custom:adjustable-bed-card";
     if (!next.name) delete next.name;
+    if (!this._editingDialog) next.compact_actions = this._savedActionIds(next);
+    if (next.compact_actions === undefined) delete next.compact_actions;
     if (this._editingDialog && this._rootConfig) {
       const overrides = Object.fromEntries(Object.entries(FULL_CARD_EDITOR_DEFAULTS)
         .map(([key, value]) => [key, next[key] ?? value]));
@@ -446,9 +462,13 @@ export class AdjustableBedCardEditor
   private _graphicOptions(): TemplateResult | typeof nothing {
     const c = this._config!;
     if (!this.hass || c.show_graphic === false) return nothing;
-    const beds = compactTargets(this.hass, c.device_id).map((t) => t.bed);
-    const drawable = beds.some((bed) =>
-      presentSections(bed, this.hass!, { ...c, show_percentage_graphic: true }).graphic);
+    const targets = compactTargets(this.hass, c.device_id);
+    const beds = targets.map((t) => t.bed);
+    // A compact card draws its sides together, so every side must qualify.
+    const sides = targets.length > 1 ? targets.filter((t) => t.key !== "both") : targets;
+    const canDraw = (t: { bed: BedEntities }) =>
+      presentSections(t.bed, this.hass!, { ...c, show_percentage_graphic: true }).graphic;
+    const drawable = c.layout === "compact" ? sides.every(canDraw) : targets.some(canDraw);
     if (!drawable) return nothing;
     const lumbar = beds.some((bed) => bed.motors.some((m) => m.key === "lumbar"));
     return html`
