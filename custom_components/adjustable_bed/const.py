@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
+# How every automatic choice reads in setup and Configure.
+AUTOMATIC_LABEL: Final = "Automatic (recommended)"
 DOMAIN: Final = "adjustable_bed"
 
 
@@ -167,7 +169,7 @@ LOGICDATA_APP_LAYOUTS: Final = {
     "middle": "Middle layout",
 }
 LOGICDATA_APP_TRANSPORTS: Final = {
-    "auto": "Auto (one compatible GATT endpoint)",
+    "auto": AUTOMATIC_LABEL,
     "t1": "T1", "t2": "T2", "t3": "T3",
 }
 
@@ -192,7 +194,7 @@ JIECANG_APP_LAYOUTS: Final = {
     "split_after_bilateral": "Split after bilateral",
 }
 JIECANG_APP_TRANSPORTS: Final = {
-    "auto": "Auto (GATT endpoints)",
+    "auto": AUTOMATIC_LABEL,
     "g1": "G1",
     "g2": "G2",
     "g3": "G3",
@@ -224,7 +226,7 @@ MALOUF_APP_MODELS: Final = {
     "S755": "S755",
 }
 MALOUF_APP_TRANSPORTS: Final = {
-    "auto": "Automatic (one compatible GATT endpoint)",
+    "auto": AUTOMATIC_LABEL,
     "richmat_single": "Richmat Nordic UART",
     "richmat_framed": "Richmat framed",
     "okin_legacy": "OKIN legacy (FFE5)",
@@ -413,7 +415,7 @@ MALOUF_LAYOUT_LUMBAR: Final = "lumbar"
 MALOUF_LAYOUT_FOUR_MOTOR: Final = "four_motor"
 MALOUF_LAYOUT_HILO: Final = "hilo"
 MALOUF_LAYOUTS: Final = {
-    MALOUF_LAYOUT_AUTO: "Auto (motor count; select Hi-Lo explicitly)",
+    MALOUF_LAYOUT_AUTO: AUTOMATIC_LABEL,
     MALOUF_LAYOUT_TWO_MOTOR: "Back and legs (2 motor, including Lucid L600)",
     MALOUF_LAYOUT_HEAD_TILT: "Back, legs, and head tilt",
     MALOUF_LAYOUT_LUMBAR: "Back, legs, and lumbar",
@@ -422,7 +424,7 @@ MALOUF_LAYOUTS: Final = {
 }
 MALOUF_MEMORY_SLOTS_AUTO: Final = 0
 MALOUF_MEMORY_SLOT_OPTIONS: Final = {
-    MALOUF_MEMORY_SLOTS_AUTO: "Auto (1 for 2-motor layout, otherwise 2)",
+    MALOUF_MEMORY_SLOTS_AUTO: AUTOMATIC_LABEL,
     1: "1 memory position",
     2: "2 memory positions",
 }
@@ -551,7 +553,7 @@ BED_TYPE_RIZE_HOME: Final = "rize_home"
 BED_TYPE_OKIN_MOTIONBED: Final = "okin_motionbed"
 BED_TYPE_COMFORT_ENHANCEMENT3: Final = "comfort_enhancement3"
 BED_TYPE_N32_MOTION_BED: Final = "n32_motion_bed"
-# Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
+# Explicit Richmat MH app profiles: one shared library, five catalogs.
 BED_TYPE_LUUNA: Final = "luuna"
 BED_TYPE_MLINE: Final = "mline"
 CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
@@ -637,7 +639,7 @@ BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
 BED_TYPE_DOUBLESLEEP: Final = "doublesleep"
-DOUBLESLEEP_VARIANTS: Final = {"auto": "From advertisement", "p1": "SleepDriver (P1)", "p2": "XiaoBao (P2)", "p3": "XiaoBao Only sensor (P3)"}
+DOUBLESLEEP_VARIANTS: Final = {"auto": AUTOMATIC_LABEL, "p1": "SleepDriver (P1)", "p2": "XiaoBao (P2)", "p3": "XiaoBao Only sensor (P3)"}
 DOUBLESLEEP_CONFIG_KEYS: Final = frozenset({CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT})
 BED_TYPE_SLEEPTRACKER: Final = "sleeptracker"
 CONF_SLEEPTRACKER_FOUNDATION: Final = "sleeptracker_foundation"
@@ -648,6 +650,7 @@ CONF_SLEEPTRACKER_PROCESSOR_TYPE: Final = "sleeptracker_processor_type"
 SLEEPTRACKER_CONFIG_KEYS: Final = frozenset(
     {
         CONF_PRODUCT_TYPE,
+        # No longer asked, but still owned so a profile change drops it.
         CONF_SLEEPTRACKER_FOUNDATION,
         CONF_SLEEPTRACKER_UNIT,
         CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
@@ -680,7 +683,7 @@ BED_TYPE_LOGICDATA_AIR_PUMP: Final = "logicdata_air_pump"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_BEDSENSE: Final = "bedsense"
 BEDSENSE_VARIANTS: Final = {
-    "auto": "BedSense layout from the Bluetooth name",
+    "auto": AUTOMATIC_LABEL,
     "bedsense_1": "BEDSENSE-850 (TYPE 1)",
     "bedsense_2": "BEDSENSE-890 (TYPE 2)",
     "bedsense_3": "Default BedSense layout (TYPE 3, WAIST / HIP labels)",
@@ -1756,7 +1759,7 @@ SBI_VARIANTS: Final = {
 }
 
 # Remacro (SynData) UUIDs, shared by the Slumberland, The Brick and Jerome's
-# apps (row 050). Frames are 8 bytes: [serial, PID, LE16 code, LE32 parameter].
+# apps. Frames are 8 bytes: [serial, PID, LE16 code, LE32 parameter].
 REMACRO_SERVICE_UUID: Final = "6e403587-b5a3-f393-e0a9-e50e24dcca9e"
 REMACRO_WRITE_CHAR_UUID: Final = "6e403588-b5a3-f393-e0a9-e50e24dcca9e"
 REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
@@ -1764,7 +1767,7 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
 STAR_ELEVATE_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     STAR_ELEVATE_VARIANT_M1X12: "Adjustable Comfort M1X12 ELEVATE",
 }
 
@@ -1778,7 +1781,7 @@ SIMMONS_VARIANT_INCLINED_SMARTBED: Final = "simmons_inclined_smartbed"
 # Variants whose packet format follows the app's Bluetooth-name rule.
 SIMMONS_NAME_RULE_VARIANTS: Final = frozenset({VARIANT_AUTO, SIMMONS_VARIANT_INCLINED})
 SIMMONS_VARIANTS: Final = {
-    VARIANT_AUTO: "Regular bed, protocol from the Bluetooth name",
+    VARIANT_AUTO: "Regular bed (recommended)",
     SIMMONS_VARIANT_OKIN: "Regular bed, OKIN-name protocol",
     SIMMONS_VARIANT_SMARTBED: "Regular bed, SmartBed-name protocol",
     SIMMONS_VARIANT_INCLINED: "Inclined bed, protocol from the Bluetooth name",
@@ -1791,7 +1794,7 @@ ADJUSTAMATTRESS_LAYOUTS: Final = (
     "FoldingBed", "HilowBed", "Lolobed",
 )
 ADJUSTAMATTRESS_VARIANTS: Final = {
-    VARIANT_AUTO: "AdjustaBed layout, model from Bluetooth name and GATT",
+    VARIANT_AUTO: "AdjustaBed (recommended)",
     **{f"P{model}_L{layout}": f"{name} (P{model}: {transport})"
        for model, transport in enumerate(("CB", "JLDP", "CB24", "SleepSnore"), 1)
        for layout, name in enumerate(ADJUSTAMATTRESS_LAYOUTS)},
@@ -1801,18 +1804,18 @@ ADJUSTAMATTRESS_VARIANTS: Final = {
 ADJUSTABLE_LUMBAR_VARIANT_OKIN: Final = "adjustable_lumbar_okin"
 ADJUSTABLE_LUMBAR_VARIANT_STAR: Final = "adjustable_lumbar_star"
 ADJUSTABLE_LUMBAR_VARIANTS: Final = {
-    VARIANT_AUTO: "Command table from the Bluetooth name (OKIN or Star)",
-    ADJUSTABLE_LUMBAR_VARIANT_OKIN: "OKIN-name table (OKIN service, with response)",
-    ADJUSTABLE_LUMBAR_VARIANT_STAR: "Star-name tables (Nordic UART, chosen by manufacturer)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    ADJUSTABLE_LUMBAR_VARIANT_OKIN: "OKIN receiver",
+    ADJUSTABLE_LUMBAR_VARIANT_STAR: "Star receiver",
 }
 
 
 # Explicit app bed types whose name rule reads the stored raw Bluetooth name.
 ADJUSTABLE_BED_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Bluetooth name and manufacturer)",
-    "adjustable_bed_okin": "OKIN-name table (with response)",
-    "adjustable_bed_star": "Star-name tables (manufacturer selection)",
-    "adjustable_bed_star_5a": "STAR manufacturer table (fixed)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    "adjustable_bed_okin": "OKIN receiver",
+    "adjustable_bed_star": "Star receiver",
+    "adjustable_bed_star_5a": "STAR receiver (older)",
 }
 
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
@@ -1826,8 +1829,8 @@ NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
 }
 SOLACE_VARIANT_WOOSA: Final = "woosa"
 SOLACE_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (conservative device-name profile)",
-    SOLACE_VARIANT_WOOSA: "Woosa Sleep app (select explicitly)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    SOLACE_VARIANT_WOOSA: "Woosa Sleep app",
 }
 # The multi-service profile is stored as ``auto``, as v4.0.2 entries hold it.
 # A new setup whose scanned name contains ``JMC`` stores the JMC profile.
@@ -1849,9 +1852,9 @@ REMACRO_VARIANTS: Final = {
     REMACRO_VARIANT_JEROMES: "Jerome's app",
 }
 LINAK_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Bed Control or Bed Connect app)",
-    LINAK_VARIANT_BED_CONTROL: "Bed Control or Bed Connect app (modern, auto-detected capabilities)",
-    LINAK_VARIANT_PERFORMANCE: "Performance Series (legacy, 300 ms hold cadence)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    LINAK_VARIANT_BED_CONTROL: "Bed Control or Bed Connect app",
+    LINAK_VARIANT_PERFORMANCE: "Performance Series app (older bases)",
 }
 
 # Okin CST product profiles. The shared service and ``OKIN-*`` local-name
@@ -1869,7 +1872,7 @@ OKIN_CST_VARIANT_MF900: Final = "cst_mf900"
 OKIN_CST_VARIANT_SUPPORT: Final = "cst_support"
 OKIN_CST_VARIANT_NECTAR_MOVE: Final = "cst_nectar_move"
 OKIN_CST_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (MF900 profile)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     # Each product is named by the app its accepted report identifies.
     OKIN_CST_VARIANT_SANCTUARY: "Jordan's Sanctuary - O app (Rize Sanctuary)",
     OKIN_CST_VARIANT_RESIDENT: "Resident Adjustable Bed app (Rize Resident)",
@@ -1898,16 +1901,16 @@ OKIN_CST_THREE_MOTOR_VARIANTS: Final = frozenset(
 SLEEPYS_BOX25_VARIANT_STAR: Final = "box25_star"
 SLEEPYS_BOX25_VARIANT_LEGACY: Final = "box25_legacy"
 SLEEPYS_BOX25_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Device Information manufacturer)",
-    SLEEPYS_BOX25_VARIANT_STAR: "StarCode (5A-framed)",
-    SLEEPYS_BOX25_VARIANT_LEGACY: "Legacy CB25 (05/04/08/03 frames)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    SLEEPYS_BOX25_VARIANT_STAR: "Newer control box (StarCode)",
+    SLEEPYS_BOX25_VARIANT_LEGACY: "Older control box (CB25)",
 }
 
 # Sleep Number side selection variants
 SLEEP_NUMBER_VARIANT_LEFT: Final = "left"
 SLEEP_NUMBER_VARIANT_RIGHT: Final = "right"
 SLEEP_NUMBER_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (left side by default)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     SLEEP_NUMBER_VARIANT_LEFT: "Left side",
     SLEEP_NUMBER_VARIANT_RIGHT: "Right side",
 }
@@ -1922,7 +1925,7 @@ KAIDI_VARIANT_SEAT_3: Final = "seat_3"
 KAIDI_VARIANT_SEAT_1_2: Final = "seat_1_2"
 KAIDI_VARIANTS: Final = {
     KAIDI_VARIANT_FLOYD: "Floyd Home (product 139)",
-    VARIANT_AUTO: "Auto-detect (recommended)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     KAIDI_VARIANT_SEAT_1: "Seat 1 (single base)",
     KAIDI_VARIANT_SEAT_2: "Seat 2",
     KAIDI_VARIANT_SEAT_3: "Seat 3",
@@ -1940,15 +1943,15 @@ OKIN_CB24_VARIANT_CB1221: Final = "cb1221"
 OKIN_CB24_VARIANT_DACHENG: Final = "dacheng"
 OKIN_CB24_VARIANT_CB27NEW: Final = "cb27new"
 OKIN_CB24_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect (recommended)",
-    OKIN_CB24_VARIANT_OLD: "OLD protocol compatibility (safe one-shot presets)",
-    OKIN_CB24_VARIANT_NEW: "NEW protocol (CB27New)",
-    OKIN_CB24_VARIANT_CB24: "CB24 profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_CB27: "CB27 profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_CB24_AB: "CB24AB profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_CB1221: "CB1221 profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_DACHENG: "Dacheng profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_CB27NEW: "CB27New profile (NEW protocol)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    OKIN_CB24_VARIANT_OLD: "Older control box",
+    OKIN_CB24_VARIANT_NEW: "Newer control box",
+    OKIN_CB24_VARIANT_CB24: "CB24 control box",
+    OKIN_CB24_VARIANT_CB27: "CB27 control box",
+    OKIN_CB24_VARIANT_CB24_AB: "CB24AB control box",
+    OKIN_CB24_VARIANT_CB1221: "CB1221 control box",
+    OKIN_CB24_VARIANT_DACHENG: "Dacheng control box",
+    OKIN_CB24_VARIANT_CB27NEW: "CB27New control box",
 }
 
 # Keeson variants
@@ -2003,16 +2006,16 @@ OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
 KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"
 KEESON_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect",
-    KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark)",
-    KEESON_VARIANT_JSON: "JSON/A00A (Juna, Linx, Ergo Health)",
-    KEESON_VARIANT_KSBT: "KSBT (Nordic UART, some Ergomotion Sync beds)",
-    KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
-    KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
-    KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
-    KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app (KSBT01C / KSBT03C)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    KEESON_VARIANT_BASE: "Member's Mark base (BaseI4 / BaseI5)",
+    KEESON_VARIANT_JSON: "Juna, Linx or Ergo Health base",
+    KEESON_VARIANT_KSBT: "KSBT receiver (some Ergomotion Sync beds)",
+    KEESON_VARIANT_KSBT_CR: "KSBT03CR receiver",
+    KEESON_VARIANT_KSBT04C: "KSBT04C receiver",
+    KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony app",
+    KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app",
     KEESON_VARIANT_SIMON_LI: "Simon Li app (chair / love seat / sofa)",
-    KEESON_VARIANT_HEAL_EVERY_NIGHT: "Heal Every Night app (motor count 2/3/4 = Healing 6/7/8)",
+    KEESON_VARIANT_HEAL_EVERY_NIGHT: "Heal Every Night app",
     KEESON_VARIANT_OKIN_SEATING: "OKIN-Seating app",
     KEESON_VARIANT_AVANTI_BASES: "Avanti Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_OKIN_COMFORT_BED: "OKIN Comfort Bed app (2M / 3M / 4M motor count)",
@@ -2023,10 +2026,10 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_DYNASTY_BASES: "Dynasty Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_RESTONIC_A: "Restonic BT app, remote A (6 buttons)",
     KEESON_VARIANT_RESTONIC_B: "Restonic BT app, remote B (10 buttons)",
-    KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
-    KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
-    KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
-    KEESON_VARIANT_SINO: "Sino (BetterLiving, big-endian)",
+    KEESON_VARIANT_ERGOMOTION: "Ergomotion base (reports positions)",
+    KEESON_VARIANT_OKIN: "OKIN 13 or 15 series control box",
+    KEESON_VARIANT_SERTA: "Serta base (Serta MP Remote)",
+    KEESON_VARIANT_SINO: "BetterLiving base (Sino)",
     KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
 
@@ -2035,10 +2038,10 @@ LEGGETT_VARIANT_GEN2: Final = "gen2"
 LEGGETT_VARIANT_OKIN: Final = "okin"
 LEGGETT_VARIANT_MLRM: Final = "mlrm"
 LEGGETT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect",
-    LEGGETT_VARIANT_GEN2: "Gen2 (Richmat-based, most common)",
-    LEGGETT_VARIANT_OKIN: "Okin (requires BLE pairing)",
-    LEGGETT_VARIANT_MLRM: "MlRM (WiLinke protocol, discrete massage control)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    LEGGETT_VARIANT_GEN2: "Gen2 base (most common)",
+    LEGGETT_VARIANT_OKIN: "Okin base (needs Bluetooth pairing)",
+    LEGGETT_VARIANT_MLRM: "MlRM remote (separate massage buttons)",
 }
 
 
@@ -2080,11 +2083,11 @@ RICHMAT_VARIANT_WILINKE: Final = "wilinke"
 RICHMAT_VARIANT_PREFIX55: Final = "prefix55"
 RICHMAT_VARIANT_PREFIXAA: Final = "prefixaa"
 RICHMAT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect (recommended)",
-    RICHMAT_VARIANT_NORDIC: "Nordic (single-byte commands)",
-    RICHMAT_VARIANT_WILINKE: "WiLinke (5-byte commands with 0x6E prefix)",
-    RICHMAT_VARIANT_PREFIX55: "Prefix55 (5-byte commands with 0x55 prefix)",
-    RICHMAT_VARIANT_PREFIXAA: "PrefixAA (5-byte commands with 0xAA prefix)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    RICHMAT_VARIANT_NORDIC: "Nordic receiver",
+    RICHMAT_VARIANT_WILINKE: "WiLinke receiver",
+    RICHMAT_VARIANT_PREFIX55: "Other receiver, type A",
+    RICHMAT_VARIANT_PREFIXAA: "Other receiver, type B",
 }
 
 
@@ -2150,7 +2153,7 @@ RICHMAT_REMOTE_BT6500: Final = "BT6500"
 RICHMAT_REMOTE_LP_QRRM: Final = "LP-QRRM"
 # Printed and QR-encoded on the HJH89 handset of a QRRM receiver (#695). The
 # features come from the generated table; the Revive Control, Blvd Home and
-# HARMONY catalogs (row055) define the same GGRM controls.
+# HARMONY catalogs define the same GGRM controls.
 RICHMAT_REMOTE_GGRM: Final = "GGRM"
 
 # Richmat WiLinke stop-byte compatibility.
@@ -2166,7 +2169,7 @@ RICHMAT_COMBINED_HEAD_FEET_REMOTE_CODES: Final[frozenset[str]] = frozenset({"twr
 
 # Display names for remote selection
 RICHMAT_REMOTES: Final = {
-    RICHMAT_REMOTE_AUTO: "Auto (all features enabled)",
+    RICHMAT_REMOTE_AUTO: AUTOMATIC_LABEL,
     RICHMAT_REMOTE_AZRN: "AZRN (Head, Pillow, Feet)",
     RICHMAT_REMOTE_BT6500: "BT6500 (Head, Feet, Pillow, Lumbar, M1/M2, ZG, Anti-snore, TV, Lights)",
     RICHMAT_REMOTE_BURM: "BURM (Head, Feet, Massage, Lights)",
@@ -2510,7 +2513,7 @@ def get_richmat_motor_count(features: RichmatFeatures) -> int:
 
 # Octo variants
 OCTO_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect (recommended)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     OCTO_VARIANT_STANDARD: "Standard Octo (most common)",
     OCTO_VARIANT_STAR2: "Octo Remote Star2",
 }
@@ -2526,7 +2529,7 @@ RICHMAT_PROTOCOL_PREFIXAA: Final = "prefixaa"  # [0xAA, 1, 0, cmd, (cmd+0xAB)&0x
 # handsetlist.csv capability flags. Drives OKIN_UUID_REMOTES in
 # beds/okin_uuid/controller.py; regenerate via tools/okin_remotes/.
 OKIMAT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect (try 82417 first)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     "62211": "62211 - RF (Head/Back/Legs, 4 Mem)",
     "62612": "62612 - RF (Head/Back/Legs/Feet, 4 Mem)",
     "63293": "63293 - RF (Back/Legs)",
@@ -2710,7 +2713,7 @@ OKIMAT_VARIANTS: Final = {
     "92113": "92113 - RF-STYLE/BK/BK/14/2009 (Back/Legs, 4 Mem)",
     "92129": "92129 - TOPLINE-11-SL-2M (Back/Legs, 2 Mem, Massage)",
     "92428": "92428 - RF (Back/Legs, 2 Mem)",
-    "92461": "92461 - \n  RF-TOPLINE\n  SI (Back/Legs)",
+    "92461": "92461 - RF-TOPLINE SI (Back/Legs)",
     "92471": "92471 - RF (Back/Legs, 2 Mem)",
     "92535": "92535 - RF-LITELINE/07/ (Back/Legs)",
     "92591": "92591 - RF-FLASHLINE/09/WH/GY (Back/Legs, 2 Mem)",
@@ -2747,7 +2750,7 @@ OKIMAT_VARIANTS: Final = {
 # channels exist start at 0x1/0x2) but keep their section meaning; the table
 # maps them to the standard section fields, so labels match the exposed axes.
 OKIN_DOT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (RF34 layout, try 97450 first)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     "90167": "90167 - RF1058 (Head/Feet, 4 Mem, Massage)",
     "91983": "91983 - RF1058 (Head/Feet, 3 Mem, Massage)",
     "93558": "93558 - RF1058 (Head/Feet, 3 Mem, Massage)",
@@ -2763,9 +2766,9 @@ OKIN_DOT_FURNIMOVE_VARIANTS: Final = frozenset({"90167", "91983", "93558"})
 OKIN_64BIT_VARIANT_NORDIC: Final = "nordic"
 OKIN_64BIT_VARIANT_CUSTOM: Final = "custom"
 OKIN_64BIT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Nordic UART)",
-    OKIN_64BIT_VARIANT_NORDIC: "Nordic UART (fire-and-forget)",
-    OKIN_64BIT_VARIANT_CUSTOM: "Custom OKIN (wait-for-response)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    OKIN_64BIT_VARIANT_NORDIC: "Standard receiver",
+    OKIN_64BIT_VARIANT_CUSTOM: "Custom OKIN receiver",
 }
 
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does

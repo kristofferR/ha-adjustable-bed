@@ -168,7 +168,7 @@ async def test_offline_entry_gets_the_review_before_connecting(hass: HomeAssista
     assert issue is not None and issue.is_fixable
     assert issue.translation_key == "app_profile_review"
     assert issue.translation_placeholders["apps"] == (
-        "- FSM Relax app (explicit chair/bed profile)\n- Limoss Remote app (bed / chair)"
+        "- FSM Relax app\n- Limoss Remote app"
     )
 
 
@@ -295,7 +295,7 @@ async def test_detection_drift_names_the_matching_profile(hass: HomeAssistant) -
     # Keeson changes run through its guided change, which the review lists.
     assert form["step_id"] == "managed"
     assert form["description_placeholders"]["apps"] == (
-        "- Cool Base (BaseI5 with fan)\n- Adjustable Lite app (Keeson)"
+        "- Cool Base\n- Adjustable Lite app"
     )
 
     entry = _entry(hass, BED_TYPE_KEESON, variant="purple", **{CONF_ADDRESS: "AA:BB:CC:DD:EE:33"})
@@ -303,7 +303,7 @@ async def test_detection_drift_names_the_matching_profile(hass: HomeAssistant) -
         async_refresh_profile_review_issue(hass, entry)
     issue = _issue(hass, entry)
     assert issue is not None and issue.translation_key == "app_profile_match"
-    assert issue.translation_placeholders["app"] == "Cool Base (BaseI5 with fan)"
+    assert issue.translation_placeholders["app"] == "Cool Base"
 
 
 async def test_switching_to_a_route_with_its_own_apps_does_not_ask_again(
@@ -353,8 +353,8 @@ async def test_advertised_app_candidates_join_the_review(hass: HomeAssistant) ->
     assert issue is not None
     assert issue.translation_placeholders["apps"] == (
         "- Adjustable bed (Lumbar) app\n"
-        "- AdjustableM5X4 app (explicit profile)\n"
-        "- AdjustableM5X5 app (CB25 / F23 / kneading)"
+        "- AdjustableM5X4 app\n"
+        "- AdjustableM5X5 app"
     )
 
 
@@ -381,13 +381,13 @@ async def test_a_solace_review_asks_about_woosa_and_adds_motion_bed_once_adverti
     # Woosa Sleep shares the name routes' names, so no advertisement decides it.
     issue = _issue(hass, entry)
     assert issue is not None and issue.translation_key == "app_profile_woosa"
-    assert issue.translation_placeholders["apps"] == "- Woosa Sleep app (Solace)"
+    assert issue.translation_placeholders["apps"] == "- Woosa Sleep app"
 
     with patch(_HISTORY, return_value=_advertisement("QMS-IQ 1234", SOLACE_SERVICE_UUID)):
         async_refresh_profile_review_issue(hass, entry)
     issue = _issue(hass, entry)
     assert issue is not None and issue.translation_key == "app_profile_review"
-    assert issue.translation_placeholders["apps"] == "- Motion Bed app\n- Woosa Sleep app (Solace)"
+    assert issue.translation_placeholders["apps"] == "- Motion Bed app\n- Woosa Sleep app"
 
 
 def _paired(hass: HomeAssistant, mode: str) -> MockConfigEntry:
@@ -420,7 +420,7 @@ async def test_paired_bed_explains_splitting_instead_of_switching(
     assert form["step_id"] == "unpair"
     assert form["data_schema"].schema["choice"].config["options"] == ["split", "keep"]
     assert form["description_placeholders"]["apps"] == (
-        "- Dynasty Bases app (Keeson)\n- INNOVA app (Keeson)"
+        "- Dynasty Bases app\n- INNOVA app"
     )
     result = await flow.async_step_unpair({"choice": "split"})
     assert result["type"] == "abort"

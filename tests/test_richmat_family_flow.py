@@ -81,28 +81,16 @@ async def answer(flow, choice: str):
     return result, finish
 
 
-def test_one_row_names_every_app_and_the_remotes():
+def test_every_app_has_a_searchable_row_and_the_family_row_stays_short():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
-    for app in (
-        "RMControl",
-        "Revive Control",
-        "Best Mattress",
-        "Blvd Home",
-        "HARMONY",
-        "Idealbed",
-        "Avocado Eco Base",
-        "CoasterSleep",
-        "Forty Winks",
-        "Milemont",
-        "Superior",
-        "SleepFunction",
-        "SVEN & SON",
-        "Richmat remotes",
-    ):
+    for app in ("RMControl", "SleepFunction", "SVEN & SON", "Richmat remotes"):
         assert app in rows[const.BED_TYPE_RICHMAT]
-    assert not set(rows) & {*const.RICHMAT_MH_BED_TYPES, "richmat_classic_apps:fortywinks"}
-    # A saved entry keeps its own label.
-    assert bed_type_label(const.BED_TYPE_RICHMAT_REVIVE) == "Revive Control app (Richmat)"
+    assert len(rows[const.BED_TYPE_RICHMAT]) < 100
+    # Each other app is found by its own name and selects its own route.
+    assert rows[const.BED_TYPE_RICHMAT_REVIVE] == "Revive Control app"
+    assert rows["richmat_classic_apps:fortywinks"] == "Forty Winks app"
+    assert rows[const.BED_TYPE_MLILY] == "MLILY Control app"
+    assert bed_type_label(const.BED_TYPE_RICHMAT_REVIVE) == "Revive Control app"
 
 
 def test_configure_accepts_the_hidden_apps_by_id():
@@ -371,3 +359,26 @@ async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
     assert saved[const.CONF_MOTOR_COUNT] == 4
     assert saved[const.CONF_HAS_MASSAGE] is True
     assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True
+
+
+@pytest.mark.parametrize(
+    ("label", "route"),
+    [
+        ("Revive Control app · Richmat", const.BED_TYPE_RICHMAT_REVIVE),
+        ("Forty Winks app · Richmat", const.BED_TYPE_RICHMAT_CLASSIC_APPS),
+        ("MLILY Control app · Richmat", const.BED_TYPE_MLILY),
+    ],
+)
+async def test_an_app_found_by_its_own_row_skips_the_richmat_question(hass, label, route):
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    flow._app_after_device = "manual_entry"
+    form = await flow.async_step_select_app()
+    picker = next(value for key, value in form["data_schema"].schema.items() if key == const.CONF_BED_TYPE)
+    assert label in picker.rows()
+    result = await flow.async_step_select_app({const.CONF_BED_TYPE: label})
+    assert result["step_id"] == "manual_entry"
+    result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:36"})
+    assert result["step_id"] != "richmat_family"
+    assert flow._manual_data[const.CONF_BED_TYPE] == route

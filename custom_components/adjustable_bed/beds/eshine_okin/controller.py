@@ -1,4 +1,4 @@
-"""Explicit eShine E2000/E3000/E3100/E5000 app controls (row122)."""
+"""Explicit eShine E2000/E3000/E3100/E5000 app controls (eShine 1.1.8)."""
 
 from __future__ import annotations
 

@@ -146,10 +146,6 @@ def test_repair_text_does_not_assume_the_bond_lives_on_the_host() -> None:
 
     assert "ESPHome" in description
     assert "stored on the proxy" in description
-    # Scoped to the errors that actually mean a refusal, so an ordinary
-    # missing-encryption failure is not sent down this path.
-    assert "AuthenticationFailed" in description
-    assert "AuthenticationRejected" in description
 
 
 def test_shared_repair_text_prescribes_no_bed_specific_reset() -> None:

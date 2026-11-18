@@ -237,7 +237,8 @@ A new app is normally a profile plus its vectors, not a new controller.
    - Held and concurrent execution (#483, #516) is the profile's `execution`
      field, or an `execution` override on a standalone controller. Each
      declaration needs an evidence row in `tests/test_execution_capabilities.py`
-     whose keys come from [execution capabilities](docs/design/execution-capabilities.md).
+     naming the app evidence that proves it (see
+     [protocol codecs](docs/design/protocol-codecs.md#execution-capabilities)).
 
 5. **Add detection to `detection.py`** in `detect_bed_type()`:
 
@@ -564,7 +565,7 @@ account for every reachable discovery before the task can be called complete.
 - Give every ledger item exactly one disposition: `IMPLEMENTED`, `ALREADY_IMPLEMENTED`, `EXCLUDED`, or `DEFERRED`. `DEFERRED` is only for a claim the audit could not verify within the coordinator workflow's stall rule; the PR body lists each one with its open finding and next step.
 - Record for every `IMPLEMENTED` or `ALREADY_IMPLEMENTED` item which codec carries it, existing or new. Reuse an existing codec only when it reproduces the item's frozen literals byte for byte. The clean-room analysis itself does not change; this mapping belongs to the post-freeze pass.
 - Implement every in-scope item marked `IMPLEMENTED` in the same task, with focused artifact-vector tests, entity or service exposure where users need it, and durable protocol documentation: a bed guide in the [bed guide format](docs/BED_GUIDE_FORMAT.md) with command tables from the shipped code. Never write the guide as audit prose.
-- The discovery ledger is an audit record, not documentation. Keep it machine-local with the APK Protocol Audit report, and put its totals, every exclusion and every deferral in the implementation PR body. Commit a machine-readable ledger only when a test reads it, under `tests/fixtures/`. Never add ledgers, disposition files or audit records to `docs/`. Do not silently defer reachable discoveries or wait for the user to ask whether anything was missed.
+- The discovery ledger is an audit record, not documentation. Keep it machine-local with the APK Protocol Audit report, and put its totals, every exclusion and every deferral in the implementation PR body. Never commit a ledger or a test that checks one: tests drive behavior with real frames and vectors. Never add ledgers, disposition files or audit records to `docs/`. Do not silently defer reachable discoveries or wait for the user to ask whether anything was missed.
 - `ALREADY_IMPLEMENTED` requires a concrete code and test reference showing behavior equivalent to the frozen artifact, not a family resemblance or an assumed shared protocol.
 - `EXCLUDED` requires the exact evidence and reason. Valid reasons are an out-of-scope transport or product boundary (for example WiFi/cloud behavior in this BLE-only integration), a safety constraint, dead or unreachable artifact code, or behavior unrelated to bed integration. Convenience, uncertain model prevalence, missing maintainer hardware, or lack of an existing entity are not valid exclusions.
 - Static artifact evidence can complete the implementation even without physical hardware. Keep hardware status explicit and defer only physical validation, never the implementation itself, when the behavior is exhaustively proven.

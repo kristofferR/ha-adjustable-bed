@@ -57,8 +57,14 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
     assert result["step_id"] == "starcode_family"
     result = await flow.async_step_starcode_family({"choice": "m5x4"})
     assert result["step_id"] == "profile_questions"
+    # Both follow the bed by default, so they wait under Advanced.
     fields = {marker.schema for marker in result["data_schema"].schema}
-    assert fields == {const.CONF_STARCODE_COMMAND_SELECTOR, const.CONF_STARCODE_TRANSPORT_SELECTOR}
+    assert fields == {"advanced"}
+    advanced = result["data_schema"].schema[next(iter(result["data_schema"].schema))].schema
+    assert {marker.schema for marker in advanced.schema} == {
+        const.CONF_STARCODE_COMMAND_SELECTOR,
+        const.CONF_STARCODE_TRANSPORT_SELECTOR,
+    }
     with (
         patch.object(flow, "_verification_possible", return_value=False),
         patch.object(flow, "async_step_bluetooth_pairing", new=AsyncMock()) as bluetooth_pairing,

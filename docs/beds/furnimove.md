@@ -507,11 +507,6 @@ commands; action and memory counts preserve captured ordering and aliases.
 
 ### Analysis provenance
 
-- This explicit app profile comes from `com.okin.okinsmartcomfort`
-  **2.2.0 (19)**, including its complete 19-APK artifact set and production API
-  tables captured on 2026-09-30.
-- The clean-room report passed independent acceptance before the integration
-  comparison.
-- The audit (unit 157) records every implemented behavior and exclusion.
-- Ref [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633) and
-  [#556](https://github.com/kristofferR/ha-adjustable-bed/issues/556).
+Based on FurniMove 2.2.0 (`com.okin.okinsmartcomfort`), with its product
+tables captured on 2026-09-30. Ref [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)
+and [#556](https://github.com/kristofferR/ha-adjustable-bed/issues/556).

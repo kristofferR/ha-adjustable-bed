@@ -4,8 +4,8 @@ The ``kaidi`` bed type resolves one profile per protocol variant. The Seat
 profiles (``seat_1``, ``seat_2``, ``seat_3``, ``seat_1_2``) hold the SEAT_*
 tables the Rize 1.3.0, ISleep 1.6.3 and Floyd 1.0.7 bundles share, as the
 pre-v5 controller sent them; product IDs gate their optional controls. ``FLOYD``
-(``floyd``) is Floyd Home 1.0.7, product 139, from the accepted row117 report.
-``IsleepProfile`` serves the ``isleep`` bed type from the accepted row064 report
+(``floyd``) is Floyd Home 1.0.7, product 139.
+``IsleepProfile`` serves the ``isleep`` bed type from
 (ISleep 1.6.3 (45), ``com.kaidi_test4``) for one selected product. Each app keeps
 its own command table; none reuses a sibling's.
 """
@@ -603,7 +603,7 @@ def add_isleep_metadata(data: Mapping[str, object], manufacturer_data: Mapping[i
     return result
 
 
-# Rize Beds 1.4.2 (57), accepted unit149. Independently frozen table, not
+# Rize Beds 1.4.2 (57). Independently frozen table, not
 # aliases of the older Seat or ISleep profiles. Column order is left/right/both.
 RIZE_PRODUCTS: Final = {
     129: "Single", 130: "Double 2/4", 131: "Single 3", 132: "Single 4",

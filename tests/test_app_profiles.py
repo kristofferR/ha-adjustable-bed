@@ -171,7 +171,7 @@ def test_reverie_protocol_models_and_pairlink_credentials_are_side_owned() -> No
 def test_apps_chosen_by_a_variant_are_listed_by_name() -> None:
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
     innova = bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
-    assert options[innova] == "INNOVA app (Keeson)"
+    assert options[innova] == "INNOVA app"
     assert resolve_bed_type_choice(innova) == (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
     assert resolve_bed_type_choice(BED_TYPE_KEESON) == (BED_TYPE_KEESON, None)
     # Z-Series has no automatic page; the Customatic row names it and its

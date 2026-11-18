@@ -2006,7 +2006,7 @@ class TestBluetoothDiscoveryFlow:
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
         enable_custom_integrations,
     ):
-        """Selecting "Diagnostic (unknown bed)" on the confirm step must create
+        """Selecting the diagnostics-only row on the confirm step must create
         an entry so users can capture a support bundle (#385)."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -3736,8 +3736,9 @@ async def test_verify_connection_success_then_creates_entry(
         assert "Connected" in caps
         assert "esphome_bedroom" in caps
         assert "Bluetooth proxy" in caps
-        # GATT + device-info details surface in the checklist.
-        assert "writable characteristic" in caps
+        # Device information surfaces; protocol details such as GATT counts do not.
+        assert "GATT" not in caps
+        assert "accepts no commands" not in caps
         assert "OKIN" in caps
         # The probe must release the bed's single BLE connection.
         client.disconnect.assert_awaited()
@@ -3795,7 +3796,7 @@ async def test_verify_connection_warns_when_no_writable_characteristic(
         verify = await _advance_progress(hass, verify)
         assert verify["step_id"] == "verify_connection"
         caps = verify["description_placeholders"]["capabilities"]
-        assert "No writable characteristic found" in caps
+        assert "accepts no commands" in caps
         assert "⚠️" in caps
 
         created = await hass.config_entries.flow.async_configure(verify["flow_id"], user_input={})
@@ -3829,7 +3830,7 @@ async def test_verify_connection_failure_still_creates_entry(
         )
         verify = await _advance_progress(hass, verify)
         assert verify["step_id"] == "verify_connection"
-        assert "Could not connect" in verify["description_placeholders"]["capabilities"]
+        assert "Couldn't connect" in verify["description_placeholders"]["capabilities"]
 
         created = await hass.config_entries.flow.async_configure(verify["flow_id"], user_input={})
 
@@ -3998,7 +3999,7 @@ async def test_a_not_advertising_bed_offers_retry_and_still_allows_finishing(
         verify = await _advance_progress(hass, progress)
         assert verify["step_id"] == "verify_connection"
         caps = verify["description_placeholders"]["capabilities"]
-        assert "not currently advertising" in caps
+        assert "isn't advertising" in caps
         assert "select **Check again**" in caps
         # Nothing may reach the BLE stack once the gate has refused.
         connects.assert_not_called()
@@ -4069,11 +4070,11 @@ async def test_an_advertising_bed_that_cannot_be_resolved_offers_retry(
         assert verify["step_id"] == "verify_connection"
 
         caps = verify["description_placeholders"]["capabilities"]
-        assert "could not open a connection" in caps
+        assert "couldn't open a connection" in caps
         assert "**Check again**" in caps
         # The bed answered a scan, so neither of the old messages applies.
-        assert "not currently advertising" not in caps
-        assert "Device not found" not in caps
+        assert "isn't advertising" not in caps
+        assert "wasn't found" not in caps
         # Nothing may reach the BLE stack without a resolved device.
         connects.assert_not_called()
 

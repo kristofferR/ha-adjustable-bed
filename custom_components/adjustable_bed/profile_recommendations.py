@@ -166,7 +166,7 @@ def _reported_recommendation(
 ) -> Recommendation | None:
     """Match only the user-confirmed identity in #670, not every Star/BOX25 bed.
 
-    The accepted row054 report proves the current profile's table selection.
+    Adjustable bed (Lumbar) 1.2.2 proves the current profile's table selection.
     #670 adds physical evidence for numbered memory on the suggested profile.
     See docs/design/profile-recommendations.md for the limits of that evidence.
     """

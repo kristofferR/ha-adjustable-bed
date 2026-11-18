@@ -1,4 +1,4 @@
-"""Rize Beds 1.4.2 (57), unit149, over the shared Kaidi app session.
+"""Rize Beds 1.4.2 (57), over the shared Kaidi app session.
 
 The profile's literal vectors select capabilities. Android global-target races,
 short-tap STOP suppression and unauthenticated admission are not reproduced.

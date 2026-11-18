@@ -1,8 +1,6 @@
-"""Ergomotion 4.0 3.7 product and control receipts. See issue558 dispositions.
+"""Ergomotion 4.0 3.7 product and control tables.
 
-Generated outside this repository from the accepted report (SHA-256
-221e356d9e6b88aaa68991d666a1bfa978ee5356be7c6da0447979b08ff09e7b, recorded in
-``tests/fixtures/ergomotion4/ledger.json``); no generator is checked in, so edits are by hand.
+Generated outside this repository from the app; no generator is checked in, so edits are by hand.
 """
 
 from dataclasses import dataclass
@@ -491,4 +489,4 @@ PRODUCT_LABELS = {
 }
 # fmt: on
 PRODUCT_CHOICES = {key: PRODUCT_LABELS.get(key, key) for key in PRODUCTS}
-PRODUCT_CHOICES["custom"] = "Other catalog product (explicit feature keys)"
+PRODUCT_CHOICES["custom"] = "Other product (enter its features)"

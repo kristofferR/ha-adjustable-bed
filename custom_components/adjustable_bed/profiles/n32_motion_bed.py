@@ -1,4 +1,4 @@
-"""N32 Motion Bed 1.1.14 (38), com.okin.simmonskorea, accepted row080.
+"""N32 Motion Bed 1.1.14 (38), com.okin.simmonskorea.
 
 Only startup enum2 is live. All held, clock, query and alarm literals reproduce
 through the Okin N-frame codec; no alternate models or individual upper motors

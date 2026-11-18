@@ -151,11 +151,11 @@ def _keeson(*variants: str) -> tuple[str, ...]:
     return tuple(bed_type_choice(BED_TYPE_KEESON, variant) for variant in variants)
 
 
-# Same Keeson frame, different keys and release timing (row060).
+# Same Keeson frame, different keys and release timing.
 _OKIN_SEATING_APPS: Final = _keeson(
     KEESON_VARIANT_SIMON_LI, KEESON_VARIANT_HEAL_EVERY_NIGHT, KEESON_VARIANT_OKIN_SEATING
 )
-# ORE-named bases; v4.0.2's sino label named Dynasty and INNOVA (row056, row059).
+# ORE-named bases; v4.0.2's sino label named Dynasty and INNOVA.
 _ORE_APPS: Final = _keeson(
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_INNOVA,
@@ -164,9 +164,9 @@ _ORE_APPS: Final = _keeson(
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
 )
-# The app accepts base-i4 (Keeson Base) and base-i5 (Cool Base) names (row058).
+# The app accepts base-i4 (Keeson Base) and base-i5 (Cool Base) names.
 _RESTONIC_APPS: Final = _keeson(KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B)
-# Same 14-byte CST frame as the OKIN routes (okin-nframe.md#jordans-serenity, row052).
+# Same 14-byte CST frame as the OKIN routes (okin-nframe.md#jordans-serenity).
 _OKIN_BEDDING_APPS: Final = (
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
@@ -199,7 +199,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
         frozenset({KEESON_VARIANT_BASE}),
         (*_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS),
     ),
-    # Adjustable Lite's frames all exist in the KSBT profile (row051).
+    # Adjustable Lite's frames all exist in the KSBT profile.
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         frozenset({KEESON_VARIANT_KSBT}),
@@ -229,7 +229,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
         None,
         (BED_TYPE_SIMMONS, *_OKIN_BEDDING_APPS[1:]),
     ),
-    # okin names on 62741523, and Star names on Nordic UART (row054).
+    # okin names on 62741523, and Star names on Nordic UART.
     _RouteApps(
         frozenset(
             {
@@ -249,7 +249,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
         None,
         (BED_TYPE_RESIDENT,),
     ),
-    # Shared OKIN FFE, CB24, Keeson and Richmat routes (row049).
+    # Shared OKIN FFE, CB24, Keeson and Richmat routes.
     _RouteApps(
         frozenset({BED_TYPE_OKIN_FFE, BED_TYPE_OKIN_CB24, BED_TYPE_RICHMAT}),
         None,
@@ -263,7 +263,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(frozenset({BED_TYPE_RICHMAT}), None, tuple(sorted(RICHMAT_MH_BED_TYPES))),
     _RouteApps(frozenset({BED_TYPE_LIMOSS}), None, (BED_TYPE_LIMOSS_REMOTE, BED_TYPE_FSM_RELAX)),
     _RouteApps(frozenset({BED_TYPE_VIBRADORM}), None, (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)),
-    # The Sleep Smart bed profile of the LOGICDATA app (row053).
+    # The Sleep Smart bed profile of the LOGICDATA app.
     _RouteApps(frozenset({BED_TYPE_COMFORT_MOTION}), None, (BED_TYPE_LOGICDATA_APP,)),
     # v4.0.2 always used the Slumberland screens (remacro.md).
     _RouteApps(
@@ -279,7 +279,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
 
 # Detection rules that now pick another primary route than v4.0.2 did for the
 # same advertisement: detected bed type -> the stored types v4.0.2 chose.
-# Cool Base matches "base-i5" anywhere in the name (row047 D40); v4.0.2 only
+# Cool Base matches "base-i5" anywhere in the name; v4.0.2 only
 # matched the prefix, so the rest landed on the shared Keeson route.
 _DETECTION_DRIFT: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_COOLBASE: frozenset({BED_TYPE_KEESON}),

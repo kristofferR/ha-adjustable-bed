@@ -153,7 +153,7 @@ async def test_factory_and_explicit_app_registration():
     )
     result = await create_controller(c._coordinator, BED_TYPE_BEDSENSE, "auto", c.client, "JQ-D")
     assert isinstance(result, BedSenseController) and result.layout == 2
-    assert "com.fenmenbielei.bedsense" in BED_TYPE_DISPLAY_NAMES[BED_TYPE_BEDSENSE]
+    assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_BEDSENSE] == "BedSense app"
     assert len(VARIANTS_BY_BED_TYPE[BED_TYPE_BEDSENSE]) == 10
     assert {
         CONF_MOTOR_COUNT,

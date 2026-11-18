@@ -1,4 +1,4 @@
-"""SIMMONS app profile (com.okin.simmons 1.12.9), accepted as APK audit row049.
+"""SIMMONS app profile (com.okin.simmons 1.12.9).
 
 The app has two packet formats on one write gateway. Its Bluetooth name picks
 the format (``okin`` prefix: checksummed frames written with response;

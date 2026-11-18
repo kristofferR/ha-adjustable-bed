@@ -27,9 +27,6 @@ a retail brand or guessed model name.
 | ✅ | [Bed Connect](https://play.google.com/store/apps/details?id=com.linak.bedconnect.iot) 5.2.4 (`253`) | `com.linak.bedconnect.iot` |
 | ✅ | [Performance Series](https://play.google.com/store/apps/details?id=com.linak.leggettandplatt) 1.0 (`124`) | `com.linak.leggettandplatt` |
 
-All three have frozen COMPLETE reports; hashes are under
-[Analysis provenance](#analysis-provenance).
-
 ## Features
 
 | Feature | Bed Control | Performance Series |
@@ -379,45 +376,39 @@ and updates a separate WiFi module. P2 is intentionally and permanently out of
 scope: this integration controls beds over BLE only and will not implement WiFi
 provisioning, cloud control or module firmware updates.
 
-### Corpus discovery disposition
+### App features
 
-Every reachable corpus finding has a final disposition. The table groups commands
-that share a builder, lifecycle and user-facing control; the byte-level command
-tables above remain exhaustive.
+Every reachable app feature, grouped by builder, lifecycle and control; the
+byte-level command tables above remain exhaustive.
 
-| Discovery group | Disposition | Integration surface |
-|-----------------|-------------|---------------------|
-| Bed Control discovery, optional app bonding and GATT session | Implemented | Unbonded-compatible coordinator connection with readiness retry |
-| STANDARD/TD3/ADVANCED/alarm capability selection | Implemented | Live service/mask discovery with persisted snapshot |
-| Individual, all-section and all 40 two-section movements | Implemented | Covers, preset buttons and simultaneous-move service |
-| STOP/release and 100 ms held-command lifecycle | Implemented | Guaranteed cleanup on completion, failure and cancellation |
-| Four favorite recalls and stores with model gating | Implemented | Buttons and generic preset services |
-| Massage zones, modes and all intensity actions | Implemented | Capability-gated buttons |
-| AUX/light toggle | Implemented | Native controller action; legacy toggle button, modern on/off entity |
-| Defaults reset and configuration factory reset | Implemented | Separate buttons; factory reset disabled by default |
-| Automatic drive configuration | Implemented | Assumed-state switch, disabled by default |
-| Device rename | Implemented | `rename` action (or `linak_rename`) plus advertising refresh disconnect |
-| Alarm event, recurrence, commit and notification states | Implemented | `linak_set_alarm` service and diagnostic sensor |
-| Reference extension, flags and reported speed | Implemented | Position entities, speed sensors and fault diagnostic |
-| All 104 modern error values | Implemented | Diagnostic sensor with raw code/payload attributes |
-| Double/synchronized bed targeting | Already implemented | Generic paired-bed routing sends the same frames per side |
-| Performance discovery, command surface and one-byte release | Implemented | Explicit Performance Series profile |
-| Performance opaque required notification | Implemented | Subscription and raw diagnostics without invented parsing |
-| Bed Connect direct-BLE P1 commands, variants and parsers | Already implemented | Modern controller is a superset; its unique factory reset is implemented separately |
-| Bed Connect phone-local scheduled favorite/massage actions | Already implemented | Home Assistant scheduling invokes the same preset/massage controls |
-| Bed Connect P2 WiFi module | Excluded | WiFi provisioning, cloud/module state and firmware are outside this BLE-only integration |
-| Library constants and implementations with no app caller | Excluded | App-unreachable, including memories 5/6; discrete light on/off separately enabled by the hardware evidence above |
-| App-local settings with no BLE effect | Excluded | Unrelated to bed transport, including the Performance app's local child-lock preference |
+| Feature | Home Assistant |
+|---------|----------------|
+| Bed Control discovery, optional app bonding and GATT session | Unbonded-compatible coordinator connection with readiness retry |
+| STANDARD/TD3/ADVANCED/alarm capability selection | Live service/mask discovery with persisted snapshot |
+| Individual, all-section and all 40 two-section movements | Covers, preset buttons and simultaneous-move service |
+| STOP/release and 100 ms held-command lifecycle | Guaranteed cleanup on completion, failure and cancellation |
+| Four favorite recalls and stores with model gating | Buttons and generic preset services |
+| Massage zones, modes and all intensity actions | Capability-gated buttons |
+| AUX/light toggle | Native controller action; legacy toggle button, modern on/off entity |
+| Defaults reset and configuration factory reset | Separate buttons; factory reset disabled by default |
+| Automatic drive configuration | Assumed-state switch, disabled by default |
+| Device rename | `rename` action (or `linak_rename`) plus advertising refresh disconnect |
+| Alarm event, recurrence, commit and notification states | `linak_set_alarm` service and diagnostic sensor |
+| Reference extension, flags and reported speed | Position entities, speed sensors and fault diagnostic |
+| All 104 modern error values | Diagnostic sensor with raw code/payload attributes |
+| Double/synchronized bed targeting | Generic paired-bed routing sends the same frames per side |
+| Performance discovery, command surface and one-byte release | Explicit Performance Series profile |
+| Performance opaque required notification | Subscription and raw diagnostics without invented parsing |
+| Bed Connect direct-BLE P1 commands, variants and parsers | Modern controller is a superset; its unique factory reset is implemented separately |
+| Bed Connect phone-local scheduled favorite/massage actions | Home Assistant scheduling invokes the same preset/massage controls |
+
+Not supported: the Bed Connect P2 WiFi module (WiFi provisioning, cloud and
+module firmware are outside this BLE-only integration), library code no app
+calls (including memories 5/6), and app-local settings with no BLE effect, such
+as the Performance app's child-lock preference.
 
 ### Analysis provenance
 
-All three current corpus packages have frozen COMPLETE reports that pass the
-reusable [APK Protocol Audit completion gates](https://github.com/kristofferR/ha-adjustable-bed/issues/443).
-The APKs, decompilation output, and reports remain machine-local as required by
-[issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436).
-
-| App | Package and version | Artifact-set SHA-256 | Frozen report evidence |
-|-----|---------------------|---------------------|------------------------|
-| Bed Control | `com.linak.linakbed.ble.memory` 6.0.9 (`264`) | `4ac807c4a76c34edffa06f6d659c07ecd94382e656851fa6f784fd47076854d3` | `analysis.json` `3801cc95b7ddbffa8a828809451143ad74ddedb2ffdc93d383f2c0a474528017`; manifest `c4d5e4ca095f4a7a43aa7ce7f17f82badf16ff1b79485bf80c17511d76cbfb94` |
-| Bed Connect | `com.linak.bedconnect.iot` 5.2.4 (`253`) | `21f189557b5a23c1dfc60623feacbf586571da9c125234cf48aabe89fbe2d885` | `analysis.json` `377168b2f0654353d0c5fd1827624f3de3c5a421d385b4755ec23d2fcd30b49a`; manifest `ef22dd0bf16252b6f75e08da39b3f33ce2dd92e9f8e16914a66a1c83edfba235` |
-| Performance Series | `com.linak.leggettandplatt` 1.0 (`124`) | `0693675a0182fc5a7a9e430d8ead9e75fefc0e2538692712172842f12095bcfe` | `analysis.json` `405f97be46aa84cf53c17acfe86ccb1665618b2683e2c3804c7b4fc60fe89f92`; manifest `662c3b4158ef31024dcbcbd62616353ef0886cddcf8d0a3585902494fd998b63` |
+Based on Bed Control 6.0.9 (`com.linak.linakbed.ble.memory`), Bed Connect
+5.2.4 (`com.linak.bedconnect.iot`) and Performance Series 1.0
+(`com.linak.leggettandplatt`).

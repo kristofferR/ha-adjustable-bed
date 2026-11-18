@@ -31,8 +31,6 @@
 | ✅ | [MotoSleep](https://play.google.com/store/apps/details?id=com.HHC.MotoSleep) 5.1.5 (`2026071001`) | `com.HHC.MotoSleep` | [MotoSleep](#motosleep) |
 | ✅ | [Power Bob for Adjustable Bed](https://play.google.com/store/apps/details?id=com.HHC.PowerBob) 2.0.3 (`2025061101`) | `com.HHC.PowerBob` | [Power Bob](#power-bob) |
 
-See [Analysis provenance](#analysis-provenance) for artifact hashes.
-
 ## Features
 
 | Feature | MotoMotion | MotoSleep | Power Bob | Legacy route | Bedgear |
@@ -283,7 +281,7 @@ The selected side and posture, current music mode/EQ, RGB timer and user-owned w
 
 A malformed saved posture requires an explicit valid posture selection before posture controls can move the bed. Malformed optional working/music/timer state is handled locally and cannot reset a valid side selection. Restoring preferences sends no BLE settings or movement frames.
 
-HA deliberately cancels delayed writes on release/cancellation, always performs admitted movement cleanup, and separates saving from recall. The shipped app can retain a delayed write after release, suppress queued STOP on re-press, or recall on the release of a save gesture. Those hazards are not reproduced. Exact findings and negative tests are in the ledger.
+HA deliberately cancels delayed writes on release/cancellation, always performs admitted movement cleanup, and separates saving from recall. The shipped app can retain a delayed write after release, suppress queued STOP on re-press, or recall on the release of a save gesture. Those hazards are not reproduced.
 
 #### Notifications
 
@@ -297,8 +295,7 @@ The `adjustable_bed.motomotion` action manages named local users and postures. `
 
 #### Evidence
 
-The accepted MotoMotion 3.1.9 report (row113): its test vectors round-trip
-through the codec. See [Analysis provenance](#analysis-provenance).
+MotoMotion 3.1.9: its test vectors round-trip through the codec.
 
 ### MotoSleep and Power Bob family
 
@@ -398,7 +395,7 @@ the root cause of [issue #445](https://github.com/kristofferR/ha-adjustable-bed/
 > [!WARNING]
 > Earlier versions of this document listed `$Y`/`$X`/`$W` as Save Zero-G, Save
 > TV and Save Anti-Snore, `$z` as a sync toggle, `$J`/`$I` as head/foot massage
-> off, and `$P`/`$p` as neck/lumbar on every bed. The audited apps show `$W` is
+> off, and `$P`/`$p` as neck/lumbar on every bed. The apps show `$W` is
 > only Panel E's unlabelled action and `$X`/`$Y` are not sent by any profile.
 > `$z` is an initialization-only query that the wrapped path drops and the
 > integration does not send; sync uses the numeric MainPanel frames below.
@@ -443,7 +440,7 @@ trustworthy physical label, so the integration does not invent one.
 
 > [!NOTE]
 > Older documentation described HHC movement as one command per press and a
-> `$b` STOP sent 3 times with a 50 ms delay. The audited apps and the current
+> `$b` STOP sent 3 times with a 50 ms delay. The apps and the current
 > code use the schedule above.
 
 #### Evidence
@@ -541,7 +538,7 @@ Normal MOTO movement release sends command/data `0x0000/0x0000` five times at
 
 **App:** [Power Bob for Adjustable Bed](https://play.google.com/store/apps/details?id=com.HHC.PowerBob) 2.0.3 (`2025061101`), `com.HHC.PowerBob`
 
-**Status:** ❓ Needs testing (static verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 Behaves as the [MotoSleep and Power Bob family](#motosleep-and-power-bob-family), except as below.
 
@@ -608,7 +605,7 @@ schedule.
 
 **App:** [Bedgear](https://play.google.com/store/apps/details?id=com.Bedgear.AdjustableBed) 2.0.1 (`2024031901`), `com.Bedgear.AdjustableBed`
 
-**Status:** ❓ Needs testing (static verification; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 #### Setup
 
@@ -784,32 +781,8 @@ qualify those behaviors with timestamps, GATT details and physical observations.
 
 ### Analysis provenance
 
-The [README Supported Beds table](../../README.md#supported-beds) remains the
-canonical support matrix.
-
-**MotoMotion:**
-
-- Accepted package: `com.HHC.MotoMotion` 3.1.9, code 2026051101.
-- Frozen XAPK SHA-256: `b1a590b6f24c8d4f5b8dfd10293b5266b4d0a95abd3a04f27786524bfd6accc2`.
-- Separate APK-member-set SHA-256: `a354614e81258f020f5207de3b3f85393535beedb8f1028e3dc2aa6221e60522`. These identify different things.
-- Five-APK arm64-v8a/en/fr/mdpi delivery only. Public Play metadata establishes versionName only, not versionCode, signer or exact delivery. Same-version replacement and other device/region deliveries are not excluded. Acquisition source-stamp and application signer digests were separated by the accepted audit.
-- The row113 audit ledger records report/audit seals, all command and candidate mappings, corrections and exclusions. Its item coverage is the [ledger fixture](../../tests/fixtures/motomotion_ledger.json) the tests check. Raw artifacts, decompilation and audit reports remain local.
-- ATT acceptance, actual firmware responses and physical effects need real-user validation after beta/release. No maintainer hardware check is required to complete the static implementation.
-
-**MotoSleep and Power Bob:** protocol evidence was frozen from MotoSleep
-`com.HHC.MotoSleep` 5.1.5 (`2026071001`) and Power Bob `com.HHC.PowerBob`
-2.0.3. Both reports are COMPLETE and pass the reusable
-[APK Protocol Audit completion gates](https://github.com/kristofferR/ha-adjustable-bed/issues/443):
-
-| Package | Artifact-set SHA-256 | Frozen report evidence |
-|---------|---------------------|------------------------|
-| `com.HHC.MotoSleep` 5.1.5 (`2026071001`) | `d909b93159816b0de135e26a423f618eabbe3d9c1effbe885c3d4d08d9f26c96` | Package-local `REPORT.SHA256` verifies `analysis.json` as `1d70180d98fc76727c6c6a1ebb7a51430c1f2d4bd0b4d3f0e61608658194b3ab` |
-| `com.HHC.PowerBob` 2.0.3 (`2025061101`) | `134568e8bbdc3a6794eb12e3452abec74957924824d8c24c0b1479af4f90ab31` | Package-local `REPORT.SHA256` verifies `analysis.json` as `25a0a8be736003b7802e9dfad89df8d2ac1701c9181c6ad596e0fe5cd277a872` |
-
-The durable [#447 accepted-exclusions registry](https://github.com/kristofferR/ha-adjustable-bed/issues/447)
-records both reports as accepted and removed from the later #436 bulk run. Raw
-reports and APKs remain machine-local as required by
-[issue #436](https://github.com/kristofferR/ha-adjustable-bed/issues/436).
+Based on MotoMotion 3.1.9 (`com.HHC.MotoMotion`), MotoSleep 5.1.5
+(`com.HHC.MotoSleep`) and Power Bob 2.0.3 (`com.HHC.PowerBob`).
 
 ### Deferred user validation
 
@@ -827,8 +800,4 @@ maintainers without real user hardware or app-delivered runtime tables:
 These are post-beta/release validation requests, not a requirement that a
 maintainer acquire the beds and not a reason to guess protocol semantics.
 
-Bedgear 2.0.1 (`2024031901`), row A12: XAPK SHA-256
-`4e5430558c7aa4badc5f23e466bfb02ba3412e89a3e0c808760aebeddefbbf1f`.
-Supplied arm64 delivery has 20 APKs. Its APK signer and distinct distribution
-source stamp are separate identities; the config.xxhdpi filename contains
-xhdpi resources. Mirror availability does not certify a Play rollout.
+Based on Bedgear 2.0.1 (`2024031901`).

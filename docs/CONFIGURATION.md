@@ -399,36 +399,36 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Bed type | Key | Pulse count | Pulse delay |
 |---|---|---|---|
 | 1500 Tilt Base (Rondure) | `rondure` | 25 | 50 ms |
-| AdjustaMattress app (seven product layouts) | `adjustamattress` | 5 | 200 ms |
-| Comfort Enhancements app (choose MC2/MC3/MC4/MC5) | `comfort_enhancements` | 5 | 200 ms |
+| AdjustaMattress app | `adjustamattress` | 5 | 200 ms |
+| Comfort Enhancements app | `comfort_enhancements` | 5 | 200 ms |
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
-| eShine app (E2000 / E3000 / E3100 / E5000) | `eshine_okin` | 10 | 300 ms |
-| FSM Relax app (explicit chair/bed profile) | `fsm_relax` | 10 | 60 ms |
-| Jensen Adjustable Sleep app, JMC400 bed (PIN) | `jensen` | 4 | 300 ms |
-| Leggett & Platt WiLinke (MlRM) | `leggett_wilinke` | 10 | 110 ms |
-| Limoss / Stawett (TEA encrypted) | `limoss` | 12 | 80 ms |
-| Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series (legacy, 300 ms hold cadence) | `linak` `performance_legacy` | 4 | 300 ms |
+| eShine app (E2000 to E5000) | `eshine_okin` | 10 | 300 ms |
+| FSM Relax app | `fsm_relax` | 10 | 60 ms |
+| Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
+| Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
+| Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
+| Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series app (older bases) | `linak` `performance_legacy` | 4 | 300 ms |
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |
-| Malouf (FFE5 protocol) | `malouf_legacy_okin` | 7 | 150 ms |
 | Malouf Base / Lucid Base apps | `malouf_app` | 7 | 150 ms |
-| N32 Motion Bed app (com.okin.simmonskorea) | `n32_motion_bed` | 5 | 200 ms |
+| Malouf remote, older receiver | `malouf_legacy_okin` | 7 | 150 ms |
+| N32 Motion Bed app | `n32_motion_bed` | 5 | 200 ms |
 | OCTO Smart Control | `octo` | 3 | 350 ms |
 | OCTO Smart Control: Octo Remote Star2 | `octo` `star2` | 3 | 50 ms |
 | Okin CB24 (SmartBed by Okin, Amada) | `okin_cb24` | 3 | 300 ms |
 | Okin CB35 (Sealy Posturematic, DewertOkin Star) | `okin_cb35` | 3 | 300 ms |
 | Okin FFE (13/15 series) | `okin_ffe` | 7 | 150 ms |
-| OKIN Motion Bed app (com.okin.motionbed) | `okin_motionbed` | 5 | 200 ms |
-| Okin ORE (legacy A5 5A) | `okin_ore` | 1 | 300 ms |
-| Resident Adjustable Base app (com.okin.resident.release) | `resident` | 4 | 300 ms |
+| OKIN Motion Bed app | `okin_motionbed` | 5 | 200 ms |
+| Okin ORE (older remotes) | `okin_ore` | 1 | 300 ms |
+| Resident Adjustable Base app | `resident` | 4 | 300 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
-| Rize Home app (Remedy III / Contempo IV) | `rize_home` | 3 | 200 ms |
+| Rize Home app | `rize_home` | 3 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
-| SUTA Smart Home (AT protocol) | `suta` | 7 | 150 ms |
-| Symphony Sleep app (com.ore.bedding.symphony, choose model and transport) | `symphony_sleep` | 4 | 300 ms |
+| SUTA Smart Home app | `suta` | 7 | 150 ms |
+| Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
-| アシステック / ASSISTEC / Yamada app (com.okin.yamada) | `yamada` | 4 | 300 ms |
+| アシステック / ASSISTEC / Yamada app | `yamada` | 4 | 300 ms |
 
 Every other bed type defaults to 10 pulses 100 ms apart.
 <!-- /generated -->
