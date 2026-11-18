@@ -8,6 +8,9 @@
  "binary_sensor:adjustamattress_demonstration": {
   "card_section": "utility"
  },
+ "binary_sensor:agingplace_occupancy": {
+  "card_section": "hidden"
+ },
  "binary_sensor:bed_presence": {
   "card_section": "hidden"
  },
@@ -255,6 +258,27 @@
  },
  "button:adjustamattress_wave_add": {
   "card_section": "massage"
+ },
+ "button:agingplace_circulation": {
+  "card_section": "utility"
+ },
+ "button:agingplace_device_info": {
+  "card_section": "hidden"
+ },
+ "button:agingplace_diagnostic": {
+  "card_section": "utility"
+ },
+ "button:agingplace_in": {
+  "card_section": "utility"
+ },
+ "button:agingplace_out": {
+  "card_section": "utility"
+ },
+ "button:agingplace_relax_cycle": {
+  "card_section": "utility"
+ },
+ "button:agingplace_sleep": {
+  "card_section": "utility"
  },
  "button:all_motors_down": {
   "card_section": "motors",
@@ -2639,6 +2663,16 @@
  "number:adjustamattress_alarm_draft_minute": {
   "card_section": "utility"
  },
+ "number:agingplace_brightness": {
+  "card_section": "lighting"
+ },
+ "number:agingplace_massage_minutes": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "number:agingplace_motion_minutes": {
+  "card_section": "lighting"
+ },
  "number:auxiliary_1_position": {
   "card_section": "motors",
   "card_motor": "auxiliary_1"
@@ -3186,6 +3220,27 @@
  },
  "sensor:adjustamattress_wave": {
   "card_section": "massage"
+ },
+ "sensor:agingplace_breathing_rate": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_circulation_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_diagnostic_status": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_heart_rate": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_relax_cycle_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_sleep_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_version": {
+  "card_section": "hidden"
  },
  "sensor:apex_firmware": {
   "card_section": "hidden"
