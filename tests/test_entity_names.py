@@ -142,3 +142,21 @@ async def test_runtime_action_labels_follow_the_rules() -> None:
 )
 def test_display_label_drops_artifact_notes_and_shouting(label: str, shown: str) -> None:
     assert display_label(label) == shown
+
+
+def test_richmat_mh_catalog_labels_use_the_shared_wording() -> None:
+    """Every MH model's app labels, not only the factory default's."""
+    from custom_components.adjustable_bed.beds.richmat_mh.catalog import CONTROLS
+    from custom_components.adjustable_bed.beds.richmat_mh.controller import (
+        _display_label as mh_label,
+    )
+
+    names = {
+        display_label(mh_label(label, group if area == "massage" else None))
+        for _route, _kind, area, group, label, _code, _keep in CONTROLS
+        if area != "motor"
+    }
+    assert {name: problems(name) for name in names if problems(name)} == {}
+    assert mh_label("Head Intensity+", "HEAD_INTENSITY_INC3") == "Massage: Head Up"
+    assert mh_label("10Min", "MIN") == "Massage: Timer 10 Minutes"
+    assert mh_label("FLAT2") == "Flat 2"
