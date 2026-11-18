@@ -191,13 +191,10 @@ def _action(name: str) -> Callable[[BedController], Coroutine[object, object, No
 
 
 # Reported values a typical user wants on a dashboard.
+# Massage and sonic levels and modes only mirror the step buttons (the bed
+# takes no direct level), so those readbacks start hidden.
 _ENABLED_STATE: Final = frozenset(
     {
-        "massage_head_level",
-        "massage_foot_level",
-        "massage_mode",
-        "sonic_head_level",
-        "sonic_foot_level",
         "massage_active",
         "sonic_active",
         "kneading_on",

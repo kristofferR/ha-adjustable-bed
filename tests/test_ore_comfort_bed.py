@@ -328,7 +328,7 @@ async def test_massage_levels_timer_and_stop_publish_app_state(
     await controller.set_massage_level("head", 3)
     await controller.set_massage_timer_option("20")
     assert state[STATE_LEVEL["head"]] == 3
-    assert state[STATE_TIMER] == "20"
+    assert state[STATE_TIMER] == 20
     # Stop zeroes head and foot on the bed only; the sliders keep their levels.
     await controller.massage_off()
     assert state[STATE_TIMER] is None
@@ -571,7 +571,7 @@ async def test_setup_exposes_the_app_surface(
         assert not exists("button", key), key
     for zone in ("head", "foot", "wave"):
         assert exists("number", f"controller_number_ore_comfort_massage_{zone}"), zone
-    assert exists("select", f"controller_select_{STATE_TIMER}")
+    assert exists("select", "massage_timer")
     assert exists("switch", "under_bed_lights")
 
     assert await hass.config_entries.async_unload(entry.entry_id)
@@ -614,7 +614,7 @@ async def test_switching_profiles_retires_the_other_profiles_entities(
         ("button", "ore_comfort_massage_start"),
         ("button", "ore_comfort_program_flat"),
         ("number", "controller_number_ore_comfort_massage_head"),
-        ("select", f"controller_select_{STATE_TIMER}"),
+        ("select", "massage_timer"),
     ):
         assert not exists(platform, key), key
     assert await hass.config_entries.async_unload(entry.entry_id)

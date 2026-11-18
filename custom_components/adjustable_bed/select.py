@@ -192,7 +192,10 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             )
             entities.append(
                 AdjustableBedMassageTimerSelect(
-                    coordinator, MASSAGE_TIMER_DESCRIPTION, timer_options
+                    coordinator,
+                    MASSAGE_TIMER_DESCRIPTION,
+                    timer_options,
+                    has_off=controller.supports_massage_timer_off,
                 )
             )
 
@@ -402,6 +405,9 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
 class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
     """Select entity for Adjustable Bed massage timer."""
 
+    # Controller state callbacks write the state; there is nothing to poll.
+    _attr_should_poll = False
+
     entity_description: SelectEntityDescription
 
     def __init__(
@@ -409,6 +415,8 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         coordinator: EntityRuntime,
         description: SelectEntityDescription,
         timer_options: list[int],
+        *,
+        has_off: bool = True,
     ) -> None:
         """Initialize the massage timer select entity."""
         super().__init__(coordinator, CARD_MASSAGE_TIMER)
@@ -416,9 +424,10 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._timer_options = timer_options
+        self._has_off = has_off
 
-        # Build options list: "Off" plus timer durations
-        self._attr_options = ["Off"] + [f"{m} min" for m in timer_options]
+        # The durations, after "Off" when the bed has an off command.
+        self._attr_options = (["Off"] if has_off else []) + [f"{m} min" for m in timer_options]
         self._unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
@@ -438,7 +447,7 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        """Return the last published timer, or "Off"."""
+        """Return the last published timer, else "Off" (or unknown without an Off choice)."""
         minutes = self._coordinator.controller_state.get(
             sided(
                 MASSAGE_TIMER_MINUTES,
@@ -446,7 +455,9 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
             )
         )
         formatted = f"{minutes} min"
-        return formatted if minutes and formatted in self._attr_options else "Off"
+        if minutes and formatted in self._attr_options:
+            return formatted
+        return "Off" if self._has_off else None
 
     async def async_select_option(self, option: str) -> None:
         """Set the massage timer duration."""

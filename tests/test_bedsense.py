@@ -133,7 +133,10 @@ def test_nine_fresh_layouts_expose_only_proven_controls(layout, axes, cycle):
     assert {
         k.removeprefix("circulation_") for k in buttons if k.startswith("circulation_")
     } == cycle
-    assert {"light_10_min", "light_8_h", "light_10_h"} <= buttons
+    # Timer buttons are the massage and light timer selects.
+    assert not any(k.startswith(("light_", "massage_timer_")) for k in buttons)
+    assert c.light_timer_options == ["10 min", "8 hours", "10 hours"]
+    assert c.massage_timer_options == [10, 20, 30] and c.supports_massage_timer_off
     assert "refresh_memory" not in buttons and "background_tap" not in buttons
     assert ("lumbar" in buttons) is (layout in (6, 8))
     assert ("music" in buttons) is (layout in (4, 5))
@@ -143,7 +146,8 @@ def test_nine_fresh_layouts_expose_only_proven_controls(layout, axes, cycle):
     assert not c.supports_position_feedback and not c.position_number_specs
     assert not c.supports_lights and not c.supports_massage  # app-labelled buttons instead
     assert len(c.controller_state_binary_sensor_specs) == 5
-    assert len(c.controller_state_sensor_specs) == 6
+    # The timer selects show the massage timer and light duration.
+    assert len(c.controller_state_sensor_specs) == 4
 
 
 async def test_factory_and_explicit_app_registration():
@@ -354,6 +358,18 @@ async def test_massage_timer_toggle_steps_and_light_duration_are_local():
     await c.execute_action("light_10_h")
     assert c.protocol_diagnostics["bedsense_light_duration"] == "10 h"
     assert c.protocol_diagnostics["bedsense_state_source"] == "local_write"
+
+
+async def test_timer_selects_send_the_app_buttons_frames():
+    c = make_controller()
+    await c.set_massage_timer(20)
+    # Choosing the running timer keeps it rather than toggling it off.
+    await c.set_massage_timer(20)
+    await c.set_massage_timer(0)
+    await c.set_light_timer("8 hours")
+    expected = [ACTIONS[k].frame for k in ("massage_timer_20", "massage_timer_cancel", "light_8_h")]
+    assert packets(c)[-3:] == expected
+    assert c._session.timer == 0
 
 
 def test_memory_persistence_is_per_app_without_cross_device_state():

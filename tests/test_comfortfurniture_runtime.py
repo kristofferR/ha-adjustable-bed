@@ -290,15 +290,23 @@ async def test_real_ha_install_imports_profile_and_exposes_entities(
 
 
 async def test_disconnect_clears_timer_selection(runtime):
-    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+    from custom_components.adjustable_bed.select import (
+        MASSAGE_TIMER_DESCRIPTION,
+        AdjustableBedMassageTimerSelect,
+    )
 
     hass, coord, client = runtime
-    timer = AdjustableBedControllerSelect(coord, coord.controller.controller_select_specs[0])
+    controller = coord.controller
+    assert not controller.supports_massage_timer_off
+    timer = AdjustableBedMassageTimerSelect(
+        coord, MASSAGE_TIMER_DESCRIPTION, controller.massage_timer_options, has_off=False
+    )
+    assert timer.options == ["10 min", "20 min", "30 min"]
     timer.hass = hass
     timer.async_write_ha_state = MagicMock()
     with virtual_clock():
-        await timer.async_select_option("20")
-    assert timer.current_option == "20"
+        await timer.async_select_option("20 min")
+    assert timer.current_option == "20 min"
 
     await coord.async_disconnect()
     assert timer.current_option is None

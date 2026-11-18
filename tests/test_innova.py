@@ -662,7 +662,7 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
     assert not exists("cover", "back_legs")
     assert not exists("button", "innova_massage_level")
     assert exists("button", "ore_comfort_massage_start")
-    assert exists("select", "controller_select_ore_comfort_massage_timer")
+    assert exists("select", "massage_timer")
     assert exists("number", "controller_number_ore_comfort_massage_wave")
     assert exists("switch", "under_bed_lights")
     assert not exists("binary_sensor", STATE_LIGHT)
@@ -924,19 +924,19 @@ async def test_disconnect_keeps_app_state_and_clears_reported_state(
         "number", DOMAIN, "AA:BB:CC:DD:EE:91_controller_number_ore_comfort_massage_head"
     )
     select = registry.async_get_entity_id(
-        "select", DOMAIN, "AA:BB:CC:DD:EE:91_controller_select_ore_comfort_massage_timer"
+        "select", DOMAIN, "AA:BB:CC:DD:EE:91_massage_timer"
     )
     await hass.services.async_call(
         "number", "set_value", {"entity_id": number, "value": 3}, blocking=True
     )
     await hass.services.async_call(
-        "select", "select_option", {"entity_id": select, "option": "20"}, blocking=True
+        "select", "select_option", {"entity_id": select, "option": "20 min"}, blocking=True
     )
     await coordinator.async_disconnect()
     await hass.async_block_till_done()
     assert coordinator.controller is None
     assert float(hass.states.get(number).state) == 3
-    assert hass.states.get(select).state == "20"
+    assert hass.states.get(select).state == "20 min"
 
     innova = _entry(hass, "AA:BB:CC:DD:EE:92", KEESON_VARIANT_INNOVA, 2)
     assert await hass.config_entries.async_setup(innova.entry_id)

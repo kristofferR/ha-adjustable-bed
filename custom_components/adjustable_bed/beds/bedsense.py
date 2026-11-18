@@ -13,19 +13,13 @@ from typing import TYPE_CHECKING
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ..card import (
-    CARD_HIDDEN,
-    CARD_LIGHT_STATE,
-    CARD_LIGHTING,
-    CARD_MASSAGE,
-    CARD_MASSAGE_TIMER,
-    CARD_UTILITY,
-)
+from ..card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CARD_UTILITY
 from ..codec import ff_frame as codec
 from ..const import CONF_BLE_DEVICE_NAME
 from ..controller_state import StateKey
 from ..detection import is_mac_like_name
 from ..profiles.ff_frame import BEDSENSE, BedSenseProfile, bedsense_layout
+from ..state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES
 from .base import BedController, ProfileExecution
 from .builder import BuildContext
 from .entity_specs import (
@@ -72,12 +66,21 @@ def _state_key(name: str) -> StateKey[object]:
     return StateKey[object](name)
 
 
-_SENSOR_CARDS = {
-    "massage_timer": CARD_MASSAGE_TIMER,
-    "light_duration": CARD_LIGHT_STATE,
-    **dict.fromkeys(
-        ("head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE
-    ),
+_SENSOR_CARDS = dict.fromkeys(("head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE)
+
+# The light timer select's options, each one app button.
+_LIGHT_TIMERS: Mapping[str, str] = {
+    "10 min": "light_10_min",
+    "8 hours": "light_8_h",
+    "10 hours": "light_10_h",
+}
+# The app indicator recorded per light button, as its select option.
+_LIGHT_OPTIONS: Mapping[str, str] = {"10 min": "10 min", "8 h": "8 hours", "10 h": "10 hours"}
+# The massage timer select's durations, each one app button.
+_MASSAGE_TIMERS: Mapping[int, str] = {
+    10: "massage_timer_10",
+    20: "massage_timer_20",
+    30: "massage_timer_30",
 }
 
 
@@ -100,19 +103,12 @@ _BUTTON_NAMES = {
     "leg_relax": "Leg relax",
     "lumbar": "Lumbar",
     "music": "Music",
-    "light_10_min": "Light for 10 minutes",
-    "light_8_h": "Light for 8 hours",
-    "light_10_h": "Light for 10 hours",
     "massage_head_up": "Head massage up",
     "massage_head_down": "Head massage down",
     "massage_foot_up": "Foot massage up",
     "massage_foot_down": "Foot massage down",
     "massage_wave_up": "Massage frequency up",
     "massage_wave_down": "Massage frequency down",
-    "massage_timer_10": "Massage timer 10 minutes",
-    "massage_timer_20": "Massage timer 20 minutes",
-    "massage_timer_30": "Massage timer 30 minutes",
-    "massage_timer_cancel": "Cancel massage timer",
 }
 
 
@@ -216,7 +212,8 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        # Memory recall/save and Flat/TV/Zero Gravity/Anti Snore have standard entities.
+        # Memory recall/save and Flat/TV/Zero Gravity/Anti Snore have standard
+        # entities; the timer buttons are the massage and light timer selects.
         keys = [
             k
             for k, a in ACTIONS.items()
@@ -225,6 +222,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
                 k.startswith(("circulation_", "clear_", "massage_", "light_"))
                 or k in ("lumbar", "music", "leg_relax", "rise", "decline")
             )
+            and not k.startswith(("massage_timer_", "light_"))
         ]
         specs = []
         for key in keys:
@@ -274,18 +272,54 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
                 _state_key(f"bedsense_{key}"),
                 "mdi:information-outline",
                 attribute_keys=(_state_key("bedsense_state_source"),),
-                entity_registry_enabled_default=True,
+                # Step counts only mirror the up/down buttons; the bed takes no level.
+                entity_registry_enabled_default=key == "circulation",
                 card=_SENSOR_CARDS.get(key, CARD_HIDDEN),
             )
-            for key in (
-                "circulation",
-                "massage_timer",
-                "light_duration",
-                "head_steps",
-                "foot_steps",
-                "wave_steps",
-            )
+            # The timer selects show the massage timer and light duration.
+            for key in ("circulation", "head_steps", "foot_steps", "wave_steps")
         )
+
+    def _layout_has(self, key: str) -> bool:
+        return self.layout in ACTIONS[key].variants
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # Every layout's app screen has the massage controls, timer included.
+        return True
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self.massage_timer_options)
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [m for m, key in _MASSAGE_TIMERS.items() if self._layout_has(key)]
+
+    @property
+    def supports_massage_timer_off(self) -> bool:
+        return self._layout_has("massage_timer_cancel")
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Choosing the running timer keeps it; the app's button would cancel it."""
+        if minutes and minutes not in self.massage_timer_options:
+            raise ValueError("Choose a massage timer this layout offers")
+        if minutes and minutes == self._session.timer:
+            return
+        await self.execute_action(_MASSAGE_TIMERS[minutes] if minutes else "massage_timer_cancel")
+
+    @property
+    def supports_light_timer(self) -> bool:
+        return bool(self.light_timer_options)
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        return [option for option, key in _LIGHT_TIMERS.items() if self._layout_has(key)]
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        if timer_option not in self.light_timer_options:
+            raise ValueError("Choose a light timer this layout offers")
+        await self.execute_action(_LIGHT_TIMERS[timer_option])
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -319,8 +353,11 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
     def _publish(self, source: str) -> None:
         self._state.update({f"bedsense_m{i}_saved": saved for i, saved in self._saved.items()})
         self._state["bedsense_state_source"] = source
+        light = self._state.get("bedsense_light_duration")
         self.forward_controller_state_updates(
-            *(_state_key(name)(value) for name, value in self._state.items())
+            *(_state_key(name)(value) for name, value in self._state.items()),
+            MASSAGE_TIMER_MINUTES(self._session.timer),
+            LIGHT_TIMER_OPTION(_LIGHT_OPTIONS.get(light) if isinstance(light, str) else None),
         )
 
     def _roles(self) -> list[BleakGATTCharacteristic]:

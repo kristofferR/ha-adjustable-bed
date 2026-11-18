@@ -296,7 +296,9 @@ def test_default_raw_state_and_no_unknown_position_semantics():
         "starcode_abm5_4_wave",
         "starcode_abm5_4_head_intensity",
     }
-    assert c.controller_select_specs[0].options == ("10", "20", "30")
+    assert c.controller_select_specs == ()
+    assert c.massage_timer_options == [10, 20, 30]
+    assert not c.supports_massage_timer_off
     assert not c.supports_massage_off_control
     assert not c.supports_light_color_control
 

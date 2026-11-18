@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.exceptions import HomeAssistantError
 
-from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESET_SAVE, CARD_UTILITY
+from ..card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -44,11 +44,11 @@ from ..const import (
 from ..controller_state import StateKey
 from ..profiles import keeson as profiles
 from ..profiles.keeson import KeesonProfile
+from ..state_keys import MASSAGE_TIMER_MINUTES
 from .base import BedController, ProfileExecution
 from .entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
-    ControllerSelectSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
@@ -118,7 +118,8 @@ MASSAGE_TIMER: Final = {"10": 0x10000030, "20": 0x10000031, "30": 0x10000032}
 STATE_LEVEL: Final = {
     zone: StateKey[int | None](f"ore_comfort_massage_{zone}_level") for zone in MASSAGE_BASE
 }
-STATE_TIMER: Final = StateKey[str | None]("ore_comfort_massage_timer")
+# The shared massage timer select reads this; the bed reports no timer.
+STATE_TIMER: Final = MASSAGE_TIMER_MINUTES
 
 # (cover key, translation key, up word, down word) for each app screen.
 _Axis = tuple[str, str, int, int]
@@ -428,7 +429,22 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
         if option not in MASSAGE_TIMER:
             raise ValueError(f"Invalid massage timer {option}")
         await self._send_single(MASSAGE_TIMER[option])
-        self.forward_controller_state_updates(STATE_TIMER(option))
+        self.forward_controller_state_updates(STATE_TIMER(int(option)))
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return True
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [int(option) for option in MASSAGE_TIMER]
+
+    @property
+    def supports_massage_timer_off(self) -> bool:
+        return False  # The timer words are durations; Stop is its own button.
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        await self.set_massage_timer_option(str(minutes))
 
     @property
     def persisted_app_state(self) -> Mapping[str, Any] | None:
@@ -458,21 +474,6 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
                 card=CARD_MASSAGE,
             )
             for zone in ("head", "foot", "wave")
-        )
-
-    @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        return (
-            ControllerSelectSpec(
-                key="ore_comfort_massage_timer",
-                translation_key="ore_comfort_massage_timer",
-                state_key=STATE_TIMER,
-                options=tuple(MASSAGE_TIMER),
-                select_fn=lambda ctrl, option: cast(
-                    OreComfortBedController, ctrl
-                ).set_massage_timer_option(option),
-                card=CARD_MASSAGE_TIMER,
-            ),
         )
 
     @property

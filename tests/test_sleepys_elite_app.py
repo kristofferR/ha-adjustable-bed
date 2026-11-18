@@ -327,7 +327,10 @@ def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
         assert "sleepys_app_query_position" in button_keys
         assert ("sleepys_app_massage_query" in button_keys) is (selector in _VOICE_SELECTORS)
         assert ("sleepys_app_color_code" in number_keys) is (selector in _VOICE_SELECTORS)
-        assert ("sleepys_app_massage_timer_code" in select_keys) is (selector in _VOICE_SELECTORS)
+        # Timer codes 1/2/3 are the shared massage timer select's 10/20/30 minutes.
+        assert controller.supports_massage_timer is (selector in _VOICE_SELECTORS)
+        assert not controller.supports_massage_timer_off
+        assert "sleepys_app_massage_timer" not in button_keys
 
         if selector in (*_POSITION_SLIDER_SELECTORS, *_VOICE_SELECTORS):
             assert {f"sleepys_app_target_axis_{axis}" for axis in range(3)} <= number_keys
@@ -579,7 +582,9 @@ async def test_massage_values_require_active_state_and_time_commit_skips_same_co
     await controller.set_massage_timer_code(2)
     controller._write_route.assert_not_awaited()
     await controller.set_massage_intensity("all", 2)
-    await controller.set_massage_timer_code(3)
+    await controller.set_massage_timer(30)
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
+    assert updates["massage_timer"] == 30
     routes = [call.args[0] for call in controller._write_route.await_args_list]
     assert [route.logical_values for route in routes] == [
         (4, 224, 6, 3, 3, 0),
@@ -700,7 +705,7 @@ def test_non_timer_layouts_keep_field_0b_out_of_the_timer_select(
 
     updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert "sleepys_app_field_0x0b" in updates
-    assert "sleepys_app_massage_timer_code" not in updates
+    assert "massage_timer" not in updates
 
 
 def test_unknown_timer_code_does_not_enter_the_declared_select_domain() -> None:
@@ -715,7 +720,7 @@ def test_unknown_timer_code_does_not_enter_the_declared_select_domain() -> None:
 
     updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["sleepys_app_field_0x0b"] == 0
-    assert "sleepys_app_massage_timer_code" not in updates
+    assert "massage_timer" not in updates
 
 
 @pytest.mark.parametrize(

@@ -211,7 +211,10 @@ async def test_profile_exposes_exact_controls_and_no_invented_queries():
     assert not ctrl.supports_single_address_pairing and not ctrl.supports_direct_position_control
     assert not ctrl.supports_position_feedback
     assert bed_traits(BED_TYPE_ESHINE).no_angle_feedback
-    assert len(ctrl.controller_button_specs) == 7
+    assert len(ctrl.controller_button_specs) == 4
+    # The three timer buttons are the massage timer select's durations.
+    assert ctrl.supports_massage_timer and ctrl.supports_massage_timer_off
+    assert ctrl.massage_timer_options == [10, 20, 30]
     assert {row["value"]: row["label"] for row in get_bed_type_options()}[
         BED_TYPE_ESHINE
     ] == "eShine app (E6000)"
@@ -230,6 +233,8 @@ async def test_buttons_and_generic_actions(sleeps):
     await ctrl.async_discover_capabilities()
     for spec in ctrl.controller_button_specs:
         await spec.press_fn(ctrl)
+    for minutes in (10, 20, 30, 0):
+        await ctrl.set_massage_timer(minutes)
     for method in (
         ctrl.preset_flat,
         ctrl.preset_zero_g,
@@ -247,6 +252,7 @@ async def test_buttons_and_generic_actions(sleeps):
         "6e01005fce",
         "6e010063d2",
         "6e010061d0",
+        "6e01005ecd",
         "6e010031a0",
         "6e010045b4",
         "6e010046b5",

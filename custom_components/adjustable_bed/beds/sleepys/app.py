@@ -37,7 +37,7 @@ from ...const import (
 )
 from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
-from ...state_keys import LIGHT_LEVEL, massage_intensity
+from ...state_keys import LIGHT_LEVEL, MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import BedController
 from ..builder import BuildContext
 from ..entity_specs import (
@@ -45,7 +45,6 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
-    ControllerSelectSpec,
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
@@ -153,7 +152,6 @@ def _same_uuid(left: str, right: str) -> bool:
 
 
 COLOR_CODE: Final = StateKey[int | None]("sleepys_app_color_code")
-MASSAGE_TIMER_CODE: Final = StateKey[str | None]("sleepys_app_massage_timer_code")
 MASSAGE_INTENSITY: Final = massage_intensity("all")
 
 
@@ -650,7 +648,7 @@ class SleepysEliteAppController(BedController):
                     and timer_code is not None
                     and 1 <= timer_code <= 3
                 ):
-                    state_updates.append(MASSAGE_TIMER_CODE(str(timer_code)))
+                    state_updates.append(MASSAGE_TIMER_MINUTES(timer_code * 10))
             self.forward_controller_state_updates(*state_updates)
 
     def _parse_notification(self, raw: bytes) -> dict[str, _ParsedValue] | None:
@@ -798,12 +796,21 @@ class SleepysEliteAppController(BedController):
 
     @property
     def supports_massage_timer(self) -> bool:
-        # The app sends opaque codes 1/2/3, not minute durations.
-        return False
+        return self.supports_massage
 
     @property
     def massage_timer_options(self) -> list[int]:
-        return []
+        # Timer codes 1/2/3 are the 10/20/30 minute choices.
+        return [10, 20, 30] if self.supports_massage else []
+
+    @property
+    def supports_massage_timer_off(self) -> bool:
+        return False  # The app's timer codes are durations only.
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        if minutes not in (10, 20, 30):
+            raise ValueError("Sleepy's massage timer is 10, 20 or 30 minutes")
+        await self.set_massage_timer_code(minutes // 10)
 
     @property
     def supports_light_level_control(self) -> bool:
@@ -961,24 +968,6 @@ class SleepysEliteAppController(BedController):
         return tuple(specs)
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        if not self.supports_massage:
-            return ()
-        options = ("1", "2", "3")
-        return (
-            ControllerSelectSpec(
-                key="sleepys_app_massage_timer_code",
-                translation_key="sleepys_app_massage_timer_code",
-                state_key=MASSAGE_TIMER_CODE,
-                options=options,
-                select_fn=lambda ctrl, value: cast(
-                    SleepysEliteAppController, ctrl
-                ).set_massage_timer_code(int(value)),
-                card=CARD_MASSAGE,
-            ),
-        )
-
-    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         specs: list[ControllerButtonSpec] = []
         app_actions = {
@@ -1030,11 +1019,6 @@ class SleepysEliteAppController(BedController):
                         "queryMassage",
                         "Refresh massage state",
                         "mdi:refresh",
-                    ),
-                    "sleepys_app_massage_timer": (
-                        "massageTimer",
-                        "Massage timer",
-                        "mdi:timer-outline",
                     ),
                     "sleepys_app_massage_wave_down": (
                         "waveReduce",
@@ -1251,7 +1235,7 @@ class SleepysEliteAppController(BedController):
         # HA value commits have no app gesture queue to retain or replay.
         await self._send_dynamic(route.builder, route.logical_values)
         self._app_fields["field_0x0b"] = code
-        self.forward_controller_state_updates(MASSAGE_TIMER_CODE(str(code)))
+        self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(code * 10))
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone != "all":
