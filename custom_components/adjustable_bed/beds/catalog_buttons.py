@@ -19,6 +19,7 @@ from enum import StrEnum
 from typing import Any, Final
 
 from ..card import (
+    CARD_CLIMATE,
     CARD_LIGHTING,
     CARD_MASSAGE,
     CARD_PRESET_SAVE,
@@ -43,6 +44,8 @@ class Kind(StrEnum):
     SAVE = "save"
     MASSAGE = "massage"
     LIGHT = "light"
+    # Fans and cooling a catalog lists with the bed's controls.
+    CLIMATE = "climate"
     # Anything else (music, fans, resets, Bluetooth): available, off by default.
     EXTRA = "extra"
 
@@ -53,6 +56,7 @@ PRESET_KEY: Final = "catalog_preset"
 SAVE_KEY: Final = "catalog_save"
 MASSAGE_KEY: Final = "catalog_massage"
 LIGHT_KEY: Final = "catalog_light"
+CLIMATE_KEY: Final = "catalog_climate"
 
 _CARDS: Final[dict[str, CardPlacement]] = {
     EXTRA_KEY: CARD_UTILITY,
@@ -60,6 +64,7 @@ _CARDS: Final[dict[str, CardPlacement]] = {
     SAVE_KEY: CARD_PRESET_SAVE,
     MASSAGE_KEY: CARD_MASSAGE,
     LIGHT_KEY: CARD_LIGHTING,
+    CLIMATE_KEY: CARD_CLIMATE,
 }
 
 # Labels a catalog uses for an empty slot or a menu heading, not a control.
@@ -234,10 +239,17 @@ def classify(label: str, *, kind: Kind | None = None) -> CatalogControl | None:
                 Kind.SAVE, f"program_memory_{slot}", memory_card(slot, save=True), name, None
             )
         return CatalogControl(Kind.SAVE, SAVE_KEY, CARD_PRESET_SAVE, name, {"preset": rest})
-    if kind is None and _EXTRA_WORDS.search(name) and "massage" not in name.lower():
+    # A catalog's group can hold music, fans or resets: they stay extras.
+    if (
+        kind in (None, Kind.PRESET, Kind.MASSAGE, Kind.LIGHT)
+        and _EXTRA_WORDS.search(name)
+        and "massage" not in name.lower()
+    ):
         return _shaped(Kind.EXTRA, EXTRA_KEY, name)
     if kind is None and _COMBO.fullmatch(name):
         return _shaped(Kind.PRESET, PRESET_KEY, name)
+    if kind is Kind.CLIMATE:
+        return _shaped(Kind.CLIMATE, CLIMATE_KEY, name)
     if kind in (None, Kind.MEMORY) and (memory := _MEMORY.fullmatch(name)):
         slot = int(memory["slot"])
         return CatalogControl(Kind.MEMORY, f"preset_memory_{slot}", memory_card(slot), name, None)
@@ -302,6 +314,24 @@ def catalog_button(
         entity_registry_enabled_default=kwargs.pop("enabled", True) and control.enabled,
         **kwargs,
     )
+
+
+def save_button(
+    key: str, label: str, press_fn: MotorCommandCallable, **kwargs: Any
+) -> ControllerButtonSpec:
+    """A catalog's save of a named preset (``label`` starts with "Save")."""
+    spec = catalog_button(key, label, press_fn, kind=Kind.SAVE, **kwargs)
+    assert spec is not None
+    return spec
+
+
+def massage_button(
+    key: str, label: str, press_fn: MotorCommandCallable, **kwargs: Any
+) -> ControllerButtonSpec:
+    """A catalog's massage control."""
+    spec = catalog_button(key, label, press_fn, kind=Kind.MASSAGE, **kwargs)
+    assert spec is not None
+    return spec
 
 
 def unique_buttons(

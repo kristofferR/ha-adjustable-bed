@@ -15,7 +15,7 @@ from ...execution import HOLD_CEILING_MS
 from ...profiles.richmat_mh_apps import APPS
 from ..base import BedController
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, relabel
+from ..catalog_buttons import Kind, relabel, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -502,7 +502,7 @@ class RichmatMHAppController(RufRichmatController):
                 lambda ctrl: _invoke(ctrl, "toggle_smart_light_lock"),
                 translation_key="richmat_mh_toggle_smart_light_lock", cancel_movement=False,
             ))
-        return tuple(specs)
+        return unique_buttons(specs)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

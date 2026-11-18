@@ -176,6 +176,7 @@ _BUTTON_NAMES: Mapping[str, str] = {
     "motion_bed_music": "Sleep music",
     "motion_bed_night_light": "Toggle night light",
     "motion_bed_sleepmian": "Toggle smart sleep",
+    "motion_bed_sync": "Toggle sync",
     "motion_bed_sleep_adjust_stop": "Stop sleep adjustment",
     "motion_bed_snore": "Anti-snore",
     "motion_bed_thermal_gear_4": "Climate off",

@@ -995,7 +995,8 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
         if self.protocol != "p3":
             items.update(
                 {
-                    27: "Stop all",
+                    # The shared Stop All sends the padded stop frame.
+                    27: "Stop movement",
                     28: "Massage on",
                     29: "Massage off",
                     31: "Massage time up",

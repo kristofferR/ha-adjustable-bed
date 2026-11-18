@@ -31,6 +31,7 @@ from ...controller_state import StateKey, sided, sided_updates
 from ...profiles import symphony as app
 from ..base import BedController, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -730,20 +731,21 @@ class SymphonyController(KeesonController):
             async def press(ctrl: BedController) -> None:
                 await fn(selected(ctrl))
 
-            return ControllerButtonSpec(
+            spec = catalog_button(
                 "symphony_" + key,
                 label,
                 press,
-                translation_key="symphony_save_action"
-                if card is CARD_PRESET_SAVE
-                else f"symphony_{card.section.value}_action",
-                translation_placeholders={"action": label},
+                kind={
+                    CARD_PRESET_SAVE: Kind.SAVE,
+                    CARD_PRESETS: Kind.PRESET,
+                    CARD_LIGHTING: Kind.LIGHT,
+                    CARD_MASSAGE: Kind.MASSAGE,
+                }.get(card),
                 # Refreshes and the status request are maintenance actions.
                 diagnostic=key in _MAINTENANCE_BUTTONS,
-                # Saving overwrites the stored preset, so the card asks first.
-                requires_confirmation=card is CARD_PRESET_SAVE,
-                card=card,
             )
+            assert spec is not None
+            return spec
 
         buttons = [
             button("refresh", "Refresh bed state", lambda c: c.query_state()),

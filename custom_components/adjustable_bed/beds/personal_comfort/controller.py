@@ -6,17 +6,16 @@ import asyncio
 from functools import partial
 from typing import TYPE_CHECKING, cast
 
-from ...card import CARD_MASSAGE
 from ...codec import personal_comfort as codec
 from ...command_scheduler import _settled
 from ...const import CONF_PRODUCT_TYPE
 from ...controller_state import StateUpdate
-from ...labels import display_label
 from ...profiles.personal_comfort import MODELS, PROFILES, PersonalComfortProfile
 from ...profiles.richmat import Button
 from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import BedController, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import massage_button
 from ..entity_specs import ControllerButtonSpec, ControllerMotorHoldSpec, MotorControlSpec
 from ..richmat.controller import RichmatProfileController
 from .air import PersonalComfortAir
@@ -176,14 +175,7 @@ class PersonalComfortBase(RichmatProfileController, PersonalComfortSession):  # 
             actions.append(("massage_head_down", "Decrease head massage"))
             actions.append(("massage_foot_down", "Decrease foot massage"))
         return tuple(
-            ControllerButtonSpec(
-                f"personal_comfort_{action}",
-                display_label(label),
-                partial(_massage, action=action),
-                translation_key="personal_comfort_action",
-                translation_placeholders={"action": display_label(label)},
-                card=CARD_MASSAGE,
-            )
+            massage_button(f"personal_comfort_{action}", label, partial(_massage, action=action))
             for action, label in actions
         )
 

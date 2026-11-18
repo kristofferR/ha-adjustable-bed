@@ -40,10 +40,11 @@ from ...const import (
 )
 from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
+from ...labels import display_label
 from ...profiles.richmat import RICHMAT_MH, RichmatProfile
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -54,7 +55,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..family_actions import YogaPresetActions
-from ..richmat.labels import screen_label
+from ..richmat.labels import command_label, screen_label
 from ..ruf_richmat.models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
 from . import catalog
 from .models import RICHMAT_MH_MODEL_CHOICES
@@ -853,7 +854,11 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         names: list[str | None] = []
         for slot, (recall, _save) in sorted(self._memory_slots().items()):
             label = _clean_label(recall.label)
-            names.append(None if label.lower() in _GENERIC_MEMORY_LABELS[slot] else label)
+            names.append(
+                None
+                if label.lower() in _GENERIC_MEMORY_LABELS[slot]
+                else display_label(command_label(label))
+            )
         return tuple(names)
 
     @property
@@ -938,7 +943,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                         cancel_movement=False,
                     )
                 )
-        return tuple(spec for spec in specs if spec is not None)
+        return unique_buttons(specs)
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
