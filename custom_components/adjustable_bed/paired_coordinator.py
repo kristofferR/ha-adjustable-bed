@@ -541,7 +541,10 @@ class PairedBedCoordinator:
             self._admission.note_stop(
                 target_side, self._topology.command_scope(command_resources(resource))
             )
-        self._cancel_behind_mode_transition(targets, command_resources(resource))
+        # Like an ordinary motor STOP, preempt any motion holding the writer.
+        self._cancel_behind_mode_transition(
+            targets, command_resources("motor:*" if resource.startswith("motor:") else resource)
+        )
         async with self._connection_mode_transition_lock:
             errors = await self._topology.stop_motor(targets, stop_fn, resource)
         if errors:

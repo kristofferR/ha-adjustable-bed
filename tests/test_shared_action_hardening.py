@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import services
@@ -186,6 +186,15 @@ def gate(bed: Bed) -> tuple[asyncio.Event, asyncio.Event]:
     return entered, release
 
 
+async def until(condition: Callable[[], bool]) -> None:
+    """Let other tasks run until ``condition`` holds, failing instead of spinning."""
+    for _ in range(1000):
+        if condition():
+            return
+        await asyncio.sleep(0)
+    pytest.fail("condition never held")
+
+
 async def test_stop_during_a_later_check_writes_no_bed(hass) -> None:
     async with beds(hass) as made:
         first, second = made.items
@@ -256,15 +265,17 @@ async def test_bed_whose_link_changed_after_its_check_fails_before_any_write(
         assert first.writes == second.writes == []
 
 
-async def test_concurrent_pair_connects_both_sides_before_either_is_written(hass) -> None:
+@pytest.mark.parametrize("topology", ["concurrent", "sequential"])
+async def test_combined_bed_prepares_both_sides_before_either_is_written(hass, topology) -> None:
     async with beds(
-        hass, capability=AlarmCapability(), topology="concurrent", connected=False
+        hass, capability=AlarmCapability(), topology=topology, connected=False
     ) as made:
         left, right = made.items
         right.connect_ok = False
-        with virtual_clock(), pytest.raises(ServiceValidationError) as raised:
+        # The right side cannot connect: a connection error, or the sequential
+        # cycle's side error naming it.
+        with virtual_clock(), pytest.raises((ConnectionError, HomeAssistantError)):
             await set_alarm(hass, [(made.pair, "both")])
-        assert raised.value.translation_key == "bed_unavailable"
         assert left.writes == right.writes == []
         assert left.stops == right.stops == 0
         right.connect_ok = True
@@ -296,6 +307,10 @@ async def test_write_error_on_a_combined_bed_keeps_its_translation(hass) -> None
         async def refuse(alarm: AlarmRequest) -> None:
             raise services.AlarmError("alarm_refresh_needed", "Refresh the alarm, then try again")
 
+        async def plain(alarm: AlarmRequest) -> None:
+            raise ConnectionError("left link failed")
+
+        left._controller.configure_alarm = plain  # type: ignore[union-attr,method-assign]
         right._controller.configure_alarm = refuse  # type: ignore[union-attr,method-assign]
         with virtual_clock(), pytest.raises(ServiceValidationError) as raised:
             await set_alarm(hass, [(made.pair, "both")])
@@ -401,11 +416,12 @@ async def test_preset_checked_offline_is_refused_by_the_live_controller(hass, ac
         assert bed.recalls == []
 
 
-async def test_pair_stop_does_not_wait_behind_the_one_link_fallback(hass) -> None:
+@pytest.mark.parametrize("stop", ["side", "other_motor"])
+async def test_pair_stop_does_not_wait_behind_the_one_link_fallback(hass, stop) -> None:
     from custom_components.adjustable_bed import paired_topology
 
     async with beds(hass, capability=AlarmCapability(), topology="concurrent") as made:
-        pair, (left, right) = made.pair, made.items
+        pair, right = made.pair, made.items[1]
         pair._automatic_connection_mode = True
         started = asyncio.Event()
 
@@ -418,7 +434,9 @@ async def test_pair_stop_does_not_wait_behind_the_one_link_fallback(hass) -> Non
             patch.object(paired_topology, "connection_slot_exhausted", return_value=True),
             patch.object(paired_topology, "shared_connection_slot_pressure", return_value=True),
         ):
-            move = asyncio.create_task(right.async_execute_controller_command(long_move))
+            move = asyncio.create_task(
+                right.async_execute_controller_command(long_move, resource="motor:legs")
+            )
             await started.wait()
             # A failed reconnect on the left starts the fallback, which waits
             # for the right side's running command while holding its lock.
@@ -431,7 +449,15 @@ async def test_pair_stop_does_not_wait_behind_the_one_link_fallback(hass) -> Non
             assert pair._connection_mode_transition_lock.locked()
             began = clock.time()
             async with asyncio.timeout(7200):
-                await pair.async_stop_command(side="right")
+                if stop == "side":
+                    await pair.async_stop_command(side="right")
+                else:
+                    # A back STOP preempts the legs move holding the writer.
+                    await pair.async_stop_motor(
+                        lambda controller: controller.move_back_stop(),
+                        "motor:back",
+                        side="right",
+                    )
             # The running move ended at once; the fallback then released the
             # link, which halts that side, instead of waiting out the move.
             assert clock.time() - began < 60
@@ -439,3 +465,99 @@ async def test_pair_stop_does_not_wait_behind_the_one_link_fallback(hass) -> Non
             assert move.done()
             async with asyncio.timeout(7200):
                 await asyncio.gather(move, fallback, return_exceptions=True)
+
+
+async def test_bed_changed_while_a_write_waits_for_its_lane_writes_none(hass) -> None:
+    async with beds(hass) as made:
+        first, second = made.items
+        busy = asyncio.Event()
+
+        async def hold(_controller: AlarmController) -> None:
+            await busy.wait()
+
+        async def occupy_first(_controller: AlarmController) -> None:
+            # The first bed's lane is busy when its write is queued.
+            made.occupied = asyncio.create_task(  # type: ignore[attr-defined]
+                first.async_execute_controller_command(hold, cancel_running=False)
+            )
+
+        second.on_check = occupy_first  # type: ignore[method-assign]
+        with virtual_clock():
+            task = asyncio.create_task(set_alarm(hass, [(first, "both"), (second, "both")]))
+            await until(lambda: first._command_scheduler.has_pending)
+            await second.async_disconnect()
+            busy.set()
+            with pytest.raises(ServiceValidationError) as raised:
+                await task
+            await made.occupied  # type: ignore[attr-defined]
+        assert raised.value.translation_key == "bed_changed"
+        assert first.writes == second.writes == []
+
+
+async def test_read_only_check_waits_for_movement_instead_of_stopping_it(hass) -> None:
+    capability = AlarmCapability(live_check=True, cancel_running=True, resource=None)
+    async with beds(hass, capability=capability, topology="concurrent") as made:
+        left, right = made.items
+        moving, release = asyncio.Event(), asyncio.Event()
+        contexts = []
+
+        async def move(_controller: AlarmController) -> None:
+            contexts.append(services.current_command_context())
+            moving.set()
+            await release.wait()
+
+        with virtual_clock():
+            motion = asyncio.create_task(
+                left.async_execute_controller_command(move, resource="motor:back")
+            )
+            await moving.wait()
+            task = asyncio.create_task(set_alarm(hass, [(made.pair, "both")]))
+            await until(lambda: left._command_scheduler.has_pending)
+            assert not contexts[0].cancel_event.is_set()
+            release.set()
+            await asyncio.gather(motion, task)
+        assert len(left.writes) == len(right.writes) == 1
+
+
+async def test_stop_on_another_bed_while_a_seek_connects_moves_neither(hass) -> None:
+    async with beds(hass, connected=False) as made:
+        first, second = made.items
+        for bed in made.items:
+            bed.async_seek_position = AsyncMock()  # type: ignore[method-assign]
+        entered, release = asyncio.Event(), asyncio.Event()
+        # Preflight checks offline; the first bed connects when its seek starts.
+        first.connect_gate = (entered, release)
+        config = {
+            "position_key": "back",
+            "move_up_fn": AsyncMock(),
+            "move_down_fn": AsyncMock(),
+            "move_stop_fn": AsyncMock(),
+            "max_value": 60.0,
+        }
+        with (
+            patch.object(services, "_position_config", return_value=config),
+            patch.object(
+                services,
+                "_resolve_sided_targets",
+                return_value=([(first, "both"), (second, "both")], []),
+            ),
+            virtual_clock(),
+        ):
+            task = asyncio.create_task(
+                hass.services.async_call(
+                    DOMAIN,
+                    "set_position",
+                    {"device_id": "bed", "motor": "back", "position": 30},
+                    blocking=True,
+                )
+            )
+            await entered.wait()
+            await second.async_stop_command()
+            release.set()
+            await task
+        first.async_seek_position.assert_not_awaited()
+        second.async_seek_position.assert_not_awaited()
+
+
+def test_whole_number_keeps_large_integers_for_the_range_check() -> None:
+    assert services._whole_number(10**400) == 10**400

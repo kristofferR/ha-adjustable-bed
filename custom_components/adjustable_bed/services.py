@@ -370,7 +370,7 @@ def _whole_number(value: object) -> int:
         isinstance(value, bool)
         or not isinstance(value, (int, float))
         # YAML accepts .inf and .nan, which have no whole-number value.
-        or not math.isfinite(value)
+        or (isinstance(value, float) and not math.isfinite(value))
         or value != int(value)
     ):
         raise _invalid("whole_number_required", f"Use a whole number instead of {value!r}", value=value)
@@ -616,15 +616,22 @@ async def _execute_sided_translated(
 ) -> None:
     """Run ``_execute_sided``, surfacing a combined bed's translated side error.
 
-    A combined bed wraps each side's failure in one untranslated error. When
-    every side failed validation, raise the first side's own message instead.
+    A combined bed wraps each side's failure in one untranslated error. Raise
+    the first translated side error instead, with the combined one as cause.
     """
     try:
         await _execute_sided(coordinator, side, command_fn, **kwargs)
     except PairedSideError as err:
-        errors = list(err.side_errors.values())
-        if errors and all(isinstance(error, ServiceValidationError) for error in errors):
-            raise errors[0] from err
+        translated = next(
+            (
+                error
+                for error in err.side_errors.values()
+                if isinstance(error, ServiceValidationError) and error.translation_key
+            ),
+            None,
+        )
+        if translated is not None:
+            raise translated from err
         raise
 
 
@@ -942,7 +949,7 @@ async def handle_save_preset(call: ServiceCall) -> None:
         # still-connected preflighted bed that never ran if one fails.
         try:
             for (coordinator, side), admission in zip(targets, admissions, strict=True):
-                await _execute_sided(
+                await _execute_sided_translated(
                     coordinator, side, program, cancel_running=False, admission=admission
                 )
         except Exception:
@@ -1242,19 +1249,17 @@ async def _execute_position_requests(
             f"motor:{plans[(_plan_key(target), motor)]['position_key']}" for motor, _ in requests
         )
 
-    async def recheck(target: BedChild) -> None:
-        """Seek only what preflight checked, on the controller that moves the bed."""
-        controller = await _get_controller_for_service(target)
-        with controller_side_scope(target):
-            for motor, position in requests:
-                checked = plans[(_plan_key(target), motor)]
-                live = _position_config(target, controller, motor, position)
-                if any(live.get(key) != checked.get(key) for key in _CHECKED_SEEK_FIELDS):
-                    raise _bed_changed()
-                plans[(_plan_key(target), motor)] = live
-
     async def seek(target: BedChild, motor: str, position: float) -> None:
-        config = plans[(_plan_key(target), motor)]
+        # Seek only what preflight checked, on the controller that moves the bed.
+        controller = await _get_controller_for_service(target)
+        checked = plans[(_plan_key(target), motor)]
+        with controller_side_scope(target):
+            config = _position_config(target, controller, motor, position)
+        if any(config.get(key) != checked.get(key) for key in _CHECKED_SEEK_FIELDS):
+            raise _bed_changed()
+        # A STOP on any selected bed while this one connected keeps it still.
+        if selection.stopped():
+            return
         await target.async_seek_position(
             position_key=cast(str, config["position_key"]),
             target_angle=position,
@@ -1267,9 +1272,7 @@ async def _execute_position_requests(
         stop_epochs: Mapping[int, int],
     ) -> Callable[[BedChild], Coroutine[Any, Any, None]]:
         async def run(target: BedChild) -> None:
-            operations: list[Callable[[], Coroutine[Any, Any, None]]] = [
-                lambda: recheck(target)
-            ]
+            operations: list[Callable[[], Coroutine[Any, Any, None]]] = []
             for motor, position in requests:
 
                 async def operation(
@@ -2110,7 +2113,7 @@ async def handle_rename(call: ServiceCall) -> None:
 
     try:
         for coordinator, side in targets:
-            await _execute_sided(
+            await _execute_sided_translated(
                 coordinator, side, rename, cancel_running=False, resource="configuration"
             )
             for target in _command_targets(coordinator, side):
@@ -2559,7 +2562,7 @@ async def handle_set_alarm(call: ServiceCall) -> None:
 
     preflighted = await _preflight_each(targets, check)
     try:
-        finished = await _write_checked_alarms(call, selection, plans, preflighted, alarm, given)
+        finished = await _write_checked_alarms(call, selection, plans, alarm, given)
     except BaseException:
         await _release_preflighted(preflighted)
         raise
@@ -2585,29 +2588,26 @@ async def _write_checked_alarms(
     call: ServiceCall,
     selection: _Selection,
     plans: Mapping[int, AlarmCapability],
-    preflighted: PreflightedSides,
     alarm: AlarmRequest,
     given: Collection[str],
 ) -> bool:
     """Prepare every side, verify the whole selection, then write each target.
 
-    Returns False when a STOP ended the call early. A STOP before the first
-    write leaves every bed unwritten; one during the writes skips the rest.
+    Every write verifies the whole selection again once it owns its link.
+    Returns False when a STOP ended the call early: one before the first
+    write leaves every bed unwritten, one during the writes skips the rest.
     """
     call_task = asyncio.current_task()
     groups = list(zip(selection.targets, selection.children, strict=True))
     sessions: dict[int, _CheckedSession] = {}
 
-    # Beds that read their stored alarms are checked live, and both sides of a
-    # concurrent combined bed connect, before anything is written.
+    # Beds that read their stored alarms, and every side of a combined bed, are
+    # prepared on a live link before anything is written.
     prepare: list[tuple[BedTarget, str, BedChild]] = []
     for (parent, side), group in groups:
-        barrier = (
-            _pair_mode(parent) == PAIR_CONNECTION_MODE_CONCURRENT
-            and len({child.operation_identity for child in group}) > 1
-        )
+        combined = len({child.operation_identity for child in group}) > 1
         for child in group:
-            if (plans[id(child)].live_check or barrier) and all(
+            if (plans[id(child)].live_check or combined) and all(
                 child is not other for _, _, other in prepare
             ):
                 prepare.append((parent, _child_side(parent, side, child), child))
@@ -2627,26 +2627,29 @@ async def _write_checked_alarms(
 
     async def prepare_side(parent: BedTarget, side: str, child: BedChild) -> None:
         plan = plans[id(child)]
-        if not plan.live_check:
-            controller = await _get_controller_for_service(child)
-            preflighted.append((parent, child))
-            sessions[id(child)] = _CheckedSession(controller, _connection_generation(child))
-            return
 
-        async def check_live(controller: BedController, capability: AlarmCapability) -> None:
-            await controller.check_alarm(_with_bed_defaults(alarm, capability, given))
+        async def check_live(controller: BedController, _capability: AlarmCapability) -> None:
+            request = _check_alarm(child.name, controller, alarm, given)
+            if plan.live_check:
+                await controller.check_alarm(request)
             sessions[id(child)] = _CheckedSession(controller, _connection_generation(child))
 
-        # One side at a time: a failed read is not a reason to STOP the other side.
-        await _execute_alarm_step(parent, side, step(check_live), plan)
+        # One side at a time, and a read never preempts movement: a failed
+        # check is not a reason to stop anything.
+        await _execute_alarm_step(parent, side, step(check_live), plan, cancel_running=False)
 
-    def require_checked_sessions() -> None:
-        """Refuse a side whose link dropped or reconnected after its check."""
+    def unchanged(skip: Collection[int]) -> bool:
+        """Verify every selected side; False when a STOP reached one.
+
+        ``skip`` holds sides already written, or writing now, whose link this
+        call may have changed itself.
+        """
+        selection.require_unchanged(call)
         for (parent, _side), group in groups:
             sequential = _pair_mode(parent) == PAIR_CONNECTION_MODE_SEQUENTIAL
             for child in group:
                 session = sessions.get(id(child))
-                if session is None:
+                if session is None or id(child) in skip:
                     continue
                 if _connection_generation(child) == session.generation and (
                     child.is_connected
@@ -2656,16 +2659,22 @@ async def _write_checked_alarms(
                 ):
                     continue
                 raise _bed_changed()
+        return not selection.stopped()
 
     def require_write_session(
         parent: BedTarget, group: tuple[BedChild, ...], controller: BedController
     ) -> BedChild:
-        """Return the side writing on ``controller``, if it writes on the checked session."""
-        child = next((item for item in group if item.controller is controller), None)
-        checked = [sessions[id(item)] for item in group if id(item) in sessions]
-        if not checked or any(controller is session.controller for session in checked):
-            return child or group[0]
+        """Return the side writing on ``controller``, if it writes on its checked session."""
+        checked = [item for item in group if id(item) in sessions]
+        owner = next(
+            (item for item in checked if sessions[id(item)].controller is controller), None
+        )
+        if owner is not None or not checked:
+            return owner or next(
+                (item for item in group if item.controller is controller), group[0]
+            )
         # Only the sequential cycle of this call may open a new session.
+        child = next((item for item in checked if item.controller is controller), None)
         sequential = getattr(parent, "_sequential", None)
         cycle = sequential._cycle if sequential is not None else None
         if (
@@ -2674,24 +2683,29 @@ async def _write_checked_alarms(
             and cycle.task is call_task
             and isinstance(parent, PairedBedCoordinator)
             and cycle.matches(parent._admission)
+            and getattr(child, "_connection_creator_task", None) is cycle.task
+            and _connection_generation(child)
+            == cast("int", sessions[id(child)].generation) + 1
         ):
-            session = sessions.get(id(child))
-            if session is None:
-                return child
-            if (
-                getattr(child, "_connection_creator_task", None) is cycle.task
-                and _connection_generation(child) == cast("int", session.generation) + 1
-            ):
-                return child
+            return child
         raise _bed_changed()
+
+    written: set[int] = set()
+    stopped = False
 
     def write(
         parent: BedTarget, group: tuple[BedChild, ...]
     ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
         async def configure(controller: BedController, _capability: AlarmCapability) -> None:
+            nonlocal stopped
             child = require_write_session(parent, group, controller)
+            # Verify the whole selection again once this side owns its link.
+            if stopped or not unchanged({*written, id(child)}):
+                stopped = True
+                return
             # Check the request again on the controller that actually writes.
             await controller.configure_alarm(_check_alarm(child.name, controller, alarm, given))
+            written.add(id(child))
 
         return step(configure)
 
@@ -2703,19 +2717,16 @@ async def _write_checked_alarms(
             if selection.stopped():
                 return False
             await prepare_side(parent, side, child)
-
-        # Verify the whole selection before the first write.
-        selection.require_unchanged(call)
-        require_checked_sessions()
-        if selection.stopped() or any(id(child) not in sessions for _, _, child in prepare):
+        if any(id(child) not in sessions for _, _, child in prepare):
             return False
 
-        for index, ((parent, side), group) in enumerate(groups):
-            if index:
-                selection.require_unchanged(call)
-                if selection.stopped():
-                    return False
+        for (parent, side), group in groups:
+            if not unchanged(written):
+                return False
             await _execute_alarm_step(parent, side, write(parent, group), plans[id(group[0])])
+            if stopped:
+                return False
+            written.update(id(child) for child in group)
     return True
 
 
@@ -2724,6 +2735,8 @@ async def _execute_alarm_step(
     side: str,
     command: Callable[[BedController], Coroutine[Any, Any, None]],
     plan: AlarmCapability,
+    *,
+    cancel_running: bool | None = None,
 ) -> None:
     """Run one alarm step, owning the STOP state current right now."""
     resources = ALL_COMMAND_RESOURCES if plan.resource is None else (plan.resource,)
@@ -2731,7 +2744,7 @@ async def _execute_alarm_step(
         parent,
         side,
         command,
-        cancel_running=plan.cancel_running,
+        cancel_running=plan.cancel_running if cancel_running is None else cancel_running,
         resource=plan.resource,
         admission=_capture_command_admission(parent, side, resources),
     )
@@ -2772,7 +2785,7 @@ async def handle_sync_clock(call: ServiceCall) -> None:
     command = live.command(targets, sync)
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
-            await _execute_sided(
+            await _execute_sided_translated(
                 coordinator,
                 side,
                 command,
