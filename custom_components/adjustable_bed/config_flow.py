@@ -4914,7 +4914,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     for choice, label in _family_rows(detected, other_receivers)
                 ),
                 SelectOptionDict(value=_FAMILY_NOT_SURE, label=not_sure),
-            ]
+            ],
+            # A protocol route submitted by its ID still selects it.
+            accepted=PROTOCOL_ROUTES,
         )
         if user_input is not None:
             choice = picker(user_input[CONF_BED_TYPE])

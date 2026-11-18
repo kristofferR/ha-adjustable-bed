@@ -122,3 +122,11 @@ def test_every_field_description_has_its_field_label():
                         if key not in labels
                     ]
         assert not missing, (name, missing)
+
+
+def test_a_fixable_issue_explains_itself_in_its_flow():
+    """Hassfest refuses an issue with both a ``description`` and a ``fix_flow``."""
+    for name in ("strings.json", "translations/en.json"):
+        issues = json.loads((PACKAGE / name).read_text()).get("issues", {})
+        both = [key for key, body in issues.items() if "description" in body and "fix_flow" in body]
+        assert not both, (name, both)

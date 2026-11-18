@@ -10089,12 +10089,11 @@
     },
     "octo_pin_required": {
       "title": "PIN required for {name}",
-      "description": "**{name}** ({address}) is locked with a PIN, and Home Assistant has none saved for it. Its controls stay unavailable until the PIN is saved.\n\nSelect **Fix** to enter the PIN. If you do not know it, follow the receiver manufacturer's instructions.",
       "fix_flow": {
         "step": {
           "init": {
             "title": "Enter the PIN for {name}",
-            "description": "Enter the four-digit PIN set on the Octo receiver. Home Assistant saves it and reconnects to the bed.",
+            "description": "**{name}** is locked with a PIN, and Home Assistant has none saved for it. Its controls stay unavailable until the PIN is saved.\n\nEnter the four-digit PIN set on the Octo receiver. Home Assistant saves it and reconnects to the bed. If you do not know it, follow the receiver manufacturer's instructions.",
             "data": {
               "octo_pin": "Octo PIN"
             }

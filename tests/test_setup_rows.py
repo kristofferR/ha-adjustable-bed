@@ -236,3 +236,9 @@ async def test_the_brand_list_asks_which_okin_receiver_in_plain_words(hass):
         await flow.async_step_okin_receiver({"choice": const.BED_TYPE_OKIN_FFE})
     after.assert_awaited_once()
     assert flow._selected_bed_type == const.BED_TYPE_OKIN_FFE
+    # A protocol route submitted by its ID, as the brand list once offered it, still works.
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    with patch.object(flow, "_async_after_app_choice", new=AsyncMock()):
+        await flow.async_step_select_family({const.CONF_BED_TYPE: const.BED_TYPE_OKIN_ORE})
+    assert flow._selected_bed_type == const.BED_TYPE_OKIN_ORE
