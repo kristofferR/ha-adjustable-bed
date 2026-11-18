@@ -1,7 +1,5 @@
 {
   "com-ore-serta330": {
-    "artifact_sha256": "dfef30206d9f0b61a56fbb74602c2a04bbbc388ab0eb933cd10084bfe5a65146",
-    "report_sha256": "9351e87c0603db9fed64e4a0421c2c685535bb3e58a42eca0c92f55a3871d81b",
     "vectors": [
       {
         "id": "P1-btnFlat",
@@ -744,8 +742,6 @@
     ]
   },
   "com-ore-tempur": {
-    "artifact_sha256": "f3c98817a94bf697fb02fe6850134cf6c248b2bb69f10a6943007d291487bb60",
-    "report_sha256": "22ae6a1c030e495905571c43a74cddd0cfcdaa9af0df8e68a28d9d95bf9cd654",
     "vectors": [
       {
         "id": "key-head_up",
@@ -2096,8 +2092,6 @@
     ]
   },
   "com-sbi-costco": {
-    "artifact_sha256": "0b1be16e910c944624a6a2991a23840e23dae88a8eba750a12f3c773ffd63803",
-    "report_sha256": "05cdd9c6b946c90c92fd2dd06c326e68930cb5ad1c479ee7b5d5d438cdaf481c",
     "vectors": [
       {
         "id": "V01",
@@ -2553,8 +2547,6 @@
     ]
   },
   "com-sfd-ergomotion": {
-    "artifact_sha256": "9b0f2fd91e57f64d8cb3da762896adb1c1410cfff82615e4c8051ac367c72dc6",
-    "report_sha256": "92fa7463033fe02f235314ab8b77021bcee14b9f47bbdfec1f0c376be3872355",
     "vectors": [
       {
         "id": "V01",
@@ -3339,8 +3331,6 @@
     ]
   },
   "com-sfd-omazz": {
-    "artifact_sha256": "bfb77d2660c8b7dd62472d063eed6e2b0c476dcfbce83edf956f54bec0130d87",
-    "report_sha256": "ff80e7d82883a6216a3cf762f3504330621709acd5be1f4a43b30ddc4c914be4",
     "vectors": [
       {
         "id": "P1-CTRL-01",
@@ -3561,8 +3551,7 @@
               "delta_ms": 7384250,
               "wake_to_vibrate": true
             }
-          ],
-          "delta_source": "parsed target local date/time minus current Date"
+          ]
         },
         "expected_bytes": "ED 80 02 02 03 04 03 00 00 00 00 00 00 00 00 84"
       },
@@ -4065,8 +4054,6 @@
     ]
   },
   "com-sfd-row": {
-    "artifact_sha256": "eeb3fac46a412395cddd0986d85cf2d4b141880b068f4e4f81baac305e1d43ee",
-    "report_sha256": "c254387dc50c66adcbd1a3f0a3ee5a63cf656ea5aa2c00a05fa292ebe9bd38de",
     "vectors": [
       {
         "id": "V01_KEY_ONE",
@@ -4217,20 +4204,7 @@
               "wake": true
             }
           ],
-          "timezone": "Europe/Oslo",
-          "source_trace": {
-            "now_local": "2026-10-26T12:30:00",
-            "rows": [
-              {
-                "enabled": true,
-                "hour": 13,
-                "minute": 30,
-                "days_mask": 0,
-                "wake": true
-              }
-            ],
-            "purpose": "Reachable stored alarm fields that exercise the source builder's +1 hour case."
-          }
+          "timezone": "Europe/Oslo"
         },
         "expected_bytes": "ED 80 02 01 00 00 03 00 00 00 00 00 00 00 00 8C"
       },
@@ -4248,20 +4222,7 @@
               "wake": false
             }
           ],
-          "timezone": "Europe/Oslo",
-          "source_trace": {
-            "now_local": "2026-10-26T11:31:00",
-            "rows": [
-              {
-                "enabled": true,
-                "hour": 11,
-                "minute": 30,
-                "days_mask": 0,
-                "wake": false
-              }
-            ],
-            "purpose": "Reachable stored alarm fields that exercise the source builder's -1 minute case."
-          }
+          "timezone": "Europe/Oslo"
         },
         "expected_bytes": "ED 80 02 00 FF 00 00 00 00 00 00 00 00 00 00 91"
       },
@@ -4363,41 +4324,7 @@
               "wake": true
             }
           ],
-          "timezone": "Europe/Oslo",
-          "source_trace": {
-            "now_local": "2026-10-26T00:00:00",
-            "rows": [
-              {
-                "enabled": true,
-                "hour": 1,
-                "minute": 0,
-                "days_mask": 0,
-                "wake": true
-              },
-              {
-                "enabled": true,
-                "hour": 2,
-                "minute": 0,
-                "days_mask": 0,
-                "wake": true
-              },
-              {
-                "enabled": true,
-                "hour": 3,
-                "minute": 0,
-                "days_mask": 0,
-                "wake": true
-              },
-              {
-                "enabled": true,
-                "hour": 4,
-                "minute": 0,
-                "days_mask": 0,
-                "wake": true
-              }
-            ],
-            "purpose": "Four enabled stored one-shot rows reach the fourth fixed-slot write before mode dispatch."
-          }
+          "timezone": "Europe/Oslo"
         },
         "expected_bytes": "NO TX (caught exception while building either table)",
         "notes": "Both tables are built before mode dispatch, so four one-shot rows also suppress a requested recurring-table mode-1 send."
@@ -4642,8 +4569,6 @@
     ]
   },
   "com-sfd-slim": {
-    "artifact_sha256": "57fc9f61148e8eefa885e006ab371de02f79ffb92d49677d306b1999007f7019",
-    "report_sha256": "b22be65a5bc86f3be68e76be1faba92c179267322a644263d1cfe3d5e03d933a",
     "vectors": [
       {
         "id": "A.reset",
@@ -5423,8 +5348,6 @@
     ]
   },
   "com-sfd-tempur_au": {
-    "artifact_sha256": "f3c19632ce4da141f3fd4f46253a5bd511a28a680fd0b70a34db6a899c732c7b",
-    "report_sha256": "178bdbe4ec3a67b36d98823df979f489f0ec0081d1cd750f6b3450337ca0bc17",
     "vectors": [
       {
         "id": "cmd-00000000",
@@ -6003,8 +5926,7 @@
             0,
             2,
             0
-          ],
-          "source_note": "synthetic host-parser vector, not captured device traffic"
+          ]
         },
         "expected_bytes": "NO_PACKET; timer_icon=ic_timer_20min (status=2)"
       },
@@ -6031,8 +5953,7 @@
             32,
             2,
             0
-          ],
-          "source_note": "synthetic host-parser vector, not captured device traffic"
+          ]
         },
         "expected_bytes": "NO_PACKET; parser_skip=bit5_set_at_byte13"
       },
@@ -6062,8 +5983,7 @@
             0,
             0,
             0
-          ],
-          "source_note": "synthetic host-parser vector, not captured device traffic"
+          ]
         },
         "expected_bytes": "NO_PACKET; timer_icon=ic_timer_30min (status=3)"
       },
@@ -6093,8 +6013,7 @@
             0,
             0,
             0
-          ],
-          "source_note": "synthetic host-parser vector, not captured device traffic"
+          ]
         },
         "expected_bytes": "NO_PACKET; parser_skip=bit5_set_at_byte14"
       },
@@ -6125,8 +6044,7 @@
             0,
             0,
             0
-          ],
-          "source_note": "synthetic host-parser vector, not captured device traffic"
+          ]
         },
         "expected_bytes": "NO_PACKET; timer_icon=ic_timer_off (status=-1)"
       },
@@ -6157,8 +6075,7 @@
             0,
             0,
             0
-          ],
-          "source_note": "synthetic host-parser vector, not captured device traffic"
+          ]
         },
         "expected_bytes": "NO_PACKET; timer_icon_unchanged (status=0)"
       },
@@ -6184,8 +6101,7 @@
             0,
             0,
             0
-          ],
-          "source_note": "synthetic host-parser vector, not captured device traffic"
+          ]
         },
         "expected_bytes": "NO_PACKET; parser_reject=length_15"
       },
@@ -6213,7 +6129,6 @@
             1,
             0
           ],
-          "source_note": "synthetic host-parser vector, not captured device traffic",
           "variants": [
             "B1",
             "B2",
@@ -6272,8 +6187,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Enabled recurring row, seven Boolean weekday flags, wake byte enabled, mode 1. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-one-time-mode2-positive",
@@ -6324,8 +6238,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Enabled one-time row with an explicit post-SimpleDateFormat epoch delta of 1h30m15s; mode 2. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-mode0-weekly-then-one-time",
@@ -6396,8 +6309,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Mode 0 builds both tables, sends weekly, sleeps 500ms, then sends one-time; wake bytes are zero. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-disabled-rows-count-without-slots",
@@ -6468,8 +6380,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Disabled rows increment the two counters but do not write records; both empty checksummed tables are dispatched. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-weekly-three-enabled-boundary",
@@ -6551,8 +6462,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Three enabled recurring rows fill exactly the three weekly record slots. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-weekly-four-enabled-overflow",
@@ -6638,8 +6548,7 @@
           "parse_exception_rows_skipped": 0,
           "caught": "outer Exception handler; byte-array bounds failure",
           "physical_or_on_air_effect": "UNVERIFIED; no sendMessage call is reached"
-        },
-        "source_note": "Fourth enabled recurring row crosses the checksum index then raises on index 16; outer catch exits before any dispatch. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-one-time-three-enabled-boundary",
@@ -6724,8 +6633,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Three enabled one-time rows fill exactly the three one-time record slots; third is within the snooze-reachable count. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-one-time-four-enabled-overflow",
@@ -6815,8 +6723,7 @@
           "parse_exception_rows_skipped": 0,
           "caught": "outer Exception handler; byte-array bounds failure",
           "physical_or_on_air_effect": "UNVERIFIED; no sendMessage call is reached"
-        },
-        "source_note": "Fourth enabled one-time row fails before checksum and dispatch. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-opposite-table-overflow-blocks-mode1",
@@ -6922,8 +6829,7 @@
           "parse_exception_rows_skipped": 0,
           "caught": "outer Exception handler; byte-array bounds failure",
           "physical_or_on_air_effect": "UNVERIFIED; no sendMessage call is reached"
-        },
-        "source_note": "Mode 1 still constructs both tables first, so an overfull non-selected one-time table prevents the weekly send. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-unknown-dispatch-mode",
@@ -6983,8 +6889,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Any dispatch mode outside 0, 1, and 2 computes both checksums and sends neither table. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-negative-remaining-delta",
@@ -7035,8 +6940,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Explicit post-parse negative delta exercises Java truncation-toward-zero and byte wrapping; not a claim about Android date parsing. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-mode0-interrupted-after-weekly",
@@ -7104,8 +7008,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Synthetic InterruptedException at the 500ms sleep boundary leaves the first sendMessage call before the one-time send. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-parse-exception-local-catch",
@@ -7157,8 +7060,7 @@
           "mainactivity_reference_guard": "ready",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "Synthetic ParseException injected at the source parse boundary demonstrates the local catch and slot skip; ordinary caller reachability is not asserted. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       },
       {
         "id": "alarm-null-reference-write-guard",
@@ -7209,8 +7111,7 @@
           "mainactivity_reference_guard": "writeMessage returns because a required characteristic/service reference is null",
           "gatt_queue_acceptance": "not established by static frame reproduction; adapter and GATT state are downstream",
           "physical_or_on_air_effect": "UNVERIFIED"
-        },
-        "source_note": "The builder calls sendMessage, but MainActivity.writeMessage returns before setValue/enqueue when any required characteristic or service reference is null. Source-derived host model only; no Android runtime, captured traffic, or bed behavior is asserted."
+        }
       }
     ]
   }

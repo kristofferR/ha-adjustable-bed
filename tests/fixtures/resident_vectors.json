@@ -8,12 +8,7 @@
       "literal": "0x00,0x04",
       "prefix": false
     },
-    "expected_bytes": "00 04",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.checkMassage",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x28ca74",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "00 04"
   },
   {
     "id": "P1-checkTime",
@@ -24,12 +19,7 @@
       "literal": "0xE1,0x80,0x01",
       "prefix": true
     },
-    "expected_bytes": "08 02 e1 80 01",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.checkTime",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2ff5c8",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 e1 80 01"
   },
   {
     "id": "P1-flatPosition",
@@ -40,12 +30,7 @@
       "literal": "0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 08 00 00 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.flatPosition",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d6270",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 08 00 00 00 00 00 00 00"
   },
   {
     "id": "P1-footDown",
@@ -56,12 +41,7 @@
       "literal": "0x00,0x00,0x00,0x08,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 00 08 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.footDown",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d6fe8",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 00 08 00 00 00 00"
   },
   {
     "id": "P1-footUp",
@@ -72,12 +52,7 @@
       "literal": "0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 00 04 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.footUp",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d7460",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 00 04 00 00 00 00"
   },
   {
     "id": "P1-headDown",
@@ -88,12 +63,7 @@
       "literal": "0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 00 02 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.headDown",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d7224",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 00 02 00 00 00 00"
   },
   {
     "id": "P1-headUp",
@@ -104,12 +74,7 @@
       "literal": "0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 00 01 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.headUp",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d769c",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 00 01 00 00 00 00"
   },
   {
     "id": "P1-headfootDown",
@@ -120,12 +85,7 @@
       "literal": "0x00,0x00,0x00,0x0A,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 00 0a 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.head&footDown",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d6c48",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 00 0a 00 00 00 00"
   },
   {
     "id": "P1-headfootUp",
@@ -136,12 +96,7 @@
       "literal": "0x00,0x00,0x00,0x05,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 00 05 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.head&footUp",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d6dac",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 00 05 00 00 00 00"
   },
   {
     "id": "P1-massageAll",
@@ -152,12 +107,7 @@
       "literal": "0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 01 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.massageAll",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2933f8",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 01 00 00 00 00 00"
   },
   {
     "id": "P1-massageStopAll",
@@ -168,12 +118,7 @@
       "literal": "0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 02 00 00 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.massageStopAll",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x293688",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 02 00 00 00 00 00 00 00"
   },
   {
     "id": "P1-massageTimerSwitch",
@@ -184,12 +129,7 @@
       "literal": "0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 02 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.massageTimerSwitch",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x292cdc",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 02 00 00 00 00 00"
   },
   {
     "id": "P1-memory1_m5",
@@ -200,12 +140,7 @@
       "literal": "0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 01 00 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.memory1_m5",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d6810",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 01 00 00 00 00 00 00"
   },
   {
     "id": "P1-memory2_m6",
@@ -216,12 +151,7 @@
       "literal": "0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 04 00 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.memory2_m6",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d66a8",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 04 00 00 00 00 00 00"
   },
   {
     "id": "P1-memory_antiSnore",
@@ -232,12 +162,7 @@
       "literal": "0x00,0x00,0x80,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 80 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.memory_antiSnore",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d6ae0",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 80 00 00 00 00 00"
   },
   {
     "id": "P1-memory_lounge",
@@ -248,12 +173,7 @@
       "literal": "0x00,0x00,0x20,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 20 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.memory_lounge",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d6978",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 20 00 00 00 00 00"
   },
   {
     "id": "P1-memory_tvpc",
@@ -264,12 +184,7 @@
       "literal": "0x00,0x00,0x40,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 40 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.memory_tvpc",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d6540",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 40 00 00 00 00 00"
   },
   {
     "id": "P1-memory_zero",
@@ -280,12 +195,7 @@
       "literal": "0x00,0x00,0x10,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 10 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.memory_zero",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d63d8",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 10 00 00 00 00 00"
   },
   {
     "id": "P1-stopCommand",
@@ -296,12 +206,7 @@
       "literal": "0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 00 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.stopCommand",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x28f210",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 00 00 00 00 00 00"
   },
   {
     "id": "P1-strengthAdd",
@@ -312,12 +217,7 @@
       "literal": "0x00,0x00,0x0C,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 00 0c 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.strengthAdd",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x292f7c",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 00 0c 00 00 00 00 00"
   },
   {
     "id": "P1-strengthReduce",
@@ -328,12 +228,7 @@
       "literal": "0x01,0x80,0x00,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 01 80 00 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.strengthReduce",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x29321c",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 01 80 00 00 00 00 00 00"
   },
   {
     "id": "P1-underbedLighting",
@@ -344,12 +239,7 @@
       "literal": "0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00",
       "prefix": true
     },
-    "expected_bytes": "08 02 00 02 00 00 00 00 00 00",
-    "evidence": [
-      "APK:assets/flutter_assets/assets/protocol/36_33_01a.json:command.underbedLighting",
-      "blutter-306/asm/resident/okin/tool/protocol.dart:0x2d6108",
-      "Protocol::compile@0x28f2ec; Protocol::empty@0x28cb50; BleManager::writeData@0x27a2f8; Android smali onMethodCall :pswitch_1a"
-    ]
+    "expected_bytes": "08 02 00 02 00 00 00 00 00 00"
   },
   {
     "id": "clock-2026",
@@ -364,10 +254,7 @@
       "minute": 8,
       "second": 9
     },
-    "expected_bytes": "e7 80 01 7e 0a 0a 07 08 09",
-    "evidence": [
-      "BleManager::calibrationTime@0x2ff17c-0x2ff4dc"
-    ]
+    "expected_bytes": "e7 80 01 7e 0a 0a 07 08 09"
   },
   {
     "id": "clock-2023",
@@ -382,10 +269,7 @@
       "minute": 59,
       "second": 58
     },
-    "expected_bytes": "e7 80 01 7b 00 1f 17 3b 3a",
-    "evidence": [
-      "BleManager::calibrationTime@0x2ff17c-0x2ff4dc"
-    ]
+    "expected_bytes": "e7 80 01 7b 00 1f 17 3b 3a"
   },
   {
     "id": "timer-10",
@@ -413,11 +297,7 @@
     "expected_outputs": [
       1
     ],
-    "expected_pending": false,
-    "evidence": [
-      "BleManager::_handleData@0x2df990-0x2dfbdc",
-      "dealingMassageMachinery@0x2dfbe0; MassagePageState::initState closure@0x2fd878-0x2fd9c4"
-    ]
+    "expected_pending": false
   },
   {
     "id": "timer-20",
@@ -445,11 +325,7 @@
     "expected_outputs": [
       2
     ],
-    "expected_pending": false,
-    "evidence": [
-      "BleManager::_handleData@0x2df990-0x2dfbdc",
-      "dealingMassageMachinery@0x2dfbe0; MassagePageState::initState closure@0x2fd878-0x2fd9c4"
-    ]
+    "expected_pending": false
   },
   {
     "id": "timer-30",
@@ -477,11 +353,7 @@
     "expected_outputs": [
       3
     ],
-    "expected_pending": false,
-    "evidence": [
-      "BleManager::_handleData@0x2df990-0x2dfbdc",
-      "dealingMassageMachinery@0x2dfbe0; MassagePageState::initState closure@0x2fd878-0x2fd9c4"
-    ]
+    "expected_pending": false
   },
   {
     "id": "short-matching",
@@ -501,11 +373,7 @@
     "expected_outputs": [
       "RangeError"
     ],
-    "expected_pending": false,
-    "evidence": [
-      "BleManager::_handleData@0x2df990-0x2dfbdc",
-      "dealingMassageMachinery@0x2dfbe0; MassagePageState::initState closure@0x2fd878-0x2fd9c4"
-    ]
+    "expected_pending": false
   },
   {
     "id": "short-ignored",
@@ -524,11 +392,7 @@
     "expected_outputs": [
       null
     ],
-    "expected_pending": false,
-    "evidence": [
-      "BleManager::_handleData@0x2df990-0x2dfbdc",
-      "dealingMassageMachinery@0x2dfbe0; MassagePageState::initState closure@0x2fd878-0x2fd9c4"
-    ]
+    "expected_pending": false
   },
   {
     "id": "legacy-fragment",
@@ -579,11 +443,7 @@
       null,
       null
     ],
-    "expected_pending": false,
-    "evidence": [
-      "BleManager::_handleData@0x2df990-0x2dfbdc",
-      "dealingMassageMachinery@0x2dfbe0; MassagePageState::initState closure@0x2fd878-0x2fd9c4"
-    ]
+    "expected_pending": false
   },
   {
     "id": "fragment-tiny-tail",
@@ -625,10 +485,6 @@
       null,
       null
     ],
-    "expected_pending": true,
-    "evidence": [
-      "BleManager::_handleData@0x2df990-0x2dfbdc",
-      "dealingMassageMachinery@0x2dfbe0; MassagePageState::initState closure@0x2fd878-0x2fd9c4"
-    ]
+    "expected_pending": true
   }
 ]

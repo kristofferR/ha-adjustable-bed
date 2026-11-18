@@ -11,6 +11,8 @@ tracker's own id format, and the ids in ``IN_FLIGHT``.
 from __future__ import annotations
 
 import ast
+import gzip
+import json
 import re
 from collections.abc import Iterator
 from pathlib import Path
@@ -92,3 +94,42 @@ def test_the_guard_finds_every_id_form() -> None:
         "Row054, unit128, cluster-015, richmat_cluster022, repair005, review020; not preview112233"
     )
     assert found == ["Row054", "unit128", "cluster-015", "cluster022", "repair005", "review020"]
+
+
+# Decompiler provenance an APK report records ("jadx/sources/...:97-117"). No
+# test reads it, and the reports stay machine-local.
+PROVENANCE_KEYS = {
+    "evidence", "source_note", "mapping_evidence", "wake_up_massage_evidence", "source_files",
+    "source_addresses", "source_functions", "source_method_sha256", "source_events",
+    "literal_source", "delta_source", "scope_disposition", "initial_state_origin",
+    "report_sha256", "artifact_sha256", "artifact_set_sha256", "source_trace",
+}
+# Fixtures of beds other in-flight v5 work is regenerating (2026-11-18); strip them once it lands.
+IN_FLIGHT_FIXTURES = (
+    "galaxy", "goodvibe", "mlily", "casper", "hush", "luuna", "richmat_app", "richmat_mh",
+    "jalon", "sonicsleep", "bobpowerbase", "richmat_cluster022", "nisco",
+)
+
+
+def _keys(value: object) -> Iterator[str]:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield key
+            yield from _keys(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _keys(child)
+
+
+def test_fixtures_carry_no_decompiler_provenance() -> None:
+    fixtures = REPO / "tests" / "fixtures"
+    found = {}
+    for path in sorted(fixtures.rglob("*.json*")):
+        relative = str(path.relative_to(fixtures))
+        if not path.name.endswith((".json", ".json.gz")) or any(m in relative for m in IN_FLIGHT_FIXTURES):
+            continue
+        raw = path.read_bytes()
+        data = json.loads(gzip.decompress(raw) if path.suffix == ".gz" else raw)
+        if keys := PROVENANCE_KEYS.intersection(_keys(data)):
+            found[relative] = sorted(keys)
+    assert found == {}

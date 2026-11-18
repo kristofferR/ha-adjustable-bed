@@ -11,11 +11,7 @@
       "parameter": 0,
       "parameter2": 0
     },
-    "expected_bytes": "034433221120d4c3b2a101010000",
-    "evidence": [
-      "E-FRAME",
-      "E-WRITE"
-    ]
+    "expected_bytes": "034433221120d4c3b2a101010000"
   },
   {
     "id": "G-head-strength",
@@ -29,11 +25,7 @@
       "parameter": 50,
       "parameter2": 0
     },
-    "expected_bytes": "034433221120d4c3b2a1014d3200",
-    "evidence": [
-      "E-FRAME",
-      "E-WRITE"
-    ]
+    "expected_bytes": "034433221120d4c3b2a1014d3200"
   },
   {
     "id": "G-leg-strength",
@@ -47,11 +39,7 @@
       "parameter": 100,
       "parameter2": 0
     },
-    "expected_bytes": "034433221120d4c3b2a1014f6400",
-    "evidence": [
-      "E-FRAME",
-      "E-WRITE"
-    ]
+    "expected_bytes": "034433221120d4c3b2a1014f6400"
   },
   {
     "id": "G-mode4",
@@ -65,11 +53,7 @@
       "parameter": 1,
       "parameter2": 1
     },
-    "expected_bytes": "034433221120d4c3b2a101a70101",
-    "evidence": [
-      "E-FRAME",
-      "E-WRITE"
-    ]
+    "expected_bytes": "034433221120d4c3b2a101a70101"
   },
   {
     "id": "G-mode4-cancel",
@@ -83,11 +67,7 @@
       "parameter": 1,
       "parameter2": 4
     },
-    "expected_bytes": "034433221120d4c3b2a101a70104",
-    "evidence": [
-      "E-FRAME",
-      "E-WRITE"
-    ]
+    "expected_bytes": "034433221120d4c3b2a101a70104"
   },
   {
     "id": "G-program-ZG",
@@ -101,11 +81,7 @@
       "parameter": 1,
       "parameter2": 0
     },
-    "expected_bytes": "034433221120d4c3b2a101a70100",
-    "evidence": [
-      "E-FRAME",
-      "E-WRITE"
-    ]
+    "expected_bytes": "034433221120d4c3b2a101a70100"
   },
   {
     "id": "G-zero-destination",
@@ -117,11 +93,7 @@
       "own": -1,
       "opcode": 1
     },
-    "expected_bytes": "030000000020ffffffff01010000",
-    "evidence": [
-      "E-FRAME",
-      "E-PARSE"
-    ]
+    "expected_bytes": "030000000020ffffffff01010000"
   },
   {
     "id": "G-password",
@@ -131,10 +103,7 @@
     "inputs": {
       "room": 10000
     },
-    "expected_bytes": "0116011027000031313232",
-    "evidence": [
-      "E-SESSION"
-    ]
+    "expected_bytes": "0116011027000031313232"
   },
   {
     "id": "G-enroll",
@@ -144,10 +113,7 @@
     "inputs": {
       "room": 10000
     },
-    "expected_bytes": "0103102700003131323200000000",
-    "evidence": [
-      "E-SESSION"
-    ]
+    "expected_bytes": "0103102700003131323200000000"
   },
   {
     "id": "G-ping",
@@ -157,10 +123,7 @@
     "inputs": {
       "own": 16909060
     },
-    "expected_bytes": "03fffffffffe04030201",
-    "evidence": [
-      "E-SESSION"
-    ]
+    "expected_bytes": "03fffffffffe04030201"
   },
   {
     "id": "C-000",
@@ -175,14 +138,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101010000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1054",
-      "evidence/js/402.pretty.js:1060",
-      "evidence/js/402.pretty.js:1166",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -198,14 +153,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101020000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1066",
-      "evidence/js/402.pretty.js:1072",
-      "evidence/js/402.pretty.js:1178",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -221,14 +168,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101030000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1078",
-      "evidence/js/402.pretty.js:1084",
-      "evidence/js/402.pretty.js:1190",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -244,14 +183,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101040000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1058",
-      "evidence/js/402.pretty.js:1170",
-      "evidence/js/402.pretty.js:1215",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -267,14 +198,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101050000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1070",
-      "evidence/js/402.pretty.js:1182",
-      "evidence/js/402.pretty.js:1227",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -290,14 +213,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101060000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1082",
-      "evidence/js/402.pretty.js:1194",
-      "evidence/js/402.pretty.js:1239",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -313,14 +228,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101070000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1056",
-      "evidence/js/402.pretty.js:1168",
-      "evidence/js/402.pretty.js:1213",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -336,14 +243,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101080000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1068",
-      "evidence/js/402.pretty.js:1180",
-      "evidence/js/402.pretty.js:1225",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -359,14 +258,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101090000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1080",
-      "evidence/js/402.pretty.js:1192",
-      "evidence/js/402.pretty.js:1237",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -382,13 +273,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1010a0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1128",
-      "evidence/js/402.pretty.js:1134",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -404,13 +288,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1010b0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1140",
-      "evidence/js/402.pretty.js:1146",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -426,13 +303,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1010c0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1152",
-      "evidence/js/402.pretty.js:1158",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -448,12 +318,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1010d0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1132",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -469,12 +333,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1010e0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1144",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -490,12 +348,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1010f0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1156",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -511,12 +363,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101100000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1130",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -532,12 +378,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101110000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1142",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -553,12 +393,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101120000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1154",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -574,13 +408,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101130000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1091",
-      "evidence/js/402.pretty.js:1097",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -596,13 +423,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101140000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1103",
-      "evidence/js/402.pretty.js:1109",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -618,13 +438,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101150000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1115",
-      "evidence/js/402.pretty.js:1121",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -640,12 +453,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101160000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1095",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -661,12 +468,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101170000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1107",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -682,12 +483,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101180000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1119",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -703,12 +498,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101190000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1093",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -724,12 +513,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1011a0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1105",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -745,12 +528,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1011b0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1117",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -766,14 +543,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1011c0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:533",
-      "evidence/js/402.pretty.js:563",
-      "evidence/js/402.pretty.js:581",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -789,12 +558,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1011d0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:537",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -810,12 +573,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1011e0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:535",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -831,14 +588,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101250000",
-    "evidence": [
-      "evidence/js/402.pretty.js:641",
-      "evidence/js/402.pretty.js:648",
-      "evidence/js/402.pretty.js:655",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -854,14 +603,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101260000",
-    "evidence": [
-      "evidence/js/402.pretty.js:758",
-      "evidence/js/402.pretty.js:774",
-      "evidence/js/402.pretty.js:788",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -877,14 +618,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101270000",
-    "evidence": [
-      "evidence/js/402.pretty.js:765",
-      "evidence/js/402.pretty.js:776",
-      "evidence/js/402.pretty.js:790",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -900,14 +633,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101290000",
-    "evidence": [
-      "evidence/js/402.pretty.js:843",
-      "evidence/js/402.pretty.js:864",
-      "evidence/js/402.pretty.js:878",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -923,14 +648,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1012a0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:850",
-      "evidence/js/402.pretty.js:866",
-      "evidence/js/402.pretty.js:880",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -946,14 +663,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1012b0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:857",
-      "evidence/js/402.pretty.js:868",
-      "evidence/js/402.pretty.js:882",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -969,14 +678,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1012d0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:645",
-      "evidence/js/402.pretty.js:652",
-      "evidence/js/402.pretty.js:659",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -992,12 +693,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1012e0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:762",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1013,12 +708,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1012f0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:769",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1034,12 +723,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101310000",
-    "evidence": [
-      "evidence/js/402.pretty.js:847",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1055,12 +738,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101320000",
-    "evidence": [
-      "evidence/js/402.pretty.js:854",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1076,12 +753,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101330000",
-    "evidence": [
-      "evidence/js/402.pretty.js:861",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1097,14 +768,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101350000",
-    "evidence": [
-      "evidence/js/402.pretty.js:643",
-      "evidence/js/402.pretty.js:650",
-      "evidence/js/402.pretty.js:657",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1120,12 +783,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101360000",
-    "evidence": [
-      "evidence/js/402.pretty.js:760",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1141,12 +798,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101370000",
-    "evidence": [
-      "evidence/js/402.pretty.js:767",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1162,12 +813,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101390000",
-    "evidence": [
-      "evidence/js/402.pretty.js:845",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1183,12 +828,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1013a0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:852",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1204,12 +843,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1013b0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:859",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1225,14 +858,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101470000",
-    "evidence": [
-      "evidence/js/528.pretty.js:452",
-      "evidence/js/528.pretty.js:457",
-      "evidence/js/528.pretty.js:466",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1248,14 +873,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101480000",
-    "evidence": [
-      "evidence/js/528.pretty.js:452",
-      "evidence/js/528.pretty.js:457",
-      "evidence/js/528.pretty.js:466",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1271,12 +888,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101490000",
-    "evidence": [
-      "evidence/js/528.pretty.js:456",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1292,12 +903,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1014a0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:456",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1313,12 +918,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1014b0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:454",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1334,12 +933,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1014c0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:454",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1355,14 +948,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1014d3200",
-    "evidence": [
-      "evidence/js/528.pretty.js:585",
-      "evidence/js/528.pretty.js:590",
-      "evidence/js/528.pretty.js:599",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1378,13 +963,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1014e3200",
-    "evidence": [
-      "evidence/js/528.pretty.js:589",
-      "evidence/js/528.pretty.js:665",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1400,14 +978,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1014f3200",
-    "evidence": [
-      "evidence/js/528.pretty.js:623",
-      "evidence/js/528.pretty.js:628",
-      "evidence/js/528.pretty.js:637",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1423,13 +993,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101503200",
-    "evidence": [
-      "evidence/js/528.pretty.js:627",
-      "evidence/js/528.pretty.js:703",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -1445,13 +1008,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101513200",
-    "evidence": [
-      "evidence/js/528.pretty.js:587",
-      "evidence/js/528.pretty.js:663",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1467,13 +1023,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101523200",
-    "evidence": [
-      "evidence/js/528.pretty.js:625",
-      "evidence/js/528.pretty.js:701",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -1489,14 +1038,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101530000",
-    "evidence": [
-      "evidence/js/528.pretty.js:491",
-      "evidence/js/528.pretty.js:519",
-      "evidence/js/528.pretty.js:536",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1512,14 +1053,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101540000",
-    "evidence": [
-      "evidence/js/528.pretty.js:493",
-      "evidence/js/528.pretty.js:521",
-      "evidence/js/528.pretty.js:538",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1535,14 +1068,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101550000",
-    "evidence": [
-      "evidence/js/528.pretty.js:495",
-      "evidence/js/528.pretty.js:523",
-      "evidence/js/528.pretty.js:540",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1558,12 +1083,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101560000",
-    "evidence": [
-      "evidence/js/528.pretty.js:509",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1579,12 +1098,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101570000",
-    "evidence": [
-      "evidence/js/528.pretty.js:511",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1600,12 +1113,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101580000",
-    "evidence": [
-      "evidence/js/528.pretty.js:513",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1621,12 +1128,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101590000",
-    "evidence": [
-      "evidence/js/528.pretty.js:500",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1642,12 +1143,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1015a0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:502",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1663,12 +1158,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1015b0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:504",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1684,14 +1173,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1015c0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:927",
-      "evidence/js/402.pretty.js:932",
-      "evidence/js/402.pretty.js:941",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1707,14 +1188,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1015d0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:921",
-      "evidence/js/402.pretty.js:932",
-      "evidence/js/402.pretty.js:941",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1730,13 +1203,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1015e0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:931",
-      "evidence/js/528.pretty.js:412",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1752,13 +1218,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1015f0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:925",
-      "evidence/js/528.pretty.js:406",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1774,13 +1233,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101600000",
-    "evidence": [
-      "evidence/js/402.pretty.js:929",
-      "evidence/js/528.pretty.js:410",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1796,13 +1248,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101610000",
-    "evidence": [
-      "evidence/js/402.pretty.js:923",
-      "evidence/js/528.pretty.js:404",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1818,14 +1263,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101620000",
-    "evidence": [
-      "evidence/js/402.pretty.js:526",
-      "evidence/js/402.pretty.js:561",
-      "evidence/js/402.pretty.js:579",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1841,12 +1278,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101630000",
-    "evidence": [
-      "evidence/js/402.pretty.js:530",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1862,12 +1293,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101640000",
-    "evidence": [
-      "evidence/js/402.pretty.js:528",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1883,14 +1308,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101650000",
-    "evidence": [
-      "evidence/js/402.pretty.js:540",
-      "evidence/js/402.pretty.js:565",
-      "evidence/js/402.pretty.js:583",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1906,12 +1323,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101660000",
-    "evidence": [
-      "evidence/js/402.pretty.js:544",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1927,12 +1338,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101670000",
-    "evidence": [
-      "evidence/js/402.pretty.js:542",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1948,14 +1353,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1016b0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:297",
-      "evidence/js/528.pretty.js:327",
-      "evidence/js/528.pretty.js:345",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1971,12 +1368,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1016c0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:301",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -1992,12 +1383,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1016d0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:299",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2013,14 +1398,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1016e0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:304",
-      "evidence/js/528.pretty.js:329",
-      "evidence/js/528.pretty.js:347",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2036,12 +1413,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1016f0000",
-    "evidence": [
-      "evidence/js/528.pretty.js:308",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2057,12 +1428,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101700000",
-    "evidence": [
-      "evidence/js/528.pretty.js:306",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2078,14 +1443,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101710000",
-    "evidence": [
-      "evidence/js/528.pretty.js:311",
-      "evidence/js/528.pretty.js:331",
-      "evidence/js/528.pretty.js:349",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2101,12 +1458,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101720000",
-    "evidence": [
-      "evidence/js/528.pretty.js:315",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2122,12 +1473,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101730000",
-    "evidence": [
-      "evidence/js/528.pretty.js:313",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2143,14 +1488,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101740000",
-    "evidence": [
-      "evidence/js/528.pretty.js:290",
-      "evidence/js/528.pretty.js:325",
-      "evidence/js/528.pretty.js:343",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2166,12 +1503,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101750000",
-    "evidence": [
-      "evidence/js/528.pretty.js:294",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2187,12 +1518,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101760000",
-    "evidence": [
-      "evidence/js/528.pretty.js:292",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2208,14 +1533,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101770000",
-    "evidence": [
-      "evidence/js/528.pretty.js:489",
-      "evidence/js/528.pretty.js:517",
-      "evidence/js/528.pretty.js:534",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2231,12 +1548,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101780000",
-    "evidence": [
-      "evidence/js/528.pretty.js:507",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2252,12 +1563,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101790000",
-    "evidence": [
-      "evidence/js/528.pretty.js:498",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MASSAGE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2273,14 +1578,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1017a0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1054",
-      "evidence/js/402.pretty.js:1060",
-      "evidence/js/402.pretty.js:1166",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2296,14 +1593,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1017b0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1066",
-      "evidence/js/402.pretty.js:1072",
-      "evidence/js/402.pretty.js:1178",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2319,14 +1608,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1017c0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1078",
-      "evidence/js/402.pretty.js:1084",
-      "evidence/js/402.pretty.js:1190",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2342,13 +1623,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1017d0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1128",
-      "evidence/js/402.pretty.js:1134",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2364,13 +1638,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1017e0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1140",
-      "evidence/js/402.pretty.js:1146",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2386,13 +1653,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1017f0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1152",
-      "evidence/js/402.pretty.js:1158",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2408,13 +1668,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101800000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1091",
-      "evidence/js/402.pretty.js:1097",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2430,13 +1683,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101810000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1103",
-      "evidence/js/402.pretty.js:1109",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2452,13 +1698,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101820000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1115",
-      "evidence/js/402.pretty.js:1121",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2474,14 +1713,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101830000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1062",
-      "evidence/js/402.pretty.js:1174",
-      "evidence/js/402.pretty.js:1219",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2497,14 +1728,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101840000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1074",
-      "evidence/js/402.pretty.js:1186",
-      "evidence/js/402.pretty.js:1231",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2520,14 +1743,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101850000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1086",
-      "evidence/js/402.pretty.js:1198",
-      "evidence/js/402.pretty.js:1243",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2543,12 +1758,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101860000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1136",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2564,12 +1773,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101870000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1148",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2585,12 +1788,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101880000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1160",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2606,12 +1803,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101890000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1099",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2627,12 +1818,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1018a0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1111",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2648,12 +1833,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1018b0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1123",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2669,14 +1848,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1018c0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1064",
-      "evidence/js/402.pretty.js:1176",
-      "evidence/js/402.pretty.js:1221",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2692,14 +1863,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1018d0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1076",
-      "evidence/js/402.pretty.js:1188",
-      "evidence/js/402.pretty.js:1233",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2715,14 +1878,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1018e0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1088",
-      "evidence/js/402.pretty.js:1200",
-      "evidence/js/402.pretty.js:1245",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2738,12 +1893,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1018f0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1138",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2759,12 +1908,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101900000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1150",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2780,12 +1923,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101910000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1162",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2801,12 +1938,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101920000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1101",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2822,12 +1953,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101930000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1113",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2843,12 +1968,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101940000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1125",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2864,14 +1983,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101950000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1056",
-      "evidence/js/402.pretty.js:1168",
-      "evidence/js/402.pretty.js:1213",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2887,14 +1998,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101960000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1068",
-      "evidence/js/402.pretty.js:1180",
-      "evidence/js/402.pretty.js:1225",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2910,14 +2013,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101970000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1080",
-      "evidence/js/402.pretty.js:1192",
-      "evidence/js/402.pretty.js:1237",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -2933,12 +2028,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101980000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1130",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2954,12 +2043,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101990000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1142",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2975,12 +2058,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1019a0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1154",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -2996,12 +2073,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1019b0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1093",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3017,12 +2088,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1019c0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1105",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3038,12 +2103,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1019d0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:1117",
-      "E-FRAME",
-      "E-WRITE",
-      "E-MOVE"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3059,14 +2118,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1019e0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:547",
-      "evidence/js/402.pretty.js:567",
-      "evidence/js/402.pretty.js:585",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3082,12 +2133,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a1019f0000",
-    "evidence": [
-      "evidence/js/402.pretty.js:551",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3103,12 +2148,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a00000",
-    "evidence": [
-      "evidence/js/402.pretty.js:549",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3124,14 +2163,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a10000",
-    "evidence": [
-      "evidence/js/402.pretty.js:554",
-      "evidence/js/402.pretty.js:569",
-      "evidence/js/402.pretty.js:587",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3147,12 +2178,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a20000",
-    "evidence": [
-      "evidence/js/402.pretty.js:558",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3168,12 +2193,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a30000",
-    "evidence": [
-      "evidence/js/402.pretty.js:556",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3189,13 +2208,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a40000",
-    "evidence": [
-      "evidence/js/402.pretty.js:80",
-      "evidence/js/528.pretty.js:48",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3211,13 +2223,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a50000",
-    "evidence": [
-      "evidence/js/402.pretty.js:80",
-      "evidence/js/528.pretty.js:49",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3233,12 +2238,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a60000",
-    "evidence": [
-      "evidence/js/402.pretty.js:343",
-      "E-FRAME",
-      "E-WRITE",
-      "E-PRESET"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3254,10 +2253,6 @@
       "parameter2": 1
     },
     "expected_bytes": "034433221120d4c3b2a101a70101",
-    "evidence": [
-      "E-MASSAGE",
-      "evidence/js/528.pretty.js:274-398,1048-1060"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3273,10 +2268,6 @@
       "parameter2": 4
     },
     "expected_bytes": "034433221120d4c3b2a101a70104",
-    "evidence": [
-      "E-MASSAGE",
-      "evidence/js/528.pretty.js:274-398,1048-1060"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3292,10 +2283,6 @@
       "parameter2": 2
     },
     "expected_bytes": "034433221120d4c3b2a101a70102",
-    "evidence": [
-      "E-MASSAGE",
-      "evidence/js/528.pretty.js:274-398,1048-1060"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3311,10 +2298,6 @@
       "parameter2": 5
     },
     "expected_bytes": "034433221120d4c3b2a101a70105",
-    "evidence": [
-      "E-MASSAGE",
-      "evidence/js/528.pretty.js:274-398,1048-1060"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3330,10 +2313,6 @@
       "parameter2": 3
     },
     "expected_bytes": "034433221120d4c3b2a101a70103",
-    "evidence": [
-      "E-MASSAGE",
-      "evidence/js/528.pretty.js:274-398,1048-1060"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3349,10 +2328,6 @@
       "parameter2": 6
     },
     "expected_bytes": "034433221120d4c3b2a101a70106",
-    "evidence": [
-      "E-MASSAGE",
-      "evidence/js/528.pretty.js:274-398,1048-1060"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3368,11 +2343,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70100",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3388,11 +2358,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70200",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3408,11 +2373,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70300",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3428,11 +2388,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70400",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3448,11 +2403,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70500",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3468,11 +2418,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70600",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3488,11 +2433,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70700",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3508,11 +2448,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70800",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3528,11 +2463,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70900",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3548,11 +2478,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70a00",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3568,11 +2493,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70b00",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3588,11 +2508,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101a70c00",
-    "evidence": [
-      "E-PRESET",
-      "evidence/js/402.pretty.js:636-735,1950-1967",
-      "evidence/js/379.js:STORED_*"
-    ],
     "normal_setup_disposition": "DEAD/UNUSED"
   },
   {
@@ -3608,11 +2523,6 @@
       "parameter2": 0
     },
     "expected_bytes": "034433221120d4c3b2a101450000",
-    "evidence": [
-      "evidence/java/com/kaidi_test4/rize/MainActivity.java:742",
-      "evidence/java/com/kaidi_test4/rize/util/PlBleApi.java:460",
-      "E-FRAME"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3624,10 +2534,6 @@
       "data": "03ffffffff200102030405a60100"
     },
     "expected_bytes": "03ffffffff200102030405a60100",
-    "evidence": [
-      "E-PARSE",
-      "E-POWER"
-    ],
     "expected_value": true
   },
   {
@@ -3639,10 +2545,6 @@
       "data": "03ffffffff200102030405a60000"
     },
     "expected_bytes": "03ffffffff200102030405a60000",
-    "evidence": [
-      "E-PARSE",
-      "E-POWER"
-    ],
     "expected_value": false
   },
   {
@@ -3654,10 +2556,6 @@
       "data": "010a00000000"
     },
     "expected_bytes": "010a00000000",
-    "evidence": [
-      "E-PARSE",
-      "E-POWER"
-    ],
     "expected_value": 4294967295
   },
   {
@@ -3669,10 +2567,6 @@
       "data": "010a44332211"
     },
     "expected_bytes": "010a44332211",
-    "evidence": [
-      "E-PARSE",
-      "E-POWER"
-    ],
     "expected_value": 287454020
   },
   {
@@ -3684,10 +2578,6 @@
       "data": "ffffc0ff0110270000870300000000000000"
     },
     "expected_bytes": "ffffc0ff0110270000870300000000000000",
-    "evidence": [
-      "E-PARSE",
-      "E-SCAN"
-    ],
     "expected_value": {
       "product": 135,
       "capability_be16": 768,
@@ -3703,10 +2593,6 @@
       "data": "ffffc0ff09000000000000444b0000870300"
     },
     "expected_bytes": "ffffc0ff09000000000000444b0000870300",
-    "evidence": [
-      "E-PARSE",
-      "E-SCAN"
-    ],
     "expected_value": {
       "product": 135,
       "capability_be16": 768,
@@ -3722,10 +2608,6 @@
       "data": "ffffc0ff02102700006655443322110000870300a144332211"
     },
     "expected_bytes": "ffffc0ff02102700006655443322110000870300a144332211",
-    "evidence": [
-      "E-PARSE",
-      "E-SCAN"
-    ],
     "expected_value": {
       "product": 135,
       "capability_be16": 768,
@@ -3775,11 +2657,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3825,11 +2702,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3875,11 +2747,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3925,11 +2792,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -3975,11 +2837,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -4025,11 +2882,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -4075,11 +2927,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -4125,11 +2972,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -4175,11 +3017,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -4225,11 +3062,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -4275,11 +3107,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -4325,11 +3152,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -4376,11 +3198,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4427,11 +3244,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4478,11 +3290,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4537,11 +3344,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4596,11 +3398,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4655,11 +3452,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4706,11 +3498,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4757,11 +3544,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4808,11 +3590,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4860,11 +3637,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4912,11 +3684,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -4964,11 +3731,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -5016,11 +3778,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -5068,11 +3825,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -5120,11 +3872,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -5172,11 +3919,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -5224,11 +3966,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -5276,11 +4013,6 @@
         }
       ]
     },
-    "evidence": [
-      "E-AUDIT001",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "CONDITIONALLY REACHABLE (persisted-state branch only)"
   },
   {
@@ -5332,11 +4064,6 @@
       "defaultData": 1,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5377,11 +4104,6 @@
       "defaultData": 1,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5433,11 +4155,6 @@
       "defaultData": 1,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5478,11 +4195,6 @@
       "defaultData": 1,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5534,11 +4246,6 @@
       "defaultData": 4,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5579,11 +4286,6 @@
       "defaultData": 4,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5635,11 +4337,6 @@
       "defaultData": 4,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5680,11 +4377,6 @@
       "defaultData": 4,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5736,11 +4428,6 @@
       "defaultData": 7,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5781,11 +4468,6 @@
       "defaultData": 7,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5837,11 +4519,6 @@
       "defaultData": 7,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5882,11 +4559,6 @@
       "defaultData": 7,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5938,11 +4610,6 @@
       "defaultData": 10,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -5983,11 +4650,6 @@
       "defaultData": 10,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -6039,11 +4701,6 @@
       "defaultData": 10,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -6084,11 +4741,6 @@
       "defaultData": 10,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -6140,11 +4792,6 @@
       "defaultData": 1,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   },
   {
@@ -6196,11 +4843,6 @@
       "defaultData": 1,
       "dialog_visible": false
     },
-    "evidence": [
-      "E-AUDIT002",
-      "E-FRAME",
-      "E-WRITE"
-    ],
     "normal_setup_disposition": "REACHABLE"
   }
 ]

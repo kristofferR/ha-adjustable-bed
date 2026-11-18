@@ -3,7 +3,6 @@
     "package": "com.okin.simmonskorea",
     "version": "1.1.14 (38)",
     "row": "080",
-    "report_sha256": "21d46e4d279eaf5b260f70f8c20bcfc2e3ec00a523abfa74fdfc959a229c6bbf",
     "accept_sha256": "11ed898c9244c1e281290c8551cded910b1016e35247dcc678670d1d0823a947",
     "hardware": "UNVERIFIED"
   },
@@ -566,15 +565,7 @@
         "07 05 00 00 00 00 00 00 01 00",
         "00 c0"
       ],
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-delete-slot2",
@@ -594,15 +585,7 @@
         "07 06 00 00 00 00 00 00 01 00",
         "00 d0"
       ],
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-delete-slot3",
@@ -622,15 +605,7 @@
         "07 07 00 00 00 00 00 00 01 00",
         "00 e0"
       ],
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-close-retains",
@@ -651,15 +626,7 @@
         "07 07 7f 06 08 2d 00 00 01 00",
         "00 e0"
       ],
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-cleared-callback",
@@ -680,15 +647,7 @@
         "operation": "delete",
         "slot": 3
       },
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-disabled-row-retained",
@@ -717,15 +676,7 @@
           "music": 4
         }
       },
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-enabled-retains-music",
@@ -754,15 +705,7 @@
           "music": 4
         }
       },
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-disabled-no-old",
@@ -782,15 +725,7 @@
           "music": 0
         }
       },
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-predicate-all-zero",
@@ -807,15 +742,7 @@
         }
       },
       "expected": true,
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-predicate-music-nonzero",
@@ -832,15 +759,7 @@
         }
       },
       "expected": false,
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F1-predicate-enabled-only",
@@ -857,15 +776,7 @@
         }
       },
       "expected": false,
-      "finding": "F1",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x399ac8",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x39b0d0",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39af04",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3aac08",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x4a6794",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x4aa170"
-      ]
+      "finding": "F1"
     },
     {
       "id": "repair-F2-Monday-UI-to-wire",
@@ -889,16 +800,7 @@
         "encoded_week": 130,
         "bytes": "07 05 82 05 06 1e 00 01 01 00"
       },
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-remove-last-day",
@@ -908,16 +810,7 @@
         "day_mask": 2
       },
       "expected": 128,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-Sunday-selection",
@@ -927,16 +820,7 @@
         "day_mask": 1
       },
       "expected": 129,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-add-Wednesday",
@@ -946,16 +830,7 @@
         "day_mask": 8
       },
       "expected": 138,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-remove-Wednesday",
@@ -965,16 +840,7 @@
         "day_mask": 8
       },
       "expected": 130,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-every-day-255",
@@ -983,16 +849,7 @@
         "week": 255
       },
       "expected": 0,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-every-day-0",
@@ -1001,16 +858,7 @@
         "week": 0
       },
       "expected": 255,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-every-day-130",
@@ -1019,16 +867,7 @@
         "week": 130
       },
       "expected": 255,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-once-0",
@@ -1037,16 +876,7 @@
         "week": 0
       },
       "expected": 255,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-once-255",
@@ -1055,16 +885,7 @@
         "week": 255
       },
       "expected": 0,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-once-130",
@@ -1073,16 +894,7 @@
         "week": 130
       },
       "expected": 0,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-startup-127",
@@ -1091,16 +903,7 @@
         "week": 127
       },
       "expected": true,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-startup-128",
@@ -1109,16 +912,7 @@
         "week": 128
       },
       "expected": false,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-startup-130",
@@ -1127,16 +921,7 @@
         "week": 130
       },
       "expected": false,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-startup--1",
@@ -1145,16 +930,7 @@
         "week": -1
       },
       "expected": true,
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-once-Sunday-UI-to-wire",
@@ -1177,16 +953,7 @@
         "encoded_week": 128,
         "bytes": "07 06 80 06 08 2d 00 01 01 00"
       },
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F2-raw-builder-week2",
@@ -1201,16 +968,7 @@
         "slot": 1
       },
       "expected": "07 05 02 05 06 1e 00 01 01 00",
-      "finding": "F2",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3c010c",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfabc",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/select/select_week_page.dart:0x3bfc50",
-        "/analysis/work/blutter/asm/simmonskorea/model/alarm_model.dart:0x3c01e8",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_details_page.dart:0x39c064",
-        "/analysis/work/blutter/asm/simmonskorea/src/protocol/send_command.dart:0x39cd74",
-        "/analysis/work/blutter/asm/simmonskorea/pages/alarm/alarm_page.dart:0x3c43d8"
-      ]
+      "finding": "F2"
     },
     {
       "id": "repair-F3-payload7",
@@ -1229,16 +987,7 @@
         }
       },
       "expected": "554433221110",
-      "finding": "F3",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
-        "/analysis/work/gdt/dispatch_by_class.tsv",
-        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
-        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
-        "/analysis/work/repair-audit001/source-pins-verification.txt",
-        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
-        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
-      ]
+      "finding": "F3"
     },
     {
       "id": "repair-F3-payload8",
@@ -1258,16 +1007,7 @@
         }
       },
       "expected": "665544332211",
-      "finding": "F3",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
-        "/analysis/work/gdt/dispatch_by_class.tsv",
-        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
-        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
-        "/analysis/work/repair-audit001/source-pins-verification.txt",
-        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
-        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
-      ]
+      "finding": "F3"
     },
     {
       "id": "repair-F3-padded7",
@@ -1286,16 +1026,7 @@
         }
       },
       "expected": "0504030201aa",
-      "finding": "F3",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
-        "/analysis/work/gdt/dispatch_by_class.tsv",
-        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
-        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
-        "/analysis/work/repair-audit001/source-pins-verification.txt",
-        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
-        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
-      ]
+      "finding": "F3"
     },
     {
       "id": "repair-F3-short6",
@@ -1313,16 +1044,7 @@
         }
       },
       "expected": null,
-      "finding": "F3",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
-        "/analysis/work/gdt/dispatch_by_class.tsv",
-        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
-        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
-        "/analysis/work/repair-audit001/source-pins-verification.txt",
-        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
-        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
-      ]
+      "finding": "F3"
     },
     {
       "id": "repair-F3-empty",
@@ -1333,16 +1055,7 @@
         }
       },
       "expected": null,
-      "finding": "F3",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
-        "/analysis/work/gdt/dispatch_by_class.tsv",
-        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
-        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
-        "/analysis/work/repair-audit001/source-pins-verification.txt",
-        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
-        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
-      ]
+      "finding": "F3"
     },
     {
       "id": "repair-F3-company-missing",
@@ -1351,16 +1064,7 @@
         "manufacturer_data": {}
       },
       "expected": null,
-      "finding": "F3",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
-        "/analysis/work/gdt/dispatch_by_class.tsv",
-        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
-        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
-        "/analysis/work/repair-audit001/source-pins-verification.txt",
-        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
-        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
-      ]
+      "finding": "F3"
     },
     {
       "id": "repair-F3-wrong-company",
@@ -1379,16 +1083,7 @@
         }
       },
       "expected": null,
-      "finding": "F3",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
-        "/analysis/work/gdt/dispatch_by_class.tsv",
-        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
-        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
-        "/analysis/work/repair-audit001/source-pins-verification.txt",
-        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
-        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
-      ]
+      "finding": "F3"
     },
     {
       "id": "repair-F3-company-null",
@@ -1399,16 +1094,7 @@
         }
       },
       "expected": null,
-      "finding": "F3",
-      "evidence": [
-        "/analysis/work/blutter/asm/simmonskorea/src/bluetooth/core/bluetooth_device_model.dart:0x34ca50",
-        "/analysis/work/gdt/dispatch_by_class.tsv",
-        "/analysis/work/repair-audit001/feedback/identity-getter-aot.txt",
-        "/analysis/work/repair-audit001/feedback/reversed-element-aot.txt",
-        "/analysis/work/repair-audit001/source-pins-verification.txt",
-        "/analysis/work/smali/base/smali_classes4/com/lib/flutter_blue_plus/FlutterBluePlusPlugin.smali:3969",
-        "/analysis/work/blutter/asm/flutter_blue_plus_platform_interface/src/bluetooth_msgs.dart:0x28b128"
-      ]
+      "finding": "F3"
     }
   ]
 }

@@ -5,407 +5,349 @@
       "id": "literal-A-plain",
       "command": "$A",
       "wrapped": false,
-      "expected_hex": "2441",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2441"
     },
     {
       "id": "literal-A-wrapped",
       "command": "$A",
       "wrapped": true,
-      "expected_hex": "24232441520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232441520d"
     },
     {
       "id": "literal-B-plain",
       "command": "$B",
       "wrapped": false,
-      "expected_hex": "2442",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2442"
     },
     {
       "id": "literal-B-wrapped",
       "command": "$B",
       "wrapped": true,
-      "expected_hex": "24232442520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232442520d"
     },
     {
       "id": "literal-C-plain",
       "command": "$C",
       "wrapped": false,
-      "expected_hex": "2443",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2443"
     },
     {
       "id": "literal-C-wrapped",
       "command": "$C",
       "wrapped": true,
-      "expected_hex": "24232443520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232443520d"
     },
     {
       "id": "literal-D-plain",
       "command": "$D",
       "wrapped": false,
-      "expected_hex": "2444",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2444"
     },
     {
       "id": "literal-D-wrapped",
       "command": "$D",
       "wrapped": true,
-      "expected_hex": "24232444520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232444520d"
     },
     {
       "id": "literal-E-plain",
       "command": "$E",
       "wrapped": false,
-      "expected_hex": "2445",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2445"
     },
     {
       "id": "literal-E-wrapped",
       "command": "$E",
       "wrapped": true,
-      "expected_hex": "24232445520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232445520d"
     },
     {
       "id": "literal-F-plain",
       "command": "$F",
       "wrapped": false,
-      "expected_hex": "2446",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2446"
     },
     {
       "id": "literal-F-wrapped",
       "command": "$F",
       "wrapped": true,
-      "expected_hex": "24232446520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232446520d"
     },
     {
       "id": "literal-G-plain",
       "command": "$G",
       "wrapped": false,
-      "expected_hex": "2447",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2447"
     },
     {
       "id": "literal-G-wrapped",
       "command": "$G",
       "wrapped": true,
-      "expected_hex": "24232447520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232447520d"
     },
     {
       "id": "literal-H-plain",
       "command": "$H",
       "wrapped": false,
-      "expected_hex": "2448",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2448"
     },
     {
       "id": "literal-H-wrapped",
       "command": "$H",
       "wrapped": true,
-      "expected_hex": "24232448520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232448520d"
     },
     {
       "id": "literal-I-plain",
       "command": "$I",
       "wrapped": false,
-      "expected_hex": "2449",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2449"
     },
     {
       "id": "literal-I-wrapped",
       "command": "$I",
       "wrapped": true,
-      "expected_hex": "24232449520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232449520d"
     },
     {
       "id": "literal-J-plain",
       "command": "$J",
       "wrapped": false,
-      "expected_hex": "244a",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "244a"
     },
     {
       "id": "literal-J-wrapped",
       "command": "$J",
       "wrapped": true,
-      "expected_hex": "2423244a520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2423244a520d"
     },
     {
       "id": "literal-K-plain",
       "command": "$K",
       "wrapped": false,
-      "expected_hex": "244b",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "244b"
     },
     {
       "id": "literal-K-wrapped",
       "command": "$K",
       "wrapped": true,
-      "expected_hex": "2423244b520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2423244b520d"
     },
     {
       "id": "literal-L-plain",
       "command": "$L",
       "wrapped": false,
-      "expected_hex": "244c",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "244c"
     },
     {
       "id": "literal-L-wrapped",
       "command": "$L",
       "wrapped": true,
-      "expected_hex": "2423244c520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2423244c520d"
     },
     {
       "id": "literal-M-plain",
       "command": "$M",
       "wrapped": false,
-      "expected_hex": "244d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "244d"
     },
     {
       "id": "literal-M-wrapped",
       "command": "$M",
       "wrapped": true,
-      "expected_hex": "2423244d520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2423244d520d"
     },
     {
       "id": "literal-N-plain",
       "command": "$N",
       "wrapped": false,
-      "expected_hex": "244e",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "244e"
     },
     {
       "id": "literal-N-wrapped",
       "command": "$N",
       "wrapped": true,
-      "expected_hex": "2423244e520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2423244e520d"
     },
     {
       "id": "literal-O-plain",
       "command": "$O",
       "wrapped": false,
-      "expected_hex": "244f",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "244f"
     },
     {
       "id": "literal-O-wrapped",
       "command": "$O",
       "wrapped": true,
-      "expected_hex": "2423244f520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2423244f520d"
     },
     {
       "id": "literal-P-plain",
       "command": "$P",
       "wrapped": false,
-      "expected_hex": "2450",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2450"
     },
     {
       "id": "literal-P-wrapped",
       "command": "$P",
       "wrapped": true,
-      "expected_hex": "24232450520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232450520d"
     },
     {
       "id": "literal-Q-plain",
       "command": "$Q",
       "wrapped": false,
-      "expected_hex": "2451",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2451"
     },
     {
       "id": "literal-Q-wrapped",
       "command": "$Q",
       "wrapped": true,
-      "expected_hex": "24232451520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232451520d"
     },
     {
       "id": "literal-R-plain",
       "command": "$R",
       "wrapped": false,
-      "expected_hex": "2452",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2452"
     },
     {
       "id": "literal-R-wrapped",
       "command": "$R",
       "wrapped": true,
-      "expected_hex": "24232452520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232452520d"
     },
     {
       "id": "literal-S-plain",
       "command": "$S",
       "wrapped": false,
-      "expected_hex": "2453",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2453"
     },
     {
       "id": "literal-S-wrapped",
       "command": "$S",
       "wrapped": true,
-      "expected_hex": "24232453520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232453520d"
     },
     {
       "id": "literal-T-plain",
       "command": "$T",
       "wrapped": false,
-      "expected_hex": "2454",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2454"
     },
     {
       "id": "literal-T-wrapped",
       "command": "$T",
       "wrapped": true,
-      "expected_hex": "24232454520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232454520d"
     },
     {
       "id": "literal-U-plain",
       "command": "$U",
       "wrapped": false,
-      "expected_hex": "2455",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2455"
     },
     {
       "id": "literal-U-wrapped",
       "command": "$U",
       "wrapped": true,
-      "expected_hex": "24232455520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232455520d"
     },
     {
       "id": "literal-V-plain",
       "command": "$V",
       "wrapped": false,
-      "expected_hex": "2456",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2456"
     },
     {
       "id": "literal-V-wrapped",
       "command": "$V",
       "wrapped": true,
-      "expected_hex": "24232456520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232456520d"
     },
     {
       "id": "literal-W-plain",
       "command": "$W",
       "wrapped": false,
-      "expected_hex": "2457",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2457"
     },
     {
       "id": "literal-W-wrapped",
       "command": "$W",
       "wrapped": true,
-      "expected_hex": "24232457520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232457520d"
     },
     {
       "id": "literal-Z-plain",
       "command": "$Z",
       "wrapped": false,
-      "expected_hex": "245a",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "245a"
     },
     {
       "id": "literal-Z-wrapped",
       "command": "$Z",
       "wrapped": true,
-      "expected_hex": "2423245a520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2423245a520d"
     },
     {
       "id": "literal-a-plain",
       "command": "$a",
       "wrapped": false,
-      "expected_hex": "2461",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2461"
     },
     {
       "id": "literal-a-wrapped",
       "command": "$a",
       "wrapped": true,
-      "expected_hex": "24232461520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232461520d"
     },
     {
       "id": "literal-b-plain",
       "command": "$b",
       "wrapped": false,
-      "expected_hex": "2462",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2462"
     },
     {
       "id": "literal-b-wrapped",
       "command": "$b",
       "wrapped": true,
-      "expected_hex": "24232462520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232462520d"
     },
     {
       "id": "literal-p-plain",
       "command": "$p",
       "wrapped": false,
-      "expected_hex": "2470",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2470"
     },
     {
       "id": "literal-p-wrapped",
       "command": "$p",
       "wrapped": true,
-      "expected_hex": "24232470520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232470520d"
     },
     {
       "id": "literal-q-plain",
       "command": "$q",
       "wrapped": false,
-      "expected_hex": "2471",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "2471"
     },
     {
       "id": "literal-q-wrapped",
       "command": "$q",
       "wrapped": true,
-      "expected_hex": "24232471520d",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "24232471520d"
     },
     {
       "id": "literal-z-plain",
       "command": "$z",
       "wrapped": false,
-      "expected_hex": "247a",
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": "247a"
     },
     {
       "id": "literal-z-wrapped",
       "command": "$z",
       "wrapped": true,
-      "expected_hex": null,
-      "evidence": "BleManager.writeData0x3ad128; source widget literals and source STOP/query callers; VARIANTS.json"
+      "expected_hex": null
     },
     {
       "id": "empty-rejected",
@@ -453,8 +395,7 @@
         120,
         120,
         120
-      ],
-      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+      ]
     },
     {
       "id": "red-below",
@@ -467,8 +408,7 @@
         0,
         0,
         0
-      ],
-      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+      ]
     },
     {
       "id": "red-at",
@@ -481,8 +421,7 @@
         10,
         0,
         0
-      ],
-      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+      ]
     },
     {
       "id": "green-blue-below",
@@ -495,8 +434,7 @@
         0,
         0,
         0
-      ],
-      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+      ]
     },
     {
       "id": "green-blue-at",
@@ -509,8 +447,7 @@
         0,
         30,
         30
-      ],
-      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+      ]
     },
     {
       "id": "mixed",
@@ -523,8 +460,7 @@
         60,
         90,
         120
-      ],
-      "evidence": "BaseViewState.changeColor0x54d830-0x54d98c"
+      ]
     }
   ],
   "tokens": [
@@ -673,120 +609,105 @@
       "left": "00315",
       "right": "00120",
       "expected_ascii": "$#003150012000004R\r",
-      "expected_hex": "2423303033313530303132303030303034520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303033313530303132303030303034520d"
     },
     {
       "id": "green30",
       "left": "00316",
       "right": "00030",
       "expected_ascii": "$#003160003000007R\r",
-      "expected_hex": "2423303033313630303033303030303037520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303033313630303033303030303037520d"
     },
     {
       "id": "blue120",
       "left": "00317",
       "right": "00120",
       "expected_ascii": "$#003170012000006R\r",
-      "expected_hex": "2423303033313730303132303030303036520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303033313730303132303030303036520d"
     },
     {
       "id": "timer10",
       "left": "00319",
       "right": "00010",
       "expected_ascii": "$#003190001000010R\r",
-      "expected_hex": "2423303033313930303031303030303130520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303033313930303031303030303130520d"
     },
     {
       "id": "timerOff",
       "left": "00319",
       "right": "00000",
       "expected_ascii": "$#003190000000011R\r",
-      "expected_hex": "2423303033313930303030303030303131520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303033313930303030303030303131520d"
     },
     {
       "id": "syncWireless",
       "left": "33049",
       "right": "00000",
       "expected_ascii": "$#330490000000013R\r",
-      "expected_hex": "2423333330343930303030303030303133520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423333330343930303030303030303133520d"
     },
     {
       "id": "syncWired",
       "left": "33049",
       "right": "00001",
       "expected_ascii": "$#330490000100012R\r",
-      "expected_hex": "2423333330343930303030313030303132520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423333330343930303030313030303132520d"
     },
     {
       "id": "syncActiveToggle",
       "left": "00015",
       "right": "00000",
       "expected_ascii": "$#000150000000004R\r",
-      "expected_hex": "2423303030313530303030303030303034520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303030313530303030303030303034520d"
     },
     {
       "id": "syncInactiveToggle",
       "left": "00012",
       "right": "00000",
       "expected_ascii": "$#000120000000003R\r",
-      "expected_hex": "2423303030313230303030303030303033520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303030313230303030303030303033520d"
     },
     {
       "id": "alarm0730off",
       "left": "073000",
       "right": "0017",
       "expected_ascii": "$#073000001700002R\r",
-      "expected_hex": "2423303733303030303031373030303032520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303733303030303031373030303032520d"
     },
     {
       "id": "alarm0830strength1",
       "left": "083000",
       "right": "0118",
       "expected_ascii": "$#083000011800003R\r",
-      "expected_hex": "2423303833303030303131383030303033520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303833303030303131383030303033520d"
     },
     {
       "id": "alarm0830strength2",
       "left": "083000",
       "right": "0219",
       "expected_ascii": "$#083000021900001R\r",
-      "expected_hex": "2423303833303030303231393030303031520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303833303030303231393030303031520d"
     },
     {
       "id": "alarm0000off",
       "left": "000000",
       "right": "0017",
       "expected_ascii": "$#000000001700006R\r",
-      "expected_hex": "2423303030303030303031373030303036520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423303030303030303031373030303036520d"
     },
     {
       "id": "alarm2359strength2",
       "left": "235900",
       "right": "0219",
       "expected_ascii": "$#235900021900007R\r",
-      "expected_hex": "2423323335393030303231393030303037520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "2423323335393030303231393030303037520d"
     },
     {
       "id": "genericOddDigitsSynthetic",
       "left": "1",
       "right": "23",
       "expected_ascii": "$#12300000R\r",
-      "expected_hex": "24233132333030303030520d",
-      "evidence": "AppToolBar.getCommand540360;BaseViewState54cd80;MainPanel40e434;GDT padLeft6568fc unboxedwidth5"
+      "expected_hex": "24233132333030303030520d"
     }
   ],
   "framing": [
@@ -1119,15 +1040,13 @@
       "id": "utf16-pair25",
       "name": "HHC😀00025D000",
       "expected_layout": "PanelFour",
-      "expected_scan": true,
-      "evidence": "Dart String.length/[] use UTF16 code units; device filter40d5b8/MainPanel40ee7c; synthetic non-BMP name, not hardware"
+      "expected_scan": true
     },
     {
       "id": "utf16-overlength",
       "name": "HHC😀000025D000",
       "expected_layout": "PanelZero",
-      "expected_scan": false,
-      "evidence": "Dart String.length/[] use UTF16 code units; synthetic15unit/14codepoint name rejected by scan; layout helper independently tested"
+      "expected_scan": false
     }
   ]
 }

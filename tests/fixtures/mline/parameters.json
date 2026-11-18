@@ -10,12 +10,7 @@
       "wake_type": 130,
       "mode": "zg"
     },
-    "expected_bytes": "07 05 82 01 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 01 07 11 00 01 01"
   },
   {
     "id": "alarm-sleep-flat",
@@ -28,12 +23,7 @@
       "wake_type": 130,
       "mode": "flat"
     },
-    "expected_bytes": "07 05 82 09 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 09 07 11 00 01 01"
   },
   {
     "id": "alarm-sleep-m1",
@@ -46,12 +36,7 @@
       "wake_type": 130,
       "mode": "m1"
     },
-    "expected_bytes": "07 05 82 05 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 05 07 11 00 01 01"
   },
   {
     "id": "alarm-sleep-m2",
@@ -64,12 +49,7 @@
       "wake_type": 130,
       "mode": "m2"
     },
-    "expected_bytes": "07 05 82 06 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 06 07 11 00 01 01"
   },
   {
     "id": "alarm-sleep-vibration",
@@ -82,12 +62,7 @@
       "wake_type": 130,
       "mode": "vibration"
     },
-    "expected_bytes": "07 05 82 08 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 08 07 11 00 01 01"
   },
   {
     "id": "alarm-sleep-antisnore",
@@ -100,12 +75,7 @@
       "wake_type": 130,
       "mode": "antisnore"
     },
-    "expected_bytes": "07 05 82 04 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 04 07 11 00 01 01"
   },
   {
     "id": "alarm-smart-zg",
@@ -118,12 +88,7 @@
       "wake_type": 130,
       "mode": "zg"
     },
-    "expected_bytes": "07 05 82 01 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 01 07 11 00 01 01"
   },
   {
     "id": "alarm-smart-flat",
@@ -136,12 +101,7 @@
       "wake_type": 130,
       "mode": "flat"
     },
-    "expected_bytes": "07 05 82 09 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 09 07 11 00 01 01"
   },
   {
     "id": "alarm-smart-m1",
@@ -154,12 +114,7 @@
       "wake_type": 130,
       "mode": "m1"
     },
-    "expected_bytes": "07 05 82 05 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 05 07 11 00 01 01"
   },
   {
     "id": "alarm-smart-m2",
@@ -172,12 +127,7 @@
       "wake_type": 130,
       "mode": "m2"
     },
-    "expected_bytes": "07 05 82 06 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 06 07 11 00 01 01"
   },
   {
     "id": "alarm-smart-vibration",
@@ -190,12 +140,7 @@
       "wake_type": 130,
       "mode": "vibration"
     },
-    "expected_bytes": "07 05 82 08 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 08 07 11 00 01 01"
   },
   {
     "id": "alarm-smart-antisnore",
@@ -208,12 +153,7 @@
       "wake_type": 130,
       "mode": "antisnore"
     },
-    "expected_bytes": "07 05 82 04 07 11 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 04 07 11 00 01 01"
   },
   {
     "id": "alarm-smartsainuo-zg",
@@ -226,12 +166,7 @@
       "wake_type": 130,
       "mode": "zg"
     },
-    "expected_bytes": "07 05 82 00 07 17 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 00 07 17 00 01 01"
   },
   {
     "id": "alarm-smartsainuo-flat",
@@ -244,12 +179,7 @@
       "wake_type": 130,
       "mode": "flat"
     },
-    "expected_bytes": "07 05 82 00 07 17 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 00 07 17 00 01 01"
   },
   {
     "id": "alarm-smartsainuo-m1",
@@ -262,12 +192,7 @@
       "wake_type": 130,
       "mode": "m1"
     },
-    "expected_bytes": "07 05 82 02 07 17 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 02 07 17 00 01 01"
   },
   {
     "id": "alarm-smartsainuo-m2",
@@ -280,12 +205,7 @@
       "wake_type": 130,
       "mode": "m2"
     },
-    "expected_bytes": "07 05 82 03 07 17 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 03 07 17 00 01 01"
   },
   {
     "id": "alarm-smartsainuo-vibration",
@@ -298,12 +218,7 @@
       "wake_type": 130,
       "mode": "vibration"
     },
-    "expected_bytes": "07 05 82 00 07 17 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 00 07 17 00 01 01"
   },
   {
     "id": "alarm-smartsainuo-antisnore",
@@ -316,12 +231,7 @@
       "wake_type": 130,
       "mode": "antisnore"
     },
-    "expected_bytes": "07 05 82 00 07 17 00 01 01",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "07 05 82 00 07 17 00 01 01"
   },
   {
     "id": "alarm-okin-zg",
@@ -334,12 +244,7 @@
       "wake_type": 130,
       "mode": "zg"
     },
-    "expected_bytes": "ed 80 03 07 11 82 00 00 00 00 00 00 00 00 00 f5",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "ed 80 03 07 11 82 00 00 00 00 00 00 00 00 00 f5"
   },
   {
     "id": "alarm-okin-flat",
@@ -352,12 +257,7 @@
       "wake_type": 130,
       "mode": "flat"
     },
-    "expected_bytes": "ed 80 03 07 11 82 00 00 00 00 00 00 00 00 00 f5",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "ed 80 03 07 11 82 00 00 00 00 00 00 00 00 00 f5"
   },
   {
     "id": "alarm-okin-m1",
@@ -370,12 +270,7 @@
       "wake_type": 130,
       "mode": "m1"
     },
-    "expected_bytes": "ed 80 03 07 11 82 11 00 00 00 00 00 00 00 00 e4",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "ed 80 03 07 11 82 11 00 00 00 00 00 00 00 00 e4"
   },
   {
     "id": "alarm-okin-m2",
@@ -388,12 +283,7 @@
       "wake_type": 130,
       "mode": "m2"
     },
-    "expected_bytes": "ed 80 03 07 11 82 13 00 00 00 00 00 00 00 00 e2",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "ed 80 03 07 11 82 13 00 00 00 00 00 00 00 00 e2"
   },
   {
     "id": "alarm-okin-vibration",
@@ -406,12 +296,7 @@
       "wake_type": 130,
       "mode": "vibration"
     },
-    "expected_bytes": "ed 80 03 07 11 82 00 00 00 00 00 00 00 00 00 f5",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "ed 80 03 07 11 82 00 00 00 00 00 00 00 00 00 f5"
   },
   {
     "id": "alarm-okin-antisnore",
@@ -424,12 +309,7 @@
       "wake_type": 130,
       "mode": "antisnore"
     },
-    "expected_bytes": "ed 80 03 07 11 82 00 00 00 00 00 00 00 00 00 f5",
-    "evidence": [
-      "alarm",
-      "alarm-time-components",
-      "STATE_CONTRACTS.json/alarm_ui"
-    ]
+    "expected_bytes": "ed 80 03 07 11 82 00 00 00 00 00 00 00 00 00 f5"
   },
   {
     "id": "clock-0-smartsainuo",
@@ -447,12 +327,7 @@
         15
       ]
     },
-    "expected_bytes": "07 04 26 11 12 04 13 14 15",
-    "evidence": [
-      "clock",
-      "work/datetime-other-components.asm",
-      "STATE_CONTRACTS.json/lifecycle"
-    ]
+    "expected_bytes": "07 04 26 11 12 04 13 14 15"
   },
   {
     "id": "clock-0-sleep",
@@ -470,12 +345,7 @@
         15
       ]
     },
-    "expected_bytes": "07 04 7e 0a 0c 03 0d 0e 0f",
-    "evidence": [
-      "clock",
-      "work/datetime-other-components.asm",
-      "STATE_CONTRACTS.json/lifecycle"
-    ]
+    "expected_bytes": "07 04 7e 0a 0c 03 0d 0e 0f"
   },
   {
     "id": "clock-0-smart",
@@ -493,12 +363,7 @@
         15
       ]
     },
-    "expected_bytes": "07 04 1a 0a 0c 04 0d 0e 0f",
-    "evidence": [
-      "clock",
-      "work/datetime-other-components.asm",
-      "STATE_CONTRACTS.json/lifecycle"
-    ]
+    "expected_bytes": "07 04 1a 0a 0c 04 0d 0e 0f"
   },
   {
     "id": "clock-0-okin",
@@ -516,12 +381,7 @@
         15
       ]
     },
-    "expected_bytes": "e7 80 01 7e 0a 0c 0d 0e 0f d9",
-    "evidence": [
-      "clock",
-      "work/datetime-other-components.asm",
-      "STATE_CONTRACTS.json/lifecycle"
-    ]
+    "expected_bytes": "e7 80 01 7e 0a 0c 0d 0e 0f d9"
   },
   {
     "id": "clock-1-smartsainuo",
@@ -539,12 +399,7 @@
         58
       ]
     },
-    "expected_bytes": "07 04 25 03 16 00 23 59 58",
-    "evidence": [
-      "clock",
-      "work/datetime-other-components.asm",
-      "STATE_CONTRACTS.json/lifecycle"
-    ]
+    "expected_bytes": "07 04 25 03 16 00 23 59 58"
   },
   {
     "id": "clock-1-sleep",
@@ -562,12 +417,7 @@
         58
       ]
     },
-    "expected_bytes": "07 04 7d 02 10 06 17 3b 3a",
-    "evidence": [
-      "clock",
-      "work/datetime-other-components.asm",
-      "STATE_CONTRACTS.json/lifecycle"
-    ]
+    "expected_bytes": "07 04 7d 02 10 06 17 3b 3a"
   },
   {
     "id": "clock-1-smart",
@@ -585,12 +435,7 @@
         58
       ]
     },
-    "expected_bytes": "07 04 19 02 10 07 17 3b 3a",
-    "evidence": [
-      "clock",
-      "work/datetime-other-components.asm",
-      "STATE_CONTRACTS.json/lifecycle"
-    ]
+    "expected_bytes": "07 04 19 02 10 07 17 3b 3a"
   },
   {
     "id": "clock-1-okin",
@@ -608,122 +453,84 @@
         58
       ]
     },
-    "expected_bytes": "e7 80 01 7d 02 10 17 3b 3a 7c",
-    "evidence": [
-      "clock",
-      "work/datetime-other-components.asm",
-      "STATE_CONTRACTS.json/lifecycle"
-    ]
+    "expected_bytes": "e7 80 01 7d 02 10 17 3b 3a 7c"
   },
   {
     "id": "aux-checkState",
     "protocol": "P3-local-status-configuration",
     "action": "checkState",
     "inputs": {},
-    "expected_bytes": "00 b0",
-    "evidence": [
-      "sensor"
-    ]
+    "expected_bytes": "00 b0"
   },
   {
     "id": "aux-gainNewHistoricalData",
     "protocol": "P3-local-status-configuration",
     "action": "gainNewHistoricalData",
     "inputs": {},
-    "expected_bytes": "01 b1 02",
-    "evidence": [
-      "sensor"
-    ]
+    "expected_bytes": "01 b1 02"
   },
   {
     "id": "aux-gainAllHistoricalData",
     "protocol": "P3-local-status-configuration",
     "action": "gainAllHistoricalData",
     "inputs": {},
-    "expected_bytes": "01 b1 01",
-    "evidence": [
-      "sensor"
-    ]
+    "expected_bytes": "01 b1 01"
   },
   {
     "id": "aux-confirmGainHistoryData",
     "protocol": "P3-local-status-configuration",
     "action": "confirmGainHistoryData",
     "inputs": {},
-    "expected_bytes": "01 b3 01",
-    "evidence": [
-      "sensor"
-    ]
+    "expected_bytes": "01 b3 01"
   },
   {
     "id": "aux-checkOpenBlemanage",
     "protocol": "P3-local-status-configuration",
     "action": "checkOpenBlemanage",
     "inputs": {},
-    "expected_bytes": "01 b4 01",
-    "evidence": [
-      "sensor"
-    ]
+    "expected_bytes": "01 b4 01"
   },
   {
     "id": "aux-openPrivacyMode",
     "protocol": "P3-local-status-configuration",
     "action": "openPrivacyMode",
     "inputs": {},
-    "expected_bytes": "01 b2 01",
-    "evidence": [
-      "sensor"
-    ]
+    "expected_bytes": "01 b2 01"
   },
   {
     "id": "aux-closePrivacyMode",
     "protocol": "P3-local-status-configuration",
     "action": "closePrivacyMode",
     "inputs": {},
-    "expected_bytes": "01 b2 00",
-    "evidence": [
-      "sensor"
-    ]
+    "expected_bytes": "01 b2 00"
   },
   {
     "id": "aux-checkAlarm.P1",
     "protocol": "P3-local-status-configuration",
     "action": "checkAlarm.P1",
     "inputs": {},
-    "expected_bytes": "00 c0",
-    "evidence": [
-      "alarm"
-    ]
+    "expected_bytes": "00 c0"
   },
   {
     "id": "aux-checkAlarm.P2",
     "protocol": "P3-local-status-configuration",
     "action": "checkAlarm.P2",
     "inputs": {},
-    "expected_bytes": "e1 80 03 9b",
-    "evidence": [
-      "alarm"
-    ]
+    "expected_bytes": "e1 80 03 9b"
   },
   {
     "id": "aux-closeAlarm.P1",
     "protocol": "P3-local-status-configuration",
     "action": "closeAlarm.P1",
     "inputs": {},
-    "expected_bytes": "07 05 00 00 00 00 00 00 00",
-    "evidence": [
-      "alarm"
-    ]
+    "expected_bytes": "07 05 00 00 00 00 00 00 00"
   },
   {
     "id": "aux-closeAlarm.P2",
     "protocol": "P3-local-status-configuration",
     "action": "closeAlarm.P2",
     "inputs": {},
-    "expected_bytes": "ed 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8f",
-    "evidence": [
-      "alarm"
-    ]
+    "expected_bytes": "ed 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8f"
   },
   {
     "id": "antisnore-1-1",
@@ -734,11 +541,7 @@
       "parameter3": 1,
       "parameter5": 1
     },
-    "expected_bytes": "04 0b 01 01 01",
-    "evidence": [
-      "sensor",
-      "STATE_CONTRACTS.json/anti_snore"
-    ]
+    "expected_bytes": "04 0b 01 01 01"
   },
   {
     "id": "antisnore-1-3",
@@ -749,11 +552,7 @@
       "parameter3": 1,
       "parameter5": 3
     },
-    "expected_bytes": "04 0b 01 03 01",
-    "evidence": [
-      "sensor",
-      "STATE_CONTRACTS.json/anti_snore"
-    ]
+    "expected_bytes": "04 0b 01 03 01"
   },
   {
     "id": "antisnore-1-6",
@@ -764,11 +563,7 @@
       "parameter3": 1,
       "parameter5": 6
     },
-    "expected_bytes": "04 0b 01 06 01",
-    "evidence": [
-      "sensor",
-      "STATE_CONTRACTS.json/anti_snore"
-    ]
+    "expected_bytes": "04 0b 01 06 01"
   },
   {
     "id": "antisnore-2-1",
@@ -779,11 +574,7 @@
       "parameter3": 2,
       "parameter5": 1
     },
-    "expected_bytes": "04 0b 01 01 02",
-    "evidence": [
-      "sensor",
-      "STATE_CONTRACTS.json/anti_snore"
-    ]
+    "expected_bytes": "04 0b 01 01 02"
   },
   {
     "id": "antisnore-2-3",
@@ -794,11 +585,7 @@
       "parameter3": 2,
       "parameter5": 3
     },
-    "expected_bytes": "04 0b 01 03 02",
-    "evidence": [
-      "sensor",
-      "STATE_CONTRACTS.json/anti_snore"
-    ]
+    "expected_bytes": "04 0b 01 03 02"
   },
   {
     "id": "antisnore-2-6",
@@ -809,11 +596,7 @@
       "parameter3": 2,
       "parameter5": 6
     },
-    "expected_bytes": "04 0b 01 06 02",
-    "evidence": [
-      "sensor",
-      "STATE_CONTRACTS.json/anti_snore"
-    ]
+    "expected_bytes": "04 0b 01 06 02"
   },
   {
     "id": "antisnore-demo-1",
@@ -822,11 +605,7 @@
     "inputs": {
       "position": 1
     },
-    "expected_bytes": "04 0b 02 01 01",
-    "evidence": [
-      "sensor",
-      "STATE_CONTRACTS.json/anti_snore"
-    ]
+    "expected_bytes": "04 0b 02 01 01"
   },
   {
     "id": "antisnore-demo-2",
@@ -835,11 +614,7 @@
     "inputs": {
       "position": 2
     },
-    "expected_bytes": "04 0b 02 01 02",
-    "evidence": [
-      "sensor",
-      "STATE_CONTRACTS.json/anti_snore"
-    ]
+    "expected_bytes": "04 0b 02 01 02"
   },
   {
     "id": "antisnore-disable",
@@ -850,9 +625,6 @@
       "parameter3": 0,
       "parameter5": 0
     },
-    "expected_bytes": "04 0b 00 00 00",
-    "evidence": [
-      "sensor"
-    ]
+    "expected_bytes": "04 0b 00 00 00"
   }
 ]
