@@ -54,6 +54,10 @@ async def call_set_alarm(
         with side_scope(target_side):
             await command(controller)
 
+    # Register (and so import every family module) before patching: family
+    # modules bind the shared helpers at import time and would keep the mocks.
+    if not hass.services.has_service(DOMAIN, "set_alarm"):
+        await async_register_services(hass)
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -63,8 +67,6 @@ async def call_set_alarm(
         patch("custom_components.adjustable_bed.services._preflight_each", side_effect=preflight_each),
         patch("custom_components.adjustable_bed.services._execute_sided", side_effect=execute),
     ):
-        if not hass.services.has_service(DOMAIN, "set_alarm"):
-            await async_register_services(hass)
         await hass.services.async_call(
             DOMAIN, "set_alarm", {"device_id": "bed", **data}, blocking=True
         )
