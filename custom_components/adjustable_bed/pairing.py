@@ -702,6 +702,13 @@ def build_pair_entry_data(
     pair's setup re-homes that entry's registry rows in place instead of letting
     the platforms recreate them (preserving per-side history/customizations).
     """
+    if any(item.get(CONF_BED_TYPE) == "personal_comfort" for item in (left_data, right_data)) and any(
+        item.get(CONF_BED_TYPE) != "personal_comfort"
+        or item.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}
+        or item.get(CONF_PRODUCT_TYPE) == "none"
+        for item in (left_data, right_data)
+    ):
+        raise ValueError("Only configured Personal Comfort bases can be combined")
     left_addr = left_data[CONF_ADDRESS]
     right_addr = right_data[CONF_ADDRESS]
     left_entry_id, left_unique_id = left_origin or (None, None)

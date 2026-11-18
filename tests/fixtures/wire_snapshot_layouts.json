@@ -6032,6 +6032,105 @@
       ]
     }
   },
+  "personal_comfort": {
+    "properties": {
+      "*": [
+        "write"
+      ]
+    },
+    "services": {
+      "0000fee9-0000-1000-8000-00805f9b34fb": [
+        "d44bc439-abfd-45a2-b575-925416129600"
+      ]
+    }
+  },
+  "personal_comfort:anm3": {
+    "properties": {
+      "0000ffe4-0000-1000-8000-00805f9b34fb": [
+        "notify"
+      ],
+      "0000ffe9-0000-1000-8000-00805f9b34fb": [
+        "write"
+      ]
+    },
+    "services": {
+      "0000ffe0-0000-1000-8000-00805f9b34fb": [
+        "0000ffe4-0000-1000-8000-00805f9b34fb"
+      ],
+      "0000ffe5-0000-1000-8000-00805f9b34fb": [
+        "0000ffe9-0000-1000-8000-00805f9b34fb"
+      ]
+    }
+  },
+  "personal_comfort:anm5": {
+    "properties": {
+      "0000ffe1-0000-1000-8000-00805f9b34fb": [
+        "write"
+      ],
+      "0000ffe2-0000-1000-8000-00805f9b34fb": [
+        "notify"
+      ]
+    },
+    "services": {
+      "0000ffe0-0000-1000-8000-00805f9b34fb": [
+        "0000ffe1-0000-1000-8000-00805f9b34fb",
+        "0000ffe2-0000-1000-8000-00805f9b34fb"
+      ]
+    }
+  },
+  "personal_comfort:ra": {
+    "properties": {
+      "*": [
+        "write",
+        "read",
+        "notify"
+      ]
+    },
+    "services": {
+      "0000180a-0000-1000-8000-00805f9b34fb": [
+        "00002a26-0000-1000-8000-00805f9b34fb"
+      ],
+      "57e34968-7076-417f-b645-4789bd9e02df": [
+        "95ae8e50-29af-47bc-aa34-55daac0202df",
+        "ace41e3d-1e48-4fac-bcae-43d7e7d202df",
+        "a3cded49-47e6-4d77-8e10-3e2c5d6602df",
+        "0638f1b8-f242-4c47-b5b1-a07623cc02df",
+        "084103c2-3350-4fec-9900-84e468c702df"
+      ]
+    }
+  },
+  "personal_comfort:reverie_v1": {
+    "properties": {
+      "*": [
+        "write"
+      ]
+    },
+    "services": {
+      "1b1d9641-b942-4da8-89cc-98e6a58fbd93": [
+        "6af87926-dc79-412e-a3e0-5f85c2d55de2"
+      ]
+    }
+  },
+  "personal_comfort:reverie_v2": {
+    "properties": {
+      "*": [
+        "write",
+        "read"
+      ]
+    },
+    "services": {
+      "db801000-f324-29c3-38d1-85c0c2e86885": [
+        "db801020-f324-29c3-38d1-85c0c2e86885",
+        "db801021-f324-29c3-38d1-85c0c2e86885",
+        "db801022-f324-29c3-38d1-85c0c2e86885",
+        "db8010d0-f324-29c3-38d1-85c0c2e86885",
+        "db8010a0-f324-29c3-38d1-85c0c2e86885",
+        "db801061-f324-29c3-38d1-85c0c2e86885",
+        "db801060-f324-29c3-38d1-85c0c2e86885",
+        "db801080-f324-29c3-38d1-85c0c2e86885"
+      ]
+    }
+  },
   "ormatek": {
     "services": {
       "0000ffe5-0000-1000-8000-00805f9b34fb": [

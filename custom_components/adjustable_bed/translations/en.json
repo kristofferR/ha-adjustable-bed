@@ -3254,6 +3254,9 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "personal_comfort_action": {
+        "name": "{action}"
+      },
       "ormatek_action": {
         "name": "{action}"
       },
@@ -4668,6 +4671,28 @@
       "sonicsleep": {
         "name": "Model"
       },
+      "personal_comfort_adjustment": {
+        "name": "Firmness adjustment",
+        "state": {
+          "idle": "Idle",
+          "adjusting": "Adjusting",
+          "error": "Error",
+          "unknown": "Unknown",
+          "left_foot_inflating": "Left foot inflating",
+          "left_foot_deflating": "Left foot deflating",
+          "left_lumbar_inflating": "Left lumbar inflating",
+          "left_lumbar_deflating": "Left lumbar deflating",
+          "left_head_inflating": "Left head inflating",
+          "left_head_deflating": "Left head deflating",
+          "right_foot_inflating": "Right foot inflating",
+          "right_foot_deflating": "Right foot deflating",
+          "right_lumbar_inflating": "Right lumbar inflating",
+          "right_lumbar_deflating": "Right lumbar deflating",
+          "right_head_inflating": "Right head inflating",
+          "right_head_deflating": "Right head deflating",
+          "busy": "Busy"
+        }
+      },
       "ormatek_alarm_time": {
         "name": "Alarm time"
       }
@@ -5272,6 +5297,12 @@
       },
       "richmat_resource_massage_timer": {
         "name": "Massage timer"
+      },
+      "personal_comfort_left_firmness": {
+        "name": "Left firmness"
+      },
+      "personal_comfort_right_firmness": {
+        "name": "Right firmness"
       },
       "l2motion_volume": {
         "name": "Volume"
@@ -8418,6 +8449,22 @@
         }
       }
     },
+    "personal_comfort_sequence": {
+      "name": "Personal Comfort sequence",
+      "description": "Run full body massage, or a preset with the other base lowering its feet for 30 seconds.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "Select a Personal Comfort base or combined pair."
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "l2motion": {
       "name": "Set light color or synchronization mode",
       "description": "Change supported light colors or explicitly confirm wired or wireless synchronization.",
@@ -8708,6 +8755,9 @@
     },
     "whole_number_required": {
       "message": "Use a whole number instead of \"{value}\"."
+    },
+    "personal_comfort_sequence": {
+      "message": "This sequence needs supported Personal Comfort bases and current connections. For a peer-foot sequence, choose one side of a combined pair with both bases connected."
     },
     "l2motion_control_unavailable": {
       "message": "This control is unavailable. Check the bed model, reported synchronization support and confirmation."
@@ -10460,6 +10510,13 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "personal_comfort_sequence": {
+      "options": {
+        "full_body_massage": "Full body massage",
+        "flat_with_peer_foot": "Flat with peer feet lowering",
+        "anti_snore_with_peer_foot": "Anti-snore with peer feet lowering"
       }
     },
     "l2motion_operation": {

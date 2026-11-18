@@ -291,6 +291,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_remote": GENERIC_FIELDS,
     "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "luuna": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hush_sleep_mm": GENERIC_FIELDS,
@@ -1587,6 +1588,18 @@ def _mline_protocols(_data: Mapping[str, Any]) -> Mapping[str, str]:
             "unknown": "Unmatched-name fallback"}
 
 
+def _personal_comfort_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.personal_comfort import MODELS
+
+    return MODELS
+
+
+def _personal_comfort_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    base = data.get(CONF_PROTOCOL_VARIANT) in ("malouf", "reverie_v1", "reverie_v2")
+    return {CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: base and data.get(CONF_PRODUCT_TYPE) in ("pf3", "pf4", "other"),
+            CONF_DISABLE_ANGLE_SENSING: True}
+
+
 def _luuna_settings(data: Mapping[str, Any]) -> dict[str, Any]:
     from .profiles.luuna import PROFILES
 
@@ -2519,6 +2532,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_HAS_MASSAGE, default=False),
             Question("mline_child_mode", default=False)),
         derive=_mline_settings, imports=("profiles.mline",),
+    ),
+    "personal_comfort": _asking(
+        "personal_comfort",
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes("personal_comfort")),
+                   Question(CONF_PRODUCT_TYPE, _personal_comfort_models,
+                            when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN,
+                                  "value": ["malouf", "reverie_v1", "reverie_v2"]})),
+        derive=_personal_comfort_settings,
     ),
     "luuna": _asking(
         "luuna",

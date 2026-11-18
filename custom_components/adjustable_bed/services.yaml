@@ -3199,3 +3199,29 @@ l2motion:
       default: false
       selector:
         boolean:
+
+personal_comfort_sequence:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          translation_key: personal_comfort_sequence
+          options:
+            - full_body_massage
+            - flat_with_peer_foot
+            - anti_snore_with_peer_foot
+    side:
+      selector:
+        select:
+          translation_key: side
+          options:
+            - left
+            - right
+            - both

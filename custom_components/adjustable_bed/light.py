@@ -161,7 +161,7 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
     ):
         return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
-    if toggle_only:
+    if toggle_only and controller.exposes_assumed_toggle_light:
         return [AdjustableBedAssumedLight(coordinator)]
     return []
 

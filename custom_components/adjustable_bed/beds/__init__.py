@@ -93,6 +93,8 @@ if TYPE_CHECKING:
     from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
     from .paramount.controller import ParamountController as ParamountController
+    from .personal_comfort.air import PersonalComfortAir as PersonalComfortAir
+    from .personal_comfort.controller import PersonalComfortBase as PersonalComfortBase
     from .remacro.controller import RemacroController as RemacroController
     from .resident.controller import ResidentController as ResidentController
     from .reverie.controller import ReverieController as ReverieController
@@ -188,6 +190,8 @@ _EXPORT_MODULES = {
     "SimmonsController": "simmons.controller",
     "AdjustaMattressController": "adjustamattress.controller",
     "AdjustableLumbarController": "adjustable_lumbar",
+    "PersonalComfortBase": "personal_comfort.controller",
+    "PersonalComfortAir": "personal_comfort.air",
     "ParamountController": "paramount.controller",
     "AdjustableBedAppController": "adjustable_lumbar",
     "BedJetPowerLayerController": "bedjet_powerlayer",

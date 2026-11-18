@@ -1237,6 +1237,9 @@
   "card_role": "up",
   "card_motor": "paramount_gearing"
  },
+ "button:personal_comfort_action": {
+  "card_section": "massage"
+ },
  "button:pillow_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2855,6 +2858,12 @@
  "number:paramount_legs_min": {
   "card_section": "utility"
  },
+ "number:personal_comfort_left_firmness": {
+  "card_section": "firmness"
+ },
+ "number:personal_comfort_right_firmness": {
+  "card_section": "firmness"
+ },
  "number:reverie_body_tilt": {
   "card_section": "motors",
   "card_motor": "lumbar"
@@ -3768,6 +3777,9 @@
  },
  "sensor:paramount_tilt": {
   "card_section": "hidden"
+ },
+ "sensor:personal_comfort_adjustment": {
+  "card_section": "firmness"
  },
  "sensor:resident_massage_timer": {
   "card_section": "massage"
