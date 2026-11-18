@@ -3,6 +3,8 @@
 // placement) and renders only the sections that exist. Styling comes entirely from Home
 // Assistant theme variables so it inherits the user's theme.
 import { defineElement } from "./registration";
+import { climateEntities, lightingPresent, massagePresent, motorHasControls, motorsPresent,
+  positionOnlyMotors, utilityPresent } from "./sections";
 import {
   LitElement,
   type PropertyValues,
@@ -1188,19 +1190,10 @@ export class AdjustableBedCard extends LitElement {
     estimate?: EstimateContext,
   ): typeof nothing | TemplateResult {
     const routedStopScope = stopScope ?? (bed.stop ? [bed.stop] : []);
-    const motors = bedGraphicMotorOrder(bed.motors, this._config?.show_lumbar_graphic === true).filter((m) => m.cover || m.up || m.down);
+    if (!motorsPresent(bed)) return nothing;
+    const motors = bedGraphicMotorOrder(bed.motors, this._config?.show_lumbar_graphic === true).filter(motorHasControls);
     // Motors with movement controls open their position setter from the label.
-    const positionRows = bed.motors.filter(
-      (m) => m.position && !m.cover && !m.up && !m.down,
-    );
-    if (
-      motors.length === 0 &&
-      positionRows.length === 0 &&
-      !bed.synchro &&
-      !bed.controlSide &&
-      !bed.stop
-    )
-      return nothing;
+    const positionRows = positionOnlyMotors(bed);
     const hasRows =
       motors.length > 0 || positionRows.length > 0 || !!bed.synchro || !!bed.controlSide;
     const estimates = estimate ? this._contextEstimates(estimate) : [];
@@ -1351,7 +1344,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _utility(bed: BedEntities): typeof nothing | TemplateResult {
-    if (bed.utility.length === 0 && !bed.utilityNumbers?.length && !bed.utilitySelects?.length && !bed.utilityStates?.length) return nothing;
+    if (!utilityPresent(bed)) return nothing;
     return html`
       ${this._heading("section.utility")}
       <div class="tiles">
@@ -1474,7 +1467,7 @@ export class AdjustableBedCard extends LitElement {
   private _lighting(bed: BedEntities): typeof nothing | TemplateResult {
     const l = bed.lights;
     const main = l.light ?? l.switch;
-    if (!hasLightingControls(l) && !l.state) return nothing;
+    if (!lightingPresent(bed)) return nothing;
     const floor = main || l.state || l.level || l.numbers?.length || l.timer || l.toggle || l.cycle || l.timerMinutes || l.timerToggle || l.buttons?.length;
     return html`
       ${this._heading("section.lighting")}
@@ -1513,8 +1506,7 @@ export class AdjustableBedCard extends LitElement {
 
   private _massage(bed: BedEntities): typeof nothing | TemplateResult {
     const m = bed.massage;
-    if (m.buttons.length === 0 && m.numbers.length === 0 && !m.selects?.length && !m.states?.length && !m.timer)
-      return nothing;
+    if (!massagePresent(bed)) return nothing;
     return html`
       ${this._heading("section.massage")}
       ${
@@ -1532,7 +1524,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _climate(bed: BedEntities): typeof nothing | TemplateResult {
-    const items = [...bed.climate.entities, ...bed.climate.selects, ...bed.climate.numbers];
+    const items = climateEntities(bed);
     if (items.length === 0) return nothing;
     return html`
       ${this._heading("section.climate")}

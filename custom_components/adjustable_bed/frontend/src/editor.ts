@@ -11,7 +11,7 @@ import { property, state } from "lit/decorators.js";
 import { SECTION_ORDER } from "./discovery";
 import { applyCompactPreset, COMPACT_PRESETS, compactActionOptions,
   compactActions, compactTargets, FULL_CARD_EDITOR_DEFAULTS, fullCardDialogConfig } from "./compact";
-import { presentSections } from "./editor-sections";
+import { presentSections } from "./sections";
 import { defineElement } from "./registration";
 import { localize } from "./localize";
 import { entityLabel } from "./names";
