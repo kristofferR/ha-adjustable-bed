@@ -124,7 +124,7 @@ async def test_feature_entities_read_their_own_side_and_standalone_selection(has
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
     from custom_components.adjustable_bed.select import _select_entities_for
     from custom_components.adjustable_bed.sensor import _sensor_entities_for
-    from custom_components.adjustable_bed.switch import _switch_entities_for
+    from custom_components.adjustable_bed.light import _light_entities_for
 
     co = real_coordinator(hass, app)
     c = ComfyController(co)
@@ -146,10 +146,10 @@ async def test_feature_entities_read_their_own_side_and_standalone_selection(has
         with controller_side_scope(runtime):
             selects = _select_entities_for(hass, runtime)
             sensors = _sensor_entities_for(hass, runtime)
-            switches = _switch_entities_for(hass, runtime)
+            light_entities = _light_entities_for(hass, runtime)
         timer = next(e for e in selects if e.translation_key == "comfy_timer_selection")
         remaining = next(e for e in sensors if e.translation_key == "comfy_timer_remaining")
-        light = next(e for e in switches if e.translation_key == "under_bed_lights")
+        light = next(e for e in light_entities if e.translation_key == "under_bed_lights")
         light.async_write_ha_state = MagicMock()
         light._handle_controller_state_update(runtime.controller_state)
         assert timer.current_option == minutes

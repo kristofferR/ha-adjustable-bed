@@ -392,7 +392,7 @@ async def test_ha_entities_and_alarm_service(
     assert exists("button", "program_memory_1")
     assert exists("button", "program_memory_2") == (layout in ("mc2", "mc3"))
     assert exists("button", "comfort_enhancements_head_cycle") == (layout != "mc3")
-    assert exists("switch", "under_bed_lights") == (layout != "mc3")
+    assert exists("light", "under_bed_lights") == (layout != "mc3")
     assert exists("select", "massage_timer") == (layout != "mc3")
     dev = next(x.device_id for x in registry.entities.values() if x.config_entry_id == e.entry_id)
     monkeypatch.setattr(

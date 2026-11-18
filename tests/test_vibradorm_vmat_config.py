@@ -635,8 +635,9 @@ async def test_actual_entity_factories_follow_remote_gates(hass, remote):
     assert ("vibradorm_app_sync_observed" in sensor_keys) is c.profile.sync
     assert ("massage_head_toggle" in button_keys) is c.profile.massage
     assert ("massage_foot_toggle" in button_keys) is c.profile.massage
-    assert ("under_bed_lights" in switch_keys) is c.profile.floor_light
-    assert light_keys == set()  # No arbitrary RGB light or measured on/off feedback.
+    # The floor light is an on/off light; no arbitrary RGB light.
+    assert light_keys == ({"under_bed_lights"} if c.profile.floor_light else set())
+    assert "under_bed_lights" not in switch_keys
 
 
 @pytest.mark.asyncio

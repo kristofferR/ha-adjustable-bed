@@ -664,7 +664,7 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
     assert exists("button", "ore_comfort_massage_start")
     assert exists("select", "massage_timer")
     assert exists("number", "controller_number_ore_comfort_massage_wave")
-    assert exists("switch", "under_bed_lights")
+    assert exists("light", "under_bed_lights")
     assert not exists("binary_sensor", STATE_LIGHT)
     assert not exists("sensor", STATE_MASSAGE_TIMER)
 

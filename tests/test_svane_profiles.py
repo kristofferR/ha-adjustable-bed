@@ -205,12 +205,10 @@ async def test_native_entities_expose_literals_raw_records_and_unknown_assumed_l
     intensity = next(n for n in numbers if n.entity_description.key == "light_level")
     assert (intensity.native_min_value, intensity.native_max_value) == (0, 100)
     assert not any("position" in n.unique_id for n in numbers)
-    assert _light_entities_for(hass, runtime) == []
-    lamp = next(
-        s
-        for s in _switch_entities_for(hass, runtime)
-        if s.entity_description.key == "under_bed_lights"
+    assert not any(
+        s.entity_description.key == "under_bed_lights" for s in _switch_entities_for(hass, runtime)
     )
+    (lamp,) = _light_entities_for(hass, runtime)
     assert lamp.is_on is None and lamp.assumed_state
     with patch.object(lamp, "async_write_ha_state", MagicMock()):
         await lamp.async_turn_on()

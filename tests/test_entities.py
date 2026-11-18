@@ -774,7 +774,7 @@ class TestSleepNumberEntities:
         registry = er.async_get(hass)
 
         assert (
-            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:41_under_bed_lights")
+            registry.async_get_entity_id("light", DOMAIN, "AA:BB:CC:DD:EE:41_under_bed_lights")
             is not None
         )
         assert (
@@ -814,14 +814,16 @@ class TestSleepNumberEntities:
             "AA:BB:CC:DD:EE:41_bed_presence_left",
         )
         assert left_presence_entity_id is not None
-        assert hass.states.get(left_presence_entity_id) is None
+        # Occupancy is a dashboard value, enabled by default.
+        assert hass.states.get(left_presence_entity_id) is not None
         right_presence_entity_id = registry.async_get_entity_id(
             "binary_sensor",
             DOMAIN,
             "AA:BB:CC:DD:EE:41_bed_presence_right",
         )
         assert right_presence_entity_id is not None
-        assert hass.states.get(right_presence_entity_id) is None
+        # Occupancy is a dashboard value, enabled by default.
+        assert hass.states.get(right_presence_entity_id) is not None
         assert (
             registry.async_get_entity_id(
                 "binary_sensor",
@@ -1743,7 +1745,7 @@ class TestButtonEntities:
             is not None
         )
         assert (
-            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:40_under_bed_lights")
+            registry.async_get_entity_id("light", DOMAIN, "AA:BB:CC:DD:EE:40_under_bed_lights")
             is not None
         )
         assert (
@@ -1894,14 +1896,14 @@ class TestButtonEntities:
 class TestSwitchEntities:
     """Test switch entities."""
 
-    async def test_switch_entities_created(
+    async def test_discrete_light_is_a_light_not_a_switch(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """Test switch entities are created."""
+        """A bed with on/off light commands gets a light entity and no light switch."""
         hass.config_entries.async_update_entry(
             mock_config_entry,
             data={**mock_config_entry.data, CONF_BED_TYPE: BED_TYPE_OKIN_CST},
@@ -1909,14 +1911,11 @@ class TestSwitchEntities:
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        switch_states = [
-            state for state in hass.states.async_all() if state.entity_id.startswith("switch.")
-        ]
+        states = hass.states.async_all()
+        assert not [state for state in states if state.entity_id.startswith("switch.")]
+        assert len([state for state in states if state.entity_id.startswith("light.")]) == 1
 
-        # Should have under-bed lights switch
-        assert len(switch_states) == 1
-
-    async def test_failed_switch_turn_off_keeps_auto_off_timer(
+    async def test_failed_light_turn_off_keeps_auto_off_timer(
         self,
         hass: HomeAssistant,
         mock_config_entry,
@@ -1932,13 +1931,13 @@ class TestSwitchEntities:
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        switch_entities = [
+        light_entities = [
             state.entity_id
             for state in hass.states.async_all()
-            if state.entity_id.startswith("switch.")
+            if state.entity_id.startswith("light.")
         ]
-        assert len(switch_entities) == 1
-        entity_id = switch_entities[0]
+        assert len(light_entities) == 1
+        entity_id = light_entities[0]
 
         coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
         with patch.object(
@@ -1957,7 +1956,7 @@ class TestSwitchEntities:
                 *args: object,
             ) -> object:
                 nonlocal scheduled_auto_off
-                if getattr(callback, "__name__", "") == "auto_off_callback":
+                if getattr(callback, "__name__", "") == "expire":
 
                     def invoke_auto_off() -> None:
                         callback(*args)
@@ -1968,7 +1967,7 @@ class TestSwitchEntities:
 
             with patch.object(hass.loop, "call_later", side_effect=capture_auto_off):
                 await hass.services.async_call(
-                    "switch",
+                    "light",
                     "turn_on",
                     {"entity_id": entity_id},
                     blocking=True,
@@ -1981,7 +1980,7 @@ class TestSwitchEntities:
 
                 with pytest.raises(RuntimeError, match="boom"):
                     await hass.services.async_call(
-                        "switch",
+                        "light",
                         "turn_off",
                         {"entity_id": entity_id},
                         blocking=True,
@@ -2961,7 +2960,7 @@ class TestLightEntities:
         assert state is not None
         assert state.state == STATE_OFF
 
-    async def test_switch_turn_on_off(
+    async def test_discrete_light_turn_on_off(
         self,
         hass: HomeAssistant,
         mock_config_entry,
@@ -2969,7 +2968,7 @@ class TestLightEntities:
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
     ):
-        """Test turning switch on and off."""
+        """Test turning the on/off light on and off."""
         hass.config_entries.async_update_entry(
             mock_config_entry,
             data={**mock_config_entry.data, CONF_BED_TYPE: BED_TYPE_OKIN_CST},
@@ -2977,16 +2976,16 @@ class TestLightEntities:
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        switch_entities = [
+        light_entities = [
             state.entity_id
             for state in hass.states.async_all()
-            if state.entity_id.startswith("switch.")
+            if state.entity_id.startswith("light.")
         ]
-        entity_id = switch_entities[0]
+        entity_id = light_entities[0]
 
         # Turn on
         await hass.services.async_call(
-            "switch",
+            "light",
             "turn_on",
             {"entity_id": entity_id},
             blocking=True,
@@ -2997,7 +2996,7 @@ class TestLightEntities:
 
         # Turn off
         await hass.services.async_call(
-            "switch",
+            "light",
             "turn_off",
             {"entity_id": entity_id},
             blocking=True,

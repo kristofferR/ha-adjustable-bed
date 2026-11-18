@@ -29,7 +29,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
-from custom_components.adjustable_bed.switch import _switch_entities_for
+from custom_components.adjustable_bed.light import _light_entities_for
 from tests.hold_lease_wire import virtual_clock
 from tests.test_svane import make_controller, written
 
@@ -57,9 +57,9 @@ async def runtime(hass, request):
 
 
 @pytest.mark.parametrize("runtime", ["multi", "jmc"], indirect=True)
-async def test_actual_action_number_and_switch_publish_commanded_lamp_intent(hass, runtime):
+async def test_actual_action_number_and_light_publish_commanded_lamp_intent(hass, runtime):
     coordinator, controller = runtime
-    lamp = next(s for s in _switch_entities_for(hass, coordinator)
+    lamp = next(s for s in _light_entities_for(hass, coordinator)
                 if s.entity_description.key == "under_bed_lights")
     toggle = next(b for b in _button_entities_for(hass, coordinator)
                   if getattr(b, "_spec", None) and b._spec.key == "svane_light_toggle")

@@ -722,6 +722,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         if self._level_intent:
             self._attr_is_on = self._level_is_on(coordinator.controller_state.get(LIGHT_LEVEL))
         self._auto_off_timer: asyncio.TimerHandle | None = None
+        # Counts published light state, so a command's assumed result never
+        # overwrites state the bed published while the command ran.
+        self._state_generation = 0
         self._unregister_callback: Callable[[], None] | None = None
         self._unregister_connection: Callable[[], None] | None = None
 
@@ -802,6 +805,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             if self._feedback_only and self._coordinator.controller is None:
                 value = None
             self._attr_is_on = None if value is None else bool(value)
+        self._state_generation += 1
         self._schedule_auto_off()
         self.async_write_ha_state()
 
@@ -833,8 +837,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         del kwargs
 
         async def _turn_on(ctrl: BedController) -> None:
+            generation = self._state_generation
             await ctrl.lights_on()
-            if not self._feedback_only:
+            if not self._feedback_only and generation == self._state_generation:
                 self._attr_is_on = True
                 self._schedule_auto_off()
                 self.async_write_ha_state()
@@ -849,8 +854,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         del kwargs
 
         async def _turn_off(ctrl: BedController) -> None:
+            generation = self._state_generation
             await ctrl.lights_off()
-            if not self._feedback_only:
+            if not self._feedback_only and generation == self._state_generation:
                 self._attr_is_on = False
                 self._cancel_auto_off()
                 self.async_write_ha_state()
