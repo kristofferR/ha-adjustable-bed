@@ -173,7 +173,7 @@ FSM Relax and Limoss Remote. Other beds reject it before any bed moves. Leave
 it unset to use the bed's own recall gesture.
 
 Position targets use the controller's units, which may be degrees or percentages.
-Check the position entity and [protocol guide](SUPPORTED_ACTUATORS.md). Feedback
+Check the position entity and the bed's [guide](README.md#bed-guides). Feedback
 must be enabled for feedback-driven seeks. Sleep Number MCR uses `left_back`,
 `right_back`, `left_legs`, and `right_legs` with percentage targets for discovered
 foundation actuators. A `set_positions` list cannot repeat a motor. Its validation

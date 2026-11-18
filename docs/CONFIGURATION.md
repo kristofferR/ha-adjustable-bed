@@ -881,6 +881,6 @@ a dialog are described in the
 ## Next Steps
 
 - **Having connection issues?** See [Troubleshooting](TROUBLESHOOTING.md)
-- **Want to learn about your bed's protocol?** See [Supported Actuators](SUPPORTED_ACTUATORS.md)
+- **Want to know more about your bed?** Find its guide in the [documentation index](README.md#bed-guides)
 - **Setting up Bluetooth?** See [Connection Guide](CONNECTION_GUIDE.md)
 

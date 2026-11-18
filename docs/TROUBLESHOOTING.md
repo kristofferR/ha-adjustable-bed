@@ -352,7 +352,7 @@ up. Motor pulse settings cannot bridge that gap.
 **Solutions:**
 1. **Check settings:** **Read bed position** is on by default for beds that report a position, and shown only for them.
 2. **Turn on Read bed position:** If you want position data, turn it on in **Configure**
-3. **Check the controller:** Feedback is available on supported Linak, Okimat, Reverie, Keeson/Ergomotion, Jensen, Limoss, Vibradorm, Sleep Number, BOX25, and SleepSpa profiles. Availability and units depend on the actual controller; see its [protocol guide](SUPPORTED_ACTUATORS.md).
+3. **Check the controller:** Feedback is available on supported Linak, Okimat, Reverie, Keeson/Ergomotion, Jensen, Limoss, Vibradorm, Sleep Number, BOX25, and SleepSpa profiles. Availability and units depend on the actual controller; see its [guide](README.md#bed-guides).
 
 ### Position values seem incorrect
 
