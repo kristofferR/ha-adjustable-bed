@@ -2644,3 +2644,60 @@ async def test_combine_repair_keeps_the_pairing_flows_translation_domain(
         "already_in_progress",
         "homeassistant",
     )
+
+
+@pytest.mark.parametrize("paired", [False, True])
+async def test_octo_pin_repair_saves_the_pin_it_asks_for(hass: HomeAssistant, paired: bool) -> None:
+    """A locked Octo receiver's repair takes the PIN and saves it where Configure does."""
+    from custom_components.adjustable_bed.repairs import async_create_fix_flow
+    from custom_components.adjustable_bed.unsupported import update_octo_pin_required_issue
+
+    address = "AA:BB:CC:DD:EE:01"
+    side_data = {CONF_ADDRESS: address, "bed_type": "octo"}
+    data: dict[str, Any] = (
+        {
+            "pair_id": "pair_test",
+            "pair_children": [
+                {**side_data, "side": "left"},
+                {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", "bed_type": "octo", "side": "right"},
+            ],
+        }
+        if paired
+        else side_data
+    )
+    entry = MockConfigEntry(domain=DOMAIN, title="Bed", data=data)
+    entry.add_to_hass(hass)
+    update_octo_pin_required_issue(hass, address, "Bed", True, entry_id=entry.entry_id)
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, "octo_pin_required_aa_bb_cc_dd_ee_01")
+    assert issue is not None and issue.is_fixable and issue.severity is IssueSeverity.ERROR
+
+    flow = await async_create_fix_flow(hass, issue.issue_id, issue.data)
+    flow.hass = hass
+    form = await flow.async_step_init({"issue_id": issue.issue_id})
+    assert form["type"] == FlowResultType.FORM
+    form = await flow.async_step_init({"octo_pin": "12a4"})
+    assert form["errors"] == {"octo_pin": "invalid_pin"}
+    with patch.object(hass.config_entries, "async_reload", AsyncMock()):
+        done = await flow.async_step_init({"octo_pin": " 1234 "})
+    assert done["type"] == FlowResultType.CREATE_ENTRY
+    if paired:
+        assert get_child(entry.data, "left")["octo_pin"] == "1234"
+        assert "octo_pin" not in get_child(entry.data, "right")
+    else:
+        assert entry.data["octo_pin"] == "1234"
+
+
+async def test_octo_pin_repair_never_overwrites_a_pin_saved_since(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.repairs import OctoPinRepairFlow
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Bed",
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:01", "bed_type": "octo", "octo_pin": "4321"},
+    )
+    entry.add_to_hass(hass)
+    flow = OctoPinRepairFlow(entry.entry_id, "AA:BB:CC:DD:EE:01")
+    flow.hass = hass
+    result = await flow.async_step_init({"octo_pin": "1234"})
+    assert result["type"] == FlowResultType.ABORT and result["reason"] == "pin_saved"
+    assert entry.data["octo_pin"] == "4321"
