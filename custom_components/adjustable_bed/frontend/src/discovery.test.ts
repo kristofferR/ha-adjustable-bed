@@ -1545,10 +1545,11 @@ test("SleepEase exposes held motors, massage, lights, sensors and the local chil
   expect(bed.utilityStates).toEqual(["sensor.hr"]);
 });
 
-test("Good Vibe Sleep exposes app controls and independent sleep state", () => {
+test("Good Vibe Sleep exposes app controls, side selection and independent sleep state", () => {
   const hass = hassWith([
     entry("button.app_action", "goodvibe_action"),
     entry("button.monitor", "goodvibe_action"),
+    entry("select.side", "goodvibe_side"),
     entry("select.light_duration", "goodvibe_light_duration"),
     entry("select.countdown", "goodvibe_massage_timer"),
     entry("number.snore", "goodvibe_snore_count"),
@@ -1557,9 +1558,9 @@ test("Good Vibe Sleep exposes app controls and independent sleep state", () => {
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.utility).toEqual(["button.app_action", "button.monitor"]);
-  // The status sensor is hidden diagnostics; there is no app side picker.
+  // The status sensor is hidden diagnostics.
   expect(bed.utilityStates).toEqual(["sensor.live"]);
-  expect(bed.controlSide).toBeUndefined();
+  expect(bed.controlSide).toBe("select.side");
   expect(bed.utilitySelects).toEqual(["select.light_duration", "select.countdown"]);
   expect(bed.utilityNumbers).toEqual(["number.snore"]);
   expect(bedIsEmpty(bed)).toBe(false);

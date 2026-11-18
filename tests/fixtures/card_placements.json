@@ -116,6 +116,9 @@
  "binary_sensor:richmat_mh_smart_light_lock": {
   "card_section": "hidden"
  },
+ "binary_sensor:richmat_mh_smart_set_lock": {
+  "card_section": "hidden"
+ },
  "binary_sensor:rize_battery_mode": {
   "card_section": "hidden"
  },
@@ -585,6 +588,14 @@
  "button:coolbase_star": {
   "card_section": "utility"
  },
+ "button:customatic_save_incline": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:customatic_save_zg": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:disconnect": {
   "card_section": "connection",
   "card_role": "disconnect"
@@ -753,6 +764,10 @@
  "button:hjbed_release": {
   "card_section": "hidden"
  },
+ "button:hjbed_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:hjbed_sofa_travel_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -896,6 +911,10 @@
  },
  "button:luuna_preset": {
   "card_section": "presets"
+ },
+ "button:malouf_oz_save_memory_2": {
+  "card_section": "presets",
+  "card_role": "save"
  },
  "button:massage_all_down": {
   "card_section": "massage"
@@ -1365,6 +1384,10 @@
  "button:richmat_app_release": {
   "card_section": "hidden"
  },
+ "button:richmat_app_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:richmat_app_tilt1_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1443,6 +1466,9 @@
  "button:richmat_mh_save": {
   "card_section": "presets",
   "card_role": "save"
+ },
+ "button:richmat_mh_toggle_smart_set_lock": {
+  "card_section": "utility"
  },
  "button:rize_all_down": {
   "card_section": "utility"
@@ -2183,6 +2209,18 @@
  },
  "button:wake_controller": {
   "card_section": "utility"
+ },
+ "button:woosa_program_love": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:woosa_program_tv": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:woosa_program_zero_g": {
+  "card_section": "presets",
+  "card_role": "save"
  },
  "button:yamada_query_alarms": {
   "card_section": "utility"
@@ -2932,6 +2970,9 @@
  "select:goodvibe_massage_timer": {
   "card_section": "utility"
  },
+ "select:goodvibe_side": {
+  "card_section": "motors"
+ },
  "select:hjbed_layout": {
   "card_section": "utility"
  },
@@ -2983,6 +3024,9 @@
   "card_section": "massage"
  },
  "select:reverie_stk_side": {
+  "card_section": "utility"
+ },
+ "select:richmat_app_side": {
   "card_section": "utility"
  },
  "select:richmat_mh_snore": {
@@ -4063,9 +4107,6 @@
  },
  "switch:reverie_pairlink_massage_rhythm": {
   "card_section": "massage"
- },
- "switch:richmat_mh_smart_set_lock": {
-  "card_section": "utility"
  },
  "switch:rize_home_motion": {
   "card_section": "utility"
