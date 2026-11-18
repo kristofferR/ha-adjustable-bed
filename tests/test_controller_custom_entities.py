@@ -497,3 +497,18 @@ async def test_controller_switch_rejects_withdrawn_setting(hass):
     runtime.controller = DiagnosticBedController(MagicMock(address="test"))
     with pytest.raises(ServiceValidationError):
         await switch.async_turn_on()
+
+
+async def test_diagnostic_controller_button_is_hidden_maintenance(hass):
+    from homeassistant.const import EntityCategory
+
+    from custom_components.adjustable_bed.beds.entity_specs import ControllerButtonSpec
+    from custom_components.adjustable_bed.button import ControllerActionButton
+
+    runtime = runtime_for(hass, SwitchController())
+    spec = ControllerButtonSpec("refresh", "Refresh", AsyncMock(), translation_key="refresh")
+    plain = ControllerActionButton(runtime, spec)
+    hidden = ControllerActionButton(runtime, replace(spec, diagnostic=True))
+    assert plain.entity_category is None and plain.entity_registry_enabled_default
+    assert hidden.entity_category is EntityCategory.DIAGNOSTIC
+    assert not hidden.entity_registry_enabled_default
