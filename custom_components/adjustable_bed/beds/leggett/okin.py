@@ -25,7 +25,7 @@ from bleak.exc import BleakError
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import dt as dt_util
 
-from ...alarm import AlarmCapability, AlarmRequest
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...codec.okin_nframe import (
     REVISION_SELECTOR_UUID,
     SERVICE_UUID,
@@ -281,9 +281,15 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
         # The bed counts down to the alarm; Home Assistant turns the time into minutes.
         return AlarmCapability() if self.supports_alarm_timer else None
 
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled and alarm.minutes_until() > 1440:
+            raise AlarmError(
+                "alarm_too_far", "The bed's alarm can be at most 24 hours ahead; choose a nearer time"
+            )
+
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         if alarm.enabled:
-            await self.set_alarm_timer(alarm.minutes_until(dt_util.now()))
+            await self.set_alarm_timer(min(1440, alarm.minutes_until(dt_util.now())))
         else:
             await self.cancel_alarm_timer()
 

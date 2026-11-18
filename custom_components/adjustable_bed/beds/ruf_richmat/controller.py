@@ -835,6 +835,8 @@ class RufRichmatController(RichmatMhController):
         sides = ("left", "right") if mattress else inherited.mattress_sides if inherited else ()
         return AlarmCapability(
             **bed,  # type: ignore[arg-type]
+            # Turning a calendar slot off first reads it from every bed.
+            live_check=calendar,
             weekdays=True,
             mattress_sides=sides,
             massage_intensities=3 if sides else 0,
@@ -890,7 +892,7 @@ class RufRichmatController(RichmatMhController):
 
     def validate_alarm(self, alarm: SharedAlarm) -> None:
         if self._calendar_disable(alarm) and alarm.slot not in self._calendar_alarms:
-            return  # configure_alarm reads the slot from the bed on the write's own link.
+            return  # check_alarm reads the slot from the bed before any bed is written.
         request = self._app_alarm(alarm)
         if request is None:
             super().validate_alarm(alarm)
@@ -912,7 +914,11 @@ class RufRichmatController(RichmatMhController):
             await asyncio.sleep(0.1)
         raise AlarmError("alarm_refresh_needed", "Refresh the bed alarms, then try again")
 
+    async def check_alarm(self, alarm: SharedAlarm) -> None:
+        await self._read_calendar_slot(alarm)
+
     async def configure_alarm(self, alarm: SharedAlarm) -> None:
+        # Read again if a reconnect between the check and the write lost the slot.
         await self._read_calendar_slot(alarm)
         request = self._app_alarm(alarm)
         if request is None:

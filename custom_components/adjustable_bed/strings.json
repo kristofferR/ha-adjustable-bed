@@ -9338,6 +9338,9 @@
     },
     "zseries_alarm_unknown": {
       "message": "Could not read whether {device_name} has an alarm. Check that it is in range, then try again."
+    },
+    "alarm_too_far": {
+      "message": "This bed's alarm can be at most 24 hours ahead. Choose a nearer time."
     }
   },
   "issues": {
