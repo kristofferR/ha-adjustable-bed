@@ -40,7 +40,6 @@ INTERNAL_COMMANDS = frozenset(
         "get_heidi_presence",
         "get_manifest_name",
         "get_simple_diagnostic_run_results",
-        "get_sleep_number_controls",
         "get_system_configuration",
         "get_system_settings_applied_status",
         "gets_actuator_homing_state",

@@ -10090,7 +10090,8 @@
         "start_sleep_number_adjustment": "Start sleep number adjustment",
         "stop": "Stop",
         "underbed_auto": "Underbed auto",
-        "underbed_auto_status": "Underbed auto status"
+        "underbed_auto_status": "Underbed auto status",
+        "get_sleep_number_controls": "Read Sleep Number settings"
       }
     },
     "customatic_hold_memory_actions": {
