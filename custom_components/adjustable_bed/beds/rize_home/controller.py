@@ -278,7 +278,7 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
         specs.extend(
             ProductButtonSpec(
                 f"rize_home_voice_{action}",
-                f"Voice action: {action.replace('_', ' ')}",
+                f"Voice: {action.replace('_', ' ').capitalize()}",
                 lambda c, a=action: _rize(c).action(f"voice_{a}"),
                 scheduler_resource="*",
                 hold=ControllerHoldSpec(f"voice_{action}"),
