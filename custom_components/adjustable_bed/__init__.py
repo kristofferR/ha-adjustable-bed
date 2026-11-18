@@ -620,18 +620,7 @@ def _v5_6_settings(
     feedback = bed_type_has_position_feedback(
         view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
     )
-    parent = isinstance(children, list)
-    paired = paired or parent
-    if (
-        CONF_DISABLE_ANGLE_SENSING not in new
-        and feedback
-        and not parent
-        and not location.endswith(("options", KEY_ORIGIN_OPTIONS))
-    ):
-        # Before 5.6 an entry without the key did not read positions; the route
-        # decides only for entries created since.
-        new[CONF_DISABLE_ANGLE_SENSING] = True
-        notes.append(f"{CONF_DISABLE_ANGLE_SENSING}=True (kept off)")
+    paired = paired or isinstance(children, list)
     disabled = new.get(CONF_DISABLE_ANGLE_SENSING)
     if isinstance(disabled, bool) and not paired:
         if disabled is not feedback:

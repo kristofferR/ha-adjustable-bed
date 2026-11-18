@@ -138,6 +138,8 @@ async def _run(
         const.CONF_MOTOR_COUNT: motor_count,
         const.CONF_HAS_MASSAGE: True,
         const.CONF_DISABLE_ANGLE_SENSING: True,
+        # The final settings ask angle sensing as Read bed position.
+        const.CONF_READ_POSITIONS: False,
     }
     submitted: dict[str, Any] = {}
     drawn: str | None = None
@@ -189,13 +191,22 @@ async def _run(
                 # A field the journey set itself, such as an app's own layout, is settled.
                 "set": later
                 | flow._journey_set
-                | {key for key, value in submitted.items() if saved.get(key) == value},
+                | {key for key, value in submitted.items() if saved.get(key) == value}
+                | (
+                    {const.CONF_DISABLE_ANGLE_SENSING}
+                    if submitted.get(const.CONF_READ_POSITIONS) is False
+                    and not reads_positions(saved)
+                    else set()
+                ),
                 "drawn_disconnect": drawn,
             }
     # A step the answers above cannot satisfy: its profile must own every field.
     data = flow._manual_data or {}
     profile = setup_profile_for(data)
-    assert profile is not None and set(_FIELDS) <= set(profile.owns), (row, path, result["step_id"])
+    owned = set(profile.owns) if profile is not None else set()
+    if const.CONF_DISABLE_ANGLE_SENSING in owned:
+        owned.add(const.CONF_READ_POSITIONS)
+    assert profile is not None and set(_FIELDS) <= owned, (row, path, result["step_id"])
     return {"saved": None}
 
 

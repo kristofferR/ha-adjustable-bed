@@ -164,16 +164,27 @@ def _shorten_unanswered_probe_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _pair_starting_mode_from_test_data(monkeypatch: pytest.MonkeyPatch) -> None:
+def _pair_starting_mode_from_test_data(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Let a test start a pair in an explicit connection mode.
 
     A pair always starts automatic and switches to sequential only when the
     adapter runs out of connection slots. Tests that exercise the sequential
     topology through a full setup put ``pair_connection_mode`` in the entry's
-    data; the integration itself never reads that key.
+    data; the integration itself never reads that key, and schema 5.6 drops it
+    everywhere except here.
     """
+    import custom_components.adjustable_bed as integration
     from custom_components.adjustable_bed import const
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+
+    if request.module.__name__.rsplit(".", 1)[-1] != "test_entry_migration":
+        monkeypatch.setattr(
+            integration,
+            "V5_6_REMOVED_KEYS",
+            integration.V5_6_REMOVED_KEYS - {const.CONF_PAIR_CONNECTION_MODE},
+        )
 
     original_init = PairedBedCoordinator.__init__
 

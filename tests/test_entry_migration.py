@@ -142,8 +142,7 @@ async def test_other_entries_are_unchanged(hass: HomeAssistant) -> None:
         CONF_BED_TYPE: BED_TYPE_LINAK,
         CONF_PROTOCOL_VARIANT: "auto",
     }
-    # Without a saved choice it did not read positions, and schema 5.6 keeps that.
-    assert migrated == {**data, CONF_DISABLE_ANGLE_SENSING: True}
+    assert migrated == data
 
 
 async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssistant) -> None:
@@ -622,15 +621,6 @@ def test_schema_5_6_rewrites_the_connection_settings(stored: dict, expected: dic
         assert record is None
 
 
-def test_schema_5_6_keeps_an_unsaved_reader_off() -> None:
-    """Before 5.6 a bed without the key did not read positions; it still does not."""
-    data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:35", CONF_BED_TYPE: BED_TYPE_LINAK}
-
-    migrated, _options = migrate_v5_6_entry(data, {}, from_version=5, from_minor_version=5)
-
-    assert migrated[CONF_DISABLE_ANGLE_SENSING] is True
-
-
 @pytest.mark.parametrize(
     ("bed_type", "disabled", "kept"),
     [
@@ -690,11 +680,9 @@ def test_schema_5_6_rewrites_each_paired_side_against_its_own_route() -> None:
     # The left side inherited the parent's handoff and angle choice.
     assert new_left[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
     assert new_left[CONF_DISABLE_ANGLE_SENSING] is True
-    # The original entry a side restores is a standalone one; it kept not reading.
     assert new_left[KEY_ORIGIN_DATA] == {
         CONF_BED_TYPE: BED_TYPE_LINAK,
         CONF_CONNECTION_MODE: CONNECTION_MODE_ALWAYS,
-        CONF_DISABLE_ANGLE_SENSING: True,
     }
     # The right side kept its own choices; a side's angle choice stays as saved.
     assert new_right[CONF_CONNECTION_MODE] == CONNECTION_MODE_IDLE
@@ -727,5 +715,4 @@ async def test_a_5_5_entry_moves_to_5_6(hass: HomeAssistant) -> None:
     assert entry.data[CONF_PROFILE_MIGRATION]["settings_5_6"]["data"] == [
         "connection_profile",
         f"{CONF_CONNECTION_MODE}={CONNECTION_MODE_RELEASE}",
-        f"{CONF_DISABLE_ANGLE_SENSING}=True (kept off)",
     ]
