@@ -27,14 +27,14 @@ from tests.test_limoss_remote_review_lifecycle import CAPS
 async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(hass):
     left = actual_coordinator(hass, **{
         CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     left_controller, left_client = await prepare_live(left)
     left_controller._sleep = LimossRemoteController._sleep.__get__(left_controller)
     right = actual_coordinator(hass, **{
         CONF_ADDRESS: "AA:BB:CC:DD:EE:02",
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     right._client = right._controller = None

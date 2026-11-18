@@ -485,15 +485,15 @@ async def test_dreamhd_alarm_wake_and_rename_services(
     app_ble.write_gatt_char.reset_mock()
     await hass.services.async_call(
         DOMAIN,
-        "jiecang_set_alarm",
+        "set_alarm",
         {
             "device_id": device_id,
             "enabled": True,
             "time": "07:00:00",
             "weekdays": [],
-            "preset": "zero_g",
-            "head_level": 0,
-            "foot_level": 0,
+            "wake_action": "zero_g",
+            "head_massage_level": 0,
+            "foot_massage_level": 0,
         },
         blocking=True,
     )

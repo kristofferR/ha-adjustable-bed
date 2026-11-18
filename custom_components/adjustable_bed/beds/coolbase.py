@@ -11,7 +11,7 @@ Unique features:
 - DewertOKIN OKIN-BLE compatibility profile with a second memory slot
 
 The Cool Base profile follows the accepted com.keeson.coolbase 1.0.0 audit
-(APK Protocol Audit row 047): every app frame carries a
+every app frame carries a
 literal trailer that the builder below reproduces, release ends the 100 ms
 refresh without a distinct STOP frame, and fan/massage/light state arrives only
 in 28-byte replies to the all-zero status query.
@@ -245,13 +245,16 @@ class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedCon
             return ()
         return (
             ControllerStateSensorSpec(
-                "coolbase_left_fan_level", "coolbase_left_fan_level", STATE_LEFT_FAN, "mdi:fan"
+                "coolbase_left_fan_level", "coolbase_left_fan_level", STATE_LEFT_FAN, "mdi:fan",
+                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
-                "coolbase_right_fan_level", "coolbase_right_fan_level", STATE_RIGHT_FAN, "mdi:fan"
+                "coolbase_right_fan_level", "coolbase_right_fan_level", STATE_RIGHT_FAN, "mdi:fan",
+                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
-                "coolbase_massage_mode", "coolbase_massage_mode", STATE_MASSAGE_MODE, "mdi:sine-wave"
+                "coolbase_massage_mode", "coolbase_massage_mode", STATE_MASSAGE_MODE, "mdi:sine-wave",
+                entity_registry_enabled_default=True,
             ),
         )
 

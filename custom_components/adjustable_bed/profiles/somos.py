@@ -1,4 +1,4 @@
-"""Somos 1.0.0/code1, accepted row099: five explicit UI profiles.
+"""Somos 1.0.0/code1: five explicit UI profiles.
 
 Hand-transcribed accepted report data. D/E axes identify UI groups only;
 physical anatomy and side are unverified. No generated catalog or runtime fetch.

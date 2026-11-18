@@ -5,8 +5,7 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 Remacro is the SynData protocol used by three store-branded Android apps from
-the same developer. The integration follows the accepted row 050 analyses of
-all three.
+the same developer. The integration follows all three apps.
 No physical bed has confirmed these controls yet.
 
 ## Known Models
@@ -264,9 +263,8 @@ stopping it sets them off.
 
 ### Unused artifact constants
 
-The apps also define constants that no reachable control sends (ledger row
-R043). Earlier versions of this integration and document used several of them.
-The names and values below come from that pre-audit documentation; they are
+The apps also define constants that no reachable control sends. Earlier versions of this integration and document used several of them.
+The names and values below come from that earlier documentation; they are
 not sent.
 
 | Constant | Value | Notes |
@@ -322,8 +320,8 @@ no STOP for a cancelled touch or a closed screen; that behavior is not copied.
 
 ### Not implemented
 
-These app paths have no in-app route, need a network, or are dead code. See the
-ledger for each reason: full-color RGB and light auto-off delay, rocking timer,
+These app paths have no in-app route, need a network, or are dead code:
+full-color RGB and light auto-off delay, rocking timer,
 sleep-module settings and telemetry, Wi-Fi provisioning, the HTTP sleep report,
 the Jerome's sleep-module MAC query, and constants that no reachable control
 sends (including the heating and LED mode codes earlier versions of this

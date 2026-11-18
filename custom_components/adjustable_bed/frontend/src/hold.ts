@@ -391,24 +391,6 @@ export function pairedPeerStopEntityIds(
   return stops.length === 1 ? [stops[0].entity_id] : [];
 }
 
-// This is the callback used by both Stop buttons rendered by the card. Keep
-// target resolution here so the state-machine tests exercise the same path as
-// the DOM handlers without needing a browser runtime.
-export function stopFromCard(
-  hold: MotorHold,
-  hass: HomeAssistant | undefined,
-  stopEntityId?: string,
-): void {
-  const target = holdTargetForEntity(hass, stopEntityId);
-  const coversAllTargets = target?.side !== "left" && target?.side !== "right";
-  hold.stopAll(
-    stopEntityId,
-    coversAllTargets,
-    target,
-    pairedPeerStopEntityIds(hass, stopEntityId),
-  );
-}
-
 // Ownership is tracked by the motor's key and the entity it drives rather than
 // object identity: the first pulse completing updates that entity, which
 // re-renders the card and rebuilds every MotorEntity, so a release handler

@@ -39,14 +39,15 @@ export interface DualBedGraphicOptions {
   right: DualBedGraphicSide;
 }
 
-// Clamp so an out-of-range reading can never fold the mattress through the base.
+// Clamp the drawing so an out-of-range reading can never fold the mattress
+// through the base. Labels still print the reported angle.
 export const clampGraphicAngle = (deg: number): number => Math.max(0, Math.min(75, deg));
 
 const feedbackClass = (p: BedGraphicPanel): `is-${PanelFeedback}` =>
   `is-${p.angle === undefined ? "unknown" : p.feedback ?? "measured"}`;
 
 const value = (p: BedGraphicPanel): string =>
-  p.angle === undefined ? "?" : p.readout ?? `${Math.round(clampGraphicAngle(p.angle))}°`;
+  p.angle === undefined ? "?" : p.readout ?? `${Math.round(p.angle)}°`;
 
 /** Schematic geometry: lumbar extension changes only the middle support. */
 export function bedGraphicGeometry(opts: BedGraphicOptions) {

@@ -55,8 +55,7 @@ PROFILE_KEY = "motomotion"
 @dataclass(frozen=True)
 class Profile:
     name: str
-    # No hold yet: the held controls need a per-control scope
-    # (docs/design/execution-capabilities.md).
+    # No hold yet: the held controls need a per-control scope.
     execution: ClassVar[ExecutionCapabilities] = NO_EXECUTION_CAPABILITIES
 
     @property

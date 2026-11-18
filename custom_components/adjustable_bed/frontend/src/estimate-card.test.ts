@@ -118,7 +118,7 @@ test("tapping a tracking saved position recalls it by id", async () => {
     .slice(1); // the section template itself owns the Save tile handler
   recall();
   await Promise.resolve();
-  expect(calls).toEqual([{ service: "recall_position", data: { device_id: "bed", position: "p1" } }]);
+  expect(calls).toEqual([{ service: "estimate_recall_position", data: { device_id: "bed", position: "p1" } }]);
 });
 
 test("TV lift estimated height and saved heights use the lift motor", async () => {
@@ -140,13 +140,13 @@ test("TV lift estimated height and saved heights use the lift motor", async () =
   recall();
   await Promise.resolve();
   expect(calls.at(-1)).toEqual({
-    service: "recall_position", data: { device_id: "bed", position: "p1" },
+    service: "estimate_recall_position", data: { device_id: "bed", position: "p1" },
   });
   card._estimateDialog = { kind: "reference", ctx, choice: "flat", phase: "choose" };
   expect(text(card._estimateDialogTemplate())).toContain("Fully lowered now");
   clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
   expect(calls.at(-1)).toEqual({
-    service: "set_position_reference", data: { device_id: "bed", motors: ["tv_lift"] },
+    service: "estimate_set_reference", data: { device_id: "bed", motors: ["tv_lift"] },
   });
 });
 
@@ -165,7 +165,7 @@ test("lower to flat moves first, then the user confirms flat", async () => {
   primary = clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!;
   primary();
   expect(calls.at(-1)).toEqual({
-    service: "set_position_reference", data: { device_id: "bed", motors: ["back", "legs"] },
+    service: "estimate_set_reference", data: { device_id: "bed", motors: ["back", "legs"] },
   });
   expect(card._estimateDialog).toBeUndefined();
 });
@@ -209,7 +209,7 @@ test("saving names the current position and keeps the button choice", () => {
   card._estimateDialog = { kind: "save", ctx, name: " Reading ", button: false };
   clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
   expect(calls).toEqual([{
-    service: "save_position", data: { device_id: "bed", name: "Reading", create_button: false },
+    service: "estimate_save_position", data: { device_id: "bed", name: "Reading", create_button: false },
   }]);
 });
 
@@ -251,4 +251,31 @@ test("compact readouts show estimate-only motors as the graphic labels them", ()
   );
   expect(unknown).toContain("? / ?");
   expect(unknown).not.toContain("Position feedback unavailable");
+});
+
+test("a preset that overwrites a saved position asks in the card's own dialog", () => {
+  const { card, calls } = fixture("tracking");
+  card.hass.states["button.save"] = { entity_id: "button.save", state: "unknown",
+    attributes: { requires_confirmation: true }, last_changed: "", last_updated: "" };
+  const press = (card as unknown as { _press(id: string): void })._press.bind(card);
+  press("button.save");
+  expect(card._estimateDialog).toEqual({ kind: "confirm", entityId: "button.save" });
+  (card as unknown as { _closeEstimateDialog(): void })._closeEstimateDialog();
+  expect(calls).toEqual([]);
+  press("button.save");
+  clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
+  expect(calls).toEqual([{ service: "press", data: { entity_id: "button.save" } }]);
+  expect(card._estimateDialog).toBeUndefined();
+});
+
+test("the full card's size follows the sections it shows", () => {
+  const { card } = fixture("tracking");
+  const size = (config: Record<string, unknown>) => {
+    (card as unknown as { _config: unknown })._config = { type: "custom:adjustable-bed-card", device_id: "bed", ...config };
+    return (card as unknown as { getCardSize(): number }).getCardSize();
+  };
+  // Header, two motor rows with their heading, and saved positions.
+  expect(size({ show_graphic: false })).toBe(6);
+  expect(size({ show_graphic: false, show_saved_positions: false })).toBe(4);
+  expect(size({ show_graphic: false, show_motors: false, show_saved_positions: false })).toBe(1);
 });

@@ -16,6 +16,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.keeson import yamada
 from custom_components.adjustable_bed.beds.keeson.yamada_state import AlarmParser
 from custom_components.adjustable_bed.codec import keeson, okin_nframe
@@ -415,15 +416,15 @@ async def test_real_setup_entities_alarm_service_and_card_hold(
         "slot": 1,
         "enabled": True,
         "time": "07:30",
-        "weekday": 129,
-        "preset": "memory_1",
+        "weekdays": ["sunday"],
+        "wake_action": "memory_1",
     }
     if version == "p1":
         with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(DOMAIN, "yamada_set_alarm", data, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         c._alarms[2] = app.Alarm(8, 45, 255, 28, True)
     with virtual_clock():
-        await hass.services.async_call(DOMAIN, "yamada_set_alarm", data, blocking=True)
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         mock_bleak_client.write_gatt_char.reset_mock()
         await hass.services.async_call(
             DOMAIN,
@@ -564,7 +565,7 @@ async def test_manual_setup_and_restore_own_only_proven_fields(hass, version):
     await finish_new_bed(flow, result)
     saved = flow._finish_with_verify.await_args.args[0]
     assert saved[CONF_MOTOR_COUNT] == 2 and saved[CONF_HAS_MASSAGE] is False
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(saved)
     assert resolve_profile_id(saved) == f"yamada:{version}"
     assert per_side_profile(BED_TYPE_YAMADA, version).variant_owned
     profile = setup_profile_for(saved)

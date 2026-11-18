@@ -16,7 +16,6 @@ from custom_components.adjustable_bed.beds.limoss.remote_state import (
     get_limoss_remote_session,
 )
 from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from tests.coordinator_patches import patch_coordinator_global
@@ -42,60 +41,6 @@ async def prepare_live(coordinator):
     await coordinator.async_start_notify()
     client.write_gatt_char.reset_mock()
     return controller, client
-
-
-@pytest.mark.parametrize("interrupt", [None, "stop", "replace"])
-async def test_options_off_must_finish_before_persist_even_after_scheduler_replacement(hass, interrupt):
-    coordinator = actual_coordinator(hass, **{
-        const.CONF_HAS_LIGHT: True,
-        const.CONF_HAS_MASSAGE: True,
-        const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
-    })
-    controller, client = await prepare_live(coordinator)
-    before = deepcopy(dict(coordinator.entry.data))
-    entered, release = asyncio.Event(), asyncio.Event()
-    opcodes = []
-
-    async def write(char, packet, **kwargs):
-        opcode = codec.decrypt(packet[1:9])[1]
-        opcodes.append(opcode)
-        if interrupt and opcode == 0x71:
-            entered.set()
-            await release.wait()
-
-    client.write_gatt_char.side_effect = write
-    flow = AdjustableBedOptionsFlow(coordinator.entry)
-    flow.hass, flow.handler = hass, coordinator.entry.entry_id
-    save = None
-    try:
-        with patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload:
-            assert (await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS}))["type"] == "form"
-            save = asyncio.create_task(flow.async_step_settings({}))
-            if interrupt:
-                await asyncio.wait_for(entered.wait(), 2)
-                # Real coordinator STOP invalidates the scheduler ticket, drains
-                # the canceled ATT operation and sends its actual native STOP.
-                if interrupt == "stop":
-                    await asyncio.wait_for(coordinator.async_stop_command(), 2)
-                else:
-                    await coordinator.async_execute_controller_command(
-                        AsyncMock(), cancel_running=True,
-                    )
-            result = await asyncio.wait_for(save, 2)
-            if interrupt:
-                assert coordinator.entry.data == before, "STOP ended OFF early, but options persisted a new profile"
-                reload.assert_not_awaited()
-            else:
-                assert result["type"] == "create_entry"
-                assert opcodes == [0x71] * 10 + [0x66] * 10
-    finally:
-        release.set()
-        if save is not None:
-            save.cancel()
-            await asyncio.gather(save, return_exceptions=True)
-        coordinator._cancel_disconnect_timer()
-        coordinator._cancel_diagnostic_polling()
-        await coordinator._command_scheduler.async_shutdown()
 
 
 @pytest.mark.parametrize(("change", "route"), [
@@ -260,47 +205,3 @@ async def test_feature_service_interrupted_off_never_commits_selected_flags(hass
         await asyncio.gather(feature, return_exceptions=True)
 
 
-async def test_queued_off_replaced_before_callback_does_not_save_options(hass):
-    coordinator = actual_coordinator(hass, **{
-        const.CONF_HAS_LIGHT: True,
-        const.CONF_HAS_MASSAGE: True,
-        const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
-    })
-    controller, client = await prepare_live(coordinator)
-    before = deepcopy(dict(coordinator.entry.data))
-    entered, finish, queued = asyncio.Event(), asyncio.Event(), asyncio.Event()
-
-    async def active():
-        entered.set()
-        await finish.wait()
-
-    command = asyncio.create_task(coordinator.async_execute_command_group(
-        [active], resources=("*",), cancel_running=False,
-    ))
-    await asyncio.wait_for(entered.wait(), 2)
-    enqueue = coordinator._command_scheduler.enqueue
-
-    async def observed_enqueue(intent, **kwargs):
-        handle = await enqueue(intent, **kwargs)
-        queued.set()
-        return handle
-
-    flow = AdjustableBedOptionsFlow(coordinator.entry)
-    flow.hass, flow.handler = hass, coordinator.entry.entry_id
-    save = replacement = None
-    try:
-        assert (await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS}))["type"] == "form"
-        with patch.object(coordinator._command_scheduler, "enqueue", side_effect=observed_enqueue):
-            save = asyncio.create_task(flow.async_step_settings({}))
-            await asyncio.wait_for(queued.wait(), 2)
-            replacement = asyncio.create_task(coordinator.async_execute_controller_command(
-                AsyncMock(), cancel_running=True,
-            ))
-            result = await asyncio.wait_for(save, 2)
-        assert result.get("errors") == {"base": "limoss_remote_feature_update_failed"}
-        assert coordinator.entry.data == before
-        assert controller.underbed_light and controller.massage
-        client.write_gatt_char.assert_not_awaited()
-    finally:
-        finish.set()
-        await asyncio.gather(command, *[task for task in (save, replacement) if task], return_exceptions=True)

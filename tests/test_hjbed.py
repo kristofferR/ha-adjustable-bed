@@ -787,43 +787,6 @@ async def test_release_invalidates_pending_hold_without_extra_wire_stop(coordina
     await scheduler.async_shutdown()
 
 
-def test_disposition_ledger_covers_the_accepted_inventory():
-    from hashlib import sha256
-
-    ledger = json.loads((FIXTURES / "hjbed_ledger.json").read_text())
-    items = ledger["items"]
-    assert len(items) == len({row["id"] for row in items}) == 1510
-    appended = {
-        "command",
-        "product binding",
-        "receive rule",
-        "feature domain",
-        "state/timing/configuration",
-    }
-    candidate_ids = sorted(row["id"] for row in items if row["category"] not in appended)
-    assert len(candidate_ids) == 582
-    assert (
-        sha256(json.dumps(candidate_ids, separators=(",", ":")).encode()).hexdigest()
-        == "e587eefb8c5d679fe88d93e049e58f9264f30ad0fe156a3e7eda7cfe2726632f"
-    )
-    assert sum(row["category"] == "command" for row in items) == 99
-    assert (
-        sum(
-            row["category"] == "product binding" and row["disposition"] == "IMPLEMENTED"
-            for row in items
-        )
-        == 724
-    )
-    for row in items:
-        assert row["disposition"] in {"IMPLEMENTED", "ALREADY_IMPLEMENTED", "EXCLUDED"}
-        assert ledger["reasons"][row["reason_ref"]]
-        assert row["evidence"]
-        if row["disposition"] != "EXCLUDED":
-            assert ledger["proofs"][row["proof_ref"]]
-            for ref in ledger["proofs"][row["proof_ref"]]:
-                assert (FIXTURES.parents[1] / ref.split(":", 1)[0]).is_file()
-
-
 async def test_acknowledged_alarm_metadata_roundtrips_without_stale_ack_loss(
     coordinator, instant, monkeypatch
 ):

@@ -1,6 +1,6 @@
 """INNOVA app profile (com.ore.sfm 2.0 (3)).
 
-Accepted clean-room audit, APK Protocol Audit cluster-015 / row059. Its sibling,
+Its sibling,
 Bedsense Bases, shares the ORE comfort-bed behavior in ``ore_comfort_bed.py``.
 INNOVA differs materially: the frame ``E5 FE 16 k0 k1 k2 k3 ~sum`` carries the
 standard Keeson 32-bit key in little-endian order, Memory A/B and the
@@ -476,7 +476,7 @@ class InnovaController(KeesonController):
         return (
             ControllerButtonSpec(
                 key=BUTTON_MASSAGE_LEVEL,
-                name="Massage level",
+                name="Cycle massage level",
                 press_fn=_action("massage_level_step"),
                 icon="mdi:sine-wave",
                 translation_key=BUTTON_MASSAGE_LEVEL,
@@ -484,7 +484,7 @@ class InnovaController(KeesonController):
             ),
             ControllerButtonSpec(
                 key=BUTTON_MASSAGE_TIMER_HOLD,
-                name="Massage timer (memory page)",
+                name="Cycle massage timer",
                 press_fn=_action("massage_timer_hold"),
                 icon="mdi:timer-outline",
                 translation_key=BUTTON_MASSAGE_TIMER_HOLD,
@@ -552,6 +552,7 @@ class InnovaController(KeesonController):
                 state_key=STATE_LIGHT,
                 icon="mdi:lightbulb",
                 card=CARD_LIGHTING,
+                entity_registry_enabled_default=True,
             ),
         )
 
@@ -565,6 +566,7 @@ class InnovaController(KeesonController):
                 icon="mdi:timer-outline",
                 native_unit_of_measurement="min",
                 card=CARD_MASSAGE_TIMER,
+                entity_registry_enabled_default=True,
             ),
         )
 

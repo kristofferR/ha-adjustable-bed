@@ -155,7 +155,7 @@ def json_command(word: int, device_id: str, *, ctrm: int, km: int, keykt: int) -
 
 # Two-byte status request of the direct P2 remotes; not a STOP.
 STATUS_QUERY: Final = b"\x00\xb0"
-# Somos Ultra Split Head (row099 E); a query, never a movement release.
+# Somos Ultra Split Head (E); a query, never a movement release.
 SOMOS_SPLIT_STATUS_QUERY: Final = b"\x01\xb0\x00"
 
 
@@ -276,7 +276,7 @@ def parse_position_status(data: bytes) -> PositionStatus | None:
 
 
 class ComfortBaseAssembler:
-    """Row161's prefixed notification pair, bounded and consumed once per reply.
+    """ComfortBaseForBluetooth's prefixed notification pair, bounded and consumed once per reply.
 
     The app retains its prefix forever and accepts empty tails. Consuming it
     avoids replaying stale timer state; reconnects create a fresh assembler.
@@ -305,7 +305,7 @@ class ComfortBaseAssembler:
 
 
 def comfortbase_timer(data: bytes) -> int:
-    """Row161's displayed timer category, without header or checksum validation."""
+    """ComfortBaseForBluetooth's displayed timer category, without header or checksum validation."""
     offset = {23: 19, 16: 14, 10: 8}.get(len(data))
     nibble = data[offset] & 15 if offset is not None else 0
     return {1: 10, 2: 20, 3: 30}.get(nibble, 0)
@@ -360,7 +360,7 @@ class SymphonyAlarm:
 
 
 class SymphonyParser:
-    """Row078 notifications, with bounded, consumed, session-owned F4 fragments.
+    """Symphony Sleep 1.1.0 notifications, with bounded, consumed, session-owned F4 fragments.
 
     No checksum, ACK or length-field constraint is invented. Truncated alarm
     records, invalid BCD/time values and fragment overflow are refused.

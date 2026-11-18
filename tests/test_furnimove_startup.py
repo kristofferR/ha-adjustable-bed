@@ -11,8 +11,8 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_FURNIMOVE_REMOTE,
     DOMAIN,
 )
@@ -108,7 +108,7 @@ async def test_rf_eco_bt_receiver_holds_its_link_after_a_stalled_connect(
     """
     entry = furnimove_entry(hass, "82417")
     hass.config_entries.async_update_entry(
-        entry, data={**entry.data, CONF_DISCONNECT_AFTER_COMMAND: True}
+        entry, data={**entry.data, CONF_CONNECTION_MODE: "release"}
     )
     ctrl = AdjustableBedCoordinator(hass, entry)
     furnish_services(mock_bleak_client)

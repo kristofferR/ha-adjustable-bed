@@ -12,7 +12,7 @@ import logging
 import math
 import unicodedata
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from ...card import CARD_HIDDEN, CARD_LIGHTING
 from ...codec import keeson as codec
@@ -64,6 +64,40 @@ _DEAD_MASSAGE = frozenset({"MassagerHead", "MassagerFeet", "MassageAll"})
 _MAIN_NAMES = frozenset({"Flat", "UBL", "ResetIn", "ResetOut"}) | frozenset(
     prefix + direction for prefix in _AXES.values() for direction in ("In", "Out")
 )
+# Rows a standard entity already sends through the same controller method.
+_STANDARD_ACTIONS: Final = frozenset(
+    {
+        "Flat",
+        "ZeroGravity",
+        "Snore",
+        "TV",
+        "Memo1",
+        "Memo2",
+        "Memo3",
+        "Memo4",
+        "MemoSave",
+        "UBL",
+        "Sync",
+        "ChildLock",
+        "SwitchToPH",
+        "SwitchToPR",
+    }
+)
+# Readable button names for the app's row identifiers.
+_ACTION_LABELS: Final = {
+    "QuietSleep": "Quiet sleep",
+    "ResetIn": "Reset in",
+    "ResetOut": "Reset out",
+    "MassagerHeadPlus": "Head massage up",
+    "MassagerHeadMinus": "Head massage down",
+    "MassagerFeetPlus": "Foot massage up",
+    "MassagerFeetMinus": "Foot massage down",
+    "MassagerStop": "Stop massage",
+    "Massager1": "Massage program 1",
+    "Massager2": "Massage program 2",
+    "Massager3": "Massage program 3",
+    "MassagerWave": "Wave massage program",
+}
 _MASSAGE_NAMES = frozenset(
     {
         "MassagerHeadPlus",
@@ -473,13 +507,14 @@ class FurniMoveController(BedController):
                 "under_bed_lights" if key == "furnimove_ubl" else key,
                 _state_key(key),
                 icon,
+                entity_registry_enabled_default=enabled,
                 card=CARD_LIGHTING if key == "furnimove_ubl" else CARD_HIDDEN,
             )
-            for key, icon in (
-                ("furnimove_ubl", "mdi:led-strip-variant"),
-                ("furnimove_sync", "mdi:sync"),
-                ("furnimove_child_lock", "mdi:lock"),
-                ("furnimove_massage_running", "mdi:vibrate"),
+            for key, icon, enabled in (
+                ("furnimove_ubl", "mdi:led-strip-variant", True),
+                ("furnimove_sync", "mdi:sync", False),
+                ("furnimove_child_lock", "mdi:lock", True),
+                ("furnimove_massage_running", "mdi:vibrate", True),
             )
             if key != "furnimove_massage_running" or self.supports_massage
         )
@@ -492,7 +527,9 @@ class FurniMoveController(BedController):
                 "furnimove_" + key,
                 _state_key("furnimove_" + key),
                 "mdi:information-outline",
+                entity_registry_enabled_default=key.startswith("massage_"),
             )
+            # The last function result stays in the diagnostics download.
             for key in (
                 *INFO,
                 "control_mode",
@@ -500,7 +537,6 @@ class FurniMoveController(BedController):
                 "massage_intensity",
                 "massage_program",
                 "massage_timer_minutes",
-                "function_result",
             )
             if not key.startswith("massage_") or self.supports_massage
         )
@@ -1084,8 +1120,10 @@ class FurniMoveController(BedController):
     @property
     def _massage_programs(self) -> tuple[int, ...]:
         return tuple(
-            program for program in (1, 2, 3, 4)
-            if self.profile.first(f"Massager{program}" if program < 4 else "MassagerWave") is not None
+            program
+            for program in (1, 2, 3, 4)
+            if self.profile.first(f"Massager{program}" if program < 4 else "MassagerWave")
+            is not None
         )
 
     @property
@@ -1201,13 +1239,18 @@ class FurniMoveController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        # Indexed keys preserve arbitrary names and duplicate memory labels.
+        # Indexed keys preserve arbitrary names and duplicate labels. Rows the
+        # standard entities already send (presets, memory, light, sync, child
+        # lock, control mode) stay reachable through furnimove_action.
         return tuple(
             ControllerButtonSpec(
-                f"furnimove_action_{spec.row_index}", spec.name, _action_callback(spec.row_index)
+                f"furnimove_action_{spec.row_index}",
+                _ACTION_LABELS.get(spec.name, spec.name),
+                _action_callback(spec.row_index),
             )
             for spec in self.furnimove_action_specs
             if self.profile.actions[spec.row_index].type != "actuator"
+            and spec.name not in _STANDARD_ACTIONS
         )
 
     def validate_furnimove_action(
@@ -1304,7 +1347,9 @@ class FurniMoveController(BedController):
             finally:
                 # Dispatch history belongs to the app session, across BLE handoffs.
                 self._coordinator.furnimove_widget_state = (
-                    self._widget_pending, self._widget_last, self._widget_before_last
+                    self._widget_pending,
+                    self._widget_last,
+                    self._widget_before_last,
                 )
 
     @property

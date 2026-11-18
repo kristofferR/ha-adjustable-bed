@@ -1,6 +1,6 @@
-"""All 60 accepted row099 literals, cn.com.somos 1.0.0/code1.
+"""All 60 Somos 1.0.0/code1 (cn.com.somos) frame literals.
 
-Frozen from the repaired accepted report, without replaying its reproducer.
+Frozen from the app's frames.
 D/E axis names deliberately carry no anatomical or side assignment.
 """
 

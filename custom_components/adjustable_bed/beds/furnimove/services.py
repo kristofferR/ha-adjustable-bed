@@ -65,17 +65,16 @@ async def _execute_furnimove(
 
 
 async def handle_furnimove_action(call: ServiceCall) -> None:
-    """Dispatch an ordered row through its artifact-proven consumer."""
+    """Press one of the selected handset's buttons."""
     row_index = call.data["row_index"]
     duration = call.data.get(ATTR_DURATION)
     duration_ms = int(duration * 1000) if duration is not None else None
-    consumer = call.data["consumer"]
     selected_action: tuple[str, str] | None = None
 
     def validate(controller: FurniMoveController) -> None:
         nonlocal selected_action
         action = controller.validate_furnimove_action(
-            row_index, duration_ms=duration_ms, consumer=consumer
+            row_index, duration_ms=duration_ms
         )
         if selected_action is not None and action != selected_action:
             raise ValueError(
@@ -85,7 +84,7 @@ async def handle_furnimove_action(call: ServiceCall) -> None:
 
     async def execute(controller: FurniMoveController) -> None:
         await controller.async_execute_furnimove_action(
-            row_index, duration_ms=duration_ms, consumer=consumer
+            row_index, duration_ms=duration_ms
         )
 
     await _execute_furnimove(call, validate, execute)
@@ -214,7 +213,6 @@ def async_register_furnimove_services(hass: HomeAssistant) -> None:
                 **device_fields,
                 vol.Required("row_index"): vol.All(_leggett_integer, vol.Range(min=0)),
                 vol.Optional(ATTR_DURATION): _hold_seconds,
-                vol.Optional("consumer", default="app"): vol.In(("app", "widget")),
             }
         ),
     )

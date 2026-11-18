@@ -1,4 +1,4 @@
-"""Somos real HA callers, explicit setup and connection ownership, accepted row099."""
+"""Somos real HA callers, explicit setup and connection ownership."""
 
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ def entry(hass, variant, address=ADDRESS):
         CONF_NAME: "Somos",
         const.CONF_BED_TYPE: "somos",
         const.CONF_PROTOCOL_VARIANT: variant,
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         **_somos_settings({const.CONF_PROTOCOL_VARIANT: variant}),
     }
     e = MockConfigEntry(domain=const.DOMAIN, title="Somos", unique_id=address, data=data)
@@ -139,13 +139,14 @@ async def test_real_setup_native_entities_and_every_accepted_caller(
 
 @pytest.mark.parametrize("variant", "abcde")
 async def test_manual_setup_configure_import_and_factory(hass, variant):
+    from homeassistant.config_entries import SOURCE_RECONFIGURE
+
     from custom_components.adjustable_bed.app_profiles import per_side_profile
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
     from custom_components.adjustable_bed.profile_id import resolve_profile_id
     from tests.form_helpers import finish_new_bed
     from tests.test_controller_contract import _FactoryCoordinator
-    from tests.test_richmat_family_flow import configure
 
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
@@ -167,7 +168,20 @@ async def test_manual_setup_configure_import_and_factory(hass, variant):
     restored = await create_controller(coordinator, "somos", variant, None)
     assert restored.profile.key == f"somos_{variant}"
     e = entry(hass, "a")
-    await configure(hass, e, {const.CONF_PROTOCOL_VARIANT: variant})
+    # The product is the entry's bed model, chosen in Reconfigure.
+    manager = hass.config_entries.flow
+    result = await manager.async_init(
+        const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": e.entry_id}
+    )
+    assert result["step_id"] == "reconfigure_bed_type"
+    result = await manager.async_configure(result["flow_id"], {const.CONF_BED_TYPE: "somos"})
+    result = await manager.async_configure(
+        result["flow_id"], {const.CONF_PROTOCOL_VARIANT: variant}
+    )
+    if variant != "a":
+        assert result["step_id"] == "migration_confirm"
+        with patch.object(hass.config_entries, "async_schedule_reload"):
+            await manager.async_configure(result["flow_id"], {"action": "apply"})
     assert e.data[const.CONF_PROTOCOL_VARIANT] == variant
     assert e.data[const.CONF_MOTOR_COUNT] == len(app.PRODUCTS[variant].axes)
     # Saved entry import is the factory path; HA has no YAML import step.
