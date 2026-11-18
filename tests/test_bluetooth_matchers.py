@@ -148,6 +148,12 @@ def test_unrelated_names_do_not_reach_discovery(name: str) -> None:
     assert first_pass(_info(name=name)).hints == ()
 
 
+def test_richmat_fixed_name_is_discovered() -> None:
+    info = _info(name="Sleep Function 2.0")
+    assert DOMAIN in _gate().match_domains(info)
+    assert detect_bed_type_detailed(info).bed_type == const.BED_TYPE_RICHMAT
+
+
 @pytest.mark.parametrize("model", sorted(model for model in SURFACE_IDS if len(model) == 4))
 def test_nisco_and_mlily_supreme_models_are_discovered_as_advertised(model: str) -> None:
     """The app reads its four-character model ID in any case; beds advertise it in upper case."""

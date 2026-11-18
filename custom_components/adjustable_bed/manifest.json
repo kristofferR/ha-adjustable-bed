@@ -3070,6 +3070,9 @@
       "local_name": "SealyMF*"
     },
     {
+      "local_name": "Sleep Function*"
+    },
+    {
       "local_name": "SmartBed*",
       "connectable": true
     },
