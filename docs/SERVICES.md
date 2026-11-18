@@ -74,7 +74,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_rise`](#richmat_rise) | Luuna Rise and Power Cool: settings | Bed settings for Luuna Rise and Power Cool beds. Alarm and lamp settings need the bed to report them first. |
 | [`mline_command`](#mline_command) | M Line: settings | Sets sleep privacy or anti-snore, reads the current settings or alarm, or downloads sleep history. |
 | [`mlily`](#mlily) | MLILY: settings | Configure this MLILY product or its independent MM/SXB sleep receiver. |
-| [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a named action listed in controller diagnostics. Persistent save, clear, reset and module changes require confirmation. |
+| [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a control by its name, as listed in the bed's diagnostics. Saving, clearing, resetting and changing modules need confirmation. |
 | [`motion_bed_air_setting`](#motion_bed_air_setting) | Motion Bed: air settings | Query or save the selected mode’s upper gear and optional timer. Lower pressure is readback only. |
 | [`motion_bed_audio`](#motion_bed_audio) | Motion Bed: audio | Select a track, preview a track, or set volume on a target that reports audio support. |
 | [`motion_bed_calibration`](#motion_bed_calibration) | Motion Bed: calibrate sleep sensing | Save the app’s flat and side calibration readings. Confirm before changing calibration. |
@@ -1323,7 +1323,7 @@ the anti-snore intervention runs on the left.
 ## Motion Bed
 
 <a id="motion_bed_action"></a>
-**`motion_bed_action`**: Run a named action listed in controller diagnostics. Persistent save, clear, reset and module changes require confirmation.
+**`motion_bed_action`**: Run a control by its name, as listed in the bed's diagnostics. Saving, clearing, resetting and changing modules need confirmation.
 
 | Field | Name | Meaning |
 |-------|------|---------|
