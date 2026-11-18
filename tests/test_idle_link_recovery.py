@@ -8,6 +8,7 @@ bed that drops idle links cannot be held connected forever.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
@@ -515,3 +516,128 @@ async def test_link_opened_for_a_service_check_gets_a_full_window(
 
     assert coordinator._idle_deadline == pytest.approx(hass.loop.time() + 40, abs=1.0)
     assert coordinator._disconnect_timer is not None
+
+
+async def _run_gated_recovery(
+    hass: HomeAssistant,
+    coordinator: AdjustableBedCoordinator,
+    client: MagicMock,
+    during,
+) -> int:
+    """Run one recovery whose connect waits until ``during`` has run and the window passed.
+
+    Returns how many connects happened.
+    """
+    gate = asyncio.Event()
+    connect = coordinator._async_connect_locked
+    connects = 0
+
+    async def _gated_connect(reset_timer: bool = True) -> bool:
+        nonlocal connects
+        connects += 1
+        await gate.wait()
+        client.is_connected = True
+        return await connect(reset_timer)
+
+    coordinator._async_connect_locked = _gated_connect
+    recovery = hass.async_create_task(coordinator._async_auto_reconnect())
+    while connects == 0 and not recovery.done():
+        await asyncio.sleep(0)
+    await during()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=60))
+    await asyncio.sleep(0)
+    gate.set()
+    await recovery
+    return connects
+
+
+async def _dropped_inside_window(
+    hass: HomeAssistant, client: MagicMock
+) -> AdjustableBedCoordinator:
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    coordinator._idle_deadline = hass.loop.time() + 20
+    _drop(coordinator, client)
+    assert _take_reconnect_timer(coordinator)
+    return coordinator
+
+
+async def test_stop_queued_before_recovery_starts_makes_it_unbounded(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A STOP already waiting behind a read is command demand for the recovery."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    controller_cls = type(coordinator.controller)
+    coordinator._idle_deadline = hass.loop.time() + 20
+    _drop(coordinator, mock_bleak_client)
+    assert _take_reconnect_timer(coordinator)
+    sent_on: list[object] = []
+    release_read = asyncio.Event()
+
+    async def _read() -> None:
+        async with coordinator._command_lock, coordinator._link_read_scope(True):
+            await release_read.wait()
+
+    read = hass.async_create_task(_read())
+    await asyncio.sleep(0)
+
+    async def _stop_all(self: object) -> None:
+        del self
+        sent_on.append(coordinator._client)
+
+    with patch.object(controller_cls, "stop_all", _stop_all):
+        stop = hass.async_create_task(coordinator.async_stop_command())
+        await asyncio.sleep(0)
+        assert coordinator._command_needs_link()
+
+        async def _nothing() -> None:
+            return None
+
+        connects = await _run_gated_recovery(hass, coordinator, mock_bleak_client, _nothing)
+        release_read.set()
+        await read
+        await stop
+
+    assert connects == 1
+    assert sent_on == [mock_bleak_client]
+
+
+async def test_command_group_is_demand_before_its_first_operation(
+    hass: HomeAssistant,
+) -> None:
+    """A group that checks the bed before its first write already needs the link."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def _live_check() -> None:
+        started.set()
+        await release.wait()
+
+    group = hass.async_create_task(
+        coordinator.async_execute_command_group([_live_check], resources=("*",))
+    )
+    await started.wait()
+
+    assert coordinator._command_needs_link()
+    release.set()
+    await group
+    assert not coordinator._command_demand
+
+
+async def test_command_hold_lifts_an_inflight_recovery(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A linked action that starts holding the link mid-recovery uses its connect."""
+    coordinator = await _dropped_inside_window(hass, mock_bleak_client)
+
+    with contextlib.ExitStack() as held:
+
+        async def _hold() -> None:
+            held.enter_context(coordinator.hold_command_connection())
+
+        connects = await _run_gated_recovery(hass, coordinator, mock_bleak_client, _hold)
+
+    assert connects == 1
+    assert coordinator.is_connected

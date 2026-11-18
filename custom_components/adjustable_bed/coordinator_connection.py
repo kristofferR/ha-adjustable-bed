@@ -369,6 +369,7 @@ class CoordinatorConnectionMixin:
             yield
             return
         self._command_connection_holds += 1
+        self._note_command_demand()
         self._cancel_disconnect_timer()
         try:
             yield
@@ -438,10 +439,26 @@ class CoordinatorConnectionMixin:
     def _command_needs_link(self: AdjustableBedCoordinator) -> bool:
         """Return True while a command runs, waits, or holds the link."""
         return bool(
-            (self._command_lock.locked() and not self._link_read_active)
+            self._command_demand
+            or (self._command_lock.locked() and not self._link_read_active)
             or self._command_connection_holds
             or self._command_scheduler.has_pending
         )
+
+    @contextlib.asynccontextmanager
+    async def _command_demand_scope(
+        self: AdjustableBedCoordinator, demand: bool = True
+    ) -> AsyncIterator[None]:
+        """Count a command as needing the link from before it waits for the lock."""
+        if not demand:
+            yield
+            return
+        self._command_demand += 1
+        self._note_command_demand()
+        try:
+            yield
+        finally:
+            self._command_demand -= 1
 
     @contextlib.asynccontextmanager
     async def _link_read_scope(
@@ -482,7 +499,7 @@ class CoordinatorConnectionMixin:
         self._cancel_disconnect_timer()
 
     def _note_command_demand(self: AdjustableBedCoordinator) -> None:
-        """Mark that a command wants the link; call before waiting for the command lock.
+        """Mark that a command wants the link.
 
         A recovery still connecting finishes for the command instead of being
         cancelled at the window's end and connected again from scratch.

@@ -457,6 +457,8 @@ class AdjustableBedCoordinator(
         self._recovered_link_window = False
         # Bumped whenever a command takes the link; a recovery checks it.
         self._command_link_generation = 0
+        # Commands between asking for the link and finishing with it.
+        self._command_demand = 0
         # A read, not a command, holds _command_lock.
         self._link_read_active = False
         # The idle window whose one recovery has been used.
@@ -1849,8 +1851,7 @@ class AdjustableBedCoordinator(
         # Capture cancel count at entry to detect if we get cancelled while waiting
         entry_cancel_count = self._cancel_counter
 
-        self._note_command_demand()
-        async with self._command_lock:
+        async with self._command_demand_scope(), self._command_lock:
             # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
             self._hold_link_for_command()
 
@@ -1994,8 +1995,7 @@ class AdjustableBedCoordinator(
         """Send STOP while owning the legacy wire and connection lifecycle lane."""
         # STOP remains outside the ordinary scheduler lane so it can preempt it,
         # then waits for any cancelled controller cleanup to release the wire lock.
-        self._note_command_demand()
-        async with self._command_lock:
+        async with self._command_demand_scope(), self._command_lock:
             self._hold_link_for_command()
             if getattr(self, "_pairing_transfer_active", False) is True:
                 raise ConnectionError("Bed ownership is being transferred")
@@ -2238,10 +2238,12 @@ class AdjustableBedCoordinator(
 
         # Queries keep a recovered link's idle window and are not command demand.
         link_read = preserve_idle_deadline or operation_name == "query"
-        if not link_read:
-            self._note_command_demand()
         entry_cancel_count = self._cancel_counter
-        async with self._command_lock, self._link_read_scope(link_read):
+        async with (
+            self._command_demand_scope(not link_read),
+            self._command_lock,
+            self._link_read_scope(link_read),
+        ):
             # Background reads can inherit a command context while it is active,
             # then acquire this lock after that command has finished. Resolve
             # ownership here so their controller sees the same cancellation event.
@@ -2902,7 +2904,9 @@ class AdjustableBedCoordinator(
             cancel_running=cancel_running,
             group_id=group_id or uuid4().hex,
         )
-        await self._command_scheduler.execute(intent, expected_stop_epoch=expected_stop_epoch)
+        # A group may connect for a live check before its first operation.
+        async with self._command_demand_scope():
+            await self._command_scheduler.execute(intent, expected_stop_epoch=expected_stop_epoch)
 
     async def async_execute_controller_query(
         self,
