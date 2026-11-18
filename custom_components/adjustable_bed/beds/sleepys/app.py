@@ -507,14 +507,18 @@ class SleepysEliteAppController(BedController):
         duration_ms: int,
         *,
         release: bool,
-    ) -> None:
-        """Refresh at the accepted cadence for an elapsed window, then release once."""
+    ) -> bool:
+        """Refresh at the accepted cadence for an elapsed window, then release once.
+
+        Return whether any refresh frame was written.
+        """
         now = self._monotonic()
         cancel_event = self._coordinator.cancel_command
         deadline = now + duration_ms / 1000
         next_refresh = now
         context = current_command_context()
         failed = False
+        written = False
         try:
             while await self._wait_until_or_cancel(next_refresh, deadline, cancel_event):
                 started = self._monotonic()
@@ -522,6 +526,7 @@ class SleepysEliteAppController(BedController):
                     break
                 if not await self._write_route_before_deadline(route, deadline, cancel_event):
                     break
+                written = True
                 now = self._monotonic()
                 if cancel_event.is_set() or now >= deadline - _DEADLINE_EPSILON_SECONDS:
                     break
@@ -537,6 +542,7 @@ class SleepysEliteAppController(BedController):
                     if not failed:
                         raise
                     _LOGGER.debug("Sleepy's STOP cleanup failed", exc_info=True)
+        return written
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Refresh one held app action until its elapsed deadline, then send STOP."""
@@ -546,9 +552,11 @@ class SleepysEliteAppController(BedController):
     async def set_motion_sensor(self, *, enabled: bool) -> None:
         """Run the app's cancellable five-second sensor refresh without STOP."""
         builder = "motionSensorOn" if enabled else "motionSensorOff"
-        await self._run_refresh_window(
+        if not await self._run_refresh_window(
             self._route(builder), _MOTION_SENSOR_REFRESH_MS, release=False
-        )
+        ):
+            # The switch must not show a setting the bed never received.
+            raise ConnectionError("Sleepy's motion sensor setting was not sent")
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Set up the chosen route, then subscribe to its response characteristic."""

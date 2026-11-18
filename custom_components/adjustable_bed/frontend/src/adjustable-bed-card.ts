@@ -1350,18 +1350,13 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _utility(bed: BedEntities): typeof nothing | TemplateResult {
-    if (bed.utility.length === 0 && !bed.utilityNumbers?.length && !bed.utilitySelects?.length && !bed.utilityStates?.length) return nothing;
+    if (bed.utility.length === 0 && !bed.utilitySwitches?.length && !bed.utilityNumbers?.length && !bed.utilitySelects?.length && !bed.utilityStates?.length) return nothing;
     return html`
       ${this._heading("section.utility")}
       <div class="tiles">
-        ${bed.utility.map((id) =>
-          this._actionTile(id, bed.stop, () =>
-            id.startsWith("switch.")
-              ? this._call("switch", "toggle", id)
-              : this._press(id),
-          ),
-        )}
+        ${bed.utility.map((id) => this._actionTile(id, bed.stop))}
       </div>
+      ${bed.utilitySwitches?.map((id) => this._switchRow(id))}
       ${bed.utilitySelects?.map((id) => this._moreInfoRow(id))}
       ${bed.utilityNumbers?.map((id) => this._moreInfoRow(id))}
       ${bed.utilityStates?.map((id) => this._moreInfoRow(id))}
@@ -1479,6 +1474,7 @@ export class AdjustableBedCard extends LitElement {
       ${this._heading("section.lighting")}
       ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
       ${main ? this._toggleRow(main) : nothing}
+      ${l.switches?.map((id) => this._switchRow(id))}
       ${l.state ? this._moreInfoRow(l.state) : nothing}
       ${l.states?.map((id) => this._moreInfoRow(id))}
       ${l.level ? this._moreInfoRow(l.level) : nothing}
@@ -1512,7 +1508,7 @@ export class AdjustableBedCard extends LitElement {
 
   private _massage(bed: BedEntities): typeof nothing | TemplateResult {
     const m = bed.massage;
-    if (m.buttons.length === 0 && m.numbers.length === 0 && !m.selects?.length && !m.states?.length && !m.timer)
+    if (m.buttons.length === 0 && m.numbers.length === 0 && !m.selects?.length && !m.switches?.length && !m.states?.length && !m.timer)
       return nothing;
     return html`
       ${this._heading("section.massage")}
@@ -1523,6 +1519,7 @@ export class AdjustableBedCard extends LitElement {
             </div>`
           : nothing
       }
+      ${m.switches?.map((id) => this._switchRow(id))}
       ${m.numbers.map((id) => this._moreInfoRow(id))}
       ${m.selects?.map((id) => this._moreInfoRow(id))}
       ${m.states?.map((id) => this._moreInfoRow(id))}
@@ -1615,6 +1612,38 @@ export class AdjustableBedCard extends LitElement {
         >
           <span class="knob"></span>
         </button>
+      </div>
+    `;
+  }
+
+  // A switch whose state the bed cannot confirm gets separate On and Off
+  // controls: a toggle would read unknown as off and only ever send On.
+  private _switchRow(entityId: string): TemplateResult {
+    const st = this._state(entityId);
+    if (st?.attributes.assumed_state !== true && (st?.state === "on" || st?.state === "off"))
+      return this._toggleRow(entityId);
+    const name = entityLabel(this.hass, entityId);
+    const set = (service: "turn_on" | "turn_off") => (e: Event) => {
+      e.stopPropagation();
+      this._call("switch", service, entityId);
+    };
+    return html`
+      <div
+        class="entity-row"
+        role="button"
+        tabindex="0"
+        aria-label=${name}
+        @click=${() => this._moreInfo(entityId)}
+        @keydown=${(e: KeyboardEvent) =>
+          this._onRowKey(e, () => this._moreInfo(entityId))}
+      >
+        ${this._icon(entityId)}
+        <div class="entity-row-text">
+          <span>${name}</span>
+          <span class="secondary">${this._stateText(entityId)}</span>
+        </div>
+        <button class="dialog-btn" @click=${set("turn_off")}>${this._t("action.off")}</button>
+        <button class="dialog-btn" @click=${set("turn_on")}>${this._t("action.on")}</button>
       </div>
     `;
   }
@@ -2132,6 +2161,8 @@ export class AdjustableBedCard extends LitElement {
     bed.massage.numbers.forEach((x) => ids.add(x));
     bed.massage.selects?.forEach((x) => ids.add(x));
     bed.massage.states?.forEach((x) => ids.add(x));
+    bed.massage.switches?.forEach((x) => ids.add(x));
+    bed.lights.switches?.forEach((x) => ids.add(x));
     bed.lights.mood?.selects.forEach((x) => ids.add(x));
     bed.lights.mood?.numbers.forEach((x) => ids.add(x));
     bed.lights.mood?.buttons?.forEach((x) => ids.add(x));
@@ -2139,6 +2170,7 @@ export class AdjustableBedCard extends LitElement {
     bed.utilityNumbers?.forEach((x) => ids.add(x));
     bed.utilitySelects?.forEach((x) => ids.add(x));
     bed.utilityStates?.forEach((x) => ids.add(x));
+    bed.utilitySwitches?.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));
     bed.climate.selects.forEach((x) => ids.add(x));
     bed.climate.numbers.forEach((x) => ids.add(x));

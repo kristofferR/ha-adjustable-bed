@@ -545,6 +545,22 @@ async def test_controller_switch_records_only_a_command_that_was_sent(hass):
     assert assumed.is_on is None
 
 
+async def test_controller_switch_ignores_a_command_stop_cancelled_before_writing(hass):
+    runtime = runtime_for(hass, SwitchController())
+    _readback, assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    cancelled = MagicMock()
+    cancelled.cancel_event.is_set.return_value = True
+    with patch(
+        "custom_components.adjustable_bed.switch.current_command_context", return_value=cancelled
+    ):
+        await assumed.async_turn_on()
+    assert assumed.is_on is None
+
+
 async def test_controller_switch_forgets_assumed_state_when_the_link_drops(hass):
     runtime = runtime_for(hass, SwitchController())
     _readback, assumed = (

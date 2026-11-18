@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN
+from ...card import CARD_HIDDEN, CARD_PRESET_SAVE
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import HJBED, RichmatProfile
@@ -593,6 +593,8 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
                         partial(_action, detail=detail, save=True),
                         translation_key="hjbed_action",
                         translation_placeholders={"action": "Save " + action_label(action)},
+                        requires_confirmation=True,
+                        card=CARD_PRESET_SAVE,
                     )
                 )
 

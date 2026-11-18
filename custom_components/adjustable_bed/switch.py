@@ -18,6 +18,7 @@ from homeassistant.helpers import entity_registry as er
 from .beds.entity_specs import ControllerSwitchSpec
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
+from .command_scheduler import current_command_context
 from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_SVANE,
@@ -307,7 +308,9 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             if live is None:
                 raise ServiceValidationError("Controller no longer supports this setting")
             await live.set_fn(ctrl, on)
-            sent = True
+            # A writer returns quietly when STOP cancels it before the frame goes out.
+            context = current_command_context()
+            sent = context is None or not context.cancel_event.is_set()
 
         await self._coordinator.async_execute_controller_command(apply)
         # A STOP or a replacing command can settle the call without sending it.

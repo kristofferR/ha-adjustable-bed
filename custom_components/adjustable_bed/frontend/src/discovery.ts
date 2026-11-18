@@ -302,7 +302,9 @@ export function bedEntitiesForDevice(
             break;
           default:
             if (domain === "light") lights.light = id;
-            else if (domain === "switch") lights.switch = id;
+            // The floor light is the main switch; others are accessory lights.
+            else if (domain === "switch" && keyOf(entry) === "under_bed_lights") lights.switch = id;
+            else if (domain === "switch") (lights.switches ??= []).push(id);
             else if (domain === "binary_sensor") lights.state = id;
             else if (domain === "sensor") (lights.states ??= []).push(id);
             else if (domain === "number") (lights.numbers ??= []).push(id);
@@ -316,6 +318,7 @@ export function bedEntitiesForDevice(
         else if (domain === "button") bed.massage.buttons.push(id);
         else if (domain === "number") bed.massage.numbers.push(id);
         else if (domain === "select") (bed.massage.selects ??= []).push(id);
+        else if (domain === "switch") (bed.massage.switches ??= []).push(id);
         else (bed.massage.states ??= []).push(id);
         break;
 
@@ -329,6 +332,7 @@ export function bedEntitiesForDevice(
         if (domain === "number") (bed.utilityNumbers ??= []).push(id);
         else if (domain === "select") (bed.utilitySelects ??= []).push(id);
         else if (domain === "sensor" || domain === "binary_sensor") (bed.utilityStates ??= []).push(id);
+        else if (domain === "switch") (bed.utilitySwitches ??= []).push(id);
         else bed.utility.push(id);
         break;
     }
@@ -446,6 +450,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.massage.numbers.length === 0 &&
     !bed.massage.selects?.length &&
     !bed.massage.states?.length &&
+    !bed.massage.switches?.length &&
     !bed.massage.timer &&
     bed.climate.entities.length === 0 &&
     bed.climate.selects.length === 0 &&
@@ -454,13 +459,14 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     !bed.utilityNumbers?.length &&
     !bed.utilitySelects?.length &&
     !bed.utilityStates?.length &&
+    !bed.utilitySwitches?.length &&
     !bed.savedPositions
   );
 }
 
 export function hasLightingControls(lights: LightEntities): boolean {
   return !!(
-    lights.light || lights.switch || lights.level || lights.toggle ||
+    lights.light || lights.switch || lights.switches?.length || lights.level || lights.toggle ||
     lights.numbers?.length || lights.buttons?.length || lights.states?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
     lights.mood?.toggle || lights.mood?.selects.length || lights.mood?.numbers.length || lights.mood?.buttons?.length
   );

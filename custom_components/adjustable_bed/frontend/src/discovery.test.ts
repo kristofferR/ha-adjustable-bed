@@ -64,7 +64,8 @@ test("OKIN Motion Bed keeps neutral middle holds and its bed light switch reacha
   });
   expect(bed.presets).toEqual(["button.preset_stop"]);
   expect(bed.memory).toEqual([{ slot: 1, goto: "button.recall_a", save: "button.save_a" }]);
-  expect(bed.lights.switch).toBe("switch.light");
+  // An app light switch sits beside the floor light, with explicit On and Off.
+  expect(bed.lights.switches).toEqual(["switch.light"]);
 });
 
 test("GM product controls and raw session state stay with their physical device", () => {
@@ -310,7 +311,8 @@ test("OCTO all-down and remote lock are utility controls", () => {
     entry("button.octo_all_down", "octo_all_down", "octo"),
     entry("switch.octo_remote_lock", "remote_control_lock", "octo"),
   ]), "octo");
-  expect(bed.utility).toEqual(["button.octo_all_down", "switch.octo_remote_lock"]);
+  expect(bed.utility).toEqual(["button.octo_all_down"]);
+  expect(bed.utilitySwitches).toEqual(["switch.octo_remote_lock"]);
   expect(bed.presets).toEqual([]);
 });
 
@@ -467,8 +469,7 @@ test("Pairlink massage controls and state join the massage section", () => {
   const bed = bedEntitiesForDevice(hass, "dev1");
 
   expect(bed.massage.timer).toBe("number.pairlink_timer");
-  // The rhythm switch opens its more-info row beside the other massage state.
-  expect(bed.massage.states).toEqual(["switch.pairlink_rhythm"]);
+  expect(bed.massage.switches).toEqual(["switch.pairlink_rhythm"]);
   expect(bed.massage.selects).toEqual(["select.pairlink_mode"]);
   // A reading, not a button: it sits with the other utility states.
   expect(bed.utilityStates).toEqual(["binary_sensor.pairlink_low_battery"]);
@@ -697,12 +698,8 @@ test("Linak configuration controls bucket into utility", () => {
   ]);
   const bed = bedEntitiesForDevice(hass, "dev1");
 
-  expect(bed.utility).toEqual([
-    "button.b_wake",
-    "button.b_reset",
-    "button.b_factory",
-    "switch.b_drive",
-  ]);
+  expect(bed.utility).toEqual(["button.b_wake", "button.b_reset", "button.b_factory"]);
+  expect(bed.utilitySwitches).toEqual(["switch.b_drive"]);
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
@@ -1469,8 +1466,9 @@ test("AdjustaMattress model-gated controls and neutral reported fields stay visi
   expect(bed.massage.selects).toEqual(["select.head"]);
   expect(bed.massage.states).toEqual(["sensor.head"]);
   expect(bed.presets).toEqual(["button.m1"]);
-  // Sleep mode and the alarm are switches the utility tiles toggle.
-  expect(bed.utility).toEqual(["switch.sleep", "switch.alarm"]);
+  // Sleep mode and the alarm are utility switches.
+  expect(bed.utilitySwitches).toEqual(["switch.sleep", "switch.alarm"]);
+  expect(bed.utility).toEqual([]);
   expect(bed.utilityNumbers).toEqual(["number.hour"]);
 });
 
@@ -1542,7 +1540,8 @@ test("SleepEase exposes held motors, massage, lights, sensors and the local chil
   expect(bed.massage.states).toEqual(["sensor.mode"]);
   expect(bed.lights.buttons).toEqual(["button.light"]);
   expect(bed.lights.states).toEqual(["sensor.light"]);
-  expect(bed.utility).toEqual(["button.refresh", "switch.child"]);
+  expect(bed.utility).toEqual(["button.refresh"]);
+  expect(bed.utilitySwitches).toEqual(["switch.child"]);
   expect(bed.utilityStates).toEqual(["sensor.hr"]);
 });
 
@@ -1596,7 +1595,7 @@ test("RUF and Richmat app mattress, alarm and sleep receiver entities reach the 
   ]), "dev1");
   expect(bed.massage.selects).toEqual(["select.pressure", "select.heat"]);
   expect(bed.utilitySelects).toEqual(["select.sleep_mode"]);
-  expect(bed.utility).toEqual(["switch.intervention"]);
+  expect(bed.utilitySwitches).toEqual(["switch.intervention"]);
   expect(bed.utilityStates).toEqual(["sensor.alarm", "sensor.calendar", "sensor.heart_rate"]);
   expect(bedIsEmpty(bed)).toBe(false);
 });
@@ -1712,4 +1711,15 @@ test("KomfyD/ComfyDS source labels keep motor leases separate from H/F steps", (
   expect(bed.utility).toContain("button.app_h");
   expect(bed.utilitySelects).toContain("select.app_timer");
   expect(bed.massage.buttons).toEqual([]);
+});
+
+test("accessory light switches sit beside the floor light instead of replacing it", () => {
+  const bed = bedEntitiesForDevice(hassWith([
+    entry("light.base", "under_bed_lights"),
+    entry("switch.cup", "smart_comfort_cup"),
+    entry("switch.read", "smart_comfort_read"),
+  ]), "dev1");
+  expect(bed.lights.light).toBe("light.base");
+  expect(bed.lights.switch).toBeUndefined();
+  expect(bed.lights.switches).toEqual(["switch.cup", "switch.read"]);
 });

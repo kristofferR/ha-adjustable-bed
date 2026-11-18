@@ -822,3 +822,10 @@ async def test_hold_repeats_at_100ms_then_stops_with_a_fresh_event() -> None:
     assert release.builder == "stop"
     assert isinstance(release_kwargs["cancel_event"], asyncio.Event)
     assert release_kwargs["cancel_event"] is not controller._coordinator.cancel_command
+
+
+async def test_motion_sensor_reports_a_setting_it_never_wrote() -> None:
+    controller = _controller("BOX25", connected=True)
+    controller._run_refresh_window = AsyncMock(return_value=False)
+    with pytest.raises(ConnectionError, match="not sent"):
+        await controller.set_motion_sensor(enabled=True)
