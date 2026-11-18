@@ -4651,6 +4651,9 @@
       },
       "sonicsleep": {
         "name": "Model"
+      },
+      "okimiki_alarms": {
+        "name": "Alarms"
       }
     },
     "light": {
@@ -8397,14 +8400,14 @@
         },
         "alarm_id": {
           "name": "Alarm slot",
-          "description": "Choose 1 through 7 explicitly when creating an alarm. Read the alarms before editing, turning on or off, or deleting one."
+          "description": "Choose 1 through 7 explicitly when creating an alarm. Read the alarms first (the Alarms sensor lists them) before editing, turning on or off, or deleting one."
         },
         "mode": {
           "name": "Wake action"
         },
         "weekdays": {
           "name": "Weekdays",
-          "description": "Leave empty for a one-time alarm."
+          "description": "Days the alarm repeats. An empty list sets a one-time alarm; leaving the field out keeps an edited alarm's days."
         },
         "enabled": {
           "name": "Enabled"

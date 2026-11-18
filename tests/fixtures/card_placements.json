@@ -3703,6 +3703,9 @@
  "sensor:n32_alarm_3": {
   "card_section": "utility"
  },
+ "sensor:okimiki_alarms": {
+  "card_section": "hidden"
+ },
  "sensor:okin_bedding_app_alarm_type": {
   "card_section": "hidden"
  },

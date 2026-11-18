@@ -1402,9 +1402,9 @@ data:
 | `control` | Control |  |
 | `duration_ms` | Press duration |  |
 | `datetime` | Alarm time |  |
-| `alarm_id` | Alarm slot | Choose 1 through 7 explicitly when creating an alarm. Read the alarms before editing, turning on or off, or deleting one. |
+| `alarm_id` | Alarm slot | Choose 1 through 7 explicitly when creating an alarm. Read the alarms first (the Alarms sensor lists them) before editing, turning on or off, or deleting one. |
 | `mode` | Wake action |  |
-| `weekdays` | Weekdays | Leave empty for a one-time alarm. |
+| `weekdays` | Weekdays | Days the alarm repeats. An empty list sets a one-time alarm; leaving the field out keeps an edited alarm's days. |
 | `enabled` | Enabled |  |
 | `seconds` | Light duration | Zero keeps the light on. |
 | `rgb_color` | RGB color |  |
@@ -1425,8 +1425,10 @@ Lighting operations are `light_color` (`rgb_color`), `light_duration` (`seconds`
 IQRM offers `single` (`datetime`, lounge) and `cancel_single`. KWRN offers
 `alarms`, `repeat` (`datetime`, `mode`, optional `weekdays` and `enabled`),
 `enable` and `delete`. Read the list with `alarms` before editing a slot with
-`alarm_id`; the received records are in the bed's diagnostics. An edit keeps
-omitted received fields and the reserved byte. Empty `weekdays` means once.
+`alarm_id`; the Alarms diagnostic sensor (disabled by default) lists the received
+slots with time, wake action, weekdays and on/off. An edit keeps omitted received
+fields and the reserved byte. An empty `weekdays` list means once; leaving the
+field out keeps an edited alarm's days.
 Alarm operations require the current session's clock capability reply. These
 are direct bed requests, not confirmed firmware schedules.
 

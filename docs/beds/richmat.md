@@ -8698,9 +8698,10 @@ All four products expose head/back, foot/legs, combined movement and flat. The
 product table and command table describe their memory and preset controls.
 Lighting appears only after the connected bed reports its light capability.
 The native RGB light and duration number show requested values; they do not
-claim confirmed light-state feedback. Zero duration means always on. The Status
-diagnostic sensor (disabled by default) carries the received alarms, observations
-and requests as attributes.
+claim confirmed light-state feedback. Zero duration means always on. On KWRN the
+Alarms diagnostic sensor (disabled by default) counts the alarm records read
+this session and lists each slot's time, wake action, weekdays and on/off as
+attributes. Other decoded events stay in diagnostics.
 
 After discovery, the light and duration entities keep their registry identities
 and customizations through an idle disconnect. They remain unavailable until
@@ -8765,10 +8766,10 @@ action rather than the shared `set_alarm`: that action does not yet keep the
 safeguards these record edits need across a paired hand-over, between check and
 write, and when Stop interrupts the check.
 
-Read KWRN's list before editing or deleting by ID; the received records are in
-diagnostics. An edit retains the returned reserved byte; omitted fields retain
+Read KWRN's list before editing or deleting by ID; the Alarms sensor shows the
+received slots. An edit retains the returned reserved byte; omitted fields retain
 the received values. Weekdays are names, Monday to Sunday; an empty list means
-once. The four modes are lounge, zero gravity, memory 1 and memory 2. Choose an
+once, and leaving the field out keeps an edited alarm's days. The four modes are lounge, zero gravity, memory 1 and memory 2. Choose an
 explicit `alarm_id` from 1 through 7 when creating a recurring alarm. The list
 has no completion marker, so Home Assistant does not infer a free slot from
 missing or delayed replies. The app's exhausted allocator serializes FF; that

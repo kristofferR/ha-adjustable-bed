@@ -521,5 +521,17 @@ def test_save_labels_and_no_raw_status_entity(coordinator, code):
         "okimiki_save_zero_gravity": "Save zero-gravity position",
     }
     assert labels == ({} if code == "IPRM" else saves)
-    # Decoded events and alarm records stay in diagnostics.
-    assert obj.controller_state_sensor_specs == ()
+    # Raw events stay in diagnostics; only KWRN lists its decoded alarms.
+    keys = [spec.translation_key for spec in obj.controller_state_sensor_specs]
+    assert keys == (["okimiki_alarms"] if code == "KWRN" else [])
+
+
+def test_kwrn_alarm_records_are_decoded_for_the_alarms_sensor(obj):
+    obj._alarms = [p.Alarm(3, 17, 7, 5, CONTROLS["zero_gravity"].opcode, p.repeat_mask((0, 6), True))]
+    obj._publish()
+    state = obj._coordinator.controller_state
+    assert state[bed.ALARM_RECORDS] == [
+        {"slot": 3, "time": "07:05", "wake_action": "zero_gravity", "weekdays": ["monday", "sunday"], "enabled": True}
+    ]
+    (sensor,) = obj.controller_state_sensor_specs
+    assert sensor.translation_key == "okimiki_alarms"

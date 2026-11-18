@@ -27,6 +27,7 @@ from ..entity_specs import (
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
+    ControllerStateSensorSpec,
     MotorControlSpec,
 )
 from ..goodvibe.controller import Gesture, GoodVibeController, Link, select_link
@@ -39,6 +40,11 @@ if TYPE_CHECKING:
     from .services import Request
 
 DURATION: Final = StateKey[int | None]("okimiki_light_seconds")
+# KWRN alarm records as read this session, decoded for the `alarm_id` a user edits.
+ALARM_COUNT: Final = StateKey[int | None]("okimiki_alarm_count")
+ALARM_RECORDS: Final = StateKey[list[dict[str, object]]]("okimiki_alarm_records")
+_ALARM_MODES: Final = {CONTROLS[mode].opcode: mode for mode in ("lounge", "zero_gravity", "memory_1", "memory_2")}
+_WEEKDAYS: Final = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 _SAVE_LABELS: Final = {"lounge": "Save lounge position", "zero_gravity": "Save zero-gravity position"}
 _SCOPE: ContextVar[tuple[object, Link, float | None, list[BleakError]] | None] = ContextVar(
     "okimiki_session", default=None
@@ -361,7 +367,13 @@ class OkimikiController(GoodVibeController):
 
     def _publish(self) -> None:
         seconds = self._requests.get("seconds") if self.supports_lights else None
-        self.forward_controller_state_updates(DURATION(seconds if type(seconds) is int else None))
+        repeat = self.model.alarm == "repeat"
+        alarms = sorted(getattr(self, "_alarms", []), key=lambda row: row.id) if repeat else []
+        self.forward_controller_state_updates(
+            DURATION(seconds if type(seconds) is int else None),
+            ALARM_COUNT(len(alarms) if repeat and getattr(self, "_link", None) is not None else None),
+            ALARM_RECORDS([_alarm_record(row) for row in alarms]),
+        )
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -379,9 +391,17 @@ class OkimikiController(GoodVibeController):
         }
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[()]:
-        # Decoded events and alarm records stay in protocol_diagnostics.
-        return ()
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        # Raw events stay in protocol_diagnostics; only KWRN's decoded alarm list is
+        # shown, since the Okimiki action edits an alarm by its slot.
+        if self.model.alarm != "repeat":
+            return ()
+        return (
+            ControllerStateSensorSpec(
+                "okimiki_alarms", "okimiki_alarms", ALARM_COUNT, "mdi:alarm",
+                attribute_keys=(ALARM_RECORDS,),
+            ),
+        )
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
@@ -653,6 +673,16 @@ class OkimikiController(GoodVibeController):
             # Deleted IDs cannot return a record. A successful explicit refresh
             # starts a new observed list, without claiming it is complete.
             self._stale_alarm_ids.clear()
+
+
+def _alarm_record(row: p.Alarm) -> dict[str, object]:
+    return {
+        "slot": row.id,
+        "time": f"{row.hour:02d}:{row.minute:02d}",
+        "wake_action": _ALARM_MODES.get(row.opcode),
+        "weekdays": [day for index, day in enumerate(_WEEKDAYS) if row.mask & (1 << (7 - index))],
+        "enabled": bool(row.mask & 1),
+    }
 
 
 async def build_controller(ctx: BuildContext) -> OkimikiController:
