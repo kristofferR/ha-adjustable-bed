@@ -1764,6 +1764,7 @@ async def _preflight_and_execute[T](
     resource: str | None = "configuration",
     admit: bool = False,
     admissions: Sequence[_CommandAdmission | None] | None = None,
+    prepare: Callable[[], None] | None = None,
 ) -> None:
     """Preflight every physical target, then run ``command`` on each in turn.
 
@@ -1771,7 +1772,9 @@ async def _preflight_and_execute[T](
     ``ServiceValidationError``. Any failure or cancellation hands the links
     opened only for validation back to their idle timer. ``admit`` lets a STOP
     pressed during the preflight cancel the command. ``admissions`` can carry
-    snapshots captured before a lazy import awaits.
+    snapshots captured before a lazy import awaits. ``prepare`` publishes
+    synchronous ingress input after the complete batch passes validation and
+    its captured STOP generations still match, before queued execution.
     """
     if admissions is None:
         admissions = [
@@ -1783,6 +1786,20 @@ async def _preflight_and_execute[T](
             for coordinator, side in targets
         ]
     preflighted = await _preflight_capability(targets, interface, label, supported, validate)
+    if prepare is not None:
+        try:
+            # An ingress update may affect an already running operation. Admit
+            # the complete batch before publishing it, with no await between
+            # the owner/STOP checks and the synchronous update.
+            if all(
+                admission is not None
+                and _capture_command_admission(parent, side, admission.resources) == admission
+                for (parent, side), admission in zip(targets, admissions, strict=True)
+            ):
+                prepare()
+        except BaseException:
+            await _release_preflighted(preflighted)
+            raise
     await _execute_preflighted(
         targets,
         preflighted,

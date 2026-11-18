@@ -675,6 +675,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf remote, older receiver",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
+    "l2motion": "L2 Motion",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie app",
@@ -1551,6 +1552,15 @@ def _detect_bed_type_with_app_candidates(
         elif result.bed_type != "bedgear":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bedgear"]))
             result.signals.append("name:bedgear_app_candidate")
+    if bedgear_eligible(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
+        # Identical scan grammar is only an app candidate, never permission to
+        # run L2 Motion's independently declared controls on another route.
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "l2motion"]))
+        result.signals.append("name:l2motion_app_candidate")
+        if result.bed_type == BED_TYPE_MOTOSLEEP and "name:motosleep" in result.signals:
+            # The exact name grammar also belongs to L2 Motion. A name alone
+            # cannot select which app's independently proven controls to run.
+            result.confidence = min(result.confidence, 0.6)
     if motomotion_eligible(service_info.name):
         if result.bed_type is None and not any(signal.startswith("excluded:") for signal in result.signals):
             return DetectionResult(bed_type=BED_TYPE_MOTOMOTION, confidence=0.3, signals=[*result.signals, "name:motomotion_app_candidate"])

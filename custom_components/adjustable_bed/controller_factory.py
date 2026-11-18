@@ -403,6 +403,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_MOTION_BED: _BuilderSpec("motion_bed.controller"),
     BED_TYPE_MOTOMOTION: _BuilderSpec("motomotion.controller"),
     "bedgear": _BuilderSpec("bedgear.controller"),
+    "l2motion": _BuilderSpec("bedgear.controller"),
     BED_TYPE_MOTOSLEEP: _BuilderSpec("motosleep"),
     BED_TYPE_OCTO: _BuilderSpec("octo.controller"),
     BED_TYPE_OKIMAT: _BuilderSpec("okin_uuid.controller"),

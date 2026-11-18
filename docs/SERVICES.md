@@ -24,6 +24,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`set_positions`](#movement-and-memory) | Move motors to positions | Move several motors to validated target positions in one ordered request. Every target is validated before movement starts. |
 | [`timed_move`](#movement-and-memory) | Move motor for a time | Move a motor for a specified duration. |
 | [`hold_control`](#hold_control) | Hold control | Hold one control that the bed's app profile declares for a bounded duration, then send that profile's release sequence. Every target is checked before any bed moves; an unsupported control is rejected with the list of valid controls. |
+| [`l2motion`](#l2-motion) | Set light color or synchronization mode | Change supported light colors or confirm wired/wireless synchronization. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
 | [`sync_clock`](#sync_clock) | Set bed clock | Set each targeted controller's clock to Home Assistant's local time. Every target is checked before any write. |
 | [`rename`](#rename) | Rename Bluetooth name | Write a new Bluetooth name to each targeted controller that supports it. Each app profile applies its own name rule to every target before any write. This does not rename the Home Assistant device. |
@@ -1811,3 +1812,12 @@ give both sides the same alarm time. Serialized pairs offer renewable holds on L
 Right, while finite Both actions remain available.
 Motor covers expose renewable holds through the standard `timed_move` and
 `hold_control` actions; presets stay finite.
+
+### L2 Motion
+
+`l2motion` accepts `operation: rgb` with `rgb: [r, g, b]` and optional
+`brightness` from 0 to 1, or `operation: sync_mode` with `wired` and `confirm: true`.
+Every selected physical target must support the request before any writes begin.
+Use the Light timer number for immediate timer changes and `set_alarm` for time
+and strength (`massage_intensity: 1` or `2`, or `enabled: false` for off).
+The [L2 Motion guide](beds/motomotion.md#l2-motion) describes the name gates.

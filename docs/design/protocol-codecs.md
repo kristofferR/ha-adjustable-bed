@@ -340,3 +340,10 @@ cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
 the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
 name gates, timing and control release policies. No sibling app's parameters
 select its capabilities.
+
+Leon's L2Motion 2.0.2 matches the existing HHC carrier in all independent
+transmit literals in `tests/l2motion_vectors.py`. Its `L2MotionProfile` declares
+its own name gates, axes and controls. The shared letter runtime preserves
+Bedgear's timing while L2Motion delays the first periodic write until its first
+timer tick. Neither synchronization commands nor accessory replies establish
+concurrent motors, position feedback or native side routing.

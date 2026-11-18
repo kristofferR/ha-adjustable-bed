@@ -74,6 +74,8 @@ class BedgearProfile:
     stop_count: ClassVar[int] = 5
     stop_interval_ms: ClassVar[int] = 30
     fallback_count: ClassVar[int] = 3
+    delayed_first_tick: ClassVar[bool] = False
+    alarm_indices: ClassVar[tuple[int, int, int]] = (11, 12, 14)
 
     def __post_init__(self) -> None:
         if not eligible(self.name):

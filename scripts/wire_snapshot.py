@@ -1211,7 +1211,7 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
         variant = "box1"
         data.update({const.CONF_PRODUCT_TYPE: "400E", const.CONF_PROTOCOL_VARIANT: variant})
-    if bed_type == const.BED_TYPE_BEDGEAR:
+    if bed_type in (const.BED_TYPE_BEDGEAR, const.BED_TYPE_L2MOTION):
         data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
     if bed_type == const.BED_TYPE_JALON:
         data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
@@ -1304,7 +1304,7 @@ def default_scenario(bed_type: str) -> Scenario:
         replies = {"write:a0b156": "a0b15689070707ba"}
     return Scenario(
         id=bed_type,
-        layout_id="adjustable_lumbar" if bed_type == const.BED_TYPE_ADJUSTABLE_BED else None,
+        layout_id="bedgear" if bed_type == const.BED_TYPE_L2MOTION else "adjustable_lumbar" if bed_type == const.BED_TYPE_ADJUSTABLE_BED else None,
         bed_type=bed_type,
         protocol_variant=variant,
         entry_data=data,
@@ -1771,6 +1771,15 @@ def build_scenarios() -> list[Scenario]:
     for suffix in ("DMH", "DE0", "B00", "C00"):
         # Index 10/11/13 are independent, never another app's layout settings.
         scenarios.append(Scenario(id=f"bedgear:flags:{suffix}", bed_type="bedgear", layout_id="bedgear",
+            entry_data={"ble_device_name": "HHC0000015" + suffix[:2] + "0" + suffix[2]}))
+
+    from custom_components.adjustable_bed.profiles.l2motion import LAYOUT_EXAMPLES
+    for pair in LAYOUT_EXAMPLES:
+        if pair != "01":
+            scenarios.append(Scenario(id=f"l2motion:{pair}", bed_type="l2motion", layout_id="bedgear",
+                entry_data={"ble_device_name": "HHC00000" + pair + "D00X"}))
+    for suffix in ("DMH", "DE0", "B00", "CD0"):
+        scenarios.append(Scenario(id=f"l2motion:flags:{suffix}", bed_type="l2motion", layout_id="bedgear",
             entry_data={"ble_device_name": "HHC0000015" + suffix[:2] + "0" + suffix[2]}))
 
     by_id = {scenario.id: scenario for scenario in scenarios}

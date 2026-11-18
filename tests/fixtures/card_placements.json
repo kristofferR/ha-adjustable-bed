@@ -863,6 +863,10 @@
   "card_role": "up",
   "card_motor": "keeson_legs"
  },
+ "button:l2motion_save_snore": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:legs_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2697,6 +2701,22 @@
   "card_role": "estimate",
   "card_motor": "head"
  },
+ "number:l2motion_bass": {
+  "card_section": "utility"
+ },
+ "number:l2motion_light_timer": {
+  "card_section": "lighting",
+  "card_role": "timer_minutes"
+ },
+ "number:l2motion_treble": {
+  "card_section": "utility"
+ },
+ "number:l2motion_vibration": {
+  "card_section": "utility"
+ },
+ "number:l2motion_volume": {
+  "card_section": "utility"
+ },
  "number:legs_position": {
   "card_section": "motors",
   "card_motor": "legs"
@@ -2978,6 +2998,9 @@
   "card_section": "motors"
  },
  "select:hjbed_layout": {
+  "card_section": "utility"
+ },
+ "select:l2motion_sound_mode": {
   "card_section": "utility"
  },
  "select:light_timer": {
@@ -4080,6 +4103,9 @@
   "card_section": "utility"
  },
  "switch:doublesleep_privacy": {
+  "card_section": "utility"
+ },
+ "switch:l2motion_sync": {
   "card_section": "utility"
  },
  "switch:linak_automatic_drive": {
