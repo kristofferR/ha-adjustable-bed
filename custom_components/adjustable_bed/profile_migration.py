@@ -122,9 +122,19 @@ class MigrationSnapshot:
         return staged
 
 
-def reconfigure_context(entry: ConfigEntry) -> ConfigFlowContext:
-    """Return the flow context that opens the guided change for an entry."""
-    return ConfigFlowContext(source=SOURCE_RECONFIGURE, entry_id=entry.entry_id)
+# Context key a repair sets to preselect the app it suggests in Reconfigure.
+SUGGESTED_CHOICE: Final = "suggested_choice"
+
+
+def reconfigure_context(entry: ConfigEntry, suggested: str | None = None) -> ConfigFlowContext:
+    """Return the flow context that opens Reconfigure for an entry.
+
+    ``suggested`` is a bed-type list value the bed-type question preselects.
+    """
+    context = ConfigFlowContext(source=SOURCE_RECONFIGURE, entry_id=entry.entry_id)
+    if suggested is not None:
+        context[SUGGESTED_CHOICE] = suggested  # type: ignore[typeddict-unknown-key]
+    return context
 
 
 @dataclass(frozen=True, slots=True)

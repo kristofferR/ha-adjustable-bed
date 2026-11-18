@@ -1,4 +1,4 @@
-"""Config entry migration of values released in v4.0.2, through schema 5.5."""
+"""Config entry migration of values released in v4.0.2, through schema 5.6."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from custom_components.adjustable_bed import (
     async_migrate_entry,
     migrate_v5_2_entry,
     migrate_v5_3_data,
+    migrate_v5_6_entry,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -22,6 +23,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     BED_TYPE_SLEEPYS_ELITE_APP,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
+    CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
@@ -29,12 +32,16 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
+    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PROFILE_ID,
     CONF_PROFILE_MIGRATION,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
     CONF_SLEEPYS_ELITE_SELECTOR,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
     DOMAIN,
     KEESON_VARIANT_SINO,
 )
@@ -72,7 +79,7 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 5)
+    assert (entry.version, entry.minor_version) == (5, 6)
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
     assert entry.data[CONF_PROFILE_ID] == "keeson:sino"
 
@@ -128,7 +135,7 @@ async def test_other_entries_are_unchanged(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 5)
+    assert (entry.version, entry.minor_version) == (5, 6)
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == BED_TYPE_LINAK
     assert migrated.pop(CONF_PROFILE_MIGRATION)["fields"] == {
@@ -168,7 +175,7 @@ async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssista
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 5)
+    assert (entry.version, entry.minor_version) == (5, 6)
     assert "pair_schema_version" not in entry.data
     assert dict(entry.options) == {"later_key": 3}
     migrated_left, migrated_right = entry.data[CONF_PAIR_CHILDREN]
@@ -201,7 +208,7 @@ async def test_a_5_1_entry_without_obsolete_keys_only_moves_to_the_current_schem
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 5)
+    assert (entry.version, entry.minor_version) == (5, 6)
     assert dict(entry.data) == data
     assert dict(entry.options) == {"later_key": 2}
 
@@ -265,7 +272,7 @@ async def test_schema_5_3_turns_massage_off_without_a_massage_page(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 5)
+    assert (entry.version, entry.minor_version) == (5, 6)
     assert entry.data[CONF_HAS_MASSAGE] is False
     assert entry.data[CONF_PROFILE_MIGRATION] == {
         "from_version": 5,
@@ -289,7 +296,7 @@ async def test_schema_5_3_leaves_a_layout_with_massage_alone(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 5)
+    assert (entry.version, entry.minor_version) == (5, 6)
     assert dict(entry.data) == data
 
 
@@ -396,7 +403,7 @@ async def test_a_4x_entry_turns_massage_off_on_its_way_to_5_3(hass: HomeAssistan
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 5)
+    assert (entry.version, entry.minor_version) == (5, 6)
     assert entry.data[CONF_HAS_MASSAGE] is False
     record = entry.data[CONF_PROFILE_MIGRATION]
     assert (record["from_version"], record["from_minor_version"]) == (4, 1)
@@ -504,7 +511,7 @@ async def test_schema_5_5_stores_an_octo_layout_as_its_override(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 5)
+    assert (entry.version, entry.minor_version) == (5, 6)
     assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == expected
     assert entry.data[CONF_PROFILE_MIGRATION]["octo_motor_count_override"] == ["data"]
 
@@ -573,4 +580,135 @@ async def test_schema_5_5_writes_each_octo_side_and_its_original(hass: HomeAssis
         "data.left",
         "data.left.origin_data",
         "data.right",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("stored", "expected"),
+    [
+        ({"disconnect_after_command": True, "idle_disconnect_seconds": 60},
+         {CONF_CONNECTION_MODE: CONNECTION_MODE_RELEASE, "idle_disconnect_seconds": 60}),
+        ({"disconnect_after_command": False, "idle_disconnect_seconds": 0},
+         {CONF_CONNECTION_MODE: CONNECTION_MODE_ALWAYS}),
+        # A timeout of 0 kept a bed connected only with the handoff off.
+        ({"disconnect_after_command": True, "idle_disconnect_seconds": 0},
+         {CONF_CONNECTION_MODE: CONNECTION_MODE_RELEASE}),
+        ({"disconnect_after_command": False, "idle_disconnect_seconds": 60},
+         {CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE, "idle_disconnect_seconds": 60}),
+        ({"idle_disconnect_seconds": 0}, {CONF_CONNECTION_MODE: CONNECTION_MODE_ALWAYS}),
+        # Nothing chosen: the bed type's default still applies.
+        ({"idle_disconnect_seconds": 40}, {"idle_disconnect_seconds": 40}),
+        ({"position_mode": "accuracy", "connection_profile": "reliable"}, {}),
+    ],
+)
+def test_schema_5_6_rewrites_the_connection_settings(stored: dict, expected: dict) -> None:
+    base = {CONF_ADDRESS: "AA:BB:CC:DD:EE:30", CONF_BED_TYPE: BED_TYPE_LINAK}
+
+    data, options = migrate_v5_6_entry(
+        {**base, **stored}, dict(stored), from_version=5, from_minor_version=5
+    )
+
+    record = data.pop(CONF_PROFILE_MIGRATION, None)
+    assert data == {**base, **expected}
+    assert options == expected
+    if stored != expected:
+        assert set(record["settings_5_6"]) == {"data", "options"}
+    else:
+        assert record is None
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "disabled", "kept"),
+    [
+        # A bed without position feedback stores nothing.
+        (BED_TYPE_JIECANG_APP, True, False),
+        (BED_TYPE_LINAK, False, False),
+        (BED_TYPE_LINAK, True, True),
+        # A choice against the route's default stays.
+        (BED_TYPE_KEESON, False, True),
+    ],
+)
+def test_schema_5_6_keeps_only_a_position_choice_against_the_route(
+    bed_type: str, disabled: bool, kept: bool
+) -> None:
+    data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:31", CONF_BED_TYPE: bed_type, CONF_DISABLE_ANGLE_SENSING: disabled}
+
+    migrated, _options = migrate_v5_6_entry(data, {}, from_version=5, from_minor_version=5)
+
+    assert (CONF_DISABLE_ANGLE_SENSING in migrated) is kept
+    if kept:
+        assert migrated[CONF_DISABLE_ANGLE_SENSING] is disabled
+
+
+def test_schema_5_6_rewrites_each_paired_side_against_its_own_route() -> None:
+    """A side takes the shared values it inherited, then follows its own route."""
+    left = {
+        CONF_SIDE: "left",
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:32",
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        KEY_ORIGIN_DATA: {
+            CONF_BED_TYPE: BED_TYPE_LINAK,
+            "disconnect_after_command": False,
+            "idle_disconnect_seconds": 0,
+        },
+    }
+    right = {
+        CONF_SIDE: "right",
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:33",
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        "disconnect_after_command": False,
+        CONF_DISABLE_ANGLE_SENSING: False,
+    }
+    data = {
+        CONF_PAIR_ID: "pair_56",
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        "disconnect_after_command": True,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_PAIR_CONNECTION_MODE: "sequential",
+        CONF_PAIR_CHILDREN: [left, right],
+    }
+
+    migrated, _options = migrate_v5_6_entry(data, {}, from_version=5, from_minor_version=5)
+
+    new_left, new_right = migrated[CONF_PAIR_CHILDREN]
+    assert CONF_PAIR_CONNECTION_MODE not in migrated
+    assert migrated[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
+    # The left side inherited the parent's handoff and angle choice.
+    assert new_left[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
+    assert new_left[CONF_DISABLE_ANGLE_SENSING] is True
+    assert new_left[KEY_ORIGIN_DATA] == {
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        CONF_CONNECTION_MODE: CONNECTION_MODE_ALWAYS,
+    }
+    # The right side kept its own choices; reading positions is its route's default.
+    assert new_right[CONF_CONNECTION_MODE] == CONNECTION_MODE_IDLE
+    assert CONF_DISABLE_ANGLE_SENSING not in new_right
+    assert "disconnect_after_command" not in str(migrated)
+    assert set(migrated[CONF_PROFILE_MIGRATION]["settings_5_6"]) >= {
+        "data",
+        "data.left",
+        "data.left.origin_data",
+        "data.right",
+    }
+
+
+async def test_a_5_5_entry_moves_to_5_6(hass: HomeAssistant) -> None:
+    data = {
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:34",
+        CONF_NAME: "Bed",
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        CONF_PROFILE_ID: BED_TYPE_LINAK,
+        "disconnect_after_command": True,
+        "connection_profile": "balanced",
+    }
+    entry = _entry(hass, dict(data), version=5, minor_version=5)
+
+    await async_migrate_entry(hass, entry)
+
+    assert (entry.version, entry.minor_version) == (5, 6)
+    assert entry.data[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
+    assert "connection_profile" not in entry.data
+    assert entry.data[CONF_PROFILE_MIGRATION]["settings_5_6"]["data"] == [
+        "connection_profile",
+        f"{CONF_CONNECTION_MODE}={CONNECTION_MODE_RELEASE}",
     ]

@@ -21,7 +21,7 @@ from homeassistant.components.repairs.const import FlowType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResultType, UnknownFlow
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers import selector
 
@@ -800,43 +800,11 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     step_id="processor",
                     description_placeholders=watch.placeholders(),
                 )
-            if guided:
+            if not is_paired(watch.entry.data):
                 return await self._async_start_guided_change(watch, recommendation)
-            if is_paired(watch.entry.data):
-                # Existing per-side profile restrictions require an explicit split.
-                # Open the menu; never split or change either side from this repair.
-                result = await self.hass.config_entries.options.async_init(watch.entry.entry_id)
-            else:
-                manager = self.hass.config_entries.options
-                original_data, original_options = watch.entry.data, watch.entry.options
-                result = await manager.async_init(watch.entry.entry_id)
-                if result.get("type") not in (FlowResultType.FORM, FlowResultType.MENU):
-                    return self.async_abort(reason="recommendation_changed")
-                flow_id = result["flow_id"]
-                try:
-                    result = await manager.async_configure(flow_id, {"next_step_id": "settings"})
-                    watch.refresh()
-                    if (
-                        _watches(self.hass).get(self._issue_id) is not watch
-                        or watch.entry.data != original_data
-                        or watch.entry.options != original_options
-                        or watch.recommendation != recommendation
-                        or watch.dismissed.get(recommendation.rule)
-                    ):
-                        manager.async_abort(flow_id)
-                        return self.async_abort(reason="recommendation_changed")
-                    # A bed-type change only re-renders settings. The user must
-                    # submit that form to apply it, exactly as in Configure.
-                    if recommendation.suggested is not None:
-                        result = await manager.async_configure(
-                            flow_id, {CONF_BED_TYPE: recommendation.suggested}
-                        )
-                except BaseException:
-                    try:
-                        manager.async_abort(flow_id)
-                    except UnknownFlow:
-                        pass
-                    raise
+            # Existing per-side profile restrictions require an explicit split.
+            # Open the menu; never split or change either side from this repair.
+            result = await self.hass.config_entries.options.async_init(watch.entry.entry_id)
             if result.get("type") in (FlowResultType.FORM, FlowResultType.MENU):
                 watch.review_flow_id = result["flow_id"]
                 watch.review_recommendation = recommendation
@@ -879,9 +847,12 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
     async def _async_start_guided_change(
         self, watch: ProfileRecommendationWatch, recommendation: Recommendation
     ) -> RepairsFlowResult:
-        """Open Reconfigure; the notice stays until it saves a change or keeps the profile."""
+        """Open Reconfigure, with the suggested app preselected where it names one.
+
+        The notice stays until Reconfigure saves a change or keeps the profile.
+        """
         result = await self.hass.config_entries.flow.async_init(
-            DOMAIN, context=reconfigure_context(watch.entry)
+            DOMAIN, context=reconfigure_context(watch.entry, recommendation.suggested)
         )
         if result.get("type") is not FlowResultType.FORM:
             return self.async_abort(reason="recommendation_changed")

@@ -367,6 +367,7 @@ from .pairing_candidates import (
 from .position_estimate_flow import EstimatedPositionsFlowMixin
 from .profile_id import with_profile_ids
 from .profile_migration import (
+    SUGGESTED_CHOICE,
     MigrationSnapshot,
     async_control_changes,
     reconfigure_family,
@@ -2282,6 +2283,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Stage a guided app or layout change without changing the working entry."""
         entry = self._get_reconfigure_entry()
         family = reconfigure_family(entry.data)
+        suggested = self.context.get(SUGGESTED_CHOICE)
+        if (
+            family is not None
+            and isinstance(suggested, str)
+            and resolve_bed_type_choice(suggested)[0] not in family.managed | family.asks
+        ):
+            # A repair suggests an app outside the family, which its question
+            # cannot offer; the full bed-type list can.
+            family = None
         if self._migration is None:
             self._migration = MigrationSnapshot.of(entry)
             self._migration_family = family
@@ -2307,6 +2317,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data[CONF_BED_TYPE], saved_variant if isinstance(saved_variant, str) else None
         )
         picker = _bed_type_selector(current, show_saved_id=True)
+        suggested = self.context.get(SUGGESTED_CHOICE)
+        shown = suggested if isinstance(suggested, str) and suggested in picker.rows().values() else current
         if user_input is not None:
             bed_type, variant = resolve_bed_type_choice(picker(user_input[CONF_BED_TYPE]))
             self._select_family_route(bed_type, variant)
@@ -2320,7 +2332,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="reconfigure_bed_type",
             data_schema=vol.Schema(
-                {vol.Required(CONF_BED_TYPE, default=picker.shown(current)): picker}
+                {vol.Required(CONF_BED_TYPE, default=picker.shown(shown)): picker}
             ),
             description_placeholders={"current": self._migration_selection_label(data)},
         )
