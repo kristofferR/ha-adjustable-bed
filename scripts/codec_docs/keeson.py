@@ -17,7 +17,11 @@ from custom_components.adjustable_bed.beds.keeson import okin_apps as okin_apps_
 from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BED_APPS
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
+from scripts.codec_docs._agingplace import BLOCKS as _AGINGPLACE_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._ore_ultramatic import BLOCKS as _ULTRAMATIC_BLOCKS
+from scripts.codec_docs._ormatek import BLOCKS as _ORMATEK_BLOCKS
+from scripts.codec_docs._somos import BLOCKS as _SOMOS_BLOCKS
 from scripts.codec_docs._yamada import BLOCKS as _YAMADA_BLOCKS
 
 GUIDE = "docs/beds/keeson.md"
@@ -50,6 +54,8 @@ _KEESON_NAMES: dict[str, str] = {
     "okin_seating": "OKIN-Seating",
     "heal_every_night": "Heal Every Night",
     "okin_comfort_bed": "OKIN Comfort Bed",
+    "comfortfurniture": "ComfortFurniture",
+    "ore_ultramatic": "ORE Ultramatic",
     "americanstar": "AMERICANSTAR",
     "avanti_bases": "Avanti Bases",
     "bedsense_bases": "Bedsense Bases",
@@ -77,6 +83,8 @@ _KEESON_NAMES: dict[str, str] = {
 }
 # Controllers that keep their key tables and timing; their profile is only the frame.
 _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
+    "comfortfurniture": ("`keeson:comfortfurniture`", "[ComfortFurniture](#comfortfurniture)"),
+    "ore_ultramatic": ("`keeson`, `ore_ultramatic`", "[ORE Ultramatic](#ore-ultramatic)"),
     "yamada_p1": ("`yamada`, P1", "[アシステック](#アシステック--yamada)"),
     "yamada_p2": ("`yamada`, P2", "[アシステック](#アシステック--yamada)"),
     **dict.fromkeys(("jalon_13", "jalon_15", "jalon_24"), ("`jalon`", "[OkinComfortBed II](#okincomfortbed-ii)")),
@@ -255,7 +263,7 @@ def render_keeson_profiles() -> str:
                 _carrier(profile),
                 "app controller"
                 if key in _KEESON_CONTROLLERS
-                else "live FFE9 / FFE4" if key == "okin_comfort_bed"
+                else "live FFE9 / FFE4" if key in ("okin_comfort_bed", "comfortfurniture")
                 else profile.transport.upper() + (" (fixed)" if profile.fixed_write else ""),
                 "app controller" if key in _KEESON_APP_TABLES else profile.lights or "none",
                 "app controller" if key in _KEESON_APP_TABLES else profile.massage,
@@ -640,6 +648,36 @@ def render_keeson_okin_apps() -> str:
         f"Release: {_kframe(profile, keeson_codec.RELEASE)} for all three apps.",
     )
 
+
+
+
+def render_comfortfurniture() -> str:
+    from custom_components.adjustable_bed.profiles.comfortfurniture import PRESET_NAMES, PROFILE
+
+    p = PROFILE
+    axes = _table(("Control", "Up", "Down"), (
+        (axis, _kframe(p.wire, up), _kframe(p.wire, down)) for axis, (up, down) in p.axes.items()
+    ))
+    presets = _table(("Target", "Recall", "Save"), (
+        (label, _kframe(p.wire, p.recalls[name]), _kframe(p.wire, p.saves[name]))
+        for name, label in PRESET_NAMES.items()
+    ))
+    words = [("Movement release", 0), ("Preset stop", p.preset_stop),
+             ("Reset label (physical effect unknown)", p.reset_label),
+             ("Massage start, initial", p.massage_start), ("Massage off", p.massage_stop),
+             *((f"{slider} bin {b}", p.slider_word(slider, b * 10))
+               for slider in p.slider_bases for b in range(3)),
+             *((f"Timer {minutes} minutes", word) for minutes, word in p.timers.items()),
+             ("Light off", ore_module.LIGHT_OFF), ("Light on", ore_module.LIGHT_ON)]
+    other = _table(("Action", "Frame"), ((name, _kframe(p.wire, word)) for name, word in words))
+    timing = _table(("Parameter", "Value"), (
+        ("Held refresh", f"{p.wire.refresh_ms} ms, first write immediate"),
+        ("One-shot / release pre-send wait", f"{p.wire.tap_wait_ms} ms"),
+        ("Slider raw progress / default", f"0..{p.slider_max} / {p.slider_default}"),
+        ("Quantization", "floor(progress / 10), bins 0..2"),
+    ))
+    return _block("#### Axis frames", axes, "#### Named target frames", presets,
+                  "#### Other frames", other, "#### App parameters", timing)
 
 def render_keeson_ore() -> str:
     ore = ore_module
@@ -1043,6 +1081,7 @@ BLOCKS: list[Block] = [
     (GUIDE, "keeson-innova", render_keeson_innova),
     (GUIDE, "keeson-okin-apps", render_keeson_okin_apps),
     (GUIDE, "keeson-ore", render_keeson_ore),
+    (GUIDE, "keeson-comfortfurniture", render_comfortfurniture),
     (GUIDE, "keeson-apps", render_keeson_apps),
     *(
         (
@@ -1153,5 +1192,10 @@ def render_symphony_sleep() -> str:
 
 
 BLOCKS.append((GUIDE, "keeson-symphony-sleep", render_symphony_sleep))
+BLOCKS.extend(_AGINGPLACE_BLOCKS)
 
 BLOCKS.extend(_YAMADA_BLOCKS)
+
+BLOCKS.extend(_ORMATEK_BLOCKS)
+BLOCKS.extend(_SOMOS_BLOCKS)
+BLOCKS.extend(_ULTRAMATIC_BLOCKS)

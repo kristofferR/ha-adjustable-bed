@@ -1,4 +1,4 @@
-"""Bedgear-specific projections and bounded, source-shaped stream framing."""
+"""Letter-family projections and bounded, source-shaped stream framing."""
 
 import re
 from dataclasses import dataclass, field
@@ -45,13 +45,15 @@ class Receiver:
         return tuple(texts)
 
 
-def token_fields(text: str) -> dict[str, object]:
+def token_fields(
+    text: str, *, alarm_indices: tuple[int, int, int] = (11, 12, 14)
+) -> dict[str, object]:
     tokens = text.split(" ")
     result: dict[str, object] = {}
     count = len(tokens)
     if count == 75:
         result["rgb_timer"] = [tokens[i] for i in (28, 29, 30, 54)]
-        result["alarm"] = [tokens[i] for i in (11, 12, 14)]
+        result["alarm"] = [tokens[i] for i in alarm_indices]
     elif count in (39, 44, 71):
         result["rgb_timer"] = [tokens[i] for i in (18, 19, 20, 30)]
     if count == 39:

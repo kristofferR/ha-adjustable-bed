@@ -264,6 +264,31 @@ class MassageTimerParser:
         return None
 
 
+class SideRecordParser:
+    """Two seven-byte side records, with current-chunk FE16 buffering.
+
+    App profiles supply the accepted three-byte headers and interpret records.
+    Reject truncated records instead of the source app's out-of-bounds access.
+    The connection owner must discard this parser on each session boundary.
+    """
+
+    def __init__(self, headers: frozenset[bytes]) -> None:
+        self.headers = headers
+        self.pending = b""
+
+    def feed(self, data: bytes) -> tuple[bytes, bytes, bytes] | None:
+        if len(data) < 3:
+            return None
+        assembled = self.pending + data
+        self.pending = b""
+        if len(data) == 20 and data[1:3] == b"\xfe\x16":
+            self.pending = data
+            return None
+        if len(assembled) < 17 or assembled[:3] not in self.headers:
+            return None
+        return assembled[:3], assembled[3:10], assembled[10:17]
+
+
 def schedule_step(slot: int, step: int, delay_ticks: int, command: int, duration: int) -> bytes:
     """Comfort Enhancement 3's decimal-text indices and hexadecimal fields.
 

@@ -580,7 +580,7 @@ async def test_native_expiry_gate_after_pacing(hass, runtime, protocol_time, mon
 
 
 @pytest.mark.parametrize("operation", ("list", "new", "set", "delete"))
-async def test_standalone_waits_for_late_clock_reply(hass, runtime, operation):
+async def test_standalone_waits_for_late_clock_reply(hass, runtime, protocol_time, operation):
     target, client, _ = runtime
     queries = 0
 
@@ -659,7 +659,7 @@ async def test_preflight_retains_links_until_all_targets_finish(
 @pytest.mark.parametrize("target", ("parent", "left"))
 @pytest.mark.parametrize("operation", ("sync_clock", "list", "new", "set", "toggle", "delete"))
 async def test_registered_actions_rebuild_on_actual_pair_links(
-    hass, live_pair, mode, target, operation
+    hass, live_pair, protocol_time, mode, target, operation
 ):
     live = await live_pair(mode)
     fields = {

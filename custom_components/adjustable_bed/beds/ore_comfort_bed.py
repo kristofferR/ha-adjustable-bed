@@ -35,9 +35,11 @@ from ..const import (
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_OKIN_COMFORT_BED,
+    KEESON_VARIANT_ORE_ULTRAMATIC,
 )
 from ..controller_state import StateKey
 from ..profiles import keeson as profiles
@@ -68,6 +70,10 @@ class OreComfortBedApp:
 
 # Sibling apps of this code base register their own entry here.
 ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
+    KEESON_VARIANT_COMFORTFURNITURE: OreComfortBedApp("ComfortFurniture", "com.ore.comfortfurniture", "2.3 (10)"),
+    KEESON_VARIANT_ORE_ULTRAMATIC: OreComfortBedApp(
+        "ORE Ultramatic", "com.ore.ultramatic", "1.0.5 (9)"
+    ),
     KEESON_VARIANT_OKIN_COMFORT_BED: OreComfortBedApp(
         "OKIN Comfort Bed", "com.ore.okincomfortbed", "1.1.6 (8)"
     ),

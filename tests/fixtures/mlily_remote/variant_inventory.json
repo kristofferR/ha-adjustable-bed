@@ -1,0 +1,208 @@
+[
+  {
+    "id": "51d801",
+    "selector": "productNone",
+    "source": "work/blutter/objs.txt:21171 (Obj!MlilyRemoteDeviceProductType@51d801)",
+    "disposition": "DEAD/UNUSED",
+    "enum_ordinal": 0,
+    "label": "none",
+    "catalog_code": "",
+    "manual": [],
+    "massage_or_fan": [],
+    "presets": [],
+    "alarm_modes": [],
+    "flag_2c": false,
+    "flag_30": false,
+    "object_sha256": "f74683033c752a2916c02ce838bae2ec95093deb2c56520f575d949e86685bec"
+  },
+  {
+    "id": "51d841",
+    "selector": "productPowerCool",
+    "source": "work/blutter/objs.txt:21186 (Obj!MlilyRemoteDeviceProductType@51d841)",
+    "disposition": "REACHABLE",
+    "enum_ordinal": 4,
+    "label": "PowerCool",
+    "catalog_code": "D9RM",
+    "manual": [
+      "deviceFunctionItemHeadUp",
+      "deviceFunctionItemHeadDown",
+      "deviceFunctionItemFootUp",
+      "deviceFunctionItemFootDown",
+      "deviceFunctionItemMotorReset",
+      "deviceFunctionItemBedLight"
+    ],
+    "massage_or_fan": [
+      "deviceFunctionItemMassageHeadInstensityStrengthen",
+      "deviceFunctionItemMassageFootInstensityStrengthen",
+      "deviceFunctionItemMassageModeChange",
+      "deviceFunctionItemMassageModeAllOff",
+      "deviceFunctionItemMassage10MinuteTimer",
+      "deviceFunctionItemMassage20MinuteTimer",
+      "deviceFunctionItemMassage30MinuteTimer"
+    ],
+    "presets": [
+      "deviceFunctionItemZeroGravity",
+      "deviceFunctionItemAntiSnoring",
+      "deviceFunctionItemMemoryPosition1",
+      "deviceFunctionItemMemoryPosition2"
+    ],
+    "alarm_modes": [],
+    "flag_2c": false,
+    "flag_30": true,
+    "object_sha256": "cacce8096bd9097899f76b8062729bd6d5aa947497c2f7dabcb3892ab2d632bc"
+  },
+  {
+    "id": "51d881",
+    "selector": "productMS300SH",
+    "source": "work/blutter/objs.txt:21800 (Obj!MlilyRemoteDeviceProductType@51d881)",
+    "disposition": "REACHABLE",
+    "enum_ordinal": 3,
+    "label": "MS300-SH",
+    "catalog_code": "DYRN",
+    "manual": [
+      "deviceFunctionItemHeadUp",
+      "deviceFunctionItemHeadDown",
+      "deviceFunctionItemFootUp",
+      "deviceFunctionItemFootDown",
+      "deviceFunctionItemHeadAndFootUp",
+      "deviceFunctionItemHeadAndFootDown",
+      "deviceFunctionItemBedLight",
+      "deviceFunctionItemMotorReset"
+    ],
+    "massage_or_fan": [
+      "deviceFunctionItemMassageHeadInstensityStrengthen",
+      "deviceFunctionItemMassageFootInstensityStrengthen",
+      "deviceFunctionItemMassageModeChange",
+      "deviceFunctionItemMassageModeAllOff",
+      "deviceFunctionItemMassage10MinuteTimer",
+      "deviceFunctionItemMassage20MinuteTimer",
+      "deviceFunctionItemMassage30MinuteTimer"
+    ],
+    "presets": [
+      "deviceFunctionItemZeroGravity",
+      "deviceFunctionItemAntiSnoring",
+      "deviceFunctionItemMemoryPosition1",
+      "deviceFunctionItemMemoryPosition2"
+    ],
+    "alarm_modes": [],
+    "flag_2c": true,
+    "flag_30": false,
+    "object_sha256": "3cd761c42a4c66cec0341558eae023d58fd27752360bcebd5d8c2ba31dbb4463"
+  },
+  {
+    "id": "51d8c1",
+    "selector": "productMS600",
+    "source": "work/blutter/objs.txt:22484 (Obj!MlilyRemoteDeviceProductType@51d8c1)",
+    "disposition": "REACHABLE",
+    "enum_ordinal": 5,
+    "label": "MS600",
+    "catalog_code": "ANRN",
+    "manual": [
+      "deviceFunctionItemHeadUp",
+      "deviceFunctionItemHeadDown",
+      "deviceFunctionItemFootUp",
+      "deviceFunctionItemFootDown",
+      "deviceFunctionItemLumberUp",
+      "deviceFunctionItemLumberDown",
+      "deviceFunctionItemPillowUp",
+      "deviceFunctionItemPillowDown",
+      "deviceFunctionItemMotorReset",
+      "deviceFunctionItemBedLight"
+    ],
+    "massage_or_fan": [
+      "deviceFunctionItemMassageHeadInstensityStrengthen",
+      "deviceFunctionItemMassageLumbarInstensityStrengthen",
+      "deviceFunctionItemMassageFootInstensityStrengthen",
+      "deviceFunctionItemMassageModeChange",
+      "deviceFunctionItemMassageModeAllOff",
+      "deviceFunctionItemMassage10MinuteTimer",
+      "deviceFunctionItemMassage20MinuteTimer",
+      "deviceFunctionItemMassage30MinuteTimer"
+    ],
+    "presets": [
+      "deviceFunctionItemZeroGravity",
+      "deviceFunctionItemAntiSnoring",
+      "deviceFunctionItemTVPosition",
+      "deviceFunctionItemMemoryPosition1",
+      "deviceFunctionItemMemoryPosition2",
+      "deviceFunctionItemMemoryPosition3"
+    ],
+    "alarm_modes": [
+      "deviceFunctionItemZeroGravity",
+      "deviceFunctionItemAntiSnoring",
+      "deviceFunctionItemTVPosition",
+      "deviceFunctionItemMemoryPosition1",
+      "deviceFunctionItemMemoryPosition2",
+      "deviceFunctionItemMemoryPosition3"
+    ],
+    "flag_2c": false,
+    "flag_30": false,
+    "object_sha256": "00bbb9a573da5550b38cf305778e6e896c9013d2ded4e2802d2274dae9c4d541"
+  },
+  {
+    "id": "51d901",
+    "selector": "productMS300",
+    "source": "work/blutter/objs.txt:23561 (Obj!MlilyRemoteDeviceProductType@51d901)",
+    "disposition": "REACHABLE",
+    "enum_ordinal": 2,
+    "label": "MS300",
+    "catalog_code": "JBRM",
+    "manual": [
+      "deviceFunctionItemHeadUp",
+      "deviceFunctionItemHeadDown",
+      "deviceFunctionItemFootUp",
+      "deviceFunctionItemFootDown",
+      "deviceFunctionItemHeadAndFootUp",
+      "deviceFunctionItemHeadAndFootDown",
+      "deviceFunctionItemBedLight",
+      "deviceFunctionItemMotorReset"
+    ],
+    "massage_or_fan": [
+      "deviceFunctionItemMassageHeadInstensityStrengthen",
+      "deviceFunctionItemMassageFootInstensityStrengthen",
+      "deviceFunctionItemMassageModeChange",
+      "deviceFunctionItemMassageModeAllOff",
+      "deviceFunctionItemMassage10MinuteTimer",
+      "deviceFunctionItemMassage20MinuteTimer",
+      "deviceFunctionItemMassage30MinuteTimer"
+    ],
+    "presets": [
+      "deviceFunctionItemAntiSnoring",
+      "deviceFunctionItemZeroGravity",
+      "deviceFunctionItemMemoryPosition1",
+      "deviceFunctionItemMemoryPosition2"
+    ],
+    "alarm_modes": [],
+    "flag_2c": false,
+    "flag_30": false,
+    "object_sha256": "8f157f3efa88d4649b9e013626e1b8ed5b2d068616e4c81faa7e740e3c7ec95f"
+  },
+  {
+    "id": "51d941",
+    "selector": "productMS200",
+    "source": "work/blutter/objs.txt:24245 (Obj!MlilyRemoteDeviceProductType@51d941)",
+    "disposition": "REACHABLE",
+    "enum_ordinal": 1,
+    "label": "MS200",
+    "catalog_code": "EGRM",
+    "manual": [
+      "deviceFunctionItemHeadUp",
+      "deviceFunctionItemHeadDown",
+      "deviceFunctionItemFootUp",
+      "deviceFunctionItemFootDown",
+      "deviceFunctionItemMotorReset"
+    ],
+    "massage_or_fan": [],
+    "presets": [
+      "deviceFunctionItemZeroGravity",
+      "deviceFunctionItemLoungePosition",
+      "deviceFunctionItemAntiSnoring",
+      "deviceFunctionItemMemoryPosition1",
+      "deviceFunctionItemMemoryPosition2"
+    ],
+    "alarm_modes": [],
+    "flag_2c": false,
+    "flag_30": false,
+    "object_sha256": "17771f528bf95019b451706dc2c6794c4178e396a047cd84a871ab797eb927ac"
+  }
+]

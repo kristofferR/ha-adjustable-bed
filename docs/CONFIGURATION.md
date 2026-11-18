@@ -400,6 +400,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 |---|---|---|---|
 | 1500 Tilt Base (Rondure) | `rondure` | 25 | 50 ms |
 | AdjustaMattress app | `adjustamattress` | 5 | 200 ms |
+| Aging in Place / Dawn House app | `agingplace` | 5 | 200 ms |
 | Comfort Enhancements app | `comfort_enhancements` | 5 | 200 ms |
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
@@ -410,6 +411,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series app (older bases) | `linak` `performance_legacy` | 4 | 300 ms |
+| Linx app | `linx` | 334 | 3 ms |
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |
 | Malouf Base / Lucid Base apps | `malouf_app` | 7 | 150 ms |
 | Malouf remote, older receiver | `malouf_legacy_okin` | 7 | 150 ms |
@@ -425,8 +427,10 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
+| Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
+| Ultramatic Smart Bed app | `ultramatic_smart_bed` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
 | アシステック / ASSISTEC / Yamada app | `yamada` | 4 | 300 ms |
 
@@ -634,6 +638,7 @@ that side, then combine them again.
 |--------------|---------------------------|
 | Sleepy's Elite | [One question](beds/sleepys.md#home-assistant-setup) for the MFRM Sleepy's Elite app or the BOX15, BOX24 or BOX25 receiver. The [app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) asks the control box the app lists, for each physical receiver. Change an existing bed's app, control box or BOX25 dialect with **Reconfigure**. |
 | OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/okin-nframe.md#okin-sleepease): select the saved app model independently of the advertisement-selected P1/P2/P3 driver. Keep each physical receiver's settings separate. Sensor sides do not select motor halves. |
+| OrmatekTechnoSmart | [Techno Smart setup](beds/keeson.md#ormatek-technosmart): choose New or Lite independently of the Okin or SmartBed remote. Each physical receiver keeps its own layout and remote; shared Bluetooth services do not select the app. Use **Reconfigure** to change the app or model. |
 | Symphony Sleep Sense | [Symphony setup](beds/okin-soundwave.md#symphony-sleep-sense): choose the product independently of the BLE selector. Shared names suggest a selector, never a product. Split-Head and KGD-SHQ/SHK support explicit Left/Right controls; every physical receiver keeps its own app choices. |
 | Keeson | Answer the [Keeson question](beds/keeson.md#home-assistant-setup) with your app: [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil Una / Dynasty Bases / Bedsense Bases / Avanti Bases / AMERICANSTAR](beds/keeson.md#ore-comfort-bed-profiles), or [Restonic BT](beds/keeson.md#restonic-bt-profiles). It then asks the app's 2M, 3M or 4M screen, or the Restonic remote style, where the app has one. |
 | Tempur Sleeptracker-AI | [Processor setup](beds/sleeptracker.md): choose this app profile for ProSmart / ProSmart Air and ActiveBreeze. Select the actual processor endpoint and app layout, unit number, snapshot ordinal, restricted session, processor type and foundation metadata. Add a separate processor entry when the current address exposes UART. Axes and massage come from the app layout; position feedback is unavailable. |
@@ -670,6 +675,8 @@ that side, then combine them again.
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | HJBed | [The exact app product](beds/richmat.md#hjbed). |
 | MLILY Control | Exact app product or explicit remote-choice route. Shared names/services do not identify the app; independent RM-/HJ- sleep devices have their own entries. See the [product table](beds/richmat.md#mlily-control). |
+| Power Bob Base | Choose Elite, Elite SH, Ultra or Ultra SH, then Standard, Split head or Split installation. Product and layout are retained separately for each physical side. SH products offer side selection on framed transports; Nordic commands cannot address a side. See [Power Bob Base](beds/richmat.md#power-bob-base). |
+| Nisco / MLILY Supreme | Select the exact app, then its own model or Auto from the stored Bluetooth name. MLILY Supreme also offers its six short manual models and an explicit normal-mattress extra. Choose the separate HJ_Bed variant for sensing/intervention. Transmit mode is an app-local choice, set with the `richmat_mh_control` action, not a native bed side. See [Nisco](beds/richmat.md#nisco) and [MLILY Supreme](beds/richmat.md#mlily-supreme). |
 | Galaxy Bed Control | Exact product code and its remote picker; V9RM/RNRN also retain base, standard and splitHead configurations. Each side owns its choices. See [Galaxy](beds/richmat.md#galaxy-bed-control). |
 | Good Vibe Sleep | [The exact product, configuration or remote alias](beds/richmat.md#good-vibe-sleep); independent RM-/HJ- sleep sensors are separate entries with their own type 1 or type 2 profile. Split sides with single-address side controls; light duration and supported snore settings are device controls. |
 | eShine E2000 / E3000 / E3100 / E5000 | [The same product selector as the app](beds/okin-nframe.md#eshine); E3000/E3100 is one choice, and name or UART matches never choose it. The profile owns its axes, massage/light features and 300 ms refresh. Each side of a two-address pair keeps its own profile; single-address split controls are unavailable. |
@@ -1034,3 +1041,93 @@ it does not write a hardware lock. Protocol, layout and local settings belong
 to each physical side of a two-address pair. See [M Line](beds/mline.md).
 
 SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).
+
+### L2 Motion
+
+Select L2 Motion for beds controlled by Leon's L2Motion. Setup and Reconfigure
+ask for the original Bluetooth name; it selects the available controls without
+extra motor or massage switches. Combined beds retain each physical side's name.
+See the [L2 Motion guide](beds/motomotion.md#l2-motion) for supported features.
+
+### Sophie app
+
+Choose **Solace → Sophie app**. Two motors, massage and disabled angle sensing
+are profile-owned. Keep the actual Bluetooth name: saved queries, alarm side
+modes and the QMS2 alarm-massage gate use independent name predicates. Each
+physical side keeps its own name when combining two beds. See the
+[Sophie profile](beds/ff_frame.md#sophie) for controls and reported-state gates.
+
+### Linx app
+
+Choose the [Linx](beds/linx.md) model, independent A00A or Nordic UART BLE
+transport and exact Bluetooth name. These belong to each physical receiver,
+including each side of a two-address pair. New app sessions default to Linx
+2.5 Q and A00A. The app profile fixes the motor count, massage gate and held
+refresh interval. No bed Wi-Fi or account setting is needed.
+
+### Nerum
+
+Choose the Nerum app and its explicit P1 (ORE), P2 (Okin) or P3 (Smartbed)
+transport, then the Nerum or 2/3/4 motor page matching the remote. The app's
+shared names are candidates, not model identifiers. These selections are
+retained per physical side of a two-address pair. Raw Android scan offsets are
+not available from HA; choose P1 explicitly from its exact GATT roles.
+See [Nerum setup](beds/nerum.md#detection--setup).
+
+### Somos / SomosBeds
+
+Choose the product shown in the Somos app: Signature (A), Elite (B), Ultra (C),
+Signature Split Head (D), or Ultra Split Head (E). The choice fixes the axes,
+massage buttons and 300 ms refresh cadence; it stays independent for each
+receiver in a two-address pair. D/E axes are numbered 1–3 because physical
+anatomy and sides are unverified. See [Somos controls](beds/keeson.md#somos--somosbeds).
+
+#### Okimiki product
+
+Choose the exact HCRN, IPRM, IQRM or KWRN product shown by the Okimiki app.
+The product owns the two-axis layout, preset/memory availability and alarm
+route. Configure keeps this selection; a two-address pair stores each side's
+product separately. Shared Bluetooth names do not select a product. Lighting
+and alarms require the current connection's capability reply. See
+[Okimiki](beds/richmat.md#okimiki) for controls and qualification status.
+
+### CheersSleep
+
+Choose **CheersSleep app** and the exact model key in the app
+profile step. All 36 keys are selectable in new setup and Reconfigure. The key
+sets the wire format, actuators, presets and massage/lighting capabilities;
+shared UUIDs and device names do not establish an app identity. Imported entries
+retain their explicit `product_type`, and each paired physical side owns its
+model. The five split keys also support optional native Left/Right children on
+one Bluetooth address. See the [guide](beds/cheerssleep.md).
+
+### ORE Ultramatic
+
+Choose **Ultramatic app (ORE)**, then choose the actual 2-, 3- or 4-motor
+layout. Configure keeps the layout with its physical bed
+side. The live GATT table chooses P1 or P2; names and a shared UUID never select
+this app automatically. Massage and light are part of its bed controls, and
+position sensing stays disabled. P1 has programmable presets and explicit
+massage/light settings; P2 has held presets/massage and a light toggle. See the
+[profile reference](beds/keeson.md#ore-ultramatic) for alarms and raw state.
+
+### SleepEvolution / W.Silver Products 3.x
+
+Choose **SleepEvolution** or **W.Silver Products 3.x** under Richmat, then the
+exact case-sensitive name prefix
+(`protocol_variant`). A matching name can suggest a prefix only after you choose
+the app. Shared prefixes and Nordic UART services cannot identify which app you
+use; the newer W.Silver MH app is a separate choice. **Reconfigure** asks the same
+app and prefix questions. A6, U3, U5 and X1 are offered only for SleepEvolution.
+
+Each receiver in a two-address pair retains its own app and prefix. There is no
+single-address side selector. The selected profile supplies its control labels,
+refresh schedule and release behavior; generic pulse settings do not replace
+that schedule. Angle feedback is disabled, and neither physical motor count nor
+remote light/massage state is inferred. See the
+[fixed ASCII app guide](beds/richmat.md#sleepevolution--wsilver-products-3x).
+
+MLILY Remote 1.0.1 has five explicit product choices and single/double layouts.
+It owns motor layout, massage availability, disabled angle sensing and its
+100 ms movement cadence. PowerCool uses fan/cooling labels. Product and layout
+are stored per side of a two-address pair. See [MLILY Remote](beds/richmat.md#mlily-remote).

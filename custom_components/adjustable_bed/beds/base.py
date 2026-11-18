@@ -873,6 +873,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def exposes_assumed_toggle_light(self) -> bool:
+        """Offer the opt-in estimated on/off entity for a toggle-only light."""
+        return True
+
+    @property
     def supports_explicit_light_on_control(self) -> bool:
         """Return True if bed has a dedicated light-on command.
 
@@ -949,6 +954,14 @@ class BedController(GattWriter):
     @property
     def has_bed_height_support(self) -> bool:
         """Return True if bed has bed height (Hi-Lo) control."""
+        return False
+
+    @property
+    def reports_angles(self) -> bool:
+        """Return True when position notifications carry angles the bed type's traits cannot declare.
+
+        For a layout chosen at runtime, such as by the exact Bluetooth name.
+        """
         return False
 
     @property
@@ -1035,6 +1048,14 @@ class BedController(GattWriter):
         The stale-entity sweep keeps their registry rows while they are not built.
         """
         return frozenset()
+
+    @property
+    def unavailable_controller_entity_keys(self) -> tuple[str, ...]:
+        """Light/number description keys awaiting current-session permission.
+
+        Retaining an entity's registry identity does not authorize its commands.
+        """
+        return ()
 
     def controller_button_available(self, key: str) -> bool:
         """Whether a named action remains valid for current discovered capabilities."""

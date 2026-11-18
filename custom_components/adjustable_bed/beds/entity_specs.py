@@ -53,6 +53,7 @@ class ControllerSelectSpec:
     # An app-local choice that sends no frame: applied without connecting.
     local_select_fn: Callable[[str], None] | None = field(default=None, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
+    is_available: Callable[[BedController], bool] | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,6 +91,7 @@ class ControllerSwitchSpec:
     assumed_state: bool = field(default=False, kw_only=True)
     # A setting the integration keeps itself sends no frame: applied without connecting.
     local_set_fn: Callable[[bool], None] | None = field(default=None, kw_only=True)
+    available_fn: Callable[[BedController], bool] | None = field(default=None, kw_only=True)
     entity_registry_enabled_default: bool = field(default=True, kw_only=True)
     # Fills a translated name template, e.g. ``{side}``.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
@@ -175,6 +177,8 @@ class MotorControlSpec:
     max_angle: float = 68
     scheduler_resource: str | None = None
     hold: ControllerMotorHoldSpec | None = field(default=None, kw_only=True)
+    # Logical sides drive the same physical actuator on a single receiver.
+    shared_across_sides: bool = field(default=False, kw_only=True)
 
 
 # Units a position slider can be scaled in.

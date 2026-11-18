@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     get_lp_legacy_profile,
 )
+from custom_components.adjustable_bed.beds.luniosmart.discovery import ALIASES as LUNIO_ALIASES
 from custom_components.adjustable_bed.beds.luuna import controller as luuna_bed
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic_frames
 from custom_components.adjustable_bed.beds.richmat_classic import (
@@ -38,14 +39,19 @@ from custom_components.adjustable_bed.beds.rmcontrol import protocol as rmcontro
 from custom_components.adjustable_bed.beds.sonicsleep import protocol as sonic_protocol
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
+from custom_components.adjustable_bed.profiles import bobpowerbase as bob_profiles
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
+from custom_components.adjustable_bed.profiles import luniosmart as lunio
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import majestichome as majestic
+from custom_components.adjustable_bed.profiles import mlily_remote as remote162
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
-from scripts.codec_docs import _galaxy
+from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
+from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
+from scripts.codec_docs import _galaxy, _okimiki, _richmat_legacy, _richmat_mh_apps
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -54,6 +60,7 @@ _LIBRARY_APPS = {
     "Casper Base": (casper_profiles.PROFILES, _const.BED_TYPE_CASPER_BASE),
     "Hush Base": (hush_profiles.PROFILES, _const.BED_TYPE_HUSH_BASE),
     "Luuna +": (luuna_profiles.PROFILES, _const.BED_TYPE_LUUNA),
+    "MLILY Remote": (remote162.PROFILES, _const.BED_TYPE_MLILY_REMOTE),
 }
 
 _RICHMAT_NAMES = {
@@ -74,6 +81,9 @@ _RICHMAT_NAMES = {
     "goodvibe": "Good Vibe Sleep",
     "mlily": "MLILY Control",
     "majestichome": "Majestic Home",
+    "okimiki": "Okimiki",
+    "bobpowerbase": "Power Bob Base",
+    "mlily_remote": "MLILY Remote",
     "leggett_lp_legacy": "L&P legacy app",
     **{
         profile.key: f"Richmat MH {name}"
@@ -82,6 +92,7 @@ _RICHMAT_NAMES = {
             (
                 *("Revive Control", "Best Mattress", "Blvd Home", "HARMONY", "Idealbed"),
                 *("RUF Betten", "W.Silver", "AMERICANSTAR", "Bailey", "TX"),
+                *("Nisco", "MLILY Supreme"),
             ),
             strict=True,
         )
@@ -150,6 +161,8 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
             richmat_profiles.GOODVIBE,
             richmat_profiles.MLILY,
             majestic.catalog("FARM").wire,
+            OKIMIKI,
+            bob_profiles.WIRE,
             richmat_profiles.LP_LEGACY,
         )
     }
@@ -160,6 +173,8 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
         "one": (_const.BED_TYPE_SONICSLEEP,),
+        "luniosmart": (_const.BED_TYPE_LUNIOSMART,),
+        **{key: (profile.app,) for key, profile in legacy_profiles().items()},
         **{
             profile.key: (_const.BED_TYPE_RICHMAT,) for profile in richmat_profiles.RICHMAT.values()
         },
@@ -181,10 +196,13 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
         **dict.fromkeys(luuna_profiles.PROFILES, (_const.BED_TYPE_LUUNA,)),
+        **dict.fromkeys(remote162.PROFILES, (_const.BED_TYPE_MLILY_REMOTE,)),
         "galaxy": (_const.BED_TYPE_GALAXY,),
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
         "mlily": (_const.BED_TYPE_MLILY,),
         "majestichome": (_const.BED_TYPE_MAJESTICHOME,),
+        "okimiki": (_const.BED_TYPE_OKIMIKI,),
+        "bobpowerbase": (_const.BED_TYPE_BOBPOWERBASE,),
         "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
         # Each app's own products; the restored ones are choices on the same bed type.
         **{
@@ -201,7 +219,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
 
 
 def _catalog_kind(key: str) -> str:
-    if key in ("hjbed", "goodvibe", "mlily", "galaxy", "majestichome"):
+    if key in ("hjbed", "goodvibe", "mlily", "galaxy", "majestichome", "okimiki", "bobpowerbase"):
         return "per-product catalog"
     if key == "eshine":
         return "[fixed E6000 table](#eshine-commands)"
@@ -224,7 +242,7 @@ def _lease(profile: richmat_profiles.RichmatProfile) -> str:
     if profile.key.startswith("richmat_classic_"):
         # The controller scopes its lease to the keep buttons of the selected layout.
         return "renewable lease on keep buttons"
-    if profile.key in ("goodvibe", "mlily", "majestichome"):
+    if profile.key in ("goodvibe", "mlily", "majestichome", "okimiki", "bobpowerbase"):
         # The controller scopes its lease to the product's sustained-press controls.
         return "renewable lease on sustained controls"
     return "renewable lease" if profile.execution.hold == "stream" else "no"
@@ -262,6 +280,7 @@ def render_richmat_profiles() -> str:
     catalog = _table(
         ("Profile", "Bed type", "Transport order", "Commands", "Hold until release"),
         (
+            ("Lunio Smart+", "`luniosmart`", "platform GATT order", "fixed two-axis layout", "100 ms stream and explicit release"),
             ("SonicSleep", "`sonicsleep`", "platform GATT order", "fixed IQRM product", "renewable lease; no release packet"),
             *(
                 (
@@ -313,6 +332,8 @@ def render_richmat_transports() -> str:
             users.setdefault(transport, []).append(app)
     for transport in sonic.ROUTES.values():
         users.setdefault(transport, []).append("SonicSleep")
+    for transport in lunio.PROFILE.transports:
+        users.setdefault(transport, []).append("Lunio Smart+ (framed controls on every route)")
     return _block(
         _table(
             ("Key", "Service", "Write", "Notify", "Commands", "Profiles"),
@@ -1213,6 +1234,32 @@ def render_bedtech_commands() -> str:
     return _block(_table(("Action", "Code", "Frame (bank 0)", "Timing"), rows))
 
 
+
+def render_luniosmart() -> str:
+    return _block(
+        _table(("Layout", "Refresh", "Partial receive expiry", "Memory slots"), [
+            ("Head and foot", f"{lunio.PROFILE.tick_s * 1000:g} ms", f"{lunio.PROFILE.receive_expiry_s * 1000:g} ms", "1"),
+        ]),
+        _table(("Route", "Service", "Write", "Declared notify", "Isolated query"), (
+            (f"S{i}", f"`{t.service_uuid}`", f"`{t.write_uuid}`", f"`{t.notify_uuid}`",
+             _hex(codec.function(0, action="deviceFunctionItemExitLimit", single=t.single)))
+            for i, key in enumerate(lunio.PROFILE.transports, 1) for t in (codec.TRANSPORTS[key],)
+        )),
+        _table(("Control", "All six routes"), (
+            (name, _hex(codec.command(code)))
+            for name, code in {**lunio.DIRECTIONS, **lunio.PRESETS, "release": lunio.RELEASE}.items()
+        )),
+        _table(("Startup", "Encoding"), [
+            ("Query", "Last matched service selects the isolated query above, independently of the writer"),
+            ("Local calendar example, 2026-11-17 12:34:56", _hex(codec.calendar(datetime(2026, 11, 17, 12, 34, 56), build=codec.record_20_len))),
+        ]),
+        _table(("Discovery", "Value"), [
+            ("Explicit case-sensitive substrings", ", ".join(f"`{word}`" for word in lunio.KEYWORDS)),
+            ("Catalog", f"{len(LUNIO_ALIASES)} aliases, {sum(row['eligible'] for row in LUNIO_ALIASES)} eligible; discovery only"),
+        ]),
+    )
+
+
 def render_sonicsleep() -> str:
     actions = {**sonic.DIRECTIONS, "flat": sonic.FLAT}
     for action, (recall, save) in sonic.PRESETS.items():
@@ -1349,6 +1396,7 @@ def render_rise_commands() -> str:
 
 
 BLOCKS: list[Block] = [
+    (GUIDE, "luniosmart", render_luniosmart),
     (GUIDE, "sonicsleep", render_sonicsleep),
     (GUIDE, "bedtech-models", render_bedtech_models),
     (GUIDE, "bedtech-app-commands", render_bedtech_commands),
@@ -1385,6 +1433,8 @@ BLOCKS: list[Block] = [
 ]
 
 BLOCKS += _galaxy.BLOCKS
+BLOCKS += _okimiki.BLOCKS
+BLOCKS += _richmat_mh_apps.BLOCKS
 
 
 def render_richmat_app_commands() -> str:
@@ -1579,3 +1629,100 @@ def render_majestichome() -> str:
 
 
 BLOCKS.append((GUIDE, "majestichome", render_majestichome))
+
+
+def render_bobpowerbase() -> str:
+    from custom_components.adjustable_bed.profiles.bobpowerbase import (
+        CATALOG,
+        LAYOUTS,
+        SCAN_KEYWORDS,
+    )
+
+    assert CATALOG.bed is not None
+    commands = _table(
+        ("Control", "Gesture", "Nordic", "Left", "Right", "Program (left)"),
+        (
+            (
+                key, action.gesture,
+                _hex(codec.function(action.short, single=True, action=action.label)),
+                _hex(codec.function(action.short, 0, action=action.label)),
+                _hex(codec.function(action.short, 1, action=action.label)),
+                _hex(codec.function(action.long)) if action.long else "none",
+            )
+            for key, action in CATALOG.actions.items()
+        ),
+    )
+    return _block(
+        _table(("Product", "Stored selector", "Controls", "Sides"), (
+            (product.label, key, ", ".join(product.actions), ", ".join(map(str, product.sides)))
+            for key, product in CATALOG.products.items()
+        )),
+        _table(("Installation", "Stored layout"), ((label, key) for key, label in LAYOUTS.items())),
+        _table(("Transport", "Service", "Write", "Catalog notify", "Generic framing"), (
+            (key, codec.TRANSPORTS[key].service_uuid, codec.TRANSPORTS[key].write_uuid,
+             codec.TRANSPORTS[key].notify_uuid, "raw" if codec.TRANSPORTS[key].single else "6E")
+            for key in CATALOG.wire.transports
+        )),
+        commands,
+        _table(("Startup", "Framed", "Nordic"), (
+            (name, _hex(codec.function(code, action=name)), _hex(codec.function(code, action=name, single=True)))
+            for name, code in CATALOG.startup
+        )),
+        _table(("Helper / example", "Characteristic write"), (
+            ("STOP left", _hex(codec.function(0x6E))),
+            ("STOP right", _hex(codec.function(0x6E, 1))),
+            ("Light off left", _hex(codec.function(0x75))),
+            ("Light off right", _hex(codec.function(0x75, 1))),
+            *[(f"Light timeout {minute} min", _hex(goodvibe_frames.light_duration(minute * 60)))
+              for minute in (0, 5)],
+            ("RGB red", _hex(codec.rgb(255, 0, 0))),
+            ("Repeat list", _hex(codec.record_20_len(5, 1, 0, (0,)))),
+            ("Delete id 3", _hex(goodvibe_frames.delete_alarm(3))),
+            ("Local calendar, 2026-11-17 16:00:00",
+             _hex(codec.calendar(datetime(2026, 11, 17, 16), build=CATALOG.record))),
+        )),
+        _table(("Rule", "Value"), (
+            ("Scan (case-sensitive substring)", ", ".join(SCAN_KEYWORDS)),
+            ("Refresh / FIFO pacing", f"{CATALOG.bed.tick_ms} ms"),
+            ("Program threshold", f"{CATALOG.bed.program_ms} ms"),
+            ("Light timeout update delay", f"{CATALOG.bed.light_delay_ms} ms"),
+            ("Partial notification expiry", f"{CATALOG.bed.receive_expiry_s:g} s"),
+            ("Public timeout choices, minutes", ", ".join(map(str, CATALOG.bed.light_minutes))),
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "bobpowerbase", render_bobpowerbase))
+
+
+BLOCKS += _richmat_legacy.BLOCKS
+
+
+def render_mlily_remote() -> str:
+    return _block(
+        _table(("Product", "Catalog code", "Motors", "Massage/cooling", "Alarm modes"), (
+            (p.row[0], p.code, "4" if p.key == "ms600" else "2",
+             "cooling, 2/3/5 hours" if p.cooling else "massage, 10/20/30 minutes" if p.row[2] else "none",
+             ", ".join(remote162.ACTIONS[i][0] for i in p.row[4]) or "none")
+            for p in remote162.PROFILES.values()
+        )),
+        _table(("Action", "Recall/action", "Save", "Framed left", "Products"), (
+            (name, f"`{short:02X}`", f"`{long:02X}`" if long is not None else "none",
+             _hex(codec.function(short)),
+             ", ".join(p.row[0] for p in remote162.PROFILES.values() if any(i in group for group in p.row[1:5])))
+            for i, (name, short, long) in enumerate(remote162.ACTIONS)
+        )),
+        _table(("Alarm/time/release", "Write"), (
+            ("STOP left", _hex(codec.function(codec.STOP))),
+            ("STOP right", _hex(codec.function(codec.STOP, 1))),
+            ("Cancel countdown, low then high", " / ".join(_hex(b) for b in codec.countdown(0, 0))),
+            ("300 minutes, memory 1, low then high", " / ".join(_hex(b) for b in codec.countdown(300, 0x2E))),
+            ("Calendar, 2026-11-16 12:34:56", _hex(codec.calendar(datetime(2026, 11, 16, 12, 34, 56), build=codec.record_20_len))),
+        )),
+        _table(("Startup", "Framed", "Nordic"), (
+            (name.removeprefix("deviceFunctionItem"), _hex(codec.function(code, action=name)), _hex(codec.function(code, single=True)))
+            for name, code in remote162.STARTUP
+        )),
+    )
+
+BLOCKS.append((GUIDE, "mlily-remote-commands", render_mlily_remote))

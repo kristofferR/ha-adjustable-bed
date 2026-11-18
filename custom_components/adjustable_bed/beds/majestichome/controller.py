@@ -152,6 +152,8 @@ class MajesticHomeController(GoodVibeController):
         link: Link | None = None,
         release_gesture: Gesture | None = None,
         on_submit: Callable[[], None] | None = None,
+        deadline: float | None = None,
+        dispatch: Callable[[], None] | None = None,
     ) -> bool:
         if self._next_write_at == 0:
             self._next_write_at = asyncio.get_running_loop().time() + FIRST_WRITE_MS / 1000
@@ -164,6 +166,8 @@ class MajesticHomeController(GoodVibeController):
                     link=link,
                     release_gesture=release_gesture,
                     on_submit=on_submit,
+                    deadline=deadline,
+                    dispatch=dispatch,
                 )
 
         task = asyncio.create_task(write())

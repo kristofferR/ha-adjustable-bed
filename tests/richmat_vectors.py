@@ -1648,6 +1648,15 @@ _LP_LEGACY: frozenset[str] = frozenset(
 )
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    "bobpowerbase": frozenset(
+        frame
+        for row in json.loads((Path(__file__).parent / "fixtures/bobpowerbase/vectors.json").read_text())
+        if row["scope"] == "BED" and not row["builder"].startswith("parse_") and row["builder"] != "repeat_code"
+        for frame in (
+            [row["expected_bytes"][offset:offset + 10] for offset in (0, 10)]
+            if row["builder"] == "light_rgb" else [row["expected_bytes"]]
+        )
+    ),
     # pre-v5 RichmatController, WiLinke framing, every remote code (smartbed-mqtt and app catalogs)
     "richmat_wilinke": frozenset(
         {
@@ -2217,10 +2226,50 @@ def _cluster017_frames() -> dict[str, frozenset[str]]:
 
 FROZEN_FRAMES.update(_cluster017_frames())
 
-# Accepted row151, captured before the production codec was selected.
+# Majestic Home 1.0.4 literals, frozen before the production codec was selected.
 _MAJESTICHOME = json.loads(
     (Path(__file__).parent / "fixtures/majestichome/protocol.json").read_text()
 )
 FROZEN_FRAMES["majestichome"] = frozenset(
     row["expected_bytes"] for row in _MAJESTICHOME if row["protocol"] in ("P1", "P2", "P_EXT")
 )
+
+
+def _okimiki() -> frozenset[str]:
+    """Okimiki 1.0.1: the original 42 plus focused 29 literals, unchanged."""
+    root = Path(__file__).parent / "fixtures" / "okimiki"
+    frames = set()
+    for file in ("vectors.json", "focused_vectors.json"):
+        for row in json.loads((root / file).read_text()):
+            data = bytes.fromhex(row["expected_bytes"])
+            if row["kind"] in ("light_color", "one_shot"):
+                frames.update(data[i:i + 5].hex() for i in range(0, len(data), 5))
+            else:
+                frames.add(data.hex())
+    return frozenset(frames)
+
+
+# Okimiki 1.0.1's P1 command table: Nordic saves. The 42+29 fixtures are unchanged.
+FROZEN_FRAMES["okimiki"] = _okimiki() | frozenset({"2b", "2c", "65", "66"})
+
+
+def _cluster022_frames() -> dict[str, frozenset[str]]:
+    result = {}
+    directory = Path(__file__).parent / "fixtures/richmat_cluster022"
+    for app in ("nisco", "mlily_supreme"):
+        values = set()
+        for row in json.loads((directory / f"{app}_vectors.json").read_text()):
+            if row["builder"].startswith("parse_") or row["builder"] == "queue_long_at_threshold":
+                continue
+            for literal in row["expected_bytes"].split(" | "):
+                if not literal.startswith(("6e", "5e")):
+                    continue  # FA uses the shared sleep builder in the outbound proof.
+                if len(literal) == 20 and row["builder"] in ("color", "led_rgb"):
+                    values.update((literal[:10], literal[10:]))
+                else:
+                    values.add(literal)
+        result[f"richmat_mh_{app}"] = frozenset(values)
+    return result
+
+
+FROZEN_FRAMES.update(_cluster022_frames())

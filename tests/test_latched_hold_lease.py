@@ -45,7 +45,7 @@ from tests.hold_lease_wire import HeldWire, leased_hold
 from tests.test_controller_contract import _create_controller_for_bed_type
 
 LATCHED = ExecutionCapabilities(hold="latched")
-DECLARED_SOLACE = ("common", "home_k1", "home_k2", "motion_flex", "woosa")
+DECLARED_SOLACE = ("common", "home_k1", "home_k2", "motion_flex", "woosa", "sophie")
 
 
 def test_latched_holds_have_the_shorter_ceiling() -> None:

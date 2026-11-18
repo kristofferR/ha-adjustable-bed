@@ -71,6 +71,7 @@ from .const import (
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SVANE,
     BED_TYPE_SYMPHONY,
+    BED_TYPE_ULTRAMATIC_SMART_BED,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
@@ -1168,13 +1169,10 @@ async def _timed_move_plan(
     svane_admission: SvaneHoldAdmission | None = None,
     *,
     hold_lease: bool = False,
+    shared_motors: set[int] | None = None,
 ) -> tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str]:
     """Validate one physical side and build its timed command."""
     async with _side_validation(parent, coordinator, preflighted) as controller:
-        if hold_lease:
-            _require_hold_execution(coordinator, controller)
-            duration_ms = _hold_ceiling(controller, duration_ms)
-
         motor_specs = {
             spec.key: spec
             for spec in controller.motor_control_specs
@@ -1197,10 +1195,23 @@ async def _timed_move_plan(
             )
 
         spec = motor_specs[motor]
+        if hold_lease:
+            control = (
+                spec.hold.up_control if direction == "up" else spec.hold.down_control
+            ) if spec.hold is not None else None
+            _require_hold_execution(coordinator, controller, control)
+            duration_ms = _hold_ceiling(controller, duration_ms)
         try:
             controller.validate_timed_movement(motor, direction, duration_ms)
         except ValueError as err:
             raise ServiceValidationError(str(err)) from err
+
+        if (
+            shared_motors is not None
+            and isinstance(coordinator, SingleAddressSideCoordinator)
+            and spec.shared_across_sides
+        ):
+            shared_motors.add(_plan_key(coordinator))
 
         if coordinator.bed_type == BED_TYPE_SVANE:
             # The factory imported the Svane controller module, off the event loop.
@@ -1553,6 +1564,7 @@ async def _async_timed_move(
         tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str],
     ] = {}
     stop_epoch_by_target: dict[int, int] = {}
+    shared_motors: set[int] = set()
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
@@ -1574,6 +1586,7 @@ async def _async_timed_move(
                     coordinator, target, preflighted, motor, direction, duration_ms,
                     svane_admissions.get(target_key),
                     hold_lease=lease is not None,
+                    shared_motors=shared_motors,
                 )
             admission = command_admissions[(id(coordinator), side)]
             actual_resources = {
@@ -1602,8 +1615,13 @@ async def _async_timed_move(
         for target in physical
     )
 
+    completed_shared_motors: set[int] = set()
+
     async def move(target: BedChild) -> None:
-        command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
+        target_key = _plan_key(target)
+        if target_key in completed_shared_motors:
+            return
+        command, pulse_count, pulse_delay_ms, resource = plans[target_key]
         if streamed:
             assert not isinstance(target, SingleAddressSideCoordinator)
             svane_admission = svane_admissions.get(_plan_key(target))
@@ -1642,14 +1660,16 @@ async def _async_timed_move(
                 expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
                 lease=lease,
             )
-            return
-        await target.async_execute_controller_command(
-            command,
-            resource=resource,
-            pulse_count=pulse_count,
-            pulse_delay_ms=pulse_delay_ms,
-            expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
-        )
+        else:
+            await target.async_execute_controller_command(
+                command,
+                resource=resource,
+                pulse_count=pulse_count,
+                pulse_delay_ms=pulse_delay_ms,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+            )
+        if target_key in shared_motors:
+            completed_shared_motors.add(target_key)
 
     try:
         for coordinator, side in targets:
@@ -1763,6 +1783,7 @@ async def _preflight_and_execute[T](
     resource: str | None = "configuration",
     admit: bool = False,
     admissions: Sequence[_CommandAdmission | None] | None = None,
+    prepare: Callable[[], None] | None = None,
 ) -> None:
     """Preflight every physical target, then run ``command`` on each in turn.
 
@@ -1770,7 +1791,9 @@ async def _preflight_and_execute[T](
     ``ServiceValidationError``. Any failure or cancellation hands the links
     opened only for validation back to their idle timer. ``admit`` lets a STOP
     pressed during the preflight cancel the command. ``admissions`` can carry
-    snapshots captured before a lazy import awaits.
+    snapshots captured before a lazy import awaits. ``prepare`` publishes
+    synchronous ingress input after the complete batch passes validation and
+    its captured STOP generations still match, before queued execution.
     """
     if admissions is None:
         admissions = [
@@ -1782,6 +1805,20 @@ async def _preflight_and_execute[T](
             for coordinator, side in targets
         ]
     preflighted = await _preflight_capability(targets, interface, label, supported, validate)
+    if prepare is not None:
+        try:
+            # An ingress update may affect an already running operation. Admit
+            # the complete batch before publishing it, with no await between
+            # the owner/STOP checks and the synchronous update.
+            if all(
+                admission is not None
+                and _capture_command_admission(parent, side, admission.resources) == admission
+                for (parent, side), admission in zip(targets, admissions, strict=True)
+            ):
+                prepare()
+        except BaseException:
+            await _release_preflighted(preflighted)
+            raise
     await _execute_preflighted(
         targets,
         preflighted,
@@ -2040,29 +2077,78 @@ async def _hold_targets(
     admissions: Sequence[_CommandAdmission] | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
-    _require_hold_topology(targets)
+    bounded_catalog = lease is None and all(
+        child.bed_type == "bobpowerbase"
+        for parent, side in targets for child in _command_targets(parent, side)
+    )
+    if not bounded_catalog:
+        _require_hold_topology(targets)
+    shared_receivers: set[int] = set()
 
     def check(target: BedChild, controller: BedController) -> None:
         _require_held_control(target, controller, control)
         if lease is not None:
             _require_hold_execution(target, controller, control)
         controller.validate_hold_control(control, duration_ms)
+        if isinstance(target, SingleAddressSideCoordinator) and any(
+            spec.shared_across_sides
+            and spec.hold is not None
+            and control in (spec.hold.up_control, spec.hold.down_control)
+            for spec in controller.motor_control_specs
+        ):
+            shared_receivers.add(_plan_key(target))
 
     # A STOP during any per-side capability/connect wait owns the event that
     # was current when the user pressed. Capture before _preflight_each awaits.
     if admissions is None:
         admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
+    completed_shared_receivers: set[int] = set()
 
     async def hold(controller: BedController) -> None:
         # Automatic link-slot fallback may have changed topology after admission.
-        _require_hold_topology(targets)
+        if not bounded_catalog:
+            _require_hold_topology(targets)
         await controller.hold_control(
             control, duration_ms if lease is None else _hold_ceiling(controller, duration_ms)
         )
 
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            if isinstance(coordinator, SingleAddressPairedCoordinator) and any(
+                _plan_key(target) in shared_receivers
+                for target in _command_targets(coordinator, side)
+            ):
+                stop_epochs = {
+                    id(child): admission.expected_stop_epochs.get(target_side)
+                    for target_side, child in coordinator._targets_for(side)
+                }
+
+                async def hold_shared(
+                    target: BedChild,
+                    _stop_epochs: dict[int, int | None] = stop_epochs,
+                ) -> None:
+                    receiver = _plan_key(target)
+                    # Skip the duplicate before its scheduler can reconnect the receiver.
+                    if receiver in completed_shared_receivers:
+                        return
+                    await target.async_execute_controller_command(
+                        track_held_control(getattr(target, "hass", None), control, hold),
+                        cancel_running=True,
+                        expected_stop_epoch=_stop_epochs[id(target)],
+                        lease=lease,
+                    )
+                    if receiver in shared_receivers:
+                        completed_shared_receivers.add(receiver)
+
+                await coordinator.async_run_child_operation(
+                    "hold control",
+                    hold_shared,
+                    side=side,
+                    expected_pair_generations=admission.expected_pair_generations,
+                    expected_stop_epochs=admission.expected_stop_epochs,
+                )
+                continue
             await _execute_sided(
                 coordinator,
                 side,
@@ -2248,8 +2334,20 @@ async def handle_set_alarm(call: ServiceCall) -> None:
     targets = _call_targets(call)
 
     route = _profile_route(
-        targets, {BED_TYPE_ZSERIES: "zseries", BED_TYPE_SYMPHONY: "symphony"}, SERVICE_SET_ALARM
+        targets,
+        {
+            BED_TYPE_ZSERIES: "zseries",
+            BED_TYPE_SYMPHONY: "symphony",
+            BED_TYPE_ULTRAMATIC_SMART_BED: "ultramatic",
+        },
+        SERVICE_SET_ALARM,
     )
+    if route == "ultramatic":
+        # Its fenced A/AB/B plans capture every target before their first await.
+        from .beds.ultramatic.services import set_ultramatic_alarm
+
+        await set_ultramatic_alarm(call, alarm, given)
+        return
     if route == "symphony":
         # Symphony reads the current alarm table live before rewriting one side.
         from .beds.symphony.services import set_symphony_alarm
@@ -2277,7 +2375,15 @@ async def handle_set_alarm(call: ServiceCall) -> None:
 
     def check(target: BedChild, controller: BedController) -> None:
         _check_alarm(target.name, controller, alarm, given)
-        scheduling[target.operation_identity] = cast("AlarmCapability", controller.alarm_capability)
+        capability = cast("AlarmCapability", controller.alarm_capability)
+        if not alarm.enabled and capability.time_to_turn_off and ATTR_TIME not in call.data:
+            raise ServiceValidationError(
+                f"Choose the time of the alarm to turn off on {target.name}",
+                translation_domain=DOMAIN,
+                translation_key="alarm_time_required_to_turn_off",
+                translation_placeholders={"device_name": target.name},
+            )
+        scheduling[target.operation_identity] = capability
 
     # Capture STOP ownership for every lane an alarm may write on, before any
     # await; the lane is known only once preflight has each target's capability.
@@ -2670,6 +2776,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.bedgear.services import async_register_bedgear_services
     from .beds.bedtech.services import register_services as register_bedtech_services
     from .beds.casper_base.services import async_register_casper_base_services
+    from .beds.cheerssleep.services import register_services as register_cheerssleep_services
     from .beds.comfort_enhancement3.services import register_services as register_apex_services
     from .beds.customatic.services import async_register_customatic_services
     from .beds.doublesleep.services import async_register_doublesleep_services
@@ -2682,20 +2789,33 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.kaidi.comfy_services import async_register_comfy_services
     from .beds.kaidi.floyd_services import async_register_floyd_services
     from .beds.kaidi.rize_services import async_register_rize_services
+    from .beds.keeson.agingplace_services import register_services as register_agingplace_services
+    from .beds.keeson.somos_services import register_services as register_somos_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
     from .beds.limoss.remote_services import async_register_limoss_remote_services
     from .beds.linak.services import async_register_linak_services
+    from .beds.linx.services import register_services as register_linx_services
     from .beds.logicdata.app_services import async_register_logicdata_app_services
     from .beds.majestichome.services import async_register_majestichome_services
+    from .beds.mlily_remote.services import register_services as register_mlily_remote_services
     from .beds.mline.services import register_services as register_mline_services
     from .beds.motion_bed.services import async_register_motion_bed_services
     from .beds.motomotion.services import async_register_motomotion_services
     from .beds.octo.services import async_register_octo_services
+    from .beds.okimiki.services import register_services as register_okimiki_services
+    from .beds.onlysnore.services import register_services as register_onlysnore_services
+    from .beds.personal_comfort.services import (
+        register_services as register_personal_comfort_services,
+    )
     from .beds.reverie.services import async_register_reverie_services
     from .beds.richmat_app.services import async_register_richmat_app_services
     from .beds.richmat_classic.resource_services import async_register_resource_bed_services
     from .beds.richmat_classic.rise_services import async_register_richmat_rise_services
     from .beds.richmat_classic.services import async_register_richmat_classic_services
+    from .beds.richmat_legacy.services import async_register_richmat_legacy_services
+    from .beds.richmat_mh.app_services import (
+        register_services as register_mh_app_services,
+    )
     from .beds.richmat_mh.services import async_register_richmat_mh_services
     from .beds.rmcontrol.services import async_register_rmcontrol_services
     from .beds.sleep_number.services import async_register_sleep_number_services
@@ -2703,27 +2823,39 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.solace.services import async_register_solace_services
     from .beds.sonicsleep.services import async_register_sonicsleep_services
     from .beds.starcode.accessory_group import register_group_services
+    from .beds.suta.services import register_services as register_suta_services
     from .beds.svane.services import async_register_svane_services
     from .beds.symphony.services import register_services as register_symphony_sense_services
+
+    # Ultramatic registers no action of its own; set_alarm uses this module.
+    from .beds.ultramatic import services as _ultramatic_alarm  # noqa: F401
     from .position_estimate_services import async_register_position_estimate_services
 
     return (
         async_register_bedgear_services,
         register_mline_services,
+        register_personal_comfort_services,
+        register_mlily_remote_services,
         register_bedtech_services,
+        register_linx_services,
+        register_somos_services,
+        register_cheerssleep_services,
         register_symphony_sense_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,
         async_register_gmmotor_services,
         async_register_richmat_mh_services,
+        register_mh_app_services,
         async_register_position_estimate_services,
         async_register_richmat_classic_services,
         async_register_resource_bed_services,
+        async_register_richmat_legacy_services,
         async_register_richmat_rise_services,
         async_register_motomotion_services,
         async_register_hjbed_services,
         async_register_richmat_app_services,
         async_register_goodvibe_services,
+        register_okimiki_services,
         async_register_rmcontrol_services,
         async_register_sleep_number_services,
         async_register_doublesleep_services,
@@ -2733,6 +2865,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_solace_services,
         async_register_sonicsleep_services,
         async_register_majestichome_services,
+        register_suta_services,
         async_register_leggett_okin_services,
         async_register_floyd_services,
         async_register_rize_services,
@@ -2743,6 +2876,8 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_fsm_relax_services,
         async_register_limoss_remote_services,
         register_apex_services,
+        register_agingplace_services,
+        register_onlysnore_services,
         async_register_logicdata_app_services,
         async_register_jiecang_app_services,
         async_register_svane_services,

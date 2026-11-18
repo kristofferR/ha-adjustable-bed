@@ -72,6 +72,7 @@ const deferred = () => {
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 function fixture() {
   const hass: HomeAssistant = placed({ entities: {}, states: {}, devices: {}, themes: {},
+    formatEntityName: (s) => s.entity_id,
     locale: { language: "en" }, language: "en", callService: async (domain, service, data) => {
       calls.push({ domain, service, data });
       return new Promise<void>(() => {});

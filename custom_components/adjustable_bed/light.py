@@ -27,7 +27,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING
 from .const import DOMAIN
-from .controller_state import ControllerState
+from .controller_state import ControllerState, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
@@ -161,7 +161,7 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
     ):
         return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
-    if toggle_only:
+    if toggle_only and controller.exposes_assumed_toggle_light:
         return [AdjustableBedAssumedLight(coordinator)]
     return []
 
@@ -275,8 +275,8 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             self._attr_color_mode = next(iter(supported_modes), None)
 
         default_rgb = controller.default_light_rgb_color if controller is not None else None
-        self._supports_discrete_light_control = (
-            controller is not None and controller.supports_discrete_light_control
+        self._supports_desired_light_off = controller is not None and (
+            controller.supports_discrete_light_control or controller.supports_light_state_feedback
         )
         self._default_rgb_color = _normalize_rgb_color(default_rgb)
         # HA brightness maps onto the bed's native 1..max levels when it has them.
@@ -324,6 +324,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         )
         self._light_turn_on_in_progress = False
         self._light_turn_off_in_progress = False
+        self._last_controller_entity_available = self.available
 
     @property
     def available(self) -> bool:
@@ -337,7 +338,10 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 and bool(octo.supported_color_modes)
                 and octo.normal_controls_available
             )
-        return super().available
+        return super().available and (
+            controller is None
+            or self.entity_description.key not in controller.unavailable_controller_entity_keys
+        )
 
     async def async_added_to_hass(self) -> None:
         """Restore the last light state and subscribe to live light state."""
@@ -382,7 +386,9 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         Only writes HA state when a value actually changes, to avoid event churn
         on repeated/identical telemetry packets.
         """
-        changed = False
+        available = self.available
+        changed = available != self._last_controller_entity_available
+        self._last_controller_entity_available = available
         was_on = self._attr_is_on
         controller = self._coordinator.capability_controller
         octo = octo_controller(controller)
@@ -493,8 +499,12 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                     elif reported_state is False:
                         self._cancel_light_auto_off_timer()
         level = state.get(LIGHT_LEVEL)
-        if self._light_level_max is not None and type(level) is int and level > 0:
-            brightness = _level_to_brightness(level, self._light_level_max)
+        if LIGHT_LEVEL in state and self._light_level_max is not None:
+            brightness = (
+                _level_to_brightness(level, self._light_level_max)
+                if type(level) is int and 0 <= level <= self._light_level_max
+                else None
+            )
             if brightness != self._attr_brightness:
                 self._attr_brightness = brightness
                 changed = True
@@ -606,7 +616,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Turn the light off using the controller's light-off semantics."""
         del kwargs
 
-        if not self._attr_is_on and not self._supports_discrete_light_control:
+        if not self._attr_is_on and not self._supports_desired_light_off:
             _LOGGER.debug(
                 "Skipping toggle-based light off for %s because HA already believes it is off",
                 self._coordinator.name,
@@ -614,7 +624,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             return
 
         async def _turn_off(ctrl: BedController) -> None:
-            if ctrl.supports_discrete_light_control:
+            if ctrl.supports_discrete_light_control or ctrl.supports_light_state_feedback:
                 await ctrl.lights_off()
                 return
             if ctrl.supports_light_toggle_control:
@@ -766,9 +776,12 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         Feedback controllers publish what the bed reported on the current link,
         so the light is unknown while no controller is connected.
         """
-        if UNDER_BED_LIGHTS_ON not in state:
+        key = sided(UNDER_BED_LIGHTS_ON, self._coordinator.controller_side)
+        if key not in state:
+            key = UNDER_BED_LIGHTS_ON
+        if key not in state:
             return
-        value = state[UNDER_BED_LIGHTS_ON]
+        value = state[key]
         if self._feedback_only and self._coordinator.controller is None:
             value = None
         self._attr_is_on = None if value is None else bool(value)

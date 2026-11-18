@@ -11,6 +11,7 @@ validation limits; the feature summaries below depend on the selected controller
 | [Linak](beds/linak.md) | Auto-detected models, up to 5 axes, 0/4 memories, speed/status/errors, massage, alarms, lights |
 | [Keeson](beds/keeson.md) | Position feedback (Ergomotion), presets, massage, lights; [Adjustable Lite](beds/keeson.md#adjustable-lite-profile), [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles), [INNOVA](beds/keeson.md#innova-profile), [MaxCoil / Dynasty / Bedsense](beds/keeson.md#ore-comfort-bed-profiles), [Restonic BT](beds/keeson.md#restonic-bt-profiles) |
 | [Richmat](beds/richmat.md) | Model-dependent motors, memory, massage, lighting, alarms and reported state; [RMControl](beds/richmat.md#rmcontrol), [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) |
+| [L2 Motion](beds/motomotion.md#l2-motion) | Name-selected motors, memory, presets, massage, RGB, timer, alarm and sound controls |
 | [MotoSleep](beds/motomotion.md#motosleep-and-power-bob-family) | Model-dependent HHC/MOTO controls, memory, massage and lighting |
 | [OCTO Smart Control](beds/octo.md) | Standard OCTO capability-advertised motor, memory, light and setting controls; separate Star2 variant. Hardware validation is deferred |
 | [Solace](beds/ff_frame.md#solace-name-routes) | Name-based profiles, named presets, optional massage/lights, exact S4-Y lift/tilt; explicit [Woosa Sleep](beds/ff_frame.md#woosa-sleep) profile with one Favourite memory |
@@ -77,6 +78,7 @@ guide documents the format once, then has one section per profile. The
 | Keeson E5/E6 | [Keeson](beds/keeson.md) | Keeson variants and the Ergomotion, Serta and OKIN FFE bed types; Tempur Curve, Q-Plus, Serta MP Remote, Omazz, Ergomotion, ROW Control, Ergo Slim, TEMPUR AU and [Ergomotion 4.0](beds/keeson.md#ergomotion-40) apps; Glideaway Motion, AdjustaMattress, Malouf legacy OKIN, Sleepy's BOX15, Scott Living, SBI, Rondure, Cool Base, BF, Cherish and Comfort Enhancements |
 | Okin N-frame | [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24, Okin CST, Okin DOT, RF ECO BT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, OKIN SleepEase, Sleepy's BOX25 legacy, AdjustableM5X4, Okin 64-Bit and Adjustable bed (Lumbar) |
 | Okin 5A | [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Okin CB35, DewertOkin ELEVATE and the Sleepy's BOX25 Star route |
+| Personal Comfort | [Personal Comfort](beds/personal-comfort.md) | ANM / RA air units and app-selected Malouf / Reverie bases |
 | Malouf | [Malouf](beds/malouf.md) | Malouf New OKIN and the Malouf Base / Lucid Base apps |
 | Richmat 6E | [Richmat](beds/richmat.md) | Richmat remotes, RMControl, BedTech, L&P MlRM, the five Richmat MH apps and HJBed |
 | Limoss DD | [Limoss](beds/limoss.md) | Limoss, Limoss Remote and FSM Relax |
@@ -147,6 +149,13 @@ metadata do not establish bed support. Hardware behavior remains unverified.
 
 This exclusion applies to this exact app version. Existing support for other
 apps and Okin-based beds is unchanged; see [Okin Protocol Family](#okin-protocol-family).
+
+### SmartSofa
+
+**SmartSofa** (`com.okin.seating.ss`, version **1.1.3 (5)**) controls sofas,
+recliners and accessories over Bluetooth. No reachable direct bed controls or
+shared bed effect were found in this version. Similar names or commands do not
+establish bed support; this exclusion is specific to this app version.
 
 ### WiFi and Cloud-Based Beds
 
@@ -267,3 +276,5 @@ Community contributors who helped reverse-engineer specific protocols:
 | BedJet PowerLayer | [natekspencer](https://github.com/natekspencer/ha-bedjet) and [Tim-GitHub](https://github.com/Tim-GitHub) |
 | Mattress Firm 900 | [David Delahoz](https://github.com/daviddelahoz/BLEAdjustableBase) |
 | Nectar | [MaximumWorf](https://github.com/MaximumWorf/homeassistant-nectar) |
+
+Somos / SomosBeds uses five explicit [Keeson carrier profiles](beds/keeson.md#somos--somosbeds). D/E keep neutral axes 1–3; physical roles and hardware behavior are unverified.

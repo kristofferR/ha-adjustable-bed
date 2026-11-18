@@ -8,6 +8,9 @@
  "binary_sensor:adjustamattress_demonstration": {
   "card_section": "utility"
  },
+ "binary_sensor:agingplace_occupancy": {
+  "card_section": "hidden"
+ },
  "binary_sensor:bed_presence": {
   "card_section": "hidden"
  },
@@ -34,6 +37,18 @@
  },
  "binary_sensor:ble_connection": {
   "card_section": "connection"
+ },
+ "binary_sensor:cheerssleep_left_asleep": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:cheerssleep_left_on_bed": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:cheerssleep_right_asleep": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:cheerssleep_right_on_bed": {
+  "card_section": "hidden"
  },
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
@@ -110,6 +125,24 @@
  "binary_sensor:motion_bed_thermal_timer_enabled": {
   "card_section": "hidden"
  },
+ "binary_sensor:nerum_light": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:nerum_massage": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:onlysnore_alarm_1_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:onlysnore_alarm_2_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:onlysnore_alarm_3_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ormatek_massage": {
+  "card_section": "massage"
+ },
  "binary_sensor:reverie_pairlink_low_battery": {
   "card_section": "utility"
  },
@@ -138,6 +171,24 @@
   "card_section": "hidden"
  },
  "binary_sensor:solace_alarm_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_alarm_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_anti_snore_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_memory_1_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_memory_2_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_tv_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_zero_g_saved": {
   "card_section": "hidden"
  },
  "binary_sensor:starcode_abm5_4_massage_active": {
@@ -255,6 +306,27 @@
  },
  "button:adjustamattress_wave_add": {
   "card_section": "massage"
+ },
+ "button:agingplace_circulation": {
+  "card_section": "utility"
+ },
+ "button:agingplace_device_info": {
+  "card_section": "hidden"
+ },
+ "button:agingplace_diagnostic": {
+  "card_section": "hidden"
+ },
+ "button:agingplace_in": {
+  "card_section": "utility"
+ },
+ "button:agingplace_out": {
+  "card_section": "utility"
+ },
+ "button:agingplace_relax_cycle": {
+  "card_section": "utility"
+ },
+ "button:agingplace_sleep": {
+  "card_section": "utility"
  },
  "button:all_motors_down": {
   "card_section": "motors",
@@ -485,6 +557,88 @@
  "button:casper_base_action": {
   "card_section": "utility"
  },
+ "button:cheerssleep_all_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "cheerssleep_all"
+ },
+ "button:cheerssleep_all_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "cheerssleep_all"
+ },
+ "button:cheerssleep_combined_down": {
+  "card_section": "utility"
+ },
+ "button:cheerssleep_combined_up": {
+  "card_section": "utility"
+ },
+ "button:cheerssleep_lift_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "cheerssleep_lift"
+ },
+ "button:cheerssleep_lift_foot_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "cheerssleep_lift_foot"
+ },
+ "button:cheerssleep_lift_foot_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "cheerssleep_lift_foot"
+ },
+ "button:cheerssleep_lift_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "cheerssleep_lift_head"
+ },
+ "button:cheerssleep_lift_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "cheerssleep_lift_head"
+ },
+ "button:cheerssleep_lift_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "cheerssleep_lift"
+ },
+ "button:cheerssleep_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_massage_head": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_massage_mode": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_refresh": {
+  "card_section": "utility"
+ },
+ "button:cheerssleep_sonic_back": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_decrease": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_foot": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_increase": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_mode_1": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_mode_2": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_switch": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_toggle": {
+  "card_section": "massage"
+ },
  "button:child_lock_toggle": {
   "card_section": "utility"
  },
@@ -509,6 +663,16 @@
   "card_role": "save"
  },
  "button:comfortbase_save_zero_g": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:comfortfurniture_preset_stop": {
+  "card_section": "presets"
+ },
+ "button:comfortfurniture_reset": {
+  "card_section": "utility"
+ },
+ "button:comfortfurniture_save": {
   "card_section": "presets",
   "card_role": "save"
  },
@@ -708,6 +872,10 @@
  "button:goodvibe_release": {
   "card_section": "hidden"
  },
+ "button:goodvibe_save_action": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:head_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -863,6 +1031,10 @@
   "card_role": "up",
   "card_motor": "keeson_legs"
  },
+ "button:l2motion_save_snore": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:legs_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -876,6 +1048,19 @@
  "button:light_cycle": {
   "card_section": "lighting",
   "card_role": "cycle"
+ },
+ "button:linx_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:linx_massage_head": {
+  "card_section": "massage"
+ },
+ "button:linx_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:linx_self_check": {
+  "card_section": "utility"
  },
  "button:logicdata_air_pump_deflate": {
   "card_section": "utility"
@@ -911,39 +1096,6 @@
  },
  "button:luuna_preset": {
   "card_section": "presets"
- },
- "button:majestichome_light_action": {
-  "card_section": "lighting"
- },
- "button:majestichome_massage_action": {
-  "card_section": "massage"
- },
- "button:majestichome_memory_1": {
-  "card_section": "memory",
-  "card_role": "recall",
-  "card_slot": 1
- },
- "button:majestichome_memory_1_save": {
-  "card_section": "memory",
-  "card_role": "save",
-  "card_slot": 1
- },
- "button:majestichome_memory_2": {
-  "card_section": "memory",
-  "card_role": "recall",
-  "card_slot": 2
- },
- "button:majestichome_memory_2_save": {
-  "card_section": "memory",
-  "card_role": "save",
-  "card_slot": 2
- },
- "button:majestichome_preset_action": {
-  "card_section": "presets"
- },
- "button:majestichome_save_action": {
-  "card_section": "presets",
-  "card_role": "save"
  },
  "button:malouf_oz_save_memory_2": {
   "card_section": "presets",
@@ -1017,6 +1169,82 @@
  },
  "button:massage_wave_previous": {
   "card_section": "massage"
+ },
+ "button:mlily_remote_antisnoring": {
+  "card_section": "presets"
+ },
+ "button:mlily_remote_antisnoring_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:mlily_remote_bedlight": {
+  "card_section": "lighting"
+ },
+ "button:mlily_remote_cooling_massage10minutetimer": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massage20minutetimer": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massage30minutetimer": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massagefootinstensitystrengthen": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massageheadinstensitystrengthen": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massagemodealloff": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massagemodechange": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_loungeposition": {
+  "card_section": "presets"
+ },
+ "button:mlily_remote_loungeposition_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:mlily_remote_massage10minutetimer": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massage20minutetimer": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massage30minutetimer": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massagefootinstensitystrengthen": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massageheadinstensitystrengthen": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massagelumbarinstensitystrengthen": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massagemodealloff": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massagemodechange": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_tvposition": {
+  "card_section": "presets"
+ },
+ "button:mlily_remote_tvposition_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:mlily_remote_zerogravity": {
+  "card_section": "presets"
+ },
+ "button:mlily_remote_zerogravity_save": {
+  "card_section": "presets",
+  "card_role": "save"
  },
  "button:motion_bed_back_down": {
   "card_section": "motors",
@@ -1216,8 +1444,18 @@
   "card_role": "up",
   "card_motor": "neck"
  },
+ "button:nerum_alarm_refresh": {
+  "card_section": "utility"
+ },
+ "button:nerum_light": {
+  "card_section": "utility"
+ },
  "button:octo_all_down": {
   "card_section": "utility"
+ },
+ "button:okimiki_action": {
+  "card_section": "presets",
+  "card_role": "save"
  },
  "button:okin_app_home": {
   "card_section": "presets"
@@ -1225,6 +1463,47 @@
  "button:okin_bedding_app_save": {
   "card_section": "presets",
   "card_role": "save"
+ },
+ "button:onlysnore_demo_1": {
+  "card_section": "utility"
+ },
+ "button:onlysnore_demo_3": {
+  "card_section": "utility"
+ },
+ "button:onlysnore_demo_6": {
+  "card_section": "utility"
+ },
+ "button:onlysnore_massage_foot_strength_next": {
+  "card_section": "massage"
+ },
+ "button:onlysnore_massage_head_strength_next": {
+  "card_section": "massage"
+ },
+ "button:onlysnore_massage_timer_next": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:onlysnore_refresh": {
+  "card_section": "utility"
+ },
+ "button:onlysnore_save_anti_snore_preset": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:onlysnore_save_reading": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:onlysnore_save_tv": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:onlysnore_save_zero_gravity": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:onlysnore_stop_intervention": {
+  "card_section": "utility"
  },
  "button:ore_comfort_massage_start": {
   "card_section": "massage"
@@ -1237,6 +1516,40 @@
   "card_section": "presets",
   "card_role": "save"
  },
+ "button:ore_ultramatic_alarm_refresh": {
+  "card_section": "utility"
+ },
+ "button:ore_ultramatic_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:ore_ultramatic_massage_head": {
+  "card_section": "massage"
+ },
+ "button:ore_ultramatic_massage_timer": {
+  "card_section": "massage"
+ },
+ "button:ore_ultramatic_massage_toggle": {
+  "card_section": "massage"
+ },
+ "button:ore_ultramatic_massage_wave": {
+  "card_section": "massage"
+ },
+ "button:ormatek_action": {
+  "card_section": "massage"
+ },
+ "button:ormatek_both_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ormatek_both"
+ },
+ "button:ormatek_both_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ormatek_both"
+ },
+ "button:ormatek_light": {
+  "card_section": "lighting"
+ },
  "button:paramount_gearing_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1246,6 +1559,9 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "paramount_gearing"
+ },
+ "button:personal_comfort_action": {
+  "card_section": "massage"
  },
  "button:pillow_down": {
   "card_section": "motors",
@@ -1447,6 +1763,22 @@
  "button:richmat_classic_release": {
   "card_section": "utility"
  },
+ "button:richmat_legacy_lighting": {
+  "card_section": "lighting"
+ },
+ "button:richmat_legacy_massage": {
+  "card_section": "massage"
+ },
+ "button:richmat_legacy_presets": {
+  "card_section": "presets"
+ },
+ "button:richmat_legacy_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:richmat_legacy_utility": {
+  "card_section": "utility"
+ },
  "button:richmat_mh_action": {
   "card_section": "utility"
  },
@@ -1499,6 +1831,15 @@
  "button:richmat_mh_save": {
   "card_section": "presets",
   "card_role": "save"
+ },
+ "button:richmat_mh_start_detection": {
+  "card_section": "utility"
+ },
+ "button:richmat_mh_stop_detection": {
+  "card_section": "utility"
+ },
+ "button:richmat_mh_toggle_smart_light_lock": {
+  "card_section": "utility"
  },
  "button:richmat_mh_toggle_smart_set_lock": {
   "card_section": "utility"
@@ -1882,10 +2223,94 @@
  "button:solace_music_toggle": {
   "card_section": "utility"
  },
+ "button:somos_axis_1_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "somos_axis_1"
+ },
+ "button:somos_axis_1_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "somos_axis_1"
+ },
+ "button:somos_axis_2_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "somos_axis_2"
+ },
+ "button:somos_axis_2_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "somos_axis_2"
+ },
+ "button:somos_axis_3_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "somos_axis_3"
+ },
+ "button:somos_axis_3_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "somos_axis_3"
+ },
+ "button:somos_feet_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "somos_feet"
+ },
+ "button:somos_feet_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "somos_feet"
+ },
+ "button:somos_foot_massage": {
+  "card_section": "massage"
+ },
+ "button:somos_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "somos_head"
+ },
+ "button:somos_head_massage": {
+  "card_section": "massage"
+ },
+ "button:somos_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "somos_head"
+ },
+ "button:somos_light": {
+  "card_section": "lighting"
+ },
+ "button:somos_lumbar_tilt_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "somos_lumbar_tilt"
+ },
+ "button:somos_lumbar_tilt_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "somos_lumbar_tilt"
+ },
+ "button:somos_massage_timer_cycle": {
+  "card_section": "massage"
+ },
  "button:sonicsleep_action": {
   "card_section": "presets"
  },
  "button:sonicsleep_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:sophie_program_anti_snore": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:sophie_program_tv": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:sophie_program_zero_g": {
   "card_section": "presets",
   "card_role": "save"
  },
@@ -2059,6 +2484,19 @@
   "card_section": "motors",
   "card_role": "stop"
  },
+ "button:suta_action": {
+  "card_section": "utility"
+ },
+ "button:suta_preset": {
+  "card_section": "presets"
+ },
+ "button:suta_release": {
+  "card_section": "hidden"
+ },
+ "button:suta_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:symphony_elevation_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2167,6 +2605,104 @@
  "button:toggle_light": {
   "card_section": "lighting",
   "card_role": "toggle"
+ },
+ "button:ultramatic_clock": {
+  "card_section": "utility"
+ },
+ "button:ultramatic_foot_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ultramatic_foot"
+ },
+ "button:ultramatic_foot_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ultramatic_foot"
+ },
+ "button:ultramatic_footstrengthadd": {
+  "card_section": "massage"
+ },
+ "button:ultramatic_footstrengthreduce": {
+  "card_section": "massage"
+ },
+ "button:ultramatic_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ultramatic_head"
+ },
+ "button:ultramatic_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ultramatic_head"
+ },
+ "button:ultramatic_headstrengthadd": {
+  "card_section": "massage"
+ },
+ "button:ultramatic_headstrengthreduce": {
+  "card_section": "massage"
+ },
+ "button:ultramatic_headtilt_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ultramatic_headtilt"
+ },
+ "button:ultramatic_headtilt_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ultramatic_headtilt"
+ },
+ "button:ultramatic_hips_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ultramatic_hips"
+ },
+ "button:ultramatic_hips_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ultramatic_hips"
+ },
+ "button:ultramatic_light": {
+  "card_section": "lighting"
+ },
+ "button:ultramatic_lumbar_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ultramatic_lumbar"
+ },
+ "button:ultramatic_lumbar_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ultramatic_lumbar"
+ },
+ "button:ultramatic_query_alarm": {
+  "card_section": "utility"
+ },
+ "button:ultramatic_query_massage": {
+  "card_section": "utility"
+ },
+ "button:ultramatic_release": {
+  "card_section": "hidden"
+ },
+ "button:ultramatic_reset_memory": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ultramatic_save_anti": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ultramatic_save_zg": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ultramatic_timerswitch": {
+  "card_section": "massage"
+ },
+ "button:ultramatic_waveadd": {
+  "card_section": "massage"
+ },
+ "button:ultramatic_wavereduce": {
+  "card_section": "massage"
  },
  "button:vibradorm_app_all_down": {
   "card_section": "utility"
@@ -2363,6 +2899,22 @@
   "card_section": "motors",
   "card_motor": "both"
  },
+ "cover:cheerssleep_all": {
+  "card_section": "motors",
+  "card_motor": "cheerssleep_all"
+ },
+ "cover:cheerssleep_lift": {
+  "card_section": "motors",
+  "card_motor": "cheerssleep_lift"
+ },
+ "cover:cheerssleep_lift_foot": {
+  "card_section": "motors",
+  "card_motor": "cheerssleep_lift_foot"
+ },
+ "cover:cheerssleep_lift_head": {
+  "card_section": "motors",
+  "card_motor": "cheerssleep_lift_head"
+ },
  "cover:comfy_foot": {
   "card_section": "motors",
   "card_motor": "comfy_foot"
@@ -2527,6 +3079,10 @@
   "card_section": "motors",
   "card_motor": "neck"
  },
+ "cover:ormatek_both": {
+  "card_section": "motors",
+  "card_motor": "ormatek_both"
+ },
  "cover:paramount_gearing": {
   "card_section": "motors",
   "card_motor": "paramount_gearing"
@@ -2603,6 +3159,30 @@
   "card_section": "motors",
   "card_motor": "smart_sleep_lumbar"
  },
+ "cover:somos_axis_1": {
+  "card_section": "motors",
+  "card_motor": "somos_axis_1"
+ },
+ "cover:somos_axis_2": {
+  "card_section": "motors",
+  "card_motor": "somos_axis_2"
+ },
+ "cover:somos_axis_3": {
+  "card_section": "motors",
+  "card_motor": "somos_axis_3"
+ },
+ "cover:somos_feet": {
+  "card_section": "motors",
+  "card_motor": "somos_feet"
+ },
+ "cover:somos_head": {
+  "card_section": "motors",
+  "card_motor": "somos_head"
+ },
+ "cover:somos_lumbar_tilt": {
+  "card_section": "motors",
+  "card_motor": "somos_lumbar_tilt"
+ },
  "cover:stair": {
   "card_section": "motors",
   "card_motor": "stair"
@@ -2659,6 +3239,26 @@
   "card_section": "motors",
   "card_motor": "tv_lift"
  },
+ "cover:ultramatic_foot": {
+  "card_section": "motors",
+  "card_motor": "ultramatic_foot"
+ },
+ "cover:ultramatic_head": {
+  "card_section": "motors",
+  "card_motor": "ultramatic_head"
+ },
+ "cover:ultramatic_headtilt": {
+  "card_section": "motors",
+  "card_motor": "ultramatic_headtilt"
+ },
+ "cover:ultramatic_hips": {
+  "card_section": "motors",
+  "card_motor": "ultramatic_hips"
+ },
+ "cover:ultramatic_lumbar": {
+  "card_section": "motors",
+  "card_motor": "ultramatic_lumbar"
+ },
  "cover:waist": {
   "card_section": "motors",
   "card_motor": "waist"
@@ -2671,6 +3271,16 @@
  },
  "number:adjustamattress_alarm_draft_minute": {
   "card_section": "utility"
+ },
+ "number:agingplace_brightness": {
+  "card_section": "lighting"
+ },
+ "number:agingplace_massage_minutes": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "number:agingplace_motion_minutes": {
+  "card_section": "lighting"
  },
  "number:auxiliary_1_position": {
   "card_section": "motors",
@@ -2703,6 +3313,15 @@
  "number:bf_cherish_wave": {
   "card_section": "massage"
  },
+ "number:cheerssleep_sonic_level": {
+  "card_section": "massage"
+ },
+ "number:comfortfurniture_intensity_level": {
+  "card_section": "massage"
+ },
+ "number:comfortfurniture_wave_level": {
+  "card_section": "massage"
+ },
  "number:fan_level": {
   "card_section": "climate"
  },
@@ -2729,6 +3348,22 @@
   "card_section": "motors",
   "card_role": "estimate",
   "card_motor": "head"
+ },
+ "number:l2motion_bass": {
+  "card_section": "utility"
+ },
+ "number:l2motion_light_timer": {
+  "card_section": "lighting",
+  "card_role": "timer_minutes"
+ },
+ "number:l2motion_treble": {
+  "card_section": "utility"
+ },
+ "number:l2motion_vibration": {
+  "card_section": "utility"
+ },
+ "number:l2motion_volume": {
+  "card_section": "utility"
  },
  "number:legs_position": {
   "card_section": "motors",
@@ -2821,6 +3456,9 @@
  "number:octo_light_duration": {
   "card_section": "hidden"
  },
+ "number:okimiki_light_seconds": {
+  "card_section": "lighting"
+ },
  "number:paramount_gearing_max": {
   "card_section": "utility"
  },
@@ -2845,6 +3483,12 @@
  "number:paramount_legs_min": {
   "card_section": "utility"
  },
+ "number:personal_comfort_left_firmness": {
+  "card_section": "firmness"
+ },
+ "number:personal_comfort_right_firmness": {
+  "card_section": "firmness"
+ },
  "number:reverie_body_tilt": {
   "card_section": "motors",
   "card_motor": "lumbar"
@@ -2868,6 +3512,20 @@
  "number:richmat_app_intensity": {
   "card_section": "utility"
  },
+ "number:richmat_mh_back_angle": {
+  "card_section": "motors",
+  "card_motor": "back"
+ },
+ "number:richmat_mh_foot_angle": {
+  "card_section": "motors",
+  "card_motor": "feet"
+ },
+ "number:richmat_mh_foot_massage_intensity": {
+  "card_section": "massage"
+ },
+ "number:richmat_mh_head_massage_intensity": {
+  "card_section": "massage"
+ },
  "number:richmat_mh_light_timer": {
   "card_section": "lighting",
   "card_role": "timer"
@@ -2875,6 +3533,10 @@
  "number:richmat_mh_light_timer_minutes": {
   "card_section": "lighting",
   "card_role": "timer_minutes"
+ },
+ "number:richmat_mh_pillow_angle": {
+  "card_section": "motors",
+  "card_motor": "pillow"
  },
  "number:richmat_resource_lamp_timeout": {
   "card_section": "utility"
@@ -2929,6 +3591,12 @@
  "number:starcode_m1x12_brightness": {
   "card_section": "lighting",
   "card_role": "level"
+ },
+ "number:suta_1_setpoint": {
+  "card_section": "utility"
+ },
+ "number:suta_2_setpoint": {
+  "card_section": "utility"
  },
  "number:symphony_light_brightness": {
   "card_section": "lighting"
@@ -3013,6 +3681,9 @@
  "select:hjbed_layout": {
   "card_section": "utility"
  },
+ "select:l2motion_sound_mode": {
+  "card_section": "utility"
+ },
  "select:light_timer": {
   "card_section": "lighting"
  },
@@ -3044,6 +3715,9 @@
  "select:okin_app_installation": {
   "card_section": "utility"
  },
+ "select:onlysnore_intervention": {
+  "card_section": "utility"
+ },
  "select:ore_comfort_massage_timer": {
   "card_section": "massage",
   "card_role": "timer"
@@ -3066,8 +3740,41 @@
  "select:richmat_app_side": {
   "card_section": "utility"
  },
+ "select:richmat_mh_motor_mode": {
+  "card_section": "utility"
+ },
  "select:richmat_mh_snore": {
   "card_section": "utility"
+ },
+ "select:richmat_mh_waist_both_duration": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_both_heat": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_both_pressure": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_left_duration": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_left_heat": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_left_pressure": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_mode": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_right_duration": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_right_heat": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_right_pressure": {
+  "card_section": "massage"
  },
  "select:rize_home_source": {
   "card_section": "utility"
@@ -3220,6 +3927,27 @@
  "sensor:adjustamattress_wave": {
   "card_section": "massage"
  },
+ "sensor:agingplace_breathing_rate": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_circulation_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_diagnostic_status": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_heart_rate": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_relax_cycle_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_sleep_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:agingplace_version": {
+  "card_section": "hidden"
+ },
  "sensor:apex_firmware": {
   "card_section": "hidden"
  },
@@ -3275,6 +4003,9 @@
  "sensor:bf_cherish_alarm": {
   "card_section": "hidden"
  },
+ "sensor:bobpowerbase_status": {
+  "card_section": "hidden"
+ },
  "sensor:casper_base": {
   "card_section": "hidden"
  },
@@ -3312,6 +4043,39 @@
   "card_section": "hidden"
  },
  "sensor:casper_sleep_r_snoring": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_foot_massage": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_head_massage": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_left_breath": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_left_heart": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_left_snore_count": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_left_snore_power": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_massage_mode": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_right_breath": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_right_heart": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_right_snore_count": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_right_snore_power": {
   "card_section": "hidden"
  },
  "sensor:comfy_lock_status": {
@@ -3599,6 +4363,19 @@
  "sensor:linak_protocol_error": {
   "card_section": "hidden"
  },
+ "sensor:linx_device_version": {
+  "card_section": "hidden"
+ },
+ "sensor:linx_massage_minutes": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "sensor:linx_massage_mode": {
+  "card_section": "massage"
+ },
+ "sensor:linx_self_check": {
+  "card_section": "hidden"
+ },
  "sensor:logicdata_air_pump_pressure": {
   "card_section": "firmness"
  },
@@ -3617,9 +4394,6 @@
  "sensor:luuna": {
   "card_section": "hidden"
  },
- "sensor:majestichome": {
-  "card_section": "hidden"
- },
  "sensor:malouf_massage_remaining": {
   "card_section": "hidden"
  },
@@ -3634,6 +4408,9 @@
   "card_role": "timer"
  },
  "sensor:massage_timer_mode": {
+  "card_section": "hidden"
+ },
+ "sensor:mlily_remote": {
   "card_section": "hidden"
  },
  "sensor:mline_alarm": {
@@ -3732,6 +4509,30 @@
  "sensor:n32_alarm_3": {
   "card_section": "utility"
  },
+ "sensor:nerum_alarm_1": {
+  "card_section": "hidden"
+ },
+ "sensor:nerum_alarm_2": {
+  "card_section": "hidden"
+ },
+ "sensor:nerum_alarm_3": {
+  "card_section": "hidden"
+ },
+ "sensor:nerum_foot_massage": {
+  "card_section": "hidden"
+ },
+ "sensor:nerum_head_massage": {
+  "card_section": "hidden"
+ },
+ "sensor:nerum_minutes": {
+  "card_section": "hidden"
+ },
+ "sensor:nerum_wave": {
+  "card_section": "hidden"
+ },
+ "sensor:okimiki_alarms": {
+  "card_section": "hidden"
+ },
  "sensor:okin_bedding_app_alarm_type": {
   "card_section": "hidden"
  },
@@ -3740,6 +4541,30 @@
  },
  "sensor:okin_bedding_app_massage_timer_minutes": {
   "card_section": "hidden"
+ },
+ "sensor:onlysnore_alarm_1_time": {
+  "card_section": "hidden"
+ },
+ "sensor:onlysnore_alarm_2_time": {
+  "card_section": "hidden"
+ },
+ "sensor:onlysnore_alarm_3_time": {
+  "card_section": "hidden"
+ },
+ "sensor:onlysnore_firmware": {
+  "card_section": "hidden"
+ },
+ "sensor:onlysnore_hardware": {
+  "card_section": "hidden"
+ },
+ "sensor:ore_ultramatic_alarm_time": {
+  "card_section": "hidden"
+ },
+ "sensor:ore_ultramatic_massage_intensity": {
+  "card_section": "hidden"
+ },
+ "sensor:ormatek_alarm_time": {
+  "card_section": "utility"
  },
  "sensor:paramount_capabilities": {
   "card_section": "hidden"
@@ -3755,6 +4580,9 @@
  },
  "sensor:paramount_tilt": {
   "card_section": "hidden"
+ },
+ "sensor:personal_comfort_adjustment": {
+  "card_section": "firmness"
  },
  "sensor:resident_massage_timer": {
   "card_section": "massage"
@@ -3773,6 +4601,33 @@
  },
  "sensor:richmat_classic_status": {
   "card_section": "utility"
+ },
+ "sensor:richmat_mh_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_detection": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_last_reply": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_memory_arrival": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_sleep_left_state": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_sleep_right_state": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_waist_both_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_waist_left_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_waist_right_alarm": {
+  "card_section": "hidden"
  },
  "sensor:rize_home_combined_intensity": {
   "card_section": "massage"
@@ -3885,7 +4740,20 @@
  "sensor:solace_audio_volume": {
   "card_section": "hidden"
  },
+ "sensor:somos_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
  "sensor:sonicsleep": {
+  "card_section": "hidden"
+ },
+ "sensor:sophie_foot_level": {
+  "card_section": "hidden"
+ },
+ "sensor:sophie_head_level": {
+  "card_section": "hidden"
+ },
+ "sensor:sophie_wave": {
   "card_section": "hidden"
  },
  "sensor:starcode_abm5_4_firmware": {
@@ -4037,6 +4905,24 @@
  "sensor:timotion_ahf_status": {
   "card_section": "hidden"
  },
+ "sensor:ultramatic_a_alarm": {
+  "card_section": "utility"
+ },
+ "sensor:ultramatic_a_timer": {
+  "card_section": "massage"
+ },
+ "sensor:ultramatic_ab_alarm": {
+  "card_section": "utility"
+ },
+ "sensor:ultramatic_ab_timer": {
+  "card_section": "massage"
+ },
+ "sensor:ultramatic_b_alarm": {
+  "card_section": "utility"
+ },
+ "sensor:ultramatic_b_timer": {
+  "card_section": "massage"
+ },
  "sensor:vibradorm_app_device_name": {
   "card_section": "hidden"
  },
@@ -4106,6 +4992,9 @@
  "switch:automatic_light": {
   "card_section": "utility"
  },
+ "switch:comfortfurniture_massage": {
+  "card_section": "massage"
+ },
  "switch:comfy_control_lock": {
   "card_section": "utility"
  },
@@ -4118,11 +5007,23 @@
  "switch:doublesleep_privacy": {
   "card_section": "utility"
  },
+ "switch:l2motion_sync": {
+  "card_section": "utility"
+ },
  "switch:linak_automatic_drive": {
   "card_section": "utility"
  },
  "switch:motionbed_light": {
   "card_section": "lighting"
+ },
+ "switch:onlysnore_detection": {
+  "card_section": "utility"
+ },
+ "switch:onlysnore_massage": {
+  "card_section": "massage"
+ },
+ "switch:onlysnore_privacy": {
+  "card_section": "utility"
  },
  "switch:paramount_call_prohibition": {
   "card_section": "utility"
@@ -4176,6 +5077,21 @@
   "card_section": "massage"
  },
  "switch:smart_sleep_privacy": {
+  "card_section": "utility"
+ },
+ "switch:suta_heating": {
+  "card_section": "utility"
+ },
+ "switch:suta_heating_light": {
+  "card_section": "utility"
+ },
+ "switch:suta_left_automatic_adjustment": {
+  "card_section": "utility"
+ },
+ "switch:suta_lock": {
+  "card_section": "utility"
+ },
+ "switch:suta_right_automatic_adjustment": {
   "card_section": "utility"
  },
  "switch:symphony_child_mode": {

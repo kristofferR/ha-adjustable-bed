@@ -2,4 +2,4 @@
 
 from ._hints import Hint, names
 
-HINTS: tuple[Hint, ...] = (names('HHC', bed_types={'bedgear'}, anywhere=True),)
+HINTS: tuple[Hint, ...] = (names('HHC', bed_types={'bedgear', 'l2motion'}, anywhere=True),)

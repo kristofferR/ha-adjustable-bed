@@ -273,8 +273,10 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
     def _handle_connection_state(self, connected: bool) -> None:
         # Without a readback the bed may change while unwatched, so a dropped
         # link makes the last command unknown rather than stale.
-        if not connected and self._spec.state_key is None and self._commanded is not None:
+        cleared = not connected and self._spec.state_key is None and self._commanded is not None
+        if cleared:
             self._commanded = None
+        if cleared or self._spec.available_fn is not None:
             self.async_write_ha_state()
 
     @property
@@ -286,6 +288,18 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
         if value is None or type(value) is not type(self._spec.on_value):
             return None
         return value == self._spec.on_value
+
+    @property
+    def available(self) -> bool:
+        if not super().available:
+            return False
+        if self._spec.available_fn is None:
+            return True
+        controller = self._coordinator.capability_controller
+        if controller is None:
+            return False
+        with self._side_scope():
+            return self._spec.available_fn(controller)
 
     async def _async_set(self, on: bool) -> None:
         if self._spec.local_set_fn is not None:
@@ -447,7 +461,13 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 state_key = side_key
             if state_key not in state:
                 return
-            self._attr_is_on = bool(state[state_key])
+            value = state[state_key]
+            # A described setting published as None is unknown, not off.
+            self._attr_is_on = (
+                None
+                if value is None and self.entity_description.state_key is not None
+                else bool(value)
+            )
         self._state_update_generation += 1
         if self.entity_description.key != "under_bed_lights":
             self.async_write_ha_state()

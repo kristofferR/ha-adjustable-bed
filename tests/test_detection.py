@@ -773,12 +773,12 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="SUTA-B207", service_uuids=[])
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_SUTA
-        assert result.confidence == 0.3
+        assert result.confidence == 0.9
 
     def test_skip_suta_accessory_subtypes(self):
-        """Test SUTA accessory/mattress subtypes are excluded from bed detection."""
+        """Drawer-only routes remain outside direct BED detection."""
         service_info = _make_service_info(
-            name="SUTA-MOON",
+            name="SUTA-DRAWER",
             service_uuids=[SOLACE_SERVICE_UUID],
         )
         result = detect_bed_type_detailed(service_info)
@@ -891,6 +891,16 @@ class TestDetectBedTypeByNamePattern:
         """Test Richmat detection by Sleep Function 2.0 name."""
         service_info = _make_service_info(name="Sleep Function 2.0")
         assert detect_bed_type(service_info) == BED_TYPE_RICHMAT
+
+    @pytest.mark.parametrize(
+        "name",
+        ["Firmware Update", "WarmTouch 12", "Wormhole", "Warmup4ie", "Terminal", "Norman's iPhone"],
+    )
+    @pytest.mark.parametrize("manufacturer_data", [{}, {89: b"\x00"}], ids=["alone", "nordic"])
+    def test_words_shaped_like_richmat_codes_are_not_beds(self, name, manufacturer_data):
+        """Richmat codes are read as beds advertise them, in upper case."""
+        info = _make_service_info(name=name, manufacturer_data=manufacturer_data)
+        assert detect_bed_type_detailed(info).bed_type is None
 
     def test_detect_limoss_by_name_pattern(self):
         """Test Limoss detection by name pattern without UUID."""

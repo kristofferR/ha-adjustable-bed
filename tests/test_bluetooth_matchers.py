@@ -12,6 +12,7 @@ from homeassistant.components.bluetooth.match import IntegrationMatcher
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.const import DOMAIN
+from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 from custom_components.adjustable_bed.discovery_hints import (
     HINTS_BY_FAMILY,
     first_pass,
@@ -23,6 +24,7 @@ from custom_components.adjustable_bed.discovery_hints._hints import (
     NameHint,
     ServiceHint,
 )
+from custom_components.adjustable_bed.profiles.richmat_mh_apps import SURFACE_IDS
 from scripts import generate_bluetooth_matchers as generator
 
 MANIFEST = Path(__file__).parents[1] / "custom_components" / "adjustable_bed" / "manifest.json"
@@ -48,6 +50,12 @@ def _info(name: str = "", service_uuids: tuple[str, ...] = (), manufacturer_data
     info.service_data = {}
     info.manufacturer_data = manufacturer_data or {}
     return info
+
+
+def _gate() -> IntegrationMatcher:
+    gate = IntegrationMatcher([{"domain": DOMAIN, **matcher} for matcher in _manifest_matchers()])
+    gate.async_setup()
+    return gate
 
 
 def _advertisements(hint: Hint) -> list[MagicMock]:
@@ -87,8 +95,7 @@ def test_every_manifest_matcher_maps_to_a_declared_hint() -> None:
 )
 def test_every_hint_is_reachable_through_a_matcher(family: str, hint: Hint) -> None:
     """Home Assistant's gate admits each hint's signal, and the first pass sees it."""
-    gate = IntegrationMatcher([{"domain": DOMAIN, **matcher} for matcher in _manifest_matchers()])
-    gate.async_setup()
+    gate = _gate()
     for info in _advertisements(hint):
         assert DOMAIN in gate.match_domains(info), (family, info.name)
         assert hint in first_pass(info).hints, (family, info.name)
@@ -118,3 +125,38 @@ def test_anywhere_names_match_after_the_start_but_the_gate_needs_a_prefix() -> N
     assert first_pass(_info(name="X6BRM123")).name(const.BED_TYPE_GMMOTOR)
     assert not first_pass(_info(name="x6brm123")).name(const.BED_TYPE_GMMOTOR)
     assert first_pass(_info(name="6BRM123")).name(const.BED_TYPE_GMMOTOR)
+
+
+def test_matcher_count_stays_bounded() -> None:
+    """Each pattern is spelled at most twice, so no hint expands into case permutations."""
+    for family, hint in HINTS:
+        if isinstance(hint, NameHint):
+            assert len(hint.matchers()) <= 2 * len(hint.patterns), family
+    assert len(manifest_matchers()) <= 2000
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Firmware Update", "WarmTouch 12", "Wormhole", "Warmup4ie", "Terminal",
+        "Sleep Sound", "SleepPhones", "Okinawa", "sTaRlInK",
+    ],
+)
+def test_unrelated_names_do_not_reach_discovery(name: str) -> None:
+    """Apps that read a name in any case still admit only the spellings beds advertise."""
+    assert DOMAIN not in _gate().match_domains(_info(name=name))
+    assert first_pass(_info(name=name)).hints == ()
+
+
+def test_richmat_fixed_name_is_discovered() -> None:
+    info = _info(name="Sleep Function 2.0")
+    assert DOMAIN in _gate().match_domains(info)
+    assert detect_bed_type_detailed(info).bed_type == const.BED_TYPE_RICHMAT
+
+
+@pytest.mark.parametrize("model", sorted(model for model in SURFACE_IDS if len(model) == 4))
+def test_nisco_and_mlily_supreme_models_are_discovered_as_advertised(model: str) -> None:
+    """The app reads its four-character model ID in any case; beds advertise it in upper case."""
+    info = _info(name=f"{model.upper()}0001")
+    assert DOMAIN in _gate().match_domains(info)
+    assert detect_bed_type_detailed(info).bed_type is not None

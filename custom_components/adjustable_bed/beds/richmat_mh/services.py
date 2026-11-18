@@ -11,7 +11,13 @@ from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
 from ...import_executor import async_import_modules
-from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...services import (
+    DEVICE_IDS,
+    SIDE_FIELD,
+    _call_targets,
+    _capture_command_admission,
+    _preflight_and_execute,
+)
 
 if TYPE_CHECKING:
     from .controller import RichmatMhController
@@ -47,6 +53,8 @@ async def _controller_class(call: ServiceCall) -> type[RichmatMhController]:
 
 async def handle_richmat_mh_aroma(call: ServiceCall) -> None:
     """Write the aroma page's three timing sliders as the app does on release."""
+    targets = _call_targets(call)
+    admissions = [_capture_command_admission(parent, side, ("configuration",)) for parent, side in targets]
 
     async def program(controller: RichmatMhController) -> None:
         await controller.richmat_mh_aroma(
@@ -56,27 +64,33 @@ async def handle_richmat_mh_aroma(call: ServiceCall) -> None:
         )
 
     await _preflight_and_execute(
-        _call_targets(call),
+        targets,
         await _controller_class(call),
         "Richmat MH aroma timing",
         program,
         supported=lambda controller: controller.supports_richmat_mh_aroma,
+        admit=True,
+        admissions=admissions,
     )
 
 
 async def handle_richmat_mh_light_color(call: ServiceCall) -> None:
     """Write the LED or button-light page's colour (one 10-byte frame)."""
+    targets = _call_targets(call)
+    admissions = [_capture_command_admission(parent, side, ("configuration",)) for parent, side in targets]
     rgb: tuple[int, int, int] = call.data["rgb_color"]
 
     async def program(controller: RichmatMhController) -> None:
         await controller.set_light_color(rgb)
 
     await _preflight_and_execute(
-        _call_targets(call),
+        targets,
         await _controller_class(call),
         "Richmat MH light colour",
         program,
         supported=lambda controller: controller.supports_richmat_mh_light_color,
+        admit=True,
+        admissions=admissions,
     )
 
 
