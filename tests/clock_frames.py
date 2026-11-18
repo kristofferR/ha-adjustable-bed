@@ -38,8 +38,8 @@ async def capture(
 
     ``bed_type`` and ``entry_data`` adjust the scenario, on its own GATT layout.
     """
-    import dataclasses
     import asyncio
+    import dataclasses
 
     from freezegun import freeze_time
 

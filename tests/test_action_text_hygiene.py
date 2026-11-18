@@ -57,7 +57,7 @@ def _texts(node: object, path: str):
 
 
 def test_bed_actions_are_named_brand_then_what() -> None:
-    assert SHARED <= set(SERVICES)
+    assert set(SERVICES) >= SHARED
     bad = {
         key: entry["name"]
         for key, entry in SERVICES.items()
