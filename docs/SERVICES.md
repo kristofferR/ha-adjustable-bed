@@ -1706,7 +1706,7 @@ or speaker/audio commands.
 | `slot` | Alarm slot | 1, or 1 to 3 when the bed reports three alarms. |
 | `enabled` | Enabled | Turn the alarm on or off. |
 | `time` | Time | Alarm time, to the minute. |
-| `week_mask` | Repeat days (app mask) | The app's repeat mask: add 1 for Sunday, 2 Monday, 4 Tuesday, 8 Wednesday, 16 Thursday, 32 Friday and 64 Saturday. 0 or 128 rings once, on the next day the time comes round. |
+| `week_mask` | Repeat days (app mask) | The app's repeat mask: add 1 for Sunday, 2 Monday, 4 Tuesday, 8 Wednesday, 16 Thursday, 32 Friday and 64 Saturday. 0 or 128 uses the app's one-time calculation, which picks one day for you. |
 | `action` | Alarm action | One of the app's five alarm actions, named by the code it sends. What each does on the bed is not known. |
 | `soft_wake` | Soft wake | Only when the bed reports three alarms. |
 

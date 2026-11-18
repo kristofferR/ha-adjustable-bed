@@ -445,7 +445,7 @@ def test_alarm_restrictions_and_distinct_source_week_paths():
     ) == bytes.fromhex("07070001071e00000000")
     with pytest.raises(ValueError, match="slot"):
         single.alarm_frame(2, True, 7, 30, 0, 0, False)
-    with pytest.raises(ValueError, match="Soft wake"):
+    with pytest.raises(ValueError, match="soft wake"):
         single.alarm_frame(1, True, 7, 30, 0, 0, True)
 
 

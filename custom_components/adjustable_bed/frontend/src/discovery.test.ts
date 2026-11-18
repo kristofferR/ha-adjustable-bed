@@ -83,7 +83,7 @@ test("Snore Monitor keeps presets, massage cycles and bed settings reachable", (
   const bed = bedEntitiesForDevice(hass, "dev1");
   expect(bed.motors).toHaveLength(1);
   expect(bed.presets).toContain("button.snore_reading");
-  expect(bed.presets).toContain("button.snore_save");
+  expect(bed.presetSaves).toContain("button.snore_save");
   expect(bed.memory).toEqual([{ slot: 1, goto: "button.snore_memory", save: "button.snore_program" }]);
   expect(bed.massage.buttons).toContain("button.snore_wave");
   expect(bed.utilitySelects).toContain("select.snore_intervention");

@@ -183,7 +183,11 @@ def register_services(hass: HomeAssistant) -> None:
             )
         time = call.data["time"]
         if time.second or time.microsecond:
-            raise ServiceValidationError("BED alarms use minute precision")
+            raise ServiceValidationError(
+                "Alarm times are set in whole minutes",
+                translation_domain=DOMAIN,
+                translation_key="alarm_time_whole_minutes",
+            )
         args: AlarmArguments = {
             "slot": call.data["slot"],
             "enabled": call.data["enabled"],

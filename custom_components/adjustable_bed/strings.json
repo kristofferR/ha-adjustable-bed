@@ -8470,7 +8470,7 @@
         },
         "week_mask": {
           "name": "Repeat days (app mask)",
-          "description": "The app's repeat mask: add 1 for Sunday, 2 Monday, 4 Tuesday, 8 Wednesday, 16 Thursday, 32 Friday and 64 Saturday. 0 or 128 rings once, on the next day the time comes round."
+          "description": "The app's repeat mask: add 1 for Sunday, 2 Monday, 4 Tuesday, 8 Wednesday, 16 Thursday, 32 Friday and 64 Saturday. 0 or 128 uses the app's one-time calculation, which picks one day for you."
         },
         "action": {
           "name": "Alarm action",

@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmError
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESET_SAVE
 from ...codec import onlysnore as codec
 from ...command_scheduler import current_command_context
@@ -592,8 +593,16 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
         now: datetime | None = None,
         weekday_now: datetime | None = None,
     ) -> bytes:
+        name = self._coordinator.name
         if slot not in range(1, self._alarm_count + 1):
-            raise ValueError("This BED does not report that alarm slot")
+            raise AlarmError(
+                "alarm_value_out_of_range",
+                f"{name} accepts slot 1 to {self._alarm_count}",
+                device_name=name,
+                option="slot",
+                min=1,
+                max=self._alarm_count,
+            )
         if (
             not 0 <= hour <= 23
             or not 0 <= minute <= 59
@@ -602,7 +611,12 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
         ):
             raise ValueError("Invalid BED alarm fields")
         if soft and self._alarm_count != 3:
-            raise ValueError("Soft wake is available only for triple alarms")
+            raise AlarmError(
+                "alarm_option_not_supported",
+                f"{name} has no soft wake with a single alarm",
+                device_name=name,
+                option="soft_wake",
+            )
         model = codec.AlarmModel(week, hour, minute, type_index, slot - 1, int(enabled), int(soft))
         now = now or dt_util.now()
         if self._alarm_count == 3:
