@@ -50,7 +50,10 @@ async def test_massage_buttons_only_expose_implemented_actions(
     keys = {entity.entity_description.key for entity in _button_entities_for(hass, coordinator)}
     assert "massage_all_toggle" not in keys
     assert ("massage_mode_step" in keys) is has_mode_step
-    assert {"massage_all_off", "massage_head_up", "massage_head_down"} <= keys
+    assert "massage_all_off" in keys
+    # The head and foot intensity numbers set any level, so the steps are not buttons.
+    assert not {"massage_head_up", "massage_head_down", "massage_foot_up", "massage_foot_down"} & keys
+    assert {"head", "foot"} <= set(controller.massage_intensity_zones)
     await coordinator.async_shutdown()
 
 

@@ -444,6 +444,11 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
             self._massage[target] = level
             self._publish_state()
 
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        # The zone intensity numbers set any level, so no step buttons.
+        return False
+
     async def massage_head_up(self) -> None:
         await self.set_massage_intensity("head", min(3, self._massage["back"] + 1))
 
@@ -452,7 +457,7 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
-        return "legs" in self._massage
+        return False
 
     async def massage_foot_up(self) -> None:
         await self.set_massage_intensity("foot", min(3, self._massage.get("legs", 0) + 1))
