@@ -193,6 +193,7 @@ class LogicdataAirPumpController(BedController):
                 translation_key="logicdata_air_pump_pressure",
                 state_key=PRESSURE_STATE,
                 icon="mdi:gauge",
+                entity_registry_enabled_default=True,
                 card=CARD_FIRMNESS,
             ),
         )

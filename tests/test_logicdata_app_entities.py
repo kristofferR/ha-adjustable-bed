@@ -269,7 +269,7 @@ async def test_new_dynamic_entities_have_localized_names(
         ("cover", "both", "Back and legs"),
         ("binary_sensor", "under_bed_lights", "Under Bed Lights"),
         ("sensor", "logicdata_app_family_match", "Command family matches"),
-        ("sensor", "logicdata_app_alarm", "Bed alarm"),
+        ("sensor", "logicdata_app_alarm", "Alarm"),
     ):
         entity = registry.async_get(_entity_id(hass, domain, key))
         assert entity.original_name == name

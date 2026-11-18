@@ -222,6 +222,7 @@ class OkinCstController(ProfileExecution[OkinNFrameProfile], BedController):
                 translation_key="memory_save_response_observed",
                 state_key=MEMORY_SAVE_RESPONSE_OBSERVED,
                 icon="mdi:content-save-check-outline",
+                entity_registry_enabled_default=False,
                 card=CARD_UTILITY,
             ),
         )

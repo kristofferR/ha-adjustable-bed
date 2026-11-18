@@ -172,6 +172,7 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
                 translation_key=f"customatic_{field}",
                 state_key=_info_key(field),
                 icon="mdi:information-outline",
+                entity_registry_enabled_default=False,
             )
             for field, _ in DEVICE_INFO_FIELDS
         )
