@@ -2471,10 +2471,10 @@
         "name": "{action}"
       },
       "motion_bed_left_legs_down": {
-        "name": "Left LEG Down"
+        "name": "Left legs Down"
       },
       "motion_bed_tilt_down": {
-        "name": "TILT Down"
+        "name": "Tilt Down"
       },
       "pillow_down": {
         "name": "Pillow Down"
@@ -2492,10 +2492,10 @@
         "name": "Waist (app label) Down"
       },
       "motion_bed_left_legs_up": {
-        "name": "Left LEG Up"
+        "name": "Left legs Up"
       },
       "motion_bed_back_down": {
-        "name": "BACK Down"
+        "name": "Back Down"
       },
       "bedsense_back_up": {
         "name": "Back Up"
@@ -2504,7 +2504,7 @@
         "name": "Part 16 Down"
       },
       "motion_bed_right_back_down": {
-        "name": "Right BACK Down"
+        "name": "Right back Down"
       },
       "stair_down": {
         "name": "Stair Down"
@@ -2513,16 +2513,16 @@
         "name": "Part 2 Down"
       },
       "motion_bed_right_legs_down": {
-        "name": "Right LEG Down"
+        "name": "Right legs Down"
       },
       "starcode_union_down": {
         "name": "Head and foot together Down"
       },
       "motion_bed_back_legs_down": {
-        "name": "BACK LEG Down"
+        "name": "Back and legs Down"
       },
       "motion_bed_right_back_up": {
-        "name": "Right BACK Up"
+        "name": "Right back Up"
       },
       "elevate_actuator_1_up": {
         "name": "ELEVATE Actuator 1 Up"
@@ -2534,7 +2534,7 @@
         "name": "Hip Down"
       },
       "motion_bed_head_up": {
-        "name": "HEAD Up"
+        "name": "Head Up"
       },
       "bedsense_head_up": {
         "name": "Head Up"
@@ -2543,7 +2543,7 @@
         "name": "Pillow Up"
       },
       "motion_bed_left_back_down": {
-        "name": "Left BACK Down"
+        "name": "Left back Down"
       },
       "bedsense_head_down": {
         "name": "Head Down"
@@ -2555,7 +2555,7 @@
         "name": "Legs Down"
       },
       "motion_bed_lift_down": {
-        "name": "LIFT Down"
+        "name": "Lift Down"
       },
       "both_up": {
         "name": "Back and legs Up"
@@ -2564,7 +2564,7 @@
         "name": "Part 2 Up"
       },
       "motion_bed_right_legs_up": {
-        "name": "Right LEG Up"
+        "name": "Right legs Up"
       },
       "head_end_tilt_down": {
         "name": "Head End Tilt Down"
@@ -2579,7 +2579,7 @@
         "name": "Part 1 Up"
       },
       "motion_bed_lift_up": {
-        "name": "LIFT Up"
+        "name": "Lift Up"
       },
       "starcode_m1x12_part_4_down": {
         "name": "Part 4 Down"
@@ -2594,10 +2594,10 @@
         "name": "Back Down"
       },
       "motion_bed_left_back_up": {
-        "name": "Left BACK Up"
+        "name": "Left back Up"
       },
       "motion_bed_lumbar_down": {
-        "name": "LUMBAR Down"
+        "name": "Lumbar Down"
       },
       "tilt_up": {
         "name": "Tilt Up"
@@ -2621,7 +2621,7 @@
         "name": "All motors Up"
       },
       "motion_bed_tilt_up": {
-        "name": "TILT Up"
+        "name": "Tilt Up"
       },
       "head_feet_down": {
         "name": "Head + Feet Down"
@@ -2630,7 +2630,7 @@
         "name": "ELEVATE Actuator 2 Down"
       },
       "motion_bed_legs_up": {
-        "name": "LEG Up"
+        "name": "Legs Up"
       },
       "starcode_m1x12_part_4_up": {
         "name": "Part 4 Up"
@@ -2642,10 +2642,10 @@
         "name": "All motors Down"
       },
       "motion_bed_hip_down": {
-        "name": "HIP Down"
+        "name": "Hip Down"
       },
       "motion_bed_legs_down": {
-        "name": "LEG Down"
+        "name": "Legs Down"
       },
       "starcode_m1x12_part_8_up": {
         "name": "Part 8 Up"
@@ -2666,16 +2666,16 @@
         "name": "Part 16 Up"
       },
       "motion_bed_lumbar_up": {
-        "name": "LUMBAR Up"
+        "name": "Lumbar Up"
       },
       "motion_bed_head_down": {
-        "name": "HEAD Down"
+        "name": "Head Down"
       },
       "motion_bed_back_up": {
-        "name": "BACK Up"
+        "name": "Back Up"
       },
       "motion_bed_back_legs_up": {
-        "name": "BACK LEG Up"
+        "name": "Back and legs Up"
       },
       "keeson_back_down": {
         "name": "Back Down"
@@ -2684,7 +2684,7 @@
         "name": "Stair Up"
       },
       "motion_bed_hip_up": {
-        "name": "HIP Up"
+        "name": "Hip Up"
       },
       "bedsense_legs_up": {
         "name": "Legs Up"
@@ -3472,40 +3472,40 @@
         "name": "Full tilt"
       },
       "motion_bed_back": {
-        "name": "BACK"
+        "name": "Back"
       },
       "motion_bed_head": {
-        "name": "HEAD"
+        "name": "Head"
       },
       "motion_bed_legs": {
-        "name": "LEG"
+        "name": "Legs"
       },
       "motion_bed_lumbar": {
-        "name": "LUMBAR"
+        "name": "Lumbar"
       },
       "motion_bed_hip": {
-        "name": "HIP"
+        "name": "Hip"
       },
       "motion_bed_lift": {
-        "name": "LIFT"
+        "name": "Lift"
       },
       "motion_bed_tilt": {
-        "name": "TILT"
+        "name": "Tilt"
       },
       "motion_bed_back_legs": {
-        "name": "BACK LEG"
+        "name": "Back and legs"
       },
       "motion_bed_left_back": {
-        "name": "Left BACK"
+        "name": "Left back"
       },
       "motion_bed_right_back": {
-        "name": "Right BACK"
+        "name": "Right back"
       },
       "motion_bed_left_legs": {
-        "name": "Left LEG"
+        "name": "Left legs"
       },
       "motion_bed_right_legs": {
-        "name": "Right LEG"
+        "name": "Right legs"
       },
       "starcode_union": {
         "name": "Head and foot together"
@@ -4020,236 +4020,59 @@
       "motion_bed_audio_volume": {
         "name": "Audio volume"
       },
-      "motion_bed_day_received_segments": {
-        "name": "Day received segments"
-      },
-      "motion_bed_pressure_triplet_tags": {
-        "name": "Pressure triplet tags"
-      },
-      "motion_bed_massage_timer_raw": {
-        "name": "Massage timer raw"
-      },
-      "motion_bed_alarm_weekdays": {
-        "name": "Alarm weekdays"
-      },
       "motion_bed_air_timer": {
-        "name": "Air timer"
-      },
-      "motion_bed_alarm_mode": {
-        "name": "Alarm mode"
-      },
-      "motion_bed_sensor_mac": {
-        "name": "Sensor mac"
+        "name": "Air massage timer"
       },
       "motion_bed_air_lower_gear": {
-        "name": "Air lower gear"
-      },
-      "motion_bed_calibration_flat": {
-        "name": "Calibration flat"
-      },
-      "motion_bed_day_segment": {
-        "name": "Day segment"
-      },
-      "motion_bed_air_setting_mode": {
-        "name": "Air setting mode"
-      },
-      "motion_bed_first_module_type": {
-        "name": "First module type"
-      },
-      "motion_bed_air_lower_raw": {
-        "name": "Air lower raw"
+        "name": "Lower air massage level"
       },
       "motion_bed_brightness": {
-        "name": "Brightness"
+        "name": "Light brightness"
       },
       "motion_bed_lower_massage": {
-        "name": "Lower massage"
-      },
-      "motion_bed_thermal_timer_mode": {
-        "name": "Thermal timer mode"
-      },
-      "motion_bed_calibration_kk": {
-        "name": "Calibration kk"
-      },
-      "motion_bed_month_average_rolls": {
-        "name": "Month average rolls"
-      },
-      "motion_bed_alarm_hour": {
-        "name": "Alarm hour"
-      },
-      "motion_bed_calibration_side": {
-        "name": "Calibration side"
-      },
-      "motion_bed_month_minimum_rolls": {
-        "name": "Month minimum rolls"
-      },
-      "motion_bed_alarm_weekday_mask": {
-        "name": "Alarm weekday mask"
+        "name": "Leg massage level"
       },
       "motion_bed_upper_massage": {
-        "name": "Upper massage"
-      },
-      "motion_bed_motor_programmed_bits": {
-        "name": "Motor programmed bits"
-      },
-      "motion_bed_app_initial_module_type": {
-        "name": "App initial module type"
+        "name": "Back massage level"
       },
       "motion_bed_fault": {
         "name": "Fault"
       },
       "motion_bed_massage_wave": {
-        "name": "Massage wave"
-      },
-      "motion_bed_raw_positions": {
-        "name": "Raw positions"
-      },
-      "motion_bed_calibration_aa": {
-        "name": "Calibration aa"
-      },
-      "motion_bed_month_flat": {
-        "name": "Month flat"
-      },
-      "motion_bed_day_operation": {
-        "name": "Day operation"
-      },
-      "motion_bed_module_status_raw": {
-        "name": "Module status raw"
-      },
-      "motion_bed_month_maximum_sleep": {
-        "name": "Month maximum sleep"
-      },
-      "motion_bed_pressure_values": {
-        "name": "Pressure values"
+        "name": "Massage frequency"
       },
       "motion_bed_month_average_sleep": {
-        "name": "Month average sleep"
-      },
-      "motion_bed_day_rolls": {
-        "name": "Day rolls"
-      },
-      "motion_bed_fault_part_raw": {
-        "name": "Fault part raw"
+        "name": "Monthly average sleep"
       },
       "motion_bed_sleep_timer": {
         "name": "Sleep timer"
       },
-      "motion_bed_thermal_mode": {
-        "name": "Thermal mode"
-      },
-      "motion_bed_thermal_timer_minute": {
-        "name": "Thermal timer minute"
-      },
-      "motion_bed_day_flat": {
-        "name": "Day flat"
-      },
-      "motion_bed_stored_side_positions": {
-        "name": "Stored side positions"
-      },
       "motion_bed_light_timer": {
         "name": "Light timer"
       },
-      "motion_bed_thermal_slider_index": {
-        "name": "Thermal slider index"
-      },
-      "motion_bed_month_side": {
-        "name": "Month side"
-      },
-      "motion_bed_pressure_raw": {
-        "name": "Pressure raw"
-      },
       "motion_bed_air_upper_gear": {
-        "name": "Air upper gear"
-      },
-      "motion_bed_month_days": {
-        "name": "Month days"
-      },
-      "motion_bed_month_minimum_sleep": {
-        "name": "Month minimum sleep"
+        "name": "Upper air massage level"
       },
       "motion_bed_fall_timer": {
-        "name": "Fall timer"
+        "name": "Fall-asleep timer"
       },
       "motion_bed_day_total": {
-        "name": "Day total"
-      },
-      "motion_bed_day_previous_window": {
-        "name": "Day previous window"
-      },
-      "motion_bed_app_day_previous_window": {
-        "name": "App day previous window"
-      },
-      "motion_bed_day_window": {
-        "name": "Day window"
+        "name": "Daily sleep report"
       },
       "motion_bed_massage_timer": {
         "name": "Massage timer"
       },
-      "motion_bed_day_slots": {
-        "name": "Day slots"
-      },
-      "motion_bed_fault_code_raw": {
-        "name": "Fault code raw"
-      },
       "motion_bed_thermal_gear": {
-        "name": "Thermal gear"
-      },
-      "motion_bed_thermal_temperature_display": {
-        "name": "Thermal temperature display"
-      },
-      "motion_bed_fault_part": {
-        "name": "Fault part"
+        "name": "Climate level"
       },
       "motion_bed_thermal_temperature": {
-        "name": "Thermal temperature"
-      },
-      "motion_bed_air_upper_raw": {
-        "name": "Air upper raw"
-      },
-      "motion_bed_thermal_timer_gear": {
-        "name": "Thermal timer gear"
+        "name": "Temperature"
       },
       "motion_bed_thermal_water": {
-        "name": "Thermal water"
-      },
-      "motion_bed_stored_flat_positions": {
-        "name": "Stored flat positions"
-      },
-      "motion_bed_alarm_minute": {
-        "name": "Alarm minute"
-      },
-      "motion_bed_day_next_window": {
-        "name": "Day next window"
-      },
-      "motion_bed_app_day_next_window": {
-        "name": "App day next window"
-      },
-      "motion_bed_day_window_start_hour": {
-        "name": "Day window start hour"
-      },
-      "motion_bed_alarm_music": {
-        "name": "Alarm music"
-      },
-      "motion_bed_alarm_flag": {
-        "name": "Alarm flag"
+        "name": "Water level"
       },
       "motion_bed_audio_track": {
         "name": "Audio track"
-      },
-      "motion_bed_day_unit": {
-        "name": "Day unit"
-      },
-      "motion_bed_app_day_unit": {
-        "name": "App day unit"
-      },
-      "motion_bed_thermal_timer_hour": {
-        "name": "Thermal timer hour"
-      },
-      "motion_bed_day_side": {
-        "name": "Day side"
-      },
-      "motion_bed_month_maximum_rolls": {
-        "name": "Month maximum rolls"
       },
       "coolbase_right_fan_level": {
         "name": "Right fan level"
@@ -5320,116 +5143,44 @@
       "vmatbasic_ed": {
         "name": "ED motor status"
       },
-      "motion_bed_snore": {
-        "name": "Snore"
-      },
-      "motion_bed_coupled_right_memory": {
-        "name": "Coupled right memory"
-      },
-      "motion_bed_sync_visible": {
-        "name": "Sync visible"
-      },
-      "motion_bed_motor_massage_visible": {
-        "name": "Motor massage visible"
-      },
-      "motion_bed_alarm_repeat": {
-        "name": "Alarm repeat"
-      },
       "motion_bed_sync_enabled": {
-        "name": "Sync enabled"
+        "name": "Sync"
       },
       "motion_bed_thermal_timer_enabled": {
-        "name": "Thermal timer enabled"
-      },
-      "motion_bed_alarm_sound": {
-        "name": "Alarm sound"
+        "name": "Climate timer"
       },
       "motion_bed_sensor_present": {
-        "name": "Sensor present"
-      },
-      "motion_bed_air_full_custom": {
-        "name": "Air full custom"
-      },
-      "motion_bed_memory_2": {
-        "name": "Memory 2"
-      },
-      "motion_bed_audio_available": {
-        "name": "Audio available"
+        "name": "Sleep sensor"
       },
       "motion_bed_alarm_enabled": {
-        "name": "Alarm enabled"
+        "name": "Alarm"
       },
       "motion_bed_air_module_present": {
-        "name": "Air module present"
-      },
-      "motion_bed_first_modular_alarm": {
-        "name": "First modular alarm"
+        "name": "Air massage module"
       },
       "motion_bed_motor_light_enabled": {
-        "name": "Motor light enabled"
+        "name": "Light"
       },
       "motion_bed_air_adaptive": {
-        "name": "Air adaptive"
+        "name": "Adaptive air massage"
       },
       "motion_bed_motor_massage_enabled": {
-        "name": "Motor massage enabled"
-      },
-      "motion_bed_alarm_massage": {
-        "name": "Alarm massage"
+        "name": "Massage"
       },
       "motion_bed_sleep_enabled": {
-        "name": "Sleep enabled"
+        "name": "Smart sleep"
       },
       "motion_bed_motor_module_present": {
-        "name": "Motor module present"
-      },
-      "motion_bed_left_tv": {
-        "name": "Left tv"
-      },
-      "motion_bed_memory_1": {
-        "name": "Memory 1"
-      },
-      "motion_bed_tv": {
-        "name": "Tv"
+        "name": "Motor module"
       },
       "motion_bed_thermal_module_present": {
-        "name": "Thermal module present"
+        "name": "Climate module"
       },
       "motion_bed_night_light_enabled": {
-        "name": "Night light enabled"
-      },
-      "motion_bed_coupled_left_memory": {
-        "name": "Coupled left memory"
-      },
-      "motion_bed_left_memory": {
-        "name": "Left memory"
-      },
-      "motion_bed_air_back_custom": {
-        "name": "Air back custom"
-      },
-      "motion_bed_right_tv": {
-        "name": "Right tv"
-      },
-      "motion_bed_right_memory": {
-        "name": "Right memory"
-      },
-      "motion_bed_calibration_reset_received": {
-        "name": "Calibration reset received"
-      },
-      "motion_bed_motor_sensor_enabled": {
-        "name": "Motor sensor enabled"
-      },
-      "motion_bed_zero_gravity": {
-        "name": "Zero gravity"
+        "name": "Night light"
       },
       "motion_bed_thermal_low_water": {
-        "name": "Thermal low water"
-      },
-      "motion_bed_right_zero_gravity": {
-        "name": "Right zero gravity"
-      },
-      "motion_bed_left_zero_gravity": {
-        "name": "Left zero gravity"
+        "name": "Low water"
       },
       "starcode_massage_active": {
         "name": "Massage active"
