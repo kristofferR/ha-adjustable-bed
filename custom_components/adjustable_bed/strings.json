@@ -4726,7 +4726,7 @@
         "name": "Bed alarm"
       },
       "doublesleep_model": {
-        "name": "App model"
+        "name": "Model"
       },
       "doublesleep_sensor_version": {
         "name": "Sensor version"
@@ -4734,14 +4734,8 @@
       "doublesleep_firmware_version": {
         "name": "Firmware version"
       },
-      "doublesleep_privacy": {
-        "name": "Privacy"
-      },
       "doublesleep_use_side": {
         "name": "Sensor sides"
-      },
-      "doublesleep_parser_error": {
-        "name": "Last parser error"
       },
       "doublesleep_report": {
         "name": "Sleep report status"
@@ -4768,7 +4762,7 @@
         "name": "Left breath rate"
       },
       "doublesleep_left_status": {
-        "name": "Left sensor status"
+        "name": "Left bed status"
       },
       "doublesleep_right_sensitivity": {
         "name": "Right sensitivity"
@@ -4780,7 +4774,7 @@
         "name": "Right breath rate"
       },
       "doublesleep_right_status": {
-        "name": "Right sensor status"
+        "name": "Right bed status"
       },
       "doublesleep_massage_mode": {
         "name": "Massage mode"
@@ -4789,13 +4783,13 @@
         "name": "Massage strength"
       },
       "doublesleep_massage_head": {
-        "name": "Massage head"
+        "name": "Head massage"
       },
       "doublesleep_massage_foot": {
-        "name": "Massage foot"
+        "name": "Foot massage"
       },
       "doublesleep_massage_time": {
-        "name": "Massage time"
+        "name": "Massage timer"
       },
       "doublesleep_massage_running": {
         "name": "Massage running"
@@ -4804,25 +4798,25 @@
         "name": "Massage source"
       },
       "doublesleep_sonic_mode": {
-        "name": "Sonic mode"
+        "name": "Sonic massage mode"
       },
       "doublesleep_sonic_strength": {
-        "name": "Sonic strength"
+        "name": "Sonic massage strength"
       },
       "doublesleep_sonic_head": {
-        "name": "Sonic head"
+        "name": "Sonic head massage"
       },
       "doublesleep_sonic_foot": {
-        "name": "Sonic foot"
+        "name": "Sonic foot massage"
       },
       "doublesleep_sonic_time": {
-        "name": "Sonic time"
+        "name": "Sonic massage timer"
       },
       "doublesleep_sonic_running": {
-        "name": "Sonic running"
+        "name": "Sonic massage running"
       },
       "doublesleep_sonic_source": {
-        "name": "Sonic source"
+        "name": "Sonic massage source"
       },
       "adjustamattress_massage_time": {
         "name": "Massage timer"
@@ -5186,6 +5180,12 @@
       },
       "adjustamattress_sleep": {
         "name": "Sleep mode"
+      },
+      "doublesleep_child_lock": {
+        "name": "Child lock"
+      },
+      "doublesleep_privacy": {
+        "name": "Privacy"
       }
     },
     "binary_sensor": {
@@ -5437,18 +5437,6 @@
       },
       "floyd_battery_mode": {
         "name": "Battery power mode"
-      },
-      "doublesleep_left_flag1": {
-        "name": "Left sensor flag1"
-      },
-      "doublesleep_left_flag2": {
-        "name": "Left sensor flag2"
-      },
-      "doublesleep_right_flag1": {
-        "name": "Right sensor flag1"
-      },
-      "doublesleep_right_flag2": {
-        "name": "Right sensor flag2"
       },
       "adjustamattress_demonstration": {
         "name": "Anti-snore demonstration"
@@ -6143,13 +6131,6 @@
       },
       "sleepys_app_massage_timer_code": {
         "name": "Massage time code"
-      },
-      "doublesleep_child_lock": {
-        "name": "Child lock",
-        "state": {
-          "off": "Off",
-          "on": "On"
-        }
       },
       "adjustamattress_alarm_draft_type": {
         "name": "Alarm action",
