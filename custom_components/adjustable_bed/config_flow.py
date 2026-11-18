@@ -6247,7 +6247,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             outcome = OperationOutcome.DEVICE_UNRESOLVED
         elif report.freshness is not None and report.freshness is not FreshnessStatus.FRESH:
             outcome = OperationOutcome.NOT_ADVERTISING
-        elif not report.connected or report.starcode_transport_valid is False:
+        elif (
+            not report.connected
+            or report.starcode_transport_valid is False
+            or (
+                # Reconfigure saves an AdjustableM5X4 only on a transport the
+                # live link proved; an unresolved one fails the check.
+                self._migration is not None
+                and self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_ABM5_4
+                and report.starcode_transport_valid is not True
+            )
+        ):
             outcome = OperationOutcome.CONNECTION_FAILED
         elif report.octo_pin_status is OctoPinStatus.INCONCLUSIVE:
             outcome = OperationOutcome.PIN_VERIFICATION_INCONCLUSIVE

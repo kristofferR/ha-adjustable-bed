@@ -548,7 +548,7 @@ SleepFunction, SVEN & SON or Richmat remote answer. Reconfigure changes it.
 
 ### Sleep Number Variants
 
-These variants apply to newer Sleep Number Fuzion bases (`Smart bed *`). Older BAM/MCR beds such as some i8 / 360 FlexFit 2 models expose both firmness sides from one entry and do not use this setting. Setup asks the side once the [Sleep Number question](beds/sleep_number.md#detection) has settled on a Fuzion base; Configure changes it.
+These variants apply to newer Sleep Number Fuzion bases (`Smart bed *`). Older BAM/MCR beds such as some i8 / 360 FlexFit 2 models expose both firmness sides from one entry and do not use this setting. Setup asks the side once the [Sleep Number question](beds/sleep_number.md#detection) has settled on a Fuzion base; Reconfigure changes it.
 
 | Variant | Description | Use For |
 |---------|-------------|---------|
@@ -646,8 +646,8 @@ that side, then combine them again.
 | Malouf / Lucid | Answer the [Malouf question](beds/malouf.md#choosing-a-profile) with your app or receiver: the [Malouf Base and Lucid Base apps](beds/malouf.md#malouf-base--lucid-base-family) ask the exact model, primary/secondary role and transport; the Nordic UART and FFE5 receivers ask the [layout and memory positions](#malouflucid-layout-and-memory). Change an existing bed's app with **Reconfigure**. |
 | Customatic / Jordan's | One question per brand: [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family) or [Z-Series](beds/okin-nframe.md#customatic-z-series) with its model; [Serenity](beds/okin-nframe.md#jordans-serenity) or [Tranquil](beds/okin-nframe.md#jordans-tranquil). Change an existing bed's app with **Reconfigure**. |
 | Vibradorm | [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister), [VMAT](beds/vibradorm.md#vmat), [V-MAT Basic](beds/vibradorm.md#v-mat-basic): app, exact remote or product, and offered light settings. |
-| Sleep Number | [Setup confirms the transport](beds/sleep_number.md#detection) from its advertised service (Fuzion or BAM/MCR), then a Fuzion entry asks its side. Configure lists both transports. |
-| Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Configure lists both receivers. |
+| Sleep Number | [Setup confirms the transport](beds/sleep_number.md#detection) from its advertised service (Fuzion or BAM/MCR), then a Fuzion entry asks its side. Reconfigure lists both transports. |
+| Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Reconfigure lists both receivers. |
 | Remacro | [One question for Slumberland, The Brick or Jerome's](beds/remacro.md#home-assistant-setup), offering the apps that list the advertised model, or all three when no model is seen or none lists it; Reconfigure changes the app, and checks that it lists the bed's model. The advertised company ID selects the model. |
 | FurniMove / OKIN Smart Remote | Answer the [Okin question](beds/okin-nframe.md#home-assistant-setup) with **FurniMove / OKIN Smart Remote app**, then the [exact handset ID](beds/furnimove.md); also includes a guided repair for older RF ECO BT entries. |
 | SIMMONS | [Regular/inclined bed and packet format](beds/okin-nframe.md#simmons). |

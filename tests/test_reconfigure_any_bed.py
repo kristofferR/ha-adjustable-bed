@@ -169,3 +169,28 @@ async def test_reconfigure_drops_the_previous_apps_own_settings(
 
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_SERTA
     assert const.CONF_VIBRADORM_APP_PROFILE not in entry.data
+
+
+async def test_reconfigure_to_adjustablem5x4_needs_a_proven_transport(hass: HomeAssistant) -> None:
+    """An unresolved AdjustableM5X4 transport fails the check rather than reaching Apply."""
+    from unittest.mock import AsyncMock
+
+    from custom_components.adjustable_bed.config_flow import (
+        AdjustableBedConfigFlow,
+        CapabilityReport,
+    )
+    from custom_components.adjustable_bed.profile_migration import MigrationSnapshot
+    from custom_components.adjustable_bed.setup_operation import OperationOutcome
+
+    entry = _entry(hass, const.BED_TYPE_LINAK)
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, reconfigure_context(entry)
+    flow._migration = MigrationSnapshot.of(entry)
+    flow._pending_entry = {**entry.data, const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4}
+    report = CapabilityReport(device_found=True, connected=True)
+    with patch.object(
+        AdjustableBedConfigFlow, "_probe_capabilities", AsyncMock(return_value=report)
+    ):
+        result = await flow._async_probe_worker_reserved()
+
+    assert result.outcome is OperationOutcome.CONNECTION_FAILED
