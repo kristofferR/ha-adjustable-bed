@@ -534,8 +534,7 @@ command.
 
 ### PIN protocol
 
-`CAP_BLE_PIN` (`0x000003`) carries three separate flags. Per a clean-room
-analysis of OCTO Smart Control 1.03.01 (versionCode 10301):
+`CAP_BLE_PIN` (`0x000003`) carries three separate flags. Per OCTO Smart Control 1.03.01 (versionCode 10301):
 
 | Field | Meaning |
 |-------|---------|
@@ -794,16 +793,7 @@ dual-proxy operation remain hardware-validation items.
 
 ### Analysis provenance
 
-- **OCTO Smart Control 1.03.02 (version code 10302):** the protocol
-  implementation follows the accepted clean-room analysis of
-  `de.octoactuators.octosmartcontrolapp` version 1.03.02, acquired as a complete
-  19 APK / 21 member set. The evidence establishes app behavior for that
-  delivered artifact. It does not establish that the delivery contains every
-  Play Store variant or all 57 optional locale splits. No physical bed was
-  available for validation, so hardware behavior remains unverified and is
-  deferred for real users after beta or release.
-- The row030 audit holds the complete finding ledger, including already-covered
-  behavior and explicit exclusions.
+Based on OCTO Smart Control 1.03.02 (`de.octoactuators.octosmartcontrolapp`).
 
 #### Official app recheck (1.03.01)
 

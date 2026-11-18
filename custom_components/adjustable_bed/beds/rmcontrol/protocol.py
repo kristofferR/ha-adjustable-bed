@@ -1,6 +1,6 @@
 """RMControl 21.3.7 packet primitives, independent of BLE and HA state.
 
-Evidence: APK Protocol Audit row 018, with its interpretation corrections.
+HA corrects some of the app's interpretation.
 """
 
 from __future__ import annotations

@@ -25,8 +25,8 @@ from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     DOMAIN,
     SIDE_BOTH,
     SIDE_LEFT,
@@ -82,7 +82,7 @@ def _receiver(hass: HomeAssistant, index: int, wire: Wire, tag: str) -> Adjustab
             CONF_NAME: f"Receiver {index}",
             CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     entry.add_to_hass(hass)

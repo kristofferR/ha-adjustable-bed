@@ -9,9 +9,9 @@
 import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { SECTION_ORDER } from "./discovery";
-import { applyCompactPreset, COMPACT_PRESETS, compactActionOptions,
-  compactActions, compactTargets, FULL_CARD_EDITOR_DEFAULTS, fullCardDialogConfig } from "./compact";
-import { presentSections } from "./editor-sections";
+import { applyCompactPreset, COMPACT_PRESETS, compactActionChoices, compactActions, compactTargets,
+  FULL_CARD_EDITOR_DEFAULTS, fullCardDialogConfig } from "./compact";
+import { presentSections } from "./sections";
 import { defineElement } from "./registration";
 import { localize } from "./localize";
 import { entityLabel } from "./names";
@@ -98,15 +98,35 @@ export class AdjustableBedCardEditor
   // A renamed slot shows its name, e.g. "Flat", not "Memory 1".
   private _slotLabel(slot: MemorySlot): string {
     const id = slot.goto ?? slot.save;
-    const fallback = `Memory ${slot.slot}`;
+    const fallback = localize(this.hass, "card.memory_slot", { slot: String(slot.slot) });
     return id ? entityLabel(this.hass, id, fallback) : fallback;
   }
 
   // ---- config emit --------------------------------------------------------
 
+  // Any edit migrates quick actions saved as translation keys to entity ids,
+  // once every saved key resolves on this bed.
+  private _savedActionIds(next: Record<string, unknown>): unknown {
+    const saved = next.compact_actions;
+    if (!this.hass || !Array.isArray(saved) ||
+      saved.every((value) => typeof value !== "string" || value.includes("."))) return saved;
+    const targets = compactTargets(this.hass, next.device_id as string | undefined);
+    const target = targets.find((t) => t.key === ((next.default_target as string | undefined) ?? "both"));
+    if (!saved.every((value) => typeof value === "string")) return saved;
+    const ids = compactActionChoices(this.hass, targets, target, saved).selected;
+    if (ids.length !== new Set(saved).size) return saved;
+    // Keep the keys unless the ids recall exactly the same actions on every side.
+    const same = (t: { bed: BedEntities }) =>
+      compactActions(this.hass!, t.bed, saved).map((a) => a.entityId).join() ===
+      compactActions(this.hass!, t.bed, ids).map((a) => a.entityId).join();
+    return targets.every(same) ? ids : saved;
+  }
+
   private _emit(next: Record<string, unknown>): void {
     next.type = next.type ?? "custom:adjustable-bed-card";
     if (!next.name) delete next.name;
+    if (!this._editingDialog) next.compact_actions = this._savedActionIds(next);
+    if (next.compact_actions === undefined) delete next.compact_actions;
     if (this._editingDialog && this._rootConfig) {
       const overrides = Object.fromEntries(Object.entries(FULL_CARD_EDITOR_DEFAULTS)
         .map(([key, value]) => [key, next[key] ?? value]));
@@ -349,13 +369,9 @@ export class AdjustableBedCardEditor
     const c = this._config!;
     const targets = compactTargets(this.hass!, c.device_id);
     const target = targets.find((t) => t.key === (c.default_target ?? "both"));
-    // The union includes capabilities that exist only on an individual side.
-    const options = targets.flatMap((t) => compactActionOptions(this.hass!, t.bed))
-      .filter((action, index, all) => all.findIndex((a) => a.key === action.key) === index);
-    const selected = c.compact_actions ?? (target
-      ? compactActions(this.hass!, target.bed).map((a) => a.key) : []);
-    const ordered = [...selected.filter((key) => options.some((a) => a.key === key)),
-      ...options.map((a) => a.key).filter((key) => !selected.includes(key))];
+    const { options, selected } = compactActionChoices(this.hass!, targets, target, c.compact_actions);
+    const ordered = [...selected,
+      ...options.map((a) => a.entityId).filter((id) => !selected.includes(id))];
     return html`
       <div class="group">
         <div class="group-title">${localize(this.hass, "editor.compact_appearance")}</div>
@@ -407,7 +423,7 @@ export class AdjustableBedCardEditor
           <button @click=${() => this._setOption("compact_actions", [])}>${localize(this.hass, "editor.labels_none")}</button>
         </div>
         ${ordered.map((key) => {
-          const action = options.find((a) => a.key === key)!;
+          const action = options.find((a) => a.entityId === key)!;
           const checked = selected.includes(key);
           const index = selected.indexOf(key);
           const move = (delta: number) => {
@@ -418,7 +434,7 @@ export class AdjustableBedCardEditor
           return html`<div class="row">
             <ha-checkbox .checked=${checked} @change=${(e: Event) => this._setOption("compact_actions",
               (e.target as HTMLInputElement).checked ? [...selected, key] : selected.filter((k) => k !== key))}
-            >${entityLabel(this.hass, action.entityId, key)}</ha-checkbox>
+            >${entityLabel(this.hass, action.entityId)}</ha-checkbox>
             <button class="icon-btn" ?disabled=${!checked || index === 0}
               aria-label=${localize(this.hass, "editor.move_up")} @click=${() => move(-1)}>↑</button>
             <button class="icon-btn" ?disabled=${!checked || index === selected.length - 1}
@@ -445,12 +461,33 @@ export class AdjustableBedCardEditor
     </div>`;
   }
 
-  private _graphicOptions(): TemplateResult {
+  // Graphic options only when the card can draw a graphic and shows it. The
+  // percentage option can itself make the graphic available, so it counts.
+  private _graphicOptions(): TemplateResult | typeof nothing {
+    const c = this._config!;
+    if (!this.hass || c.show_graphic === false) return nothing;
+    const targets = compactTargets(this.hass, c.device_id);
+    const beds = targets.map((t) => t.bed);
+    // A compact card draws its sides together, so every side must qualify.
+    const sides = targets.length > 1 ? targets.filter((t) => t.key !== "both") : targets;
+    const canDraw = (t: { bed: BedEntities }) =>
+      presentSections(t.bed, this.hass!, { ...c, show_percentage_graphic: true }).graphic;
+    const drawable = c.layout === "compact" ? sides.every(canDraw) : targets.some(canDraw);
+    if (!drawable) return nothing;
+    const lumbar = beds.some((bed) => bed.motors.some((m) => m.key === "lumbar"));
     return html`
       ${this._compactToggle("show_graphic_labels", true)}
       ${this._compactToggle("show_percentage_graphic", false)}
-      ${this._compactToggle("show_lumbar_graphic", false)}
+      ${lumbar || c.show_lumbar_graphic ? this._compactToggle("show_lumbar_graphic", false) : nothing}
     `;
+  }
+
+  private _graphicGroup(): TemplateResult | typeof nothing {
+    const options = this._graphicOptions();
+    return options === nothing ? nothing : html`<div class="group">
+      <div class="group-title">${localize(this.hass, "editor.graphic_group")}</div>
+      ${options}
+    </div>`;
   }
 
   protected override render(): TemplateResult | typeof nothing {
@@ -473,7 +510,7 @@ export class AdjustableBedCardEditor
       ></ha-form>
       ${this._editingDialog ? nothing : this._layoutGroup()}
       ${this._config.layout === "compact" ? this._compactGroup() : html`
-        ${this._graphicOptions()}
+        ${this._graphicGroup()}
         ${bed ? this._motorsGroup(bed) : nothing}
         ${bed ? this._sectionsGroup(bed) : nothing}
         ${bed ? this._memoryGroup(bed) : nothing}

@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.serenity.rize import SAVE_ACK, RizeRemedyIIController
 from custom_components.adjustable_bed.codec.okin_nframe import frame
 from custom_components.adjustable_bed.const import BED_TYPE_RIZE_REMEDY_II, CONF_MOTOR_COUNT
@@ -323,42 +324,6 @@ async def test_shared_services_admit_only_live_controls_and_named_memories(hass)
         ctrl.client.write_gatt_char.assert_not_called()
 
 
-async def test_options_change_and_pair_side_profile_ownership(hass) -> None:
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant.common import MockConfigEntry
-
-    from custom_components.adjustable_bed.app_profiles import per_side_profile
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_CST,
-        CONF_BED_TYPE,
-        CONF_DISABLE_ANGLE_SENSING,
-        CONF_HAS_MASSAGE,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-        CONF_PROTOCOL_VARIANT,
-        DOMAIN,
-    )
-    from tests.form_helpers import shown_markers
-
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-        CONF_PROTOCOL_VARIANT: "cst_support", CONF_MOTOR_COUNT: 4, CONF_MOTOR_PULSE_COUNT: 7,
-        CONF_MOTOR_PULSE_DELAY_MS: 150, CONF_HAS_MASSAGE: False})
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    form = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_RIZE_REMEDY_II}, step_id="settings")
-    assert not {CONF_MOTOR_COUNT, CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_DELAY_MS} & shown_markers(form).keys()
-    saved = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_RIZE_REMEDY_II}, step_id="settings")
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_MOTOR_COUNT] == 3
-    assert entry.data[CONF_HAS_MASSAGE] is True
-    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
-    assert entry.data.get(CONF_PROTOCOL_VARIANT, "auto") == "auto"
-    assert (entry.data[CONF_MOTOR_PULSE_COUNT], entry.data[CONF_MOTOR_PULSE_DELAY_MS]) == (10, 100)
-    assert per_side_profile(BED_TYPE_RIZE_REMEDY_II, "auto") is not None
-
-
 @pytest.mark.parametrize(("count", "invalid"), [(0, True), (1, False), (600, False), (601, True)])
 def test_cover_pulse_count_bounds_match_the_admitted_ha_press_window(count, invalid) -> None:
     from custom_components.adjustable_bed.config_flow import _invalid_pulse_count
@@ -368,7 +333,6 @@ def test_cover_pulse_count_bounds_match_the_admitted_ha_press_window(count, inva
 async def test_fixed_app_setup_finishes_without_an_empty_question_step(hass, enable_custom_integrations) -> None:
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import (
-        CONF_DISABLE_ANGLE_SENSING,
         CONF_HAS_MASSAGE,
     )
     from tests.form_helpers import complete
@@ -384,7 +348,7 @@ async def test_fixed_app_setup_finishes_without_an_empty_question_step(hass, ena
     assert result["type"] == "create_entry"
     assert result["data"][CONF_MOTOR_COUNT] == 3
     assert result["data"][CONF_HAS_MASSAGE] is True
-    assert result["data"][CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(result["data"])
     from custom_components.adjustable_bed.profile_id import resolve_profile_id
     assert resolve_profile_id(result["data"]) == BED_TYPE_RIZE_REMEDY_II
 

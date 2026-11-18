@@ -133,8 +133,8 @@ async def test_configure_keeps_a_saved_good_vibe_product(hass):
     flow = AdjustableBedOptionsFlow(entry)
     flow.hass, flow.handler = hass, entry.entry_id
     form = await flow._async_options_form(None, step_id="settings")
-    marker = next(m for m in form["data_schema"].schema if m == const.CONF_PROTOCOL_VARIANT)
-    assert marker.default() == "6CRM"
+    # The product picks the route, which changes in Reconfigure.
+    assert const.CONF_PROTOCOL_VARIANT not in {m.schema for m in form["data_schema"].schema}
     with patch.object(hass.config_entries, "async_schedule_reload"):
         result = await flow._async_options_form({}, step_id="settings")
     assert result["type"] == "create_entry"

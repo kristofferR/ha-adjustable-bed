@@ -1,6 +1,6 @@
 """The Hush Base 1.0.5 app's products as profiles over ``codec/richmat.py``.
 
-The app (``com.richmat.hushbase``, row126) lists twelve products of its own,
+The app (``com.richmat.hushbase``) lists twelve products of its own,
 catalog indices 46 to 57. It also restores products a phone saved under its
 shared catalog, the other indices from 1 to 71; those keep the Hush app's own
 rows. Each row in ``beds/hush_base/catalog.py`` names the product, its action groups,
@@ -42,7 +42,7 @@ class HushProfile:
     key: str
     index: int
     row: ProductRow
-    # No hold yet: see docs/design/execution-capabilities.md.
+    # The app does not prove a hold.
     execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
 
     @property

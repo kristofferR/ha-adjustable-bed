@@ -1,4 +1,4 @@
-"""Luuna + 2.0.1's three explicit products, accepted APK audit unit146."""
+"""Luuna + 2.0.1's three explicit products."""
 
 from dataclasses import dataclass
 from typing import Final

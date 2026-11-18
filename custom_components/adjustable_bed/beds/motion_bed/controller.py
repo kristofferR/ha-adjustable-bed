@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...const import (
     CONF_BLE_DEVICE_NAME,
     CONF_MOTION_BED_MOVEMENT,
@@ -35,7 +36,15 @@ from ..entity_specs import (
 from ..family_actions import MotionBedModuleActions
 from .actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from .models import MotionBedSelection
-from .protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock
+from .protocol import (
+    SOURCE_COMMANDS,
+    AlarmMode,
+    AlarmSound,
+    AlarmSwitch,
+    build_alarm,
+    build_clock,
+    build_thermal_clock,
+)
 from .requests import MotionBedWrite
 from .state import (
     MotionBedContext,
@@ -103,6 +112,93 @@ def motion_bed_cover_key(up: MotionBedAction) -> str:
     return f"motion_bed_{side.group(1)}_{axis}" if side else f"motion_bed_{axis}"
 
 
+# Alarm-sound previews only serve the app's alarm editor; the audio action keeps them.
+_NOT_BUTTONS: Final = frozenset(
+    {*(f"motion_bed_audio_preview_{index}" for index in range(1, 6)), "motion_bed_audio_stop"}
+)
+
+# Entity names for app labels that are unclear, shouted or shared by two buttons.
+_BUTTON_NAMES: Mapping[str, str] = {
+    "motion_bed_10time": "Massage timer 10 minutes",
+    "motion_bed_20time": "Massage timer 20 minutes",
+    "motion_bed_30time": "Massage timer 30 minutes",
+    "motion_bed_air_adaptive_off": "Adaptive air massage off",
+    "motion_bed_air_adaptive_on": "Adaptive air massage on",
+    "motion_bed_air_back": "Air wave massage",
+    "motion_bed_air_fangqi": "Deflate",
+    "motion_bed_air_full": "Air combination massage",
+    "motion_bed_air_fullgxunhuan": "Full air massage cycle",
+    "motion_bed_air_jingbu": "Neck air massage",
+    "motion_bed_air_lumbar": "Lumbar air massage",
+    "motion_bed_air_massage_stop": "Stop air massage",
+    "motion_bed_air_sleepmian": "Air sleep massage",
+    "motion_bed_air_yujia": "Air yoga massage",
+    "motion_bed_back_down": "Back down",
+    "motion_bed_legs_down": "Legs down",
+    "motion_bed_back_legsxunhuan": "Back and legs cycle",
+    "motion_bed_hipxunhuan": "Hip cycle",
+    "motion_bed_legsxunhuan": "Legs cycle",
+    "motion_bed_lumbarxunhuan": "Lumbar cycle",
+    "motion_bed_upperxunhuan": "Head cycle",
+    **{f"motion_bed_brightness_{level}": f"Light brightness {level}" for level in range(11)},
+    "motion_bed_calibration_flat_position": "Calibrate sleep sensor flat",
+    "motion_bed_calibration_next_position": "Calibrate sleep sensor side",
+    "motion_bed_coupled_flat": "Both sides flat",
+    "motion_bed_coupled_tv": "Both sides TV",
+    "motion_bed_coupled_zero_gravity": "Both sides zero gravity",
+    "motion_bed_coupled_memory_left": "Both sides left memory",
+    "motion_bed_coupled_memory_right": "Both sides right memory",
+    "motion_bed_split_flat": "Split flat",
+    "motion_bed_split_flat_left": "Left flat",
+    "motion_bed_split_flat_right": "Right flat",
+    "motion_bed_split_memory_left": "Left memory",
+    "motion_bed_split_memory_right": "Right memory",
+    "motion_bed_split_tv_left": "Left TV",
+    "motion_bed_split_tv_right": "Right TV",
+    "motion_bed_split_zero_gravity_left": "Left zero gravity",
+    "motion_bed_split_zero_gravity_right": "Right zero gravity",
+    "motion_bed_dingyao": "Lumbar support",
+    "motion_bed_flat": "Flat",
+    "motion_bed_houqing": "Tilt backward",
+    "motion_bed_legsrelax": "Leg relax",
+    "motion_bed_light_enabled_off": "Light off",
+    "motion_bed_light_enabled_on": "Light on",
+    "motion_bed_massage_enabled_off": "Massage off",
+    "motion_bed_massage_enabled_on": "Massage on",
+    "motion_bed_massage_lower_decrease": "Decrease leg massage",
+    "motion_bed_massage_lower_increase": "Increase leg massage",
+    "motion_bed_massage_upper_decrease": "Decrease back massage",
+    "motion_bed_massage_upper_increase": "Increase back massage",
+    "motion_bed_massage_wave_decrease": "Decrease massage frequency",
+    "motion_bed_massage_wave_increase": "Increase massage frequency",
+    "motion_bed_memory1": "Memory 1",
+    "motion_bed_music": "Sleep music",
+    "motion_bed_night_light": "Toggle night light",
+    "motion_bed_sleepmian": "Toggle smart sleep",
+    "motion_bed_sleep_adjust_stop": "Stop sleep adjustment",
+    "motion_bed_snore": "Anti-snore",
+    "motion_bed_thermal_gear_4": "Climate off",
+    "motion_bed_thermal_timer_off": "Climate timer off",
+    "motion_bed_thermal_timer_on": "Climate timer on",
+    "motion_bed_tv": "TV",
+    "motion_bed_tv_10fenzhong": "Light timer 10 minutes",
+    "motion_bed_tv_8xiaoshi": "Light timer 8 hours",
+    "motion_bed_tv_10xiaoshi": "Light timer 10 hours",
+    "motion_bed_wholeflat": "All flat",
+    "motion_bed_wholeshangsheng": "Rise",
+    "motion_bed_wholexiajiang": "Lower",
+    "motion_bed_yijiangshengqi": "Rise",
+    "motion_bed_yijiangjiangxia": "Lower",
+    "motion_bed_yujia": "Yoga",
+    "motion_bed_zero_gravity": "Zero pressure",
+}
+
+
+def motion_bed_button_name(key: str, action: MotionBedAction) -> str:
+    """Return the entity name of a Motion Bed button."""
+    return _BUTTON_NAMES.get(key, action.name)
+
+
 def _is_button(action: MotionBedAction) -> bool:
     if action.kind == "held":
         return action.owner in ("DiandongFragment", "SleepAdjustActivity")
@@ -122,6 +218,8 @@ def button_actions_for(owners: frozenset[str]) -> Mapping[str, MotionBedAction]:
     active = [action for action in MOTION_BED_ACTIONS if action.owner in owners and _is_button(action)]
     for action in sorted(active, key=lambda action: action.kind == "held"):
         key = motion_bed_button_key(action)
+        if key in _NOT_BUTTONS:
+            continue
         current = chosen.get(key)
         if current is None or (current.owner not in _MODULE_OWNERS and action.owner in _MODULE_OWNERS):
             chosen[key] = action
@@ -149,6 +247,81 @@ ACTIVE_MODULE: Final = StateKey[str | None]("motion_bed_active_module")
 
 def _field_key(name: str) -> StateKey[ScalarState]:
     return StateKey[ScalarState]("motion_bed_" + name)
+
+
+# Without a chosen wake action the alarm only rings; the bed does not move.
+_ALARM_MODES: Final = {
+    "none": AlarmMode.NO_ACTION,
+    "zero_g": AlarmMode.ZERO_GRAVITY,
+    "memory_1": AlarmMode.MEMORY_1,
+}
+# Music tracks, offered only on targets that report an audio module.
+_AUDIO_SOUNDS: Final = {
+    "music_1": AlarmSound.MUSIC_1,
+    "music_2": AlarmSound.MUSIC_2,
+    "music_3": AlarmSound.MUSIC_3,
+    "music_4": AlarmSound.MUSIC_4,
+    "music_5": AlarmSound.MUSIC_5,
+}
+
+
+# Reported values worth an entity: (state field, enabled by default, attribute fields).
+# Preset-selected flags, raw readbacks, calibration samples and module inventory
+# details stay in diagnostics.
+_SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
+    ("upper_massage", True, ()),
+    ("lower_massage", True, ()),
+    ("massage_wave", True, ()),
+    ("massage_timer", True, ()),
+    ("brightness", True, ()),
+    ("light_timer", False, ()),
+    ("audio_volume", False, ()),
+    ("audio_track", False, ()),
+    ("sleep_timer", False, ()),
+    ("fall_timer", False, ()),
+    ("air_upper_gear", True, ()),
+    ("air_lower_gear", True, ()),
+    ("air_timer", True, ()),
+    ("thermal_gear", True, ()),
+    ("thermal_temperature", True, ()),
+    ("thermal_water", True, ()),
+    ("fault", True, ("fault_part",)),
+    ("day_total", False, ("day_unit", "day_flat", "day_side", "day_rolls", "day_slots")),
+    (
+        "month_average_sleep",
+        False,
+        (
+            "month_days", "month_maximum_sleep", "month_minimum_sleep", "month_average_rolls",
+            "month_maximum_rolls", "month_minimum_rolls", "month_flat", "month_side",
+        ),
+    ),
+)
+_BINARY_SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
+    ("motor_light_enabled", True, ()),
+    ("motor_massage_enabled", True, ()),
+    ("night_light_enabled", True, ()),
+    ("sleep_enabled", False, ()),
+    ("sync_enabled", False, ()),
+    ("air_adaptive", True, ()),
+    ("thermal_low_water", True, ()),
+    (
+        "thermal_timer_enabled",
+        True,
+        ("thermal_timer_hour", "thermal_timer_minute", "thermal_timer_mode", "thermal_timer_gear"),
+    ),
+    (
+        "alarm_enabled",
+        False,
+        (
+            "alarm_hour", "alarm_minute", "alarm_weekdays", "alarm_repeat", "alarm_mode",
+            "alarm_massage", "alarm_sound", "alarm_music",
+        ),
+    ),
+    ("sensor_present", False, ("sensor_mac",)),
+    ("motor_module_present", False, ()),
+    ("air_module_present", False, ()),
+    ("thermal_module_present", False, ()),
+)
 
 
 class MotionBedController(ProfileExecution[MotionBedProfile], BedController, MotionBedModuleActions):
@@ -325,7 +498,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         return tuple(
             ControllerButtonSpec(
                 key=key,
-                name=action.name,
+                name=motion_bed_button_name(key, action),
                 press_fn=_action_callback(action.key),
                 translation_key=None,
             )
@@ -384,26 +557,24 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return tuple(
             ControllerStateSensorSpec(
-                key="motion_bed_" + item.name, translation_key="motion_bed_" + item.name,
-                state_key=_field_key(item.name), icon="mdi:bed-outline",
-                entity_registry_enabled_default=item.name in {
-                    "brightness", "upper_massage", "lower_massage", "massage_timer", "thermal_temperature",
-                    "thermal_water", "fault", "fault_part", "raw_positions",
-                },
+                key="motion_bed_" + name, translation_key="motion_bed_" + name,
+                state_key=_field_key(name), icon="mdi:bed-outline",
+                attribute_keys=tuple(_field_key(item) for item in attributes),
+                entity_registry_enabled_default=enabled,
             )
-            for item in fields(self._state)
-            if "bool" not in str(item.type)
+            for name, enabled, attributes in _SENSORS
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return tuple(
             ControllerStateBinarySensorSpec(
-                key="motion_bed_" + item.name, translation_key="motion_bed_" + item.name,
-                state_key=_field_key(item.name), icon="mdi:bed-outline",
+                key="motion_bed_" + name, translation_key="motion_bed_" + name,
+                state_key=_field_key(name), icon="mdi:bed-outline",
+                attribute_keys=tuple(_field_key(item) for item in attributes),
+                entity_registry_enabled_default=enabled,
             )
-            for item in fields(self._state)
-            if "bool" in str(item.type)
+            for name, enabled, attributes in _BINARY_SENSORS
         )
 
     def _publish(self) -> None:
@@ -852,6 +1023,55 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             except TimeoutError:
                 if sleep_adjust and asyncio.get_running_loop().time() < deadline:
                     await self.write_command(SOURCE_COMMANDS["SleepAdjustActivity:281"])
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        surface = self.selection.surface
+        if not (
+            surface in ("home", "motor") or (surface == "hub" and self._module_present("motor"))
+        ):
+            return None
+        return AlarmCapability(
+            wake_actions=tuple(_ALARM_MODES),
+            weekdays=True,
+            massage=True,
+            # The first sound is the default, so an alarm rings unless set to none.
+            sounds=(*_AUDIO_SOUNDS, "none") if self._has_audio else ("alarm", "none"),
+            cancel_running=True,
+            resource="*",
+        )
+
+    def _alarm_write(self, alarm: AlarmRequest) -> MotionBedWrite:
+        home = self.selection.surface == "home"
+        switch = None if home else AlarmSwitch.ENABLED if alarm.enabled else AlarmSwitch.DISABLED
+        sound = {"none": AlarmSound.NONE, "alarm": AlarmSound.BUZZER, **_AUDIO_SOUNDS}[alarm.sound]
+        frame = build_alarm(
+            enabled=alarm.enabled,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            weekdays={day + 1: True for day in alarm.weekdays},
+            mode=_ALARM_MODES[alarm.wake_action],
+            massage=alarm.massage,
+            sound=sound,
+            switch=switch,
+            audio=self._has_audio,
+        )
+        # Setting an alarm through this action is the explicit confirmation.
+        return MotionBedWrite(
+            "alarm",
+            (frame,),
+            "home" if home else "motor_settings",
+            confirmed=True,
+            persistent=True,
+            alarm_audio=self._has_audio,
+            alarm_switch=None if switch is None else int(switch),
+        )
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_motion_bed_write(self._alarm_write(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.async_execute_motion_bed_write(self._alarm_write(alarm))
 
     def validate_motion_bed_write(self, request: MotionBedWrite) -> None:
         available: set[str] = set()

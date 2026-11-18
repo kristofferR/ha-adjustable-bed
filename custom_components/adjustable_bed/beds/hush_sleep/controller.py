@@ -108,6 +108,7 @@ class HushSleepController(CasperSleepController):
                     DEVICE_TIME,
                     LIVE_REQUESTED,
                 ),
+                entity_registry_enabled_default=False,
             ),
         )
 

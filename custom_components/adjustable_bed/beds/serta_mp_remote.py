@@ -26,7 +26,6 @@ from .builder import BuildContext
 from .entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
-    ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
@@ -326,24 +325,6 @@ class SertaMPRemoteController(AppController):
         ):
             return
         await super().stop_all()
-
-    @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return super().controller_state_sensor_specs + (
-            ControllerStateSensorSpec(
-                "app_memory_request",
-                "app_memory_request",
-                MEMORY_REQUEST,
-                "mdi:progress-check",
-                attribute_keys=(
-                    MEMORY_HEAD_TARGET,
-                    MEMORY_FOOT_TARGET,
-                    MEMORY_PROGRESS_VISIBLE,
-                    HEAD_FLAG,
-                    FOOT_FLAG,
-                ),
-            ),
-        )
 
     async def set_motor_position(self, motor: str, position: int) -> None:
         if motor not in ("back", "legs"):

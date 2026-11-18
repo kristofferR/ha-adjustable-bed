@@ -56,7 +56,11 @@ globalThis.KeyboardEvent = class {
 
 const { AdjustableBedCard } = await import("./adjustable-bed-card.ts");
 const { bedEntitiesForDevice } = await import("./discovery.ts");
-const { heldButtonMotor, stopFromCard } = await import("./hold.ts");
+const { heldButtonMotor, stopCardMotorHold } = await import("./hold.ts");
+
+// Stop as a side's or a single bed's Stop button does: scoped to that stop.
+const stopFromCard = (hold, hass, stopEntityId) =>
+  stopCardMotorHold(hold, stopEntityId, [stopEntityId], undefined, hass);
 
 class FakeClock {
   now = 0;
