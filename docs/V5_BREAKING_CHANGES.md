@@ -280,6 +280,34 @@ only mirrored the phone app's internals. What to know:
 - **Preset save buttons ask for confirmation** in the dashboard card, and the
   card never offers them as a compact quick action.
 
+### One Shape per Control
+
+The same control now looks the same on every bed:
+
+- **Sleep-monitor readings are dashboard entities.** Heart rate and breathing
+  rate are numeric sensors (bpm and breaths/min where the bed's unit is known)
+  with history graphs; a reading the bed does not have shows unknown instead of
+  "--". In bed, snoring and body movement are binary sensors with the occupancy,
+  sound and motion device classes. They are enabled and no longer under
+  Diagnostic. Every bed uses the same names ("Left heart rate", "Right in bed").
+  The sensors that stay sensors keep their entity IDs; in-bed, snoring and
+  movement readings that were text sensors are new binary sensors with new
+  entity IDs.
+- **Sleep Number bed presence is enabled by default** and named "In bed",
+  "Left in bed" and "Right in bed", like every other bed's occupancy.
+- **Every on/off under-bed light is a `light` entity.** It was a switch
+  (`switch.<bed>_under_bed_lights`) on 32 bed types and is now
+  `light.<bed>_under_bed_lights`. Point automations and voice assistants at the
+  light. Beds that cannot report the light's state show it as assumed, as the
+  switch did. Octo keeps its switch: its light depends on the Octo PIN session
+  and the bed's own light timer, which the switch handles.
+- **Keeson, Serta, Ergomotion and OKIN FFE beds have a Stop button**, like the
+  other beds on the same receiver. It sends the release key the remote sends
+  when a button is let go. Profiles whose app has no release key (Adjustable
+  Lite and the KSBT remotes) still have none.
+- **Logicdata beds show their two memory slots** (recall and save), which the
+  guide and controller always supported.
+
 Removed and replaced entities by bed:
 
 | Bed or app | Removed | Replaced |
@@ -313,6 +341,11 @@ Removed and replaced entities by bed:
 | Richmat resource apps | 13 disabled "App ..." request buttons (the `richmat_resource_bed` action still sends every command) | |
 | BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons | |
 | V-MAT Basic | ED motor status binary sensor | |
+| Sleep sensors (Casper and Hush sleep modules, Good Vibe and MLILY sleep devices, CheersSleep, RUF and Richmat sleep receivers, DoubleSleep, Aging in Place, M Line) | | Heart and breathing rate sensors became the shared **Heart rate** and **Breathing rate** sensors (same entity IDs); in-bed, snoring and movement text sensors became **In bed**, **Snoring** and **Body movement** binary sensors |
+| GM Control sleep module | Time and Query part buttons (the clock is set and the part read on every connection) | Start and stop live data buttons became the **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
+| Under-bed light on CheersSleep, SUTA, Cherish, Comfort Enhancements, KomfyD, ComfyDS, iSleep, Kaidi, Keeson, Logicdata, MattressFirm, Nectar, OKIN 64-bit, 7-byte, CB24, CB35, CST and Nordic, Remacro, Rize, Rize Remedy II, Serenity, Tranquil, Sleep Number, SleepStar, Sleepy's Box25 and Elite app, Solace, Svane, Vibradorm and Vibradorm app | `switch.<bed>_under_bed_lights` | `light.<bed>_under_bed_lights` |
+| Heal Every Night (OKIN apps) | | Installation and actuator direction selects became the **Reversed installation**, **Reverse actuator 1** and **Reverse actuator 2** switches |
+| Snore Monitor | Alarm enabled binary sensors | Whether each alarm is on is an attribute of its alarm time sensor |
 
 ## New Entities, Attributes and Actions
 
