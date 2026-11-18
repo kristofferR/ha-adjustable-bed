@@ -616,6 +616,8 @@ async def test_set_alarm_mattress_rejects_a_wake_action(hass):
 async def test_set_alarm_off_keeps_the_reported_calendar_slot(hass):
     from homeassistant.exceptions import ServiceValidationError
 
+    from custom_components.adjustable_bed.beds.ruf_richmat.protocol import alarm_frame
+    from custom_components.adjustable_bed.codec import richmat as codec
     from tests.alarm_helpers import call_set_alarm
 
     model = next(
@@ -625,17 +627,29 @@ async def test_set_alarm_off_keeps_the_reported_calendar_slot(hass):
     )
     c = make("wsilver2", model)
     c._dev = {}
-    c.ruf_richmat_alarm = AsyncMock()
-    c.write_command = AsyncMock()
-    with (
-        patch("custom_components.adjustable_bed.beds.ruf_richmat.controller.asyncio.sleep", AsyncMock()),
-        pytest.raises(ServiceValidationError, match="Refresh"),
-    ):
+    query = codec.record_20_len(5, 1, 0, (0,))
+    record = {"bed": 0, "hour": 6, "minute": 45, "mode": 0x45, "week": 0b0100_0001}
+    answers = True
+    writes: list[bytes] = []
+
+    async def write(frame, *args, **kwargs):
+        writes.append(bytes(frame))
+        if frame == query and answers:
+            c._calendar_alarms[3] = dict(record)
+
+    c.write_command = AsyncMock(side_effect=write)
+    sleep = AsyncMock()
+    with patch("custom_components.adjustable_bed.beds.ruf_richmat.controller.asyncio.sleep", sleep):
         await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
-    # The bed answered the calendar query.
-    c._calendar_alarms[3] = {"bed": 0, "hour": 6, "minute": 45, "mode": 0x45, "week": 0b0100_0001}
-    await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
-    request = c.ruf_richmat_alarm.await_args.args[0]
-    assert (request.enabled, request.hour, request.minute, request.mode, request.weekdays) == (
-        False, 6, 45, 0x45, (1,)
-    )
+        assert writes[0] == query
+        expected = AlarmRequest(
+            "calendar", False, hour=6, minute=45, slot=3, mode=0x45, weekdays=(1,)
+        )
+        assert alarm_frame(expected, datetime.now()) in writes
+        # A bed that never answers is refused before the slot is rewritten.
+        c._calendar_alarms.clear()
+        writes.clear()
+        answers = False
+        with pytest.raises(ServiceValidationError, match="Refresh"):
+            await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+        assert writes == [query]
