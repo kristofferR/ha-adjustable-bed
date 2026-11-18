@@ -330,6 +330,9 @@ class AppFamily:
     # Whether a list drawn for a route behind the row shows the row; False
     # shows the route by its own label.
     routes_show_row: bool = True
+    # Whether the bed-type list also lists each member app by its own name,
+    # for a family with too many apps to name in its row.
+    lists_members: bool = False
     form: Form = Form.KEYS
     keep_label: str = "keep"
     offers_keep: Callable[[Visit], bool] = keep_when_guided
@@ -1416,13 +1419,8 @@ RICHMAT_FAMILY: Final = AppFamily(
     step="richmat_family",
     row=BED_TYPE_RICHMAT,
     name="Richmat",
-    apps=(
-        "RMControl, MLILY Control, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
-        "RUF | Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control, TX, "
-        "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, Luuna Rise, Power Cool Sleep System, "
-        "Lady Americana, ACAA, STA Homecare, Zero Gravity, SleepFunction and "
-        "SVEN & SON apps, Luuna +, SonicSleep / 소닉슬립, and Richmat remotes"
-    ),
+    # Each other app is its own row too (lists_members).
+    apps="RMControl, SleepFunction and SVEN & SON apps, and Richmat remotes",
     answers={
         "richmat_420": Answer("richmat_app"),
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
@@ -1439,6 +1437,7 @@ RICHMAT_FAMILY: Final = AppFamily(
     },
     routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", BED_TYPE_MLILY},
     routes_show_row=False,
+    lists_members=True,
     offers_keep=keep_never,
     offer=_richmat_answers,
     preselect=_richmat_app_row,
@@ -1613,6 +1612,17 @@ def family_row_label(bed_type: str) -> str | None:
     if (family := row_family(bed_type)) is None:
         return None
     return f"{family.apps}{FAMILY_ROW_SEPARATOR}{family.name}"
+
+
+def family_member_rows() -> list[tuple[str, str | None]]:
+    """Return the member apps that families listing their members show as rows."""
+    return [
+        (answer.bed_type, answer.variant)
+        for family in APP_FAMILIES
+        if family.lists_members
+        for answer in family.answers.values()
+        if answer.member and not answer.keep and answer.bed_type != family.row
+    ]
 
 
 def shown_row(route: str, *, configure: bool) -> str | None:
