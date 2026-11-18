@@ -422,7 +422,7 @@ Home Assistant command reconnects automatically.
 2. OEM bed using different manufacturer's controller
 
 **Solutions:**
-1. **Change settings:** Open **Configure → Change settings** and correct **Bed type** and **Protocol variant** using the matching protocol guide. Keep the existing entry and its entity history. Within a family with a [guided change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed), Configure refuses an app or route change: use **Reconfigure** from the entry's three-dot menu instead.
+1. **Change the bed type:** Open **Reconfigure** from the entry's three-dot menu and choose the bed type, app or bed model the matching protocol guide names. It [reviews the change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed) before saving, and keeps the existing entry and its entity history.
 2. **Capture evidence if uncertain:** Generate a support bundle. A retail brand or a shared service UUID alone may not distinguish the protocols.
 3. **Paired entries:** Some profile changes require splitting the pair and configuring each side separately before combining again.
 

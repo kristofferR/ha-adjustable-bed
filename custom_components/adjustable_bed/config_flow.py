@@ -2307,8 +2307,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # The list keeps a default it does not offer, such as a route behind a
         # family row.
         picker = _bed_type_selector(shown, show_saved_id=True)
+        errors: dict[str, str] = {}
         if user_input is not None:
             bed_type, variant = resolve_bed_type_choice(picker(user_input[CONF_BED_TYPE]))
+            # An app that does not list the bed's model would only trade its
+            # controls for the fallback ones.
+            if bed_type == BED_TYPE_REMACRO and variant is not None:
+                problem, _ = remacro_entry_problem(
+                    {**data, CONF_PROTOCOL_VARIANT: variant},
+                    remacro_manufacturer_data(self.hass, data[CONF_ADDRESS]),
+                )
+                if problem == "not_in_app":
+                    errors[CONF_BED_TYPE] = "remacro_model_not_in_app"
+        if user_input is not None and not errors:
             self._select_family_route(bed_type, variant)
             if variant is None and len(_setup_routes(bed_type)) >= 2:
                 return await self.async_step_reconfigure_route()
@@ -2318,6 +2329,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             data_schema=vol.Schema(
                 {vol.Required(CONF_BED_TYPE, default=picker.shown(shown)): picker}
             ),
+            errors=errors,
             description_placeholders={"current": self._migration_selection_label(data)},
         )
 
@@ -7324,8 +7336,15 @@ class AdjustableBedOptionsFlow(
         await async_import_profile(self.hass, questions)
         context = FlowContext(self.hass, self.config_entry.entry_id)
         if questions is not None:
+            # The route changes in Reconfigure, after the pair is separated.
             schema.update(
-                _profile_question_schema(questions, current, context, advanced_section=False)
+                _profile_question_schema(
+                    questions,
+                    current,
+                    context,
+                    advanced_section=False,
+                    skip={CONF_PROTOCOL_VARIANT},
+                )
             )
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -7358,9 +7377,9 @@ class AdjustableBedOptionsFlow(
                     asked = {question.key for question in questions.questions}
                     changes = {key: value for key, value in changes.items() if key not in asked}
                     before = {**current, **changes}
-                    app_data = questions.staged(
-                        before, _profile_answers(questions, user_input, current, context)
-                    )
+                    answers = _profile_answers(questions, user_input, current, context)
+                    answers.pop(CONF_PROTOCOL_VARIANT, None)
+                    app_data = questions.staged(before, answers)
                     errors.update(questions.errors(app_data, context))
                     # A profile derives its settled values only from answers its
                     # checks accepted, as setup and single-entry Configure do.

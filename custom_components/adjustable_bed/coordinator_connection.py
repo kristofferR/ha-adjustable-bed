@@ -373,17 +373,20 @@ class CoordinatorConnectionMixin:
         if self._bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
             return True
 
-        # LP Comfort Connect is kept connected conservatively, and the new bond
-        # makes an unexpected drop recoverable. Reconnect promptly while leaving
-        # the established lifecycle behavior of other persistent protocols (such
-        # as Sleep Number MCR) unchanged by this Gen2-specific fix.
+        # LP Comfort Connect's bond makes an unexpected drop recoverable, so it
+        # reconnects promptly while leaving the established lifecycle behavior of
+        # other persistent protocols (such as Sleep Number MCR) unchanged. A
+        # Leggett & Platt entry on Auto or Gen2 counts while its controller is
+        # Gen2 or not yet known.
         if self._bed_type == BED_TYPE_LEGGETT_GEN2:
             return True
         if self._bed_type == BED_TYPE_LEGGETT_PLATT and self._protocol_variant in (
             VARIANT_AUTO,
             LEGGETT_VARIANT_GEN2,
         ):
-            return self._uses_persistent_connection()
+            resolved = self.capability_controller
+            if resolved is None or resolved.holds_link_after_stalled_reconnect:
+                return True
 
         return not self._uses_persistent_connection()
 
@@ -1685,15 +1688,8 @@ class CoordinatorConnectionMixin:
                 6, source_mac=self._address
             )
         reason = connection_reachability(self.hass, self._address)
-        if reason:
-            _LOGGER.log(
-                logging.DEBUG if self._connect_failure_logged else logging.WARNING,
-                "Bluetooth reachability for %s: %s",
-                self._address,
-                reason,
-            )
-            if self._connection_attempt_details:
-                self._connection_attempt_details[-1]["reachability"] = reason
+        if reason and self._connection_attempt_details:
+            self._connection_attempt_details[-1]["reachability"] = reason
         total_elapsed = time.monotonic() - overall_start
         # All attempts failed: the bed is unreachable, not idle-disconnected, so
         # ensure the connectivity sensor reports "disconnected" rather than "idle"
@@ -1708,11 +1704,12 @@ class CoordinatorConnectionMixin:
             logging.DEBUG if self._connect_failure_logged else logging.WARNING,
             "Could not connect to %s after %d attempts (%.1fs, last error: %s). "
             "Check that the bed has power, close any phone app connected to it, "
-            "and check that its Bluetooth adapter or proxy is online",
+            "and check that its Bluetooth adapter or proxy is online%s",
             self._address,
             attempt,
             total_elapsed,
             self._last_connection_error or "not found",
+            f" (Bluetooth reachability: {reason})" if reason else "",
         )
         self._connect_failure_logged = True
         self._schedule_pending_capability_reload()

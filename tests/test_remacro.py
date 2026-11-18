@@ -1725,3 +1725,32 @@ async def test_all_motors_yields_to_a_single_axis_stop(
         # All motors up, its release STOP, then the head STOP.
         assert codes == ["1001", "0100", "0001"]
         await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_reconfigure_rejects_an_app_that_does_not_list_the_model(hass: HomeAssistant) -> None:
+    from homeassistant.data_entry_flow import FlowResultType
+
+    from custom_components.adjustable_bed.detection import bed_type_choice
+    from custom_components.adjustable_bed.profile_migration import reconfigure_context
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:65",
+            CONF_BED_TYPE: BED_TYPE_REMACRO,
+            CONF_MOTOR_COUNT: 2,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_REMACRO_MODEL: 54,
+        },
+    )
+    entry.add_to_hass(hass)
+    manager = hass.config_entries.flow
+    with patch(_HISTORY, return_value=None):
+        result = await manager.async_init(DOMAIN, context=reconfigure_context(entry))
+        result = await manager.async_configure(
+            result["flow_id"], {CONF_BED_TYPE: bed_type_choice(BED_TYPE_REMACRO, "jeromes")}
+        )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_BED_TYPE: "remacro_model_not_in_app"}
+    assert entry.data[CONF_PROTOCOL_VARIANT] == "auto"
+    manager.async_abort(result["flow_id"])

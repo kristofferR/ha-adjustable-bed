@@ -611,15 +611,14 @@ def test_schema_5_6_rewrites_the_connection_settings(stored: dict, expected: dic
         CONF_DISABLE_ANGLE_SENSING: True,
     }
 
-    data, options = migrate_v5_6_entry(
-        {**base, **stored}, dict(stored), from_version=5, from_minor_version=5
+    data, _options = migrate_v5_6_entry(
+        {**base, **stored}, {}, from_version=5, from_minor_version=5
     )
 
     record = data.pop(CONF_PROFILE_MIGRATION, None)
     assert data == {**base, **expected}
-    assert options == expected
     if stored != expected:
-        assert set(record["settings_5_6"]) == {"data", "options"}
+        assert set(record["settings_5_6"]) == {"data"}
     else:
         assert record is None
 
@@ -665,7 +664,32 @@ def test_schema_5_6_options_follow_the_data_they_inherit_from() -> None:
     )
 
     assert migrated[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
-    assert options == {}
+    # Read over the data, the option still releases the link.
+    assert options == {CONF_CONNECTION_MODE: CONNECTION_MODE_RELEASE}
+
+
+def test_schema_5_6_options_and_data_read_as_one() -> None:
+    """A 0 in data under a 65 s option meant a 65 s timeout, and still does."""
+    data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:42", CONF_BED_TYPE: BED_TYPE_KEESON, "idle_disconnect_seconds": 0}
+
+    migrated, options = migrate_v5_6_entry(
+        data, {"idle_disconnect_seconds": 65}, from_version=5, from_minor_version=5
+    )
+
+    assert migrated[CONF_CONNECTION_MODE] == CONNECTION_MODE_ALWAYS
+    merged = {**migrated, **options}
+    assert merged[CONF_CONNECTION_MODE] == CONNECTION_MODE_IDLE
+    assert merged["idle_disconnect_seconds"] == 65
+
+
+def test_schema_5_6_keeps_an_angle_option_that_hides_the_opposite_data_value() -> None:
+    data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:43", CONF_BED_TYPE: BED_TYPE_LINAK, CONF_DISABLE_ANGLE_SENSING: True}
+
+    _migrated, options = migrate_v5_6_entry(
+        data, {CONF_DISABLE_ANGLE_SENSING: False}, from_version=5, from_minor_version=5
+    )
+
+    assert options == {CONF_DISABLE_ANGLE_SENSING: False}
 
 
 def test_schema_5_6_rewrites_each_paired_side_against_its_own_route() -> None:
@@ -812,3 +836,27 @@ def test_schema_5_6_applies_pair_options_to_each_side_first() -> None:
     assert left[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
     assert right[CONF_CONNECTION_MODE] == CONNECTION_MODE_ALWAYS
     assert options == {}
+
+
+def test_schema_5_6_a_side_follows_the_pairs_route_option() -> None:
+    """A side read the pair's route option, so its saved mode is that route's."""
+    data = {
+        CONF_PAIR_ID: "pair_ksbt",
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_PAIR_CHILDREN: [
+            {
+                CONF_SIDE: "left",
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:44",
+                CONF_BED_TYPE: BED_TYPE_KEESON,
+                CONF_PROTOCOL_VARIANT: "auto",
+                "idle_disconnect_seconds": 40,
+            },
+        ],
+    }
+
+    migrated, options = migrate_v5_6_entry(
+        data, {CONF_PROTOCOL_VARIANT: "ksbt"}, from_version=5, from_minor_version=5
+    )
+
+    effective = effective_child_data(migrated, "left", options)
+    assert effective[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE

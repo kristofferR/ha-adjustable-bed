@@ -573,8 +573,9 @@ def _v5_6_settings(
     changed: dict[str, list[str]],
     *,
     paired: bool = False,
-    inherited_after: bool | None = None,
+    underneath: Mapping[str, Any] | None = None,
     side_overrides: Mapping[str, Any] | None = None,
+    side_route: Mapping[str, Any] | None = None,
     explicit_mode: bool = False,
 ) -> dict[str, Any]:
     """Return one stored settings mapping in the 5.6 shape.
@@ -584,8 +585,8 @@ def _v5_6_settings(
     sides first take the shared values they inherited, then each side and each
     original entry is rewritten against its own route. A pair's parent and
     sides (``paired``) keep their angle-sensing values as they are, since a
-    side without one would inherit the parent's. ``inherited_after`` is the
-    "Disconnect after each command" options inherit from the entry's data.
+    side without one would inherit the parent's. Options pass the legacy data
+    they layer over as ``underneath``, so their mode reads both as one.
     """
     new = {key: value for key, value in settings.items() if key not in V5_6_REMOVED_KEYS}
     notes = sorted(V5_6_REMOVED_KEYS.intersection(settings))
@@ -595,7 +596,7 @@ def _v5_6_settings(
             _v5_6_settings(
                 # In the order a side reads them: parent, side, then options.
                 {**shared, **child, **(side_overrides or {})},
-                {**route, **_route_of(child)},
+                {**route, **_route_of(child), **(side_route or {})},
                 f"{location}.{child.get(CONF_SIDE, index)}",
                 changed,
                 paired=True,
@@ -605,23 +606,30 @@ def _v5_6_settings(
             else child
             for index, child in enumerate(children)
         ]
-    after = new.pop(_LEGACY_DISCONNECT_AFTER_COMMAND, None)
-    seconds = new.get(CONF_IDLE_DISCONNECT_SECONDS)
-    view = {**route, **_route_of(new)}
+    below = underneath or {}
+    own_after = new.pop(_LEGACY_DISCONNECT_AFTER_COMMAND, None)
+    own_seconds = new.get(CONF_IDLE_DISCONNECT_SECONDS)
+    layered = underneath is not None and (own_after is not None or own_seconds is not None)
+    # Options over data read as one: what this layer leaves out, the one below sets.
+    after = own_after if own_after is not None else below.get(_LEGACY_DISCONNECT_AFTER_COMMAND)
+    seconds = own_seconds if own_seconds is not None else below.get(CONF_IDLE_DISCONNECT_SECONDS)
+    if not layered:
+        after, seconds = own_after, own_seconds
+    explicit_mode = explicit_mode or layered
+    view = {**_route_of(new), **route}
+    default_mode = default_connection_mode(view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT))
+    if own_seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
+        new.pop(CONF_IDLE_DISCONNECT_SECONDS)
     mode: str | None = None
     if seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
-        new.pop(CONF_IDLE_DISCONNECT_SECONDS)
         # Issue #700's "0 keeps the bed connected" applied only while the
-        # handoff was off, saved here, inherited, or the bed type's default.
-        effective = after if after is not None else inherited_after
-        if effective is None:
-            effective = default_connection_mode(
-                view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
-            ) == CONNECTION_MODE_RELEASE
-        if after is True or (effective and explicit_mode):
-            # A side saves its handoff, so it never inherits a parent's Always.
+        # handoff was off: saved, inherited, or the bed type's default.
+        handoff = after if after is not None else default_mode == CONNECTION_MODE_RELEASE
+        if after is True or (handoff and explicit_mode):
+            # A side or an option saves its handoff, so it never takes Always
+            # from the layer below.
             mode = CONNECTION_MODE_RELEASE
-        elif not effective:
+        elif not handoff:
             mode = CONNECTION_MODE_ALWAYS
         else:
             notes.append(f"{CONF_IDLE_DISCONNECT_SECONDS}=0 (handoff on)")
@@ -629,33 +637,41 @@ def _v5_6_settings(
         mode = CONNECTION_MODE_RELEASE
     elif after is False:
         mode = CONNECTION_MODE_IDLE
-    elif explicit_mode and CONF_IDLE_DISCONNECT_SECONDS in new:
-        # A side would otherwise inherit the parent's new mode, which its own
-        # settings never followed: save the mode it ran with.
-        mode = default_connection_mode(view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT))
+    elif explicit_mode and seconds is not None:
+        # Without a saved mode this would take the layer below's new mode,
+        # which its own settings never followed: save the mode it ran with.
+        mode = default_mode
     if mode is not None:
         new[CONF_CONNECTION_MODE] = mode
         notes.append(f"{CONF_CONNECTION_MODE}={mode}")
-    elif after is not None:
+    elif own_after is not None:
         notes.append(_LEGACY_DISCONNECT_AFTER_COMMAND)
     feedback = bed_type_has_position_feedback(
         view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
     )
     paired = paired or isinstance(children, list)
     disabled = new.get(CONF_DISABLE_ANGLE_SENSING)
-    if isinstance(disabled, bool) and not paired:
-        if disabled is not feedback:
-            # Equal to the route's own default: the route decides it now.
-            del new[CONF_DISABLE_ANGLE_SENSING]
-            notes.append(CONF_DISABLE_ANGLE_SENSING)
+    below_disabled = below.get(CONF_DISABLE_ANGLE_SENSING)
+    if (
+        isinstance(disabled, bool)
+        and not paired
+        and disabled is not feedback
+        # Dropping it must not uncover an opposite value in the layer below.
+        and below_disabled in (None, disabled)
+    ):
+        # Equal to the route's own default: the route decides it now.
+        del new[CONF_DISABLE_ANGLE_SENSING]
+        notes.append(CONF_DISABLE_ANGLE_SENSING)
+    raw_origin = settings.get(KEY_ORIGIN_DATA)
     for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
         if isinstance(nested := new.get(key), Mapping):
-            origin = new.get(KEY_ORIGIN_DATA)
+            origin = raw_origin if isinstance(raw_origin, Mapping) else nested
             new[key] = _v5_6_settings(
                 nested,
-                _route_of(origin if isinstance(origin, Mapping) else nested),
+                {**_route_of(origin), **_route_of(nested)},
                 f"{location}.{key}",
                 changed,
+                underneath=origin if key == KEY_ORIGIN_OPTIONS else None,
             )
     if notes:
         changed.setdefault(location, []).extend(notes)
@@ -706,8 +722,15 @@ def migrate_v5_6_entry(
     if side_overrides:
         changed["options"] = [f"{key} (moved to each side)" for key in sorted(side_overrides)]
     route = _route_of(data)
-    new_data = _v5_6_settings(data, route, "data", changed, side_overrides=side_overrides)
-    legacy_after = data.get(_LEGACY_DISCONNECT_AFTER_COMMAND)
+    new_data = _v5_6_settings(
+        data,
+        route,
+        "data",
+        changed,
+        side_overrides=side_overrides,
+        # A side reads the pair's route options over its own.
+        side_route=_route_of(options) if paired else None,
+    )
     new_options = _v5_6_settings(
         options,
         {**route, **_route_of(options)},
@@ -715,7 +738,7 @@ def migrate_v5_6_entry(
         changed,
         # A pair's options reach its sides, which keep their angle choices.
         paired=paired,
-        inherited_after=legacy_after if isinstance(legacy_after, bool) else None,
+        underneath=data,
     )
     if changed:
         _with_migration_record(

@@ -166,18 +166,15 @@ the profile or protocol variant** when several profiles fit. Weak or unknown ide
 stay quiet. A shared Bluetooth service or a new app alone does not prove that
 another profile works better.
 
-**Review profile settings** opens Configure. A clear suggestion shows its settings;
-an ambiguous match keeps your current selection so you can check your app, physical
-remote and product. Nothing changes until you submit settings. Closing them keeps
-your profile. Saving this review confirms your selection.
-
-When every suggested profile belongs to the bed's family with a
-[guided change](#changing-the-bed-type-app-or-layout-of-an-existing-bed), **Review
-profile settings** opens that guided change instead, because Configure refuses
-an app or route change within the family. Applying a change there confirms the
-review, and the question's keep answer there keeps the current profile. Closing it
-leaves the notice open. A suggestion of another bed type still opens Configure,
-which can make that change.
+**Review profile settings** opens **Reconfigure**, with a single suggested app
+or bed type preselected; an ambiguous match starts from your current selection so
+you can check your app, physical remote and product. For a bed in a family with a
+[guided change](#changing-the-bed-type-app-or-layout-of-an-existing-bed), the
+family's question opens, and its **Another app or remote** answer reaches every
+other bed type. Applying a change there confirms the review; choosing the current
+setup again, or the question's keep answer, keeps the current profile. Closing it
+leaves the notice open. A review about a Richmat remote setting alone opens
+Configure, where saving the settings confirms it.
 
 **Keep current profile** (or Ignore) dismisses the assessment across restarts and
 updates. Only a materially different profile or candidate set may ask again.
