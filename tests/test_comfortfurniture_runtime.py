@@ -61,7 +61,7 @@ async def test_new_install_route_has_fixed_capabilities(hass, route):
         APP,
         4,
     )
-    assert data[CONF_HAS_MASSAGE] and data[CONF_DISABLE_ANGLE_SENSING]
+    assert data[CONF_HAS_MASSAGE] and CONF_DISABLE_ANGLE_SENSING not in data
     assert data[CONF_MOTOR_PULSE_DELAY_MS] == 100
     assert hidden_generic_fields(BED_TYPE_KEESON, APP) == {
         CONF_MOTOR_COUNT,
@@ -169,7 +169,7 @@ async def test_card_lease_stop_invalidates_generation(runtime):
         await coord.async_stop_command()
         await first
         count = len(_written(client))
-        with pytest.raises(ServiceValidationError, match="has ended"):
+        with pytest.raises(ServiceValidationError, match="already stopped"):
             await hass.services.async_call(DOMAIN, "timed_move", call, blocking=True)
         assert len(_written(client)) == count
     frames = _written(client)
