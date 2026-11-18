@@ -181,3 +181,24 @@ test("the dialog editor stores tap to move and saved positions for the dialog on
   // The compact card keeps its own settings.
   expect(emitted.every((config) => config.tap_to_move === true && config.layout === "compact")).toBe(true);
 });
+
+test("a bed-specific motor is headed by its cover's name, not its key", () => {
+  const hass: HomeAssistant = placed({
+    states: {}, devices: { bed: { id: "bed", name: "Bed" } },
+    entities: {
+      "cover.bed_lift": {
+        entity_id: "cover.bed_lift", device_id: "bed", platform: "adjustable_bed",
+        translation_key: "adjustamattress_lift", name: "Lift",
+      },
+    },
+    locale: { language: "en" }, language: "en", themes: {},
+    formatEntityName: (stateObj) => hass.entities[stateObj.entity_id]?.name ?? "",
+    callService: async () => undefined,
+  });
+  hass.states["cover.bed_lift"] = {
+    entity_id: "cover.bed_lift", state: "open", last_changed: "", last_updated: "", attributes: {},
+  };
+  const markup = render(hass, {});
+  expect(markup).toContain("<span>Lift</span>");
+  expect(markup).not.toContain("Adjustamattress Lift");
+});
