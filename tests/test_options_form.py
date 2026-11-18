@@ -228,3 +228,16 @@ async def test_configure_never_changes_the_route(
 
     assert saved["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_PROTOCOL_VARIANT] == "remedy_iii"
+
+
+async def test_configure_keeps_an_automatic_route_unsaved(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    """Saving Configure must not pin a route the advertisement chooses at runtime."""
+    del enable_custom_integrations
+    entry, form = await _settings_form(hass, {CONF_BED_TYPE: "smart_sleep"})
+
+    saved = await hass.config_entries.options.async_configure(form["flow_id"], user_input={})
+
+    assert saved["type"] == FlowResultType.CREATE_ENTRY
+    assert CONF_PROTOCOL_VARIANT not in entry.data

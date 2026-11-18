@@ -7263,6 +7263,14 @@ class AdjustableBedOptionsFlow(
             menu_options.append("remove_bond")
         return self.async_show_menu(step_id="init", menu_options=menu_options)
 
+    def _keep_saved_route(self, new_data: dict[str, Any]) -> None:
+        """Keep the saved route, even an unsaved automatic one: Reconfigure changes it."""
+        saved = self.config_entry.data
+        if CONF_PROTOCOL_VARIANT in saved:
+            new_data[CONF_PROTOCOL_VARIANT] = saved[CONF_PROTOCOL_VARIANT]
+        else:
+            new_data.pop(CONF_PROTOCOL_VARIANT, None)
+
     def _async_flow_manager(self) -> Any:
         """Options flows are driven by their own manager, not the config one."""
         return self.hass.config_entries.options
@@ -7817,7 +7825,12 @@ class AdjustableBedOptionsFlow(
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
-                    errors={CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"},
+                    # The route is not on this form: it changes in Reconfigure.
+                    errors={
+                        CONF_RMCONTROL_PRODUCT
+                        if vol.Optional(CONF_RMCONTROL_PRODUCT) in schema_dict
+                        else "base": "rmcontrol_needs_reconfigure"
+                    },
                 )
             # Switching a bed to an app that does not list its model would only
             # trade its controls for the fallback ones. Keeping the current app
@@ -8059,6 +8072,7 @@ class AdjustableBedOptionsFlow(
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
                 if self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+                    self._keep_saved_route(new_data)
                     self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
                     for key in stale_profile_keys:
                         new_data.pop(key, None)
@@ -8095,6 +8109,7 @@ class AdjustableBedOptionsFlow(
                 store_read_positions(new_data, read if isinstance(read, bool) else None)
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
+            self._keep_saved_route(new_data)
             self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
             for key in stale_profile_keys:
                 new_data.pop(key, None)

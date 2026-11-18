@@ -747,6 +747,8 @@ def test_schema_5_6_a_shared_timeout_wins_over_a_sides_zero() -> None:
     data = {
         CONF_PAIR_ID: "pair_65",
         CONF_BED_TYPE: BED_TYPE_KEESON,
+        # The parent's own 0 becomes Always, which the side never ran with.
+        "idle_disconnect_seconds": 0,
         CONF_PAIR_CHILDREN: [
             {
                 CONF_SIDE: "left",
@@ -761,10 +763,10 @@ def test_schema_5_6_a_shared_timeout_wins_over_a_sides_zero() -> None:
         data, {"idle_disconnect_seconds": 65}, from_version=5, from_minor_version=5
     )
 
-    (left,) = migrated[CONF_PAIR_CHILDREN]
-    assert left.get(CONF_CONNECTION_MODE) != CONNECTION_MODE_ALWAYS
-    assert left["idle_disconnect_seconds"] == 65
     assert options == {}
+    effective = effective_child_data(migrated, "left", options)
+    assert effective[CONF_CONNECTION_MODE] == CONNECTION_MODE_IDLE
+    assert effective["idle_disconnect_seconds"] == 65
 
 
 def test_schema_5_6_applies_pair_options_to_each_side_first() -> None:

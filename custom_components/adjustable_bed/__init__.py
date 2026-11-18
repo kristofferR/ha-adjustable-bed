@@ -575,6 +575,7 @@ def _v5_6_settings(
     paired: bool = False,
     inherited_after: bool | None = None,
     side_overrides: Mapping[str, Any] | None = None,
+    explicit_mode: bool = False,
 ) -> dict[str, Any]:
     """Return one stored settings mapping in the 5.6 shape.
 
@@ -598,6 +599,7 @@ def _v5_6_settings(
                 f"{location}.{child.get(CONF_SIDE, index)}",
                 changed,
                 paired=True,
+                explicit_mode=True,
             )
             if isinstance(child, Mapping)
             else child
@@ -626,6 +628,10 @@ def _v5_6_settings(
         mode = CONNECTION_MODE_RELEASE
     elif after is False:
         mode = CONNECTION_MODE_IDLE
+    elif explicit_mode and CONF_IDLE_DISCONNECT_SECONDS in new:
+        # A side would otherwise inherit the parent's new mode, which its own
+        # settings never followed: save the mode it ran with.
+        mode = default_connection_mode(view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT))
     if mode is not None:
         new[CONF_CONNECTION_MODE] = mode
         notes.append(f"{CONF_CONNECTION_MODE}={mode}")
