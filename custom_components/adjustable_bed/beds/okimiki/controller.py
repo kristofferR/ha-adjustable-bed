@@ -248,6 +248,8 @@ class OkimikiController(GoodVibeController):
         link: Link | None = None,
         release_gesture: Gesture | None = None,
         on_submit: Callable[[], None] | None = None,
+        deadline: float | None = None,
+        dispatch: Callable[[], None] | None = None,
     ) -> bool:
         scope = _SCOPE.get()
         if scope is not None and scope[0] is self:
@@ -268,7 +270,13 @@ class OkimikiController(GoodVibeController):
         # Drain an in-flight BLE write before releasing the same captured link.
         task = asyncio.create_task(
             super()._send(
-                data, cleanup=cleanup, link=link, release_gesture=release_gesture, on_submit=submit
+                data,
+                cleanup=cleanup,
+                link=link,
+                release_gesture=release_gesture,
+                on_submit=submit,
+                deadline=deadline,
+                dispatch=dispatch,
             )
         )
         cancelled = False
