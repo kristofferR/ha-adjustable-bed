@@ -136,27 +136,27 @@ async def test_real_pair_captures_both_physical_stop_epochs_before_import(hass, 
         await pair.async_shutdown()
 
 
-async def test_app_mode_action_sets_local_pickers_without_writing(hass, targets) -> None:
+async def test_app_mode_action_sets_local_pickers_without_the_scheduler(hass, targets) -> None:
     coordinators, controllers = targets
     for coordinator, controller in zip(coordinators, controllers, strict=True):
-        async def execute(command, _controller=controller, **_kwargs):
-            await command(_controller)
-        coordinator.async_execute_controller_command.side_effect = execute
+        coordinator.capability_controller = controller
     await hass.services.async_call(DOMAIN, actions.SERVICE, {
         "device_id": ["left", "right"], "action": "app_mode", "transmit_mode": "2",
     }, blocking=True)
     for coordinator, controller in zip(coordinators, controllers, strict=True):
         assert controller._transmit_mode == 2 and not frames(controller)
-        assert coordinator.async_execute_controller_command.call_args.kwargs["cancel_running"] is False
+        coordinator.async_execute_controller_command.assert_not_awaited()
     with pytest.raises(ServiceValidationError, match="app_mode"):
         await hass.services.async_call(DOMAIN, actions.SERVICE, {
             "device_id": ["left"], "action": "press", "opcode": 1, "transmit_mode": "1",
         }, blocking=True)
     # cfrm declares no motor groups, so a group is refused before any target changes.
-    with pytest.raises(ServiceValidationError):
+    with pytest.raises(ServiceValidationError, match="motor group"):
         await hass.services.async_call(DOMAIN, actions.SERVICE, {
-            "device_id": ["left", "right"], "action": "app_mode", "motor_group": "group_sync",
+            "device_id": ["left", "right"], "action": "app_mode", "transmit_mode": "1",
+            "motor_group": "group_sync",
         }, blocking=True)
+    assert all(controller._transmit_mode == 2 for controller in controllers)
 
 
 async def test_real_button_entity_dispatches_through_runtime(hass, sleeps) -> None:

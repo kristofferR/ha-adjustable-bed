@@ -15,8 +15,10 @@ from ...services import (
     SIDE_FIELD,
     _call_targets,
     _capture_command_admission,
+    _command_targets,
     _preflight_and_execute,
 )
+from ..base import controller_as
 from . import protocol
 from .services import ALARM_SCHEMA
 
@@ -78,11 +80,27 @@ async def handle_control(call: ServiceCall) -> None:
     await async_import_modules(call.hass, "beds.richmat_mh.app_controller")
     from .app_controller import RichmatMHAppController
 
+    if action == "app_mode":
+        # Local pickers: set them on each side's live or offline controller without
+        # entering the BLE scheduler, so a write already waiting reads the new mode.
+        controllers: list[RichmatMHAppController] = []
+        for parent, side in targets:
+            for target in _command_targets(parent, side):
+                controller = controller_as(target.capability_controller, RichmatMHAppController)
+                if controller is None:
+                    raise ServiceValidationError(f"Device '{target.name}' has no Nisco or MLILY Supreme app profile")
+                if motor_group is not None and motor_group not in controller.motor_groups:
+                    raise ServiceValidationError(f"Device '{target.name}' declares no {group} motor group")
+                controllers.append(controller)
+        for controller in controllers:
+            if transmit_mode is not None:
+                controller.set_transmit_mode(transmit_mode)
+            if motor_group is not None:
+                controller.set_group_type(motor_group)
+        return
+
     def validate(controller: RichmatMHAppController) -> None:
-        if action == "app_mode":
-            if motor_group is not None and motor_group not in controller.motor_groups:
-                raise ValueError("Choose a motor group this model declares")
-        elif action != "query":
+        if action != "query":
             assert opcode is not None
             if action == "voice_queue":
                 controller.validate_voice(opcode)
@@ -90,12 +108,7 @@ async def handle_control(call: ServiceCall) -> None:
                 controller.validate_control(opcode, remote_long=action == "remote_long")
 
     async def execute(controller: RichmatMHAppController) -> None:
-        if action == "app_mode":
-            if transmit_mode is not None:
-                controller.set_transmit_mode(transmit_mode)
-            if motor_group is not None:
-                controller.set_group_type(motor_group)
-        elif action == "query":
+        if action == "query":
             assert query is not None
             controller._classifier.rx_type = "INIT"
             await controller.write_command(QUERIES[query])
@@ -110,7 +123,7 @@ async def handle_control(call: ServiceCall) -> None:
 
     await _preflight_and_execute(
         targets, RichmatMHAppController, "Nisco / MLILY Supreme BED controls", execute,
-        validate=validate, cancel_running=action not in ("query", "app_mode"), resource=None,
+        validate=validate, cancel_running=action != "query", resource=None,
         admit=True, admissions=admissions,
     )
 
