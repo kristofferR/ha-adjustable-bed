@@ -1157,6 +1157,7 @@ class GoodVibeController(BedController):
         finite_bed_hold = (
             bed is not None
             and gesture == "sustainPress"
+            and duration >= bed.tick_ms
             and (context is None or context.lease is None)
         )
         deadline = monotonic() + duration / 1000 if bed is not None else None

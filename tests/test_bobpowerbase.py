@@ -213,6 +213,42 @@ async def test_finite_hold_elapsed_deadline_does_not_backfill_latency(hass, fake
     assert "goodvibe_reset" not in c.controller.execution.hold_controls
 
 
+@pytest.mark.parametrize("duration", (99, 100))
+async def test_finite_hold_first_tick_survives_clock_and_timer_overhead(
+    hass, fake_time, monkeypatch, duration
+):
+    c = runtime(hass)
+
+    def clock():
+        fake_time[0] += 0.0001
+        return fake_time[0]
+
+    async def delay(_milliseconds):
+        fake_time[0] += _milliseconds / 1000 + 0.001
+        return True
+
+    monkeypatch.setattr(bed, "monotonic", clock)
+    monkeypatch.setattr(c.controller, "_delay", delay)
+    await c.controller.hold_control("goodvibe_head_up", duration)
+    expected = [0x24, 0x6E] if duration == 100 else [0x6E]
+    assert [call.args[1][3] for call in c.client.write_gatt_char.await_args_list] == expected
+
+
+@pytest.mark.parametrize("late_at", ("timer", "wire"))
+async def test_finite_hold_expired_first_tick_is_not_backfilled(
+    hass, fake_time, monkeypatch, late_at
+):
+    c = runtime(hass)
+
+    async def late(*_args):
+        fake_time[0] += 0.25
+        return True
+
+    monkeypatch.setattr(c.controller, "_delay" if late_at == "timer" else "_pace", late)
+    await c.controller.hold_control("goodvibe_head_up", 100)
+    assert [call.args[1][3] for call in c.client.write_gatt_char.await_args_list] == [0x6E]
+
+
 async def test_preset_recall_and_program_have_no_release_or_duplicate_recall(hass, fake_time):
     c = runtime(hass)
     await c.controller.press("memory_1", 1000)

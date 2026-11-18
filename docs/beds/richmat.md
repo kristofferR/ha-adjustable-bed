@@ -6316,8 +6316,12 @@ The normal light menu appears only after the connected bed reports it.
 #### Timing
 
 The generated table states the app intervals. Movement first refreshes after
-one tick. Finite HA holds end by elapsed deadline, with no queued catch-up;
-renewable controls use HA's admitted hold lease. Release drains the submitted
+one tick. Finite HA movement budgets start after that nominal startup tick,
+with a fixed admission end anchored before waiting. New movement is admitted
+strictly before that end, without queued catch-up or per-tick grace. Renewable
+controls retain HA's absolute admitted hold lease. Cleanup begins at the finite
+end (or earlier on STOP/cancellation), retains the source FIFO spacing and can
+submit STOP after that end. The public action drains the submitted
 write and its captured-link STOP even if the caller is cancelled. The app's
 FIFO can leave older movement ahead of STOP; HA does not retain that backlog.
 One-shot reset/massage/light actions have no additional release. Presets recall
