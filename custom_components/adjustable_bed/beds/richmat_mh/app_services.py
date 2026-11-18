@@ -6,7 +6,6 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
-from homeassistant.util import dt as dt_util
 
 from ...const import DOMAIN
 from ...import_executor import async_import_modules
@@ -20,10 +19,8 @@ from ...services import (
 )
 from ..base import controller_as
 from . import protocol
-from .services import ALARM_SCHEMA
 
 SERVICE = "richmat_mh_control"
-MODE_ALARM_SERVICE = "richmat_mh_mode_alarm"
 SLEEP_MODE_SERVICE = "richmat_mh_sleep_mode"
 QUERIES = {
     "version": protocol.TX_VERSION,
@@ -128,36 +125,6 @@ async def handle_control(call: ServiceCall) -> None:
     )
 
 
-async def handle_mode_alarm(call: ServiceCall) -> None:
-    targets = _call_targets(call)
-    admissions = [_capture_command_admission(parent, side, ("configuration",)) for parent, side in targets]
-    enabled: bool = call.data["enabled"]
-    position: str | None = call.data.get("position")
-    massage: list[str] = call.data["massage"]
-    when = call.data.get("time")
-    if enabled and when is None:
-        raise ServiceValidationError("Setting an alarm requires a time")
-    if when is not None and (when.second or when.microsecond):
-        raise ServiceValidationError("This alarm uses minute precision")
-    if call.data.get("slot") is not None:
-        raise ServiceValidationError("The ModeFrag caller has no alarm-slot field")
-    await async_import_modules(call.hass, "beds.richmat_mh.app_controller")
-    from .app_controller import RichmatMHAppController
-
-    async def execute(controller: RichmatMHAppController) -> None:
-        minutes = 0
-        if enabled and when is not None:
-            now = dt_util.now()
-            minutes = protocol.alarm_countdown_minutes(when.hour * 60 + when.minute, now.hour * 60 + now.minute)
-        await controller.mode_alarm(enabled, minutes, position, massage)
-
-    await _preflight_and_execute(
-        targets, RichmatMHAppController, "Nisco ModeFrag alarm", execute,
-        validate=lambda ctrl: ctrl.validate_mode_alarm(enabled, position, massage),
-        admit=True, admissions=admissions,
-    )
-
-
 async def handle_sleep_mode(call: ServiceCall) -> None:
     targets = _call_targets(call)
     admissions = [_capture_command_admission(parent, side, ("configuration",)) for parent, side in targets]
@@ -175,5 +142,4 @@ async def handle_sleep_mode(call: ServiceCall) -> None:
 
 def register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, SERVICE, handle_control, schema=SCHEMA)
-    hass.services.async_register(DOMAIN, MODE_ALARM_SERVICE, handle_mode_alarm, schema=ALARM_SCHEMA)
     hass.services.async_register(DOMAIN, SLEEP_MODE_SERVICE, handle_sleep_mode, schema=SLEEP_SCHEMA)

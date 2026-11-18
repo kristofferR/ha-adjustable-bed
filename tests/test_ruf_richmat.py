@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -467,27 +467,45 @@ def test_calendar_capability_and_position_gates_are_model_specific():
     assert not c.supports_ruf_richmat_alarms
 
 
-async def test_alarm_service_schema_and_validation(hass, monkeypatch):
-    from homeassistant.core import ServiceCall
-
-    from custom_components.adjustable_bed.beds.ruf_richmat import services as service
+async def test_set_alarm_writes_the_mattress_alarm(hass):
+    from tests.alarm_helpers import call_set_alarm
 
     c = make("wsilver2", "bfrm_mattress")
     c._normal_ready = True
-
-    async def execute(targets, interface, label, command, *, supported, validate, admit, admissions):
-        assert isinstance(c, interface) and supported(c)
-        assert admit is True and admissions == []
-        validate(c)
-        await command(c)
-
-    monkeypatch.setattr(service, "_call_targets", lambda _call: [])
-    monkeypatch.setattr(service, "_preflight_and_execute", execute)
-    data = service.SCHEMA(
-        {"device_id": ["bed"], "family": "mattress", "time": "07:30:00", "mattress_side": "right"}
+    await call_set_alarm(
+        hass,
+        c,
+        {"enabled": True, "time": "07:30:00", "mattress_side": "right"},
     )
-    await service.handle_alarm(ServiceCall(hass, "adjustable_bed", service.SERVICE, data))
     assert frames(c)[0].startswith("5e020b0101071e")
+
+
+async def test_set_alarm_writes_a_named_calendar_alarm(hass):
+    from tests.alarm_helpers import call_set_alarm
+
+    model = next(
+        m
+        for m, p in profiles("wsilver2").items()
+        if p["fields"].get("hasNewAlarm") and p["fields"].get("alarmList")
+    )
+    c = make("wsilver2", model)
+    c._dev = {}
+    capability = c.alarm_capability
+    assert capability is not None and capability.slots == 7 and capability.wake_actions
+    c.ruf_richmat_alarm = AsyncMock()
+    await call_set_alarm(
+        hass,
+        c,
+        {
+            "enabled": True,
+            "time": "07:30:00",
+            "slot": 2,
+            "weekdays": ["monday"],
+            "wake_action": capability.wake_actions[0],
+        },
+    )
+    request = c.ruf_richmat_alarm.await_args.args[0]
+    assert (request.family, request.slot, request.weekdays) == ("calendar", 2, (0,))
 
 
 @pytest.mark.parametrize("app", MODEL_IDS)
@@ -577,3 +595,79 @@ async def test_factory_preloads_only_the_selected_catalog_in_executor(monkeypatc
     result = await create_controller(c, "richmat_americanstar", "model_2i_mattress", None)
     assert isinstance(result, RufRichmatController)
     assert order[0:2] == [("executor", "americanstar"), ("read", "americanstar")]
+
+
+async def test_set_alarm_mattress_rejects_a_wake_action(hass):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from tests.alarm_helpers import call_set_alarm
+
+    c = make("wsilver2", "bfrm_mattress")
+    c._normal_ready = True
+    with pytest.raises(ServiceValidationError, match="only vibrates|wake_action"):
+        await call_set_alarm(
+            hass,
+            c,
+            {"enabled": True, "time": "07:30:00", "mattress_side": "right", "wake_action": "tv"},
+        )
+    assert not frames(c)
+
+
+async def test_set_alarm_off_keeps_the_reported_calendar_slot(hass):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed.beds.ruf_richmat.protocol import alarm_frame
+    from custom_components.adjustable_bed.codec import richmat as codec
+    from tests.alarm_helpers import call_set_alarm
+
+    model = next(
+        m
+        for m, p in profiles("wsilver2").items()
+        if p["fields"].get("hasNewAlarm") and p["fields"].get("alarmList")
+    )
+    c = make("wsilver2", model)
+    c._dev = {}
+    query = codec.record_20_len(5, 1, 0, (0,))
+    record = {"bed": 0, "hour": 6, "minute": 45, "mode": 0x45, "week": 0b0100_0001}
+    answers = True
+    writes: list[bytes] = []
+
+    async def write(frame, *args, **kwargs):
+        writes.append(bytes(frame))
+        if frame == query and answers:
+            c._calendar_alarms[3] = dict(record)
+
+    c.write_command = AsyncMock(side_effect=write)
+    sleep = AsyncMock()
+    with patch("custom_components.adjustable_bed.beds.ruf_richmat.controller.asyncio.sleep", sleep):
+        await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+        assert writes[0] == query
+        expected = AlarmRequest(
+            "calendar", False, hour=6, minute=45, slot=3, mode=0x45, weekdays=(1,)
+        )
+        assert alarm_frame(expected, datetime.now()) in writes
+        # A bed that never answers is refused before the slot is rewritten.
+        c._calendar_alarms.clear()
+        writes.clear()
+        answers = False
+        with pytest.raises(ServiceValidationError, match="Refresh"):
+            await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+        assert writes == [query]
+
+
+async def test_set_alarm_calendar_needs_an_explicit_wake_action(hass):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from tests.alarm_helpers import call_set_alarm
+
+    model = next(
+        m
+        for m, p in profiles("wsilver2").items()
+        if p["fields"].get("hasNewAlarm") and p["fields"].get("alarmList")
+    )
+    c = make("wsilver2", model)
+    c._dev = {}
+    c.ruf_richmat_alarm = AsyncMock()
+    with pytest.raises(ServiceValidationError, match="Choose a wake action"):
+        await call_set_alarm(hass, c, {"enabled": True, "time": "07:00:00", "slot": 1})
+    c.ruf_richmat_alarm.assert_not_awaited()

@@ -307,16 +307,6 @@ async def test_stale_notification_closure_cannot_publish_after_stop(sleeps) -> N
     assert controller._coordinator.controller_state == before
 
 
-async def test_nisco_mode_alarm_has_its_separate_150ms_caller(sleeps) -> None:
-    controller = make("nisco")
-    controller._dev["alarm"] = True
-    await controller.mode_alarm(False, 0, None, [])
-    assert frames(controller) == [frame.hex() for frame in protocol.TX_ALARM_CANCEL]
-    assert 0.15 in sleeps and 0.3 not in sleeps
-    with pytest.raises(ValueError, match="only for Nisco"):
-        await make("mlily_supreme").mode_alarm(False, 0, None, [])
-
-
 async def test_native_memory_save_uses_attached_fixed_remote_long_caller(sleeps) -> None:
     controller = make("mlily_supreme", "aerm")
     controller._wait_cancel = AsyncMock()
@@ -375,7 +365,9 @@ def test_aliases_and_entity_metadata_are_owned_by_each_catalog() -> None:
 
 @pytest.mark.parametrize("app", ("nisco", "mlily_supreme"))
 def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
-    raw = re.compile(r"\b(Inc\d?|Dec|\d*Min|Zg2|Ubl|Flat2|Xiaofeiyan|M\d|Zero gravity)\b")
+    from tests.test_entity_names import problems
+
+    raw = re.compile(r"\b(Inc\d?|Dec|\d*Min|Zg2|Ubl|Flat2)\b")
     for model in models(app):
         for advanced in (False, True):
             controller = make(app, model)
@@ -384,9 +376,9 @@ def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
             names = [spec.name for spec in controller.controller_button_specs]
             assert len(names) == len(set(names)), (model, names)
             for name in names:
-                assert not raw.search(name), (model, name)
+                assert not raw.search(name) and not problems(name), (model, name)
             if model == "bhrm" and not advanced:
-                assert {"Massage: Head Up 2", "Massage: Timer 10 Minutes"} <= set(names)
+                assert {"Massage head intensity up 2", "Massage 10 min"} <= set(names)
 
 
 def test_undecoded_mlily_alarm_reply_never_sets_the_alarm_sensor() -> None:

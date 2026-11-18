@@ -15,7 +15,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SIMMONS,
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -40,7 +40,7 @@ async def runtime(hass, request):
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Svane", CONF_BED_TYPE: BED_TYPE_SVANE,
         CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC if profile == "jmc" else SVANE_VARIANT_MULTI,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: "idle",
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
@@ -183,7 +183,7 @@ async def test_actual_mixed_pair_rejects_late_svane_feet_minimum_before_any_writ
     child, controller = runtime
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_NAME: "Simmons", CONF_BED_TYPE: BED_TYPE_SIMMONS,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: "idle",
     })
     entry.add_to_hass(hass)
     first = AdjustableBedCoordinator(hass, entry)

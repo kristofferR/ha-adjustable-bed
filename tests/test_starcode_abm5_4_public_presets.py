@@ -140,7 +140,7 @@ async def test_real_scheduler_white_queues_without_interrupting_user_stream(
             const.CONF_STARCODE_UI_SELECTOR: "BOX25",
             const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220",
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)

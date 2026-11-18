@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping
 from dataclasses import replace
 from typing import TYPE_CHECKING, Final, Literal
 
@@ -23,6 +23,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from ..richmat.labels import resource_label
 from ..ruf_richmat.controller import RufRichmatController, waist_init
 from . import protocol
 from .app_catalog import catalog, details
@@ -75,59 +76,6 @@ _NORMAL_SETTINGS: Final = {
     "pillow_duration": (7, {"off": 0, "20_minutes": 1, "40_minutes": 2, "60_minutes": 3}),
     "sleep_duration": (9, {"15_minutes": 1, "20_minutes": 2, "30_minutes": 3}),
 }
-
-
-# Catalog labels are the app's command names, frozen as evidence; this maps them to
-# button names matching the shared preset and massage buttons. Labels not listed are
-# already readable (Relax, Lock, Yoga, Head Up Only, ...).
-_BUTTON_NAMES: Final = {
-    "Zero gravity": "Zero Gravity",
-    "M1": "Memory 1", "M2": "Memory 2", "M3": "Memory 3", "M4": "Memory 4",
-    "Read": "Reading", "Movie Watching": "Movie", "Movie viewing": "Movie",
-    "Xiaofeiyan": "Yoga",
-    "Flat2": "Flat 2", "Zg2 Back": "Zero Gravity 2", "Zg2 Set": "Save Zero Gravity 2",
-    "Head Foot Both": "Head and Foot Up", "Head Foot On Off": "Head and Foot On/Off",
-    "Pillow": "Pillow Up",
-    "Pillow Lumbar Both Tilt Up": "Pillow and Lumbar Tilt Up",
-    "Pillow Lumbar Both Tilt Down": "Pillow and Lumbar Tilt Down",
-    "Ubl Off": "Under-Bed Light Off",
-    "Massage Off": "Massage: Off",
-    "All massage off": "Massage: All Off",
-    "Massage Head Foot Both Off": "Massage: All Off",
-    "Massage Head Foot Both On": "Massage: All On",
-    "Both massage off": "Massage: Both Off",
-    "Massage Off Reset": "Massage: Off and Flat",
-    "Massage Mode": "Massage: Mode",
-    "Massage Constant": "Massage: Constant",
-    "Massage Pulse": "Massage: Pulse",
-    "Massage Wave": "Massage: Wave",
-    "Massage Wave3": "Massage: Wave 3",
-    "Massage 10Min": "Massage: Timer 10 Minutes",
-    "Massage 20Min": "Massage: Timer 20 Minutes",
-    "Massage 30Min": "Massage: Timer 30 Minutes",
-    "Massage Head On Off": "Massage: Head Toggle",
-    "Massage Foot On Off": "Massage: Foot Toggle",
-    "Massage Head Intensity Inc": "Massage: Head Up",
-    "Massage Head Intensity Inc2": "Massage: Head Up 2",
-    "Massage Head Intensity Dec": "Massage: Head Down",
-    "Massage Foot Intensity Inc": "Massage: Foot Up",
-    "Massage Foot Intensity Inc2": "Massage: Foot Up 2",
-    "Massage Foot Intensity Dec": "Massage: Foot Down",
-    "Massage Head Foot Intensity Inc": "Massage: Intensity Up",
-    "Massage Head Foot Intensity Dec": "Massage: Intensity Down",
-    "Massage Head Foot Speed Inc": "Massage: Speed Up",
-    "Massage Head Foot Speed Dec": "Massage: Speed Down",
-    "Massage Intensity1": "Massage: Intensity Level 1",
-    "Massage Intensity2": "Massage: Intensity Level 2",
-    "Massage Intensity3": "Massage: Intensity Level 3",
-}
-
-
-def _button_name(label: str) -> str:
-    if label.startswith("Save "):
-        base = _BUTTON_NAMES.get(label[5:], label[5:])
-        return base.replace("Memory", "Save to Memory", 1) if base.startswith("Memory") else f"Save {base}"
-    return _BUTTON_NAMES.get(label, label)
 
 
 class RichmatMHAppClassifier(protocol.Classifier):
@@ -511,22 +459,6 @@ class RichmatMHAppController(RufRichmatController):
             finally:
                 await self._release()
 
-    def validate_mode_alarm(
-        self, enabled: bool, position: str | None, massage: Sequence[str],
-    ) -> None:
-        if self.app != "nisco":
-            raise ValueError("The 150 ms ModeFrag caller is established only for Nisco")
-        self._alarm_request(enabled=enabled, position=position, massage=massage, slot=None)
-
-    async def mode_alarm(
-        self, enabled: bool, minutes: int, position: str | None, massage: Sequence[str],
-    ) -> None:
-        self.validate_mode_alarm(enabled, position, massage)
-        action = self._alarm_request(enabled=enabled, position=position, massage=massage, slot=None)
-        self._classifier.rx_type = "ALARM"
-        frames = protocol.alarm_frames(minutes, action) if action is not None else protocol.TX_ALARM_CANCEL
-        await self._write_sequence(frames, 0.15)
-
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         # Only N establishes the 6e23 lock-state consumer. M still has its
@@ -549,10 +481,13 @@ class RichmatMHAppController(RufRichmatController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         specs = []
         for spec in super().controller_button_specs:
-            if spec.translation_placeholders and "action" in spec.translation_placeholders:
-                name = _button_name(spec.translation_placeholders["action"])
-                spec = replace(spec, name=name, translation_placeholders={"action": name})
             control = next((c for c in self._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
+            if control and spec.translation_placeholders and "action" in spec.translation_placeholders:
+                # These catalogs label controls with command names ("Massage Head
+                # Intensity Inc", "Zg2 Set"); the shared resource wording reads them.
+                words = control.label.lower().split() + (["set"] if control.kind == "save" else [])
+                name = resource_label("_".join(words))
+                spec = replace(spec, name=name, translation_placeholders={"action": name})
             if control and control.keep_ms:
                 spec = replace(spec, hold=ControllerHoldSpec(f"mh_{control.code:02x}"))
             if control and (control.kind == "save" or control.code == 0x62):

@@ -16,8 +16,8 @@ from custom_components.adjustable_bed.codec.okin_5a import command as _cmd
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CB35,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
@@ -404,7 +404,7 @@ async def test_stop_after_preset_disconnect_keeps_bounded_interrupt_window(
     """Default v4 disconnects must not forget a still-driving autonomous preset."""
     hass.config_entries.async_update_entry(
         mock_okin_cb35_config_entry,
-        data={**mock_okin_cb35_config_entry.data, CONF_DISCONNECT_AFTER_COMMAND: True},
+        data={**mock_okin_cb35_config_entry.data, CONF_CONNECTION_MODE: "release"},
     )
     coordinator = AdjustableBedCoordinator(hass, mock_okin_cb35_config_entry)
     controllers: list[OkinCB35Controller] = []

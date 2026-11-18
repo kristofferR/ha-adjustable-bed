@@ -20,11 +20,10 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 
 
 @pytest.mark.real_connect_delays
-@pytest.mark.parametrize("profile", list(const.CONNECTION_PROFILES))
 @pytest.mark.parametrize("bed_type", [const.BED_TYPE_STARCODE_ABM5_4, const.BED_TYPE_LINAK])
 @pytest.mark.parametrize("transport", ["BOX1220", "BOX3633", "BOX25", "BOX25_STAR"])
 async def test_connection_driver_receives_exact_app_deadline_without_changing_other_profiles(
-    hass, mock_coordinator_connected, mock_bleak_client, profile, bed_type, transport
+    hass, mock_coordinator_connected, mock_bleak_client, bed_type, transport
 ):
     if bed_type == const.BED_TYPE_STARCODE_ABM5_4:
         role = TRANSPORTS[transport]
@@ -43,7 +42,6 @@ async def test_connection_driver_receives_exact_app_deadline_without_changing_ot
             CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
             CONF_NAME: "Explicit app bed",
             const.CONF_BED_TYPE: bed_type,
-            const.CONF_CONNECTION_PROFILE: profile,
             const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
             const.CONF_STARCODE_UI_SELECTOR: "BOX15",
             const.CONF_STARCODE_TRANSPORT_SELECTOR: transport,
@@ -51,7 +49,7 @@ async def test_connection_driver_receives_exact_app_deadline_without_changing_ot
     )
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
-    settings = const.CONNECTION_PROFILES[profile]
+    settings = const.CONNECTION_SETTINGS
     with (
         patch(
             "custom_components.adjustable_bed.coordinator_connection.establish_connection",
@@ -105,7 +103,7 @@ async def test_first_setup_connection_uses_selected_app_timeout(hass, request_bo
     expected = (
         8.0
         if bed_type == const.BED_TYPE_STARCODE_ABM5_4
-        else const.CONNECTION_PROFILES[const.DEFAULT_CONNECTION_PROFILE].connection_timeout
+        else const.CONNECTION_SETTINGS.connection_timeout
     )
     assert connect.await_args.kwargs["timeout"] == expected
     assert connect.await_args.kwargs.get("pair", False) is request_bond

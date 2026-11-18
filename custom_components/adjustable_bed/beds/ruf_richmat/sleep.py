@@ -13,7 +13,7 @@ from ...card import CARD_UTILITY
 from ...controller_state import StateKey, StateUpdate
 from ..base import BedController
 from ..builder import BuildContext
-from ..entity_specs import ControllerSelectSpec, ControllerStateSensorSpec
+from ..entity_specs import ControllerSelectSpec, ControllerStateSensorSpec, ControllerSwitchSpec
 from .protocol import crc8, sleep_frame
 
 if TYPE_CHECKING:
@@ -103,15 +103,28 @@ class RufRichmatSleepController(BedController):
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        return tuple(
+        return (
             ControllerSelectSpec(
+                "ruf_richmat_sleep_mode",
+                "ruf_richmat_sleep_mode",
+                _setting_key("mode"),
+                ("single", "double"),
+                lambda ctrl, option: _select(ctrl, "mode", option),
+            ),
+        )
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        return tuple(
+            ControllerSwitchSpec(
                 f"ruf_richmat_sleep_{setting}",
                 f"ruf_richmat_sleep_{setting}",
+                lambda ctrl, on, s=setting: _select(ctrl, s, "on" if on else "off"),
                 _setting_key(setting),
-                ("single", "double") if setting == "mode" else ("off", "on"),
-                lambda ctrl, option, s=setting: _select(ctrl, s, option),
+                "on",
+                "mdi:account-voice",
             )
-            for setting in ("mode", "left_intervention", "right_intervention")
+            for setting in ("left_intervention", "right_intervention")
         )
 
     @property
@@ -133,6 +146,7 @@ class RufRichmatSleepController(BedController):
                         icon,
                         native_unit_of_measurement=unit,
                         card=CARD_UTILITY,
+                        entity_registry_enabled_default=True,
                     )
                 )
         return tuple(rows) + (
@@ -143,6 +157,7 @@ class RufRichmatSleepController(BedController):
                 "mdi:information-outline",
                 attribute_keys=(ATTRIBUTES,),
                 card=CARD_UTILITY,
+                entity_registry_enabled_default=False,
             ),
         )
 

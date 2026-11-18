@@ -5,9 +5,8 @@ Nordic, Prefix55, PrefixAA); its remote codes select features, not frames.
 ``BEDTECH`` and ``LEGGETT_WILINKE`` are their own bed types. These three take
 their frames from the pre-v5 controllers. The catalog apps keep their per-model
 tables as data and use this module for their transports: RMControl 21.3.7
-(row018), the five Richmat MH apps (row055), HJBed 2.1.2 (row121), the five
-classic apps (row066), Good Vibe Sleep 2.0.1 (row116) and the legacy L&P
-Adjustable Base 2.2.1 (row019).
+, the five Richmat MH apps, HJBed 2.1.2, the five classic apps, Good Vibe
+Sleep 2.0.1 and the legacy L&P Adjustable Base 2.2.1.
 """
 
 from __future__ import annotations
@@ -134,7 +133,7 @@ RICHMAT_CODES: Final[Mapping[Button, int]] = {
     "sync_off": 0xBD,
 }
 RICHMAT_MEMORY: Final = ((0x2E, 0x2B), (0x2F, 0x2C), (0x30, 0x2D), (0xB2, 0xB3), (0xF4, 0xF5))
-# GGRM's catalog ONCE actions (row055 binding rows), each released after 120 ms.
+# GGRM's catalog ONCE actions, each released after 120 ms.
 GGRM_ACTIONS: Final = {
     0x66: ("Save Zero G", "richmat_mh_save"),
     0x69: ("Save Anti-snore", "richmat_mh_save"),
@@ -184,7 +183,7 @@ BEDTECH: Final = RichmatProfile(
     quiet_release=False,
 )
 # BedTech 7.1.3 (14): only ordinary UI actions that pass their model guards.
-# E_UI/E_CATALOG in the accepted unit095 report; literals in bedtech_vectors.json.
+# E_UI/E_CATALOG in BedTech 7.1.3; literals in bedtech_vectors.json.
 _BEDTECH_MOTORS: Final[Mapping[Button, int]] = {
     "head_up": 0x24,
     "head_down": 0x25,
@@ -311,7 +310,7 @@ RICHMAT_APP: Final = RichmatProfile(
 # Its controller declares holds per product, on the sustained-press controls.
 GOODVIBE: Final = RichmatProfile(key="goodvibe", transports=("w1", "n1", "w5", "w4", "w3", "w2"))
 MLILY: Final = RichmatProfile(key="mlily", transports=("w1", "n1", "w5", "w4", "w3", "w2"))
-# The five classic resource-driven apps (row066) share one builder and service
+# The five classic resource-driven apps share one builder and service
 # order; each keeps its own catalog in ``beds/richmat_classic/data``. The first present
 # service wins, and Nordic UART takes the bare resource bytes.
 CLASSIC_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w1", "w2", "n1", "w4")
@@ -320,7 +319,7 @@ RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
     for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool", *RESOURCE_APPS)
 }
 
-# Eshine 1.0.1 (row106): the E6000's one fixed table, over the app's transports.
+# Eshine 1.0.1: the E6000's one fixed table, over the app's transports.
 ESHINE: Final = RichmatProfile(
     key="eshine",
     execution=STREAM_HOLD,
@@ -350,7 +349,7 @@ ESHINE: Final = RichmatProfile(
     },
 )
 
-# L&P Adjustable Base 2.2.1 (row019): its per-layout tokens are
+# L&P Adjustable Base 2.2.1: its per-layout tokens are
 # ``beds/leggett/lp_legacy_catalog.py``. It writes to the characteristics the user
 # configures, so it drives none of the codec's transports.
 LP_LEGACY: Final = RichmatProfile(key="leggett_lp_legacy", transports=())

@@ -17,6 +17,7 @@ from homeassistant.util import dt as dt_util
 from ...card import (
     CARD_LIGHT_LEVEL,
     CARD_LIGHT_MOOD,
+    CARD_PRESET_SAVE,
     CARD_UTILITY,
     CardPlacement,
     CardRole,
@@ -134,6 +135,21 @@ def _action(action: str) -> Callable[[BedController], Coroutine[object, object, 
         await _app(controller).app_action(action)
 
     return run
+
+
+# Reported values a typical user wants on a dashboard.
+_ENABLED_STATE: Final = frozenset(
+    {
+        "massage_head_level",
+        "massage_foot_level",
+        "massage_mode",
+        "sonic_head_level",
+        "sonic_foot_level",
+        "massage_active",
+        "sonic_active",
+        "kneading_on",
+    }
+)
 
 
 class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
@@ -358,7 +374,13 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 translation_key=f"starcode_{key}",
                 card=CardPlacement(CardSection.LIGHTING, CardRole.CYCLE)
                 if key == "light_cycle"
+                else CARD_PRESET_SAVE
+                if key.startswith("save_")
                 else CARD_UTILITY,
+                # Saving or resetting overwrites stored positions, so the card asks first.
+                requires_confirmation=key.startswith("save_") or key == "reset",
+                # The bed reports this state itself; the query is a fallback.
+                diagnostic=key == "query",
             )
             for key, label in (
                 ("save_tv", "Save Ascent"),
@@ -409,25 +431,20 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        # Raw timer counts, the brightness the number shows, the RGB flag (an
+        # attribute) and feedback from unlabelled motors stay in diagnostics.
         keys: tuple[str, ...] = (
             "firmware",
-            "massage_time_raw",
             "massage_head_level",
             "massage_foot_level",
             "massage_mode",
-            "light_brightness",
             "light_color_index",
-            "light_rgb_mode",
             "light_mode",
-            "sonic_time_raw",
             "sonic_frequency",
             "sonic_head_level",
             "sonic_foot_level",
             "sonic_mode",
             "sonic_massage_type",
-            "motor_part4",
-            "motor_part5",
-            "motor_part6",
         )
         if self.profile == "cb25":
             keys += ("alarm_0",)
@@ -443,7 +460,7 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 "eq_high_frequency",
             ) + tuple(f"eq_band_{i}" for i in range(8))
         if self.profile == "kneading":
-            keys += ("kneading_time_raw", "kneading_mode")
+            keys += ("kneading_mode",)
         return tuple(
             ControllerStateSensorSpec(
                 f"starcode_{key}",
@@ -453,26 +470,26 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 attribute_keys=(field_key("light_rgb"), field_key("light_rgb_mode"))
                 if key == "light_color_index"
                 else (field_key(key + "_details"),),
+                entity_registry_enabled_default=key in _ENABLED_STATE,
             )
             for key in keys
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        keys: tuple[str, ...] = (
-            "motor_stopped",
-            "massage_active",
-            "light_on",
-            "sonic_active",
-            "firmware_read_ok",
-        )
+        # The light entity shows the light; motor, firmware and demo flags are protocol state.
+        keys: tuple[str, ...] = ("massage_active", "sonic_active")
         if self.profile != "cb25":
             keys += ("usb_on",)
         if self.profile == "kneading":
-            keys += ("kneading_on", "kneading_demo")
+            keys += ("kneading_on",)
         return tuple(
             ControllerStateBinarySensorSpec(
-                f"starcode_{key}", f"starcode_{key}", spec_key(key), "mdi:information-outline"
+                f"starcode_{key}",
+                f"starcode_{key}",
+                spec_key(key),
+                "mdi:information-outline",
+                entity_registry_enabled_default=key in _ENABLED_STATE,
             )
             for key in keys
         )

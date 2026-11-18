@@ -23,7 +23,9 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...codec.okin_nframe import (
     REVISION_SELECTOR_UUID,
     SERVICE_UUID,
@@ -274,6 +276,23 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
     async def cancel_sleep_timer(self) -> None:
         await self._recall(self.profile.keys["sleep_cancel"])
 
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        # The bed counts down to the alarm; Home Assistant turns the time into minutes.
+        return AlarmCapability() if self.supports_alarm_timer else None
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled and alarm.minutes_until() > 1440:
+            raise AlarmError(
+                "alarm_too_far", "The bed's alarm can be at most 24 hours ahead; choose a nearer time"
+            )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled:
+            await self.set_alarm_timer(min(1440, alarm.minutes_until(dt_util.now())))
+        else:
+            await self.cancel_alarm_timer()
+
     async def set_alarm_timer(self, minutes: int) -> None:
         await self._recall(leggett_alarm(self.profile, minutes))
 
@@ -289,12 +308,14 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
                 translation_key="leggett_led_mask",
                 state_key=LED_MASK,
                 icon="mdi:led-outline",
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 key="leggett_status",
                 translation_key="leggett_status",
                 state_key=STATUS,
                 icon="mdi:information-outline",
+                entity_registry_enabled_default=False,
             ),
         )
 
@@ -307,12 +328,14 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
                 translation_key="leggett_alarm_indicator",
                 state_key=ALARM_INDICATOR,
                 icon="mdi:alarm",
+                entity_registry_enabled_default=True,
             ),
             ControllerStateBinarySensorSpec(
                 key="leggett_sleep_timer_indicator",
                 translation_key="leggett_sleep_timer_indicator",
                 state_key=SLEEP_TIMER_INDICATOR,
                 icon="mdi:timer-outline",
+                entity_registry_enabled_default=True,
             ),
         )
 

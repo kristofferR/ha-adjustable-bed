@@ -45,8 +45,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
     DOMAIN,
@@ -239,7 +239,7 @@ def _physical(
             "name": f"Bed {who}",
             CONF_BED_TYPE: bed_type,
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
             **entry_data,
         },
     )

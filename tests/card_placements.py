@@ -108,7 +108,11 @@ from custom_components.adjustable_bed.sensor import (
     AdjustableBedControllerStateSensor,
     AdjustableBedMassageSensor,
 )
-from custom_components.adjustable_bed.switch import SWITCH_DESCRIPTIONS, AdjustableBedSwitch
+from custom_components.adjustable_bed.switch import (
+    SWITCH_DESCRIPTIONS,
+    AdjustableBedControllerSwitch,
+    AdjustableBedSwitch,
+)
 from tests.entity_translation_reachability import (
     INTEGRATION,
     SPEC_PLATFORMS,
@@ -160,7 +164,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.ruf_richmat.controller import RufRichmatController
     from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
     from custom_components.adjustable_bed.beds.sleepys.app import (
-        _APP_STATE_FIELDS_BY_SELECTOR,
+        SLEEPYS_ELITE_SELECTORS,
         SleepysEliteAppController,
     )
     from custom_components.adjustable_bed.beds.smart_comfort.controller import (
@@ -198,7 +202,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             )
             yield variant(controller, profile=profile)
         elif isinstance(controller, SleepysEliteAppController):
-            for selector in _APP_STATE_FIELDS_BY_SELECTOR:
+            for selector in SLEEPYS_ELITE_SELECTORS:
                 yield variant(controller, selector=selector)
         elif isinstance(controller, StarcodeAbm5_4Controller):
             for selector in _POSITIVE_SELECTORS:
@@ -247,6 +251,10 @@ def controller_entities(controllers: Iterable[BedController]) -> list[Entity]:
         entities.extend(
             AdjustableBedControllerNumber(runtime, spec)
             for spec in controller.controller_number_specs
+        )
+        entities.extend(
+            AdjustableBedControllerSwitch(runtime, spec)
+            for spec in controller.controller_switch_specs
         )
         entities.extend(
             AdjustableBedControllerStateSensor(runtime, spec)

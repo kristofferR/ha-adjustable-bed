@@ -29,7 +29,7 @@
 | Motor Control | ✅ (head/back, foot/legs) | ✅ (head, foot; lumbar/body tilt by model) | ✅ (back, legs; lumbar on R510L) |
 | Position Feedback | ✅ (nine-byte notifications, 0–100%) | ✅ (characteristic / selected-side feedback, 0–100%) | ✅ (current authenticated peer) |
 | Memory Presets | ✅ (recall/save 1–4, model-gated) | ✅ (recall/save 1–4, model-gated) | ✅ (recall 1–4; save unavailable) |
-| Massage | ✅ (head/foot 0–10, wave compatibility control) | ✅ (model-gated head/foot 0–10, wave controls) | ✅ (head/foot 0–10, mode/rhythm, raw timer code) |
+| Massage | ✅ (head/foot 0–10, wave compatibility control) | ✅ (model-gated head/foot 0–10, wave controls) | ✅ (head/foot 0–10, mode/rhythm, raw timer byte) |
 | Wave Massage | ✅ (decimal-text builder; no inferred protocol range/cycle) | ✅ (raw characteristic / STK side-specific controls) | See mode/rhythm controls |
 | Under-bed Lights | ✅ (toggle, model-gated) | ✅ (brightness/RGB, model-gated) | ✅ (on/off, level, RGB feedback) |
 | Zero-G / Anti-Snore / Flat | ✅ (model-gated) | ✅ (model-specific preset route) | ✅ |
@@ -86,7 +86,7 @@ route stays one answer away. Either route then asks the model the app shows,
 with the app's explicit **Other** fallback as the default (nothing the bed
 advertises identifies the model, so there is no automatic choice), and, for
 a model whose app reads positions, whether to read them; a model without
-position reports never reads them. **Configure** lists both receivers under
+position reports never reads them. **Reconfigure** lists both receivers under
 their own names, so an entry on the wrong one can move without being removed;
 a working entry needs no change. Pairlink (R510L / Harmoniq) keeps its own row
 and setup.
@@ -482,7 +482,7 @@ alone does not run physical-disconnect cleanup.
 ## Home Assistant actions and automation
 
 `reverie_set_comfort` accepts typed position, massage, mode, and raw timer-byte
-fields. Pairlink exposes that value as a timer code and does not claim a
+fields. Pairlink's massage timer number sends that byte and does not claim a
 minute conversion. Every selected physical target validates the request before any target
 writes. Protocol 110 Composer requests require its five accepted values.
 Protocol 108 applies changed values after notification feedback. Pairlink
@@ -503,13 +503,9 @@ schedule `reverie_set_comfort`, `reverie_run_routine`, `goto_preset`, or
 `save_preset` at the desired time. Phone-local alarm storage, Android
 notifications, and its scheduler are outside this integration's scope.
 
-`reverie_test` sends the accepted Protocol 108 or 110 direct diagnostic and
-its matching stop writes. Pairlink diagnostics use the current central or local
-session and the same authentication, sign, target, and readiness checks as
-ordinary actions. The diagnostic retains the command connection until its timed
-cleanup completes, including with Disconnect After Command enabled. Pairlink's
-massage mode and rhythm selects display receiver feedback; the mode sensor
-retains its numeric value for automations. Pairlink RGB light color follows
+The app's factory bed test is not offered as an action. Pairlink's
+massage mode select and rhythm switch display receiver feedback; the
+controller state keeps the numeric mode for diagnostics. Pairlink RGB light color follows
 receiver feedback once all three channels are known for the current peer.
 A successful GATT write only shows transport acceptance, not physical bed behavior.
 
@@ -581,11 +577,10 @@ routine request. Feedback and unrelated backup disconnects preserve the routine.
 
 The implementation covers central and explicit local runtime consumers.
 Hardware delivery remains unverified and is deferred to real-user validation
-after beta/release. The row041 audit records the evidence, overlay identities,
-exact exclusions and acceptance history.
+after beta/release.
 The [SDK implementation notes](reverie-pairlink-sdk.md) describe private receive
 and metadata consumers. They do not create an arbitrary-packet action.
 
 ### Analysis provenance
 
-- Package `com.reverie.reverie`, version 3.3.3.8; row041 and comparison seal amendment 007.
+Based on Reverie 3.3.3.8 (`com.reverie.reverie`).

@@ -87,18 +87,6 @@ async def test_registered_query_uses_bed_probe_and_explicit_response(hass, targe
         assert controller.client.write_gatt_char.call_args.kwargs["response"] is True
 
 
-async def test_mode_alarm_rejects_sibling_before_any_target_is_programmed(hass, targets) -> None:
-    coordinators, controllers = targets
-    for controller in controllers:
-        controller._dev["alarm"] = True
-    with pytest.raises(ServiceValidationError, match="only for Nisco"):
-        await hass.services.async_call(DOMAIN, actions.MODE_ALARM_SERVICE, {
-            "device_id": ["left", "right"], "enabled": False,
-        }, blocking=True)
-    for coordinator in coordinators:
-        coordinator.async_execute_controller_command.assert_not_awaited()
-
-
 @pytest.mark.parametrize("stop_during_import", [False, True])
 async def test_real_pair_captures_both_physical_stop_epochs_before_import(hass, monkeypatch, stop_during_import) -> None:
     from custom_components.adjustable_bed import services

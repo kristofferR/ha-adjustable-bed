@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class IsleepController(KaidiAppController):
-    """ISleep commands and product gates from accepted row064."""
+    """ISleep commands and product gates from ISleep 1.6.3."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         super().__init__(coordinator, validate_isleep_profile(coordinator.entry.data))

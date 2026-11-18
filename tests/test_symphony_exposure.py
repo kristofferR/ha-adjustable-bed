@@ -7,6 +7,7 @@ import pytest
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -36,12 +37,12 @@ async def test_setup_routes_require_product_and_keep_fifth_axis(
         await finish_new_bed(
             flow,
             await flow.async_step_profile_questions(values),
-            {"name": "SS800", "disconnect_after_command": False},
+            {"name": "SS800", "connection_mode": "idle"},
         )
     saved = finish.call_args.args[0]
     assert saved["product_type"] == "13" and saved["protocol_variant"] == "9"
     assert saved["motor_count"] == 5 and saved["has_massage"]
-    assert saved["disable_angle_sensing"]
+    assert not reads_positions(saved)
 
 
 def test_findability_side_owned_fields_and_options_preservation():
@@ -89,9 +90,11 @@ async def test_factory_restore_keeps_explicit_choices_and_unknown_numeric_fallba
     controller = await create_controller(coordinator, const.BED_TYPE_SYMPHONY, "4", None)
     assert controller.app.product.value == 0 and controller.app.selector == 4
     coordinator.capability_controller = controller
-    local = controller.controller_select_specs[0].local_select_fn
+    local = next(
+        s for s in controller.controller_switch_specs if s.key == "symphony_child_mode"
+    ).local_set_fn
     assert local is not None
-    local("on")
+    local(True)
     replacement = await create_controller(coordinator, const.BED_TYPE_SYMPHONY, "4", None)
     assert replacement.local.child
     replacement.restore_persisted_app_state({"child": False})
@@ -101,7 +104,7 @@ async def test_factory_restore_keeps_explicit_choices_and_unknown_numeric_fallba
         coordinator, const.BED_TYPE_SYMPHONY, "9", None
     )
     with pytest.raises(ValueError, match="profile changed"):
-        local("on")
+        local(True)
 
 
 def test_real_cover_attributes_advertise_renewable_movement_without_preset_leases():
@@ -125,3 +128,19 @@ def test_real_cover_attributes_advertise_renewable_movement_without_preset_lease
         assert attrs["held_control_up"] == spec.hold.up_control
         assert attrs["held_stop_scope"] == "side"
     assert all("memory" not in key and "flat" not in key for key in controller.held_control_options)
+
+
+async def test_privacy_is_a_switch_where_the_app_can_set_it():
+    coordinator = _FactoryCoordinator()
+    coordinator.entry.data = {"product_type": "12", "protocol_variant": "9"}
+    controller = await create_controller(coordinator, const.BED_TYPE_SYMPHONY, "9", None)
+    privacy = next(s for s in controller.controller_switch_specs if s.key == "symphony_privacy")
+    assert not any(
+        s.key.startswith("symphony_privacy_") for s in controller.controller_button_specs
+    )
+    assert "symphony_privacy" not in {
+        s.key for s in controller.controller_state_binary_sensor_specs
+    }
+    with patch.object(controller, "set_privacy", new=AsyncMock()) as set_privacy:
+        await privacy.set_fn(controller, True)
+    set_privacy.assert_awaited_once_with(True)

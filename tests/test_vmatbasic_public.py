@@ -33,7 +33,7 @@ async def target(hass, profile="xtbox", address="AA:BB:CC:DD:EE:01"):
             const.CONF_BED_TYPE: const.BED_TYPE_VMATBASIC,
             const.CONF_VMATBASIC_PROFILE: profile,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)
@@ -278,17 +278,17 @@ async def test_real_public_profile_entities_and_parser_state_have_no_extra_capab
             if hasattr(entity, "_spec")
         }
         assert all(entity.native_value is None for entity in sensors.values())
-        assert binaries["vmatbasic_ed"].is_on is None
+        # The ED bit has no known meaning: diagnostics only, never an entity.
+        assert "vmatbasic_ed" not in binaries
         await coordinator.async_execute_controller_query(
             lambda ctrl: ctrl.async_refresh_diagnostics()
         )
         assert sensors["vmatbasic_temperature"].native_value == 25.0
         assert sensors["vmatbasic_floor_minutes_observed"].native_value == 1439
         assert sensors["vmatbasic_model"].native_value == " model \0"
-        assert binaries["vmatbasic_ed"].is_on is True
+        assert coordinator.controller_state["vmatbasic_ed"] is True
         coordinator.controller.invalidate_diagnostics()
         assert all(entity.native_value is None for entity in sensors.values())
-        assert binaries["vmatbasic_ed"].is_on is None
     finally:
         await close(coordinator)
 
@@ -306,7 +306,7 @@ async def actual_descriptor_pair(hass):
             const.CONF_VMATBASIC_FLOOR_LEVEL: level,
             const.CONF_VMATBASIC_FLOOR_MINUTES: minutes,
             const.CONF_SIDE: side,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         }
         for side, address, profile, level, minutes in [
             (const.SIDE_LEFT, "AA:BB:CC:DD:EE:01", "cbi", 201, 321),
