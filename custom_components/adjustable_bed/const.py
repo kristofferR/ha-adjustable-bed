@@ -226,7 +226,7 @@ MALOUF_APP_MODELS: Final = {
     "S755": "S755",
 }
 MALOUF_APP_TRANSPORTS: Final = {
-    "auto": "Automatic (one compatible GATT endpoint)",
+    "auto": AUTOMATIC_LABEL,
     "richmat_single": "Richmat Nordic UART",
     "richmat_framed": "Richmat framed",
     "okin_legacy": "OKIN legacy (FFE5)",
@@ -656,6 +656,8 @@ CONF_SLEEPTRACKER_PROCESSOR_TYPE: Final = "sleeptracker_processor_type"
 SLEEPTRACKER_CONFIG_KEYS: Final = frozenset(
     {
         CONF_PRODUCT_TYPE,
+        # No longer asked, but still owned so a profile change drops it.
+        CONF_SLEEPTRACKER_FOUNDATION,
         CONF_SLEEPTRACKER_UNIT,
         CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
         CONF_SLEEPTRACKER_RESTRICTED,

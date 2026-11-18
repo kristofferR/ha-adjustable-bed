@@ -249,7 +249,6 @@ from .const import (
     OKIMAT_SERVICE_UUID,
     OKIMAT_VARIANTS,
     OKIMAT_WRITE_CHAR_UUID,
-    OKIN_CST_VARIANT_MF900,
     OKIN_CST_VARIANTS,
     OKIN_FFE_NAME_PATTERNS,
     OKIN_GENERIC_NAME_PATTERNS,
@@ -641,8 +640,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion app",
     BED_TYPE_OKIN_64BIT: "Okin 64-Bit (older remotes)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
-    # Its automatic route is the MFirm 900 - O app; the other apps are app rows.
-    BED_TYPE_OKIN_CST: "MFirm 900 - O app (Okin CST)",
+    # Each app is its own row; this row asks which one.
+    BED_TYPE_OKIN_CST: "Okin CST (Rize, Jordan's and other apps)",
     BED_TYPE_OKIN_RF_ECO_BT: "OKIN RF ECO BT stair lift",
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "LP Control and LP Comfort Connect (Leggett & Platt Gen2)",
@@ -758,11 +757,11 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app, remote A",
     (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B): "Restonic BT app, remote B",
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): "Woosa Sleep app",
-    # Each Okin CST app is its own row; the automatic route is MFirm 900 - O.
+    # Each Okin CST app is its own row.
     **{
         (BED_TYPE_OKIN_CST, variant): label
         for variant, label in OKIN_CST_VARIANTS.items()
-        if variant not in {VARIANT_AUTO, OKIN_CST_VARIANT_MF900}
+        if variant != VARIANT_AUTO
     },
     (BED_TYPE_SVANE, SVANE_VARIANT_JMC): "Svane Remote app (JMC400)",
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): "Jensen Adjustable Sleep app (LinOn)",

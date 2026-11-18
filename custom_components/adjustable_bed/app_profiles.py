@@ -23,6 +23,7 @@ from functools import cache
 from typing import Final
 
 from .const import (
+    CONF_SLEEPTRACKER_FOUNDATION,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
@@ -215,7 +216,10 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})
     ),
     BED_TYPE_DOUBLESLEEP: SideProfile("OKIN SleepEase"),
-    BED_TYPE_SLEEPTRACKER: SideProfile("Sleeptracker Smart Bed"),
+    # Older setups saved the app's foundation size; it stays this profile's to drop.
+    BED_TYPE_SLEEPTRACKER: SideProfile(
+        "Sleeptracker Smart Bed", frozenset({CONF_SLEEPTRACKER_FOUNDATION})
+    ),
     BED_TYPE_SLEEPYS_ELITE_APP: SideProfile("Sleepy's Elite app", frozenset({CONF_HAS_MASSAGE})),
     BED_TYPE_MOTION_BED: SideProfile("Motion Bed"),
     # The command selector's change sets the app's UI selector.

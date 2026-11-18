@@ -487,6 +487,7 @@ _CHECK_FALLBACKS: Final[dict[str, str]] = {
     ),
     "check_connected": "✅ Connected",
     "check_connected_via": "✅ Connected through {source}",
+    "check_connected_via_proxy": "✅ Connected through Bluetooth proxy {source}",
     "check_no_commands": (
         "⚠️ The device connected but accepts no commands. It may not be your bed's "
         "controller. Check that you chose the right device."
@@ -497,7 +498,7 @@ _CHECK_FALLBACKS: Final[dict[str, str]] = {
     ),
     "check_transport_ok": "✅ The app's connection type is available",
     "check_device_info": "ℹ️ The bed reports: {details}",
-    "check_positions": "✅ The bed reports its position",
+    "check_positions": "✅ This bed type can report its position",
 }
 
 
@@ -1842,8 +1843,12 @@ def _profile_question_schema(
     context: FlowContext,
     *,
     advanced_section: bool = True,
+    errors: Mapping[str, str] | None = None,
 ) -> dict[vol.Marker, Any]:
-    """Render a profile's questions, its advanced ones in a collapsed section."""
+    """Render a profile's questions, its advanced ones in a collapsed section.
+
+    The section opens when an error names one of its questions, so it shows.
+    """
     schema: dict[vol.Marker, Any] = {}
     advanced: dict[vol.Marker, Any] = {}
     shown = {question.key for question in profile.questions}
@@ -1856,7 +1861,10 @@ def _profile_question_schema(
         marker, validator = _question_field(question, data, context, visible=visible)
         (advanced if question.advanced and advanced_section else schema)[marker] = validator
     if advanced:
-        schema[vol.Optional("advanced")] = section(vol.Schema(advanced), {"collapsed": True})
+        named = {marker.schema for marker in advanced} & set(errors or ())
+        schema[vol.Optional("advanced")] = section(
+            vol.Schema(advanced), {"collapsed": not named}
+        )
     return schema
 
 
@@ -2873,7 +2881,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         return self.async_show_form(
             step_id="profile_questions",
-            data_schema=vol.Schema(_profile_question_schema(profile, data, FlowContext(self.hass))),
+            data_schema=vol.Schema(
+                _profile_question_schema(profile, data, FlowContext(self.hass), errors=errors)
+            ),
             errors=errors,
             description_placeholders={
                 "profile": profile.title(data) if profile.title else bed_type_label(data[CONF_BED_TYPE])
@@ -6394,7 +6404,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 + await async_describe_actual(self.hass, report.actual_path, report.predicted_path)
             )
         elif report.source:
-            lines.append(await line("check_connected_via", source=report.source))
+            key = "check_connected_via_proxy" if report.via_proxy else "check_connected_via"
+            lines.append(await line(key, source=report.source))
         else:
             lines.append(await line("check_connected"))
 
@@ -6411,7 +6422,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if details := " · ".join(part for part in (report.manufacturer, report.model) if part):
             lines.append(await line("check_device_info", details=details))
 
-        # Many beds never report their position; that is normal, not a warning.
+        # Many bed types never report their position; that is normal, not a warning.
         if report.position_feedback:
             lines.append(await line("check_positions"))
 

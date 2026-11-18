@@ -53,12 +53,18 @@ def test_offered_labels_are_clean() -> None:
     assert not problems
 
 
+# Bed types whose stored "auto" is a fixed app or layout, not a detection.
+_AUTO_IS_A_CHOICE = frozenset(
+    {"adjustamattress", "bedtech", "remacro", "simmons", "svane"}
+)
+
+
 def test_automatic_choices_read_the_same() -> None:
     odd = {
         bed_type: variants[VARIANT_AUTO]
         for bed_type, variants in VARIANTS_BY_BED_TYPE.items()
         if VARIANT_AUTO in variants
-        and variants[VARIANT_AUTO].startswith("Auto")
+        and bed_type not in _AUTO_IS_A_CHOICE
         and variants[VARIANT_AUTO] != AUTOMATIC_LABEL
     }
     assert not odd

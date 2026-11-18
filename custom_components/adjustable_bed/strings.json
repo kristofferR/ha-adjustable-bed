@@ -184,7 +184,8 @@
           "check_transport_missing": "Check: connection type missing",
           "check_transport_ok": "Check: connection type available",
           "check_device_info": "Check: device information",
-          "check_positions": "Check: positions"
+          "check_positions": "Check: positions",
+          "check_connected_via_proxy": "Check: connected through a proxy"
         },
         "data_description": {
           "action": "Retry checks the bed again without losing the settings you just entered.",
@@ -199,7 +200,8 @@
           "check_transport_missing": "❌ The connection type chosen for this app isn't available on this bed. Choose Automatic, or another type.",
           "check_transport_ok": "✅ The app's connection type is available",
           "check_device_info": "ℹ️ The bed reports: {details}",
-          "check_positions": "✅ The bed reports its position"
+          "check_positions": "✅ This bed type can report its position",
+          "check_connected_via_proxy": "✅ Connected through Bluetooth proxy {source}"
         }
       },
       "diagnostic": {
