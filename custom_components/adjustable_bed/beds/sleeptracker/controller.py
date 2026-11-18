@@ -956,6 +956,7 @@ class SleeptrackerController(BedController):
                 lambda ctrl: ctrl.read_positions(),
                 translation_key="sleeptracker_refresh",
                 cancel_movement=False,
+                diagnostic=True,
             ),
             _request_button(
                 "sleeptracker_identify", "Identify split light (unit 1)", p.Request("identify")
@@ -1213,7 +1214,8 @@ class SleeptrackerController(BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        keys = ["layout", "massage_pattern", "massage_head_strength", "massage_foot_strength"]
+        # Massage pattern and strengths are the massage selects' state.
+        keys = ["layout"]
         if self._model.breeze:
             keys.extend(side + "_commanded_timer_seconds" for side in ("left", "right"))
         return tuple(
@@ -1223,6 +1225,7 @@ class SleeptrackerController(BedController):
                 _field_key(key),
                 "mdi:bed-outline",
                 attribute_keys=(_field_key("metadata"),) if key == "layout" else (),
+                entity_registry_enabled_default=False,
             )
             for key in keys
         )
@@ -1235,6 +1238,7 @@ class SleeptrackerController(BedController):
                 "sleeptracker_light_on",
                 _field_key("light_on"),
                 "mdi:lightbulb",
+                entity_registry_enabled_default=True,
                 card=CARD_LIGHTING,
             ),
         ) + (
@@ -1244,6 +1248,7 @@ class SleeptrackerController(BedController):
                     "sleeptracker_wind_down_running",
                     _field_key("wind_down_running"),
                     "mdi:bed-clock",
+                    entity_registry_enabled_default=True,
                     card=CARD_MASSAGE,
                 ),
             )

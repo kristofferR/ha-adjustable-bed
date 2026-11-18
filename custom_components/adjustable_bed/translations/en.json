@@ -2108,7 +2108,7 @@
         "name": "Refresh bed state"
       },
       "sleeptracker_identify": {
-        "name": "Identify split light (wire unit 1)"
+        "name": "Identify"
       },
       "sleeptracker_save_zero_g": {
         "name": "Save zero gravity"
@@ -2126,19 +2126,19 @@
         "name": "40 Hz massage"
       },
       "sleeptracker_wind_down_1": {
-        "name": "Wind down 1 (app 16 min)"
+        "name": "Wind-down 1"
       },
       "sleeptracker_wind_down_2": {
-        "name": "Wind down 2 (app 10 min)"
+        "name": "Wind-down 2"
       },
       "sleeptracker_local_animation": {
-        "name": "Local bed animation"
+        "name": "Bed animation"
       },
       "sleeptracker_wave_start": {
         "name": "Start relaxation wave"
       },
       "sleeptracker_identify_local": {
-        "name": "Identify local safety light"
+        "name": "Identify with safety light"
       },
       "sleepys_app_program": {
         "name": "Program"
@@ -4411,22 +4411,13 @@
         }
       },
       "sleeptracker_layout": {
-        "name": "Sleeptracker layout"
-      },
-      "sleeptracker_massage_pattern": {
-        "name": "Massage pattern (reported)"
-      },
-      "sleeptracker_massage_head_strength": {
-        "name": "Head massage strength (raw)"
-      },
-      "sleeptracker_massage_foot_strength": {
-        "name": "Foot massage strength (raw)"
+        "name": "Foundation layout"
       },
       "sleeptracker_left_commanded_timer_seconds": {
-        "name": "Left ActiveBreeze timer (last command)"
+        "name": "Left ActiveBreeze run time"
       },
       "sleeptracker_right_commanded_timer_seconds": {
-        "name": "Right ActiveBreeze timer (last command)"
+        "name": "Right ActiveBreeze run time"
       },
       "starcode_m1x12_firmware": {
         "name": "Firmware version"
@@ -5382,10 +5373,10 @@
         "name": "Smart light lock"
       },
       "sleeptracker_light_on": {
-        "name": "Safety light (reported)"
+        "name": "Safety light"
       },
       "sleeptracker_wind_down_running": {
-        "name": "Wind-down running (reported)"
+        "name": "Wind-down"
       },
       "starcode_m1x12_motor_stopped": {
         "name": "Motor stopped"
@@ -6082,9 +6073,9 @@
         "name": "Massage pattern",
         "state": {
           "off": "Off",
-          "one": "Wave Form One",
-          "two": "Wave Form Two",
-          "three": "Wave Form Three"
+          "one": "Wave 1",
+          "two": "Wave 2",
+          "three": "Wave 3"
         }
       },
       "sleeptracker_left_mode": {
