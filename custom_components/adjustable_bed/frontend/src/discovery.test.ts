@@ -1281,11 +1281,11 @@ test("Richmat MH app-labelled buttons, sliders and selectors land in their secti
   const hass = hassWith([
     entry("cover.back", "back"),
     entry("button.flat", "preset_flat"),
-    entry("button.read", "richmat_mh_preset"),
-    entry("button.relax", "richmat_mh_preset"),
-    entry("button.wave", "richmat_mh_massage"),
-    entry("button.save_read", "richmat_mh_save"),
-    entry("button.reset", "richmat_mh_action"),
+    entry("button.read", "catalog_preset"),
+    entry("button.relax", "catalog_preset"),
+    entry("button.wave", "catalog_massage"),
+    entry("button.save_read", "catalog_save"),
+    entry("button.reset", "catalog_action"),
     entry("button.lock", "richmat_mh_toggle_smart_set_lock"),
     entry("binary_sensor.lock", "richmat_mh_smart_set_lock"),
     entry("number.head", "richmat_mh_head_massage_intensity"),
@@ -1495,12 +1495,12 @@ test("ISleep controls retain each pattern and keep enrollment outside the everyd
 test("BedSense app actions retain distinct entities and app indicators", () => {
   const bed = bedEntitiesForDevice(hassWith([
     entry("cover.bed_hip", "bedsense_hip"),
-    entry("button.bed_8h", "bedsense_light"),
-    entry("button.bed_10h", "bedsense_light"),
-    entry("button.bed_head_up", "bedsense_massage"),
-    entry("button.bed_timer_10", "bedsense_massage"),
-    entry("button.bed_cycle", "bedsense_action"),
-    entry("button.bed_clear", "bedsense_action"),
+    entry("button.bed_8h", "catalog_light"),
+    entry("button.bed_10h", "catalog_light"),
+    entry("button.bed_head_up", "catalog_massage"),
+    entry("button.bed_timer_10", "catalog_massage"),
+    entry("button.bed_cycle", "catalog_action"),
+    entry("button.bed_clear", "catalog_action"),
     entry("sensor.bed_light", "bedsense_light_duration"),
     entry("sensor.bed_steps", "bedsense_foot_steps"),
     entry("sensor.bed_timer", "bedsense_massage_timer"),
@@ -1555,18 +1555,23 @@ test("BF and Cherish expose their exact app controls in the native card", () => 
   ]);
 });
 
-test("Casper Base product actions stay available in the card utility section", () => {
+test("App catalog saves sit with the presets and extras in the utility section", () => {
   const bed = bedEntitiesForDevice(hassWith([
-    entry("button.casper_save_tv", "casper_base_action"),
-    entry("button.casper_fan", "casper_base_action"),
+    entry("button.casper_save_tv", "catalog_save"),
+    entry("button.casper_fan", "catalog_action"),
+    entry("button.casper_head_up", "head_up"),
+    entry("button.casper_sleep_aid", "catalog_preset"),
   ]), "dev1");
-  expect(bed.utility).toEqual(["button.casper_save_tv", "button.casper_fan"]);
+  expect(bed.presetSaves).toEqual(["button.casper_save_tv"]);
+  expect(bed.presets).toEqual(["button.casper_sleep_aid"]);
+  expect(bed.motors.map((motor) => [motor.key, motor.up])).toEqual([["head", "button.casper_head_up"]]);
+  expect(bed.utility).toEqual(["button.casper_fan"]);
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
 test("HJBed gestures release through their same-side cancellation button", () => {
   const hass = hassWith([
-    entry("button.memory", "hjbed_action", "right"),
+    entry("button.memory", "catalog_preset", "right"),
     entry("button.release", "hjbed_release", "right"),
     entry("button.other_release", "hjbed_release", "left"),
   ]);
@@ -1584,9 +1589,9 @@ test("SleepEase exposes held motors, massage, lights, sensors and the local chil
   const hass = hassWith([
     entry("cover.head", "head"),
     entry("button.flat", "preset_flat"),
-    entry("button.massage", "doublesleep_massage_action"),
-    entry("button.light", "doublesleep_light_action"),
-    entry("button.refresh", "doublesleep_action"),
+    entry("button.massage", "catalog_massage"),
+    entry("button.light", "catalog_light"),
+    entry("button.refresh", "catalog_action"),
     entry("sensor.hr", "doublesleep_left_heart_rate"),
     entry("sensor.mode", "doublesleep_massage_mode"),
     entry("sensor.light", "doublesleep_light"),
@@ -1613,8 +1618,8 @@ test("SleepEase exposes held motors, massage, lights, sensors and the local chil
 
 test("Good Vibe Sleep exposes app controls, side selection and independent sleep state", () => {
   const hass = hassWith([
-    entry("button.app_action", "goodvibe_action"),
-    entry("button.monitor", "goodvibe_action"),
+    entry("button.app_action", "catalog_action"),
+    entry("button.monitor", "catalog_action"),
     entry("select.side", "goodvibe_side"),
     entry("select.light_duration", "goodvibe_light_duration"),
     entry("select.countdown", "goodvibe_massage_timer"),
@@ -1632,9 +1637,9 @@ test("Good Vibe Sleep exposes app controls, side selection and independent sleep
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
-test("Classic Richmat app actions, selectors and state stay in the utility section", () => {
+test("Classic Richmat app presets, selectors and state reach the card", () => {
   const hass = hassWith([
-    entry("button.lounge", "richmat_classic_action"),
+    entry("button.lounge", "catalog_preset"),
     entry("button.release", "richmat_classic_release"),
     entry("select.mode", "richmat_classic_mode"),
     entry("select.hold", "richmat_classic_hold"),
@@ -1644,7 +1649,9 @@ test("Classic Richmat app actions, selectors and state stay in the utility secti
   publish(hass, "select.mode", { card_section: "utility" });
   publish(hass, "select.hold", { card_section: "utility" });
   const bed = bedEntitiesForDevice(hass, "dev1");
-  expect(bed.utility).toEqual(["button.lounge", "button.release"]);
+  expect(bed.presets).toEqual(["button.lounge"]);
+  // The release button is hidden: the held control finds it.
+  expect(bed.utility).toEqual([]);
   expect(bed.utilitySelects).toEqual(["select.mode", "select.hold"]);
   expect(bed.utilityStates).toEqual(["sensor.status"]);
   expect(bedIsEmpty(bed)).toBe(false);
@@ -1716,11 +1723,11 @@ test("eShine motor hold metadata uses one bounded controller stream per physical
 
 test("MotoMotion controls retain device ownership and held metadata", () => {
   const hass = hassWith([
-    entry("button.mm_head", "motomotion_action", "chair"),
+    entry("button.mm_head", "catalog_action", "chair"),
     entry("sensor.mm_state", "motomotion_status", "chair"),
     entry("number.mm_volume", "motomotion_volume", "chair"),
     entry("select.mm_mode", "motomotion_music_mode", "chair"),
-    entry("button.other", "motomotion_action", "other"),
+    entry("button.other", "catalog_action", "other"),
   ]);
   hass.states["button.mm_head"] = {
     entity_id: "button.mm_head", state: "unknown", last_changed: "", last_updated: "",
@@ -1738,7 +1745,7 @@ test("MotoMotion controls retain device ownership and held metadata", () => {
 
 test("MotoMotion Home hold resolves its source-specific release on the same device", () => {
   const hass = hassWith([
-    entry("button.mm_home", "motomotion_action", "chair"),
+    entry("button.mm_home", "catalog_preset", "chair"),
     entry("button.other_release", "motomotion_release", "other"),
     entry("button.mm_release", "motomotion_release", "chair"),
   ]);
@@ -1755,10 +1762,10 @@ test("MotoMotion Home hold resolves its source-specific release on the same devi
 
 test("Hush product actions remain scoped to their physical device", () => {
   const hass = hassWith([
-    entry("button.hush_memory", "hush_base_action", "bed"),
-    entry("button.other_memory", "hush_base_action", "other"),
+    entry("button.hush_sleep_aid", "catalog_preset", "bed"),
+    entry("button.other_sleep_aid", "catalog_preset", "other"),
   ]);
-  expect(bedEntitiesForDevice(hass, "bed").utility).toEqual(["button.hush_memory"]);
+  expect(bedEntitiesForDevice(hass, "bed").presets).toEqual(["button.hush_sleep_aid"]);
 });
 
 test("KomfyD/ComfyDS source labels keep motor leases separate from H/F steps", () => {
