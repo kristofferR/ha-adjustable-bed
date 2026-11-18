@@ -341,9 +341,10 @@ async def test_all_real_entity_specs_build_and_actions_reach_wire(fmt, no_delays
             await entity.async_press()
         runtime.async_execute_controller_command.assert_awaited_once()
     for spec in ctrl.controller_select_specs:
-        if spec.key == "smart_sleep_child_mode":
-            continue
         await spec.select_fn(ctrl, spec.options[-1])
+    for switch in ctrl.controller_switch_specs:
+        if switch.local_set_fn is None:
+            await switch.set_fn(ctrl, True)
     frames = {c.args[1] for c in ctrl.client.write_gatt_char.call_args_list}
     assert all(
         codec.motion(fmt, axis, up) in frames for axis in range(1, 6) for up in (True, False)
@@ -735,7 +736,7 @@ async def test_real_memory_and_preset_entities_publish_card_routes(hass, fmt, no
             await command(ctrl)
 
         runtime.async_execute_controller_command = AsyncMock(side_effect=execute)
-        entity = by_key["smart_sleep_read"]
+        entity = by_key["preset_lounge"]
         entity.hass = hass
         with patch(
             "custom_components.adjustable_bed.button.invalidate_on_command",

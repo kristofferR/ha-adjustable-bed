@@ -3115,83 +3115,62 @@
       "smart_sleep_refresh": {
         "name": "Refresh bed state"
       },
-      "smart_sleep_flat": {
-        "name": "Flat"
-      },
-      "smart_sleep_zero_g": {
-        "name": "Zero G"
-      },
-      "smart_sleep_read": {
-        "name": "Read"
-      },
-      "smart_sleep_tv": {
-        "name": "Tv"
-      },
-      "smart_sleep_anti_snore": {
-        "name": "Anti Snore"
-      },
       "smart_sleep_ai_zero": {
-        "name": "Ai Zero"
+        "name": "AI zero"
       },
       "smart_sleep_save_zero_g": {
-        "name": "Save Zero G"
+        "name": "Save zero gravity"
       },
       "smart_sleep_save_read": {
-        "name": "Save Read"
+        "name": "Save read"
       },
       "smart_sleep_save_tv": {
-        "name": "Save Tv"
+        "name": "Save TV"
       },
       "smart_sleep_save_anti_snore": {
-        "name": "Save Anti Snore"
-      },
-      "smart_sleep_massage_all": {
-        "name": "Massage all"
-      },
-      "smart_sleep_massage_off": {
-        "name": "Massage off"
+        "name": "Save anti-snore"
       },
       "smart_sleep_massage_wave": {
-        "name": "Massage wave"
+        "name": "Cycle massage wave"
       },
       "smart_sleep_massage_timer": {
-        "name": "Massage timer"
+        "name": "Cycle massage timer"
       },
       "smart_sleep_massage_head_strength": {
-        "name": "Massage head strength"
+        "name": "Cycle head massage strength"
       },
       "smart_sleep_massage_foot_strength": {
-        "name": "Massage foot strength"
+        "name": "Cycle foot massage strength"
       },
       "smart_sleep_head_up": {
-        "name": "Head up (app)"
+        "name": "Head up"
       },
       "smart_sleep_head_down": {
-        "name": "Head down (app)"
+        "name": "Head down"
       },
       "smart_sleep_foot_up": {
-        "name": "Foot up (app)"
+        "name": "Foot up"
       },
       "smart_sleep_foot_down": {
-        "name": "Foot down (app)"
+        "name": "Foot down"
       },
       "smart_sleep_headrest_up": {
-        "name": "Headrest up (app)"
+        "name": "Headrest up"
       },
       "smart_sleep_headrest_down": {
-        "name": "Headrest down (app)"
+        "name": "Headrest down"
       },
       "smart_sleep_lumbar_up": {
-        "name": "Lumbar up (app)"
+        "name": "Lumbar up"
       },
       "smart_sleep_lumbar_down": {
-        "name": "Lumbar down (app)"
+        "name": "Lumbar down"
       },
       "smart_sleep_hips_up": {
-        "name": "Hips up (app)"
+        "name": "Hips up"
       },
       "smart_sleep_hips_down": {
-        "name": "Hips down (app)"
+        "name": "Hips down"
       },
       "rize_remedy_ii_wave_1": {
         "name": "Massage wave 1"
@@ -3613,19 +3592,19 @@
         "name": "Waist"
       },
       "smart_sleep_head": {
-        "name": "Head (app)"
+        "name": "Head"
       },
       "smart_sleep_foot": {
-        "name": "Foot (app)"
+        "name": "Foot"
       },
       "smart_sleep_headrest": {
-        "name": "Headrest (app)"
+        "name": "Headrest"
       },
       "smart_sleep_lumbar": {
-        "name": "Lumbar (app)"
+        "name": "Lumbar"
       },
       "smart_sleep_hips": {
-        "name": "Hips (app)"
+        "name": "Hips"
       },
       "n32_upper": {
         "name": "Upper"
@@ -5126,10 +5105,10 @@
         "name": "Timer remaining (estimated)"
       },
       "smart_sleep_model": {
-        "name": "App model ID"
+        "name": "Model"
       },
       "smart_sleep_alarm_week": {
-        "name": "Alarm week mask"
+        "name": "Alarm days"
       },
       "smart_sleep_alarm_action": {
         "name": "Alarm action"
@@ -5138,13 +5117,13 @@
         "name": "Alarm time"
       },
       "smart_sleep_light_brightness": {
-        "name": "Light brightness (reported)"
+        "name": "Light brightness"
       },
       "smart_sleep_ai_status": {
-        "name": "AI-zero status"
+        "name": "AI zero status"
       },
       "smart_sleep_ai_score": {
-        "name": "AI-zero score"
+        "name": "AI zero score"
       },
       "rize_remedy_ii_save_acknowledged": {
         "name": "Save acknowledgment code"
@@ -5251,6 +5230,15 @@
       },
       "comfy_timer": {
         "name": "Timer"
+      },
+      "smart_sleep_child_mode": {
+        "name": "Child mode"
+      },
+      "smart_sleep_privacy": {
+        "name": "Privacy"
+      },
+      "smart_sleep_massage": {
+        "name": "Massage"
       }
     },
     "binary_sensor": {
@@ -5547,9 +5535,6 @@
       },
       "rize_home_active": {
         "name": "Massage active"
-      },
-      "smart_sleep_massage_on": {
-        "name": "Massage"
       },
       "smart_sleep_alarm_on": {
         "name": "Alarm"
@@ -6611,17 +6596,18 @@
           "50": "50 minutes"
         }
       },
-      "smart_sleep_child_mode": {
-        "name": "Child mode (Home Assistant)"
-      },
-      "smart_sleep_privacy": {
-        "name": "Privacy"
-      },
       "smart_sleep_antisnore": {
-        "name": "Automatic antisnore"
+        "name": "Automatic anti-snore",
+        "state": {
+          "off": "Off",
+          "1": "1",
+          "3": "3",
+          "6": "6",
+          "demo": "Demonstration"
+        }
       },
       "smart_sleep_sensitivity": {
-        "name": "Antisnore sensitivity"
+        "name": "Anti-snore sensitivity"
       },
       "smart_sleep_wave": {
         "name": "Massage wave"
@@ -6633,7 +6619,7 @@
         "name": "Foot massage strength"
       },
       "smart_sleep_timer": {
-        "name": "Massage timer option"
+        "name": "Massage timer"
       },
       "symphony_child_mode": {
         "name": "Local child mode"

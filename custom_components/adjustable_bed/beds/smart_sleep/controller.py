@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from time import monotonic
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
@@ -27,6 +27,7 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
     PositionNumberSpec,
 )
@@ -352,8 +353,14 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
         return "anti_snore" in self.presets
 
     def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
-        if self.profile.key == "p1" and key in ("preset_memory_1", "preset_memory_2"):
+        if self.profile.key != "p1":
+            return None
+        if key in ("preset_memory_1", "preset_memory_2"):
             return ControllerHoldSpec(key)
+        # The standard preset buttons hold P1's refreshed recall, as the app does.
+        name = _STANDARD_PRESETS.get(key)
+        if name is not None and name in self.presets:
+            return ControllerHoldSpec(f"preset_{name}")
         return None
 
     @property
@@ -539,19 +546,43 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
         self.forward_controller_state_updates(keys.CHILD_MODE(option))
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        specs = [
-            ControllerSelectSpec(
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        return (
+            ControllerSwitchSpec(
                 "smart_sleep_child_mode",
                 "smart_sleep_child_mode",
+                lambda ctrl, on: _local_child(ctrl, "on" if on else "off"),
                 keys.CHILD_MODE,
-                ("off", "on"),
-                lambda ctrl, option: _local_child(ctrl, option),
-                local_select_fn=self.select_child,
-            )
-        ]
+                "on",
+                "mdi:lock",
+                local_set_fn=lambda on: self.select_child("on" if on else "off"),
+            ),
+            ControllerSwitchSpec(
+                "smart_sleep_privacy",
+                "smart_sleep_privacy",
+                lambda ctrl, on: require_controller(ctrl, SmartSleepController).select_option(
+                    "privacy", "on" if on else "off"
+                ),
+                keys.PRIVACY,
+                "on",
+                "mdi:shield-lock-outline",
+            ),
+            ControllerSwitchSpec(
+                "smart_sleep_massage",
+                "smart_sleep_massage",
+                lambda ctrl, on: require_controller(ctrl, SmartSleepController).massage_action(
+                    "all" if on else "off"
+                ),
+                keys.MASSAGE_ON,
+                icon="mdi:vibrate",
+                card=CARD_MASSAGE,
+            ),
+        )
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        specs = []
         for name, key, options in (
-            ("privacy", keys.PRIVACY, ("off", "on")),
             ("antisnore", keys.ANTISNORE, ("off", "1", "3", "6", "demo")),
             ("sensitivity", keys.SENSITIVITY, ("1", "2", "3")),
             *(
@@ -592,6 +623,8 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 lambda ctrl: require_controller(ctrl, SmartSleepController).refresh_all(),
                 translation_key="smart_sleep_refresh",
                 cancel_movement=False,
+                # The bed answers queries but does not push remote changes.
+                diagnostic=True,
             )
         ]
         specs.extend(
@@ -605,7 +638,8 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 invalidates_position=True,
             )
             for name in self.presets
-            if name not in ("memory_1", "memory_2")
+            # The standard preset buttons cover the presets HA already names.
+            if name not in ("memory_1", "memory_2", *_STANDARD_PRESETS.values())
         )
         if self.profile.key == "p2":
             specs.extend(
@@ -632,7 +666,8 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 hold=ControllerHoldSpec(f"massage_{name}"),
                 card=CARD_MASSAGE_TIMER if name == "timer" else CARD_MASSAGE,
             )
-            for name in ("all", "off", "wave", "timer", "head_strength", "foot_strength")
+            # Massage on/off is the massage switch.
+            for name in ("wave", "timer", "head_strength", "foot_strength")
         )
         return tuple(specs)
 
@@ -951,28 +986,50 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        # Enabled: values a user reads. Disabled: raw masks, codes and metadata.
         return tuple(
-            ControllerStateSensorSpec(str(key), str(key), key, "mdi:information-outline")
-            for key in (
-                keys.MODEL,
-                keys.ALARM_WEEK,
-                keys.ALARM_ACTION,
-                keys.ALARM_TIME,
-                *((keys.BRIGHTNESS,) if self.profile.key == "p2" else ()),
-                *((keys.AI_STATUS, keys.AI_SCORE) if self.model == 8 else ()),
+            ControllerStateSensorSpec(
+                str(key),
+                str(key),
+                key,
+                "mdi:information-outline",
+                entity_registry_enabled_default=enabled,
+            )
+            for key, enabled in (
+                (keys.MODEL, False),
+                (keys.ALARM_WEEK, False),
+                (keys.ALARM_ACTION, False),
+                (keys.ALARM_TIME, True),
+                *(((keys.BRIGHTNESS, True),) if self.profile.key == "p2" else ()),
+                *(((keys.AI_STATUS, False), (keys.AI_SCORE, False)) if self.model == 8 else ()),
             )
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return tuple(
-            ControllerStateBinarySensorSpec(str(key), str(key), key, "mdi:information-outline")
+            ControllerStateBinarySensorSpec(
+                str(key),
+                str(key),
+                key,
+                "mdi:information-outline",
+                entity_registry_enabled_default=True,
+            )
             for key in (
-                keys.MASSAGE_ON,
                 keys.ALARM_ON,
                 *((keys.FLEXIBLE,) if self.model == 67 and self.profile.key == "p1" else ()),
             )
         )
+
+
+# Standard preset button key -> this app's preset name.
+_STANDARD_PRESETS: Final = {
+    "preset_flat": "flat",
+    "preset_zero_g": "zero_g",
+    "preset_lounge": "read",
+    "preset_tv": "tv",
+    "preset_anti_snore": "anti_snore",
+}
 
 
 async def _local_child(ctrl: BedController, option: str) -> None:
