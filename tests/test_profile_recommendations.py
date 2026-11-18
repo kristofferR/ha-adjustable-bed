@@ -121,18 +121,29 @@ async def open_flow(hass, target):
 
 async def finish_reconfigure(hass, handoff, action="apply"):
     """Answer a Reconfigure handoff with its preselected answers, then its review."""
+    from unittest.mock import PropertyMock
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
     kind, flow_id = handoff["next_flow"]
     assert kind == "config_flow"
     manager = hass.config_entries.flow
-    result = await manager.async_configure(flow_id)
-    for _ in range(6):
-        if result["type"] != "form" or result.get("errors"):
-            break
-        if result["step_id"] == "migration_confirm":
-            with patch.object(hass.config_entries, "async_schedule_reload"):
-                result = await manager.async_configure(flow_id, {"action": action})
-            continue
-        result = await manager.async_configure(flow_id, result["data_schema"]({}))
+    # The destination's link check is covered elsewhere; these tests follow the review.
+    with patch.object(
+        AdjustableBedConfigFlow,
+        "_migration_requires_check",
+        new_callable=PropertyMock,
+        return_value=False,
+    ):
+        result = await manager.async_configure(flow_id)
+        for _ in range(6):
+            if result["type"] != "form" or result.get("errors"):
+                break
+            if result["step_id"] == "migration_confirm":
+                with patch.object(hass.config_entries, "async_schedule_reload"):
+                    result = await manager.async_configure(flow_id, {"action": action})
+                continue
+            result = await manager.async_configure(flow_id, result["data_schema"]({}))
     return result
 
 

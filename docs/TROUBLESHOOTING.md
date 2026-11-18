@@ -44,12 +44,11 @@ apps apart, so an upgraded bed whose bed type gained app profiles shows one
 repair under **Settings > System > Repairs**. It lists only the apps that fit
 that bed type:
 
-- **Choose the app you use.** Most apps are applied right away, with the same
-  checks as **Configure**. The bed reloads with that app's controls and keeps
-  its device and matching entity IDs.
-- Apps with their own settings (Motion Bed, AdjustableM5X4, AdjustableM5X5),
-  or a change **Configure** would refuse, are not applied here. The repair
-  opens **Configure** with the app selected.
+- **Choose the app you use.** The repair opens **Reconfigure** with that app
+  selected. It asks the app's own questions, checks the bed where the app
+  needs it, and shows which controls change before anything is saved. The bed
+  then reloads with that app's controls and keeps its device and matching
+  entity IDs.
 - A family with a
   [guided change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
   is offered that guided change or **Keep current configuration** instead,

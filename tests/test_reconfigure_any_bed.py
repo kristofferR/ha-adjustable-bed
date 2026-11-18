@@ -119,3 +119,23 @@ async def test_a_picked_device_lets_home_assistant_choose_the_adapter(hass: Home
 
     assert result["step_id"] == "finish_settings"
     assert flow._manual_data[const.CONF_PREFERRED_ADAPTER] == const.ADAPTER_AUTO
+
+
+async def test_reconfigure_to_a_checked_route_checks_its_link_first(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    """A destination whose family checks its link is checked before the review."""
+    del enable_custom_integrations
+    entry = _entry(hass, const.BED_TYPE_LINAK)
+    manager = hass.config_entries.flow
+
+    result = await manager.async_init(const.DOMAIN, context=reconfigure_context(entry))
+    result = await manager.async_configure(
+        result["flow_id"], {const.CONF_BED_TYPE: const.BED_TYPE_SLEEPYS_BOX25}
+    )
+
+    if result.get("step_id") == "profile_questions":
+        result = await manager.async_configure(result["flow_id"], _schema(result)({}))
+    assert result.get("step_id") == "migration_check", result
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LINAK
+    manager.async_abort(result["flow_id"])

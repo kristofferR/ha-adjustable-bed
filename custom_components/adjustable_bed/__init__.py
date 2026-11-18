@@ -594,9 +594,10 @@ def _v5_6_settings(
         shared = {key: new[key] for key in _V5_6_INHERITED_KEYS if key in new}
         new[CONF_PAIR_CHILDREN] = [
             _v5_6_settings(
-                # In the order a side reads them: parent, side, then options.
-                {**shared, **child, **(side_overrides or {})},
-                {**route, **_route_of(child), **(side_route or {})},
+                # In the order a side reads them: parent, side, then the options
+                # the side does not own itself.
+                {**shared, **child, **_not_owned(child, side_overrides)},
+                {**route, **_route_of(child), **_not_owned(child, side_route)},
                 f"{location}.{child.get(CONF_SIDE, index)}",
                 changed,
                 paired=True,
@@ -676,6 +677,12 @@ def _v5_6_settings(
     if notes:
         changed.setdefault(location, []).extend(notes)
     return new
+
+
+def _not_owned(child: Mapping[str, Any], options: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Return the pair options a side reads: those its own profile does not own."""
+    owned = side_owned_profile_fields(child)
+    return {key: value for key, value in (options or {}).items() if key not in owned}
 
 
 def _route_of(settings: Mapping[str, Any]) -> dict[str, Any]:

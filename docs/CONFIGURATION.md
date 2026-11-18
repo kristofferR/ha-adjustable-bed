@@ -461,10 +461,10 @@ list sets its route itself. The final settings list the routes in a collapsed
 **Advanced: receiver route** section. The routes named after an Okin protocol
 (Okin Handle, 7-Byte, Nordic, CB24, CB35, FFE, 64-Bit and ORE) are not rows of
 the app list: a discovered bed shows its detected route, the brand list under
-**My app isn't listed** lists them, and Configure keeps them by name. Configure lists
-the routes of the saved bed type. In a family with a
-[guided change](#changing-the-bed-type-app-or-layout-of-an-existing-bed), the app question chooses the route and Configure
-refuses a route change; use **Reconfigure**. Additional
+**My app isn't listed** lists them, and Reconfigure's bed-type list keeps them by
+name. The route of an existing bed changes only in
+[Reconfigure](#changing-the-bed-type-app-or-layout-of-an-existing-bed), which
+asks for it after the bed type when there are several. Additional
 controller-specific choices are documented here:
 
 | Bed type | Choices covered by its guide |

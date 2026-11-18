@@ -353,6 +353,7 @@ from .pairing import (
     is_paired,
     iter_children,
     pair_member_addresses,
+    side_owned_profile_fields,
     supports_single_address_pairing,
     with_updated_child,
 )
@@ -2362,11 +2363,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Ask the staged route's own questions, then pair, check and review it.
 
         A family's own row asks the family's question; an app row or a route
-        already names the exact route, as it does at setup. Like the change
-        Configure used to make, it is saved without the family's link check.
+        already names the exact route, as it does at setup. The destination's
+        family check and an Octo PIN check run before the review.
         """
         assert self._manual_data is not None
         bed_type = self._manual_data[CONF_BED_TYPE]
+        # The destination's own family checks its link before the review.
+        self._migration_family = next(
+            (family for family in GUIDED_FAMILIES if bed_type in family.managed | family.asks),
+            None,
+        )
         if exact or any(
             bed_type in family.asks and bed_type != family.row for family in APP_FAMILIES
         ):
@@ -6150,7 +6156,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         )
         if self._migration is not None and self._migration.is_unchanged_by(entry_data):
             return await self._async_abort_unchanged()
-        if self._migration is not None and not self._migration_requires_check:
+        if (
+            self._migration is not None
+            and not self._migration_requires_check
+            and not needs_pin_check
+        ):
             return await self._async_create_selected_app_entry(title=title, data=entry_data)
         if (
             self._migration is None
@@ -7419,8 +7429,15 @@ class AdjustableBedOptionsFlow(
                 # one side, keeping unrelated entry-level options intact.
                 options = inheritable_child_fields(self.config_entry.options)
                 for receiver_side in PAIR_SIDES:
-                    if options and get_child(data, receiver_side) is not None:
-                        data = with_updated_child(data, receiver_side, options)
+                    if options and (receiver := get_child(data, receiver_side)) is not None:
+                        # Only what the receiver reads: never a setting its own
+                        # profile owns, such as its route.
+                        owned = side_owned_profile_fields(receiver)
+                        data = with_updated_child(
+                            data,
+                            receiver_side,
+                            {key: value for key, value in options.items() if key not in owned},
+                        )
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     data=with_updated_child(data, side, changes, remove=stale),

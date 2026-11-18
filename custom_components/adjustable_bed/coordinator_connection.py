@@ -394,7 +394,8 @@ class CoordinatorConnectionMixin:
         self: AdjustableBedCoordinator, stage: str, attempt_details: dict[str, Any], attempt_start: float
     ) -> None:
         """Record a connect attempt whose link dropped before startup finished."""
-        _LOGGER.warning("Connection to %s dropped during %s", self._address, stage)
+        # Part of one outage: its summary warns once with this error.
+        _LOGGER.debug("Connection to %s dropped during %s", self._address, stage)
         self._connecting = False
         self._last_connection_error = f"Connection dropped during {stage}"
         self._last_connection_error_type = ConnectionError.__name__
@@ -1179,11 +1180,12 @@ class CoordinatorConnectionMixin:
                 # The bed may disconnect during the stabilisation delay
                 # (the _on_disconnect callback clears self._client).
                 if self._client is None or not self._client.is_connected:
-                    _LOGGER.warning(
+                    _LOGGER.debug(
                         "Connection to %s dropped during post-connect stabilisation",
                         self._address,
                     )
                     self._connecting = False
+                    self._last_connection_error = "Connection dropped during post-connect stabilisation"
                     self._connection_attempt_details.append(attempt_details)
                     continue
 
