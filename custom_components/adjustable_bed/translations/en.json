@@ -3254,6 +3254,15 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "sophie_program_tv": {
+        "name": "Save or clear TV position"
+      },
+      "sophie_program_zero_g": {
+        "name": "Save or clear zero gravity position"
+      },
+      "sophie_program_anti_snore": {
+        "name": "Save or clear anti-snore position"
+      },
       "personal_comfort_action": {
         "name": "{action}"
       },
@@ -4671,6 +4680,15 @@
       "sonicsleep": {
         "name": "Model"
       },
+      "sophie_head_level": {
+        "name": "Head massage level"
+      },
+      "sophie_foot_level": {
+        "name": "Foot massage level"
+      },
+      "sophie_wave": {
+        "name": "Massage wave"
+      },
       "personal_comfort_adjustment": {
         "name": "Firmness adjustment",
         "state": {
@@ -5010,6 +5028,24 @@
       },
       "richmat_mh_smart_set_lock": {
         "name": "Smart set lock"
+      },
+      "sophie_alarm_enabled": {
+        "name": "Bed alarm"
+      },
+      "sophie_memory_1_saved": {
+        "name": "Memory 1 saved"
+      },
+      "sophie_memory_2_saved": {
+        "name": "Memory 2 saved"
+      },
+      "sophie_tv_saved": {
+        "name": "TV position saved"
+      },
+      "sophie_zero_g_saved": {
+        "name": "Zero gravity position saved"
+      },
+      "sophie_anti_snore_saved": {
+        "name": "Anti-snore position saved"
       },
       "ormatek_massage": {
         "name": "Massage"
@@ -9297,7 +9333,8 @@
         "motion_bed": "Motion Bed app",
         "bedsense": "BedSense app",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected controls"
+        "keep": "I don't know: keep the detected controls",
+        "sophie": "Sophie app"
       }
     },
     "leggett_family_choice": {
@@ -10368,6 +10405,8 @@
         "all_up": "All motors up",
         "zero_g": "Zero gravity",
         "zero_g_2": "Zero gravity 2",
+        "zero_g_left": "Zero gravity, left side",
+        "zero_g_right": "Zero gravity, right side",
         "anti_snore": "Anti-snore",
         "lounge": "Lounge",
         "tv": "TV",

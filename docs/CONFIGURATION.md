@@ -1042,3 +1042,11 @@ Select L2 Motion for beds controlled by Leon's L2Motion. Setup and Reconfigure
 ask for the original Bluetooth name; it selects the available controls without
 extra motor or massage switches. Combined beds retain each physical side's name.
 See the [L2 Motion guide](beds/motomotion.md#l2-motion) for supported features.
+
+### Sophie app
+
+Choose **Solace → Sophie app**. Two motors, massage and disabled angle sensing
+are profile-owned. Keep the actual Bluetooth name: saved queries, alarm side
+modes and the QMS2 alarm-massage gate use independent name predicates. Each
+physical side keeps its own name when combining two beds. See the
+[Sophie profile](beds/ff_frame.md#sophie) for controls and reported-state gates.

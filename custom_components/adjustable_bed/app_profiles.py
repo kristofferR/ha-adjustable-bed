@@ -124,6 +124,7 @@ from .const import (
     LEGGETT_VARIANT_OKIN,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     RICHMAT_MH_BED_TYPES,
+    SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_VARIANT_M1X12,
 )
@@ -278,6 +279,7 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
                                  CONF_KAIDI_PRODUCT_ID, CONF_KAIDI_SOFA_ACU_NO}),
     ),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): SideProfile("Woosa Sleep"),
+    (BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE): SideProfile("Sophie"),
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): SideProfile("Nectar Move"),
     (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN): SideProfile(
         "Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})

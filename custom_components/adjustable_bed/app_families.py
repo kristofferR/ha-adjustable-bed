@@ -156,6 +156,7 @@ from .const import (
     RICHMAT_REMOTES,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
+    SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANT_JMC,
@@ -988,10 +989,10 @@ KEESON_FAMILY: Final = AppFamily(
 # --- Solace -----------------------------------------------------------------
 
 
-def _woosa_row(visit: Visit) -> str | None:
-    """The Woosa Sleep row already answered the question."""
-    if visit.first and not visit.guided and visit.incoming[1] == SOLACE_VARIANT_WOOSA:
-        return "woosa"
+def _explicit_solace_row(visit: Visit) -> str | None:
+    """An explicit app row already answered the family question."""
+    if visit.first and not visit.guided:
+        return {SOLACE_VARIANT_WOOSA: "woosa", SOLACE_VARIANT_SOPHIE: "sophie"}.get(visit.incoming[1])
     return None
 
 
@@ -1003,16 +1004,17 @@ SOLACE_FAMILY: Final = AppFamily(
     step="solace_family",
     row=BED_TYPE_SOLACE,
     name="Solace",
-    apps="HomeKobo, Sealy MotionFlex and Sweet Night apps",
+    apps="HomeKobo, Sealy MotionFlex, Sweet Night and Sophie apps",
     answers={
         "name_route": Answer(BED_TYPE_SOLACE, VARIANT_AUTO),
+        "sophie": Answer(BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE),
         # Say what Woosa Sleep controls differ before choosing it.
         "woosa": Answer(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA, step="solace_woosa"),
         "motion_bed": Answer(BED_TYPE_MOTION_BED, member=False),
         "bedsense": Answer(BED_TYPE_BEDSENSE, member=False),
     },
     offers_keep=keep_always,
-    preselect=_woosa_row,
+    preselect=_explicit_solace_row,
     placeholders=_current,
     guided=True,
     route_keys=(CONF_PROTOCOL_VARIANT,),

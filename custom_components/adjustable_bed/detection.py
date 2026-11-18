@@ -278,6 +278,7 @@ from .const import (
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
+    SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_NAME_PATTERNS,
     STAR_ELEVATE_VARIANT_M1X12,
@@ -310,6 +311,7 @@ from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
+from .profiles.sophie import accepts_name as accepts_sophie_name
 from .profiles.vmatbasic import manufacturer_payload_matches
 
 _LOGGER = logging.getLogger(__name__)
@@ -763,6 +765,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app, remote A",
     (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B): "Restonic BT app, remote B",
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): "Woosa Sleep app",
+    (BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE): "Sophie app",
     # Each Okin CST app is its own row.
     **{
         (BED_TYPE_OKIN_CST, variant): label
@@ -1564,6 +1567,15 @@ def _detect_bed_type_with_app_candidates(
         result.signals.append("name:richmat_classic_app_candidate")
     # App name rules add candidates without replacing an existing route.
     # Each app reads the exact name, not a normalized shared prefix.
+    if accepts_sophie_name(service_info.name) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.3,
+                signals=[*result.signals, "name:sophie_app_candidate"])
+        elif result.bed_type != BED_TYPE_SOLACE:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SOLACE]))
+            result.signals.append("name:sophie_app_candidate")
     if bedgear_eligible(service_info.name) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):

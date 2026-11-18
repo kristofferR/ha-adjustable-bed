@@ -440,6 +440,7 @@ data:
 | SIMMONS | `custom_position`, `flat`, `anti_snore` (regular bed) | `slot` 1–2, `weekdays`, `confirm_custom_position`. Both alarms are read from the bed first |
 | Solace | `none`, `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` |
 | OrmatekTechnoSmart | New: `massage`, `memory_1`, `flat`. Lite: `zero_g`, `tv` | Daily, one alarm |
+| Solace (Sophie app) | `none`, `zero_g`, `memory_1`; side models `none`, `zero_g_left`, `zero_g_right`, `zero_g` | `weekdays`, `massage` (not QMS2), `sound: alarm` rings. Once the bed reports alarm support |
 | Symphony Sleep | `none`, `memory_1`, `memory_2` | Once |
 | Symphony Sleep Sense | By product | `weekdays` |
 | Yamada | By app version | `slot` 1–2, `weekdays`. Refresh the bed's alarms first |

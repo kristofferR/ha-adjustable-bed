@@ -23,6 +23,9 @@ WAKE_ACTIONS: Final = (
     "all_up",
     "zero_g",
     "zero_g_2",
+    # Beds whose two halves wake separately.
+    "zero_g_left",
+    "zero_g_right",
     "anti_snore",
     "lounge",
     "tv",

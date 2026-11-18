@@ -213,6 +213,13 @@ SOLACE_PROFILES: Final[dict[str, SolaceProfile]] = {
             massage_step_ms=400,
             save_requery_ms=300,
         ),
+        SolaceProfile(
+            key="sophie",
+            execution=ExecutionCapabilities(hold="latched"),
+            axes=("back", "legs"), presets=True, memory_slots=2,
+            queries="home_k2", massage=True, light_levels=True, light_timer=True,
+            query_delay_ms=300, query_spacing_ms=500,
+        ),
         # Hardware-confirmed four-cover layout with the deployed legacy flat; no report.
         SolaceProfile(
             key="legacy_s4_y",
