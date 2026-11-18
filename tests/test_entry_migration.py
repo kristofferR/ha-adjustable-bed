@@ -32,7 +32,6 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PROFILE_ID,
     CONF_PROFILE_MIGRATION,
@@ -50,6 +49,7 @@ from custom_components.adjustable_bed.pairing import (
     KEY_ORIGIN_OPTIONS,
     effective_child_data,
 )
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 
 def _entry(

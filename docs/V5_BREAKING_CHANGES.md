@@ -164,6 +164,7 @@ records what it changed in diagnostics, under `profile_migration`.
 | **Position update mode** (`position_mode`) | Removed. When a command asks for a position read afterwards, it happens as with the default "Speed": in the background while the link stays open, and before the link is released with **Release right after each command**. No read is made when **Read bed position** is off or another command is waiting |
 | **Connection profile** (`connection_profile`) | Removed. Every bed uses the former "Reliable" timing: a 25 s connect timeout, 3 and 6 s backoff and a 1 s pause after connecting |
 | **Disconnect after each command** and **Idle disconnect timeout** (including its `0`, "keep connected") | One **Bluetooth connection** setting: **Release right after each command** (was Disconnect after each command on), **Stay connected for a while** with **Seconds to stay connected** (was off, with its timeout), or **Always stay connected** (was a timeout of `0` with Disconnect after each command off). Hidden for beds that always keep their link |
+| With **Idle disconnect timeout**, a link the bed or adapter dropped was reconnected 5 s later with a new timeout each time, so a bed that drops idle links stayed connected and blocked its remote and app | **Stay connected for a while** counts from the last command. A dropped link is reconnected once before that time runs out (or whenever a command needs it) and is released when it would have been. If the reconnected link drops too, or after that time, the next command reconnects. **Always stay connected** and **Release right after each command** reconnect on the next command, as before |
 | LP Comfort Connect (Leggett & Platt Gen2, and Leggett & Platt on Automatic) kept its link permanently | Follows **Bluetooth connection** and stays connected for a while by default. If a reconnect stalls, it keeps the link until you disconnect it or Home Assistant restarts. Choose **Always stay connected** for the old behavior |
 | **Disable angle sensing** | **Read bed position**, on by default and shown only for beds that report a position. A saved choice equal to the bed's default is dropped, so the bed's default applies |
 | **Motor pulse count** and **Motor pulse delay (ms)** | **Movement per tap** (the pulse count, usually 1 to 100; a few beds allow more). The delay is no longer shown; each bed uses its own, and a saved delay still applies |
@@ -230,6 +231,9 @@ phone app's internals.
 - **Saves follow one rule.** A preset save sits with the presets, is a
   configuration entity and asks for confirmation in the dashboard card. A
   memory save is offered in the card's Set mode and no longer asks twice.
+- **Bed occupancy sensors** (Sleep Number) update only while the bed is
+  connected. In 4.x their 30-second poll connected the bed and kept it
+  connected; it no longer extends **Seconds to stay connected**.
 - A paired bed's Left, Right and Both entities are named from their devices,
   as Home Assistant 2026.11 does, so the card no longer shows doubled names
   such as "Bed Left Back".
