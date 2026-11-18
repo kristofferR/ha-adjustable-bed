@@ -24261,15 +24261,15 @@
 "number:richmat_mh_light_timer=300": {"status":"ok","writes":[[0,"6e400002",true,"6e0b002ca5",1,0]]}
 }},
 "richmat_mlily_supreme:sleep": {
-"info": {"bed_type": "richmat_mlily_supreme", "controller": "RichmatMHAppSleepController", "gaps": ["select:ruf_richmat_sleep_mode=single", "select:ruf_richmat_sleep_mode=double", "select:ruf_richmat_sleep_left_intervention=off", "select:ruf_richmat_sleep_left_intervention=on", "select:ruf_richmat_sleep_right_intervention=off", "select:ruf_richmat_sleep_right_intervention=on"], "module": "richmat_mh.app_sleep", "pulse": [10, 100]},
+"info": {"bed_type": "richmat_mlily_supreme", "controller": "RichmatMHAppSleepController", "gaps": ["select:ruf_richmat_sleep_mode=single", "select:ruf_richmat_sleep_mode=double", "switch:ruf_richmat_sleep_left_intervention=on", "switch:ruf_richmat_sleep_left_intervention=off", "switch:ruf_richmat_sleep_right_intervention=on", "switch:ruf_richmat_sleep_right_intervention=off"], "module": "richmat_mh.app_sleep", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[1000,"26f66991","notify","",1,0]]},
 "select:ruf_richmat_sleep_mode=single": {"error":"ValueError","status":"error","writes":[]},
 "select:ruf_richmat_sleep_mode=double": {"error":"ValueError","status":"error","writes":[]},
-"select:ruf_richmat_sleep_left_intervention=off": {"error":"ValueError","status":"error","writes":[]},
-"select:ruf_richmat_sleep_left_intervention=on": {"error":"ValueError","status":"error","writes":[]},
-"select:ruf_richmat_sleep_right_intervention=off": {"error":"ValueError","status":"error","writes":[]},
-"select:ruf_richmat_sleep_right_intervention=on": {"error":"ValueError","status":"error","writes":[]},
+"switch:ruf_richmat_sleep_left_intervention=on": {"error":"ValueError","status":"error","writes":[]},
+"switch:ruf_richmat_sleep_left_intervention=off": {"error":"ValueError","status":"error","writes":[]},
+"switch:ruf_richmat_sleep_right_intervention=on": {"error":"ValueError","status":"error","writes":[]},
+"switch:ruf_richmat_sleep_right_intervention=off": {"error":"ValueError","status":"error","writes":[]},
 "background": {"status":"background","writes":[[1000,"26f66991",true,"fa0330a512",1,0],[1007,"26f66991",true,"fa025e01",1,0]]}
 }},
 "richmat_mlily_supreme:waist": {
@@ -24819,15 +24819,15 @@
 "button:richmat_mh_stop_detection": {"status":"ok","writes":[[0,"6e400002",true,"6e88c220d8",1,0]]}
 }},
 "richmat_nisco:sleep": {
-"info": {"bed_type": "richmat_nisco", "controller": "RichmatMHAppSleepController", "gaps": ["select:ruf_richmat_sleep_mode=single", "select:ruf_richmat_sleep_mode=double", "select:ruf_richmat_sleep_left_intervention=off", "select:ruf_richmat_sleep_left_intervention=on", "select:ruf_richmat_sleep_right_intervention=off", "select:ruf_richmat_sleep_right_intervention=on"], "module": "richmat_mh.app_sleep", "pulse": [10, 100]},
+"info": {"bed_type": "richmat_nisco", "controller": "RichmatMHAppSleepController", "gaps": ["select:ruf_richmat_sleep_mode=single", "select:ruf_richmat_sleep_mode=double", "switch:ruf_richmat_sleep_left_intervention=on", "switch:ruf_richmat_sleep_left_intervention=off", "switch:ruf_richmat_sleep_right_intervention=on", "switch:ruf_richmat_sleep_right_intervention=off"], "module": "richmat_mh.app_sleep", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[1000,"26f66991","notify","",1,0]]},
 "select:ruf_richmat_sleep_mode=single": {"error":"ValueError","status":"error","writes":[]},
 "select:ruf_richmat_sleep_mode=double": {"error":"ValueError","status":"error","writes":[]},
-"select:ruf_richmat_sleep_left_intervention=off": {"error":"ValueError","status":"error","writes":[]},
-"select:ruf_richmat_sleep_left_intervention=on": {"error":"ValueError","status":"error","writes":[]},
-"select:ruf_richmat_sleep_right_intervention=off": {"error":"ValueError","status":"error","writes":[]},
-"select:ruf_richmat_sleep_right_intervention=on": {"error":"ValueError","status":"error","writes":[]},
+"switch:ruf_richmat_sleep_left_intervention=on": {"error":"ValueError","status":"error","writes":[]},
+"switch:ruf_richmat_sleep_left_intervention=off": {"error":"ValueError","status":"error","writes":[]},
+"switch:ruf_richmat_sleep_right_intervention=on": {"error":"ValueError","status":"error","writes":[]},
+"switch:ruf_richmat_sleep_right_intervention=off": {"error":"ValueError","status":"error","writes":[]},
 "background": {"status":"background","writes":[[1000,"26f66991",true,"fa0330a512",1,0],[1007,"26f66991",true,"fa025e01",1,0]]}
 }},
 "richmat_revive": {
