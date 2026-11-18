@@ -99,6 +99,7 @@ from .const import (
     VARIANT_REQUIRED_BED_TYPES,
     ZSERIES_VARIANTS,
 )
+from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
@@ -151,6 +152,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
     BED_TYPE_MLILY: MLILY_PROFILES,
     BED_TYPE_OKIMIKI: OKIMIKI_PROFILES,
+    "bobpowerbase": BOB_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
     BED_TYPE_RICHMAT_APP: RICHMAT_APP_PRODUCTS,

@@ -1,0 +1,68 @@
+[
+  {
+    "bytes": "6e09010078",
+    "event": "deviceCharacteristicsSubscriptionClockEvent",
+    "scope": "BED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:4858"
+  },
+  {
+    "bytes": "6e0e00037f",
+    "event": "deviceCharacteristicsSubscriptionLightEvent",
+    "scope": "BED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:4894"
+  },
+  {
+    "bytes": "6e1a000189",
+    "event": "deviceCharacteristicsSubscriptionAromatherapyEvent",
+    "scope": "EXCLUDED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:4930"
+  },
+  {
+    "bytes": "6e07010177",
+    "event": "deviceAddAlarmSuccessEvent",
+    "scope": "BED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:4966"
+  },
+  {
+    "bytes": "6e07010278",
+    "event": "deviceCancelAlarmSuccessEvent",
+    "scope": "BED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5002"
+  },
+  {
+    "bytes": "6e16010186",
+    "event": "deviceCharacteristicsSubscriptionMusicEvent",
+    "scope": "EXCLUDED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5038"
+  },
+  {
+    "bytes": "6e90c101c0",
+    "event": "deviceCharacteristicsSubscriptionDetectionEvent",
+    "scope": "BED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5074"
+  },
+  {
+    "bytes": "6e2100008f",
+    "event": "deviceCharacteristicsSubscriptionSnoreEvent",
+    "scope": "BED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5110"
+  },
+  {
+    "bytes": "6e23018416",
+    "event": "deviceCharacteristicsSubscriptionBoxLockEvent",
+    "scope": "BED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5146"
+  },
+  {
+    "bytes": "6e23008415",
+    "event": "deviceCharacteristicsSubscriptionCancelBoxLockEvent",
+    "scope": "BED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5182"
+  },
+  {
+    "bytes": "6e23a06e9f",
+    "event": "deviceCharacteristicsSubscriptionSnoreStopPlayMusicEvent",
+    "scope": "EXCLUDED",
+    "source": "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:5218"
+  }
+]

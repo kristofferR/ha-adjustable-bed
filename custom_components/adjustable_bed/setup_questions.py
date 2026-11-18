@@ -250,6 +250,8 @@ from .profiles import jiecang as jiecang_profiles
 from .profiles import limoss as limoss_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
+from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
@@ -317,6 +319,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JALON: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_RICHMAT_APP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
@@ -2681,6 +2684,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
     ),
     # The app's product sets every control, so its one row asks it.
+    "bobpowerbase": _asking(
+        "bobpowerbase",
+        questions=(Question(CONF_PROTOCOL_VARIANT, BOB_PROFILES),
+                   Question(CONF_PRODUCT_TYPE, BOB_LAYOUTS, "standard")),
+    ),
     BED_TYPE_MLILY: _asking(
         BED_TYPE_MLILY,
         questions=(Question(CONF_PROTOCOL_VARIANT, MLILY_PROFILES, searchable=True),),

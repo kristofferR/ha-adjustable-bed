@@ -277,7 +277,7 @@ def recommend_profile(
     # A bare shared service is not enough to question a configured bed. Name,
     # manufacturer or a high-confidence dedicated signature must corroborate it.
     receiver_ambiguities = set(detected.ambiguous_types or ()) - {
-        BED_TYPE_MLILY, BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_GALAXY,
+        BED_TYPE_MLILY, BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_GALAXY, "bobpowerbase",
         BED_TYPE_ESHINE_OKIN, BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_RESIDENT, BED_TYPE_MLINE, BED_TYPE_YAMADA, BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_N32_MOTION_BED, BED_TYPE_OKIMIKI,
@@ -288,6 +288,7 @@ def recommend_profile(
         signal.startswith(("name:", "manufacturer", "mac:"))
         and signal not in (
             "name:mlily_app_candidate", "name:hjbed_app_candidate", "name:goodvibe_app_candidate", "name:galaxy_app_candidate",
+            "name:bobpowerbase_app_candidate",
             "name:eshine_okin_app_candidate", "name:richmat_classic_app_candidate",
             "name:resident_app_candidate", "name:mline_app_candidate", "name:yamada_app_candidate",
             "name:n32_app_candidate", "name:okimiki_app_candidate",

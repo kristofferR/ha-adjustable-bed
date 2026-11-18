@@ -3282,6 +3282,9 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "goodvibe_save_action": {
+        "name": "{action}"
+      },
       "onlysnore_massage_timer_next": {
         "name": "Cycle massage timer"
       },
@@ -5058,6 +5061,9 @@
       },
       "sonicsleep": {
         "name": "Model"
+      },
+      "bobpowerbase_status": {
+        "name": "Status"
       },
       "onlysnore_firmware": {
         "name": "Firmware version"
@@ -9089,6 +9095,46 @@
         }
       }
     },
+    "bobpowerbase": {
+      "name": "Power Bob Base: settings",
+      "description": "Manage repeat alarms, synchronize local time, or set lighting reported by the connected bed.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Action"
+        },
+        "action": {
+          "name": "Alarm preset"
+        },
+        "datetime": {
+          "name": "Alarm date and time",
+          "description": "ISO 8601 with a timezone offset."
+        },
+        "alarm_id": {
+          "name": "Alarm slot",
+          "description": "Use an explicit slot when the reported alarm list may be incomplete."
+        },
+        "weekdays": {
+          "name": "Repeat weekdays",
+          "description": "Monday is 0, Sunday is 6. Empty means once."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Whole minutes from 0 to 15, supplied as seconds. Zero means always on."
+        },
+        "rgb_color": {
+          "name": "Light color"
+        }
+      }
+    },
     "onlysnore_set_alarm": {
       "name": "Snore Monitor: set bed alarm",
       "description": "Set or turn off one of the bed's own alarms. Snore Monitor keeps this action instead of Set alarm because its alarm actions and raw repeat mask have no confirmed meaning.",
@@ -11415,6 +11461,26 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "bobpowerbase_operation": {
+      "options": {
+        "repeat": "Save repeating alarm",
+        "delete": "Delete alarm",
+        "alarms": "Read alarms",
+        "sync": "Set bed clock",
+        "light_color": "Set light color",
+        "light_duration": "Set light duration",
+        "light_off": "Turn light off"
+      }
+    },
+    "bobpowerbase_alarm_action": {
+      "options": {
+        "anti_snore": "Anti-snore",
+        "zero_gravity": "Zero gravity",
+        "tv": "TV",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2"
       }
     },
     "onlysnore_alarm_action": {

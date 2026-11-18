@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.profiles import richmat as profiles
 from custom_components.adjustable_bed.profiles.okimiki import CATALOG as OKIMIKI_CATALOG
 from custom_components.adjustable_bed.profiles.okimiki import CONTROLS as OKIMIKI_CONTROLS
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI_WIRE
+from custom_components.adjustable_bed.profiles.bobpowerbase import WIRE as BOB_WIRE
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.richmat_vectors import FROZEN_FRAMES
 
@@ -40,6 +41,7 @@ PROFILES = {
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
     "mlily": profiles.MLILY,
+    "bobpowerbase": BOB_WIRE,
     "galaxy": profiles.GALAXY,
     "okimiki": OKIMIKI_WIRE,
     "leggett_lp_legacy": profiles.LP_LEGACY,
@@ -240,6 +242,18 @@ def _census(key: str) -> set[str]:
         } | {
             codec.record(5, 1, 0, (0,)).hex(),
             *(frame.hex() for frame in okimiki.countdown(0, 0)),
+        }
+    if key == "bobpowerbase":
+        from custom_components.adjustable_bed.profiles.bobpowerbase import ACTIONS, CATALOG
+
+        return {
+            codec.function(code, side, single=raw, action=action.label).hex()
+            for action in ACTIONS.values() for side in (0, 1) for raw in (False, True)
+            for code in ((action.short, action.long) if action.long else (action.short,))
+        } | {
+            codec.function(code, single=raw, action=name).hex()
+            for name, code in (*CATALOG.startup, ("deviceFunctionItemStop", 0x6E))
+            for raw in (False, True)
         }
     if key == "mlily":
         from custom_components.adjustable_bed.profiles.mlily import catalog

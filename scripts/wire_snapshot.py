@@ -1259,6 +1259,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_RICHMAT_APP_SLEEP: "hj",
         const.BED_TYPE_DOUBLESLEEP: "p1",
         const.BED_TYPE_RICHMAT_CLASSIC_APPS: "avocadoecobase",
+        const.BED_TYPE_BOBPOWERBASE: "elite",
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
@@ -1308,6 +1309,9 @@ def default_scenario(bed_type: str) -> Scenario:
         replies = GALAXY_REPLIES
     if bed_type == const.BED_TYPE_OKIMIKI:
         replies = OKIMIKI_REPLIES
+    if bed_type == const.BED_TYPE_BOBPOWERBASE:
+        data[const.CONF_PRODUCT_TYPE] = "standard"
+        replies = {"*": "6e0e00037f"}
     if bed_type == const.BED_TYPE_RICHMAT_CLASSIC_APPS:
         data[const.CONF_PRODUCT_TYPE] = "GORM"  # three app modes
     if bed_type == const.BED_TYPE_SLEEPYS_ELITE_APP:
@@ -1682,6 +1686,18 @@ def route_scenarios() -> list[Scenario]:
     if "okimiki" in const.SUPPORTED_BED_TYPES:
         for product in ("HCRN", "IPRM", "IQRM", "KWRN"):
             scenarios.append(Scenario(id=f"okimiki:{product}:nordic", bed_type="okimiki", protocol_variant=product, layout_id="okimiki_nordic", replies=OKIMIKI_REPLIES))
+    if const.BED_TYPE_BOBPOWERBASE in const.SUPPORTED_BED_TYPES:
+        from custom_components.adjustable_bed.profiles.bobpowerbase import PROFILE_CHOICES, WIRE
+
+        for product in PROFILE_CHOICES:
+            for route in WIRE.transports:
+                scenarios.append(Scenario(
+                    id=f"bobpowerbase:{product}:{route}", bed_type=const.BED_TYPE_BOBPOWERBASE,
+                    protocol_variant=product, entry_data={const.CONF_PRODUCT_TYPE: "standard"},
+                    layout_id=f"bobpowerbase_{route}", replies={"*": "6e0e00037f"},
+                ))
+        scenarios.append(dataclasses.replace(default_scenario(const.BED_TYPE_BOBPOWERBASE),
+            id="bobpowerbase:props_write", layout_id="bobpowerbase", properties=WRITE_ONLY))
     # Good Vibe Sleep: products by gesture mix and native sides, the legacy
     # single-byte link, and the two independent sleep sensors.
     if "goodvibe" in const.SUPPORTED_BED_TYPES:

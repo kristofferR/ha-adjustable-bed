@@ -872,6 +872,10 @@
   "button:goodvibe_release": {
     "card_section": "hidden"
   },
+  "button:goodvibe_save_action": {
+    "card_section": "presets",
+    "card_role": "save"
+  },
   "button:head_down": {
     "card_section": "motors",
     "card_role": "down",
@@ -3845,6 +3849,9 @@
     "card_section": "massage"
   },
   "sensor:bf_cherish_alarm": {
+    "card_section": "hidden"
+  },
+  "sensor:bobpowerbase_status": {
     "card_section": "hidden"
   },
   "sensor:casper_base": {

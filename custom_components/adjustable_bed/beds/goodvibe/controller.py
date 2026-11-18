@@ -9,12 +9,13 @@ from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import partial
+from time import monotonic
 from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
-from ...card import CARD_HIDDEN, CARD_UTILITY, CardPlacement, CardSection
+from ...card import CARD_HIDDEN, CARD_PRESET_SAVE, CARD_UTILITY, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
@@ -254,7 +255,8 @@ class GoodVibeController(BedController):
         self._poll: asyncio.Task[None] | None = None
         self._followups: set[asyncio.Task[None]] = set()
         self._normal = Notifications(
-            self._event, mlily=catalog.key == "mlily", timer_pair=catalog.notification_menus
+            self._event, mlily=catalog.key == "mlily", timer_pair=catalog.notification_menus,
+            direct_bed=catalog.bed is not None,
         )
         self._sleep = Receiver(self.kind, ordinary_utf8=catalog.reply_gated_menus) if self.kind != 1 else None
         self._pending_single: dict[str, object] | None = None
@@ -271,7 +273,7 @@ class GoodVibeController(BedController):
 
     @property
     def snore_available(self) -> bool:
-        if self.product is None or self.catalog.reply_gated_menus:
+        if self.product is None or self.catalog.reply_gated_menus or self.catalog.bed is not None:
             return False
         if self.catalog.notification_menus:
             return self.catalog.runtimes[self.product_key].snore
@@ -367,6 +369,10 @@ class GoodVibeController(BedController):
         duration = state.get("light_duration")
         if duration is not None and (type(duration) is not int or not 0 <= duration <= 65535):
             raise ValueError("Invalid saved Good Vibe duration")
+        if self.catalog.bed is not None and duration is not None and duration not in (
+            minute * 60 for minute in self.catalog.bed.light_minutes
+        ):
+            raise ValueError("Choose a Power Bob Base light duration from 0 to 15 minutes")
         for key in ("saved_single", "light_color", "light_duration"):
             if key in state:
                 self.choices.events[key] = deepcopy(state[key])
@@ -375,7 +381,28 @@ class GoodVibeController(BedController):
         side = {"left": 0, "right": 1, "both": 2}.get(self.command_side or "", self.choices.side)
         if self.product is None or side not in self.product.sides:
             raise ValueError("This product does not offer the requested side")
+        if self.catalog.bed is not None and self._link is not None and self._link.legacy and side != 0:
+            raise ValueError("The Nordic command does not address a bed side")
         return side
+
+    @property
+    def has_dynamic_controller_entities(self) -> bool:
+        return self.catalog.bed is not None or super().has_dynamic_controller_entities
+
+    @property
+    def has_dynamic_buttons(self) -> bool:
+        return self.catalog.bed is not None or super().has_dynamic_buttons
+
+    @property
+    def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
+        if self.catalog.bed is not None and self.product is not None and self.product.light:
+            # A missing session reply withdraws permission, not the known
+            # product's registry identity or the user's customizations.
+            return frozenset({
+                ("button", "goodvibe_light_off"),
+                ("select", "controller_select_goodvibe_light_duration"),
+            })
+        return super().retained_entity_keys
 
     def menu_available(self, menu: str) -> bool:
         """A product getter permits a menu; the app may also require its reply."""
@@ -386,6 +413,8 @@ class GoodVibeController(BedController):
             "alarm": bool(self.product.alarms),
             "sleep": self.product.sleep == "deviceSleepMonitoringBle" if self.catalog.reply_gated_menus else self.product.sleep != "deviceSleepMonitoringNone",
         }[menu]
+        if self.catalog.bed is not None:
+            return allowed and (menu != "light" or "deviceCharacteristicsSubscriptionLightEvent" in self.choices.events)
         if not self.catalog.reply_gated_menus:
             return allowed
         if menu == "alarm" and allowed and any(
@@ -438,8 +467,18 @@ class GoodVibeController(BedController):
         }
 
     def _event(self, name: str, value: object) -> None:
+        if self.catalog.bed is not None:
+            # Keep shared BED effects, without promoting companion/audio/accessory state.
+            if name.startswith(("deviceMusic", "deviceBlacket", "deviceFan", "deviceAtomization", "deviceHeating", "deviceSleep")) or name in (
+                "deviceCharacteristicsSubscriptionMusicEvent",
+                "deviceCharacteristicsSubscriptionAromatherapyEvent",
+                "deviceCharacteristicsSubscriptionSnoreStopPlayMusicEvent",
+            ):
+                return
         self._last_event = name
         self.choices.events[name] = deepcopy(value)
+        if self.catalog.bed is not None and name == "deviceCharacteristicsSubscriptionLightEvent":
+            self._menus_changed.set()
         if self.catalog.notification_menus and self.product is not None:
             if name == "deviceCharacteristicsSubscriptionClockEvent" and self.product.alarms:
                 self._menus.add("alarm")
@@ -507,6 +546,7 @@ class GoodVibeController(BedController):
             or self.client is not link.client
             or not link.client.is_connected
             or self._coordinator.address != self._address
+            or self.catalog.bed is not None and self._coordinator.controller is not self
         ):
             raise ConnectionError("Good Vibe Sleep session changed")
         return link
@@ -529,9 +569,12 @@ class GoodVibeController(BedController):
         link: Link | None = None,
         release_gesture: Gesture | None = None,
         on_submit: Callable[[], None] | None = None,
+        deadline: float | None = None,
+        dispatch: Callable[[], None] | None = None,
     ) -> bool:
         link = link or self._current_link()
-        if not cleanup and self._coordinator.cancel_command.is_set():
+        cancel = asyncio.Event() if cleanup else self._coordinator.cancel_command
+        if cancel.is_set():
             return False
         async with self._ble_lock:
             if release_gesture is not None and (
@@ -540,29 +583,46 @@ class GoodVibeController(BedController):
                 return False
             if self._current_link() is not link:
                 raise ConnectionError("Good Vibe Sleep link was replaced")
-            if not cleanup and self._coordinator.cancel_command.is_set():
+            if cancel.is_set():
                 return False
-            if self.catalog.reply_gated_menus:
+            if self.catalog.reply_gated_menus or self.catalog.bed is not None:
                 loop = asyncio.get_running_loop()
                 delay = self._next_write_at - loop.time()
                 if delay > 0:
                     await asyncio.sleep(delay)
                 if self._current_link() is not link:
                     raise ConnectionError("The BLE link changed while a write was queued")
-                if not cleanup and self._coordinator.cancel_command.is_set():
+                if cancel.is_set():
                     return False
-                self._next_write_at = loop.time() + QUEUE_MS / 1000
+                tick = self.catalog.bed.tick_ms if self.catalog.bed is not None else QUEUE_MS
+                self._next_write_at = loop.time() + tick / 1000
             # Pacing holds the wire lock; cancellation/link ownership are checked again.
             if not await self._pace(cleanup):
                 return False
             if self._current_link() is not link:
                 raise ConnectionError("Catalog link was replaced during pacing")
-            if not cleanup and self._coordinator.cancel_command.is_set():
+            if cancel.is_set():
+                return False
+            if deadline is not None and monotonic() >= deadline:
+                return False
+            context = current_command_context()
+            if (
+                self.catalog.bed is not None
+                and not cleanup
+                and context is not None
+                and context.lease is not None
+                and (
+                    context.hold_deadline is not None
+                    and asyncio.get_running_loop().time() >= context.hold_deadline
+                )
+            ):
                 return False
             if release_gesture is not None and (
                 self._gesture is not release_gesture or not release_gesture.release_is_current
             ):
                 return False
+            if dispatch is not None:
+                dispatch()
             response = self.kind == 3 or (
                 self.kind == 1 and "write-without-response" not in link.tx.properties
             )
@@ -578,7 +638,23 @@ class GoodVibeController(BedController):
             )
             if on_submit is not None:
                 on_submit()
-            await link.client.write_gatt_char(link.tx, data, response=response)
+            if self.catalog.bed is None:
+                await link.client.write_gatt_char(link.tx, data, response=response)
+            else:
+                write = asyncio.create_task(link.client.write_gatt_char(link.tx, data, response=response))
+                try:
+                    await asyncio.shield(write)
+                except asyncio.CancelledError:
+                    # A submitted GATT write must drain before cleanup releases
+                    # the same physical link and wire lock.
+                    while not write.done():
+                        try:
+                            await asyncio.shield(write)
+                        except asyncio.CancelledError:
+                            if write.cancelled():
+                                raise
+                    write.result()
+                    raise
             self._last_write = asyncio.get_running_loop().time()
         return True
 
@@ -603,13 +679,18 @@ class GoodVibeController(BedController):
     def _notification(self, link: Link, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         if self._link is not link or self.client is not link.client or not link.client.is_connected:
             return
+        if self.catalog.bed is not None and self._coordinator.controller is not self:
+            return
         self.forward_raw_notification(link.rx.uuid, bytes(data))
         if self.kind == 1:
             self._normal.feed(bytes(data))
             if self._expiry is not None:
                 self._expiry.cancel()
             self._expiry = (
-                asyncio.get_running_loop().call_later(EXPIRY_S, self._normal.clear)
+                asyncio.get_running_loop().call_later(
+                    self.catalog.bed.receive_expiry_s if self.catalog.bed else EXPIRY_S,
+                    self._expire_notifications, link,
+                )
                 if self._normal.buffer
                 else None
             )
@@ -661,6 +742,10 @@ class GoodVibeController(BedController):
                     self._report_done.set()
         self._publish()
 
+    def _expire_notifications(self, link: Link) -> None:
+        if self._link is link:
+            self._normal.clear()
+
     def _follow_up(self, link: Link, operation: str, expected: str | None = None) -> None:
         async def follow() -> None:
             async def execute(controller: BedController) -> None:
@@ -702,12 +787,20 @@ class GoodVibeController(BedController):
             self.on_disconnect()
         link = select_link(
             client, self.kind, self.profile, strict_sleep=self.catalog.reply_gated_menus,
-            bind_framing=self.catalog.notification_menus,
+            bind_framing=self.catalog.notification_menus or self.catalog.bed is not None,
         )
         self._link = link
         try:
             await client.start_notify(link.rx, partial(self._notification, link))
             if self.kind == 1:
+                if self.catalog.bed is not None:
+                    self._next_write_at = asyncio.get_running_loop().time() + self.catalog.bed.tick_ms / 1000
+                    for action, code in self.catalog.startup:
+                        await self._send(codec.function(code, action=action, single=link.legacy), link=link)
+                    if self.product is not None and self.product.alarms:
+                        await self._send(codec.calendar(dt_util.now(), build=self.record), link=link)
+                    self._publish()
+                    return
                 startup = self.catalog.startup
                 time_sync = self.product is not None and bool(self.product.alarms)
                 sleep_query = (
@@ -792,6 +885,14 @@ class GoodVibeController(BedController):
         self._gesture = None
         self._menus.clear()
         self._menus_changed.set()
+        if self.catalog.bed is not None:
+            durable = {key: value for key, value in self.choices.events.items()
+                       if key in ("light_color", "light_duration")}
+            self.choices.events.clear()
+            self.choices.events.update(durable)
+            self._last_event = None
+            self._last_write = 0.0
+            self._normal.rejection = None
         if self.catalog.notification_menus:
             for key in ("repeat_alarms", "sleep_advertisement_name", "menus"):
                 self.choices.events.pop(key, None)
@@ -900,20 +1001,22 @@ class GoodVibeController(BedController):
                 ),
             )
         buttons = []
-        if self.product.light:
+        labels = self.catalog.labels
+        if self.product.light and (self.catalog.bed is None or self.menu_available("light")):
 
             async def light_off(controller: BedController) -> None:
                 from .services import Request
 
                 await selected(controller).async_execute_goodvibe_request(Request("light_off"))
 
+            off = labels.get("light_off", "Bed light off")
             buttons.append(
                 ControllerButtonSpec(
                     "goodvibe_light_off",
-                    "Bed light off",
+                    off,
                     light_off,
                     translation_key="goodvibe_action",
-                    translation_placeholders={"action": "Bed light off"},
+                    translation_placeholders={"action": off},
                 )
             )
         for detail in self.control_actions:
@@ -921,24 +1024,31 @@ class GoodVibeController(BedController):
             if action.local or action.hidden or not action.interactive:
                 continue
             key = "goodvibe_" + detail
+            name = labels.get(detail, label(action))
             buttons.append(
                 ControllerButtonSpec(
                     key,
-                    label(action),
+                    name,
                     partial(_press, detail=detail),
                     translation_key="goodvibe_action",
-                    translation_placeholders={"action": label(action)},
-                    hold=ControllerHoldSpec(key, 0, 0, "goodvibe_release"),
+                    translation_placeholders={"action": name},
+                    hold=(ControllerHoldSpec(key, 0, 0, "goodvibe_release")
+                          if self.catalog.bed is None or action.gesture != "shortPress" else None),
                 )
             )
             if action.gesture in ("longPress", "shortAndLongPress"):
+                long_name = labels.get(detail + "_long", label(action) + " (long press)")
+                # A Power Bob Base long press saves the preset: confirm it first.
+                saves = self.catalog.bed is not None
                 buttons.append(
                     ControllerButtonSpec(
                         key + "_long",
-                        label(action) + " (long press)",
+                        long_name,
                         partial(_press, detail=detail, duration=3100),
-                        translation_key="goodvibe_action",
-                        translation_placeholders={"action": label(action) + " (long press)"},
+                        translation_key="goodvibe_save_action" if saves else "goodvibe_action",
+                        translation_placeholders={"action": long_name},
+                        requires_confirmation=saves,
+                        card=CARD_PRESET_SAVE if saves else CARD_UTILITY,
                     )
                 )
         buttons.append(
@@ -997,7 +1107,23 @@ class GoodVibeController(BedController):
             raise ValueError("Control is unavailable for this product")
         await self.press(control.removeprefix("goodvibe_"), duration_ms)
 
-    async def _delay(self, milliseconds: int) -> bool:
+    def validate_hold_control(self, control: str, duration_ms: int) -> None:
+        super().validate_hold_control(control, duration_ms)
+        if self.catalog.bed is not None:
+            self._side()
+
+    def controller_button_available(self, key: str) -> bool:
+        if self.catalog.bed is None:
+            return super().controller_button_available(key)
+        if key == "goodvibe_light_off" and not self.menu_available("light"):
+            return False
+        try:
+            self._side()
+        except ValueError:
+            return False
+        return super().controller_button_available(key)
+
+    async def _delay(self, milliseconds: float) -> bool:
         try:
             await asyncio.wait_for(self._coordinator.cancel_command.wait(), milliseconds / 1000)
             return False
@@ -1030,6 +1156,19 @@ class GoodVibeController(BedController):
             # Admission checks the scope too; memory mode may change after it.
             raise ValueError("This control does not support renewable holds")
         side, link = self._side(), self._current_link()
+        bed = self.catalog.bed
+        finite_bed_hold = (
+            bed is not None
+            and gesture == "sustainPress"
+            and duration >= bed.tick_ms
+            and (context is None or context.lease is None)
+        )
+        deadline = monotonic() + duration / 1000 if bed is not None else None
+        if finite_bed_hold:
+            assert bed is not None and deadline is not None
+            # HA's finite movement budget excludes the source's first tick.
+            # Anchor it here, never after a delayed timer or submitted write.
+            deadline += bed.tick_ms / 1000
         cancel = self._coordinator.cancel_command
         long = action.force_long or memory
         # The artifact replaces flagged items with the None descriptor while its local release mode is off.
@@ -1053,13 +1192,14 @@ class GoodVibeController(BedController):
             nonlocal attempted
             attempted = True
 
-        async def send(*, released: bool = False) -> None:
-            await self._send(
+        async def send(*, released: bool = False) -> bool:
+            return await self._send(
                 frame,
                 link=link,
                 cleanup=released,
                 release_gesture=gesture_state if released else None,
                 on_submit=mark_submitted,
+                deadline=deadline if gesture == "sustainPress" and not released else None,
             )
 
         def released_short() -> bool:
@@ -1074,13 +1214,29 @@ class GoodVibeController(BedController):
         try:
             try:
                 if gesture == "sustainPress":
-                    remaining = duration
-                    while remaining >= TICK_MS and await self._delay(TICK_MS):
-                        await send()
-                        remaining -= TICK_MS
+                    if bed is not None:
+                        assert deadline is not None
+                        next_tick_ms = bed.tick_ms
+                        while (
+                            not finite_bed_hold or next_tick_ms < bed.tick_ms + duration
+                        ) and monotonic() + bed.tick_ms / 1000 < deadline:
+                            if not await self._delay(bed.tick_ms):
+                                break
+                            if not await send():
+                                break
+                            next_tick_ms += bed.tick_ms
+                        remaining_ms = (deadline - monotonic()) * 1000
+                        if finite_bed_hold and remaining_ms > 0 and not cancel.is_set():
+                            await self._delay(remaining_ms)
+                    else:
+                        remaining = duration
+                        while remaining >= TICK_MS and await self._delay(TICK_MS):
+                            await send()
+                            remaining -= TICK_MS
                 elif gesture in ("longPress", "shortAndLongPress"):
-                    if duration >= LONG_PRESS_MS:
-                        if await self._delay(LONG_PRESS_MS):
+                    program_ms = bed.program_ms if bed is not None else LONG_PRESS_MS
+                    if duration >= program_ms:
+                        if await self._delay(program_ms):
                             long_callback = True
                             frame = (
                                 codec.function(0, side, single=link.legacy)
@@ -1123,13 +1279,28 @@ class GoodVibeController(BedController):
                 elif action.label == "deviceFunctionItemFootUpAndHeadDown":
                     self.choices.release, self.choices.hold = False, True
             self._publish()
-            if attempted and gesture == "shortPress":
+            if attempted and gesture == "shortPress" and bed is None:
                 await self._delay(duration)
         finally:
             if self._gesture is gesture_state:
                 self._gesture = None
-            if attempted and gesture in ("shortPress", "sustainPress"):
-                await self._send(_stop(side, link), cleanup=True, link=link)
+            release_required = (attempted or bed is not None and not cancel.is_set()) and gesture == "sustainPress"
+            if release_required or attempted and gesture == "shortPress" and bed is None:
+                if bed is None:
+                    await self._send(_stop(side, link), cleanup=True, link=link)
+                else:
+                    release = asyncio.create_task(self._send(_stop(side, link), cleanup=True, link=link))
+                    cancelled = False
+                    while not release.done():
+                        try:
+                            await asyncio.shield(release)
+                        except asyncio.CancelledError:
+                            cancelled = True
+                            if release.cancelled():
+                                raise
+                    release.result()
+                    if cancelled:
+                        raise asyncio.CancelledError
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
@@ -1172,7 +1343,7 @@ class GoodVibeController(BedController):
                     card=CardPlacement(CardSection.MOTORS),
                 )
             )
-        if self.product.light:
+        if self.product.light and (self.catalog.bed is None or self.menu_available("light")):
 
             async def duration(controller: BedController, value: str) -> None:
                 from .services import Request
@@ -1182,7 +1353,7 @@ class GoodVibeController(BedController):
                 )
 
             eight = self.product.light_display == "deviceBedLightDisplayCircleEightColorValue"
-            options = tuple(map(str, p.light_durations(self.product.label.split(" / ")[0], eight)))
+            options = tuple(map(str, (minute * 60 for minute in self.catalog.bed.light_minutes))) if self.catalog.bed else tuple(map(str, p.light_durations(self.product.label.split(" / ")[0], eight)))
             specs.append(
                 ControllerSelectSpec(
                     "goodvibe_light_duration",
@@ -1190,6 +1361,10 @@ class GoodVibeController(BedController):
                     LIGHT_DURATION,
                     options,
                     duration,
+                    is_available=(
+                        lambda controller: isinstance(controller, GoodVibeController)
+                        and controller.catalog.bed is not None and controller.menu_available("light")
+                    ) if self.catalog.bed is not None else None,
                 )
             )
         return tuple(specs)
@@ -1241,10 +1416,11 @@ class GoodVibeController(BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        status_key = "bobpowerbase_status" if self.catalog.bed is not None else "galaxy_status" if self.catalog.key == "galaxy" else "goodvibe_status"
         specs = [
             ControllerStateSensorSpec(
-                "galaxy_status" if self.catalog.key == "galaxy" else "goodvibe_status",
-                "galaxy_status" if self.catalog.key == "galaxy" else "goodvibe_status",
+                status_key,
+                status_key,
                 STATUS,
                 "mdi:bed",
                 attribute_keys=(
@@ -1405,8 +1581,49 @@ class GoodVibeController(BedController):
     def validate_goodvibe_request(self, request: Request) -> None:
         request.validate(self)
 
-    async def async_execute_goodvibe_request(self, request: Request) -> None:
+    async def async_prepare_goodvibe_request(
+        self, request: Request, *, admitted: Callable[[], bool]
+    ) -> None:
+        """Await Bob's reported light permission within the existing HA readiness budget."""
+        if self.catalog.bed is None or not request.operation.startswith("light_"):
+            return
+        request.validate(self, reported=False)
+        link = self._current_link()
+        generation = self._coordinator._position_connection_generation
+        cancel = self._coordinator.cancel_command
+
+        def current() -> None:
+            admitted()
+            if self._current_link() is not link or self._coordinator._position_connection_generation != generation:
+                raise ConnectionError("Power Bob Base session changed while awaiting light capability")
+            if cancel.is_set():
+                raise asyncio.CancelledError
+
+        self._menus_changed.clear()
+        current()
+        if self.menu_available("light"):
+            return
+        ready = asyncio.create_task(self._menus_changed.wait())
+        stopped = asyncio.create_task(cancel.wait())
+        try:
+            done, _pending = await asyncio.wait(
+                (ready, stopped), timeout=MENU_REPLY_TIMEOUT_S,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            current()
+            if not done:
+                raise ValueError("The connected bed has no light menu reply before readiness timed out")
+            request.validate(self)
+        finally:
+            ready.cancel()
+            stopped.cancel()
+            await asyncio.gather(ready, stopped, return_exceptions=True)
+
+    async def async_execute_goodvibe_request(
+        self, request: Request, *, dispatch: Callable[[], None] | None = None
+    ) -> None:
         self.validate_goodvibe_request(request)
+        link = self._current_link()
         if self.kind != 1:
             assert self._sleep is not None
             if request.operation != "report":
@@ -1430,13 +1647,16 @@ class GoodVibeController(BedController):
                 self._report_context = None
             return
         frames = request.frames(self)
+        if self.catalog.bed is not None and request.operation == "light_duration":
+            if not await self._delay(self.catalog.bed.light_delay_ms):
+                return
         if request.operation == "alarms":
             self.choices.events["repeat_alarms"] = {}
             if self.catalog.reply_gated_menus:
                 self.choices.events["repeat_alarm_records"] = []
         try:
             for frame in frames:
-                if not await self._send(frame):
+                if not await self._send(frame, link=link, dispatch=dispatch):
                     raise asyncio.CancelledError
         except BaseException:
             self._pending_single = None

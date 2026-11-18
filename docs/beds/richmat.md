@@ -57,6 +57,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | [Power Bob Base](https://play.google.com/store/apps/details?id=com.richmat.bobpowerbase) 1.0.9 (10900) | `com.richmat.bobpowerbase` | [Power Bob Base](#power-bob-base) |
 | ✅ | [Richmat](https://play.google.com/store/apps/details?id=com.richmat.richmat) 4.2.0 (42006) | `com.richmat.richmat` | [Richmat 4.2.0](#richmat-420) |
 | ✅ | [RMControl](https://play.google.com/store/apps/details?id=com.richmat.rmcontrol2) 21.3.7 | `com.richmat.rmcontrol2` | [RMControl](#rmcontrol); the [Richmat remotes](#richmat-remotes) cover the same beds |
 | ✅ | [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) 7.1.3 (14) | `com.bedtech` | [BedTech](#bedtech) |
@@ -215,6 +216,7 @@ sends STOP.
 | Good Vibe Sleep | `goodvibe` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease on sustained controls |
 | MLILY Control | `mlily` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease on sustained controls |
 | Okimiki | `okimiki` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease on sustained controls |
+| Power Bob Base | `bobpowerbase` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease on sustained controls |
 | L&P legacy app | `leggett_lp_legacy` | configured characteristics | per-layout catalog | no |
 | Casper Base | `casper_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
 | Hush Base | `hush_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
@@ -291,13 +293,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -6311,6 +6313,152 @@ value. `tests/test_richmat_app_vectors.py` preserves all 2,094 literal fixtures 
 24 semantic cases. `tests/test_richmat_app.py` checks integration behavior.
 Physical validation is for real beta/release users and is not implied here.
 
+
+### Power Bob Base
+
+**App:** [Power Bob Base](https://play.google.com/store/apps/details?id=com.richmat.bobpowerbase) 1.0.9 (10900), `com.richmat.bobpowerbase`
+
+**Status:** ❓ Needs testing, all four products are unverified on hardware.
+
+#### Setup
+
+Choose Power Bob Base, the exact Elite/Elite SH/Ultra/Ultra SH product, and its
+Standard, Split head or Split installation. Configure asks the same questions;
+imports and restored entries retain the product, layout and derived profile id.
+Shared scan words offer the app as a candidate. Neither a shared GATT service
+nor the catalog metadata code selects a product. SH products expose Left/Right
+controls; Nordic generic commands omit the side and cannot control Right.
+No mandatory bond or PIN is implied by this app.
+
+#### Controls
+
+<!-- generated:bobpowerbase -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Stored selector | Controls | Sides |
+|---|---|---|---|
+| Power Bob Elite | elite | head_up, head_down, foot_up, foot_down, reset, light, anti_snore, zero_gravity, tv, memory_1, memory_2 | 0 |
+| Power Bob Elite SH | elite_sh | head_up, head_down, foot_up, foot_down, reset, light, anti_snore, zero_gravity, tv, memory_1, memory_2 | 0, 1 |
+| Power Bob Ultra | ultra | head_up, head_down, foot_up, foot_down, head_foot_up, head_foot_down, lumbar_up, lumbar_down, pillow_up, pillow_down, reset, massage_head, massage_foot, massage_mode, massage_off, massage_10, massage_20, massage_30, anti_snore, zero_gravity, tv, memory_1, memory_2 | 0 |
+| Power Bob Ultra SH | ultra_sh | head_up, head_down, foot_up, foot_down, head_foot_up, head_foot_down, lumbar_up, lumbar_down, pillow_up, pillow_down, reset, massage_head, massage_foot, massage_mode, massage_off, massage_10, massage_20, massage_30, anti_snore, zero_gravity, tv, memory_1, memory_2 | 0, 1 |
+
+| Installation | Stored layout |
+|---|---|
+| Standard | standard |
+| Split head | split_head |
+| Split | split |
+
+| Transport | Service | Write | Catalog notify | Generic framing |
+|---|---|---|---|---|
+| n1 | 6e400001-b5a3-f393-e0a9-e50e24dcca9e | 6e400002-b5a3-f393-e0a9-e50e24dcca9e | 6e400003-b5a3-f393-e0a9-e50e24dcca9e | raw |
+| w1 | 0000fee9-0000-1000-8000-00805f9b34fb | d44bc439-abfd-45a2-b575-925416129600 | d44bc439-abfd-45a2-b575-925416129601 | 6E |
+| w2 | 0000fee9-0000-1000-8000-00805f9b34bb | d44bc439-abfd-45a2-b575-925416129622 | d44bc439-abfd-45a2-b575-925416129611 | 6E |
+| w3 | 0000ffe0-0000-1000-8000-00805f9b34fb | 0000ffe2-0000-1000-8000-00805f9b34fb | 0000ffe1-0000-1000-8000-00805f9b34fb | 6E |
+| w4 | 0000fff0-0000-1000-8000-00805f9b34fb | 0000fff2-0000-1000-8000-00805f9b34fb | 0000fff1-0000-1000-8000-00805f9b34fb | 6E |
+| w5 | 0000e0ff-3c17-d293-8e48-14fe2e4da212 | 00000002-3c17-d293-8e48-14fe2e4da212 | 00000003-3c17-d293-8e48-14fe2e4da212 | 6E |
+
+| Control | Gesture | Nordic | Left | Right | Program (left) |
+|---|---|---|---|---|---|
+| head_up | sustainPress | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | none |
+| head_down | sustainPress | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | none |
+| foot_up | sustainPress | `26` | `6E 01 00 26 95` | `6E 01 01 26 96` | none |
+| foot_down | sustainPress | `27` | `6E 01 00 27 96` | `6E 01 01 27 97` | none |
+| head_foot_up | sustainPress | `29` | `6E 01 00 29 98` | `6E 01 01 29 99` | none |
+| head_foot_down | sustainPress | `2A` | `6E 01 00 2A 99` | `6E 01 01 2A 9A` | none |
+| lumbar_up | sustainPress | `3F` | `6E 01 00 3F AE` | `6E 01 01 3F AF` | none |
+| lumbar_down | sustainPress | `40` | `6E 01 00 40 AF` | `6E 01 01 40 B0` | none |
+| pillow_up | sustainPress | `41` | `6E 01 00 41 B0` | `6E 01 01 41 B1` | none |
+| pillow_down | sustainPress | `42` | `6E 01 00 42 B1` | `6E 01 01 42 B2` | none |
+| reset | shortPress | `31` | `6E 01 00 31 A0` | `6E 01 01 31 A1` | none |
+| light | shortPress | `3C` | `6E 01 00 3C AB` | `6E 01 01 3C AC` | none |
+| massage_head | shortPress | `4C` | `6E 01 00 4C BB` | `6E 01 01 4C BC` | none |
+| massage_foot | shortPress | `4E` | `6E 01 00 4E BD` | `6E 01 01 4E BE` | none |
+| massage_mode | shortPress | `48` | `6E 01 00 48 B7` | `6E 01 01 48 B8` | none |
+| massage_off | shortPress | `5E` | `6E 01 00 5E CD` | `6E 01 01 5E CE` | none |
+| massage_10 | shortPress | `5F` | `6E 01 00 5F CE` | `6E 01 01 5F CF` | none |
+| massage_20 | shortPress | `63` | `6E 01 00 63 D2` | `6E 01 01 63 D3` | none |
+| massage_30 | shortPress | `61` | `6E 01 00 61 D0` | `6E 01 01 61 D1` | none |
+| anti_snore | shortAndLongPress | `46` | `6E 01 00 46 B5` | `6E 01 01 46 B6` | `6E 01 00 69 D8` |
+| zero_gravity | shortAndLongPress | `45` | `6E 01 00 45 B4` | `6E 01 01 45 B5` | `6E 01 00 66 D5` |
+| tv | shortAndLongPress | `58` | `6E 01 00 58 C7` | `6E 01 01 58 C8` | `6E 01 00 64 D3` |
+| memory_1 | shortAndLongPress | `2E` | `6E 01 00 2E 9D` | `6E 01 01 2E 9E` | `6E 01 00 2B 9A` |
+| memory_2 | shortAndLongPress | `2F` | `6E 01 00 2F 9E` | `6E 01 01 2F 9F` | `6E 01 00 2C 9B` |
+
+| Startup | Framed | Nordic |
+|---|---|---|
+| deviceFunctionItemExitLimit | `6E 02 01 00 71` | `00` |
+| deviceFunctionItemCheckClock | `6E 08 01 01 78` | `01` |
+| deviceFunctionItemCheckLight | `6E 0A 00 01 79` | `01` |
+
+| Helper / example | Characteristic write |
+|---|---|
+| STOP left | `6E 01 00 6E DD` |
+| STOP right | `6E 01 01 6E DE` |
+| Light off left | `6E 01 00 75 E4` |
+| Light off right | `6E 01 01 75 E5` |
+| Light timeout 0 min | `6E 0B FF FF 77` |
+| Light timeout 5 min | `6E 0B 01 2C A6` |
+| RGB red | `6E 0C FF FF 78 6E 0D 00 00 7B` |
+| Repeat list | `6E 20 08 05 01 00 00 9C` |
+| Delete id 3 | `6E 20 08 05 02 01 03 A1` |
+| Local calendar, 2026-11-17 16:00:00 | `6E 20 0D 08 03 01 38 0B 11 10 00 00 0B` |
+
+| Rule | Value |
+|---|---|
+| Scan (case-sensitive substring) | QRRM, COOL, MPE_, 209A, BED- |
+| Refresh / FIFO pacing | 100 ms |
+| Program threshold | 3000 ms |
+| Light timeout update delay | 200 ms |
+| Partial notification expiry | 0.5 s |
+| Public timeout choices, minutes | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 |
+<!-- /generated -->
+
+Every product offers head/foot movement, reset, two custom memories, TV,
+zero gravity and anti-snore recall/programming; each preset's long press is its
+**Save** button. Ultra adds combined head/foot, lumbar, pillow and massage. Elite
+retains its direct bed-light button.
+The normal light menu appears only after the connected bed reports it.
+
+#### Timing
+
+The generated table states the app intervals. Movement first refreshes after
+one tick. Finite HA movement budgets start after that nominal startup tick,
+with a fixed admission end anchored before waiting. New movement is admitted
+strictly before that end, without queued catch-up or per-tick grace. Renewable
+controls retain HA's absolute admitted hold lease. Cleanup begins at the finite
+end (or earlier on STOP/cancellation), retains the source FIFO spacing and can
+submit STOP after that end. The public action drains the submitted
+write and its captured-link STOP even if the caller is cancelled. The app's
+FIFO can leave older movement ahead of STOP; HA does not retain that backlog.
+One-shot reset/massage/light actions have no additional release. Presets recall
+once on a short press or save at the long-press threshold, suppressing recall.
+
+#### Notifications
+
+The status sensor exposes connection-scoped BED events, motor-index feedback,
+massage, lighting, alarm records and lock state as attributes. Motor indices
+and height-like values are retained without calibrated physical-axis claims.
+Diagnostic and anti-snore configuration event payloads retain raw fields.
+No setter is inferred from a receiver. Partial receive bytes expire and old
+callbacks cannot publish into a replacement session. The app's exact snore
+capability literal conflicts with its type-21 framing; no corrected frame is invented.
+
+#### Services
+
+`adjustable_bed.bobpowerbase` exposes repeat alarm list/add/delete, local clock
+sync, light color, light timeout and light off. Alarm actions are `anti_snore`,
+`zero_gravity`, `tv`, `memory_1` and `memory_2`. Weekdays are Monday=0 through
+Sunday=6; an empty list means once, and `enabled` occupies the low repeat bit.
+New alarms use the first unused observed id from 1 through 7; this app allocation
+range does not establish controller capacity. An explicit `alarm_id` avoids
+relying on an incomplete notification list. Light timeout accepts whole minutes
+from 0 through 15, supplied as seconds, with zero selecting the always-on sentinel.
+Color is two frames in one characteristic write. All requested targets and
+operands are checked before control writes use the coordinator scheduler.
+
+#### Analysis provenance
+
+Based on Power Bob Base 1.0.9 (10900) (`com.richmat.bobpowerbase`).
 
 ## Notes
 

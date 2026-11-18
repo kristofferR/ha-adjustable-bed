@@ -318,6 +318,9 @@ async def _create_controller_for_bed_type(
         return await create_controller(coordinator, bed_type, variant or "6brm", client)
     if bed_type == const.BED_TYPE_OKIMIKI:
         return await create_controller(coordinator, bed_type, variant or "HCRN", client)
+    if bed_type == const.BED_TYPE_BOBPOWERBASE:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "standard"
+        return await create_controller(coordinator, bed_type, variant or "elite", client)
     if bed_type == const.BED_TYPE_GALAXY:
         selected = variant or "6BRM"
         return await create_controller(coordinator, bed_type, selected, client)

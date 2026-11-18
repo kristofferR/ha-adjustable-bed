@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.beds.rmcontrol import protocol as rmcontro
 from custom_components.adjustable_bed.beds.sonicsleep import protocol as sonic_protocol
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
+from custom_components.adjustable_bed.profiles import bobpowerbase as bob_profiles
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luniosmart as lunio
@@ -76,6 +77,7 @@ _RICHMAT_NAMES = {
     "goodvibe": "Good Vibe Sleep",
     "mlily": "MLILY Control",
     "okimiki": "Okimiki",
+    "bobpowerbase": "Power Bob Base",
     "leggett_lp_legacy": "L&P legacy app",
     **{
         profile.key: f"Richmat MH {name}"
@@ -152,6 +154,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
             richmat_profiles.GOODVIBE,
             richmat_profiles.MLILY,
             OKIMIKI,
+            bob_profiles.WIRE,
             richmat_profiles.LP_LEGACY,
         )
     }
@@ -188,6 +191,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
         "mlily": (_const.BED_TYPE_MLILY,),
         "okimiki": (_const.BED_TYPE_OKIMIKI,),
+        "bobpowerbase": (_const.BED_TYPE_BOBPOWERBASE,),
         "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
         # Each app's own products; the restored ones are choices on the same bed type.
         **{
@@ -204,7 +208,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
 
 
 def _catalog_kind(key: str) -> str:
-    if key in ("hjbed", "goodvibe", "mlily", "galaxy", "okimiki"):
+    if key in ("hjbed", "goodvibe", "mlily", "galaxy", "okimiki", "bobpowerbase"):
         return "per-product catalog"
     if key == "eshine":
         return "[fixed E6000 table](#eshine-commands)"
@@ -227,7 +231,7 @@ def _lease(profile: richmat_profiles.RichmatProfile) -> str:
     if profile.key.startswith("richmat_classic_"):
         # The controller scopes its lease to the keep buttons of the selected layout.
         return "renewable lease on keep buttons"
-    if profile.key in ("goodvibe", "mlily", "okimiki"):
+    if profile.key in ("goodvibe", "mlily", "okimiki", "bobpowerbase"):
         # The controller scopes its lease to the product's sustained-press controls.
         return "renewable lease on sustained controls"
     return "renewable lease" if profile.execution.hold == "stream" else "no"
@@ -1556,3 +1560,67 @@ def render_resource_apps() -> str:
 
 
 BLOCKS.append((GUIDE, "richmat-resource-apps", render_resource_apps))
+
+
+def render_bobpowerbase() -> str:
+    from custom_components.adjustable_bed.profiles.bobpowerbase import (
+        CATALOG,
+        LAYOUTS,
+        SCAN_KEYWORDS,
+    )
+
+    assert CATALOG.bed is not None
+    commands = _table(
+        ("Control", "Gesture", "Nordic", "Left", "Right", "Program (left)"),
+        (
+            (
+                key, action.gesture,
+                _hex(codec.function(action.short, single=True, action=action.label)),
+                _hex(codec.function(action.short, 0, action=action.label)),
+                _hex(codec.function(action.short, 1, action=action.label)),
+                _hex(codec.function(action.long)) if action.long else "none",
+            )
+            for key, action in CATALOG.actions.items()
+        ),
+    )
+    return _block(
+        _table(("Product", "Stored selector", "Controls", "Sides"), (
+            (product.label, key, ", ".join(product.actions), ", ".join(map(str, product.sides)))
+            for key, product in CATALOG.products.items()
+        )),
+        _table(("Installation", "Stored layout"), ((label, key) for key, label in LAYOUTS.items())),
+        _table(("Transport", "Service", "Write", "Catalog notify", "Generic framing"), (
+            (key, codec.TRANSPORTS[key].service_uuid, codec.TRANSPORTS[key].write_uuid,
+             codec.TRANSPORTS[key].notify_uuid, "raw" if codec.TRANSPORTS[key].single else "6E")
+            for key in CATALOG.wire.transports
+        )),
+        commands,
+        _table(("Startup", "Framed", "Nordic"), (
+            (name, _hex(codec.function(code, action=name)), _hex(codec.function(code, action=name, single=True)))
+            for name, code in CATALOG.startup
+        )),
+        _table(("Helper / example", "Characteristic write"), (
+            ("STOP left", _hex(codec.function(0x6E))),
+            ("STOP right", _hex(codec.function(0x6E, 1))),
+            ("Light off left", _hex(codec.function(0x75))),
+            ("Light off right", _hex(codec.function(0x75, 1))),
+            *[(f"Light timeout {minute} min", _hex(goodvibe_frames.light_duration(minute * 60)))
+              for minute in (0, 5)],
+            ("RGB red", _hex(codec.rgb(255, 0, 0))),
+            ("Repeat list", _hex(codec.record_20_len(5, 1, 0, (0,)))),
+            ("Delete id 3", _hex(goodvibe_frames.delete_alarm(3))),
+            ("Local calendar, 2026-11-17 16:00:00",
+             _hex(codec.calendar(datetime(2026, 11, 17, 16), build=CATALOG.record))),
+        )),
+        _table(("Rule", "Value"), (
+            ("Scan (case-sensitive substring)", ", ".join(SCAN_KEYWORDS)),
+            ("Refresh / FIFO pacing", f"{CATALOG.bed.tick_ms} ms"),
+            ("Program threshold", f"{CATALOG.bed.program_ms} ms"),
+            ("Light timeout update delay", f"{CATALOG.bed.light_delay_ms} ms"),
+            ("Partial notification expiry", f"{CATALOG.bed.receive_expiry_s:g} s"),
+            ("Public timeout choices, minutes", ", ".join(map(str, CATALOG.bed.light_minutes))),
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "bobpowerbase", render_bobpowerbase))

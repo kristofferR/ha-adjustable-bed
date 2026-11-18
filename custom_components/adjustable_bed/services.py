@@ -2078,7 +2078,12 @@ async def _hold_targets(
     admissions: Sequence[_CommandAdmission] | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
-    _require_hold_topology(targets)
+    bounded_catalog = lease is None and all(
+        child.bed_type == "bobpowerbase"
+        for parent, side in targets for child in _command_targets(parent, side)
+    )
+    if not bounded_catalog:
+        _require_hold_topology(targets)
     shared_receivers: set[int] = set()
 
     def check(target: BedChild, controller: BedController) -> None:
@@ -2103,7 +2108,8 @@ async def _hold_targets(
 
     async def hold(controller: BedController) -> None:
         # Automatic link-slot fallback may have changed topology after admission.
-        _require_hold_topology(targets)
+        if not bounded_catalog:
+            _require_hold_topology(targets)
         await controller.hold_control(
             control, duration_ms if lease is None else _hold_ceiling(controller, duration_ms)
         )

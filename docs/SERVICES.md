@@ -90,6 +90,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`octo_enroll_pin`](#octo_enroll_pin) | Octo: set PIN | Set a new four-digit PIN on one unlocked OCTO Smart Control receiver. Enter the same PIN twice. Home Assistant saves it for reconnects after sending the command. |
 | [`octo_reset_defaults`](#octo_reset_defaults) | Octo: reset receiver | Restore receiver defaults after explicit confirmation. The receiver disconnects five seconds after the reset command. |
 | [`okimiki`](#okimiki) | Okimiki: controls and alarms | Press or save a control, set the light or clock, or read and set the selected Okimiki product's alarms. |
+| [`bobpowerbase`](#bobpowerbase) | Power Bob Base: settings | Manage repeat alarms, synchronize local time, or set lighting reported by the connected bed. |
 | [`rmcontrol_anti_snore`](#rmcontrol_anti_snore) | RMControl: anti-snore | Turns anti-snore on or off, or sets how it responds to snoring. |
 | [`reverie_pairlink_alarm_comfort`](#reverie_pairlink_alarm_comfort) | Reverie: set alarm comfort | Send the complete Pairlink alarm comfort sequence, including unchanged values. |
 | [`reverie_run_routine`](#reverie_run_routine) | Reverie: run routine | Replace the selected Reverie target's Composer routine queue and execute its direct bed actions. |
@@ -1527,6 +1528,40 @@ are direct bed requests, not confirmed firmware schedules.
 Okimiki alarms are not on [`set_alarm`](#set_alarm) yet. That action does not yet
 have the safeguards this bed's record edits need across a paired hand-over,
 between the check and the write, and when Stop interrupts the check.
+
+## Power Bob Base
+
+<a id="bobpowerbase"></a>
+**`bobpowerbase`**: Manage repeat alarms, synchronize local time, or set lighting reported by the connected bed.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `operation` | Action |  |
+| `action` | Alarm preset |  |
+| `datetime` | Alarm date and time | ISO 8601 with a timezone offset. |
+| `alarm_id` | Alarm slot | Use an explicit slot when the reported alarm list may be incomplete. |
+| `weekdays` | Repeat weekdays | Monday is 0, Sunday is 6. Empty means once. |
+| `enabled` | Enabled |  |
+| `seconds` | Light duration | Whole minutes from 0 to 15, supplied as seconds. Zero means always on. |
+| `rgb_color` | Light color |  |
+
+### Power Bob Base configuration
+
+`adjustable_bed.bobpowerbase` manages repeat alarms, synchronizes the local
+calendar and changes lighting after the connected bed reports its light menu.
+Use `repeat`, `delete`, `alarms`, `sync`, `light_color`, `light_duration` or
+`light_off`. Alarm presets are `anti_snore`, `zero_gravity`, `tv`, `memory_1`
+and `memory_2`; a new alarm takes a timezone-aware `datetime`. Weekdays use
+Monday=0 through Sunday=6, with an empty list for once, and `enabled` controls
+the low repeat bit. Supply `alarm_id` explicitly when the observed list may be
+incomplete. Light duration is a whole minute from 0 to 15, supplied as seconds;
+zero means always on. RGB channels use `rgb_color`.
+
+The normal buttons expose product-specific movement, recall and programming.
+Held movement uses `hold_control` with its declared `goodvibe_` control key.
+SH products have framed Left/Right controls; a raw Nordic command cannot
+address Right. Renewable Both requires simultaneous side execution; finite
+holds can run serially. See [Power Bob Base](beds/richmat.md#power-bob-base).
 
 ## RMControl
 

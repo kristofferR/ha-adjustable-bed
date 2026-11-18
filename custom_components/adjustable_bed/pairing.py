@@ -108,6 +108,7 @@ from .const import (
     VARIANT_AUTO,
     VMATBASIC_CONFIG_KEYS,
 )
+from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
@@ -126,6 +127,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
     BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
     BED_TYPE_OKIMIKI: frozenset(OKIMIKI_PROFILES),
+    "bobpowerbase": frozenset(BOB_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
     BED_TYPE_RICHMAT_APP: frozenset(RICHMAT_APP_PRODUCTS),
     BED_TYPE_RICHMAT_APP_SLEEP: frozenset(RICHMAT_SLEEP_CHOICES),
@@ -201,6 +203,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
         "cheerssleep",
         "ultramatic_smart_bed",
+        "bobpowerbase",
         "bedtech",
         BED_TYPE_ERGOMOTION,
         BED_TYPE_ERGOMOTION_4,
@@ -232,6 +235,8 @@ def supports_single_address_pairing(
     ble_device_name: str | None = None,
 ) -> bool:
     """Return whether a bed can expose the Phase 3 single-address surface."""
+    if bed_type == "bobpowerbase":
+        return protocol_variant in ("elite_sh", "ultra_sh")
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
     if bed_type == "cheerssleep":
