@@ -235,6 +235,17 @@ async def test_notification_session_and_fragment_callbacks(target):
     assert ctrl._parser.pending is None
 
 
+async def test_alarm_report_publishes_valid_time_with_raw_attributes(target):
+    coordinator, client = await target("P2")
+    callback = client.start_notify.await_args.args[1]
+    callback(None, bytearray.fromhex("ed8003071e7f02000000"))
+    assert coordinator.controller_state[state.TIME] == "07:30"
+    assert coordinator.controller_state[state.REPEAT] == 127
+    assert coordinator.controller_state[state.ACTION] == 2
+    callback(None, bytearray.fromhex("ed8003631e7f02000000"))  # Hour 99 is no time of day.
+    assert coordinator.controller_state[state.TIME] is None
+
+
 async def test_cancellation_release_and_session_replacement(target):
     coordinator, client = await target("P2")
     ctrl = coordinator.controller

@@ -4788,6 +4788,24 @@
   "binary_sensor:mline_privacy": {
     "card_section": "hidden"
   },
+  "button:ore_ultramatic_alarm_refresh": {
+    "card_section": "utility"
+  },
+  "button:ore_ultramatic_massage_foot": {
+    "card_section": "massage"
+  },
+  "button:ore_ultramatic_massage_head": {
+    "card_section": "massage"
+  },
+  "button:ore_ultramatic_massage_timer": {
+    "card_section": "massage"
+  },
+  "button:ore_ultramatic_massage_toggle": {
+    "card_section": "massage"
+  },
+  "button:ore_ultramatic_massage_wave": {
+    "card_section": "massage"
+  },
   "sensor:mline_alarm": {
     "card_section": "hidden"
   },
@@ -4806,43 +4824,13 @@
   "button:sonicsleep_action": {
     "card_section": "presets"
   },
+  "sensor:ore_ultramatic_alarm_time": {
+    "card_section": "hidden"
+  },
+  "sensor:ore_ultramatic_massage_intensity": {
+    "card_section": "hidden"
+  },
   "sensor:sonicsleep": {
-    "card_section": "hidden"
-  },
-  "button:ultramatic_alarm_refresh": {
-    "card_section": "utility"
-  },
-  "button:ultramatic_massage_foot": {
-    "card_section": "massage"
-  },
-  "button:ultramatic_massage_head": {
-    "card_section": "massage"
-  },
-  "button:ultramatic_massage_timer": {
-    "card_section": "massage"
-  },
-  "button:ultramatic_massage_toggle": {
-    "card_section": "massage"
-  },
-  "button:ultramatic_massage_wave": {
-    "card_section": "massage"
-  },
-  "sensor:ultramatic_alarm_action": {
-    "card_section": "hidden"
-  },
-  "sensor:ultramatic_alarm_hour": {
-    "card_section": "hidden"
-  },
-  "sensor:ultramatic_alarm_minute": {
-    "card_section": "hidden"
-  },
-  "sensor:ultramatic_alarm_repeat": {
-    "card_section": "hidden"
-  },
-  "sensor:ultramatic_massage_intensity": {
-    "card_section": "hidden"
-  },
-  "sensor:ultramatic_massage_timer_code": {
     "card_section": "hidden"
   }
 }
