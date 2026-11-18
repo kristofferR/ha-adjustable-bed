@@ -118,10 +118,11 @@ async def test_renewable_motion_expires_but_programming_never_renews(runtime):
         )
 
     task = asyncio.create_task(hold())
-    await asyncio.sleep(0.25)
-    before = len(values(client))
-    await hold()  # Renewal returns without another DOWN.
-    assert len(values(client)) == before
+    while not values(client):  # The first movement write, after the lazy import.
+        await asyncio.sleep(0)
+    starts = len(c._command_scheduler.recent_records)
+    await hold()  # Renewal extends the running hold; it starts no second one.
+    assert len(c._command_scheduler.recent_records) == starts
     assert not task.done()
     await task
     assert values(client)[-1] == "6e"

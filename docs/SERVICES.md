@@ -1615,7 +1615,7 @@ preliminary memory-slot write. See the [Rize guide](beds/kaidi.md#rize-beds).
 | Field | Name | Meaning |
 |-------|------|---------|
 | `control` | Control | Control key from the selected profile in the Richmat guide. |
-| `operation` | Operation | A press runs the control; save reaches its save step. |
+| `operation` | Operation | Press runs the control as the app's button does, so pressing a preset longer than the app's save time also saves it. Save runs only the save step. |
 | `duration_ms` | Press length | Milliseconds, 1 to 60000. Applies to a press only. |
 ### SleepEvolution and W.Silver Products 3.x controls
 

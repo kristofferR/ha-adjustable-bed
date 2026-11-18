@@ -59,3 +59,19 @@ async def test_configure_keeps_the_app_and_prefix_and_routes_validate(app, hass)
     profile = setup_profile_for({const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: "Ml"})
     assert profile is not None and profile.validate is not None
     assert profile.validate({const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: "MM"})
+
+
+@pytest.mark.parametrize("app", ("sleep_evolution", "wsilver_legacy"))
+def test_a_newly_chosen_app_suggests_the_prefix_from_the_name(app):
+    from custom_components.adjustable_bed.config_flow import _apply_route_defaults
+
+    data = {const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT, const.CONF_BLE_DEVICE_NAME: "GV123",
+            const.CONF_PROTOCOL_VARIANT: "auto"}
+    _apply_route_defaults(data, app, None)
+    assert data[const.CONF_PROTOCOL_VARIANT] == "GV"
+    # No matching name: the prefix stays unchosen rather than the catalog's first.
+    data = {const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT, const.CONF_BLE_DEVICE_NAME: "Bed"}
+    _apply_route_defaults(data, app, None)
+    assert const.CONF_PROTOCOL_VARIANT not in data
+    title = setup_profile_for({const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: "A2"}).title
+    assert title is not None and title({const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: "A2"}).endswith(" A2")

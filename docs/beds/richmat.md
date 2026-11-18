@@ -8667,15 +8667,13 @@ Based on Zero Gravity 1.0.3 (4).
 | [SleepEvolution](https://play.google.com/store/apps/details?id=com.richmat.nu503) | 3.5.5 (13) | `com.richmat.nu503` |
 | [W.Silver Products](https://play.google.com/store/apps/details?id=com.richmat.silver) | 3.3.7 (9) | `com.richmat.silver` |
 
-These profiles describe frozen July 2026 deliveries without a fresh online
-latest-version attestation. Physical directions, preset, massage, light and
-reset effects, radio delivery and STOP response require external qualification
-after a beta/release.
+Physical directions, preset, massage, light and reset effects, radio delivery
+and STOP response are not yet verified on hardware.
 
 #### Setup
 
 Search **SleepEvolution** or **W.Silver Products 3.x** under **Richmat** in setup
-or **Configure**, then select the exact case-sensitive two-character name
+or **Reconfigure**, then select the exact case-sensitive two-character name
 prefix. A matching name can suggest a prefix only after app selection. Shared
 prefixes and Nordic UART services cannot choose between the apps. The newer
 W.Silver MH app remains a separate choice. `Ml`, `Mr` and `Ms` are case

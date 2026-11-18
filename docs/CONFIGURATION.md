@@ -1037,12 +1037,12 @@ SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-
 
 ### SleepEvolution / W.Silver Products 3.x
 
-Choose **SleepEvolution (com.richmat.nu503)** or **W.Silver Products 3.x
-(com.richmat.silver)** under Richmat, then the exact case-sensitive name prefix
+Choose **SleepEvolution** or **W.Silver Products 3.x** under Richmat, then the
+exact case-sensitive name prefix
 (`protocol_variant`). A matching name can suggest a prefix only after you choose
 the app. Shared prefixes and Nordic UART services cannot identify which app you
-use; the newer W.Silver MH app is a separate choice. **Configure** asks the same
-prefix question. A6, U3, U5 and X1 are offered only for SleepEvolution.
+use; the newer W.Silver MH app is a separate choice. **Reconfigure** asks the same
+app and prefix questions. A6, U3, U5 and X1 are offered only for SleepEvolution.
 
 Each receiver in a two-address pair retains its own app and prefix. There is no
 single-address side selector. The selected profile supplies its control labels,

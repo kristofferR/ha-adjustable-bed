@@ -1722,6 +1722,20 @@ def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | No
     """Give a newly chosen route the defaults Configure gives a bed-type change."""
     data[CONF_BED_TYPE] = bed_type
     variants = get_variants_for_bed_type(bed_type)
+    if variant is None and variants and not is_valid_variant_for_bed_type(bed_type, VARIANT_AUTO):
+        # A model question that suggests its own answer (from the Bluetooth name,
+        # say) decides it for the new route; the previous route's answer does not.
+        profile = setup_profile_for({CONF_BED_TYPE: bed_type})
+        question = next(
+            (q for q in profile.questions if q.key == CONF_PROTOCOL_VARIANT), None
+        ) if profile is not None else None
+        if question is not None and callable(question.default):
+            staged = {key: value for key, value in data.items() if key != CONF_PROTOCOL_VARIANT}
+            suggested = question.default(staged)
+            variant = suggested if suggested in variants else None
+            if variant is None:
+                data.pop(CONF_PROTOCOL_VARIANT, None)
+                variants = {}
     if variant is None and variants:
         variant = (
             VARIANT_AUTO

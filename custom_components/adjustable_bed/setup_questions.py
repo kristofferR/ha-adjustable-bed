@@ -2541,7 +2541,10 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             },
             questions=(Question(CONF_PROTOCOL_VARIANT, _legacy_choices, _legacy_default),),
             validate=_legacy_errors,
-            title=lambda data: "SleepEvolution" if data[CONF_BED_TYPE] == "sleep_evolution" else "W.Silver Products 3.x",
+            # The prefix names the layout, so a prefix change shows in the review.
+            title=lambda data: (
+                "SleepEvolution" if data[CONF_BED_TYPE] == "sleep_evolution" else "W.Silver Products 3.x"
+            ) + (f" {data[CONF_PROTOCOL_VARIANT]}" if data.get(CONF_PROTOCOL_VARIANT) else ""),
             imports=("profiles.richmat_legacy",),
         )
         for app in ("sleep_evolution", "wsilver_legacy")

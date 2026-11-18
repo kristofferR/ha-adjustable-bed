@@ -8394,7 +8394,7 @@
         },
         "operation": {
           "name": "Operation",
-          "description": "A press runs the control; save reaches its save step."
+          "description": "Press runs the control as the app's button does, so pressing a preset longer than the app's save time also saves it. Save runs only the save step."
         },
         "duration_ms": {
           "name": "Press length",
