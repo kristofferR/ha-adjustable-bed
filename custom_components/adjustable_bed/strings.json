@@ -2968,6 +2968,34 @@
       "resident_check_massage": {
         "name": "Refresh massage timer"
       },
+      "ultramatic_head_up": {"name": "Head up"},
+      "ultramatic_head_down": {"name": "Head down"},
+      "ultramatic_foot_up": {"name": "Foot up"},
+      "ultramatic_foot_down": {"name": "Foot down"},
+      "ultramatic_headtilt_up": {"name": "Head tilt up"},
+      "ultramatic_headtilt_down": {"name": "Head tilt down"},
+      "ultramatic_lumbar_up": {"name": "Posture up (LUMBAR)"},
+      "ultramatic_lumbar_down": {"name": "Posture down (LUMBAR)"},
+      "ultramatic_hips_up": {"name": "Lumbar up (HIPS)"},
+      "ultramatic_hips_down": {"name": "Lumbar down (HIPS)"},
+      "ultramatic_timerswitch": {"name": "Cycle massage timer"},
+      "ultramatic_headstrengthadd": {"name": "Increase head massage"},
+      "ultramatic_headstrengthreduce": {"name": "Decrease head massage"},
+      "ultramatic_footstrengthadd": {"name": "Increase foot massage"},
+      "ultramatic_footstrengthreduce": {"name": "Decrease foot massage"},
+      "ultramatic_waveadd": {"name": "Increase massage wave"},
+      "ultramatic_wavereduce": {"name": "Decrease massage wave"},
+      "ultramatic_massageonoff": {"name": "Toggle massage"},
+      "ultramatic_light": {"name": "Toggle light"},
+      "ultramatic_save_zg": {"name": "Hold to save ZG"},
+      "ultramatic_save_anti": {"name": "Hold to save ANTI"},
+      "ultramatic_save_m1": {"name": "Hold to save M1"},
+      "ultramatic_save_m2": {"name": "Hold to save M2"},
+      "ultramatic_reset_memory": {"name": "Hold FLAT + ZG"},
+      "ultramatic_query_massage": {"name": "Refresh massage"},
+      "ultramatic_query_alarm": {"name": "Refresh alarm"},
+      "ultramatic_clock": {"name": "Sync bed clock"},
+      "ultramatic_release": {"name": "Release held control"},
       "resident_sync_clock": {
         "name": "Sync bed clock"
       },
@@ -3618,6 +3646,11 @@
       "motionbed_middle": {
         "name": "Middle controls (lumbar icon)"
       },
+      "ultramatic_head": {"name": "Head (app control)"},
+      "ultramatic_foot": {"name": "Foot (app control)"},
+      "ultramatic_headtilt": {"name": "Head tilt (app control)"},
+      "ultramatic_lumbar": {"name": "Posture (LUMBAR)"},
+      "ultramatic_hips": {"name": "Lumbar (HIPS)"},
       "comfy_head": {
         "name": "Head (app control)"
       },
@@ -5096,6 +5129,12 @@
       "resident_massage_timer": {
         "name": "Massage timer"
       },
+      "ultramatic_a_timer": {"name": "A massage timer"},
+      "ultramatic_ab_timer": {"name": "AB massage timer"},
+      "ultramatic_b_timer": {"name": "B massage timer"},
+      "ultramatic_a_alarm": {"name": "A bed alarm"},
+      "ultramatic_ab_alarm": {"name": "AB bed alarm"},
+      "ultramatic_b_alarm": {"name": "B bed alarm"},
       "luuna": {
         "name": "Luuna + status"
       },
@@ -9593,6 +9632,19 @@
           "name": "Slot identifier",
           "description": "0..99 is the wire formatter domain, not the bed capacity. Use the same identifier to edit or delete."
         }
+      }
+    },
+    "ultramatic_alarm": {
+      "name": "Ultramatic Smart Bed alarm",
+      "description": "Set the complete bed alarm, toggle a current reported alarm, or refresh it. Hardware remains unverified.",
+      "fields": {
+        "device_id": {"name": "Bed"},
+        "side": {"name": "Side"},
+        "operation": {"name": "Operation"},
+        "time": {"name": "Local time", "description": "Minute precision, required for set."},
+        "days": {"name": "Repeat mask", "description": "Sunday bit 0 through Saturday bit 6; 128 selects the next occurrence. 255 preserves the app default."},
+        "wake": {"name": "Wake action"},
+        "enabled": {"name": "Enabled"}
       }
     },
     "n32_motion_bed_alarm": {

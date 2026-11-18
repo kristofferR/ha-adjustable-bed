@@ -161,6 +161,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:okin_motionbed": {"hold": ("row150",)},
     "OkinNFrameProfile:n32_motion_bed": {"hold": ("n32",)},
     "OkinNFrameProfile:resident": {"hold": ("resident-base",)},
+    "OkinNFrameProfile:ultramatic_smart_bed": {"hold": ("row176",)},
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
     # Customatic: held motor keys OR into one shared mask; a release clears one bit (#516).
@@ -336,6 +337,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_nframe.py:<module>.OKIN_MOTIONBED": ("OkinNFrameProfile:okin_motionbed",),
     "profiles/n32_motion_bed.py:<module>.N32": ("OkinNFrameProfile:n32_motion_bed",),
     "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
+    "profiles/ultramatic.py:<module>.PROFILE": ("OkinNFrameProfile:ultramatic_smart_bed",),
     "profiles/mline.py:<module>.MLineProfile": tuple(f"MLineProfile:{key}" for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),

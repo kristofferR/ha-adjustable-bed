@@ -1128,3 +1128,31 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+## Ultramatic Smart Bed alarm
+
+The Nordic UART app profile exposes `ultramatic_alarm`. Use `operation: set`
+with all fields: local `time` at minute precision, `days` (Sunday bit 0 through
+Saturday bit 6, 128 for the next occurrence, or the app default 255), `wake`
+(`vibrate`, `zero_g`, `memory_1`), and `enabled`. `operation: toggle` preserves a
+valid alarm reported on the current connection. `operation: query` refreshes
+both raw side records. Query and Toggle accept no setting fields.
+
+```yaml
+action: adjustable_bed.ultramatic_alarm
+data:
+  device_id: YOUR_BED_DEVICE_ID
+  operation: set
+  time: "06:30:00"
+  days: 62
+  wake: vibrate
+  enabled: true
+```
+
+Optional `side` follows the normal paired child targeting rules. An ordinary
+standalone entry uses its persisted A/AB/B selector. Every target is validated
+before any alarm mutation; disconnect, STOP or controller replacement cancels
+stale admission. The app supports one alarm per selected side, with no extra
+slot, TV or Read alarm. Firmware acceptance remains unverified. See the
+[Ultramatic profile](beds/okin-nframe.md#ultramatic-smart-bed) for gestures,
+global STOP and the source timer quirks.

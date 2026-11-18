@@ -23,13 +23,14 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.profiles import n32_motion_bed as n32
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
-from custom_components.adjustable_bed.profiles import rize_home
+from custom_components.adjustable_bed.profiles import rize_home, ultramatic
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
     PROFILES as ADJUSTABLE_BED_PROFILES,
 )
 from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFILES as APEX_PROFILES
 from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._ultramatic import render as render_ultramatic
 
 GUIDE = "docs/beds/okin-nframe.md"
 
@@ -145,6 +146,7 @@ _OKIN_GROUPS = {
     "OKIN Motion Bed": (okin_profiles.OKIN_MOTIONBED,),
     "N32 Motion Bed": (N32,),
     "Resident Adjustable Base": (okin_profiles.RESIDENT,),
+    "Ultramatic Smart Bed": (ultramatic.PROFILE,),
     "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
     "Adjustable bed (Lumbar)": tuple(okin_profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
 }
@@ -243,6 +245,16 @@ def render_okin_nframe_profiles() -> str:
         (
             (profile.name, *([_DEADLINE] * 3), "n/a", _DEADLINE, "n/a")
             if profile.key in okin_profiles.BEDDING_PROFILES
+            else (
+                profile.name,
+                "held recall",
+                "held M1/M2",
+                "same frame, bounded save hold",
+                "n/a",
+                "one-shot, see profile",
+                "n/a",
+            )
+            if profile is ultramatic.PROFILE
             else (
                 profile.name,
                 _okin_tap(profile.recall),
@@ -747,6 +759,7 @@ def render_n32_session() -> str:
 
 
 BLOCKS: list[Block] = [
+    (GUIDE, "ultramatic-controls", render_ultramatic),
     (GUIDE, "rize-home", render_rize_home),
     (GUIDE, "okin-motionbed", render_okin_motionbed),
     (GUIDE, "rize-remedy-ii-controls", render_rize_remedy_ii_controls),

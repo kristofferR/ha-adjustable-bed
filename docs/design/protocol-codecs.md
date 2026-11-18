@@ -73,6 +73,16 @@ family owns its encoders and parser. `tests/test_smart_comfort.py` verifies both
 members' frozen literals, rather than selecting a family by UUID or brand.
 See the [Smart Comfort guide](../beds/smart-comfort.md).
 
+## Ultramatic Smart Bed
+
+Ultramatic Smart Bed 1.1.2 (5), row176, reproduces every accepted send through
+Okin N-frame's `frame40`, `request`, `clock` and `alarm` encoders, including
+unequal alarm type/side cases. `SideRecordParser` adds bounded extraction of
+the app's two seven-byte replies. Its typed app profile owns BCD, side selection
+and normalization; the family controller extension owns the session and gestures.
+It uses one Nordic UART route and is independent of the legacy Ultramatic ORE
+controller. Hardware remains unverified.
+
 ## M Line composite codec
 
 The M Line 1.2.2 codec delegates its 44 frozen control literals to the proven

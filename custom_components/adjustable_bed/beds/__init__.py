@@ -132,6 +132,7 @@ if TYPE_CHECKING:
     from .tempur_au import TempurAUController as TempurAUController
     from .tempur_curve import TempurCurveController as TempurCurveController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
+    from .ultramatic.controller import UltramaticController as UltramaticController
     from .vibradorm.app import VibradormAppController as VibradormAppController
     from .vibradorm.controller import VibradormController as VibradormController
     from .vmatbasic.controller import VMatBasicController as VMatBasicController
@@ -143,6 +144,7 @@ _EXPORT_MODULES = {
     "N32MotionBedController": "n32_motion_bed.controller",
     "SonicSleepController": "sonicsleep.controller",
     "ResidentController": "resident.controller",
+    "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",
     "SymphonyController": "symphony.controller",
@@ -294,6 +296,7 @@ __all__ = [
     "OreComfortBedController",
     "InnovaController",
     "OkinMotionBedController",
+    "UltramaticController",
     "OkinNordicController",
     "LeggettGen2Controller",
     "LeggettLpLegacyController",

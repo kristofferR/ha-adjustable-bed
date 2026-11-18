@@ -237,6 +237,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_COMFORT_ENHANCEMENT3: SideProfile("Comfort Enhancement 3", variant_owned=True),
     BED_TYPE_N32_MOTION_BED: SideProfile("N32 Motion Bed"),
     BED_TYPE_RESIDENT: SideProfile("Resident Adjustable Base"),
+    "ultramatic_smart_bed": SideProfile("Ultramatic Smart Bed"),
     BED_TYPE_YAMADA: SideProfile("アシステック / Yamada", variant_owned=True),
     BED_TYPE_SIMMONS: SideProfile("SIMMONS", variant_owned=True),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, SideProfile("Richmat app model", variant_owned=True)),

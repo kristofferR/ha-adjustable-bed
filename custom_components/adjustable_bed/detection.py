@@ -603,6 +603,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 (com.okin.apex)",
     BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app (com.okin.simmonskorea)",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app (com.okin.resident.release)",
+    "ultramatic_smart_bed": "Ultramatic Smart Bed app (com.okin.ultramaticSmartBed, Nordic UART)",
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app (com.okin.yamada)",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth / ComfortBase BLE (choose product)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
@@ -1348,6 +1349,19 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # existing protocol detection and ask the user to identify the app.
     device_name = getattr(getattr(service_info, "device", None), "name", None)
     platform_name = device_name if isinstance(device_name, str) and device_name else service_info.name
+    # This app checks the first manufacturer VALUE, without a company-id gate.
+    # Its shared name/UART route offers an explicit app choice, never an ORE alias.
+    manufacturer_value = next(iter(service_info.manufacturer_data.values()), b"")
+    if (
+        isinstance(platform_name, str) and platform_name.lower().startswith("smartbed")
+        and manufacturer_value.startswith(bytes.fromhex("44 4f 54 01 05"))
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        if result.bed_type is None:
+            result = DetectionResult("ultramatic_smart_bed", 0.3, ["name:ultramatic_app_candidate"])
+        elif result.bed_type != "ultramatic_smart_bed":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "ultramatic_smart_bed"]))
+            result.signals.append("name:ultramatic_app_candidate")
     if (
         isinstance(platform_name, str)
         and platform_name.lower().startswith(("okin", "smartbed"))

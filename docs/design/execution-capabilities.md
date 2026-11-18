@@ -88,6 +88,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `comfort_enhancement3` (all 15 remotes) | S stream (movement only) | U | U | row083 | 100 ms admitted movement callbacks; nominal STOP200/300 ms. Favorites ZG is one accepted write, not a uniform renewable preset stream. HA fixes unsafe app ownership and mutable-link races. |
 | `n32_motion_bed` | S stream | U | U | n32 | Combined upper, lower and cervical keys refresh at 200 ms, release sends one STOP; frame buttons end at 5300 ms; no arbitrary concurrent axes or speed |
 | `resident` | S stream | U | U | resident-base | Every held control refreshes at 300 ms and releases with two STOP frames; combined head/foot keys are explicit, arbitrary motor composition is unproven |
+| `ultramatic_smart_bed` | S stream | U | U | row176 | One held control refreshes at 300 ms; release sends global selector-00 STOP after 100 ms. FLAT+ZG is a fixed gesture, without arbitrary composition or speed. |
 | `adjustable_lumbar` (both routes) | S stream | U | U | lumbar | unsupported chord only stops |
 | `eshine_okin` (E2000, E3000/E3100, E5000) | S stream | U | U | eshine-okin | held keys write at once, refresh every 300 ms with no fixed count, STOP 200 ms after release; hold declared. Single-touch coordination excludes a second movement control; the one multi-touch path, Flat+Zero Gravity, is a fixed frame either release stops. None of its 25 constructors sets a speed |
 | `bedgear` | S stream | U | U | bedgear | Refresh starts at 100 ms; per-control STOP, short-up fallback or end of refresh. |
@@ -731,6 +732,7 @@ Report workspaces are machine-local under
 | row083 | `com.okin.apex` | 1.4.0 (5) | COMPLETE | Accepted row083 report and audit002, F1/F2 repaired. Movement 100 ms callbacks with 200/300 ms release. Favorites ZG is one accepted write. HA fixes unsafe ownership and session races. |
 | n32 | `com.okin.simmonskorea` | 1.1.14 (38) | COMPLETE | `com.okin.simmonskorea-1.1.14-2026-11-12-queue001/report/`, accepted audit002; hardware UNVERIFIED |
 | resident-base | `com.okin.resident.release` | 1.0.0 (1) | COMPLETE | `com.okin.resident.release-1.0.0-2026-11-10-maxqueue001/report/`, accepted audit001 |
+| row176 | `com.okin.ultramaticSmartBed` | 1.1.2 (5) | COMPLETE | Accepted report, scoped UMS-A001 correction and audit002; held controls refresh at 300 ms, global STOP after 100 ms. |
 | lumbar | `com.okin.bedding.adjustablelumbar` | 1.2.2 | COMPLETE | `com.okin.bedding.adjustablelumbar-1.2.2-2026-10-01-queue-e0bb6807-20261001-054-002/report/` |
 | m1x12 | `com.starcode.adjustablem1x12` | 1.1.3 | COMPLETE | `com.starcode.adjustablem1x12-1.1.3-2026-10-26-39bdcafa-repair-002/report/` |
 | malouf | `com.malouf.bedbase` | 2.4.3 | COMPLETE | `com.malouf.bedbase-2.4.3-2026-08-27/report/` |

@@ -1,0 +1,1527 @@
+{
+  "origin": "Static app literal/branch-derived vectors. Not hardware traffic or runtime app execution.",
+  "commands": [
+    {
+      "id": "timerSwitch-A",
+      "protocol": "P1",
+      "action": "timerSwitch",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 02 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x356ca0 object 49d911",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "timerSwitch-AB",
+      "protocol": "P1",
+      "action": "timerSwitch",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 02 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x356ca0 object 49d911",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "timerSwitch-B",
+      "protocol": "P1",
+      "action": "timerSwitch",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 02 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x356ca0 object 49d911",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "headStrengthAdd-A",
+      "protocol": "P1",
+      "action": "headStrengthAdd",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 08 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x356d30 object 49d8f1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "headStrengthAdd-AB",
+      "protocol": "P1",
+      "action": "headStrengthAdd",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 08 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x356d30 object 49d8f1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "headStrengthAdd-B",
+      "protocol": "P1",
+      "action": "headStrengthAdd",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 08 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x356d30 object 49d8f1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "headStrengthReduce-A",
+      "protocol": "P1",
+      "action": "headStrengthReduce",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 80 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x356dc0 object 49d8d1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "headStrengthReduce-AB",
+      "protocol": "P1",
+      "action": "headStrengthReduce",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 80 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x356dc0 object 49d8d1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "headStrengthReduce-B",
+      "protocol": "P1",
+      "action": "headStrengthReduce",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 80 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x356dc0 object 49d8d1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "footStrengthAdd-A",
+      "protocol": "P1",
+      "action": "footStrengthAdd",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 04 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x356e50 object 49d8b1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "footStrengthAdd-AB",
+      "protocol": "P1",
+      "action": "footStrengthAdd",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 04 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x356e50 object 49d8b1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "footStrengthAdd-B",
+      "protocol": "P1",
+      "action": "footStrengthAdd",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 04 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x356e50 object 49d8b1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "footStrengthReduce-A",
+      "protocol": "P1",
+      "action": "footStrengthReduce",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 01 00 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x356ee0 object 49d891",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "footStrengthReduce-AB",
+      "protocol": "P1",
+      "action": "footStrengthReduce",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 01 00 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x356ee0 object 49d891",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "footStrengthReduce-B",
+      "protocol": "P1",
+      "action": "footStrengthReduce",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 01 00 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x356ee0 object 49d891",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "waveAdd-A",
+      "protocol": "P1",
+      "action": "waveAdd",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 10 00 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x356f70 object 49d871",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "waveAdd-AB",
+      "protocol": "P1",
+      "action": "waveAdd",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 10 00 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x356f70 object 49d871",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "waveAdd-B",
+      "protocol": "P1",
+      "action": "waveAdd",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 10 00 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x356f70 object 49d871",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "waveReduce-A",
+      "protocol": "P1",
+      "action": "waveReduce",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 04 00 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x357000 object 49d851",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "waveReduce-AB",
+      "protocol": "P1",
+      "action": "waveReduce",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 04 00 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x357000 object 49d851",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "waveReduce-B",
+      "protocol": "P1",
+      "action": "waveReduce",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 04 00 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x357000 object 49d851",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "massageOnOff-A",
+      "protocol": "P1",
+      "action": "massageOnOff",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 01 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x357090 object 49d831",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "massageOnOff-AB",
+      "protocol": "P1",
+      "action": "massageOnOff",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 01 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x357090 object 49d831",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "massageOnOff-B",
+      "protocol": "P1",
+      "action": "massageOnOff",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 01 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x357090 object 49d831",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADUP-A",
+      "protocol": "P1",
+      "action": "HEADUP",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 00 01 01",
+      "evidence": [
+        "commons/mapList.dart:0x358d84 object 49db91",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADUP-AB",
+      "protocol": "P1",
+      "action": "HEADUP",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 00 01 00",
+      "evidence": [
+        "commons/mapList.dart:0x358d84 object 49db91",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADUP-B",
+      "protocol": "P1",
+      "action": "HEADUP",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 00 01 02",
+      "evidence": [
+        "commons/mapList.dart:0x358d84 object 49db91",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADDOWN-A",
+      "protocol": "P1",
+      "action": "HEADDOWN",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 00 02 01",
+      "evidence": [
+        "commons/mapList.dart:0x358e14 object 49db71",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADDOWN-AB",
+      "protocol": "P1",
+      "action": "HEADDOWN",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 00 02 00",
+      "evidence": [
+        "commons/mapList.dart:0x358e14 object 49db71",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADDOWN-B",
+      "protocol": "P1",
+      "action": "HEADDOWN",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 00 02 02",
+      "evidence": [
+        "commons/mapList.dart:0x358e14 object 49db71",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "FOOTUP-A",
+      "protocol": "P1",
+      "action": "FOOTUP",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 00 04 01",
+      "evidence": [
+        "commons/mapList.dart:0x358ea4 object 49db51",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "FOOTUP-AB",
+      "protocol": "P1",
+      "action": "FOOTUP",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 00 04 00",
+      "evidence": [
+        "commons/mapList.dart:0x358ea4 object 49db51",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "FOOTUP-B",
+      "protocol": "P1",
+      "action": "FOOTUP",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 00 04 02",
+      "evidence": [
+        "commons/mapList.dart:0x358ea4 object 49db51",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "FOOTDOWN-A",
+      "protocol": "P1",
+      "action": "FOOTDOWN",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 00 08 01",
+      "evidence": [
+        "commons/mapList.dart:0x358f34 object 49db31",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "FOOTDOWN-AB",
+      "protocol": "P1",
+      "action": "FOOTDOWN",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 00 08 00",
+      "evidence": [
+        "commons/mapList.dart:0x358f34 object 49db31",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "FOOTDOWN-B",
+      "protocol": "P1",
+      "action": "FOOTDOWN",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 00 08 02",
+      "evidence": [
+        "commons/mapList.dart:0x358f34 object 49db31",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "LUMBARUP-A",
+      "protocol": "P1",
+      "action": "LUMBARUP",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 00 40 01",
+      "evidence": [
+        "commons/mapList.dart:0x358fc4 object 49db11",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "LUMBARUP-AB",
+      "protocol": "P1",
+      "action": "LUMBARUP",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 00 40 00",
+      "evidence": [
+        "commons/mapList.dart:0x358fc4 object 49db11",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "LUMBARUP-B",
+      "protocol": "P1",
+      "action": "LUMBARUP",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 00 40 02",
+      "evidence": [
+        "commons/mapList.dart:0x358fc4 object 49db11",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "LUMBARDOWN-A",
+      "protocol": "P1",
+      "action": "LUMBARDOWN",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 00 80 01",
+      "evidence": [
+        "commons/mapList.dart:0x359054 object 49daf1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "LUMBARDOWN-AB",
+      "protocol": "P1",
+      "action": "LUMBARDOWN",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 00 80 00",
+      "evidence": [
+        "commons/mapList.dart:0x359054 object 49daf1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "LUMBARDOWN-B",
+      "protocol": "P1",
+      "action": "LUMBARDOWN",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 00 80 02",
+      "evidence": [
+        "commons/mapList.dart:0x359054 object 49daf1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADTILTUP-A",
+      "protocol": "P1",
+      "action": "HEADTILTUP",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 00 10 01",
+      "evidence": [
+        "commons/mapList.dart:0x3590e4 object 49dad1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADTILTUP-AB",
+      "protocol": "P1",
+      "action": "HEADTILTUP",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 00 10 00",
+      "evidence": [
+        "commons/mapList.dart:0x3590e4 object 49dad1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADTILTUP-B",
+      "protocol": "P1",
+      "action": "HEADTILTUP",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 00 10 02",
+      "evidence": [
+        "commons/mapList.dart:0x3590e4 object 49dad1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADTILTDOWN-A",
+      "protocol": "P1",
+      "action": "HEADTILTDOWN",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 00 20 01",
+      "evidence": [
+        "commons/mapList.dart:0x359174 object 49dab1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADTILTDOWN-AB",
+      "protocol": "P1",
+      "action": "HEADTILTDOWN",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 00 20 00",
+      "evidence": [
+        "commons/mapList.dart:0x359174 object 49dab1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HEADTILTDOWN-B",
+      "protocol": "P1",
+      "action": "HEADTILTDOWN",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 00 20 02",
+      "evidence": [
+        "commons/mapList.dart:0x359174 object 49dab1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HIPSUP-A",
+      "protocol": "P1",
+      "action": "HIPSUP",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 40 00 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x359204 object 49da91",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HIPSUP-AB",
+      "protocol": "P1",
+      "action": "HIPSUP",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 40 00 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x359204 object 49da91",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HIPSUP-B",
+      "protocol": "P1",
+      "action": "HIPSUP",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 40 00 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x359204 object 49da91",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HIPSDOWN-A",
+      "protocol": "P1",
+      "action": "HIPSDOWN",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 80 00 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x359294 object 49da71",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HIPSDOWN-AB",
+      "protocol": "P1",
+      "action": "HIPSDOWN",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 80 00 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x359294 object 49da71",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "HIPSDOWN-B",
+      "protocol": "P1",
+      "action": "HIPSDOWN",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 80 00 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x359294 object 49da71",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "ZG-A",
+      "protocol": "P1",
+      "action": "ZG",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 10 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x359324 object 49da11",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "ZG-AB",
+      "protocol": "P1",
+      "action": "ZG",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 10 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x359324 object 49da11",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "ZG-B",
+      "protocol": "P1",
+      "action": "ZG",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 10 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x359324 object 49da11",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "ANTI-A",
+      "protocol": "P1",
+      "action": "ANTI",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 00 80 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x3593b4 object 49dbb1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "ANTI-AB",
+      "protocol": "P1",
+      "action": "ANTI",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 00 80 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x3593b4 object 49dbb1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "ANTI-B",
+      "protocol": "P1",
+      "action": "ANTI",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 00 80 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x3593b4 object 49dbb1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "FLAT-A",
+      "protocol": "P1",
+      "action": "FLAT",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 08 00 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x359444 object 49da51",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "FLAT-AB",
+      "protocol": "P1",
+      "action": "FLAT",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 08 00 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x359444 object 49da51",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "FLAT-B",
+      "protocol": "P1",
+      "action": "FLAT",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 08 00 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x359444 object 49da51",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "M1-A",
+      "protocol": "P1",
+      "action": "M1",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 01 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x3594d4 object 49dbf1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "M1-AB",
+      "protocol": "P1",
+      "action": "M1",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 01 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x3594d4 object 49dbf1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "M1-B",
+      "protocol": "P1",
+      "action": "M1",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 01 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x3594d4 object 49dbf1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "M2-A",
+      "protocol": "P1",
+      "action": "M2",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 04 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x359564 object 49dbd1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "M2-AB",
+      "protocol": "P1",
+      "action": "M2",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 04 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x359564 object 49dbd1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "M2-B",
+      "protocol": "P1",
+      "action": "M2",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 04 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x359564 object 49dbd1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "LIGHT-A",
+      "protocol": "P1",
+      "action": "LIGHT",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 00 02 00 00 01",
+      "evidence": [
+        "commons/mapList.dart:0x3595f4 object 49d9d1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "LIGHT-AB",
+      "protocol": "P1",
+      "action": "LIGHT",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 00 02 00 00 00",
+      "evidence": [
+        "commons/mapList.dart:0x3595f4 object 49d9d1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "LIGHT-B",
+      "protocol": "P1",
+      "action": "LIGHT",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 00 02 00 00 02",
+      "evidence": [
+        "commons/mapList.dart:0x3595f4 object 49d9d1",
+        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
+      ]
+    },
+    {
+      "id": "reset-A",
+      "protocol": "P1",
+      "action": "reset_memory",
+      "inputs": {
+        "side": "A"
+      },
+      "expected_bytes": "05 02 08 00 10 00 01",
+      "evidence": [
+        "BleManager.resetMemoryPosition 0x3587d4 -> writeData 0x3589d4"
+      ]
+    },
+    {
+      "id": "reset-AB",
+      "protocol": "P1",
+      "action": "reset_memory",
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_bytes": "05 02 08 00 10 00 00",
+      "evidence": [
+        "BleManager.resetMemoryPosition 0x3587d4 -> writeData 0x3589d4"
+      ]
+    },
+    {
+      "id": "reset-B",
+      "protocol": "P1",
+      "action": "reset_memory",
+      "inputs": {
+        "side": "B"
+      },
+      "expected_bytes": "05 02 08 00 10 00 02",
+      "evidence": [
+        "BleManager.resetMemoryPosition 0x3587d4 -> writeData 0x3589d4"
+      ]
+    },
+    {
+      "id": "STOP",
+      "protocol": "P1",
+      "action": "STOP",
+      "inputs": {},
+      "expected_bytes": "05 02 00 00 00 00 00",
+      "evidence": [
+        "BleManager 0x358318 -> delayed 0x2e47e8"
+      ]
+    },
+    {
+      "id": "query_massage",
+      "protocol": "P1",
+      "action": "query_massage",
+      "inputs": {},
+      "expected_bytes": "00 b0",
+      "evidence": [
+        "BleManager 0x2e5364"
+      ]
+    },
+    {
+      "id": "query_alarm",
+      "protocol": "P1",
+      "action": "query_alarm",
+      "inputs": {},
+      "expected_bytes": "00 c0",
+      "evidence": [
+        "BleManager 0x2e6268/0x2dcd58"
+      ]
+    },
+    {
+      "id": "clock-tuesday",
+      "protocol": "P1",
+      "action": "clock",
+      "inputs": {
+        "local_time": "2026-11-17T06:05:09"
+      },
+      "expected_bytes": "07 04 26 11 17 02 06 05 09",
+      "evidence": [
+        "calibrationTime 0x34fbc0, convertToBCD 0x35010c"
+      ]
+    },
+    {
+      "id": "clock-sunday",
+      "protocol": "P1",
+      "action": "clock",
+      "inputs": {
+        "local_time": "2025-12-07T23:59:58"
+      },
+      "expected_bytes": "07 04 25 12 07 00 23 59 58",
+      "evidence": [
+        "calibrationTime 0x34fbc0, weekday Sunday->0"
+      ]
+    },
+    {
+      "id": "alarm-vibrate-A",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 6,
+        "minute": 30,
+        "days": 127,
+        "side": "A",
+        "enabled": true,
+        "type_code": 1
+      },
+      "expected_bytes": "07 05 7f 01 06 30 00 01 01",
+      "evidence": [
+        "setAlarmCommand 0x351c18"
+      ]
+    },
+    {
+      "id": "alarm-ZG-AB",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 21,
+        "minute": 9,
+        "days": 2,
+        "side": "AB",
+        "enabled": false,
+        "type_code": 2
+      },
+      "expected_bytes": "07 05 02 02 21 09 00 00 00",
+      "evidence": [
+        "getAlarmTypeValue 0x351efc; setAlarmCommand 0x351c18",
+        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
+      ]
+    },
+    {
+      "id": "alarm-M1-B",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 23,
+        "minute": 59,
+        "days": 255,
+        "side": "B",
+        "enabled": true,
+        "type_code": 3
+      },
+      "expected_bytes": "07 05 ff 03 23 59 00 01 02",
+      "evidence": [
+        "LayoutLogic mapping 0x33d5d8; setAlarmCommand 0x351c18",
+        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
+      ]
+    },
+    {
+      "id": "alarm-once-today",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 7,
+        "minute": 30,
+        "days": 128,
+        "side": "AB",
+        "enabled": true,
+        "type_code": 1,
+        "now": "2026-11-17T06:30:00"
+      },
+      "expected_bytes": "07 05 04 01 07 30 00 01 00",
+      "evidence": [
+        "compareTime 0x351f70; sendAlarmCommand 0x3517e8",
+        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
+      ]
+    },
+    {
+      "id": "alarm-once-equal-nextday",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 6,
+        "minute": 30,
+        "days": 128,
+        "side": "B",
+        "enabled": true,
+        "type_code": 2,
+        "now": "2026-11-17T06:30:00"
+      },
+      "expected_bytes": "07 05 08 02 06 30 00 01 02",
+      "evidence": [
+        "compareTime strict isAfter 0x352150"
+      ]
+    },
+    {
+      "id": "alarm-once-Saturday-wrap",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 6,
+        "minute": 30,
+        "days": 128,
+        "side": "A",
+        "enabled": true,
+        "type_code": 3,
+        "now": "2026-11-21T20:00:00"
+      },
+      "expected_bytes": "07 05 01 03 06 30 00 01 01",
+      "evidence": [
+        "compareTime Saturday->Sunday 0x352344",
+        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
+      ]
+    }
+  ],
+  "parsers": [
+    {
+      "id": "massage-A-BE600",
+      "packets": [
+        "a5 0b 0e 01 02 58 03 02 01 00 02 04 b0 01 03 02 00"
+      ],
+      "inputs": {
+        "side": "A"
+      },
+      "expected_parsed": {
+        "kind": "massage",
+        "standalone": false,
+        "timer_bucket": 1,
+        "wave": 3,
+        "head": 2,
+        "foot": 1
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "massage-B-BE1200",
+      "packets": [
+        "a5 0b 0e 01 02 58 03 02 01 00 02 04 b0 01 03 02 00"
+      ],
+      "inputs": {
+        "side": "B"
+      },
+      "expected_parsed": {
+        "kind": "massage",
+        "standalone": false,
+        "timer_bucket": 2,
+        "wave": 1,
+        "head": 3,
+        "foot": 2
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "massage-AB-different-fallback",
+      "packets": [
+        "a5 0b 0e 01 02 58 03 02 01 00 02 04 b0 01 03 02 00"
+      ],
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_parsed": {
+        "kind": "massage",
+        "standalone": false,
+        "timer_bucket": 0,
+        "wave": 0,
+        "head": 0,
+        "foot": 0
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "massage-AB-same-bucket",
+      "packets": [
+        "a5 0b 0e 01 02 58 03 02 01 00 02 02 00 03 02 01 00"
+      ],
+      "inputs": {
+        "side": "AB"
+      },
+      "expected_parsed": {
+        "kind": "massage",
+        "standalone": false,
+        "timer_bucket": 1,
+        "wave": 3,
+        "head": 2,
+        "foot": 1
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "massage-second-zero-select-first",
+      "packets": [
+        "a5 0b 0e 01 02 58 03 02 01 00 00 00 00 00 00 00 00"
+      ],
+      "inputs": {
+        "side": "B"
+      },
+      "expected_parsed": {
+        "kind": "massage",
+        "standalone": true,
+        "timer_bucket": 1,
+        "wave": 3,
+        "head": 2,
+        "foot": 1
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "alarm-A",
+      "packets": [
+        "ed 80 03 01 7f 01 06 30 00 01 02 02 03 22 45 00 00"
+      ],
+      "inputs": {
+        "side": "A"
+      },
+      "expected_parsed": {
+        "kind": "alarm",
+        "standalone": false,
+        "days": 127,
+        "wake_type": "Vibrate",
+        "hour": 6,
+        "minute": 30,
+        "enabled": true
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "alarm-B",
+      "packets": [
+        "a5 0c 0e 01 7f 01 06 30 00 01 02 02 03 22 45 00 00"
+      ],
+      "inputs": {
+        "side": "B"
+      },
+      "expected_parsed": {
+        "kind": "alarm",
+        "standalone": false,
+        "days": 2,
+        "wake_type": "Position",
+        "position_index": 1,
+        "hour": 22,
+        "minute": 45,
+        "enabled": false
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "alarm-AB-different-default",
+      "packets": [
+        "ed 80 03 01 7f 01 06 30 00 01 02 02 03 22 45 00 00"
+      ],
+      "inputs": {
+        "side": "AB",
+        "now": "2026-11-17T08:41:00"
+      },
+      "expected_parsed": {
+        "kind": "alarm",
+        "standalone": false,
+        "days": 255,
+        "wake_type": "Vibrate",
+        "hour": 8,
+        "minute": 41,
+        "enabled": false
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "alarm-zero-days-default",
+      "packets": [
+        "a5 0c 0e 00 00 00 00 00 00 00 00 00 00 00 00 00 00"
+      ],
+      "inputs": {
+        "now": "2026-11-17T08:41:00"
+      },
+      "expected_parsed": {
+        "kind": "alarm",
+        "standalone": true,
+        "days": 255,
+        "wake_type": "Vibrate",
+        "hour": 8,
+        "minute": 41,
+        "enabled": false
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "alarm-invalid-BCD-nibble",
+      "packets": [
+        "a5 0c 0e 00 01 00 1a 2f 00 01 00 00 00 00 00 00 00"
+      ],
+      "inputs": {},
+      "expected_parsed": {
+        "kind": "alarm",
+        "standalone": true,
+        "days": 1,
+        "wake_type": "Position",
+        "position_index": -2,
+        "hour": 20,
+        "minute": 35,
+        "enabled": true
+      },
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "truncated-recognized",
+      "packets": [
+        "a5 0b 0e"
+      ],
+      "inputs": {},
+      "expected_parsed": null,
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ],
+      "expected_error": "IndexError"
+    },
+    {
+      "id": "unknown-header",
+      "packets": [
+        "11 22 33"
+      ],
+      "inputs": {},
+      "expected_parsed": null,
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "too-short",
+      "packets": [
+        "a5 0b"
+      ],
+      "inputs": {},
+      "expected_parsed": null,
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "FE16-buffer-retains-prefix",
+      "packets": [
+        "00 fe 16 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ",
+        "a5 0b 0e 01 02 58 03 02 01 00 02 04 b0 01 03 02 00"
+      ],
+      "inputs": {
+        "side": "A"
+      },
+      "expected_parsed": null,
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    },
+    {
+      "id": "disconnected-ignore",
+      "packets": [
+        "a5 0b 0e 01 02 58 03 02 01 00 02 04 b0 01 03 02 00"
+      ],
+      "inputs": {
+        "connected": false
+      },
+      "expected_parsed": null,
+      "evidence": [
+        "BleManager._handleData 0x2ed184",
+        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
+      ]
+    }
+  ],
+  "timer_buckets": [
+    {
+      "value": 0,
+      "expected": 0
+    },
+    {
+      "value": 1,
+      "expected": 1
+    },
+    {
+      "value": 600,
+      "expected": 1
+    },
+    {
+      "value": 601,
+      "expected": 2
+    },
+    {
+      "value": 1200,
+      "expected": 2
+    },
+    {
+      "value": 1201,
+      "expected": 3
+    },
+    {
+      "value": 1800,
+      "expected": 3
+    },
+    {
+      "value": 1801,
+      "expected": 0
+    },
+    {
+      "value": 65535,
+      "expected": 0
+    }
+  ],
+  "ab_equivalence": [
+    {
+      "a": [
+        1,
+        2,
+        88,
+        1,
+        2,
+        3,
+        0
+      ],
+      "b": [
+        2,
+        2,
+        0,
+        1,
+        2,
+        3,
+        0
+      ],
+      "expected": true
+    },
+    {
+      "a": [
+        1,
+        2,
+        88,
+        1,
+        2,
+        3,
+        0
+      ],
+      "b": [
+        2,
+        1,
+        255,
+        1,
+        2,
+        3,
+        0
+      ],
+      "expected": false
+    },
+    {
+      "a": [
+        1,
+        2,
+        88,
+        1,
+        2,
+        3,
+        0
+      ],
+      "b": [
+        2,
+        2,
+        89,
+        1,
+        2,
+        3,
+        0
+      ],
+      "expected": false
+    }
+  ]
+}

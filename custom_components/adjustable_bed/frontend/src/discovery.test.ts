@@ -36,6 +36,47 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   });
 }
 
+test("Ultramatic SmartBed publishes five neutral motors and its app controls", () => {
+  const motors = ["head", "foot", "headtilt", "lumbar", "hips"];
+  const hass = hassWith([
+    ...motors.map((motor) => entry(`cover.${motor}`, `ultramatic_${motor}`)),
+    entry("button.light", "ultramatic_light"),
+    entry("button.massage", "ultramatic_massageOnOff"),
+    entry("button.timer", "ultramatic_timerSwitch"),
+    entry("button.save", "ultramatic_save_zg"),
+    entry("button.reset", "ultramatic_reset_memory"),
+    entry("button.clock", "ultramatic_clock"),
+    entry("button.query", "ultramatic_query_alarm"),
+    entry("button.release", "ultramatic_release"),
+    entry("sensor.alarm", "ultramatic_ab_alarm"),
+    entry("sensor.timer", "ultramatic_ab_timer"),
+  ]);
+  for (const motor of motors) {
+    hass.states[`cover.${motor}`] = {
+      entity_id: `cover.${motor}`, state: "unknown", last_changed: "", last_updated: "",
+      attributes: {
+        held_control_up: `${motor.toUpperCase()}UP`, held_control_down: `${motor.toUpperCase()}DOWN`,
+        held_stop_scope: "side",
+        hold_start_delay_ms: 0, hold_release_delay_ms: 0,
+        hold_release_button_key: "ultramatic_release",
+      },
+    };
+  }
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors.map((motor) => motor.key).sort())
+    .toEqual(motors.map((motor) => `ultramatic_${motor}`).sort());
+  for (const motor of bed.motors) {
+    expect(motor.releaseButton).toBe("button.release");
+    expect(motor.heldControls?.up?.releaseDelayMs).toBe(0);
+  }
+  expect(bed.lights.buttons).toEqual(["button.light"]);
+  expect(bed.presets).toEqual(["button.reset", "button.save"]);
+  expect(bed.utility).toEqual(["button.clock", "button.query"]);
+  expect(bed.utilityStates).toEqual(["sensor.alarm"]);
+  expect(bed.massage.buttons).toEqual(["button.massage", "button.timer"]);
+  expect(bed.massage.states).toEqual(["sensor.timer"]);
+});
+
 test("OKIN Motion Bed keeps neutral middle holds and raw light actions reachable", () => {
   const hass = hassWith([
     entry("cover.middle", "motionbed_middle"),

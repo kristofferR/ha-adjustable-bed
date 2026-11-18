@@ -44,6 +44,7 @@ Its P1 and SoundWave branches are separately vector-tested.
 | [Comfort Enhancement 3 / Comfort Plus3](#comfort-enhancement-3) | All 15 app remote profiles, hardware models unverified |
 | [N32 Motion Bed](#n32-motion-bed) | Beds controlled with N32 Motion Bed, hardware models unverified |
 | [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base, hardware models unverified |
+| [Ultramatic Smart Bed](#ultramatic-smart-bed) | Nordic UART app profile, hardware models unverified |
 | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) | Beds controlled with the Adjustable bed(Lumbar) app |
 
 Customatic Z-Series beds use the separate [Customatic Z-Series](#customatic-z-series)
@@ -89,6 +90,7 @@ Customatic app profiles.
 | ✅ | [Rize Home](https://play.google.com/store/apps/details?id=com.okin.rize) 1.1.2 (12) | `com.okin.rize` | [Remedy III / Contempo IV](#rize-home-remedy-iii--contempo-iv) |
 | ✅ | [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38) | `com.okin.simmonskorea` | [N32 Motion Bed](#n32-motion-bed) |
 | ✅ | [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1) | `com.okin.resident.release` | [Resident Adjustable Base](#resident-adjustable-base) |
+| ✅ | [Ultramatic Smart Bed](https://play.google.com/store/apps/details?id=com.okin.ultramaticSmartBed) 1.1.2 (5) | `com.okin.ultramaticSmartBed` | [Ultramatic Smart Bed](#ultramatic-smart-bed) |
 | ✅ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33) | `com.okin.bedding.adjustbed` | [Adjustable bed app](#adjustable-bed-app) |
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
 | ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | [eShine](#eshine) (E2000, E3000/E3100, E5000) |
@@ -273,6 +275,7 @@ are unchanged.
 | OKIN Motion Bed | `okin_motionbed` | `okin_motionbed` | 32-bit | fixed E5 gateway envelope | with response | back, middle, legs | 2 |
 | N32 Motion Bed | `n32_motion_bed` | `n32_motion_bed` | 40-bit | plain frame | with response | back, legs, head | 3 |
 | Resident Adjustable Base | `resident` | `resident` | 64-bit | plain frame | with response | head, feet | 2 |
+| Ultramatic Smart Bed | `ultramatic_smart_bed` | `ultramatic_smart_bed` | 40-bit | plain frame | without response | head, foot, headtilt, lumbar, hips | 2 |
 | OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
 | OKIN 64-bit OKIN service | `okin_64bit_custom` | `okin_64bit` | 64-bit | plain frame | with response | head, feet, lumbar | 2 |
 | Adjustable bed (Lumbar) 36_33_04a | `adjustable_lumbar_okin` | `adjustable_lumbar` | 64-bit | plain frame | with response | head, feet, lumbar | 0 |
@@ -339,6 +342,7 @@ are unchanged.
 | OKIN Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | N32 Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | Resident Adjustable Base | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
+| Ultramatic Smart Bed | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
 | Adjustable bed (Lumbar) 36_33_04a | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
@@ -407,6 +411,7 @@ Entry pulse settings are the configured motor pulse count and delay.
 | OKIN Motion Bed | once, no STOP | once, no STOP | once, no STOP | n/a | once, no STOP | n/a |
 | N32 Motion Bed | once, 1 STOP | once, 1 STOP | n/a | n/a | n/a | n/a |
 | Resident Adjustable Base | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| Ultramatic Smart Bed | held recall | held M1/M2 | same frame, bounded save hold | n/a | one-shot, see profile | n/a |
 | OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | Adjustable bed (Lumbar) 36_33_04a | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
@@ -5592,6 +5597,152 @@ capture of the iPhone app and a replay over an ESPHome proxy (see
 writes fail with ATT Insufficient Authorization until the link is encrypted with
 a bond and the clock record and clock query were written on that connection.
 This profile's own startup and controls have not yet run on that hardware.
+
+### Ultramatic Smart Bed
+
+**App:** [Ultramatic Smart Bed](https://play.google.com/store/apps/details?id=com.okin.ultramaticSmartBed) 1.1.2 (5), `com.okin.ultramaticSmartBed`
+
+**Status:** ❓ Needs testing. Static app behavior only; physical hardware unverified.
+
+#### Setup
+
+Select **Ultramatic Smart Bed app (Nordic UART)** during setup or Configure.
+This is independent of the legacy Ultramatic ORE controls. The app admits a
+platform name beginning with `smartbed`, ignoring case, and the first
+manufacturer-data value beginning with `44 4F 54 01 05`. It checks no company
+identifier or advertised service. HA offers an app choice for this shared name;
+the exact UART roles below are required on connection. Both notify and
+indicate-only receivers are accepted. No PIN or mandatory bond is declared.
+
+The stored selector is A, AB (both, default), or B. Optional single-address
+Left/Right child devices route to A/B on the same connection. Each physical
+bed of a two-address pair retains its own selector. These names establish
+addressing only. The compatibility motor-count setting does not limit the
+app's five control pairs or assert a physical actuator count.
+
+#### Controls
+
+Head, Foot and Head Tilt retain the app labels. **Posture (LUMBAR)** and
+**Lumbar (HIPS)** retain both visible and internal names because their physical
+mapping is unverified. There is no angle feedback, seek, or calibration.
+
+Flat, ZG, ANTI, M1 and M2 are held recalls. Dedicated confirmed buttons hold
+ZG, ANTI, M1 or M2 for the app's save gesture, or hold the fixed FLAT+ZG
+combination. The app's completion toast is not a device acknowledgement;
+FLAT+ZG is not claimed to erase EEPROM or factory settings. TV and Read are
+not exposed because they have no reachable command.
+
+Massage offers head/foot intensity steps, wave steps, timer cycling and a
+master toggle. No absolute intensity or wave setter is claimed. Light is a
+toggle button without assumed on/off state or brightness.
+
+<!-- generated:ultramatic-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | UUID | Mode |
+|---|---|---|
+| Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | exact UUID |
+| Write | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | without response |
+| Status | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | notify preferred, indicate accepted |
+
+| Action | A | AB | B |
+|---|---|---|---|
+| HEADUP | `05 02 00 00 00 01 01` | `05 02 00 00 00 01 00` | `05 02 00 00 00 01 02` |
+| HEADDOWN | `05 02 00 00 00 02 01` | `05 02 00 00 00 02 00` | `05 02 00 00 00 02 02` |
+| FOOTUP | `05 02 00 00 00 04 01` | `05 02 00 00 00 04 00` | `05 02 00 00 00 04 02` |
+| FOOTDOWN | `05 02 00 00 00 08 01` | `05 02 00 00 00 08 00` | `05 02 00 00 00 08 02` |
+| HEADTILTUP | `05 02 00 00 00 10 01` | `05 02 00 00 00 10 00` | `05 02 00 00 00 10 02` |
+| HEADTILTDOWN | `05 02 00 00 00 20 01` | `05 02 00 00 00 20 00` | `05 02 00 00 00 20 02` |
+| LUMBARUP | `05 02 00 00 00 40 01` | `05 02 00 00 00 40 00` | `05 02 00 00 00 40 02` |
+| LUMBARDOWN | `05 02 00 00 00 80 01` | `05 02 00 00 00 80 00` | `05 02 00 00 00 80 02` |
+| HIPSUP | `05 02 40 00 00 00 01` | `05 02 40 00 00 00 00` | `05 02 40 00 00 00 02` |
+| HIPSDOWN | `05 02 80 00 00 00 01` | `05 02 80 00 00 00 00` | `05 02 80 00 00 00 02` |
+| ZG | `05 02 00 00 10 00 01` | `05 02 00 00 10 00 00` | `05 02 00 00 10 00 02` |
+| ANTI | `05 02 00 00 80 00 01` | `05 02 00 00 80 00 00` | `05 02 00 00 80 00 02` |
+| FLAT | `05 02 08 00 00 00 01` | `05 02 08 00 00 00 00` | `05 02 08 00 00 00 02` |
+| M1 | `05 02 00 01 00 00 01` | `05 02 00 01 00 00 00` | `05 02 00 01 00 00 02` |
+| M2 | `05 02 00 04 00 00 01` | `05 02 00 04 00 00 00` | `05 02 00 04 00 00 02` |
+| LIGHT | `05 02 00 02 00 00 01` | `05 02 00 02 00 00 00` | `05 02 00 02 00 00 02` |
+| timerSwitch | `05 02 00 00 02 00 01` | `05 02 00 00 02 00 00` | `05 02 00 00 02 00 02` |
+| headStrengthAdd | `05 02 00 00 08 00 01` | `05 02 00 00 08 00 00` | `05 02 00 00 08 00 02` |
+| headStrengthReduce | `05 02 00 80 00 00 01` | `05 02 00 80 00 00 00` | `05 02 00 80 00 00 02` |
+| footStrengthAdd | `05 02 00 00 04 00 01` | `05 02 00 00 04 00 00` | `05 02 00 00 04 00 02` |
+| footStrengthReduce | `05 02 01 00 00 00 01` | `05 02 01 00 00 00 00` | `05 02 01 00 00 00 02` |
+| waveAdd | `05 02 10 00 00 00 01` | `05 02 10 00 00 00 00` | `05 02 10 00 00 00 02` |
+| waveReduce | `05 02 04 00 00 00 01` | `05 02 04 00 00 00 00` | `05 02 04 00 00 00 02` |
+| massageOnOff | `05 02 00 00 01 00 01` | `05 02 00 00 01 00 00` | `05 02 00 00 01 00 02` |
+| reset_memory | `05 02 08 00 10 00 01` | `05 02 08 00 10 00 00` | `05 02 08 00 10 00 02` |
+| STOP | `05 02 00 00 00 00 00` | `05 02 00 00 00 00 00` | `05 02 00 00 00 00 00` |
+
+| Request | Bytes |
+|---|---|
+| Massage status | `00 B0` |
+| Alarm status | `00 C0` |
+
+| Gesture | Policy |
+|---|---|
+| Movement and recall | Immediate, then 300 ms while held |
+| Release | Global AB STOP after 100 ms |
+| Save ZG / ANTI / M1 / M2; FLAT+ZG | Same held frame for 6000 ms; no hardware acknowledgement |
+| Massage | One control, then status queries at 300 / 600 / 900 ms |
+| Light | One toggle, then ordinary release |
+| Startup | clock +0 ms, massage +200 ms, massage +500 ms |
+| Explicit clock sync | clock +0 ms, clock +500 ms |
+| Alarm set | alarm +0 ms, alarm +300 ms, query +500 ms, query +600 ms, query +700 ms |
+| Alarm query | query +0 ms, query +200 ms |
+| Notification retry | Once after 1000 ms |
+<!-- /generated -->
+
+#### Timing
+
+The generated table specifies normal schedules. The source app's delayed
+callbacks reread one mutable command buffer: startup's clock retry becomes a
+massage query, and an alarm retry becomes an alarm query. HA captures these
+normal frames and their connection, serializes their sequence, and prevents
+another action from replacing a pending STOP. Holds use elapsed deadlines
+without catching up missed refreshes. Release drains on cancellation and uses
+the captured connection. STOP always addresses AB, including after A or B
+movement. Concurrent arbitrary controls are unsupported; renewable Both holds
+on a sequential pair are rejected before motion. Finite and single-side
+operations use the normal coordinator admission.
+
+#### Notifications
+
+Massage and alarm reports contain two seven-byte records. Each A/AB/B massage
+timer sensor has raw wave and head/foot intensity attributes; each bed alarm
+sensor has days, wake type, raw position index and enabled attributes. These
+states clear on disconnect. A record with side zero marks standalone operation
+and always selects the first record, even when the second record contains zero.
+AB requires A/B records to agree. Massage uses whole timer buckets for the low
+timer byte while still comparing the high byte and all other tail bytes.
+
+Massage time is big-endian; the display buckets are off, 10, 20 and 30 minutes,
+without claiming raw hardware units or ranges. Alarm receive order is
+`side, days, type, BCDhour, BCDminute, ignored, enabled`. It differs from the
+send order `days, type, BCDhour, BCDminute, zero, enabled, side`.
+Zero days and mismatched AB records use the app's local-time default. Invalid
+BCD nibbles and unknown type indices remain visible as diagnostics, but cannot
+be sent back by Toggle. Truncated recognized reports are safely ignored. The
+source's current-chunk FE16 buffering is bounded to one chunk and cleared on
+each connection; its retained prefix does not establish another protocol.
+
+#### Services
+
+`ultramatic_alarm` accepts Set, Toggle or Query. Set requires local time to the
+minute, a Sunday-bit-0 weekday mask, enabled, and Vibrate, ZG or M1. Mask 128
+chooses today only if the selected minute is strictly after local now,
+otherwise tomorrow; 255 preserves the app default. Toggle requires a valid
+report on the current connection and preserves its other fields. Every target
+is validated before mutation. Refresh and explicit clock-sync buttons use the
+same scheduler as all other controls. Bed alarms already written can run while
+HA is disconnected.
+
+#### Evidence
+
+Accepted row176 app literals and receive cases reproduce through the shared
+N-frame codec, including the corrected unequal wake-type/side alarm cases.
+Hardware qualification belongs to external beta users. The frozen July 2026
+artifact does not establish current store recency.
 
 ## Notes
 

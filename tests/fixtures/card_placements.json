@@ -4808,5 +4808,147 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:ultramatic_clock": {
+    "card_section": "utility"
+  },
+  "button:ultramatic_footstrengthadd": {
+    "card_section": "massage"
+  },
+  "button:ultramatic_footstrengthreduce": {
+    "card_section": "massage"
+  },
+  "button:ultramatic_foot_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "ultramatic_foot"
+  },
+  "button:ultramatic_foot_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "ultramatic_foot"
+  },
+  "button:ultramatic_headstrengthadd": {
+    "card_section": "massage"
+  },
+  "button:ultramatic_headstrengthreduce": {
+    "card_section": "massage"
+  },
+  "button:ultramatic_head_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "ultramatic_head"
+  },
+  "button:ultramatic_head_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "ultramatic_head"
+  },
+  "button:ultramatic_headtilt_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "ultramatic_headtilt"
+  },
+  "button:ultramatic_headtilt_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "ultramatic_headtilt"
+  },
+  "button:ultramatic_hips_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "ultramatic_hips"
+  },
+  "button:ultramatic_hips_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "ultramatic_hips"
+  },
+  "button:ultramatic_light": {
+    "card_section": "lighting"
+  },
+  "button:ultramatic_lumbar_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "ultramatic_lumbar"
+  },
+  "button:ultramatic_lumbar_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "ultramatic_lumbar"
+  },
+  "button:ultramatic_massageonoff": {
+    "card_section": "massage"
+  },
+  "button:ultramatic_query_alarm": {
+    "card_section": "utility"
+  },
+  "button:ultramatic_query_massage": {
+    "card_section": "utility"
+  },
+  "button:ultramatic_release": {
+    "card_section": "hidden"
+  },
+  "button:ultramatic_reset_memory": {
+    "card_section": "presets"
+  },
+  "button:ultramatic_save_anti": {
+    "card_section": "presets"
+  },
+  "button:ultramatic_save_m1": {
+    "card_section": "presets"
+  },
+  "button:ultramatic_save_m2": {
+    "card_section": "presets"
+  },
+  "button:ultramatic_save_zg": {
+    "card_section": "presets"
+  },
+  "button:ultramatic_timerswitch": {
+    "card_section": "massage"
+  },
+  "button:ultramatic_waveadd": {
+    "card_section": "massage"
+  },
+  "button:ultramatic_wavereduce": {
+    "card_section": "massage"
+  },
+  "cover:ultramatic_foot": {
+    "card_section": "motors",
+    "card_motor": "ultramatic_foot"
+  },
+  "cover:ultramatic_head": {
+    "card_section": "motors",
+    "card_motor": "ultramatic_head"
+  },
+  "cover:ultramatic_headtilt": {
+    "card_section": "motors",
+    "card_motor": "ultramatic_headtilt"
+  },
+  "cover:ultramatic_hips": {
+    "card_section": "motors",
+    "card_motor": "ultramatic_hips"
+  },
+  "cover:ultramatic_lumbar": {
+    "card_section": "motors",
+    "card_motor": "ultramatic_lumbar"
+  },
+  "sensor:ultramatic_a_alarm": {
+    "card_section": "utility"
+  },
+  "sensor:ultramatic_a_timer": {
+    "card_section": "massage"
+  },
+  "sensor:ultramatic_ab_alarm": {
+    "card_section": "utility"
+  },
+  "sensor:ultramatic_ab_timer": {
+    "card_section": "massage"
+  },
+  "sensor:ultramatic_b_alarm": {
+    "card_section": "utility"
+  },
+  "sensor:ultramatic_b_timer": {
+    "card_section": "massage"
   }
 }

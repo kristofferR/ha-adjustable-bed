@@ -413,6 +413,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | SUTA Smart Home (AT protocol) | `suta` | 7 | 150 ms |
 | Symphony Sleep app (com.ore.bedding.symphony, choose model and transport) | `symphony_sleep` | 4 | 300 ms |
+| Ultramatic Smart Bed app (com.okin.ultramaticSmartBed, Nordic UART) | `ultramatic_smart_bed` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
 | アシステック / ASSISTEC / Yamada app (com.okin.yamada) | `yamada` | 4 | 300 ms |
 

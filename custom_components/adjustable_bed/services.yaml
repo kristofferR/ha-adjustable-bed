@@ -4548,3 +4548,46 @@ sonicsleep:
       default: true
       selector:
         boolean: null
+
+ultramatic_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+          - set
+          - toggle
+          - query
+    time:
+      selector:
+        time: null
+    days:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    wake:
+      selector:
+        select:
+          options:
+          - vibrate
+          - zero_g
+          - memory_1
+    enabled:
+      selector:
+        boolean: null
