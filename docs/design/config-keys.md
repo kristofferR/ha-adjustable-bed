@@ -60,22 +60,20 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `motor_count` | User | Setup and Configure; a question of the Keeson ORE apps and INNOVA, the Okin remotes and Sleepy's BOX15 and BOX24; owned by the declarations that fix it | `coordinator.py`, controllers, entity platforms |
 | `has_massage` | User | Setup and Configure; a question of `vibradorm_app@caresse` and `sleepys_box25`; owned by the declarations that fix or derive it; turned off by [schema 5.3](#massage-off-in-schema-53) where the profile has no massage | Controllers, entity platforms |
 | `has_light` | User | A question of `jiecang_app`, `logicdata_app`, `limoss_remote`, `fsm_relax` and `ergomotion_4` | bed builders, `coordinator.py` |
-| `disable_angle_sensing` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
-| `motor_pulse_count` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py`, `beds/richmat_classic/controller.py` |
-| `motor_pulse_delay_ms` | User | Setup and Configure; owned by the declarations that fix it | `coordinator.py` |
+| `disable_angle_sensing` | User | Setup and Configure through **Read bed position**, stored only where it differs from the route's default (`bed_traits.store_read_positions`); owned by the declarations that fix it | `bed_traits.reads_positions`, `coordinator.py` |
+| `motor_pulse_count` | User | Setup and Configure as **Movement per tap** (1-100); owned by the declarations that fix it | `coordinator.py`, `beds/richmat_classic/controller.py` |
+| `motor_pulse_delay_ms` | User | Setup stores the route's default; no form shows it since 5.6, and a saved value still applies; owned by the declarations that fix it | `coordinator.py` |
 | `motor_pulse_user_set` | Internal | Setup and Configure record whether the user changed the pulse fields | `coordinator.py` (a profile default applies otherwise) |
 | `product_type` | User | A question of `limoss_remote`, `fsm_relax`, the Keeson app layouts and `ergomotion_4`, `richmat_classic_apps`, `gmmotor`, `isleep`, `doublesleep` and `sleeptracker` | bed builders, `pairing.py` |
 | `reverse_motor_1`, `reverse_motor_2`, `reverse_motor_3`, `reverse_motor_4` | User | A question of `limoss_remote` and `fsm_relax` | bed builders |
 | `ble_device_name` | User | Setup stores the advertised name; the StarCode steps and Configure ask it; a question of `motion_bed` and `motomotion` | Name rules in controllers, `coordinator.py` |
 | `preferred_adapter` | User | Setup and Configure | `coordinator.py`, repairs |
-| `connection_profile` | User | Configure | `coordinator.py` |
-| `disconnect_after_command` | User | `disconnect_after_command` step, Configure | `coordinator.py` |
-| `idle_disconnect_seconds` | User | Configure | `coordinator.py` |
-| `position_mode` | User | Configure, for beds with position feedback | `coordinator.py` |
+| `connection_mode` | User | Setup and Configure, except for beds that hold their link (`bed_traits.connection_mode_is_fixed`); written by [schema 5.6](#settings-in-schema-56) | `coordinator.py` (`bed_traits.default_connection_mode` applies otherwise) |
+| `idle_disconnect_seconds` | User | Setup and Configure, for the "Stay connected for a while" mode (1-300) | `coordinator.py` |
 | `passive_position_reconciliation` | User | Configure | `coordinator.py` |
 | `back_max_angle` | User | Configure | `coordinator.py`, estimated positions |
 | `legs_max_angle` | User | Configure | `coordinator.py`, estimated positions |
-| `disable_discovery` | User | Configure; saved integration-wide in `discovery_settings.py`, never in the entry | `discovery_settings.py` (a per-entry copy is dropped by schema 5.2) |
+| `disable_discovery` | User | **Add Integration → Find new beds automatically**; saved integration-wide in `discovery_settings.py`, never in the entry | `discovery_settings.py` (a per-entry copy is dropped by schema 5.2) |
 
 ### App and product settings
 
@@ -179,7 +177,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `pair_mode` | Internal | `pairing.py` | Paired setup, `coordinator.py`, `paired_devices.py` |
 | `pair_children` | Internal | `pairing.py` | `pairing.py`, `profile_id.py`, migration |
 | `pair_member_addresses` | Internal | `pairing.py` | `pairing.pair_member_addresses` (discovery deduplication) |
-| `pair_connection_mode` | Internal | `pairing.py`, from the combine step | `paired_coordinator.py` |
+| `pair_connection_mode` | Internal | Nothing; [schema 5.6](#settings-in-schema-56) drops it | Nothing |
 | `side` | Internal | `pairing.py`, per side descriptor | Paired setup, registry, repairs |
 | `pair_schema_version` | Obsolete | Nothing since schema 5.2 | Nothing; see below |
 
@@ -189,7 +187,7 @@ original data and options keep them under `origin_data` and `origin_options`.
 |---|---|---|---|
 | `profile_review_pending` | Internal | Schema 4.3 migration, `profile_review.py` | `profile_review.py` |
 | `profile_review_kept` | Internal | `profile_review.py` on Keep | `profile_review.py` |
-| `profile_migration` | Internal | Schema 5.1, 5.2, 5.3 and 5.5 migrations | Diagnostics, support bundles |
+| `profile_migration` | Internal | Schema 5.1, 5.2, 5.3, 5.5 and 5.6 migrations | Diagnostics, support bundles |
 
 ## Flow inputs
 
@@ -200,6 +198,7 @@ These keys name form fields that a flow reads and never stores.
 | `acknowledge` | Estimated positions (`position_estimate_flow.py`) |
 | `measure` | Estimated positions (`position_estimate_flow.py`) |
 | `pair_selection` | `pair_beds` (`pairing_candidates.py`) |
+| `read_positions` | Setup and Configure: **Read bed position**, saved as `disable_angle_sensing` |
 
 ## Dropped by schema 5.2
 
@@ -253,3 +252,20 @@ migration record. The fallbacks are gone.
 
 Schema 5 is one way: an entry at 5.2 or 5.3 cannot load on 4.x, and restoring a
 Home Assistant backup is the only way back.
+
+## Settings in schema 5.6
+
+The 5.6 step (`migrate_v5_6_entry` in `__init__.py`) rewrites entry data,
+options, each paired side (after it takes the shared values it inherited) and
+each side's `origin_data` and `origin_options`, and lists each change under
+`settings_5_6` in the migration record.
+
+| Key | What 5.6 does |
+|---|---|
+| `position_mode` | Dropped. Every bed reads its position in the background after a command |
+| `connection_profile` | Dropped. Every bed uses `CONNECTION_SETTINGS` (the former Reliable timing) |
+| `pair_connection_mode` | Dropped. Nothing could set it; a pair starts concurrent and falls back to sequential at runtime |
+| `disconnect_after_command` | Dropped. `true` becomes `connection_mode: release`, `false` becomes `idle` |
+| `idle_disconnect_seconds` | `0` is dropped and becomes `connection_mode: always`, unless `disconnect_after_command` was `true` |
+| `disable_angle_sensing` | Dropped where it equals the route's default (`true` without position feedback, `false` with it) |
+

@@ -2413,6 +2413,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Choose by app or keep the historical setup, never infer a profile."""
         return await self._async_family_step(VIBRADORM_FAMILY, user_input)
 
+    async def _async_abort_unchanged(self) -> ConfigFlowResult:
+        """End a change that resolves to the saved setup, settling a review that opened it.
+
+        Choosing the current setup again answers a suggestion as Keep would.
+        """
+        from .profile_recommendations import (
+            async_complete_profile_review,
+            async_confirm_profile_review,
+        )
+
+        entry = self._get_reconfigure_entry()
+        await async_confirm_profile_review(
+            self.hass, entry, self.flow_id, {**entry.data, **entry.options}
+        )
+        async_complete_profile_review(self.hass, entry, self.flow_id)
+        return self.async_abort(reason="migration_unchanged")
+
     def _migration_unchanged(self) -> bool:
         return self._migration is not None and self._migration.matches(
             self._get_reconfigure_entry()
@@ -2582,7 +2599,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         data = with_profile_ids(data, options)
         if {**data, **options} == {**self._migration.data, **self._migration.options}:
             # The answer resolves to the saved route: nothing to migrate.
-            return self.async_abort(reason="migration_unchanged")
+            return await self._async_abort_unchanged()
         kept = _limoss_remote_features_left(
             {**self._migration.data, **self._migration.options}, {**data, **options}
         )
@@ -4794,7 +4811,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and self._migration.is_unchanged_by(self._manual_data)
         ):
             # A label that resolves to the saved route never migrates anything.
-            return self.async_abort(reason="migration_unchanged")
+            return await self._async_abort_unchanged()
         address = self._manual_data.get(CONF_ADDRESS, "")
         bed_type = self._manual_data.get(CONF_BED_TYPE)
         variant = self._manual_data.get(CONF_PROTOCOL_VARIANT)
@@ -6113,7 +6130,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
         )
         if self._migration is not None and self._migration.is_unchanged_by(entry_data):
-            return self.async_abort(reason="migration_unchanged")
+            return await self._async_abort_unchanged()
         if self._migration is not None and not self._migration_requires_check:
             return await self._async_create_selected_app_entry(title=title, data=entry_data)
         if (

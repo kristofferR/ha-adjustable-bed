@@ -21,7 +21,7 @@ from homeassistant.components.repairs.const import FlowType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import FlowResultType, UnknownFlow
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers import selector
 
@@ -749,10 +749,8 @@ def _reviews_within_guided_family(
 ) -> bool:
     """Return True when every candidate stays in the entry's guided family.
 
-    Configure refuses an app or route change within a guided family, so such a
-    review runs the guided change, as the app review does. A candidate of
-    another bed type stays a Configure change, which the guided change cannot
-    offer.
+    Such a review runs the family's question in Reconfigure, as the app review
+    does, even without one suggested app.
     """
     family = managed_family(entry_data)
     if family is None or recommendation.rule == _TEMPUR_PROCESSOR_RULE:
@@ -800,11 +798,45 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     step_id="processor",
                     description_placeholders=watch.placeholders(),
                 )
-            if not is_paired(watch.entry.data):
+            if guided or (
+                recommendation.suggested is not None
+                and not recommendation.suggested.startswith(_REMOTE_PREFIX)
+                and not is_paired(watch.entry.data)
+            ):
+                # A different app or bed type is chosen, checked and reviewed in
+                # Reconfigure, with the suggestion preselected.
                 return await self._async_start_guided_change(watch, recommendation)
-            # Existing per-side profile restrictions require an explicit split.
-            # Open the menu; never split or change either side from this repair.
-            result = await self.hass.config_entries.options.async_init(watch.entry.entry_id)
+            if is_paired(watch.entry.data):
+                # Existing per-side profile restrictions require an explicit split.
+                # Open the menu; never split or change either side from this repair.
+                result = await self.hass.config_entries.options.async_init(watch.entry.entry_id)
+            else:
+                # Without one app to switch to, Configure shows the settings to
+                # check, such as the remote; saving them answers the review.
+                manager = self.hass.config_entries.options
+                original_data, original_options = watch.entry.data, watch.entry.options
+                result = await manager.async_init(watch.entry.entry_id)
+                if result.get("type") not in (FlowResultType.FORM, FlowResultType.MENU):
+                    return self.async_abort(reason="recommendation_changed")
+                flow_id = result["flow_id"]
+                try:
+                    result = await manager.async_configure(flow_id, {"next_step_id": "settings"})
+                    watch.refresh()
+                    if (
+                        _watches(self.hass).get(self._issue_id) is not watch
+                        or watch.entry.data != original_data
+                        or watch.entry.options != original_options
+                        or watch.recommendation != recommendation
+                        or watch.dismissed.get(recommendation.rule)
+                    ):
+                        manager.async_abort(flow_id)
+                        return self.async_abort(reason="recommendation_changed")
+                except BaseException:
+                    try:
+                        manager.async_abort(flow_id)
+                    except UnknownFlow:
+                        pass
+                    raise
             if result.get("type") in (FlowResultType.FORM, FlowResultType.MENU):
                 watch.review_flow_id = result["flow_id"]
                 watch.review_recommendation = recommendation
