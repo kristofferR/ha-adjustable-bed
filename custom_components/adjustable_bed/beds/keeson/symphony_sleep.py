@@ -426,9 +426,11 @@ class SymphonySleepController(KeesonController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return (
             ControllerButtonSpec("symphony_query_alarm", "Refresh bed alarm", lambda c: cast(SymphonySleepController, c).query_alarm(),
-                                 translation_key="symphony_query_alarm", card=CARD_UTILITY, scheduler_resource="*"),
+                                 translation_key="symphony_query_alarm", card=CARD_UTILITY, scheduler_resource="*",
+                                 diagnostic=True),
             ControllerButtonSpec("symphony_sync_clock", "Sync bed clock", lambda c: c.sync_clock(),
-                                 translation_key="symphony_sync_clock", card=CARD_UTILITY, scheduler_resource="*"),
+                                 translation_key="symphony_sync_clock", card=CARD_UTILITY, scheduler_resource="*",
+                                 diagnostic=True),
         )
 
     @property

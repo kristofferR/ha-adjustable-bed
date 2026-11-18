@@ -655,6 +655,7 @@ class BfCherishController(ProfileExecution[keeson_profiles.KeesonProfile], BedCo
                 _action("query_alarm"),
                 translation_key="bf_query_alarm",
                 cancel_movement=False,
+                diagnostic=True,
             ),
         )
 

@@ -180,6 +180,12 @@ def _protocol_name(live: str | None, stored: object) -> str | None:
     return stored if isinstance(stored, str) and not is_mac_like_name(stored) else None
 
 
+def _voice_label(action: str) -> str:
+    """Sentence-case label of a voice-route action, e.g. ``voice_zero_g`` -> "Zero g"."""
+    label = action.removeprefix("voice_").replace("_", " ")
+    return {"zero g": "Zero gravity", "anti snore": "Anti-snore"}.get(label, label).capitalize()
+
+
 def _action(name: str) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
         target = controller
@@ -310,8 +316,8 @@ class AdjustableLumbarController(
         labels = {
             **_SAVE_LABELS,
             **_WAVE_LABELS,
-            "massage_on": "Massage On",
-            "check_massage": "Check Massage",
+            "massage_on": "Massage on",
+            "check_massage": "Refresh massage",
         }
         return tuple(
             ControllerButtonSpec(
@@ -320,6 +326,7 @@ class AdjustableLumbarController(
                 _action(key),
                 translation_key=f"adjustable_lumbar_{key}",
                 icon="mdi:content-save" if key.startswith("save_") else "mdi:gesture-tap",
+                diagnostic=key == "check_massage",
                 card=CARD_MASSAGE if key in _WAVE_LABELS or key == "massage_on" else CARD_UTILITY,
             )
             for key, label in labels.items()
@@ -670,19 +677,20 @@ class AdjustableBedAppController(AdjustableLumbarController):
             replace(spec, key=spec.key.replace("adjustable_lumbar", "adjustable_bed"))
             for spec in super().controller_button_specs
         )
+        # The voice route repeats controls the touch entities already offer, so
+        # these stay disabled diagnostics for testing that route.
         return buttons + tuple(
             ControllerButtonSpec(
                 f"adjustable_bed_{action}",
-                "App speech: " + action.removeprefix("voice_").replace("_", " ").title(),
+                "Voice: " + _voice_label(action),
                 _action(action),
                 invalidates_position=(
                     action in VOICE_MOTORS or action.removeprefix("voice_") in VOICE_PRESETS
                 ),
                 icon="mdi:gesture-tap",
                 translation_key="adjustable_bed_speech",
-                translation_placeholders={
-                    "action": action.removeprefix("voice_").replace("_", " ").title()
-                },
+                translation_placeholders={"action": _voice_label(action)},
+                diagnostic=True,
                 card=CARD_UTILITY,
             )
             for action in (*VOICE_MOTORS, *(f"voice_{key}" for key in VOICE_FINITE), "voice_stop")

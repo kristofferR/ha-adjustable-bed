@@ -153,6 +153,7 @@ class ResidentController(Okin64BitController):
                 card=CARD_MASSAGE,
                 translation_key="resident_check_massage",
                 icon="mdi:refresh",
+                diagnostic=True,
             ),
             ControllerButtonSpec(
                 "resident_sync_clock",
@@ -161,6 +162,7 @@ class ResidentController(Okin64BitController):
                 card=CARD_UTILITY,
                 translation_key="resident_sync_clock",
                 icon="mdi:clock-check",
+                diagnostic=True,
             ),
         )
 

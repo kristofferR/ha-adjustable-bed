@@ -44,6 +44,16 @@ MASSAGE_END: Final = StateKey[str | None]("apex_local_massage_end")
 FIRMWARE: Final = StateKey[str | None]("apex_firmware")
 
 
+# Entity names for the remote's grouped motor keys; the remote prints the M channels.
+_GROUP_NAMES: Final = {
+    "lumbar": "Lumbar",
+    "head_foot": "Head and foot",
+    "head_tilt": "Head tilt",
+    "midbody": "Mid-body",
+    "tflat": "T-flat",
+}
+
+
 @dataclass(frozen=True, slots=True)
 class _Link:
     client: BleakClient
@@ -259,17 +269,18 @@ class ComfortEnhancement3Controller(OkinHandleController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         buttons = []
-        for key, label, _, _ in self.remote.groups:
+        for key, _, _, _ in self.remote.groups:
             for direction in ("up", "down"):
                 control = f"{key}_{direction}"
+                name = f"{_GROUP_NAMES[key]} {direction}"
                 buttons.append(
                     ControllerButtonSpec(
                         f"apex_{control}",
-                        f"{label} {direction}",
+                        name,
                         lambda c, k=control: _apex(c).move(k),
                         scheduler_resource="*",
                         translation_key="apex_group",
-                        translation_placeholders={"action": f"{label} {direction}"},
+                        translation_placeholders={"action": name},
                         hold=ControllerHoldSpec(control),
                         invalidates_position=True,
                         card=CARD_UTILITY,
@@ -279,11 +290,13 @@ class ComfortEnhancement3Controller(OkinHandleController):
             buttons.append(
                 ControllerButtonSpec(
                     "apex_qs",
-                    "QS" if self.remote.qs else "Zzz",
+                    "Quiet sleep" if self.remote.qs else "Sleep",
                     lambda c: _apex(c)._preset("qs"),
                     scheduler_resource="*",
                     translation_key="apex_qs",
-                    translation_placeholders={"action": "QS" if self.remote.qs else "Zzz"},
+                    translation_placeholders={
+                        "action": "Quiet sleep" if self.remote.qs else "Sleep"
+                    },
                     invalidates_position=True,
                     card=CARD_PRESETS,
                 )

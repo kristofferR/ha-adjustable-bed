@@ -204,6 +204,7 @@ class N32MotionBedController(Okin64BitController):
                 translation_key="n32_refresh_alarms",
                 cancel_movement=False,
                 scheduler_resource="configuration",
+                diagnostic=True,
             ),
         )
 

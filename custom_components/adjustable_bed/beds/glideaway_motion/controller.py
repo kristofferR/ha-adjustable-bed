@@ -466,6 +466,7 @@ class GlideawayMotionController(ProfileExecution[keeson_profiles.KeesonProfile],
                 lambda c: cast(GlideawayMotionController, c).query_alarm(),
                 "mdi:alarm",
                 translation_key="glideaway_motion_query_alarm",
+                diagnostic=True,
             ),
         )
 
