@@ -554,7 +554,7 @@ class ProfileRecommendationWatch:
             "choices": "\n".join(
                 f"- {_recommendation_label(choice)}" for choice in self.recommendation.choices
             ),
-            "pair_action": "Split into two beds" if self.side else "Restore standalone controls",
+            "pair_action": "Separate into two beds" if self.side else "Remove Left, Right and Both controls",
             "processor_guide_url": (
                 "https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/beds/sleeptracker.md"
             ),

@@ -895,7 +895,7 @@ ordinary disconnect does not remove the side's controls. Beds with saved or
 offline-safe capabilities still support setup with one side unavailable.
 
 Existing side entity IDs, device IDs, names, areas, and history are retained when
-combining entries. To undo it, choose **Split into two beds** in the pair's options;
+combining entries. To undo it, choose **Separate into two beds** in the pair's options;
 the side entries are restored and combined controls are removed. Update any
 automation that targeted the combined controls.
 

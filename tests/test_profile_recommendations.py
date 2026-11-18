@@ -1449,7 +1449,7 @@ async def test_single_address_pair_has_one_physical_notice(
     assert form["step_id"] == "paired"
     placeholders = form["description_placeholders"]
     assert placeholders is not None
-    assert placeholders["pair_action"] == "Restore standalone controls"
+    assert placeholders["pair_action"] == "Remove Left, Right and Both controls"
     assert placeholders["target"] == "Bedroom"
     assert target.recommendation is not None
     for path in ("strings.json", "translations/en.json"):
@@ -1457,8 +1457,8 @@ async def test_single_address_pair_has_one_physical_notice(
         step = strings["issues"][target.recommendation.translation_key]["fix_flow"]["step"]["paired"]
         assert step["title"].format(**placeholders) == "Review the profile for Bedroom"
         description = step["description"].format(**placeholders)
-        assert "Restore standalone controls" in description
-        assert "Split into two beds" not in description
+        assert "Remove Left, Right and Both controls" in description
+        assert "Separate into two beds" not in description
         assert ",  side" not in description
     hass.config_entries.options.async_abort(result["next_flow"][1])
 

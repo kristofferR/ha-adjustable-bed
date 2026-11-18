@@ -53,7 +53,8 @@ def test_every_key_constant_is_used():
 def test_dropped_keys_have_no_constant():
     """Schema 5.2 drops these keys, so no entry writes them again.
 
-    Disable discovery keeps its form field: the integration-wide Store saves it.
+    Disable discovery keeps its constant: per-entry cleanup still drops the
+    legacy key, and the integration-wide Store saves the setting under that name.
     """
     assert V5_2_OBSOLETE_KEYS & _stored_keys() == {CONF_DISABLE_DISCOVERY}
 
