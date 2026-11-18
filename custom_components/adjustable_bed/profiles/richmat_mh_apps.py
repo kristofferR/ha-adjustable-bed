@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
+from ..const import AUTOMATIC_LABEL
 from .richmat import RICHMAT_MH, RichmatProfile
 
 
@@ -90,7 +91,7 @@ def models(app: str) -> tuple[str, ...]:
 
 def variants(app: str) -> dict[str, str]:
     choices = {
-        "auto": "Model from the Bluetooth name (first four characters)",
+        "auto": AUTOMATIC_LABEL,
         **{f"model_{model}": NAMED_MODELS.get(model, model.upper()) for model in models(app)},
     }
     if APPS[app].normal_mattress:

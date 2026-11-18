@@ -389,3 +389,18 @@ def test_undecoded_mlily_alarm_reply_never_sets_the_alarm_sensor() -> None:
     controller._apply(protocol.Event("alarm", "6e0601ff"))
     assert ALARM_STATUS_KEY not in controller._coordinator.controller_state
     assert controller._coordinator.controller_state[LAST_REPLY] == "6e0601ff"
+
+
+async def test_nisco_alarm_cancel_uses_the_shared_set_alarm_route(sleeps) -> None:
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    controller = make("nisco", "cfrm")
+    controller._dev["alarm"] = True
+    assert controller.alarm_capability is not None
+    request = AlarmRequest(enabled=False, reference_time=datetime(2026, 11, 18, 7, 0))
+    controller.validate_alarm(request)
+    await controller.configure_alarm(request)
+    assert frames(controller) == [frame.hex() for frame in protocol.TX_ALARM_CANCEL]
+

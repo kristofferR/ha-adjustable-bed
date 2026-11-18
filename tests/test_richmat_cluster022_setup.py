@@ -55,19 +55,13 @@ async def test_new_install_and_configure_keep_explicit_app(hass, app, label) -> 
     assert saved[const.CONF_BED_TYPE] == bed_type
     assert profile_route(resolve_profile_id(saved)).bed_type == bed_type
 
-    entry = entry_for(hass)
+    # The app and model change in Reconfigure; Configure keeps them.
+    entry = entry_for(hass, **{const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: "model_cfrm"})
     options = AdjustableBedOptionsFlow(entry)
     options.hass, options.handler = hass, entry.entry_id
     form = await options.async_step_settings()
-    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
-    choice = selector(f"{label} app · Richmat")
-    form = await options.async_step_settings({const.CONF_BED_TYPE: choice})
-    assert const.CONF_PROTOCOL_VARIANT in fields(form)
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await options.async_step_settings({const.CONF_PROTOCOL_VARIANT: "model_cfrm"})
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == bed_type
+    assert const.CONF_BED_TYPE not in fields(form)
+    assert const.CONF_PROTOCOL_VARIANT not in fields(form)
     # The mocked reload above omits setup, which normally synchronizes ids.
     _async_sync_profile_ids(hass, entry)
     assert profile_route(entry.data[const.CONF_PROFILE_ID]).variant == "model_cfrm"
@@ -118,14 +112,13 @@ async def test_pair_configure_preserves_other_physical_profile(hass, enable_cust
     _async_sync_profile_ids(hass, entry)
     right_before = child(entry, "right")
     form = await receiver_form(hass, entry, "left")
-    assert receiver_fields(form)[const.CONF_PROTOCOL_VARIANT].default() == "model_cfrm"
-    result = await hass.config_entries.options.async_configure(form["flow_id"], {
-        **form["data_schema"]({}), const.CONF_PROTOCOL_VARIANT: "model_garm",
-    })
+    # The model picks the route, which changes in Reconfigure.
+    assert const.CONF_PROTOCOL_VARIANT not in receiver_fields(form)
+    result = await hass.config_entries.options.async_configure(form["flow_id"], form["data_schema"]({}))
     assert result["type"] is FlowResultType.CREATE_ENTRY
     _async_sync_profile_ids(hass, entry)
     left, right = child(entry, "left"), child(entry, "right")
-    assert left[const.CONF_PROTOCOL_VARIANT] == "model_garm"
+    assert left[const.CONF_PROTOCOL_VARIANT] == "model_cfrm"
     assert profile_route(left[const.CONF_PROFILE_ID]).bed_type == "richmat_nisco"
     assert right == right_before
     assert profile_route(right[const.CONF_PROFILE_ID]).variant == "model_3i"
