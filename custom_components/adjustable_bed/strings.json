@@ -10731,7 +10731,8 @@
         "m5x4": "AdjustableM5X4 app",
         "m5x5": "AdjustableM5X5 app: CB25, F23 or kneading bed",
         "m1x12": "Adjustable Comfort M1X12 app: CB25, F23 or kneading bed",
-        "another": "Another app or remote: search every app"
+        "another": "Another app or remote: search every app",
+        "keep": "Keep the current app"
       }
     },
     "remacro_family_choice": {
