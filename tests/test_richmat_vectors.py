@@ -14,12 +14,16 @@ from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     get_lp_legacy_profile,
 )
+from custom_components.adjustable_bed.beds.okimiki import protocol as okimiki
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic
 from custom_components.adjustable_bed.beds.richmat_mh import controller as mh_bed
 from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh
 from custom_components.adjustable_bed.beds.ruf_richmat import controller as ruf_richmat
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles import richmat as profiles
+from custom_components.adjustable_bed.profiles.okimiki import CATALOG as OKIMIKI_CATALOG
+from custom_components.adjustable_bed.profiles.okimiki import CONTROLS as OKIMIKI_CONTROLS
+from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI_WIRE
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.richmat_vectors import FROZEN_FRAMES
 
@@ -37,6 +41,7 @@ PROFILES = {
     "goodvibe": profiles.GOODVIBE,
     "mlily": profiles.MLILY,
     "galaxy": profiles.GALAXY,
+    "okimiki": OKIMIKI_WIRE,
     "leggett_lp_legacy": profiles.LP_LEGACY,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
     **{profile.key: profile for profile in profiles.RICHMAT_CLASSIC.values()},
@@ -215,6 +220,27 @@ def _lp_legacy_census() -> set[str]:
 
 
 def _census(key: str) -> set[str]:
+    if key == "okimiki":
+        # Actual four-product controls, STOP/light-off and startup builders.
+        # Parameterized alarms, RGB, time and duration retain their 71 literals.
+        codes = {
+            code
+            for product in OKIMIKI_CATALOG.products.values()
+            for name in product.actions
+            for control in (OKIMIKI_CONTROLS[name],)
+            for code in (control.opcode, control.save)
+            if code is not None
+        } | {0x6E, 0x75}
+        return {
+            codec.function(code, single=single).hex()
+            for code in codes for single in (False, True)
+        } | {
+            codec.function(code, action=action, single=single).hex()
+            for action, code in OKIMIKI_CATALOG.startup for single in (False, True)
+        } | {
+            codec.record(5, 1, 0, (0,)).hex(),
+            *(frame.hex() for frame in okimiki.countdown(0, 0)),
+        }
     if key == "mlily":
         from custom_components.adjustable_bed.profiles.mlily import catalog
 

@@ -1077,3 +1077,12 @@ Signature Split Head (D), or Ultra Split Head (E). The choice fixes the axes,
 massage buttons and 300 ms refresh cadence; it stays independent for each
 receiver in a two-address pair. D/E axes are numbered 1–3 because physical
 anatomy and sides are unverified. See [Somos controls](beds/keeson.md#somos--somosbeds).
+
+#### Okimiki product
+
+Choose the exact HCRN, IPRM, IQRM or KWRN product shown by the Okimiki app.
+The product owns the two-axis layout, preset/memory availability and alarm
+route. Configure keeps this selection; a two-address pair stores each side's
+product separately. Shared Bluetooth names do not select a product. Lighting
+and alarms require the current connection's capability reply. See
+[Okimiki](beds/richmat.md#okimiki) for controls and qualification status.

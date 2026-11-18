@@ -190,6 +190,7 @@ from .const import (
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -422,7 +423,7 @@ _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
-     BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
+     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
 
@@ -856,6 +857,7 @@ def _bed_type_selector(
             "sonicsleep",
             "suta",
             BED_TYPE_MLILY,
+            BED_TYPE_OKIMIKI,
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
             *PROTOCOL_ROUTES,

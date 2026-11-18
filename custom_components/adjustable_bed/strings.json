@@ -3256,6 +3256,9 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "okimiki_action": {
+        "name": "{action}"
+      },
       "comfortfurniture_save": {
         "name": "{action}"
       },
@@ -4787,6 +4790,9 @@
       "sonicsleep": {
         "name": "Model"
       },
+      "okimiki_alarms": {
+        "name": "Alarms"
+      },
       "somos_timer": {
         "name": "Massage timer"
       },
@@ -5500,6 +5506,9 @@
       },
       "richmat_resource_massage_timer": {
         "name": "Massage timer"
+      },
+      "okimiki_light_seconds": {
+        "name": "Light duration"
       },
       "comfortfurniture_wave_level": {
         "name": "Massage wave"
@@ -8664,6 +8673,52 @@
         }
       }
     },
+    "okimiki": {
+      "name": "Okimiki: controls and alarms",
+      "description": "Press or save a control, set the light or clock, or read and set the selected Okimiki product's alarms.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "One or more beds, including paired side devices."
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "control": {
+          "name": "Control"
+        },
+        "duration_ms": {
+          "name": "Press duration"
+        },
+        "datetime": {
+          "name": "Alarm time"
+        },
+        "alarm_id": {
+          "name": "Alarm slot",
+          "description": "Choose 1 through 7 explicitly when creating an alarm. Read the alarms first (the Alarms sensor lists them) before editing, turning on or off, or deleting one."
+        },
+        "mode": {
+          "name": "Wake action"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Days the alarm repeats. An empty list sets a one-time alarm; leaving the field out keeps an edited alarm's days."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "Zero keeps the light on."
+        },
+        "rgb_color": {
+          "name": "RGB color"
+        }
+      }
+    },
     "suta": {
       "name": "SUTA Smart Home: command",
       "description": "Send one command from the bed's SUTA layout, picked by its exact Bluetooth name. Alarms use Set alarm.",
@@ -9737,6 +9792,7 @@
         "acaa": "ACAA app",
         "sta2": "STA Homecare app",
         "zerogravity": "Zero Gravity app",
+        "okimiki": "Okimiki app",
         "luniosmart": "Lunio Smart+ app"
       }
     },
@@ -10807,6 +10863,45 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "okimiki_operation": {
+      "options": {
+        "press": "Press",
+        "save": "Save",
+        "light_color": "Light color",
+        "light_duration": "Light duration",
+        "light_off": "Light off",
+        "single": "Set one-time alarm",
+        "cancel_single": "Cancel one-time alarm",
+        "alarms": "Read alarms",
+        "repeat": "Set alarm",
+        "enable": "Turn alarm on or off",
+        "delete": "Delete alarm",
+        "sync": "Sync clock"
+      }
+    },
+    "okimiki_control": {
+      "options": {
+        "head_up": "Head up",
+        "head_down": "Head down",
+        "foot_up": "Foot up",
+        "foot_down": "Foot down",
+        "head_foot_up": "Head and foot up",
+        "head_foot_down": "Head and foot down",
+        "flat": "Flat",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2",
+        "lounge": "Lounge",
+        "zero_gravity": "Zero gravity"
+      }
+    },
+    "okimiki_alarm_mode": {
+      "options": {
+        "lounge": "Lounge",
+        "zero_gravity": "Zero gravity",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2"
       }
     },
     "suta_logical_side": {

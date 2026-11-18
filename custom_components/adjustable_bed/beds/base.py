@@ -1049,6 +1049,14 @@ class BedController(GattWriter):
         """
         return frozenset()
 
+    @property
+    def unavailable_controller_entity_keys(self) -> tuple[str, ...]:
+        """Light/number description keys awaiting current-session permission.
+
+        Retaining an entity's registry identity does not authorize its commands.
+        """
+        return ()
+
     def controller_button_available(self, key: str) -> bool:
         """Whether a named action remains valid for current discovered capabilities."""
         return True

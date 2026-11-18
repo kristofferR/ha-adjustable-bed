@@ -52,6 +52,7 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
@@ -1433,6 +1434,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         "luniosmart": Answer("luniosmart", data=_NO_RMCONTROL),
         "sonicsleep": Answer("sonicsleep", data=_NO_RMCONTROL),
         "mlily": Answer(BED_TYPE_MLILY, data=_NO_RMCONTROL),
+        "okimiki": Answer(BED_TYPE_OKIMIKI, data=_NO_RMCONTROL),
         **{app: Answer(bed_type, data=_NO_RMCONTROL) for bed_type, app in RICHMAT_MH_APPS.items()},
         # The classic apps keep their own declared questions.
         **{
@@ -1441,7 +1443,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", "luniosmart", BED_TYPE_MLILY},
+    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", "luniosmart", BED_TYPE_MLILY, BED_TYPE_OKIMIKI},
     routes_show_row=False,
     lists_members=True,
     offers_keep=keep_never,

@@ -267,6 +267,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "galaxy": {"hold": ("galaxy",), "hold_controls": ("galaxy",)},
     "goodvibe": {"hold": ("goodvibe",), "hold_controls": ("goodvibe",)},
     "mlily": {"hold": ("mlily159",), "hold_controls": ("mlily159",)},
+    "okimiki": {"hold": ("okimiki",), "hold_controls": ("okimiki",)},
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection (row066, five reports).
     "richmat_classic_apps": {
@@ -335,6 +336,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/suta.py:<module>.SutaProfile": SUTA_STREAM,
     "profiles/suta.py:<module>.SutaProfile.__post_init__": SUTA_STREAM,
     "beds/suta/controller.py:<module>.SutaController": SUTA_STREAM,
+    "beds/okimiki/controller.py:<module>.OkimikiController": ("okimiki",),
+    "beds/okimiki/controller.py:<module>.OkimikiController.execution": ("okimiki",),
     "profiles/smart_sleep.py:<module>.PROFILES": ("SmartSleepProfile:p2",),
     "profiles/smart_sleep.py:<module>.SmartSleepProfile": ("SmartSleepProfile:p1", "SmartSleepProfile:p2"),
     "profiles/comfort_enhancement3.py:<module>.profile": tuple(f"OkinNFrameProfile:apex_{i}" for i in range(15)),

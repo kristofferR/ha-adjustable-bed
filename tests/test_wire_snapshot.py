@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -48,6 +49,24 @@ def test_wire_bytes_match_committed_snapshot() -> None:
         + result.stdout[-6000:]
         + result.stderr[-2000:]
     )
+
+
+def test_existing_snapshot_has_canonical_rendering_without_capture() -> None:
+    """Appending accepted captures must retain the renderer's canonical order."""
+    tool = _load_tool()
+    text = tool.SNAPSHOT_PATH.read_text()
+    stored = json.loads(text)
+    scenarios = {}
+    for sid, entry in stored["scenarios"].items():
+        commands = {}
+        for name, command in entry["commands"].items():
+            commands[name] = (
+                {**command, "writes": [[w[0], stored["chars"][w[1]], *w[2:]]
+                                       for w in command["writes"]]}
+                if "writes" in command else command
+            )
+        scenarios[sid] = {**entry["info"], "commands": commands}
+    assert tool.render({"schema": stored["schema"], "scenarios": scenarios}) == text
 
 
 async def test_virtual_clock_orders_sleeps_and_timeouts() -> None:

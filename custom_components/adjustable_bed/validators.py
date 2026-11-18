@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
@@ -106,6 +107,7 @@ from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
+from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
@@ -148,6 +150,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_GALAXY: GALAXY_PROFILES,
     BED_TYPE_GOODVIBE: GOODVIBE_PROFILES,
     BED_TYPE_MLILY: MLILY_PROFILES,
+    BED_TYPE_OKIMIKI: OKIMIKI_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
     BED_TYPE_RICHMAT_APP: RICHMAT_APP_PRODUCTS,

@@ -1,0 +1,25 @@
+[
+  {
+    "entity_id": "cover.okimiki_back",
+    "translation_key": "back",
+    "attributes": {
+      "card_section": "motors",
+      "card_motor": "back",
+      "hold_lease_mode": "stream",
+      "hold_lease_motor": "back",
+      "held_control_up": "okimiki_head_up",
+      "held_control_down": "okimiki_head_down",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "held_stop_scope": "motor",
+      "hold_release_button_key": "goodvibe_release"
+    }
+  },
+  {
+    "entity_id": "button.okimiki_release",
+    "translation_key": "goodvibe_release",
+    "attributes": {
+      "card_section": "hidden"
+    }
+  }
+]

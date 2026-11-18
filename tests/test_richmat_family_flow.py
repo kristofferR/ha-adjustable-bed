@@ -25,6 +25,7 @@ APPS = [
     "luniosmart",
     "sonicsleep",
     "mlily",
+    "okimiki",
     "revive",
     "best_mattress",
     "blvd_home",

@@ -374,3 +374,12 @@ so the new codec is deliberately limited to these two builders. The production
 harness covers all 203 accepted final frames and 56 constructor literals.
 Names, timing and capability gates stay in profile/catalog data. The historical
 standalone SUTA inventory does not describe this expanded route.
+
+Okimiki 1.0.1 (10101) freezes the original 42
+and focused 29 literal rows in `tests/fixtures/okimiki/`. All 71 passed the
+production Richmat codec before selecting it. `profiles/okimiki.py` retains
+four concrete factory/CID/body identities, including IPRM and IQRM's distinct
+alarm getter despite sharing KWRN's menu body. Its shared catalog-controller
+extension owns the app's whole-buffer common parser, captured-session writes,
+strict elapsed deadlines, flat release, three-second save threshold and local
+alarm records. No existing wire builder or profile changes.

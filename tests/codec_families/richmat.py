@@ -34,6 +34,7 @@ _VARIANTS = {
     "richmat_app": "6BRM",
     "goodvibe": "selector-0001",
     "mlily": "6brm",
+    "okimiki": "HCRN",
     **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},
 }
 # The Casper Base and Hush Base products are their bed type's protocol variant.
@@ -86,6 +87,7 @@ FAMILY = CodecFamily(
             "galaxy",
             "goodvibe",
             "mlily",
+            "okimiki",
             "hjbed",
             "richmat_app",
             "hush_base",

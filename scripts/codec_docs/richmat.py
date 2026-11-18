@@ -46,7 +46,8 @@ from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
-from scripts.codec_docs import _galaxy
+from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
+from scripts.codec_docs import _galaxy, _okimiki
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -74,6 +75,7 @@ _RICHMAT_NAMES = {
     "galaxy": "Galaxy Bed Control",
     "goodvibe": "Good Vibe Sleep",
     "mlily": "MLILY Control",
+    "okimiki": "Okimiki",
     "leggett_lp_legacy": "L&P legacy app",
     **{
         profile.key: f"Richmat MH {name}"
@@ -149,6 +151,7 @@ def _richmat_profiles() -> dict[str, richmat_profiles.RichmatProfile]:
             richmat_profiles.GALAXY,
             richmat_profiles.GOODVIBE,
             richmat_profiles.MLILY,
+            OKIMIKI,
             richmat_profiles.LP_LEGACY,
         )
     }
@@ -184,6 +187,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
         "galaxy": (_const.BED_TYPE_GALAXY,),
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
         "mlily": (_const.BED_TYPE_MLILY,),
+        "okimiki": (_const.BED_TYPE_OKIMIKI,),
         "leggett_lp_legacy": (_const.BED_TYPE_LEGGETT_LP_LEGACY,),
         # Each app's own products; the restored ones are choices on the same bed type.
         **{
@@ -200,7 +204,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
 
 
 def _catalog_kind(key: str) -> str:
-    if key in ("hjbed", "goodvibe", "mlily", "galaxy"):
+    if key in ("hjbed", "goodvibe", "mlily", "galaxy", "okimiki"):
         return "per-product catalog"
     if key == "eshine":
         return "[fixed E6000 table](#eshine-commands)"
@@ -223,7 +227,7 @@ def _lease(profile: richmat_profiles.RichmatProfile) -> str:
     if profile.key.startswith("richmat_classic_"):
         # The controller scopes its lease to the keep buttons of the selected layout.
         return "renewable lease on keep buttons"
-    if profile.key in ("goodvibe", "mlily"):
+    if profile.key in ("goodvibe", "mlily", "okimiki"):
         # The controller scopes its lease to the product's sustained-press controls.
         return "renewable lease on sustained controls"
     return "renewable lease" if profile.execution.hold == "stream" else "no"
@@ -1413,6 +1417,7 @@ BLOCKS: list[Block] = [
 ]
 
 BLOCKS += _galaxy.BLOCKS
+BLOCKS += _okimiki.BLOCKS
 
 
 def render_richmat_app_commands() -> str:
