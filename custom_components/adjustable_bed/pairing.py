@@ -200,6 +200,7 @@ PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
         "cheerssleep",
+        "ultramatic_smart_bed",
         "bedtech",
         BED_TYPE_ERGOMOTION,
         BED_TYPE_ERGOMOTION_4,
@@ -820,6 +821,9 @@ def build_single_address_pair_entry_data(
     elif bed_type == BED_TYPE_OKIN_CB24:
         left[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_A
         right[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_B
+    elif bed_type == "ultramatic_smart_bed":
+        left[CONF_CB24_BED_SELECTION] = 1
+        right[CONF_CB24_BED_SELECTION] = 2
     elif bed_type == BED_TYPE_SLEEP_NUMBER:
         left[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_LEFT
         right[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_RIGHT

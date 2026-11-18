@@ -429,6 +429,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
+| Ultramatic Smart Bed app | `ultramatic_smart_bed` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
 | アシステック / ASSISTEC / Yamada app | `yamada` | 4 | 300 ms |
 

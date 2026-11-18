@@ -6032,6 +6032,38 @@
       ]
     }
   },
+  "ultramatic_smart_bed": {
+    "services": {
+      "6e400001-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+        "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    },
+    "properties": {
+      "6e400002-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write-without-response"
+      ],
+      "6e400003-b5a3-f393-e0a9-e50e24dcca9e": [
+        "notify"
+      ]
+    }
+  },
+  "ultramatic_smart_bed:indicate": {
+    "services": {
+      "6e400001-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+        "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    },
+    "properties": {
+      "6e400002-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write-without-response"
+      ],
+      "6e400003-b5a3-f393-e0a9-e50e24dcca9e": [
+        "indicate"
+      ]
+    }
+  },
   "ore_ultramatic:P1": {
     "services": {
       "0000fff0-0000-1000-8000-00805f9b34fb": [],

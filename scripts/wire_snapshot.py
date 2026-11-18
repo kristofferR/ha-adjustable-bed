@@ -409,6 +409,38 @@ def plan_commands(controller: Any) -> list[Command]:
     for name in sorted(LATE_ACTIONS):
         if _overrides(controller, name):
             plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS.get(name))))
+    if controller._coordinator.bed_type == "ultramatic_smart_bed":
+        from custom_components.adjustable_bed.beds.ultramatic.state import AlarmSettings
+
+        for wake_type in (1, 2, 3):
+
+            async def set_ultramatic_alarm(ctrl: Any, wake_type: int = wake_type) -> None:
+                await ctrl.set_alarm(ctrl.prepare_alarm(AlarmSettings(6, 30, 127, wake_type, True)))
+
+            plan.append(Command(f"ultramatic_alarm_type_{wake_type}", set_ultramatic_alarm, True))
+
+        async def disable_ultramatic_alarm(ctrl: Any) -> None:
+            from custom_components.adjustable_bed.alarm import AlarmError
+
+            if ctrl._side() == "AB":
+                # These frozen replies contain unequal A/B alarm records.
+                # A display fallback must never authorize a combined overwrite.
+                try:
+                    ctrl.prepare_alarm(None, disable=True)
+                except AlarmError as error:
+                    if error.translation_key == "alarm_refresh_needed":
+                        return
+                    raise
+                raise AssertionError("Unequal Ultramatic records authorized a combined disable")
+            try:
+                plan = ctrl.prepare_alarm(None, disable=True)
+            except AlarmError as error:
+                if error.translation_key == "alarm_already_off":
+                    return  # Nothing is sent for an alarm that is already off.
+                raise
+            await ctrl.set_alarm(plan)
+
+        plan.append(Command("ultramatic_alarm_disable", disable_ultramatic_alarm, True))
     return plan
 
 
@@ -1175,6 +1207,31 @@ KAIDI_BROADCAST = "c0ff0278563412ffeeddccbbaa0000%s0100a004030201"
 # A node ping answer from AA:BB:CC:DD:EE:FF with vaddr 0x01020304.
 KAIDI_PING_REPLY = "0300000000ffffeeddccbbaa04030201"
 
+# Row176 accepted records: massage and both distinct alarm headers. The default
+# is AB/notify/ED, retained alongside every explicit selector/property/layout.
+ULTRAMATIC_MASSAGE = "a50b0e010258030201000204b001030200"
+ULTRAMATIC_ALARM_BODY = "017f010630000102020322450000"
+
+
+def ultramatic_scenarios() -> list[Scenario]:
+    return [
+        Scenario(
+            id=f"ultramatic_smart_bed:{side}:{notify}:{header}",
+            bed_type="ultramatic_smart_bed",
+            entry_data={"cb24_bed_selection": selector},
+            layout_id="ultramatic_smart_bed"
+            if notify == "notify"
+            else "ultramatic_smart_bed:indicate",
+            replies={
+                "write:00b0": ULTRAMATIC_MASSAGE,
+                "write:00c0": prefix + ULTRAMATIC_ALARM_BODY,
+            },
+        )
+        for side, selector in (("A", 1), ("AB", 0), ("B", 2))
+        for notify in ("notify", "indicate")
+        for header, prefix in (("ed", "ed8003"), ("a5", "a50c0e"))
+    ]
+
 
 def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
@@ -1211,6 +1268,9 @@ def default_scenario(bed_type: str) -> Scenario:
                      const.CONF_BLE_DEVICE_NAME: "KSWF07D00000000"})
     if bed_type == const.BED_TYPE_SUTA:
         data[const.CONF_BLE_DEVICE_NAME] = "SUTA-unknown"
+    if bed_type == const.BED_TYPE_ULTRAMATIC_SMART_BED:
+        data[const.CONF_CB24_BED_SELECTION] = 0
+        replies = {"write:00b0": ULTRAMATIC_MASSAGE, "write:00c0": "ed8003" + ULTRAMATIC_ALARM_BODY}
     if bed_type == const.BED_TYPE_SONICSLEEP:
         data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
@@ -1872,6 +1932,7 @@ def build_scenarios() -> list[Scenario]:
                 protocol_variant=route, layout_id="linx",
                 entry_data={"product_type": model, "ble_device_name": "KSWF07D00000000"},
             ))
+    scenarios.extend(ultramatic_scenarios())
     # Bedgear A12: each selected layout, dynamic zone array and independent M gate.
     for pair in ("15", "35", "E1", "81", "51", "44", "91", "13", "71", "61", "D1", "34", "23", "97", "25", "55", "65", "75", "95", "96", "98", "41", "42", "43", "31", "32", "11", "12", "21", "22", "Z1"):
         scenarios.append(Scenario(id=f"bedgear:{pair}", bed_type="bedgear", layout_id="bedgear",
@@ -1994,7 +2055,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type in {"rize_home", "okin_64bit"}:
+        if controller._coordinator.bed_type in {"rize_home", "okin_64bit", "ultramatic_smart_bed"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         if controller._coordinator.bed_type in {"symphony", "linx"}:

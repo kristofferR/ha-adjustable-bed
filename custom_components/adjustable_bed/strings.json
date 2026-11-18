@@ -3258,6 +3258,81 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "ultramatic_head_up": {
+        "name": "Head up"
+      },
+      "ultramatic_head_down": {
+        "name": "Head down"
+      },
+      "ultramatic_foot_up": {
+        "name": "Foot up"
+      },
+      "ultramatic_foot_down": {
+        "name": "Foot down"
+      },
+      "ultramatic_headtilt_up": {
+        "name": "Head tilt up"
+      },
+      "ultramatic_headtilt_down": {
+        "name": "Head tilt down"
+      },
+      "ultramatic_lumbar_up": {
+        "name": "Posture up"
+      },
+      "ultramatic_lumbar_down": {
+        "name": "Posture down"
+      },
+      "ultramatic_hips_up": {
+        "name": "Lumbar up"
+      },
+      "ultramatic_hips_down": {
+        "name": "Lumbar down"
+      },
+      "ultramatic_timerswitch": {
+        "name": "Cycle massage timer"
+      },
+      "ultramatic_headstrengthadd": {
+        "name": "Increase head massage"
+      },
+      "ultramatic_headstrengthreduce": {
+        "name": "Decrease head massage"
+      },
+      "ultramatic_footstrengthadd": {
+        "name": "Increase foot massage"
+      },
+      "ultramatic_footstrengthreduce": {
+        "name": "Decrease foot massage"
+      },
+      "ultramatic_waveadd": {
+        "name": "Increase massage wave"
+      },
+      "ultramatic_wavereduce": {
+        "name": "Decrease massage wave"
+      },
+      "ultramatic_light": {
+        "name": "Toggle light"
+      },
+      "ultramatic_save_zg": {
+        "name": "Save zero gravity position"
+      },
+      "ultramatic_save_anti": {
+        "name": "Save anti-snore position"
+      },
+      "ultramatic_reset_memory": {
+        "name": "Reset saved positions"
+      },
+      "ultramatic_query_massage": {
+        "name": "Refresh massage"
+      },
+      "ultramatic_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "ultramatic_clock": {
+        "name": "Sync bed clock"
+      },
+      "ultramatic_release": {
+        "name": "Release held control"
+      },
       "ore_ultramatic_alarm_refresh": {
         "name": "Refresh alarm"
       },
@@ -3781,6 +3856,21 @@
       },
       "bedgear_combined": {
         "name": "Head and foot"
+      },
+      "ultramatic_head": {
+        "name": "Head"
+      },
+      "ultramatic_foot": {
+        "name": "Foot"
+      },
+      "ultramatic_headtilt": {
+        "name": "Head tilt"
+      },
+      "ultramatic_lumbar": {
+        "name": "Posture"
+      },
+      "ultramatic_hips": {
+        "name": "Lumbar"
       },
       "cheerssleep_all": {
         "name": "Storage lift"
@@ -4887,6 +4977,24 @@
       },
       "sonicsleep": {
         "name": "Model"
+      },
+      "ultramatic_a_timer": {
+        "name": "Left massage timer"
+      },
+      "ultramatic_ab_timer": {
+        "name": "Both sides massage timer"
+      },
+      "ultramatic_b_timer": {
+        "name": "Right massage timer"
+      },
+      "ultramatic_a_alarm": {
+        "name": "Left alarm"
+      },
+      "ultramatic_ab_alarm": {
+        "name": "Both sides alarm"
+      },
+      "ultramatic_b_alarm": {
+        "name": "Right alarm"
       },
       "ore_ultramatic_alarm_time": {
         "name": "Alarm time"
@@ -9276,6 +9384,9 @@
     },
     "alarm_refresh_needed": {
       "message": "Refresh the bed's alarms, then try again."
+    },
+    "alarm_already_off": {
+      "message": "The bed's alarm is already off, so nothing was sent."
     },
     "bed_release_failed": {
       "message": "Could not disconnect {device_name} before checking the next bed. Try again."

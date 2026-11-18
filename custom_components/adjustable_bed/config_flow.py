@@ -1275,6 +1275,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # Each app's own answers.
         BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_MOTION_BED,
+        "ultramatic_smart_bed",
         BED_TYPE_DOUBLESLEEP,
         "symphony",
         BED_TYPE_SLEEPTRACKER,
@@ -1324,6 +1325,8 @@ def _motor_count_options(
         return [3]
     if bed_type == BED_TYPE_STARCODE_M5X5:
         return [2]
+    if bed_type == "ultramatic_smart_bed":
+        return [2]  # Compatibility field; the app controls are declared explicitly.
     if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
         return [1]
     if bed_type == BED_TYPE_FURNIMOVE:
