@@ -22,6 +22,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
+    SleepFlag,
     sleep_flag_binary_sensor_spec,
     sleep_rate_sensor_spec,
 )
@@ -111,6 +112,12 @@ def _live_updates(side: str, state: LiveState) -> list[StateUpdate]:
         _flag_key(side, "moving")(state.moving),
         _flag_key(side, "snoring")(state.snoring),
     ]
+
+_FLAG_FIELDS: Final[tuple[tuple[str, SleepFlag], ...]] = (
+    ("on_bed", "bed_presence"),
+    ("moving", "body_movement"),
+    ("snoring", "snoring"),
+)
 
 
 class GmmotorSleepController(BedController, GmmotorActions):
@@ -233,11 +240,7 @@ class GmmotorSleepController(BedController, GmmotorActions):
                 kind, f"gmmotor_sleep_{side}_{field}", _flag_key(side, field), side
             )
             for side in _SIDES
-            for field, kind in (
-                ("on_bed", "bed_presence"),
-                ("moving", "body_movement"),
-                ("snoring", "snoring"),
-            )
+            for field, kind in _FLAG_FIELDS
         )
 
     async def write_command(

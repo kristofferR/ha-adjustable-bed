@@ -31,6 +31,8 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    SleepFlag,
+    SleepRate,
     sleep_flag_binary_sensor_spec,
     sleep_rate_sensor_spec,
 )
@@ -215,6 +217,16 @@ def select_link(
 
 
 GOODVIBE_CATALOG = Catalog("goodvibe", "Good Vibe Sleep", GOODVIBE, ACTIONS, PRODUCTS, ACTION_EXPANSIONS)
+
+_RATE_FIELDS: Final[tuple[tuple[str, SleepRate], ...]] = (
+    ("heart", "heart_rate"),
+    ("respiration", "breathing_rate"),
+)
+_FLAG_FIELDS: Final[tuple[tuple[str, SleepFlag], ...]] = (
+    ("occupancy", "bed_presence"),
+    ("movement", "body_movement"),
+    ("snore", "snoring"),
+)
 
 
 class GoodVibeController(BedController):
@@ -1449,7 +1461,7 @@ class GoodVibeController(BedController):
                     sleeper,
                 )
                 for side, sleeper in _LIVE_SIDES.items()
-                for name, kind in (("heart", "heart_rate"), ("respiration", "breathing_rate"))
+                for name, kind in _RATE_FIELDS
             )
         return tuple(specs)
 
@@ -1465,11 +1477,7 @@ class GoodVibeController(BedController):
                 sleeper,
             )
             for side, sleeper in _LIVE_SIDES.items()
-            for name, kind in (
-                ("occupancy", "bed_presence"),
-                ("movement", "body_movement"),
-                ("snore", "snoring"),
-            )
+            for name, kind in _FLAG_FIELDS
         )
 
     async def stop_all(self) -> None:

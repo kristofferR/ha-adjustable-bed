@@ -820,8 +820,10 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         if controller is None and self._attr_is_on:
             return  # Offline: the bed's own timer keeps running, so keep ours.
         self._cancel_auto_off()
-        seconds = controller.light_auto_off_seconds if controller is not None else None
-        if seconds is None or not self._attr_is_on:
+        if controller is None or not self._attr_is_on:
+            return
+        seconds = controller.light_auto_off_seconds
+        if seconds is None:
             return
 
         def expire() -> None:

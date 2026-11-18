@@ -28,6 +28,7 @@ from ..entity_specs import (
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
+    SleepRate,
     sleep_rate_sensor_spec,
 )
 from . import protocol as p
@@ -90,6 +91,11 @@ _SIDES: Final[tuple[Literal["left", "right"], ...]] = ("left", "right")
 def _field_key(field: str) -> StateKey[object]:
     """A decoded or app-local field, retained across controller rebuilds."""
     return StateKey[object]("doublesleep_" + field)
+
+_RATE_FIELDS: Final[tuple[tuple[str, SleepRate], ...]] = (
+    ("heart_rate", "heart_rate"),
+    ("breath_rate", "breathing_rate"),
+)
 
 
 class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
@@ -1184,7 +1190,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 side,
             )
             for side in _SIDES
-            for field, kind in (("heart_rate", "heart_rate"), ("breath_rate", "breathing_rate"))
+            for field, kind in _RATE_FIELDS
         ]
         specs.extend(
             ControllerStateSensorSpec(

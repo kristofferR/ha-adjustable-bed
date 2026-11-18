@@ -121,10 +121,10 @@ async def test_actual_platform_builders_expose_source_named_controls(hass, app):
 @pytest.mark.parametrize("app", ("komfyd", "comfyds"))
 async def test_feature_entities_read_their_own_side_and_standalone_selection(hass, app):
     from custom_components.adjustable_bed.entity_runtime import controller_side_scope
+    from custom_components.adjustable_bed.light import _light_entities_for
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
     from custom_components.adjustable_bed.select import _select_entities_for
     from custom_components.adjustable_bed.sensor import _sensor_entities_for
-    from custom_components.adjustable_bed.light import _light_entities_for
 
     co = real_coordinator(hass, app)
     c = ComfyController(co)

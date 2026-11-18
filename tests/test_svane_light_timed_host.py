@@ -26,10 +26,10 @@ from custom_components.adjustable_bed.const import (
     SVANE_VARIANT_MULTI,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
-from custom_components.adjustable_bed.light import _light_entities_for
 from tests.hold_lease_wire import virtual_clock
 from tests.test_svane import make_controller, written
 

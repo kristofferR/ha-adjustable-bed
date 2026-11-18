@@ -15,6 +15,8 @@ from ..casper_base.protocol import CasperBaseActions, Request, SensorKind
 from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    SleepFlag,
+    SleepRate,
     sleep_flag_binary_sensor_spec,
     sleep_rate_sensor_spec,
 )
@@ -73,6 +75,13 @@ def _typed_live(field: str, value: object) -> int | bool | None:
 
 
 _SIDES: Final[dict[str, Literal["left", "right"]]] = {"L": "left", "R": "right"}
+
+_RATE_FIELDS: Final[tuple[tuple[str, SleepRate], ...]] = (("heart", "heart_rate"), ("breath", "breathing_rate"))
+_FLAG_FIELDS: Final[tuple[tuple[str, SleepFlag], ...]] = (
+    ("on_bed", "bed_presence"),
+    ("body_move", "body_movement"),
+    ("snoring", "snoring"),
+)
 
 
 class CasperSleepController(BedController, CasperBaseActions):
@@ -158,7 +167,7 @@ class CasperSleepController(BedController, CasperBaseActions):
                     name,
                     attribute_keys=(live_key(side, "valid"),),
                 )
-                for field, kind in (("heart", "heart_rate"), ("breath", "breathing_rate"))
+                for field, kind in _RATE_FIELDS
             )
         return tuple(specs)
 
@@ -173,11 +182,7 @@ class CasperSleepController(BedController, CasperBaseActions):
                 attribute_keys=(live_key(side, "valid"),),
             )
             for side, name in _SIDES.items()
-            for field, kind in (
-                ("on_bed", "bed_presence"),
-                ("body_move", "body_movement"),
-                ("snoring", "snoring"),
-            )
+            for field, kind in _FLAG_FIELDS
         )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:

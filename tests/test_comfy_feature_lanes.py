@@ -15,10 +15,10 @@ from custom_components.adjustable_bed.beds.kaidi.comfy import TIMER_REMAINING, T
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.controller_state import sided
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.services import async_register_services
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
-from custom_components.adjustable_bed.light import _light_entities_for
 from tests.test_comfy import no_real_timers  # noqa: F401
 from tests.test_coordinator_sleepys_elite import _FakeGattClient, _ready_command_lane
 

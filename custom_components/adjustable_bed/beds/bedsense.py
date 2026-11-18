@@ -9,11 +9,11 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ..card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CARD_UTILITY
+from ..card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CARD_UTILITY, CardPlacement
 from ..codec import ff_frame as codec
 from ..const import CONF_BLE_DEVICE_NAME
 from ..controller_state import StateKey
@@ -66,7 +66,9 @@ def _state_key(name: str) -> StateKey[object]:
     return StateKey[object](name)
 
 
-_SENSOR_CARDS = dict.fromkeys(("head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE)
+_SENSOR_CARDS: Final[Mapping[str, CardPlacement]] = dict.fromkeys(
+    ("head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE
+)
 
 # The light timer select's options, each one app button.
 _LIGHT_TIMERS: Mapping[str, str] = {

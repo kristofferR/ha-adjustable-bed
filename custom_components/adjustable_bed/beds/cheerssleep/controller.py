@@ -30,6 +30,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
+    SleepRate,
     sleep_flag_binary_sensor_spec,
     sleep_rate_sensor_spec,
 )
@@ -72,6 +73,8 @@ class Request:
     up: bool = True
     position: int = 1
     sleeper: str | None = None
+
+_RATE_FIELDS: Final[tuple[tuple[str, SleepRate], ...]] = (("heart", "heart_rate"), ("breath", "breathing_rate"))
 
 
 class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedController):
@@ -1075,7 +1078,7 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                     side,
                     has_unit=False,
                 )
-                for name, kind in (("heart", "heart_rate"), ("breath", "breathing_rate"))
+                for name, kind in _RATE_FIELDS
             )
             result.extend(
                 ControllerStateSensorSpec(

@@ -18,6 +18,7 @@ from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
+    SleepFlag,
     sleep_flag_binary_sensor_spec,
     sleep_rate_sensor_spec,
 )
@@ -64,6 +65,11 @@ def _rate_key(side: str, kind: str) -> StateKey[int | None]:
 def _flag_key(side: str, kind: str) -> StateKey[bool | None]:
     """An occupancy or movement flag."""
     return StateKey[bool | None](f"ruf_richmat_sleep_{side}_{kind}")
+
+_FLAG_FIELDS: Final[tuple[tuple[str, SleepFlag], ...]] = (
+    ("occupancy", "bed_presence"),
+    ("movement", "body_movement"),
+)
 
 
 class RufRichmatSleepController(BedController):
@@ -170,7 +176,7 @@ class RufRichmatSleepController(BedController):
                 kind, f"ruf_richmat_sleep_{side}_{name}", _flag_key(side, name), side
             )
             for side in _SIDES
-            for name, kind in (("occupancy", "bed_presence"), ("movement", "body_movement"))
+            for name, kind in _FLAG_FIELDS
         )
 
     async def async_discover_capabilities(self) -> None:

@@ -42,12 +42,12 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.pairing import (
     build_pair_entry_data,
     supports_single_address_pairing,
 )
 from custom_components.adjustable_bed.setup_operation import OperationOutcome, OperationResult
-from custom_components.adjustable_bed.light import _light_entities_for
 from tests.form_helpers import finish_new_bed, start_new_bed
 from tests.hold_lease_wire import virtual_clock
 
