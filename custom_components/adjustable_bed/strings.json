@@ -3618,13 +3618,13 @@
     },
     "sensor": {
       "timotion_ahf_status": {
-        "name": "AHF status communication"
+        "name": "Status"
       },
       "timotion_ahf_lock_mask": {
-        "name": "AHF raw lock mask"
+        "name": "Control locks"
       },
       "timotion_ahf_lamp_display_code": {
-        "name": "AHF lamp display code"
+        "name": "Lamp display"
       },
       "rmcontrol_protocol_version": {
         "name": "RMControl protocol version"
@@ -4918,19 +4918,13 @@
         "name": "Bed height"
       },
       "paramount_tilt": {
-        "name": "Tilt (raw)"
+        "name": "Tilt"
       },
       "paramount_rssi": {
-        "name": "Bed reply signal strength"
+        "name": "Signal strength"
       },
       "paramount_serial": {
-        "name": "Serial identifier"
-      },
-      "paramount_session_state": {
-        "name": "Session state"
-      },
-      "paramount_registration_result": {
-        "name": "Registration result"
+        "name": "Serial number"
       },
       "smart_comfort_model": {
         "name": "Smart Comfort model code"
@@ -5156,6 +5150,24 @@
       },
       "motionbed_light": {
         "name": "Bed light"
+      },
+      "paramount_call_prohibition": {
+        "name": "Call button"
+      },
+      "paramount_switch_prohibition": {
+        "name": "Bed switches"
+      },
+      "paramount_head_range": {
+        "name": "Head movement"
+      },
+      "paramount_legs_range": {
+        "name": "Legs movement"
+      },
+      "paramount_height_range": {
+        "name": "Height movement"
+      },
+      "paramount_gearing_range": {
+        "name": "Linked motion movement"
       }
     },
     "binary_sensor": {
@@ -6373,56 +6385,14 @@
           "fast": "Fast"
         }
       },
-      "paramount_call_prohibition": {
-        "name": "Physical call button",
-        "state": {
-          "allowed": "Allowed",
-          "prohibited": "Prohibited"
-        }
-      },
-      "paramount_switch_prohibition": {
-        "name": "Physical bed switches",
-        "state": {
-          "allowed": "Allowed",
-          "prohibited": "Prohibited"
-        }
-      },
       "paramount_duration": {
         "name": "Tap movement duration",
         "state": {
-          "hold": "Hold",
+          "hold": "Press and hold",
           "1": "1 second",
           "2": "2 seconds",
           "3": "3 seconds",
           "4": "4 seconds"
-        }
-      },
-      "paramount_head_range": {
-        "name": "Head movement",
-        "state": {
-          "enabled": "Enabled",
-          "disabled": "Disabled"
-        }
-      },
-      "paramount_legs_range": {
-        "name": "Legs movement",
-        "state": {
-          "enabled": "Enabled",
-          "disabled": "Disabled"
-        }
-      },
-      "paramount_height_range": {
-        "name": "Height movement",
-        "state": {
-          "enabled": "Enabled",
-          "disabled": "Disabled"
-        }
-      },
-      "paramount_gearing_range": {
-        "name": "Linked motion movement",
-        "state": {
-          "enabled": "Enabled",
-          "disabled": "Disabled"
         }
       },
       "smart_comfort_seat": {
