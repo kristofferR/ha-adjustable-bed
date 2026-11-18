@@ -1,4 +1,4 @@
-"""Floyd Home 1.0.7, product 139. See the row117 disposition ledger.
+"""Floyd Home 1.0.7, product 139.
 
 Session glue is shared with the Kaidi Seat controller; commands, capabilities
 and write spacing come from this app's profile (``profiles/kaidi.py``).
@@ -90,7 +90,7 @@ class FloydController(KaidiController):
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (ControllerStateBinarySensorSpec(
             key="floyd_battery_mode", translation_key="floyd_battery_mode",
-            state_key=BATTERY_MODE, icon="mdi:battery",
+            state_key=BATTERY_MODE, icon="mdi:battery", entity_registry_enabled_default=False,
         ),)
 
     def on_disconnect(self) -> None:

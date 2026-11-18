@@ -5,7 +5,7 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 One wire codec (TEA-encrypted ten-byte `DD` frames on FFE0/FFE1) serves a legacy
-route and two audited app profiles. This guide covers the codec first, then one
+route and two app profiles. This guide covers the codec first, then one
 section per profile. See [Protocol codecs and app profiles](../design/protocol-codecs.md)
 for the architecture.
 
@@ -155,7 +155,7 @@ asks which app you use:
 Each route keeps its own controls, feedback and memory format; none is
 translated into another. For an existing bed, open the entry's three-dot menu
 and **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
 **Keep** leaves the entry as it is. A change to Limoss Remote first checks for
 the app's FFE0 service and its notifying FFE1 characteristic. Leaving Limoss
 Remote with its light or massage enabled sends the app's OFF commands before
@@ -237,7 +237,7 @@ bytes on the app profiles; the legacy route sends them clear.
 | `63` | `63 00 00 00 00` | Vibration zone 4 | `massage_foot_minus` | Legs massage minus | Legacy route, Limoss Remote, FSM Relax |
 | `64` | `64 00 00 00 00` | Vibration zone 5 | `massage_both_plus` | Both massage plus | Legacy route, Limoss Remote, FSM Relax |
 | `65` | `65 00 00 00 00` | Vibration zone 6 | `massage_both_minus` | Both massage minus | Legacy route, Limoss Remote, FSM Relax |
-| `70` | `70 00 00 00 00` | Light toggle | `light` | Underbed light control | Legacy route, Limoss Remote, FSM Relax |
+| `70` | `70 00 00 00 00` | Light toggle | `light` | Toggle under-bed light | Legacy route, Limoss Remote, FSM Relax |
 
 #### Stop, release and features
 
@@ -397,8 +397,9 @@ controller's.
 - Configuration 1 selects the eight-key chair's custom Alpha ordering.
 - Every rendered lamp/massage combination is retained, including blank cells and
   omitted combined/shift directions. The key tables are generated above.
-- Controls use literal motor channels rather than unproven physical axes or
-  angle units.
+- Controls use motor channels (Motor 1-4) rather than unproven physical axes or
+  angle units. Capability counts, calibration replies and raw positions stay in
+  diagnostics; the versions and serial are disabled diagnostic sensors.
 
 **Local settings**
 
@@ -594,7 +595,6 @@ generated timing table.
 
 #### Evidence
 
-APK Protocol Audit row040 accounts for every reachable behavior and exclusion.
 Limoss Remote sends only its frozen
 bodies, and its key tables match the report's rendered tables.
 
@@ -772,7 +772,6 @@ the STOP burst.
 
 #### Evidence
 
-APK Protocol Audit unit 075 accounts for every reachable behavior and exclusion.
 FSM Relax sends only its frozen
 bodies.
 
@@ -792,15 +791,6 @@ are settings of that profile, not separate routes.
 
 ### Analysis provenance
 
-- Limoss Remote 7.1.8: artifact-set hash
-  `5914bd873c4a5911575f85623125ab67c4fc6e34577e0be4359041d26bf88d06`; accepted
-  repair-004 report manifest
-  `1f595cb461818dd4a4661b827a78078c70b040fd7fa62b5a93b58f91945ea16c`; accepting
-  independent-audit-004 manifest
-  `9e02c4dbe33ff65c65a3fb8b17ce184aed047a660f4ea284aed86bf0a303f061`.
-  Audit: row040.
-- FSM Relax 1.9: audit unit 075, which records the accepted artifact set and
-  report manifests.
+- Based on Limoss Remote 7.1.8 and FSM Relax 1.9.
 - The legacy route came from earlier `com.limoss.limossremote` and `com.stawett`
   analyses.
-- Raw artifacts and frozen audit reports remain machine-local.

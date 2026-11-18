@@ -36,7 +36,7 @@ from custom_components.adjustable_bed.services import async_register_services
 from tests.hold_lease_wire import virtual_clock
 
 FIXTURES = Path(__file__).parent / "fixtures/betterliving2"
-TIMERS = json.loads((FIXTURES / "repair_observations.json").read_text())["timer_counterexamples"]
+TIMERS = json.loads((FIXTURES / "state_cases.json").read_text())["timer_counterexamples"]
 COMMANDS = json.loads((FIXTURES / "commands.json").read_text())
 NOW = datetime(2026, 7, 14, 12, 30, 45)
 
@@ -457,13 +457,13 @@ async def test_native_child_target_and_conflicting_side(hass, mode):
             with virtual_clock(), patch.object(runtime.dt_util, "now", return_value=NOW):
                 await hass.services.async_call(
                     DOMAIN,
-                    "betterliving2_set_alarm",
+                    "set_alarm",
                     {
                         "device_id": [ids["right"]],
                         "enabled": True,
                         "time": "07:30",
-                        "weekdays": [1],
-                        "action": "memory_1",
+                        "weekdays": ["monday"],
+                        "wake_action": "memory_1",
                     },
                     blocking=True,
                 )
@@ -473,7 +473,7 @@ async def test_native_child_target_and_conflicting_side(hass, mode):
                 with pytest.raises(ServiceValidationError):
                     await hass.services.async_call(
                         DOMAIN,
-                        "betterliving2_set_alarm",
+                        "set_alarm",
                         {
                             "device_id": [ids["right"]],
                             "side": "left",
@@ -527,7 +527,7 @@ async def test_stop_during_lazy_import_cancels_original_admission(hass):
             call = asyncio.create_task(
                 hass.services.async_call(
                     DOMAIN,
-                    "betterliving2_set_alarm",
+                    "set_alarm",
                     {
                         "device_id": [device.id],
                         "enabled": True,

@@ -1,6 +1,6 @@
 # Okin SoundWave and Symphony Sleep Sense
 
-**Status:** ❓ Needs testing (static app behavior verified; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -295,7 +295,7 @@ parameter cycles likewise hydrate their current session state.
 
 | Action | Purpose |
 |---|---|
-| `symphony_sense_set_alarm` | Set or close the product's alarm; weekdays use Monday 1 through Sunday 7 |
+| `set_alarm` | Set or close the product's alarm; weekdays use Monday 1 through Sunday 7 |
 | `symphony_set_light` | Explicit color code 1–7 and brightness 20–80 on ES700/SS800 |
 | `symphony_anti_snore` | Head/Elevation, enabled state, source-specific strength, or demonstration |
 | `symphony_preset` | Explicit recall/save for the chosen product |
@@ -309,7 +309,7 @@ physical effect and is not a raw-packet API.
 
 #### Evidence
 
-Accepted row133 establishes three direct BLE wire groups, explicit product and
+The app has three direct BLE wire groups, explicit product and
 selector dispatch, parser bindings and release behavior. Static controls are
 implemented without requiring maintainer hardware testing. External beta/release
 reports can corroborate peripheral effects and transport behavior.
@@ -341,9 +341,4 @@ available.
 
 ### Analysis provenance
 
-- Package `com.okin.ist`, version 2.8.0 (194), complete 20-APK artifact set
-  `034c1e657c6d28987e9a58da69ee79a343d3fd8099438c2d5e6b7ed28ac5fa64`.
-- Accepted repaired report manifest SHA256:
-  `7a2e41029bcf3328208b85dca430b0cab52b6bba52516011732329d858d12e2c`.
-- Independent audit002 acceptance SHA256:
-  `e48316d95deb3f601bef302473cb5177ed6f761186e32e8fea02dbaa2cdde5bc`.
+Based on Symphony Sleep Sense 2.8.0 (`com.okin.ist`).

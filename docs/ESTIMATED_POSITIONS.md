@@ -123,10 +123,10 @@ them, press **I used the remote** so nothing acts on an outdated estimate.
 Flat is the only reference. To recover:
 
 - **After a restart**, if the bed has not moved, use **It hasn't moved**
-  (the `confirm_position_unchanged` action). The restored estimate becomes
+  (the `estimate_confirm_unchanged` action). The restored estimate becomes
   tracking again. It is never trusted on its own.
 - **When the bed is flat**, press **Set back reference** (one button per
-  motor), or use `set_position_reference`. The estimate starts again at 0%.
+  motor), or use `estimate_set_reference`. The estimate starts again at 0%.
 - **When you are not sure**, use **Lower to flat, then I confirm**
   (`lower_to_flat`). The motors lower for their full travel time plus a margin.
   Check that the bed is flat, then set the reference. The bed only lowers when
@@ -211,21 +211,21 @@ Every action takes `device_id`, and `side` where it applies to a paired bed. See
 
 | Action | Fields | Behavior |
 |--------|--------|----------|
-| `save_position` | `name`, optional `create_button` (default on) | Save the current estimates. Returns `position_id` |
-| `rename_position` | `position`, `name`, optional `create_button` | Rename, and show or hide the button entity |
-| `update_position` | `position` | Replace with the current estimates of the sides it covers |
-| `delete_position` | `position` | Delete it and its button |
-| `recall_position` | `position` | Move to it |
-| `set_position_reference` | optional `motors` | Confirm flat now |
-| `confirm_position_unchanged` | None | Trust a restored estimate |
-| `mark_position_unknown` | None | Same as **I used the remote** |
+| `estimate_save_position` | `name`, optional `create_button` (default on) | Save the current estimates. Returns `position_id` |
+| `estimate_rename_position` | `position`, `name`, optional `create_button` | Rename, and show or hide the button entity |
+| `estimate_update_position` | `position` | Replace with the current estimates of the sides it covers |
+| `estimate_delete_position` | `position` | Delete it and its button |
+| `estimate_recall_position` | `position` | Move to it |
+| `estimate_set_reference` | optional `motors` | Confirm flat now |
+| `estimate_confirm_unchanged` | None | Trust a restored estimate |
+| `estimate_mark_unknown` | None | Same as **I used the remote** |
 | `lower_to_flat` | optional `motors` | Lower past full travel; confirm flat afterwards |
 
 `position` accepts a saved position's name or its ID. Selecting one side of a
 paired bed limits the position actions to positions saved for that side.
 
 ```yaml
-action: adjustable_bed.recall_position
+action: adjustable_bed.estimate_recall_position
 data:
   device_id: 0123456789abcdef0123456789abcdef
   position: Reading

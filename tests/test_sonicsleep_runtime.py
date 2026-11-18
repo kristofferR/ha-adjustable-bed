@@ -26,7 +26,7 @@ from tests.test_sonicsleep import clock as clock
 
 @pytest.fixture
 async def runtime(hass, request, mock_coordinator_connected, mock_bleak_client, clock):
-    entry = MockConfigEntry(domain=const.DOMAIN, title="SonicSleep", data={CONF_ADDRESS: "AA:BB:CC:DD:EE:79", CONF_NAME: "SonicSleep", const.CONF_BED_TYPE: "sonicsleep", const.CONF_PRODUCT_TYPE: "one", const.CONF_DISABLE_ANGLE_SENSING: True, const.CONF_DISCONNECT_AFTER_COMMAND: False})
+    entry = MockConfigEntry(domain=const.DOMAIN, title="SonicSleep", data={CONF_ADDRESS: "AA:BB:CC:DD:EE:79", CONF_NAME: "SonicSleep", const.CONF_BED_TYPE: "sonicsleep", const.CONF_PRODUCT_TYPE: "one", const.CONF_DISABLE_ANGLE_SENSING: True, const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE})
     entry.add_to_hass(hass)
     target = AdjustableBedCoordinator(hass, entry)
     target._max_retries = 1

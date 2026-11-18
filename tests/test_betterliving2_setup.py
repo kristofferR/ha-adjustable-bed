@@ -1,6 +1,6 @@
 """BetterLiving2's actual setup/Configure/factory and per-side configuration paths."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from pytest_homeassistant.common import MockConfigEntry
@@ -56,10 +56,27 @@ async def test_real_configure_import_restore_and_factory(hass, wire, layout):
     options.hass, options.handler = hass, entry.entry_id
     form = await options.async_step_settings()
     fields = {marker.schema for marker in form_fields(form["data_schema"])}
-    assert {"protocol_variant", "product_type"} <= fields
-    assert not {"motor_count", "has_massage", "disable_angle_sensing"} & fields
-    result = await options.async_step_settings({"protocol_variant": wire, "product_type": layout})
-    assert not result.get("errors")
+    assert not {"protocol_variant", "motor_count", "has_massage", "disable_angle_sensing"} & fields
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {"source": "reconfigure", "entry_id": entry.entry_id}
+    await flow.async_step_reconfigure()
+    result = await flow.async_step_reconfigure_bed_type({"bed_type": "betterliving2"})
+    if result.get("step_id") == "reconfigure_route":
+        result = await flow.async_step_reconfigure_route({"protocol_variant": wire})
+    assert result["step_id"] == "profile_questions"
+    result = await flow.async_step_profile_questions(
+        {"protocol_variant": wire, "product_type": layout}
+    )
+    if result["type"] == "abort":
+        assert wire == "p1" and layout == "2"
+        assert result["reason"] == "migration_unchanged"
+    else:
+        assert result["step_id"] == "migration_confirm"
+        assert entry.data["protocol_variant"] == "p1"
+        with patch.object(hass.config_entries, "async_schedule_reload"):
+            result = await flow.async_step_migration_confirm({"action": "apply"})
+        assert result["reason"] == "migration_applied"
     assert entry.data["protocol_variant"] == wire and entry.data["product_type"] == layout
     await async_migrate_entry(hass, entry)
     coordinator = AdjustableBedCoordinator(hass, entry)

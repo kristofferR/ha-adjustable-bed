@@ -45,7 +45,8 @@ for (const route of ["p1", "p2", "p3"]) {
         down: { control: "combined_down", startDelayMs: 0, releaseDelayMs: 0 },
       },
     });
-    expect(bed.utility).toEqual(["button.left_betterliving2_program_zero_g"]);
+    expect(bed.utility).toEqual([]);
+    expect(bed.presetSaves).toEqual(["button.left_betterliving2_program_zero_g"]);
     expect(bed.utilityStates).toEqual([]);
     if (route === "p1") {
       expect(bed.massage.numbers).toEqual(["number.left_betterliving2_massage_head"]);

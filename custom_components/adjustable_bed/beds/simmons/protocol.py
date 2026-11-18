@@ -1,6 +1,6 @@
 """SIMMONS app (com.okin.simmons 1.12.9) frames, alarm rules and reply parsing.
 
-Every value here comes from the accepted row049 clean-room report. The app
+Every value here comes from the app. It
 chooses the packet format from the Bluetooth name and, independently, the GATT
 destination from the discovered services. Hardware acceptance is unverified.
 Control masks and timing are the ``SIMMONS_PROFILES`` data: SmartBed names send

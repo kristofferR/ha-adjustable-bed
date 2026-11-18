@@ -22,7 +22,7 @@ from custom_components.adjustable_bed.profiles.betterliving2 import (
 
 FIXTURES = Path(__file__).parent / "fixtures/betterliving2"
 RX = json.loads((FIXTURES / "receive.json").read_text())
-REPAIRS = json.loads((FIXTURES / "repair_observations.json").read_text())
+REPAIRS = json.loads((FIXTURES / "state_cases.json").read_text())
 PREFERENCES = json.loads((FIXTURES / "alarm_preferences.json").read_text())
 
 

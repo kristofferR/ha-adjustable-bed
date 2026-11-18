@@ -25,7 +25,7 @@ Names containing SLEEP, SMARTBED or OKIN are candidates shared with other apps.
 | Light | One-shot light action; no observed on/off state |
 | Massage | Optional registered-route controls: start, cycle wave, intensity and timer |
 | Clock / alarm | Clock sync, recurring or one-shot alarm, disable and query |
-| Sleep sensor | Observed heart, breath, motion and source Boolean projection |
+| Sleep sensor | Heart, breath and motion; the source's unnamed boolean is in diagnostics |
 | Privacy / anti-snore settings | Sleep protocol only |
 | Raw history | Explicit bounded transfer and separate acknowledgement on the same connection |
 
@@ -288,6 +288,4 @@ and unused generic plugin APIs are outside the direct BLE BED integration.
 
 ### Analysis provenance
 
-- Accepted standalone row147: `com.okin.mline` 1.2.2 (38).
-- Complete XAPK SHA-256: `2d2de719cc6f7d2016cbd4808adec3e76d51a872441bdded04d49b6042a25e44`.
-- Accepted report seal SHA-256: `476728c67a06572a0631dfd9ecb2b271759b57dc2ccd43c10b9b71787acd7057`.
+Based on M Line 1.2.2 (`com.okin.mline`).

@@ -60,7 +60,7 @@ def setup_flow(hass, bed_type: str) -> AdjustableBedConfigFlow:
 def test_one_row_names_both_apps_and_both_receivers():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
     label = rows[const.BED_TYPE_MALOUF_APP]
-    for name in ("Malouf Base", "Lucid Base", "Nordic UART", "FFE5"):
+    for name in ("Malouf Base", "Lucid Base", "Malouf and Lucid remotes"):
         assert name in label
     # The receiver routes are answers of the question, not rows of their own.
     assert not set(RECEIVERS) & set(rows)

@@ -1,4 +1,4 @@
-"""BetterLiving2 1.3.0 (16), row082: app-owned packet fields and controls.
+"""BetterLiving2 1.3.0 (16): app-owned packet fields and controls.
 
 The accepted report proves three wire routes and two selected layouts. Neither
 the zero model byte nor the three-motor screen establishes side addressing or a

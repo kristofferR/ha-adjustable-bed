@@ -109,9 +109,11 @@ async def fixture_pair(hass, monkeypatch, *, mixed=False, central_side=1, mode=N
     ) for i, entry in enumerate(entries)]
     data = pairing.build_pair_entry_data(
         {**entries[0].data, **entries[0].options}, {**entries[1].data, **entries[1].options},
-        name="Transferred pair", connection_mode=mode, left_origin=(entries[0].entry_id, entries[0].unique_id),
+        name="Transferred pair", left_origin=(entries[0].entry_id, entries[0].unique_id),
         right_origin=(entries[1].entry_id, entries[1].unique_id),
     )
+    # Tests start the pair in this mode (see conftest).
+    data["pair_connection_mode"] = mode
     pair = MockConfigEntry(domain=DOMAIN, title="Transferred pair", unique_id=data["pair_id"], data=data)
     pair.add_to_hass(hass)
     monkeypatch.setattr(bluetooth, "async_current_scanners", lambda _: _scanners(SOURCES))

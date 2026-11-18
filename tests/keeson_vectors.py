@@ -2068,7 +2068,7 @@ FROZEN_FRAMES["jalon_bed"] = frozenset(
     ]
 )
 
-# com.ore.betterliving2 1.3.0 (16), row082. Route/layout pairs own separate profiles.
+# com.ore.betterliving2 1.3.0 (16). Route/layout pairs own separate profiles.
 _BETTERLIVING2 = json.loads((Path(__file__).parent / "fixtures/betterliving2/vectors.json").read_text())
 for _wire in ("P1", "P2", "P3"):
     for _layout in ("2", "3"):

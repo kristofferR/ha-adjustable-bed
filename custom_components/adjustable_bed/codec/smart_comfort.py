@@ -1,4 +1,4 @@
-"""Smart Comfort seat frames, from the two accepted cluster-024 app reports.
+"""Smart Comfort seat frames, from the two Smart Comfort apps.
 
 Unlike Keeson key words, these frames have separate seat, accessory and RGB
 fields, plus A0/B1 queries and three notification layouts.

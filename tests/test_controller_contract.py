@@ -13,7 +13,10 @@ import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.bed_traits import (
+    MASSAGE_SETTING_UNUSED_BED_TYPES,
+    bed_traits,
+)
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.entity_specs import (
     POSITION_UNIT_DEGREES,
@@ -443,6 +446,45 @@ def _contract_routes(bed_type: str) -> list[str | None]:
     if not variants:
         return [None]
     return [v for v in variants if (bed_type, v) not in _LIVE_ONLY_ROUTES]
+
+
+async def _controller_with_massage_setting(
+    bed_type: str, variant: str | None, has_massage: bool
+) -> BedController:
+    """Create a route's controller as an entry with "Has massage" set would."""
+    original = _FactoryCoordinator.__init__
+
+    def init(self: _FactoryCoordinator) -> None:
+        original(self)
+        self.has_massage = has_massage
+        self.entry.data[const.CONF_HAS_MASSAGE] = has_massage
+
+    with patch.object(_FactoryCoordinator, "__init__", init):
+        return await _create_controller_for_bed_type(bed_type, variant)
+
+
+@pytest.mark.parametrize("bed_type", sorted(MASSAGE_SETTING_UNUSED_BED_TYPES - {"diagnostic"}))
+async def test_beds_that_hide_has_massage_never_read_it(bed_type: str) -> None:
+    """Setup and Configure hide "Has massage" only where it changes no control."""
+    from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS
+
+    for variant in _contract_routes(bed_type):
+        on = await _controller_with_massage_setting(bed_type, variant, True)
+        off = await _controller_with_massage_setting(bed_type, variant, False)
+        route = f"{bed_type} ({variant})"
+        if off.auto_enable_massage:
+            continue
+        assert not any(
+            description.requires_massage
+            and (description.is_supported is None or description.is_supported(on))
+            for description in BUTTON_DESCRIPTIONS
+        ), route
+        assert not on.supports_massage_intensity_control, route
+        assert not on.reports_massage_state, route
+        assert not getattr(on, "supports_massage_timer", False), route
+        assert [spec.key for spec in on.controller_button_specs] == [
+            spec.key for spec in off.controller_button_specs
+        ], route
 
 
 @pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)

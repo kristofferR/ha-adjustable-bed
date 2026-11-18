@@ -114,7 +114,7 @@ FSM_LABELS: Final[dict[int, str]] = {
     0x63: "Legs massage minus",
     0x64: "Both massage plus",
     0x65: "Both massage minus",
-    0x70: "Underbed light control",
+    0x70: "Toggle under-bed light",
 }
 
 LEGACY: Final = LimossProfile(

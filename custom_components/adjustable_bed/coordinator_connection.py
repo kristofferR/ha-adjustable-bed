@@ -280,12 +280,6 @@ class CoordinatorConnectionMixin:
     def _uses_persistent_connection(self: AdjustableBedCoordinator) -> bool:
         """Return True when this controller should stay connected indefinitely.
 
-        Leggett & Platt Gen2 (LP Comfort Connect, 209-M001) is included
-        conservatively until bonded reconnects are confirmed on hardware. We hold
-        the link open for the lifetime of the entry in the meantime (issue #385).
-        Trade-off: the physical remote cannot be used while Home Assistant is
-        connected.
-
         Resolution order:
         1. The live controller's ``requires_persistent_connection`` (authoritative).
         2. The value cached from the last resolved controller — needed because
@@ -293,11 +287,10 @@ class CoordinatorConnectionMixin:
            decision runs, so an Okin/MlRM bed must still be recognised as
            non-persistent and get its reconnect timer.
         3. Before the first connect, the bed type's static ``persistent_connection``
-           trait. ``auto``/``gen2`` ``leggett_platt`` entries assume Gen2;
-           ``okin`` and ``mlrm`` do not (they reconnect normally).
+           trait.
 
-        An idle timeout of 0 opts any bed into the same lifecycle unless
-        Disconnect After Command is on (issue #700). Like persistent
+        The "always connected" mode opts any bed into the same lifecycle
+        (issue #700). Like persistent
         controllers, a dropped link then reconnects on the next command rather
         than on a timer, so receivers that drop idle links cannot storm.
         """
@@ -380,17 +373,20 @@ class CoordinatorConnectionMixin:
         if self._bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
             return True
 
-        # LP Comfort Connect is kept connected conservatively, and the new bond
-        # makes an unexpected drop recoverable. Reconnect promptly while leaving
-        # the established lifecycle behavior of other persistent protocols (such
-        # as Sleep Number MCR) unchanged by this Gen2-specific fix.
+        # LP Comfort Connect's bond makes an unexpected drop recoverable, so it
+        # reconnects promptly while leaving the established lifecycle behavior of
+        # other persistent protocols (such as Sleep Number MCR) unchanged. A
+        # Leggett & Platt entry on Auto or Gen2 counts while its controller is
+        # Gen2 or not yet known.
         if self._bed_type == BED_TYPE_LEGGETT_GEN2:
             return True
         if self._bed_type == BED_TYPE_LEGGETT_PLATT and self._protocol_variant in (
             VARIANT_AUTO,
             LEGGETT_VARIANT_GEN2,
         ):
-            return self._uses_persistent_connection()
+            resolved = self.capability_controller
+            if resolved is None or resolved.holds_link_after_stalled_reconnect:
+                return True
 
         return not self._uses_persistent_connection()
 
@@ -398,7 +394,8 @@ class CoordinatorConnectionMixin:
         self: AdjustableBedCoordinator, stage: str, attempt_details: dict[str, Any], attempt_start: float
     ) -> None:
         """Record a connect attempt whose link dropped before startup finished."""
-        _LOGGER.warning("Connection to %s dropped during %s", self._address, stage)
+        # Part of one outage: its summary warns once with this error.
+        _LOGGER.debug("Connection to %s dropped during %s", self._address, stage)
         self._connecting = False
         self._last_connection_error = f"Connection dropped during {stage}"
         self._last_connection_error_type = ConnectionError.__name__
@@ -412,6 +409,7 @@ class CoordinatorConnectionMixin:
         attempt_details["error_type"] = self._last_connection_error_type
         attempt_details["error_category"] = "CONNECTION DROPPED"
         self._client = None
+        self._link_ready = False
         self._controller = None
         self._notify_connection_state_change(False)
         self._connection_attempt_details.append(attempt_details)
@@ -454,6 +452,7 @@ class CoordinatorConnectionMixin:
                 self._vmat_unready_client = client
             else:
                 self._client = None
+                self._link_ready = False
                 if self._vmat_unready_client is client:
                     self._vmat_unready_client = None
             self._controller = None
@@ -692,8 +691,10 @@ class CoordinatorConnectionMixin:
                     attempt_details["lookup_elapsed_seconds"] = round(lookup_elapsed, 3)
                     attempt_details["total_elapsed_seconds"] = round(lookup_elapsed, 3)
                     attempt_details["result"] = "device_not_found"
-                    _LOGGER.warning(
-                        "Device %s NOT FOUND in Bluetooth scanner after %.1fs (attempt %d/%d). "
+                    # Expected while the bed is off or out of range; the final
+                    # failure below says so once.
+                    _LOGGER.debug(
+                        "Device %s not found in Bluetooth scanner after %.1fs (attempt %d/%d). "
                         "Bed may be powered off, out of range, or connected to another device.",
                         self._address,
                         lookup_elapsed,
@@ -740,7 +741,7 @@ class CoordinatorConnectionMixin:
                 lookup_elapsed = time.monotonic() - attempt_start
                 attempt_details["lookup_elapsed_seconds"] = round(lookup_elapsed, 3)
                 connect_log(
-                    "✓ Device %s FOUND in %.1fs (name: %s) via adapter: %s",
+                    "Device %s found in %.1fs (name: %s) via adapter: %s",
                     self._address,
                     lookup_elapsed,
                     device.name or "Unknown",
@@ -764,13 +765,14 @@ class CoordinatorConnectionMixin:
 
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
                     if device_source == self._preferred_adapter:
-                        _LOGGER.info(
-                            "✓ Device discovered by preferred adapter: %s",
+                        _LOGGER.debug(
+                            "Device discovered by preferred adapter: %s",
                             self._preferred_adapter,
                         )
                     else:
-                        _LOGGER.warning(
-                            "⚠ Device discovered by %s, but preferred adapter is %s - connection may use different adapter",
+                        _LOGGER.debug(
+                            "Device discovered by %s, but preferred adapter is %s; "
+                            "the connection may use a different adapter",
                             device_source,
                             self._preferred_adapter,
                         )
@@ -888,6 +890,7 @@ class CoordinatorConnectionMixin:
                 # Mark that we're connecting to suppress spurious disconnect warnings
                 # during bleak's internal retry process
                 self._connecting = True
+                self._link_ready = False
                 # Notify callbacks so binary sensor can show "connecting" state
                 self._notify_connection_state_change(False)
                 # Serialize with the config flow, repair flow and diagnostic so
@@ -1050,6 +1053,7 @@ class CoordinatorConnectionMixin:
                                         await client.disconnect()
                                 finally:
                                     self._client = None
+                                    self._link_ready = False
                                     self._intentional_disconnect = False
                             _LOGGER.warning(
                                 "Pairing not supported by Bluetooth adapter: %s. "
@@ -1143,7 +1147,7 @@ class CoordinatorConnectionMixin:
                 attempt_details["total_elapsed_seconds"] = round(total_elapsed, 3)
                 attempt_details["result"] = "connected"
                 connect_log(
-                    "✓ CONNECTED to %s in %.1fs (GATT: %.1fs) via adapter: %s",
+                    "Connected to %s in %.1fs (GATT: %.1fs) via adapter: %s",
                     self._address,
                     total_elapsed,
                     connect_elapsed,
@@ -1152,13 +1156,13 @@ class CoordinatorConnectionMixin:
 
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
                     if actual_adapter == self._preferred_adapter:
-                        _LOGGER.info(
-                            "✓ Connection using preferred adapter: %s",
+                        _LOGGER.debug(
+                            "Connection using preferred adapter: %s",
                             self._preferred_adapter,
                         )
                     elif actual_adapter != "unknown":
-                        _LOGGER.warning(
-                            "⚠ Connected via %s instead of preferred adapter %s",
+                        _LOGGER.debug(
+                            "Connected via %s instead of preferred adapter %s",
                             actual_adapter,
                             self._preferred_adapter,
                         )
@@ -1180,11 +1184,12 @@ class CoordinatorConnectionMixin:
                 # The bed may disconnect during the stabilisation delay
                 # (the _on_disconnect callback clears self._client).
                 if self._client is None or not self._client.is_connected:
-                    _LOGGER.warning(
+                    _LOGGER.debug(
                         "Connection to %s dropped during post-connect stabilisation",
                         self._address,
                     )
                     self._connecting = False
+                    self._last_connection_error = "Connection dropped during post-connect stabilisation"
                     self._connection_attempt_details.append(attempt_details)
                     continue
 
@@ -1220,7 +1225,7 @@ class CoordinatorConnectionMixin:
                         and expected_service not in discovered_uuids
                     ):
                         _LOGGER.warning(
-                            "⚠ Expected OKIN service UUID %s not found in discovered "
+                            "Expected OKIN service UUID %s not found in discovered "
                             "services for %s. This usually means pairing/bonding failed. "
                             "Discovered services: %s. Try removing and re-adding the "
                             "device with 'Pair Now' option.",
@@ -1516,6 +1521,9 @@ class CoordinatorConnectionMixin:
                     self._last_bond_evidence = None
                 await self.async_clear_obsolete_pairing_state()
 
+                # Ready for commands: the next outage warns again.
+                self._connect_failure_logged = False
+                self._link_ready = True
                 return True
 
             except asyncio.CancelledError:
@@ -1628,8 +1636,8 @@ class CoordinatorConnectionMixin:
                 self._last_connection_error = str(err)
                 self._last_connection_error_type = type(err).__name__
 
-                _LOGGER.warning(
-                    "✗ %s to %s after %.1fs (attempt %d/%d): %s",
+                _LOGGER.debug(
+                    "%s to %s after %.1fs (attempt %d/%d): %s",
                     error_category,
                     self._address,
                     attempt_elapsed,
@@ -1658,7 +1666,7 @@ class CoordinatorConnectionMixin:
                 attempt_details["error_type"] = type(err).__name__
                 attempt_details["error_category"] = "UNEXPECTED ERROR"
 
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "Unexpected error connecting to %s (attempt %d/%d): %s",
                     self._address,
                     attempt_number,
@@ -1687,10 +1695,8 @@ class CoordinatorConnectionMixin:
                 6, source_mac=self._address
             )
         reason = connection_reachability(self.hass, self._address)
-        if reason:
-            _LOGGER.warning("Bluetooth reachability for %s: %s", self._address, reason)
-            if self._connection_attempt_details:
-                self._connection_attempt_details[-1]["reachability"] = reason
+        if reason and self._connection_attempt_details:
+            self._connection_attempt_details[-1]["reachability"] = reason
         total_elapsed = time.monotonic() - overall_start
         # All attempts failed: the bed is unreachable, not idle-disconnected, so
         # ensure the connectivity sensor reports "disconnected" rather than "idle"
@@ -1699,18 +1705,20 @@ class CoordinatorConnectionMixin:
         # previously published "idle" would linger until some later event.
         self._last_disconnect_reason = "connect_failed"
         self._notify_connection_state_change(False)
-        _LOGGER.error(
-            "✗ FAILED to connect to %s after %d attempts (%.1fs total). "
-            "Troubleshooting:\n"
-            "  1. Power cycle bed (unplug 30 seconds)\n"
-            "  2. Close any phone apps connected to bed\n"
-            "  3. Check Bluetooth adapter is working\n"
-            "  4. Move adapter closer to bed\n"
-            "  5. If using ESPHome proxy, verify it's online",
+        # Warn once per outage; repeats while the bed stays unreachable are
+        # expected and go to debug.
+        _LOGGER.log(
+            logging.DEBUG if self._connect_failure_logged else logging.WARNING,
+            "Could not connect to %s after %d attempts (%.1fs, last error: %s). "
+            "Check that the bed has power, close any phone app connected to it, "
+            "and check that its Bluetooth adapter or proxy is online%s",
             self._address,
             attempt,
             total_elapsed,
+            self._last_connection_error or "not found",
+            f" (Bluetooth reachability: {reason})" if reason else "",
         )
+        self._connect_failure_logged = True
         self._schedule_pending_capability_reload()
         return False
 
@@ -1727,6 +1735,8 @@ class CoordinatorConnectionMixin:
                 self._address,
             )
             return
+        # Whether the dropped link had finished startup and accepted commands.
+        ready, self._link_ready = self._link_ready, False
 
         if self._furnimove_bond_task is not None:
             if not self._furnimove_bond_task.done() and not self._intentional_disconnect:
@@ -1778,6 +1788,7 @@ class CoordinatorConnectionMixin:
                 self._address,
             )
             self._client = None
+            self._link_ready = False
             self._controller = None
             if self._vmat_unready_client is client:
                 self._vmat_unready_client = None
@@ -1787,8 +1798,13 @@ class CoordinatorConnectionMixin:
             self._schedule_pending_capability_reload()
             return
 
-        _LOGGER.warning(
-            "Unexpectedly disconnected from %s. Client details: is_connected=%s, address=%s",
+        # Many beds drop an idle link by design, and a drop while connecting is
+        # part of an outage its summary reports. A drop of a ready link under a
+        # running command is worth a warning.
+        _LOGGER.log(
+            logging.WARNING if ready and self._command_lock.locked() else logging.DEBUG,
+            "Disconnected from %s by the bed or adapter. Client details: is_connected=%s, "
+            "address=%s",
             self._address,
             getattr(client, "is_connected", "N/A"),
             getattr(client, "address", "N/A"),
@@ -1798,6 +1814,7 @@ class CoordinatorConnectionMixin:
             self._address,
         )
         self._client = None
+        self._link_ready = False
         self._controller = None
         # Keep _position_data for last known state; entity availability handles offline
         self._cancel_disconnect_timer()
@@ -1874,14 +1891,14 @@ class CoordinatorConnectionMixin:
         if not self._command_lock.locked():
             self._cancel_command.clear()
 
-        _LOGGER.info("Attempting automatic reconnection to %s", self._address)
+        _LOGGER.debug("Attempting automatic reconnection to %s", self._address)
         try:
             connected = await self.async_connect()
             if connected:
-                _LOGGER.info("Auto-reconnection successful for %s", self._address)
+                _LOGGER.debug("Auto-reconnection successful for %s", self._address)
                 # Note: async_start_notify is called automatically in _async_connect_locked
             else:
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "Auto-reconnection failed for %s. Will retry on next command.",
                     self._address,
                 )
@@ -2088,6 +2105,7 @@ class CoordinatorConnectionMixin:
                     # see the link is still up. The fallback closed it, so
                     # finish the teardown that was left half-done.
                     self._client = None
+                    self._link_ready = False
                     self._controller = None
                     self._last_disconnected = datetime.now(UTC)
                     self._notify_connection_state_change(False)
@@ -2189,6 +2207,7 @@ class CoordinatorConnectionMixin:
             if controller is not None and self._controller is controller:
                 controller.on_disconnect()
             self._client = None
+            self._link_ready = False
             self._controller = None
             if self._vmat_unready_client is client:
                 self._vmat_unready_client = None

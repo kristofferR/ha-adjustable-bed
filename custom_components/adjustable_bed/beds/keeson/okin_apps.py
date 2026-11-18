@@ -1,6 +1,6 @@
 """Okin app profiles on the big-endian Keeson E5 frame.
 
-Accepted clean-room audits (APK Protocol Audit cluster-012, row060):
+Based on these apps:
 
 - ``com.okin.simon`` 1.0.1 (2), "Simon Li" (chair, love seat and sofa seats)
 - ``com.okin.healeverynight`` 1.0 (1), "Heal Every Night" (Healing 6/7/8 beds)

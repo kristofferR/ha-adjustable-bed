@@ -522,7 +522,11 @@ async def test_setup_and_options_preserve_explicit_profile(hass):
         assert form["data_schema"] is not None
         assert (
             form["data_schema"](
-                {CONF_PRODUCT_TYPE: "132", CONF_KAIDI_ROOM_ID: 10001, CONF_KAIDI_SOFA_ACU_NO: 2}
+                {
+                    CONF_PRODUCT_TYPE: "132",
+                    CONF_KAIDI_ROOM_ID: 10001,
+                    "advanced": {CONF_KAIDI_SOFA_ACU_NO: 2},
+                }
             )[CONF_PRODUCT_TYPE]
             == 132
         )

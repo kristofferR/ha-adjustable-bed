@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, replace
+from datetime import datetime
 from typing import TYPE_CHECKING, Final
 
 from bleak import BleakClient
@@ -12,7 +13,8 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN, CARD_MASSAGE
+from ...alarm import AlarmCapability, AlarmRequest
+from ...card import CARD_HIDDEN, CARD_MASSAGE, CARD_PRESET_SAVE
 from ...command_scheduler import CommandContext, current_command_context
 from ...const import CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
 from ...controller_state import StateKey
@@ -215,6 +217,7 @@ class BetterLiving2Controller(KeesonController):
                 lambda c: require(c).program("zero_g"),
                 "mdi:content-save",
                 requires_confirmation=True,
+                card=CARD_PRESET_SAVE,
             ),
         ]
         if self.wire == "P1":
@@ -754,12 +757,44 @@ class BetterLiving2Controller(KeesonController):
     async def query_massage(self) -> None:
         await self._run((app.massage_query(self.wire),), receive_kind="massage")
 
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(
+            wake_actions=("massage", "memory_1", "memory_2"),
+            weekdays=True,
+            cancel_running=True,
+            resource=None,
+        )
+
+    def alarm_plan(self, alarm: AlarmRequest) -> AlarmPlan:
+        return self.prepare_alarm(
+            enabled=alarm.enabled,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            weekdays=frozenset((day + 1) % 7 for day in alarm.weekdays),
+            action=alarm.wake_action,
+            reference_time=alarm.reference_time,
+        )
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.alarm_plan(alarm)
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.set_alarm(self.alarm_plan(alarm))
+
     def prepare_alarm(
-        self, *, enabled: bool, hour: int, minute: int, weekdays: frozenset[int], action: str
+        self,
+        *,
+        enabled: bool,
+        hour: int,
+        minute: int,
+        weekdays: frozenset[int],
+        action: str,
+        reference_time: datetime | None = None,
     ) -> AlarmPlan:
         if action not in app.ALARM_KINDS[self.wire]:
             raise ValueError("Choose memory_1, memory_2 or massage")
-        now = dt_util.now()
+        now = reference_time if reference_time is not None else dt_util.now()
         week = app.weekday_mask(weekdays, hour, minute, now)
         frame = app.alarm(
             self.wire,

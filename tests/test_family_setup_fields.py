@@ -22,7 +22,8 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_families import APP_FAMILIES, GUIDED_FAMILIES
 from custom_components.adjustable_bed.bed_traits import (
     bed_type_has_position_feedback,
-    disconnect_after_command_default_enabled,
+    default_connection_mode,
+    reads_positions,
 )
 from custom_components.adjustable_bed.config_flow import (
     _APP_SETUP_STEPS,
@@ -71,7 +72,13 @@ def _route_field(flow: AdjustableBedConfigFlow, step: str) -> str | None:
         asked = {question.key for question in flow._asking[0].questions}
         return const.CONF_PROTOCOL_VARIANT if const.CONF_PROTOCOL_VARIANT in asked else None
     return _ROUTE_STEPS.get(step)
-_FIELDS = (const.CONF_MOTOR_COUNT, const.CONF_HAS_MASSAGE, const.CONF_DISABLE_ANGLE_SENSING)
+_FIELDS = (
+    const.CONF_MOTOR_COUNT,
+    const.CONF_HAS_MASSAGE,
+    const.CONF_DISABLE_ANGLE_SENSING,
+    # The final settings ask angle sensing as Read bed position.
+    const.CONF_READ_POSITIONS,
+)
 
 
 def _starting_rows() -> list[str]:
@@ -123,17 +130,19 @@ async def _run(
     """Set the row up with these route answers; return the saved route or the next choice.
 
     The final settings submit the answers a route's own default would never
-    give. With ``change_disconnect``, they also submit disconnect after each
-    command: as drawn, or changed from it.
+    give. With ``change_disconnect``, they also submit the connection mode: as
+    drawn, or changed from it.
     """
     flow = _new_flow(hass, row)
     sentinels = {
         const.CONF_MOTOR_COUNT: motor_count,
         const.CONF_HAS_MASSAGE: True,
         const.CONF_DISABLE_ANGLE_SENSING: True,
+        # The final settings ask angle sensing as Read bed position.
+        const.CONF_READ_POSITIONS: False,
     }
     submitted: dict[str, Any] = {}
-    drawn: bool | None = None
+    drawn: str | None = None
     later: set[str] = set()
     with _finishing(flow):
         try:
@@ -158,10 +167,13 @@ async def _run(
                     }
                     answers.update(submitted)
                     drawn = next(
-                        _default(m) for m in fields if m.schema == const.CONF_DISCONNECT_AFTER_COMMAND
+                        (_default(m) for m in fields if m.schema == const.CONF_CONNECTION_MODE),
+                        None,
                     )
-                    if change_disconnect is not None:
-                        answers[const.CONF_DISCONNECT_AFTER_COMMAND] = drawn != change_disconnect
+                    if change_disconnect is not None and drawn is not None:
+                        answers[const.CONF_CONNECTION_MODE] = (
+                            _other_mode(drawn) if change_disconnect else drawn
+                        )
                 elif (key := _route_field(flow, step)) is not None:
                     if answered == len(path):
                         marker = next(m for m in fields if m.schema == key)
@@ -179,13 +191,22 @@ async def _run(
                 # A field the journey set itself, such as an app's own layout, is settled.
                 "set": later
                 | flow._journey_set
-                | {key for key, value in submitted.items() if saved.get(key) == value},
+                | {key for key, value in submitted.items() if saved.get(key) == value}
+                | (
+                    {const.CONF_DISABLE_ANGLE_SENSING}
+                    if submitted.get(const.CONF_READ_POSITIONS) is False
+                    and not reads_positions(saved)
+                    else set()
+                ),
                 "drawn_disconnect": drawn,
             }
     # A step the answers above cannot satisfy: its profile must own every field.
     data = flow._manual_data or {}
     profile = setup_profile_for(data)
-    assert profile is not None and set(_FIELDS) <= set(profile.owns), (row, path, result["step_id"])
+    owned = set(profile.owns) if profile is not None else set()
+    if const.CONF_DISABLE_ANGLE_SENSING in owned:
+        owned.add(const.CONF_READ_POSITIONS)
+    assert profile is not None and set(_FIELDS) <= owned, (row, path, result["step_id"])
     return {"saved": None}
 
 
@@ -227,6 +248,8 @@ async def _missing(data: dict[str, Any], reached: set[str]) -> set[str]:
         const.CONF_MOTOR_COUNT: len(_motor_count_options(bed_type, variant)) > 1,
         const.CONF_DISABLE_ANGLE_SENSING: bed_type_has_position_feedback(bed_type, variant),
     }
+    if const.CONF_READ_POSITIONS in reached:
+        reached = reached | {const.CONF_DISABLE_ANGLE_SENSING}
     missing = {key for key, matters in choices.items() if matters} - owned - reached
     if const.CONF_HAS_MASSAGE not in owned | reached and await _massage_is_a_choice(data):
         missing.add(const.CONF_HAS_MASSAGE)
@@ -388,7 +411,7 @@ async def test_an_entry_on_any_route_reaches_every_sibling_route(
 
 @pytest.mark.parametrize("row", _starting_rows())
 @pytest.mark.parametrize("change", [False, True], ids=["left", "changed"])
-async def test_disconnect_after_command_follows_the_route_unless_changed(hass, row, change):
+async def test_connection_mode_follows_the_route_unless_changed(hass, row, change):
     """Left as drawn it saves the chosen route's own default; a change is kept."""
     gaps = {}
     paths: list[list[Any]] = [[]]
@@ -401,12 +424,20 @@ async def test_disconnect_after_command_follows_the_route_unless_changed(hass, r
         if (saved := result["saved"]) is None:
             continue
         drawn = result["drawn_disconnect"]
-        expected = not drawn if change else disconnect_after_command_default_enabled(
-            saved[const.CONF_BED_TYPE], saved.get(const.CONF_PROTOCOL_VARIANT)
-        )
-        if saved.get(const.CONF_DISCONNECT_AFTER_COMMAND) != expected:
+        if drawn is None:
+            # A bed that holds its link shows no connection mode and stores none.
+            expected = None
+        else:
+            expected = _other_mode(drawn) if change else default_connection_mode(
+                saved[const.CONF_BED_TYPE], saved.get(const.CONF_PROTOCOL_VARIANT)
+            )
+        if saved.get(const.CONF_CONNECTION_MODE) != expected:
             gaps[" > ".join(map(str, path)) or "(row)"] = (_route(saved), expected)
     assert not gaps, gaps
+
+
+def _other_mode(mode: str) -> str:
+    return const.CONNECTION_MODE_IDLE if mode == const.CONNECTION_MODE_RELEASE else const.CONNECTION_MODE_RELEASE
 
 
 def _app_rows() -> list[str]:
@@ -465,14 +496,14 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
     form = await flow.async_step_manual_entry({CONF_ADDRESS: ADDRESS})
     assert form["step_id"] == "finish_settings"
     markers = {m.schema: m for m in _fields(form["data_schema"])}
-    shown = const.CONF_DISABLE_ANGLE_SENSING in markers
+    shown = const.CONF_READ_POSITIONS in markers
     bed_type, variant = resolve_bed_type_choice(row)
     routes = (variant or const.VARIANT_AUTO, *(get_variants_for_bed_type(bed_type) or {}))
     # Shown exactly where a route of the row reports positions.
     assert shown == any(bed_type_has_position_feedback(bed_type, r) for r in routes)
     answers = _answers(form, 0)
     if shown and disable:
-        answers[const.CONF_DISABLE_ANGLE_SENSING] = True
+        answers[const.CONF_READ_POSITIONS] = False
     with _finishing(flow), pytest.raises(_Finished) as finished:
         result = await flow.async_step_finish_settings(answers)
         for attempt in range(4):
@@ -483,8 +514,9 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
     reports = bed_type_has_position_feedback(
         saved[const.CONF_BED_TYPE], saved.get(const.CONF_PROTOCOL_VARIANT)
     )
-    expected = True if disable and shown else not reports
-    assert saved[const.CONF_DISABLE_ANGLE_SENSING] is expected
+    assert reads_positions(saved) is (reports and not (disable and shown))
+    # Only a choice against the route's own default is stored.
+    assert (const.CONF_DISABLE_ANGLE_SENSING in saved) is bool(reports and disable and shown)
 
 
 # Bed types whose controller reads positions, on routes the integration does not
@@ -552,7 +584,7 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
 
 @pytest.mark.parametrize(("bed_type", "variant"), _quiet_routes())
 async def test_an_untouched_setup_leaves_a_quiet_route_unread(hass, bed_type, variant):
-    """Left as drawn, every setup of the route saves angle sensing disabled."""
+    """Left as drawn, no setup of the route reads a position."""
     saved = []
     paths: list[list[Any]] = [[]]
     while paths:
@@ -598,4 +630,4 @@ async def test_an_untouched_setup_leaves_a_quiet_route_unread(hass, bed_type, va
         and (s.get(const.CONF_PROTOCOL_VARIANT) or const.VARIANT_AUTO) == variant
     ]
     assert routes, f"no untouched setup reached {bed_type}:{variant}"
-    assert all(s[const.CONF_DISABLE_ANGLE_SENSING] is True for s in routes), routes
+    assert not any(reads_positions(s) for s in routes), routes

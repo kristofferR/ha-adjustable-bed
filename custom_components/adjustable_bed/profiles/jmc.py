@@ -3,7 +3,7 @@
 ``JENSEN`` is the Jensen Adjustable Sleep app's JMC400 route, the ``jensen`` bed
 type, from the audits of ``air.no.jensen.adjustablesleep`` 2.0.29 (98) and
 2.0.37 (106) and the #631 JMC400 capture. ``SVANE_REMOTE`` is the Svane Remote
-1.8 app (``com.svane.svaneremote``, row130): its JMC400 route, the ``svane`` bed
+1.8 app (``com.svane.svaneremote``): its JMC400 route, the ``svane`` bed
 type's ``svane_remote_jmc`` variant, sends every frame below, and its
 multi-service route sends the same light frames to its own lamp roles.
 """

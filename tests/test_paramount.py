@@ -443,11 +443,12 @@ async def test_movement_enable_changes_schedule_app_state_saves(
     with patch.object(store, "_schedule_save") as save:
         store.update("paramount:auto", bed.persisted_app_state)
         enabled = next(
-            spec for spec in bed.controller_select_specs if spec.key == "paramount_head_range"
+            spec for spec in bed.controller_switch_specs if spec.key == "paramount_head_range"
         )
-        await enabled.select_fn(bed, "disabled")
+        assert enabled.local_set_fn is not None
+        enabled.local_set_fn(False)
         store.update("paramount:auto", bed.persisted_app_state)
-        await enabled.select_fn(bed, "enabled")
+        await enabled.set_fn(bed, True)
         store.update("paramount:auto", bed.persisted_app_state)
     assert save.call_count == 3
     assert (await store.async_slot("paramount:auto"))["range_enabled"] == {"head": True}
@@ -494,3 +495,17 @@ def test_memory_buttons_publish_capability_gated_hold_metadata(
     assert bed.standard_button_hold_spec("program_memory_1") is None
     bed._mask &= ~16
     assert bed.standard_button_hold_spec(key) is None
+
+
+async def test_prohibition_switches_allow_the_physical_control_when_on(
+    bed: ParamountController,
+) -> None:
+    switch = next(s for s in bed.controller_switch_specs if s.key == "paramount_call_prohibition")
+    assert switch.on_value == "allowed"
+    with patch.object(bed, "_change_setting", new=AsyncMock()) as change:
+        await switch.set_fn(bed, True)
+        await switch.set_fn(bed, False)
+    assert [call.args for call in change.await_args_list] == [
+        ("call_prohibition", False),
+        ("call_prohibition", True),
+    ]

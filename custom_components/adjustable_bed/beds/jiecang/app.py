@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability
 from ...codec import jiecang as codec
 from ...codec.jiecang import Notification, TransportKey, Wake
 from ...const import (
@@ -671,6 +672,15 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
         if preset not in _WAKE_PRESETS:
             raise ValueError("Unsupported wake preset")
         return next(value for value in _WAKE_PRESETS if value == preset)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        yoga = ("yoga",) if self.supports_preset_yoga else ()
+        return AlarmCapability(
+            wake_actions=("flat", "zero_g", "anti_snore", "memory_1", "memory_2", *yoga),
+            weekdays=True,
+            massage_levels=3,
+        )
 
     async def configure_clock_alarm(
         self,

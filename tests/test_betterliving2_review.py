@@ -18,6 +18,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import (
     _async_ensure_paired_device_registry,
     _build_paired_children,
+    services,
 )
 from custom_components.adjustable_bed.beds.keeson import betterliving2 as runtime
 from custom_components.adjustable_bed.beds.keeson import betterliving2_services as actions
@@ -434,17 +435,26 @@ async def native_pair(hass, stack, action, mode, initial, events, hook=None):
 
 async def call_app(hass, parent_id, action):
     if action == "alarm":
-        name = "betterliving2_set_alarm"
-        payload = {"enabled": True, "time": "07:30", "weekdays": [1], "action": "memory_1"}
+        name = "set_alarm"
+        payload = {
+            "enabled": True,
+            "time": "07:30",
+            "weekdays": ["monday"],
+            "wake_action": "memory_1",
+        }
     else:
         name = "betterliving2_massage"
         payload = {"head": 1, "feet": 2}
-    await hass.services.async_call(
-        DOMAIN,
-        name,
-        {"device_id": [parent_id], **payload},
-        blocking=True,
-    )
+    try:
+        await hass.services.async_call(
+            DOMAIN,
+            name,
+            {"device_id": [parent_id], **payload},
+            blocking=True,
+        )
+    except PairedSideError as err:
+        err.add_note(repr(err.side_errors))
+        raise
 
 
 def action_frames(events, child, action):
@@ -625,10 +635,8 @@ async def test_native_both_rejects_later_owner_drift_before_mutation(hass, actio
         boundary = []
 
         if roster_fault:
-            service_name = (
-                "betterliving2_set_alarm" if action == "alarm" else "betterliving2_massage"
-            )
-            handler = actions.set_alarm if action == "alarm" else actions.massage
+            service_name = "set_alarm" if action == "alarm" else "betterliving2_massage"
+            handler = services.handle_set_alarm if action == "alarm" else actions.massage
             assert (
                 hass.services.async_services_for_domain(DOMAIN)[service_name].job.target is handler
             )

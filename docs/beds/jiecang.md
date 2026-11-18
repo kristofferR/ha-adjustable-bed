@@ -5,7 +5,7 @@
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 One wire codec (`F1 F1 ... 7E` frames over three GATT transports) serves a legacy
-route, four audited Jiecang app profiles and three audited LOGICDATA app profiles.
+route, four Jiecang app profiles and three LOGICDATA app profiles.
 This guide covers the codec first, then one section per profile. See
 [Protocol codecs and app profiles](../design/protocol-codecs.md) for the architecture.
 
@@ -57,7 +57,7 @@ so a service UUID cannot say which app's layout or release behavior applies
 | Memory Presets | ✅ (3 slots, recall and program) | ✅ (two recalls, two saves) | ✅ (2 slots, separate recall and save) | ✅ (2 slots, different payload) |
 | Massage | ✅ (back/leg, 0-10 levels) | ✅ (independent back and foot levels 0-3, mode cycling, stop; no massage mode number) | ✅ (Off and levels 1-3 per layout zone, mode, stop) | ✅ (same) |
 | Lights | ✅ (toggle) | ✅ (toggle, with reported light state) | ✅ (toggle; RGB, brightness, timeout and automatic under-bed lighting when reported) | ✅ (same, with its own capability gates) |
-| Alarm | ❌ | ❌ (no BLE alarm programming) | ✅ (`adjustable_bed.jiecang_set_alarm`) | ✅ |
+| Alarm | ❌ | ❌ (no BLE alarm programming) | ✅ (`adjustable_bed.set_alarm`) | ✅ |
 | Wake Routine | ❌ | ✅ (`adjustable_bed.jiecang_wake`) | ✅ (`adjustable_bed.jiecang_wake`) | ✅ |
 | Clock | ❌ | ❌ (no clock-setting command) | ✅ (answered on the bed's clock request) | ✅ |
 | Bluetooth Rename | ❌ | ✅ (G1 only) | ✅ (G1 or G3) | ✅ (G1 or G3) |
@@ -103,7 +103,7 @@ app or remote you use; the bed's name and services never decide it.
    saves the detected legacy route.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
 The same question appears, with **Keep** leaving the entry as it is. Choosing an
 app checks the bed's Bluetooth services with the app's own transport selection
 before anything is saved; a bed without that app's services keeps its setup.
@@ -218,7 +218,7 @@ Each query is listed with every offset it is sent at.
 Bed types that build the same controller over the same profile with the same
 default timing, so they send identical bytes. They stay separate bed types so
 existing entries keep their identities; the
-[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+wire snapshot (`tests/test_wire_snapshot.py`) proves the equality by capture.
 
 | Bed type | Same as | Differs only in |
 |----------|---------|-----------------|
@@ -524,8 +524,8 @@ data cannot express.
 
 ### Legacy route
 
-**Status:** ❓ Needs testing. No accepted APK report. The frames are those the
-original controller sent, taken from pre-audit decompiles of Comfort Motion 2.1.6
+**Status:** ❓ Needs testing. The frames are those the
+original controller sent, taken from earlier decompiles of Comfort Motion 2.1.6
 ([#127](https://github.com/kristofferR/ha-adjustable-bed/issues/127)) and
 `com.logicdata.motionrelax` ([#260](https://github.com/kristofferR/ha-adjustable-bed/issues/260)).
 smartbed-mqtt has no Jiecang implementation.
@@ -628,8 +628,7 @@ Configure's bed-type list, which then asks the app, packet family and layout.
 - Writable name roles are rediscovered per connection; G2 alone cannot reuse an
   old G1 name handle.
 - Write response mode comes from the discovered characteristic properties.
-- Comfort Motion sends only its frozen frames and the raw rename (APK Protocol
-  Audit row115).
+- Comfort Motion sends only its frozen frames and the raw rename.
 
 #### Controls
 
@@ -717,8 +716,7 @@ not change HA's local device name.
 
 #### Evidence
 
-APK Protocol Audit row115 holds the accepted report, every disposition and
-exclusion. Physical actuator effects, ATT properties, release effects, mode
+Physical actuator effects, ATT properties, release effects, mode
 names and rename persistence remain validation for real users after beta or
 release; maintainers need not acquire a bed.
 
@@ -785,7 +783,7 @@ light controls; HA answers clock requests with the clock frame.
 
 #### Services
 
-- `adjustable_bed.jiecang_set_alarm` writes the app's weekly alarm configuration.
+- `adjustable_bed.set_alarm` writes the app's weekly alarm configuration.
   It accepts a time, weekdays, wake preset and massage levels. Storing that
   configuration is separate from executing the Android app's local wake routine.
 - `adjustable_bed.jiecang_wake` executes the proven wake packet sequence. Use a
@@ -795,7 +793,7 @@ light controls; HA answers clock requests with the clock frame.
 - `adjustable_bed.jiecang_stop_wake` stops active wake massage without changing
   the saved alarm schedule. It sends the standard massage stop, even on bilateral
   layouts.
-- `adjustable_bed.rename` (or the older `jiecang_rename`) writes a Bluetooth name
+- `adjustable_bed.rename` (or the older `rename`) writes a Bluetooth name
   that matches the profile's name rule (see the
   [profile summary](#profile-summary)). This changes the advertised device name,
   separately from its friendly name in Home Assistant.
@@ -863,8 +861,6 @@ preset replaces the memory recall.
 
 #### Evidence
 
-- ERGOBALANCE and Dream Motion: APK Protocol Audit cluster-004.
-- Dream Motion HD: APK Protocol Audit row105.
 
 ### ERGOBALANCE (Dreamask)
 
@@ -885,7 +881,6 @@ See the [generated tables](#hold-and-release-timing).
 
 #### Evidence
 
-APK Protocol Audit cluster-004.
 
 ### Dream Motion (Dreamotion)
 
@@ -906,7 +901,6 @@ See the [generated tables](#hold-and-release-timing).
 
 #### Evidence
 
-APK Protocol Audit cluster-004.
 
 ### Dream Motion HD
 
@@ -981,12 +975,11 @@ queries, without a light-status query.
   wake massage on cancellation or failure, including a failed release write.
 - `adjustable_bed.rename` accepts printable ASCII names, including spaces. G1
   writes the bare name; G3 prefixes the name's byte length, correct for every
-  length. Non-ASCII names are rejected. The older `jiecang_rename` alias keeps its
+  length. Non-ASCII names are rejected. The older `rename` alias keeps its
   narrower released schema.
 
 #### Evidence
 
-APK Protocol Audit row105.
 
 ### LOGICDATA app family
 
@@ -1247,23 +1240,21 @@ being answered. The tablet decodes neither clock nor alarm replies.
 #### Services
 
 - The phone profile synchronizes the clock and supports weekly native alarm
-  configuration through `adjustable_bed.logicdata_set_alarm` when the standard
+  configuration through `adjustable_bed.set_alarm` when the standard
   family is selected: weekdays, time, a supported preset (wake codes flat `0`,
   anti-snore `1`, zero-g `2`, memory 1 `3`, memory 2 `4`) and back/leg massage
   levels. The alarm state is exposed as the `logicdata_app_alarm` sensor. The
   tablet profile has no clock or alarm BLE implementation.
 - `adjustable_bed.rename` changes the Bluetooth device name when the chosen
   transport provides a name characteristic (T1 bare, T3 wrapped). This is
-  separate from the Home Assistant friendly name; the older `logicdata_rename`
+  separate from the Home Assistant friendly name; the older `rename`
   name still works. The controller accepts 1–255 printable ASCII characters, a
   deliberate input policy that avoids the tablet app's malformed Unicode name
   encoding.
 
 #### Evidence
 
-Both profiles send only their frozen frames. APK Protocol Audit cluster-006
-records the dispositions, phone/tablet differences, report hashes and
-exclusions.
+Both profiles send only their frozen frames.
 
 ### Sleep Smart Air Mattress (bed)
 
@@ -1341,24 +1332,15 @@ No positions, firmware, model or calibration are reported.
 
 #### Evidence
 
-Sleep Smart sends only its frozen frames. APK Protocol Audit row053 records the
-dispositions, exclusions and deferred hardware checks.
+Sleep Smart sends only its frozen frames.
 
 ## Notes
 
 ### Analysis provenance
 
-- The machine-local audit ledgers hold the evidence and dispositions; this guide
-  holds the results in reference form: Comfort Motion (row115), ERGOBALANCE and
-  Dream Motion (cluster-004), Dream Motion HD (row105), MOTIONrelax phone and
-  tablet (cluster-006) and Sleep Smart (row053).
-- Packages: `com.jiecang.app.android.jiecangbed` 2.2.1 (28),
-  `com.jiecang.dreamask.app.android.bed` 1.0.8 (8),
-  `com.jiecang.dreamotion.app.android.bed` 1.0.5 (11) and
-  `com.dreamhd.jiecang.android.pad.bed` 1.0.4 (4); LOGICDATA
-  `com.logicdata.app.android.bed` 1.0.6 (7), `com.logicdata.app.android.pad.bed`
-  1.0.4 (5) and `com.logicdata.app.mattress.bed` 1.0.0 (1). No raw APK or frozen
-  analysis is shipped with the integration; accepted frozen reports remain
-  unchanged.
-- Physical actuator mapping, GATT properties and behavior on real firmware remain
-  deferred validation for users after a beta or release.
+Based on Comfort Motion 2.2.1 (`com.jiecang.app.android.jiecangbed`),
+ERGOBALANCE 1.0.8 (`com.jiecang.dreamask.app.android.bed`), Dream Motion 1.0.5
+(`com.jiecang.dreamotion.app.android.bed`), Dream Motion HD 1.0.4
+(`com.dreamhd.jiecang.android.pad.bed`), MOTIONrelax 1.0.6 and 1.0.4
+(`com.logicdata.app.android.bed`, `com.logicdata.app.android.pad.bed`) and
+Sleep Smart 1.0.0 (`com.logicdata.app.mattress.bed`).

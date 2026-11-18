@@ -22,6 +22,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator, ChildEntryView
 from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
 from tests.test_reverie_routines import _pairlink_runtime
 from tests.test_reverie_session_lane import _central
 
@@ -117,17 +118,20 @@ async def test_pairlink_diagnostic_owns_connection_through_cleanup(hass, monkeyp
 
 
 @pytest.mark.parametrize(("mode", "rhythm"), [(0, False), (3, True)])
-async def test_pairlink_feedback_populates_selects_and_preserves_numeric_mode(hass, monkeypatch, mode, rhythm):
+async def test_pairlink_feedback_populates_controls_and_preserves_numeric_mode(hass, monkeypatch, mode, rhythm):
     coordinator, controller = await _pairlink_central(hass)
-    mode_select, rhythm_select = [
+    (mode_select,) = [
         AdjustableBedControllerSelect(coordinator, spec) for spec in controller.controller_select_specs
     ]
+    (rhythm_switch,) = [
+        AdjustableBedControllerSwitch(coordinator, spec) for spec in controller.controller_switch_specs
+    ]
     assert mode_select.current_option is None
-    assert rhythm_select.current_option is None
+    assert rhythm_switch.is_on is None
     controller.handle_mesh_event(32, bytes((0, 0, 0, 0, 2, 0xA7, 12, mode)))
     controller.handle_mesh_event(32, bytes((0, 0, 0, 0, 2, 0xA7, 13, int(rhythm))))
     assert mode_select.current_option == str(mode)
-    assert rhythm_select.current_option == ("on" if rhythm else "off")
+    assert rhythm_switch.is_on is rhythm
     assert type(coordinator.controller_state["reverie_massage_mode"]) is int
     assert controller._state["reverie_massage_mode"] == mode
     assert coordinator.controller_state["reverie_massage_rhythm"] is rhythm
@@ -137,7 +141,7 @@ async def test_pairlink_feedback_populates_selects_and_preserves_numeric_mode(ha
     set_mode.assert_awaited_once_with((mode + 1) % 5)
     controller.on_disconnect()
     assert mode_select.current_option is None
-    assert rhythm_select.current_option is None
+    assert rhythm_switch.is_on is None
     await coordinator.async_shutdown()
 
 
