@@ -5,20 +5,11 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING
 
-import voluptuous as vol
-from homeassistant.const import CONF_DEVICE_ID
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import ServiceCall
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import config_validation as cv
 
-from ...const import DOMAIN
 from ...import_executor import async_import_modules
 from ...services import (
-    ATTR_ENABLED,
-    ATTR_TIME,
-    ATTR_WAKE_MODE,
-    DEVICE_IDS,
-    SIDE_FIELD,
     _call_targets,
     _command_targets,
     _execute_sided,
@@ -33,7 +24,6 @@ if TYPE_CHECKING:
     from .controller import ZSeriesController
 
 
-SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
 
 
 async def _execute_zseries_alarm(
@@ -99,55 +89,3 @@ async def _execute_zseries_alarm(
     except BaseException:
         await _release_preflighted(preflighted)
         raise
-
-
-async def handle_zseries_set_alarm(call: ServiceCall) -> None:
-    """Set or clear the Z-Series app alarm, using Home Assistant's local time."""
-    enabled = call.data[ATTR_ENABLED]
-    alarm_time = call.data.get(ATTR_TIME)
-    wake_mode = call.data.get(ATTR_WAKE_MODE)
-    if enabled and alarm_time is None:
-        raise ServiceValidationError(
-            "Choose an alarm time",
-            translation_domain=DOMAIN,
-            translation_key="zseries_alarm_time_required",
-        )
-    if enabled and wake_mode is None:
-        # The app refuses to enable an alarm until a wake-up mode is chosen.
-        raise ServiceValidationError(
-            "Choose a wake-up mode",
-            translation_domain=DOMAIN,
-            translation_key="zseries_alarm_wake_mode_required",
-        )
-    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
-        raise ServiceValidationError("Z-Series alarms use minute precision")
-    hour, minute = (alarm_time.hour, alarm_time.minute) if alarm_time is not None else (0, 0)
-
-    async def program(controller: ZSeriesController) -> None:
-        await controller.configure_clock_alarm(
-            enabled=enabled,
-            weekdays=(),
-            hour=hour,
-            minute=minute,
-            preset=wake_mode or "massage",  # Ignored when clearing the alarm.
-        )
-
-    await _execute_zseries_alarm(call, "Z-Series app alarms", program)
-
-
-def async_register_serenity_services(hass: HomeAssistant) -> None:
-    """Register the Z-Series app alarm action."""
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_ZSERIES_SET_ALARM,
-        handle_zseries_set_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                vol.Required(ATTR_ENABLED): cv.boolean,
-                vol.Optional(ATTR_TIME): cv.time,
-                vol.Optional(ATTR_WAKE_MODE): vol.In(("massage", "memory_1")),
-                **SIDE_FIELD,
-            }
-        ),
-    )

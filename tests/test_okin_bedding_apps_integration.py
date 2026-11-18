@@ -211,7 +211,7 @@ async def test_hold_services_preflight_profile_and_literal_action(
     [
         (BED_TYPE_ZSERIES, True, None),
         (BED_TYPE_ZSERIES, False, "does not support"),
-        (BED_TYPE_TRANQUIL, True, "does not support"),
+        (BED_TYPE_TRANQUIL, True, "has no alarm"),
     ],
 )
 async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
@@ -236,21 +236,21 @@ async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
-        data = {"device_id": "bed", "enabled": True, "time": "07:45:00", "wake_mode": "memory_1"}
+        data = {"device_id": "bed", "enabled": True, "time": "07:45:00", "wake_action": "memory_1"}
         if error:
             with pytest.raises(ServiceValidationError, match=error):
-                await hass.services.async_call(DOMAIN, "zseries_set_alarm", data, blocking=True)
+                await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
             assert written(controller) == []
             return
-        with pytest.raises(ServiceValidationError, match="wake-up mode"):
+        with pytest.raises(ServiceValidationError, match="Choose a wake action"):
             await hass.services.async_call(
                 DOMAIN,
-                "zseries_set_alarm",
-                {key: value for key, value in data.items() if key != "wake_mode"},
+                "set_alarm",
+                {key: value for key, value in data.items() if key != "wake_action"},
                 blocking=True,
             )
         assert written(controller) == []
-        await hass.services.async_call(DOMAIN, "zseries_set_alarm", data, blocking=True)
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         await hass.services.async_call(DOMAIN, "sync_clock", {"device_id": "bed"}, blocking=True)
     clock = "07061a0a01040d2f3b"
     assert written(controller) == [
@@ -405,14 +405,14 @@ async def test_enabling_alarm_requires_time_and_clearing_does_not(hass):
         with pytest.raises(ServiceValidationError) as raised:
             await hass.services.async_call(
                 DOMAIN,
-                "zseries_set_alarm",
-                {"device_id": "bed", "enabled": True, "wake_mode": "massage"},
+                "set_alarm",
+                {"device_id": "bed", "enabled": True, "wake_action": "massage"},
                 blocking=True,
             )
-        assert raised.value.translation_key == "zseries_alarm_time_required"
+        assert raised.value.translation_key == "alarm_time_required"
         assert written(controller) == []
         await hass.services.async_call(
-            DOMAIN, "zseries_set_alarm", {"device_id": "bed", "enabled": False}, blocking=True
+            DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False}, blocking=True
         )
     assert written(controller) == ["07061a0a01040d2f3b", "070500000000000001", "00c0", "00c0"]
 
@@ -446,8 +446,8 @@ async def _set_alarm(hass, controller):
     ):
         await hass.services.async_call(
             DOMAIN,
-            "zseries_set_alarm",
-            {"device_id": "bed", "enabled": True, "time": "07:45:00", "wake_mode": "massage"},
+            "set_alarm",
+            {"device_id": "bed", "enabled": True, "time": "07:45:00", "wake_action": "massage"},
             blocking=True,
         )
 
@@ -533,11 +533,11 @@ def _two_devices(first, second):
     return None, [(target, SIDE_BOTH) for target in targets], targets
 
 
-async def _call(hass, resolved, service="zseries_set_alarm"):
+async def _call(hass, resolved, service="set_alarm"):
     await async_register_services(hass)
     data = {"device_id": ["a", "b"]}
-    if service == "zseries_set_alarm":
-        data |= {"enabled": True, "time": "07:45:00", "wake_mode": "massage"}
+    if service == "set_alarm":
+        data |= {"enabled": True, "time": "07:45:00", "wake_action": "massage"}
     with (
         patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(resolved, [])) as resolve,
         patch("custom_components.adjustable_bed.services._resolve_sided_targets", new=resolve),
@@ -547,7 +547,7 @@ async def _call(hass, resolved, service="zseries_set_alarm"):
 
 
 @pytest.mark.parametrize("layout", [_two_devices, _paired])
-@pytest.mark.parametrize("service", ["zseries_set_alarm", "sync_clock"])
+@pytest.mark.parametrize("service", ["set_alarm", "sync_clock"])
 @pytest.mark.parametrize(
     ("second_read", "error"),
     [([b"CST20"], "does not support"), (TimeoutError("unreadable"), "Could not read")],

@@ -87,6 +87,8 @@ class AlarmCapability:
     massage_durations: tuple[int, ...] = ()
     sounds: tuple[str, ...] = ()
     light: bool = False
+    # The bed refuses to turn an alarm on without an explicit wake action.
+    requires_wake_action: bool = False
     # Wake actions that move to a user-saved position need explicit consent.
     confirm_actions: frozenset[str] = field(default_factory=frozenset)
     cancel_running: bool = False

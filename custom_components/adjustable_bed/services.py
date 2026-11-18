@@ -2100,6 +2100,13 @@ def _check_alarm(
                 "wake_actions": ", ".join(capability.wake_actions),
             },
         )
+    if alarm.enabled and capability.requires_wake_action and wake_action is None:
+        raise ServiceValidationError(
+            f"Choose a wake action for '{device_name}'",
+            translation_domain=DOMAIN,
+            translation_key="alarm_wake_action_required",
+            translation_placeholders={"device_name": device_name},
+        )
     limits = (
         ("slot", alarm.slot, 1, capability.slots),
         ("head_massage_level", alarm.head_massage_level, 0, capability.massage_levels),
@@ -2557,7 +2564,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.richmat_mh.services import async_register_richmat_mh_services
     from .beds.rmcontrol.services import async_register_rmcontrol_services
     from .beds.ruf_richmat.services import async_register_ruf_richmat_services
-    from .beds.serenity.services import async_register_serenity_services
     from .beds.simmons.services import async_register_simmons_services
     from .beds.sleep_number.services import async_register_sleep_number_services
     from .beds.sleeptracker.services import async_register_sleeptracker_services
@@ -2604,7 +2610,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_furnimove_services,
         async_register_fsm_relax_services,
         async_register_limoss_remote_services,
-        async_register_serenity_services,
         register_apex_services,
         async_register_simmons_services,
         async_register_logicdata_app_services,
