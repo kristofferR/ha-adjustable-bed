@@ -21,10 +21,10 @@ from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh
 from custom_components.adjustable_bed.beds.ruf_richmat import controller as ruf_richmat
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles import richmat as profiles
+from custom_components.adjustable_bed.profiles.bobpowerbase import WIRE as BOB_WIRE
 from custom_components.adjustable_bed.profiles.okimiki import CATALOG as OKIMIKI_CATALOG
 from custom_components.adjustable_bed.profiles.okimiki import CONTROLS as OKIMIKI_CONTROLS
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI_WIRE
-from custom_components.adjustable_bed.profiles.bobpowerbase import WIRE as BOB_WIRE
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.richmat_vectors import FROZEN_FRAMES
 
