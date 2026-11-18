@@ -4816,7 +4816,7 @@
     "card_section": "presets"
   },
   "button:suta_release": {
-    "card_section": "utility"
+    "card_section": "hidden"
   },
   "number:suta_1_setpoint": {
     "card_section": "utility"
@@ -4826,5 +4826,20 @@
   },
   "sensor:suta": {
     "card_section": "hidden"
+  },
+  "switch:suta_lock": {
+    "card_section": "utility"
+  },
+  "switch:suta_heating": {
+    "card_section": "utility"
+  },
+  "switch:suta_heating_light": {
+    "card_section": "utility"
+  },
+  "switch:suta_left_automatic_adjustment": {
+    "card_section": "utility"
+  },
+  "switch:suta_right_automatic_adjustment": {
+    "card_section": "utility"
   }
 }

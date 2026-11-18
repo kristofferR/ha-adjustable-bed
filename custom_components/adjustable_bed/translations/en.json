@@ -3355,7 +3355,7 @@
         "name": "{action}"
       },
       "suta_release": {
-        "name": "Release"
+        "name": "Release held control"
       },
       "suta_preset": {
         "name": "{action}"
@@ -5251,7 +5251,7 @@
         "name": "SonicSleep state"
       },
       "suta": {
-        "name": "SUTA model"
+        "name": "Model"
       }
     },
     "light": {
@@ -5274,6 +5274,21 @@
       },
       "automatic_light": {
         "name": "Automatic under-bed light"
+      },
+      "suta_lock": {
+        "name": "Lock"
+      },
+      "suta_heating": {
+        "name": "Heating"
+      },
+      "suta_heating_light": {
+        "name": "Light"
+      },
+      "suta_left_automatic_adjustment": {
+        "name": "Left automatic adjustment"
+      },
+      "suta_right_automatic_adjustment": {
+        "name": "Right automatic adjustment"
       }
     },
     "binary_sensor": {
@@ -5892,10 +5907,10 @@
         "name": "Massage timer request"
       },
       "suta_1_setpoint": {
-        "name": "Left heating setpoint"
+        "name": "Left target temperature"
       },
       "suta_2_setpoint": {
-        "name": "Right heating setpoint"
+        "name": "Right target temperature"
       }
     },
     "select": {

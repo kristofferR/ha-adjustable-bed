@@ -207,6 +207,7 @@ SPEC_PLATFORMS = {
     "ControllerButtonSpec": ("button", 4),
     "ControllerSelectSpec": ("select", 1),
     "ControllerNumberSpec": ("number", 1),
+    "ControllerSwitchSpec": ("switch", 1),
     "ControllerStateSensorSpec": ("sensor", 1),
     "ControllerStateBinarySensorSpec": ("binary_sensor", 1),
 }
@@ -278,6 +279,7 @@ def _add_spec_keys(keys: dict[str, set[str]], controller: BedController) -> None
         ("button", controller.controller_button_specs),
         ("select", controller.controller_select_specs),
         ("number", (*controller.controller_number_specs, *controller.position_number_specs)),
+        ("switch", controller.controller_switch_specs),
         ("sensor", controller.controller_state_sensor_specs),
         ("binary_sensor", controller.controller_state_binary_sensor_specs),
     ):

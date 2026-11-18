@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_HIDDEN, CARD_PRESETS, CARD_UTILITY
 from ...codec import suta as codec
 from ...command_scheduler import current_command_context
 from ...const import CONF_BLE_DEVICE_NAME
@@ -37,6 +37,7 @@ from ..entity_specs import (
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
 )
 from ..lifecycle import ControllerSession
@@ -53,6 +54,69 @@ MODEL: Final = StateKey[str]("suta_model")
 OBSERVATIONS: Final = StateKey[dict[str, object]]("suta_observations")
 LEFT_SETPOINT: Final = StateKey[int | None]("suta_left_setpoint")
 RIGHT_SETPOINT: Final = StateKey[int | None]("suta_right_setpoint")
+HEATING_ON: Final = StateKey[bool | None]("suta_heating_on")
+HEATING_LIGHT_ON: Final = StateKey[bool | None]("suta_heating_light_on")
+AUTOMATIC_ADJUSTMENT: Final = {
+    side: StateKey[bool | None](f"suta_side_{side}_automatic_adjustment") for side in (1, 2)
+}
+_SIDE_NAMES: Final = {1: "Left", 2: "Right"}
+# Entity labels from the app's own button text. Keys absent here and from the
+# standard buttons are reachable only through the SUTA action.
+_TEXT_LABELS: Final = {
+    "beep_enable": "Enable beep",
+    "set_date": "Sync clock",
+    "both_open_all": "Open all",
+    "both_close_all": "Close all",
+    "mode_open_bk": "Open back",
+    "mode_close_bk": "Close back",
+    "mode_open_hd": "Open head",
+    "mode_close_hd": "Close head",
+    "mode_open_ft": "Open foot",
+    "mode_close_ft": "Close foot",
+    "mode_m8": "M8",
+    "mode_bed": "Bed",
+    "mode_bed_flat": "Bed flat",
+    "mode_chair": "Chair",
+    "mode_sofa": "Sofa",
+    "mode_sofa_bed": "Sofa bed",
+    "mode_swing": "Swing",
+    "mode_pilates": "Pilates",
+    "mode_read": "Read",
+    "mode_both_pull": "Pull",
+    "mode_both_yoga": "Yoga",
+    "both_set_tv": "Save TV position",
+    "both_set_snore": "Save anti-snore position",
+    "set_mode_zerog": "Save zero-gravity position",
+    "mode_set_pilates": "Save Pilates position",
+    "mode_set_read": "Save read position",
+    "reset_on": "Reset",
+    # B702 places BOTT under its storage icon, beside separate back+foot keys.
+    "ctrl_bott_up": "Storage lift up",
+    "ctrl_bott_down": "Storage lift down",
+}
+# Cycled steps: DT and fan 00 stops the zone, other values are app steps 1-3.
+_STEP_ZONES: Final = {
+    "mass_head_dt": "Head massage",
+    "mass_foot_dt": "Foot massage",
+    "mass_head_lv": "Massage level",
+    "mode_fans_top_dt": "Top fan",
+    "mode_fans_middle_dt": "Middle fan",
+    "mode_fans_bottom_dt": "Bottom fan",
+    "mode_fans_all_on_dt": "All fans",
+}
+_BINARY_LABELS: Final = {
+    "waist_massage": "waist massage",
+    "back_massage": "back massage",
+    "leg_massage": "leg massage",
+    "surge_massage": "surge massage",
+    "undulate_massage": "undulating massage",
+}
+_ADAPTIVE_MODES: Final = (4, 5, 6, 7, 14)
+# Queries run after connect; switches replace the on/off binary pairs.
+_BINARY_WITHOUT_BUTTON: Final = frozenset({
+    "temperature_setpoint", "current_mattress_state", "mattress_temperature", "firmware_version",
+    "temperature_controller_state", "heating_power", "heating_light", "automatic_adjustment_switch",
+})
 _LOGGER = logging.getLogger(__name__)
 WRITE_TIMEOUT: Final = 5.0  # HA transport bound, not a firmware timing claim.
 
@@ -212,6 +276,36 @@ class SutaController(BedController):
             if all("ctrl_" + remote + "_" + direction in self.profile.commands for direction in ("up", "down"))
         )
 
+    def _text_label(self, key: str, suffix: str) -> str | None:
+        if key in _STEP_ZONES:
+            steps = self.profile.commands.get(key, SHARED.get(key))
+            index = steps.suffixes.index(suffix) if steps is not None else 0
+            return f"{_STEP_ZONES[key]} {index}" if key == "mass_head_lv" else (
+                f"{_STEP_ZONES[key]} off" if index == 0 else f"{_STEP_ZONES[key]} {index}"
+            )
+        if key in ("ctrl_two_up", "ctrl_two_down"):
+            # TWO drives back and foot together; alone it is the panel's only motion.
+            direction = "up" if key.endswith("_up") else "down"
+            both = all(f"ctrl_{axis}_up" in self.profile.commands for axis in ("back", "foot"))
+            return f"Back and foot {direction}" if both else direction.capitalize()
+        return _TEXT_LABELS.get(key)
+
+    @staticmethod
+    def _binary_label(key: str, payload: bytes) -> str:
+        side = _SIDE_NAMES[payload[0]]
+        if key in _BINARY_LABELS:
+            return f"{side} {_BINARY_LABELS[key]}"
+        if key.startswith("massage_timer_"):
+            return f"{side} massage timer {key.removeprefix('massage_timer_')} min"
+        if key.startswith("massage_strength_"):
+            return f"{side} massage strength {key.removeprefix('massage_strength_')}"
+        if key.startswith("adaptive_"):
+            _, mode, stiffness = key.split("_")
+            return f"{side} adaptive mode {_ADAPTIVE_MODES.index(int(mode)) + 1}: {stiffness}"
+        if key == "heating_timer":
+            return f"{side} heating timer {payload[-1]} h"
+        raise ValueError(f"No SUTA entity label for {key}")
+
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         result: list[ControllerButtonSpec] = []
@@ -220,11 +314,12 @@ class SutaController(BedController):
         standard.update(control for spec in self.motor_control_specs if spec.hold is not None for control in (spec.hold.up_control, spec.hold.down_control))
         commands = self.commands
         for key, command in commands.items():
-            if key in standard or key == "mass_foot_lv":
+            if key in standard:
                 continue
-            suffixes = command.suffixes or ("",)
-            for suffix in suffixes:
-                label = ("Massage level" if command.kind == "lv" else key.replace("_", " ").title()) + (" " + suffix if suffix else "")
+            for suffix in command.suffixes or ("",):
+                label = self._text_label(key, suffix)
+                if label is None:
+                    continue
                 result.append(ControllerButtonSpec(
                     "suta_" + key + suffix, label, partial(_action, key=key, suffix=suffix),
                     translation_key="suta_preset" if command.text.startswith(("AT+MODE", "AT+SETMODE")) else "suta_action", translation_placeholders={"action": label},
@@ -234,28 +329,41 @@ class SutaController(BedController):
                     card=CARD_PRESETS if command.text.startswith(("AT+MODE", "AT+SETMODE")) else CARD_UTILITY,
                 ))
         for action in BINARY.values():
-            if self.family not in action.controllers or action.key == "temperature_setpoint":
+            if self.family not in action.controllers or action.key in _BINARY_WITHOUT_BUTTON:
                 continue
             for prefix in action.prefixes:
-                payload = prefix[6:]
-                side = ("Left " if payload[0] == 1 else "Right ") if len(payload) == 2 else ""
-                label = side + action.label.title()
-                if action.key in ("heating_power", "heating_light"):
-                    label += ": " + ("On" if payload[-1] else "Off")
-                elif action.key in ("heating_timer", "automatic_adjustment_switch"):
-                    label += ": " + str(payload[-1])
+                label = self._binary_label(action.key, prefix[6:])
                 result.append(ControllerButtonSpec(
                     "suta_" + action.key + "_" + prefix[6:].hex(), label,
                     partial(_binary_action, action=action.key, payload=prefix[6:]),
                     translation_key="suta_action", translation_placeholders={"action": label},
                 ))
         if self.supports_stop_all:
-            result.append(ControllerButtonSpec("suta_release", "Release", lambda c: c.stop_all(), release_only=True, translation_key="suta_release"))
-        if self.family == "P1" and commands:
-            result.append(ControllerButtonSpec("suta_snore_cycle", "Snore then flat", partial(_action, key="snore_cycle"), translation_key="suta_action", translation_placeholders={"action": "Snore then flat"}))
+            # The card presses this when a held gesture ends.
+            result.append(ControllerButtonSpec("suta_release", "Release held control", lambda c: c.stop_all(), release_only=True, translation_key="suta_release", card=CARD_HIDDEN))
+        if self.family == "P1" and {"both_snore", "mode_flat"} <= commands.keys():
+            result.append(ControllerButtonSpec("suta_snore_cycle", "Anti-snore then flat", partial(_action, key="snore_cycle"), translation_key="suta_action", translation_placeholders={"action": "Anti-snore then flat"}))
         if "mass_head_dt" in commands and "mass_foot_dt" in commands:
             result.append(ControllerButtonSpec("suta_massage_off", "Stop massage", partial(_action, key="massage_off"), translation_key="suta_action", translation_placeholders={"action": "Stop massage"}))
         return tuple(result)
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if self.family == "TEMP":
+            return (
+                ControllerSwitchSpec("suta_heating", "suta_heating", HEATING_ON, partial(_binary_switch, action="heating_power"), "mdi:radiator"),
+                ControllerSwitchSpec("suta_heating_light", "suta_heating_light", HEATING_LIGHT_ON, partial(_binary_switch, action="heating_light"), "mdi:lightbulb"),
+            )
+        if self.family == "MOON":
+            return tuple(
+                ControllerSwitchSpec(f"suta_automatic_adjustment_{side}", f"suta_{_SIDE_NAMES[side].lower()}_automatic_adjustment",
+                                     AUTOMATIC_ADJUSTMENT[side], partial(_binary_switch, action="automatic_adjustment_switch", side=side), "mdi:tune-variant")
+                for side in (1, 2)
+            )
+        if "set_lock_on" in self.commands and "set_lock_off" in self.commands:
+            # The bed reports no lock state, so the switch shows the last command.
+            return (ControllerSwitchSpec("suta_lock", "suta_lock", None, _lock, "mdi:lock"),)
+        return ()
 
     def controller_button_available(self, key: str) -> bool:
         if key.startswith("suta_mass_head_lv"):
@@ -279,7 +387,8 @@ class SutaController(BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (ControllerStateSensorSpec("suta", "suta", MODEL, "mdi:bed", attribute_keys=(OBSERVATIONS,)),)
+        return (ControllerStateSensorSpec("suta", "suta", MODEL, "mdi:bed", attribute_keys=(OBSERVATIONS,),
+                                          entity_registry_enabled_default=False),)
 
     @property
     def commands(self) -> dict[str, Command]:
@@ -400,10 +509,15 @@ class SutaController(BedController):
 
     def _publish(self) -> None:
         left, right = self.observations.get("side_1_setpoint"), self.observations.get("side_2_setpoint")
+        power, light = self.observations.get("power"), self.observations.get("light")
+        automatic = {side: self.observations.get(f"side_{side}_automatic_checked") for side in (1, 2)}
         self.forward_controller_state_updates(
             MODEL(self.name), OBSERVATIONS(dict(self.observations)),
             LEFT_SETPOINT(left if isinstance(left, int) else None),
             RIGHT_SETPOINT(right if isinstance(right, int) else None),
+            HEATING_ON(power == 1 if power in (0, 1) else None),
+            HEATING_LIGHT_ON(light == 1 if light in (0, 1) else None),
+            *(AUTOMATIC_ADJUSTMENT[side](value if isinstance(value, bool) else None) for side, value in automatic.items()),
         )
 
     async def _send(self, link: Link, packet: bytes, cancel: asyncio.Event, *, deadline: float | None = None) -> float | None:
@@ -733,6 +847,16 @@ async def _binary_action(controller: BedController, action: str, payload: bytes)
     if not isinstance(controller, SutaController):
         raise ValueError("SUTA controller required")
     await controller.execute_request(Request(action, logical_side=payload[0] if len(payload) == 2 else None, value=payload[-1]))
+
+
+async def _binary_switch(controller: BedController, enabled: bool, *, action: str, side: int | None = None) -> None:
+    if not isinstance(controller, SutaController):
+        raise ValueError("SUTA controller required")
+    await controller.execute_request(Request(action, logical_side=side, value=int(enabled)))
+
+
+async def _lock(controller: BedController, enabled: bool) -> None:
+    await _action(controller, "set_lock_on" if enabled else "set_lock_off")
 
 
 async def _setpoint(controller: BedController, value: float, *, side: int) -> None:

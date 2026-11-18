@@ -275,3 +275,107 @@ async def test_massage_level_entity_refreshes_on_each_local_zone_change(hass, ru
         assert level.async_write_ha_state.call_count == 2
     finally:
         await level.async_will_remove_from_hass()
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-B402"], indirect=True)
+async def test_lock_switch_sends_lock_and_keeps_the_commanded_state(hass, runtime):
+    from custom_components.adjustable_bed.switch import (
+        AdjustableBedControllerSwitch,
+        _switch_entities_for,
+    )
+
+    target, client, _ = runtime
+    assert await target.async_connect()
+    (lock,) = [e for e in _switch_entities_for(hass, target) if isinstance(e, AdjustableBedControllerSwitch)]
+    lock.hass = hass
+    lock.entity_id = "switch.suta_lock"
+    lock.async_write_ha_state = MagicMock()
+    assert lock.assumed_state and lock.is_on is None
+    await lock.async_turn_on()
+    assert written(client)[-1] == codec.text("AT+SETLOCK=ON")
+    assert lock.is_on is True
+    await lock.async_turn_off()
+    assert written(client)[-1] == codec.text("AT+SETLOCK=OFF")
+    assert lock.is_on is False
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-TEMP"], indirect=True)
+async def test_heating_switch_keeps_reported_state_across_disconnect(hass, runtime):
+    from custom_components.adjustable_bed.switch import (
+        AdjustableBedControllerSwitch,
+        _switch_entities_for,
+    )
+
+    target, _client, _ = runtime
+    heating = next(e for e in _switch_entities_for(hass, target)
+                   if isinstance(e, AdjustableBedControllerSwitch) and e.translation_key == "suta_heating")
+    heating.hass = hass
+    heating.entity_id = "switch.suta_heating"
+    heating.async_write_ha_state = MagicMock()
+    await heating.async_added_to_hass()
+    try:
+        assert heating.is_on is None and heating.assumed_state
+        target.handle_controller_state_updates(bed.HEATING_ON(True))
+        assert heating.is_on is True and not heating.assumed_state
+        # Disconnect clears connection-scoped state; a toggle must not resend "on".
+        target.handle_controller_state_updates(bed.HEATING_ON(None))
+        assert heating.is_on is True and heating.assumed_state
+    finally:
+        await heating.async_will_remove_from_hass()
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-MOON"], indirect=True)
+async def test_sent_setting_wins_until_the_bed_reports_a_change(hass, runtime):
+    from custom_components.adjustable_bed.switch import (
+        AdjustableBedControllerSwitch,
+        _switch_entities_for,
+    )
+
+    target, client, _ = runtime
+    assert await target.async_connect()
+    left = next(e for e in _switch_entities_for(hass, target)
+                if isinstance(e, AdjustableBedControllerSwitch) and e.translation_key == "suta_left_automatic_adjustment")
+    left.hass = hass
+    left.entity_id = "switch.suta_left_automatic_adjustment"
+    left.async_write_ha_state = MagicMock()
+    await left.async_added_to_hass()
+    try:
+        target.handle_controller_state_updates(bed.AUTOMATIC_ADJUSTMENT[1](True))
+        await left.async_turn_off()
+        assert written(client)[-1] == codec.binary(0x97, 0x0B, bytes((1, 0)))
+        # The write is not echoed; an unrelated publish repeats the old snapshot.
+        target.handle_controller_state_updates(bed.AUTOMATIC_ADJUSTMENT[1](True))
+        assert left.is_on is False
+        target.handle_controller_state_updates(bed.AUTOMATIC_ADJUSTMENT[1](False))
+        assert left.is_on is False and not left.assumed_state
+    finally:
+        await left.async_will_remove_from_hass()
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-TEMP"], indirect=True)
+async def test_report_during_the_write_is_trusted(hass, runtime):
+    from custom_components.adjustable_bed.switch import (
+        AdjustableBedControllerSwitch,
+        _switch_entities_for,
+    )
+
+    target, client, _ = runtime
+    assert await target.async_connect()
+    heating = next(e for e in _switch_entities_for(hass, target)
+                   if isinstance(e, AdjustableBedControllerSwitch) and e.translation_key == "suta_heating")
+    heating.hass = hass
+    heating.entity_id = "switch.suta_heating"
+    heating.async_write_ha_state = MagicMock()
+    await heating.async_added_to_hass()
+    target.handle_controller_state_updates(bed.HEATING_ON(False))
+
+    async def confirm(_char, packet, **_kwargs):
+        if packet == codec.binary(0xA1, 1, b"\x01"):
+            target.handle_controller_state_updates(bed.HEATING_ON(True))
+
+    client.write_gatt_char.side_effect = confirm
+    try:
+        await heating.async_turn_on()
+        assert heating.is_on is True and not heating.assumed_state
+    finally:
+        await heating.async_will_remove_from_hass()

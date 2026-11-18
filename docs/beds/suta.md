@@ -954,8 +954,15 @@ selector or live SINSLAVE command is proven.
 
 #### Controls
 
-Native entities expose each panel's controls. Combined TWO/BOTT/HTWO labels
-do not imply a physical actuator layout. B702 offers four programmable
+Native entities expose each panel's controls under the app's button text.
+TWO is "Back and foot" where the panel also has back and foot keys, and plain
+"Up"/"Down" where it is the only motion; B702's BOTT key is "Storage lift".
+Lock/unlock, MOON automatic adjustment and TEMP heating power and light are
+switches. Lock state is not reported, so its switch shows the last command.
+Version, date and alarm queries, the post-connect state queries and the
+unlabelled RBHC/N520 angle commands stay available through the SUTA action
+only. The Model sensor (disabled by default) carries the observations as
+attributes. B702 offers four programmable
 memory slots, B803 three; other panels retain their own exact slots.
 Preset M8 does not imply eight programmable memories.
 

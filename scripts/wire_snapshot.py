@@ -388,6 +388,15 @@ def plan_commands(controller: Any) -> list[Command]:
                     True,
                 )
             )
+    for spec in _value(controller, "controller_switch_specs", ()):
+        for enabled in (True, False):
+            plan.append(
+                Command(
+                    f"switch:{spec.key}={'on' if enabled else 'off'}",
+                    lambda ctrl, fn=spec.set_fn, e=enabled: fn(ctrl, e),
+                    True,
+                )
+            )
     for spec in _value(controller, "controller_number_specs", ()):
         for bound in dict.fromkeys((spec.native_min_value, spec.native_max_value)):
             plan.append(

@@ -348,3 +348,66 @@ async def test_dedicated_save_never_finishes_burst_on_replacement_session(clock)
     with pytest.raises(ConnectionError, match="session changed"):
         await controller.action("both_set_tv")
     assert written(c) == [codec.text("AT+SETMODE=BOTH TV")]
+
+
+def _labels(controller):
+    return {spec.key: (spec.translation_placeholders or {}).get("action", spec.name) for spec in controller.controller_button_specs}
+
+
+def test_entity_labels_follow_the_app_buttons():
+    b702, _ = make("SUTA-B702")
+    labels = _labels(b702)
+    assert labels["suta_ctrl_two_up"] == "Back and foot up"
+    assert labels["suta_ctrl_bott_down"] == "Storage lift down"
+    assert labels["suta_both_set_tv"] == "Save TV position"
+    assert labels["suta_release"] == "Release held control"
+    assert {s.key for s in b702.controller_switch_specs} == {"suta_lock"}
+    b402, _ = make("SUTA-B402")
+    assert _labels(b402)["suta_ctrl_two_up"] == "Up"
+    assert "suta_snore_cycle" not in _labels(b402)
+    b905, _ = make("SUTA-B905")
+    labels = _labels(b905)
+    assert labels["suta_mass_head_dt00"] == "Head massage off"
+    assert labels["suta_mass_head_dt50"] == "Head massage 3"
+    assert labels["suta_mass_head_lv20"] == "Massage level 2"
+    # Queries and unlabeled app gestures stay reachable only through the action.
+    assert not {"suta_get_sys_version", "suta_get_alarm", "suta_get_date"} & labels.keys()
+    rbhc, _ = make("SUTA-RBHC1")
+    assert not {"suta_angle_on", "suta_angle_off"} & _labels(rbhc).keys()
+    moon_, _ = make("SUTA-MOON")
+    labels = _labels(moon_)
+    assert labels["suta_adaptive_14_soft_0203"] == "Right adaptive mode 5: soft"
+    assert labels["suta_massage_timer_10_010a"] == "Left massage timer 10 min"
+    assert not any(key.startswith(("suta_automatic_adjustment", "suta_firmware_version")) for key in labels)
+    temp_, _ = make("SUTA-TEMP")
+    assert _labels(temp_)["suta_heating_timer_020a"] == "Right heating timer 10 h"
+    for controller in (b702, b402, b905, rbhc, moon_, temp_):
+        names = list(_labels(controller).values())
+        assert len(names) == len(set(names))
+
+
+async def test_switches_send_the_app_frames_and_read_reported_state(clock):
+    moon_, c = make("SUTA-MOON")
+    await moon_.start_notify()
+    left = next(s for s in moon_.controller_switch_specs if s.key == "suta_automatic_adjustment_1")
+    await left.set_fn(moon_, True)
+    assert written(c)[-1] == codec.binary(0x97, 0x0B, bytes((1, 1)))
+    sender, callback = c.client.start_notify.call_args.args
+    callback(sender, bytearray.fromhex("5359970d000800020a0000020a01") + bytes((0, 0, 0)))
+    states = {update.key: update.value for update in c.handle_controller_state_updates.call_args.args}
+    assert states[bed.AUTOMATIC_ADJUSTMENT[1]] is True
+    assert states[bed.AUTOMATIC_ADJUSTMENT[2]] is False
+
+    temp_, c = make("SUTA-TEMP")
+    await temp_.start_notify()
+    heating, light = temp_.controller_switch_specs
+    await heating.set_fn(temp_, False)
+    await light.set_fn(temp_, True)
+    assert written(c)[-2:] == [codec.binary(0xA1, 1, b"\x00"), codec.binary(0xA1, 2, b"\x01")]
+
+    b402, c = make("SUTA-B402")
+    await b402.start_notify()
+    (lock,) = b402.controller_switch_specs
+    assert lock.state_key is None
+    await lock.set_fn(b402, True)
+    assert written(c)[-1] == codec.text("AT+SETLOCK=ON")

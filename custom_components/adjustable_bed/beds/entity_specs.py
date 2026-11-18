@@ -68,6 +68,23 @@ class ControllerNumberSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class ControllerSwitchSpec:
+    """A controller-declared on/off setting that replaces an on/off button pair.
+
+    ``state_key`` reads the bed's reported state. Without one the switch keeps
+    the last commanded value as assumed state.
+    """
+
+    key: str
+    translation_key: str
+    state_key: StateKey[bool | None] | None
+    set_fn: Callable[[BedController, bool], Awaitable[None]]
+    icon: str | None = None
+    translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
+    card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
+
+
+@dataclass(frozen=True, slots=True)
 class ProductButtonSpec(ControllerButtonSpec):
     """An optional product action with its own entity namespace."""
 
