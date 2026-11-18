@@ -1518,10 +1518,10 @@ class TestButtonEntities:
         ]
 
         # The mock has no reference-output service, so it represents the
-        # app's Standard model: flat, both-up, stop, connection controls,
-        # wake and defaults reset. Lighting has its own light entity. The
-        # distinct destructive factory reset is registered but disabled.
-        assert len(button_states) == 7
+        # app's Standard model: flat, both-up, stop, connection controls and
+        # defaults reset. Lighting has its own light entity. The destructive
+        # factory reset and the diagnostic wake are registered but disabled.
+        assert len(button_states) == 6
 
     async def test_button_entities_with_massage(
         self,
@@ -1551,10 +1551,10 @@ class TestButtonEntities:
             state for state in hass.states.async_all() if state.entity_id.startswith("button.")
         ]
 
-        # Seven enabled Standard-model base actions plus the modern app's eleven
+        # Six enabled Standard-model base actions plus the modern app's eleven
         # massage actions. Memory controls are absent without the reference
         # service, exactly as they are in Bed Control.
-        assert len(button_states) == 18
+        assert len(button_states) == 17
 
     async def test_keeson_base_exposes_direct_massage_buttons(
         self,

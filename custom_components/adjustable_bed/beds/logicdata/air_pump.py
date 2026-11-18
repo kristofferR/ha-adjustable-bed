@@ -14,7 +14,7 @@ import unicodedata
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Final, cast
 
-from ...card import CARD_FIRMNESS
+from ...card import CARD_FIRMNESS, CARD_PRESET_SAVE, CARD_UTILITY
 from ...controller_state import StateKey
 from ..base import BedController
 from ..entity_specs import (
@@ -181,6 +181,9 @@ class LogicdataAirPumpController(BedController):
                 _action(key),
                 icon=_ICONS[key],
                 translation_key=f"{_PREFIX}{key}",
+                # Saving overwrites the stored pressure, so the card asks first.
+                requires_confirmation=key == "save_memory",
+                card=CARD_PRESET_SAVE if key == "save_memory" else CARD_UTILITY,
             )
             for key, label in _LABELS.items()
         )
@@ -193,6 +196,7 @@ class LogicdataAirPumpController(BedController):
                 translation_key="logicdata_air_pump_pressure",
                 state_key=PRESSURE_STATE,
                 icon="mdi:gauge",
+                entity_registry_enabled_default=True,
                 card=CARD_FIRMNESS,
             ),
         )

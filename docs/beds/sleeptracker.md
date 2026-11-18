@@ -373,8 +373,7 @@ Wi-Fi/AP/SSID/password provisioning, network configuration and reboot,
 HTTP/WebSocket/cloud/account/sleep/alarm infrastructure, DFU/firmware updates,
 help/media, speaker/audio and synchronization controls are excluded. This
 includes speaker statements in the shipped animation and speaker state fields.
-Dead enum mappings and unused UUID/read paths are excluded too. The ledger
-contains the exact evidence and rationale for each exclusion.
+Dead enum mappings and unused UUID/read paths are excluded too.
 
 After a beta or release, real users can validate the selected processor address,
 negotiated transport and framing, unit/snapshot physical mapping, climate
@@ -385,12 +384,7 @@ missing static evidence or a requirement for the maintainer to obtain a bed.
 
 ### Analysis provenance
 
-- The complete Google Play delivery of `com.fullpower.applications.horizon`
-  **3.6.2 (262)** was analyzed and independently accepted on 2026-10-08.
-  Protocol and app behavior are proven by that artifact and the accepted
-  October 17/18 addenda.
-- An ActiveBreeze STS-60 user has confirmed setup, strength/climate readback,
-  Wave Form One and lumbar movement on releases through 4.2.4 in
-  [issue #693](https://github.com/kristofferR/ha-adjustable-bed/issues/693).
-  Other hardware behavior remains unverified.
-- The S02 audit records every accepted discovery and implementation disposition.
+Based on Sleeptracker 3.6.2 (`com.fullpower.applications.horizon`). An
+ActiveBreeze STS-60 user has confirmed setup, strength/climate readback, Wave
+Form One and lumbar movement in
+[issue #693](https://github.com/kristofferR/ha-adjustable-bed/issues/693).

@@ -423,7 +423,7 @@ def test_immutable_profile_control_catalog(profile, buttons, numbers, selects):
     assert len(controller.controller_number_specs) == numbers
     assert len(controller.controller_select_specs) == selects
     assert len(controller.controller_state_sensor_specs) == 7
-    assert len(controller.controller_state_binary_sensor_specs) == 1
+    assert controller.controller_state_binary_sensor_specs == ()
     assert all(
         spec.translation_key.startswith("vmatbasic_") for spec in controller.controller_button_specs
     )

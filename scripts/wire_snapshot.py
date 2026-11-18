@@ -37,7 +37,7 @@ How it works, and where it stops:
 - The command plan: every motor axis, the standard presets, every memory slot up
   to ``memory_slot_count``, lights and massage, then one representative call of
   every other implemented ``BedController`` action (each option of option-taking
-  ones), every controller-declared button, select option and number bound, and a
+  ones), every controller-declared button, select option, switch state and number bound, and a
   STOP pressed partway through each cover movement. See ``plan_commands``.
 - Each scenario replays a hand-maintained fake GATT layout from
   ``wire_snapshot_layouts.json``, so renaming a UUID constant changes nothing. A
@@ -389,11 +389,11 @@ def plan_commands(controller: Any) -> list[Command]:
                 )
             )
     for spec in _value(controller, "controller_switch_specs", ()):
-        for enabled in (True, False):
+        for on in (True, False):
             plan.append(
                 Command(
-                    f"switch:{spec.key}={'on' if enabled else 'off'}",
-                    lambda ctrl, fn=spec.set_fn, e=enabled: fn(ctrl, e),
+                    f"switch:{spec.key}={'on' if on else 'off'}",
+                    lambda ctrl, fn=spec.set_fn, v=on: fn(ctrl, v),
                     True,
                 )
             )

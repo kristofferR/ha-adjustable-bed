@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Final, Literal, cast
 from bleak import BleakClient
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...codec import richmat as codec
 from ...const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatFeatures
 from ...controller_state import StateKey
@@ -106,6 +107,31 @@ async def detect_rmcontrol_transport(client: BleakClient) -> tuple[bool, str, bo
     return matches[0]
 
 
+# Shared wake actions and the product alarm catalog's action names.
+_ALARM_ACTIONS: Final = {
+    "zero_g": "ZeroGravity",
+    "zero_g_2": "ZeroGravity2",
+    "flat": "AllMotorDown",
+    "flat_reset": "MotorReset",
+    "all_up": "AllMotorUp",
+    "anti_snore": "AntiSnoring",
+    "lounge": "LoungePosition",
+    "reading": "ReadingPosition",
+    "tv": "TVPosition",
+    "yoga": "YogaPosition",
+    "memory_1": "MemoryPosition1",
+    "memory_2": "MemoryPosition2",
+    "memory_3": "MemoryPosition3",
+    "memory_5": "MemoryPosition5",
+    "massage": "MassageModeAllOn",
+    "head_massage": "MassageHeadInstensityStrengthen",
+    "foot_massage": "MassageFootInstensityStrengthen",
+    "deep_sleep": "DeepSleepPosition",
+    "get_up": "HelpGetUpPosition",
+    "wake_up": "WakeUp",
+}
+
+
 def _is_transport_action(action: RichmatAction) -> bool:
     return action.action not in _LOCAL_ACTIONS and not action.action.startswith(
         (_PREFIX + "Title", "deviceFunctionSofa")
@@ -118,9 +144,9 @@ def _state_key(name: str) -> StateKey[StateValue | None]:
 
 
 # (entity key, reported state field, unit) of telemetry sensors.
+# The protocol version, an unexplained bed mode and the last received alarm
+# record (not an authoritative alarm list) stay in diagnostics.
 _TELEMETRY_SENSORS: Final = (
-    ("protocol_version", "protocol_version", None),
-    ("bed_mode", "bed_mode_mode", None),
     ("light_timer", "light_timer_seconds", "s"),
     ("massage_head_strength", "massage_head_strength", None),
     ("massage_foot_strength", "massage_foot_strength", None),
@@ -132,7 +158,6 @@ _TELEMETRY_SENSORS: Final = (
     ("heating_temperature", "heating_temperature", None),
     ("anti_snore_count", "anti_snore_intervention_count", None),
     ("anti_snore_time", "anti_snore_intervention_time", None),
-    ("alarm_record", "repeat_alarm_alarm_id", None),
 )
 # (entity key, reported state field) of telemetry binary sensors.
 _TELEMETRY_FLAGS: Final = (
@@ -140,6 +165,10 @@ _TELEMETRY_FLAGS: Final = (
     ("music_playing", "music_playing"),
     ("lock", "lock_locked"),
     ("rgb_motion", "rgb_motion_enabled"),
+)
+# Reported values a typical user wants on a dashboard.
+_ENABLED_TELEMETRY: Final = frozenset(
+    {"massage_head_strength", "massage_foot_strength", "massage_mode", "heating_temperature", "lock"}
 )
 
 
@@ -832,18 +861,7 @@ class RmcontrolController(RichmatController):
                 state_key=_state_key("rmcontrol_" + field),
                 icon="mdi:information-outline",
                 native_unit_of_measurement=unit,
-                attribute_keys=tuple(
-                    _state_key("rmcontrol_repeat_alarm_" + name)
-                    for name in (
-                        "record_flag",
-                        "hour",
-                        "minute",
-                        "command",
-                        "repeat_mask",
-                    )
-                )
-                if key == "alarm_record"
-                else (),
+                entity_registry_enabled_default=key in _ENABLED_TELEMETRY,
             )
             for key, field, unit in _TELEMETRY_SENSORS
             if "rmcontrol_" + field in self._reported_state
@@ -857,6 +875,7 @@ class RmcontrolController(RichmatController):
                 translation_key="rmcontrol_" + key,
                 state_key=_state_key("rmcontrol_" + field),
                 icon="mdi:information-outline",
+                entity_registry_enabled_default=key in _ENABLED_TELEMETRY,
             )
             for key, field in _TELEMETRY_FLAGS
             if "rmcontrol_" + field in self._reported_state
@@ -965,6 +984,67 @@ class RmcontrolController(RichmatController):
         )
         if not supported:
             raise NotImplementedError("This product has not advertised this RMControl alarm type")
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if not self.supports_rmcontrol_alarm:
+            return None
+        repeat = self.supports_rmcontrol_repeat_alarm
+        return AlarmCapability(
+            wake_actions=tuple(
+                action
+                for action, name in _ALARM_ACTIONS.items()
+                if self._alarm_action_available(name)
+            ),
+            # Repeating products keep seven numbered alarms; others count down once.
+            weekdays=repeat,
+            slots=7 if repeat else 1,
+            # The app always asks which action the alarm runs.
+            requires_wake_action=True,
+        )
+
+    def _alarm_action_available(self, name: str) -> bool:
+        try:
+            self._alarm_command(name)
+        except ValueError:
+            return False
+        return True
+
+    @staticmethod
+    def _alarm_action(alarm: AlarmRequest) -> str:
+        action = _ALARM_ACTIONS.get(alarm.wake_action)
+        if action is None:
+            raise ValueError("Choose a wake action this bed offers")
+        return action
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled:
+            self.validate_rmcontrol_alarm_action(self._alarm_action(alarm))
+            if self.supports_rmcontrol_repeat_alarm and not alarm.weekdays:
+                raise AlarmError(
+                    "alarm_weekdays_required", "Choose at least one day for this bed's repeating alarms"
+                )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        action = self._alarm_action(alarm) if alarm.enabled else None
+        if not self.supports_rmcontrol_repeat_alarm:
+            if action is not None:
+                await self.rmcontrol_single_alarm(alarm.minutes_until(dt_util.now()), action)
+            else:
+                await self.rmcontrol_single_alarm(0, None)
+        elif action is not None:
+            await self.rmcontrol_repeat_alarm(
+                alarm.slot, alarm.hour, alarm.minute, alarm.weekdays, action
+            )
+        else:
+            await self.rmcontrol_delete_alarm(alarm.slot)
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        return self.supports_rmcontrol_alarm_time_sync
+
+    async def sync_clock(self) -> None:
+        await self.rmcontrol_sync_alarm_time(dt_util.now())
 
     def validate_rmcontrol_alarm_action(self, action: str) -> None:
         """Reject actions absent or ambiguous in this product before any target writes."""

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import copy
 import dataclasses
 import logging
 import sys
@@ -37,6 +38,9 @@ from homeassistant.helpers.field_visibility import (
     FieldCondition,
 )
 from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
@@ -99,10 +103,14 @@ from .app_profiles import (
     per_side_profile,
 )
 from .bed_traits import (
+    asks_massage,
     bed_traits,
     bed_type_has_position_feedback,
-    disconnect_after_command_default_enabled,
+    connection_mode_is_fixed,
+    default_connection_mode,
     passive_position_reconciliation_default_enabled,
+    reads_positions,
+    store_read_positions,
     supports_passive_position_reconciliation,
 )
 from .beds.kaidi.metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
@@ -147,6 +155,7 @@ from .bond_verification import (
 )
 from .const import (
     ADAPTER_AUTO,
+    AUTOMATIC_LABEL,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
@@ -158,7 +167,6 @@ from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
-    BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
     BED_TYPE_GMMOTOR,
@@ -174,7 +182,6 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_AIR_PUMP,
-    BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
@@ -212,10 +219,9 @@ from .const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CONNECTION_PROFILE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
@@ -239,10 +245,10 @@ from .const import (
     CONF_PAIRLINK_PASSWORD_TEXT,
     CONF_PAIRLINK_ROLE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
-    CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_READ_POSITIONS,
     CONF_REVERSE_MOTORS,
     CONF_RMCONTROL_PRODUCT,
     CONF_STARCODE_LIFT_ENTRIES,
@@ -261,25 +267,23 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
-    CONNECTION_PROFILE_BALANCED,
-    CONNECTION_PROFILE_RELIABLE,
-    CONNECTION_PROFILES,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
+    CONNECTION_SETTINGS,
     DEFAULT_BACK_MAX_ANGLE,
-    DEFAULT_CONNECTION_PROFILE,
-    DEFAULT_DISABLE_ANGLE_SENSING,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_MOTOR_COUNT,
-    DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
-    IDLE_DISCONNECT_KEEP_CONNECTED,
     KEESON_LAYOUT_APP_BED_TYPES,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
+    MAX_IDLE_DISCONNECT_SECONDS,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OKIN_BEDDING_APP_BED_TYPES,
@@ -290,8 +294,6 @@ from .const import (
     PAIR_SIDES,
     PAIRLINK_ROLE_CENTRAL,
     PAIRLINK_ROLE_PERIPHERAL,
-    POSITION_MODE_ACCURACY,
-    POSITION_MODE_SPEED,
     PRODUCT_TYPES,
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
@@ -353,6 +355,7 @@ from .pairing import (
     is_paired,
     iter_children,
     pair_member_addresses,
+    side_owned_profile_fields,
     supports_single_address_pairing,
     with_updated_child,
 )
@@ -365,6 +368,7 @@ from .pairing_candidates import (
 from .position_estimate_flow import EstimatedPositionsFlowMixin
 from .profile_id import with_profile_ids
 from .profile_migration import (
+    SUGGESTED_CHOICE,
     MigrationSnapshot,
     async_control_changes,
     reconfigure_family,
@@ -460,6 +464,45 @@ async def _async_translation(hass: HomeAssistant, category: str, key: str, defau
     except Exception:  # noqa: BLE001 - a missing translation must not block a flow
         return default
     return translations.get(f"component.{DOMAIN}.{category}.{key}", default)
+
+
+# English fallbacks for the connection check's lines; the shipped text lives in
+# strings.json under step.verify_connection.data_description.
+_CHECK_FALLBACKS: Final[dict[str, str]] = {
+    "check_unresolved": (
+        "⚠️ The bed is advertising, but Home Assistant couldn't open a connection just "
+        "now. This is usually momentary. Select **Check again**, or finish setup and let "
+        "the integration keep trying."
+    ),
+    "check_not_advertising": (
+        "❌ The bed isn't advertising, so no connection was attempted. Wake it with its "
+        "remote, or move it closer to a Bluetooth adapter or proxy, then select **Check again**."
+    ),
+    "check_not_found": (
+        "❌ The bed wasn't found. It may be out of range or asleep. You can still finish "
+        "setup; the integration keeps trying to connect."
+    ),
+    "check_found": "✅ Bed found over Bluetooth",
+    "check_not_connected": (
+        "❌ Couldn't connect. Beds allow one connection at a time, so close the bed's app "
+        "and put the remote down, or move the bed closer. You can still finish setup and "
+        "try again later."
+    ),
+    "check_connected": "✅ Connected",
+    "check_connected_via": "✅ Connected through {source}",
+    "check_connected_via_proxy": "✅ Connected through Bluetooth proxy {source}",
+    "check_no_commands": (
+        "⚠️ The device connected but accepts no commands. It may not be your bed's "
+        "controller. Check that you chose the right device."
+    ),
+    "check_transport_missing": (
+        "❌ The connection type chosen for this app isn't available on this bed. Choose "
+        "Automatic, or another type."
+    ),
+    "check_transport_ok": "✅ The app's connection type is available",
+    "check_device_info": "ℹ️ The bed reports: {details}",
+    "check_positions": "✅ This bed type can report its position",
+}
 
 
 # English fallbacks for the pairing form's bond-state line. The shipped text
@@ -731,23 +774,6 @@ def _per_side_refusal(
     return None
 
 
-def _apply_bed_type_choice(user_input: dict[str, Any], shown_choice: str | None) -> None:
-    """Resolve an app entry of the bed-type selector into bed type and variant.
-
-    The app's variant applies only when the user picked that entry; an
-    unchanged selector leaves the variant field in charge.
-    """
-    choice = user_input.get(CONF_BED_TYPE)
-    if not isinstance(choice, str):
-        return
-    bed_type, variant = resolve_bed_type_choice(choice)
-    if variant is None:
-        return
-    user_input[CONF_BED_TYPE] = bed_type
-    if choice != shown_choice:
-        user_input[CONF_PROTOCOL_VARIANT] = variant
-
-
 def _setup_routes(bed_type: str | None) -> dict[str, str]:
     """Return the labelled routes a generic setup may choose for a bed type.
 
@@ -770,7 +796,7 @@ def _labelled_routes(bed_type: str) -> dict[str, str]:
     }
     if routes and VARIANT_AUTO not in routes and is_valid_variant_for_bed_type(bed_type, VARIANT_AUTO):
         # The bed type accepts its automatic route without labelling it.
-        routes = {VARIANT_AUTO: "Auto-detect (recommended)", **routes}
+        routes = {VARIANT_AUTO: AUTOMATIC_LABEL, **routes}
     return routes
 
 
@@ -1148,6 +1174,9 @@ def _hide_owned_generic_fields(
 ) -> None:
     """Drop the generic fields the selected app profile sets itself, except ``keep``."""
     hidden = hidden_generic_fields(bed_type, variant) - set(keep)
+    if CONF_DISABLE_ANGLE_SENSING in hidden:
+        # The profile sets the stored value behind Read bed position.
+        hidden = hidden | {CONF_READ_POSITIONS}
     for marker in tuple(schema):
         if marker.schema in hidden:
             del schema[marker]
@@ -1388,11 +1417,6 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
         return result.bed_type
     return None
 
-
-CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
-    CONNECTION_PROFILE_BALANCED: "Balanced (recommended)",
-    CONNECTION_PROFILE_RELIABLE: "Reliable (slower connect)",
-}
 
 MALOUF_BED_TYPES = frozenset({BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN})
 
@@ -1683,6 +1707,17 @@ def _keeson_route_label(bed_type: str, variant: str | None) -> str:
     return (get_variants_for_bed_type(bed_type) or {}).get(variant, variant)
 
 
+# The settings _apply_route_defaults replaces for a newly chosen route.
+_ROUTE_DEFAULT_KEYS: Final = (
+    CONF_PROTOCOL_VARIANT,
+    CONF_MOTOR_COUNT,
+    CONF_MOTOR_PULSE_COUNT,
+    CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_MOTOR_PULSE_USER_SET,
+    CONF_DISABLE_ANGLE_SENSING,
+)
+
+
 def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | None) -> None:
     """Give a newly chosen route the defaults Configure gives a bed-type change."""
     data[CONF_BED_TYPE] = bed_type
@@ -1705,7 +1740,8 @@ def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | No
     data[CONF_MOTOR_PULSE_COUNT] = pulse_count
     data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
     data[CONF_MOTOR_PULSE_USER_SET] = False
-    data[CONF_DISABLE_ANGLE_SENSING] = not bed_type_has_position_feedback(bed_type, route_variant)
+    # A new route reads its position exactly when it reports one.
+    data.pop(CONF_DISABLE_ANGLE_SENSING, None)
 
 
 def _configure_questions(
@@ -1805,12 +1841,21 @@ def _profile_question_schema(
     context: FlowContext,
     *,
     advanced_section: bool = True,
+    skip: Collection[str] = (),
+    errors: Mapping[str, str] | None = None,
 ) -> dict[vol.Marker, Any]:
-    """Render a profile's questions, its advanced ones in a collapsed section."""
+    """Render a profile's questions, its advanced ones in a collapsed section.
+
+    Questions in ``skip`` are not asked; a condition on one is settled by the
+    saved setup. The section opens when an error names one of its questions,
+    so it shows.
+    """
     schema: dict[vol.Marker, Any] = {}
     advanced: dict[vol.Marker, Any] = {}
-    shown = {question.key for question in profile.questions}
+    shown = {question.key for question in profile.questions} - set(skip)
     for question in profile.questions:
+        if question.key in skip:
+            continue
         # A condition on an answer this form does not ask, such as a route
         # Configure leaves to the guided change, is settled by the saved setup.
         visible = question.condition_fields() <= shown
@@ -1819,7 +1864,10 @@ def _profile_question_schema(
         marker, validator = _question_field(question, data, context, visible=visible)
         (advanced if question.advanced and advanced_section else schema)[marker] = validator
     if advanced:
-        schema[vol.Optional("advanced")] = section(vol.Schema(advanced), {"collapsed": True})
+        named = {marker.schema for marker in advanced} & set(errors or ())
+        schema[vol.Optional("advanced")] = section(
+            vol.Schema(advanced), {"collapsed": not named}
+        )
     return schema
 
 
@@ -1857,16 +1905,93 @@ def _profile_answers(
     return answers
 
 
-_PULSE_FIELDS: Final = (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
+# The one movement timing a user may tune: how many times a tap repeats its
+# command (#510). The repeat delay stays each bed's own.
+_PULSE_FIELDS: Final = (CONF_MOTOR_PULSE_COUNT,)
+_PULSE_COUNT_RANGE: Final = (1, 100)
 _ANGLE_LIMITS: Final[dict[str, float]] = {
     CONF_BACK_MAX_ANGLE: DEFAULT_BACK_MAX_ANGLE,
     CONF_LEGS_MAX_ANGLE: DEFAULT_LEGS_MAX_ANGLE,
 }
-_POSITION_MODES: Final = {
-    POSITION_MODE_SPEED: "Speed (recommended)",
-    POSITION_MODE_ACCURACY: "Accuracy",
-}
 _TEXT: Final = TextSelector(TextSelectorConfig())
+_CONNECTION_MODE_SELECTOR: Final = SelectSelector(
+    SelectSelectorConfig(
+        options=[CONNECTION_MODE_RELEASE, CONNECTION_MODE_IDLE, CONNECTION_MODE_ALWAYS],
+        translation_key="connection_mode",
+        mode=SelectSelectorMode.LIST,
+    )
+)
+_IDLE_SECONDS_SELECTOR: Final = NumberSelector(
+    NumberSelectorConfig(
+        min=1,
+        max=MAX_IDLE_DISCONNECT_SECONDS,
+        step=1,
+        mode=NumberSelectorMode.BOX,
+        unit_of_measurement="s",
+    )
+)
+
+
+def _pulse_count_selector(bed_type: str, saved: object) -> NumberSelector:
+    """Return Movement per tap's field, keeping room for a larger count saved earlier."""
+    high = _PULSE_COUNT_RANGE[1]
+    if bed_type in {BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}:
+        # These apps' 100 ms taps have their own, longer range.
+        high = ZSERIES_PULSE_COUNT_RANGE[1]
+    if isinstance(saved, int) and saved > high:
+        high = saved
+    return NumberSelector(
+        NumberSelectorConfig(min=_PULSE_COUNT_RANGE[0], max=high, step=1, mode=NumberSelectorMode.BOX)
+    )
+
+
+def _connection_fields(
+    data: Mapping[str, Any], bed_type: str, variant: str
+) -> dict[vol.Marker, Any]:
+    """Return the connection mode and its idle seconds, shown only for that mode.
+
+    A bed that holds its link whatever the mode says gets neither.
+    """
+    if connection_mode_is_fixed(bed_type, variant):
+        return {}
+    from homeassistant import data_entry_flow
+
+    mode = data.get(CONF_CONNECTION_MODE)
+    if mode not in (CONNECTION_MODE_RELEASE, CONNECTION_MODE_IDLE, CONNECTION_MODE_ALWAYS):
+        mode = default_connection_mode(bed_type, variant)
+    seconds = data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS)
+    if not isinstance(seconds, int) or not 1 <= seconds <= MAX_IDLE_DISCONNECT_SECONDS:
+        seconds = DEFAULT_IDLE_DISCONNECT_SECONDS
+    return {
+        vol.Optional(CONF_CONNECTION_MODE, default=mode): _CONNECTION_MODE_SELECTOR,
+        data_entry_flow.Optional(
+            CONF_IDLE_DISCONNECT_SECONDS,
+            default=seconds,
+            visible=FieldCondition(
+                field=CONF_CONNECTION_MODE,
+                operator=ConditionOperator("in"),
+                value=[CONNECTION_MODE_IDLE],
+            ),
+        ): _IDLE_SECONDS_SELECTOR,
+    }
+
+
+def _unused_generic_fields(bed_type: str, variant: str | None) -> set[str]:
+    """Return the generic settings a route ignores or sets itself, which no form shows."""
+    unused: set[str] = set()
+    if not asks_massage(bed_type):
+        unused.add(CONF_HAS_MASSAGE)
+    if len(_motor_count_options(bed_type, variant or VARIANT_AUTO)) < 2:
+        # The route fixes its motor count.
+        unused.add(CONF_MOTOR_COUNT)
+    fixed = bed_traits(bed_type, variant).max_angles
+    if "back" in fixed:
+        unused.add(CONF_BACK_MAX_ANGLE)
+    if "legs" in fixed:
+        unused.add(CONF_LEGS_MAX_ANGLE)
+    if CONF_DISABLE_ANGLE_SENSING in hidden_generic_fields(bed_type, variant):
+        unused.add(CONF_READ_POSITIONS)
+    return unused
 
 
 def _settings_fields(
@@ -1880,44 +2005,45 @@ def _settings_fields(
     """Return the generic settings fields ``keys`` for a route, in that order.
 
     Each shows its saved value, else the caller's default, else the route's own:
-    its pulse timing, its disconnect-after-command default and so on.
+    its movement per tap, its connection mode and so on. ``CONF_CONNECTION_MODE``
+    adds its idle seconds too.
     """
     adapters = get_available_adapters(hass)
     route_defaults: dict[str, Any] = {
         CONF_NAME: "Adjustable Bed",
         CONF_MOTOR_COUNT: DEFAULT_MOTOR_COUNT,
         CONF_HAS_MASSAGE: DEFAULT_HAS_MASSAGE,
-        CONF_DISABLE_ANGLE_SENSING: DEFAULT_DISABLE_ANGLE_SENSING,
-        CONF_POSITION_MODE: DEFAULT_POSITION_MODE,
         CONF_PASSIVE_POSITION_RECONCILIATION: passive_position_reconciliation_default_enabled(
             bed_type
         ),
         CONF_PREFERRED_ADAPTER: ADAPTER_AUTO,
-        CONF_CONNECTION_PROFILE: DEFAULT_CONNECTION_PROFILE,
-        **dict(zip(_PULSE_FIELDS, get_motor_pulse_defaults(bed_type, variant), strict=True)),
-        CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command_default_enabled(bed_type, variant),
-        CONF_IDLE_DISCONNECT_SECONDS: DEFAULT_IDLE_DISCONNECT_SECONDS,
+        CONF_MOTOR_PULSE_COUNT: get_motor_pulse_defaults(bed_type, variant)[0],
         **_ANGLE_LIMITS,
         **(defaults or {}),
     }
     validators: dict[str, Any] = {
         CONF_NAME: str,
         CONF_MOTOR_COUNT: vol.All(vol.Coerce(int), vol.In(_motor_count_options(bed_type, variant))),
-        CONF_POSITION_MODE: vol.In(_POSITION_MODES),
         CONF_PREFERRED_ADAPTER: vol.In(adapters),
-        CONF_CONNECTION_PROFILE: vol.In(CONNECTION_PROFILE_OPTIONS),
-        CONF_IDLE_DISCONNECT_SECONDS: vol.All(
-            vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)
-        ),
-        **dict.fromkeys((*_PULSE_FIELDS, *_ANGLE_LIMITS), _TEXT),
+        CONF_MOTOR_PULSE_COUNT: _pulse_count_selector(bed_type, data.get(CONF_MOTOR_PULSE_COUNT)),
+        **dict.fromkeys(_ANGLE_LIMITS, _TEXT),
     }
     fields: dict[vol.Marker, Any] = {}
     for key in keys:
+        if key == CONF_CONNECTION_MODE:
+            fields.update(_connection_fields(data, bed_type, variant))
+            continue
+        if key == CONF_READ_POSITIONS:
+            default = defaults.get(key) if defaults and key in defaults else reads_positions(
+                {CONF_BED_TYPE: bed_type, CONF_PROTOCOL_VARIANT: variant, **data}
+            )
+            fields[vol.Optional(key, default=bool(default))] = bool
+            continue
         default = data.get(key, route_defaults[key])
         if key == CONF_PREFERRED_ADAPTER and default not in adapters:
             # A stored adapter that has gone falls back to automatic.
             default = ADAPTER_AUTO
-        elif key in _PULSE_FIELDS or key in _ANGLE_LIMITS:
+        elif key in _ANGLE_LIMITS:
             default = str(default)
         fields[vol.Optional(key, default=default)] = validators.get(key, bool)
     return fields
@@ -1926,27 +2052,41 @@ def _settings_fields(
 def _parse_settings(
     submitted: Mapping[str, Any], bed_type: str, pulse_defaults: tuple[int, int]
 ) -> tuple[dict[str, Any], dict[str, str]]:
-    """Return the submitted pulse timing and angle limits as numbers, and errors by field.
+    """Return the submitted generic settings as stored values, and errors by field.
 
-    A blank field takes its default. Only the fields submitted are returned.
+    Movement per tap and the angle limits become numbers (a blank field takes
+    its default), the connection mode keeps its idle seconds, and Read bed
+    position stays a form value for ``store_read_positions``. Only the fields
+    submitted are returned.
     """
     values: dict[str, Any] = {}
     errors: dict[str, str] = {}
-    for key, default in zip(_PULSE_FIELDS, pulse_defaults, strict=True):
-        if key not in submitted:
-            continue
+    if CONF_MOTOR_PULSE_COUNT in submitted:
+        raw = submitted[CONF_MOTOR_PULSE_COUNT]
         try:
-            values[key] = int(submitted[key] or default)
+            count = int(float(raw)) if raw not in (None, "") else pulse_defaults[0]
         except ValueError, TypeError:
-            errors[key] = "invalid_number"
-            continue
-        if key == CONF_MOTOR_PULSE_COUNT and _invalid_pulse_count(bed_type, values[key]):
-            # The profile's own range names the limits.
-            errors[key] = "invalid_pulse_count_range"
-        elif values[key] < 1:
-            errors[key] = "invalid_number"
-    if CONF_MOTOR_PULSE_COUNT not in submitted and _invalid_pulse_count(bed_type, pulse_defaults[0]):
+            errors[CONF_MOTOR_PULSE_COUNT] = "invalid_number"
+        else:
+            values[CONF_MOTOR_PULSE_COUNT] = count
+            if _invalid_pulse_count(bed_type, count):
+                # The profile's own range names the limits.
+                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+            elif count < _PULSE_COUNT_RANGE[0]:
+                # The field bounds the rest; a larger count saved earlier stays valid.
+                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_movement_per_tap"
+    elif _invalid_pulse_count(bed_type, pulse_defaults[0]):
         errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+    if CONF_IDLE_DISCONNECT_SECONDS in submitted:
+        try:
+            seconds = int(float(submitted[CONF_IDLE_DISCONNECT_SECONDS]))
+        except ValueError, TypeError:
+            errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_number"
+        else:
+            if 1 <= seconds <= MAX_IDLE_DISCONNECT_SECONDS:
+                values[CONF_IDLE_DISCONNECT_SECONDS] = seconds
+            else:
+                errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_number"
     for key, default in _ANGLE_LIMITS.items():
         if key not in submitted:
             continue
@@ -2017,16 +2157,6 @@ def _with_family(option: SelectOptionDict) -> SelectOptionDict:
     return SelectOptionDict(value=option["value"], label=f"{app}{FAMILY_ROW_SEPARATOR}{family}")
 
 
-# Routes whose choice opens the app's own settings.
-APP_SETTINGS_BED_TYPES: Final = (
-    _DECLARED_QUESTION_ROUTES
-    | {bed_type for family in APP_FAMILIES if not family.picks_route for bed_type in family.asks}
-    # FSM Relax asks its own settings after the Limoss question, and the Malouf
-    # family step stages the app, whose model is asked after it.
-    | {BED_TYPE_FSM_RELAX, BED_TYPE_MALOUF_APP}
-)
-
-
 def _skips_setup_connection_probe(bed_type: str | None, variant: str | None) -> bool:
     """Return True when setup should avoid a redundant Gen2 connection cycle.
 
@@ -2078,12 +2208,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # version 2 stores v4.0.2 aliases and per-app keys under one name. Minor
     # version 3 marks older entries for the one-time app profile review. v5
     # stores the profile id each entry runs (profile_id.py); setup derives it
-    # for new entries. Minor version 2 drops the obsolete keys recorded in
-    # docs/design/config-keys.md; minor version 3 turns Massage off on layouts
+    # for new entries. Minor version 2 drops the obsolete keys in
+    # V5_2_OBSOLETE_KEYS; minor version 3 turns Massage off on layouts
     # whose profile has no massage; minor version 5 stores each Octo setup's
     # motor layout as its override.
     VERSION = 5
-    MINOR_VERSION = 5
+    MINOR_VERSION = 6
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -2158,18 +2288,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         pairing = ""
         if requires_pairing(data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)):
             pairing = " " + await text("pairing", "It requires Bluetooth pairing.")
-        # Only a route with a guided change can choose its app in Reconfigure.
-        later = (
-            await text(
-                "later_reconfigure",
-                "To choose your app later, open **Reconfigure** from this entry's "
-                "three-dot menu. **Configure › Change app or layout** points there too.",
-            )
-            if reconfigure_family(data) is not None
-            else await text(
-                "later_configure",
-                "To choose your app later, change **Bed type** in **Configure › Change settings**.",
-            )
+        later = await text(
+            "later",
+            "To choose your app later, open **Reconfigure** from this entry's three-dot menu.",
         )
         return self.async_show_menu(
             step_id="keep_detected",
@@ -2206,15 +2327,120 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Stage a guided app or layout change without changing the working entry."""
         entry = self._get_reconfigure_entry()
         family = reconfigure_family(entry.data)
-        if family is None:
-            return self.async_abort(reason="reconfigure_not_supported")
+        suggested = self.context.get(SUGGESTED_CHOICE)
+        if (
+            family is not None
+            and isinstance(suggested, str)
+            and resolve_bed_type_choice(suggested)[0] not in family.managed | family.asks
+        ):
+            # A repair suggests an app outside the family, which its question
+            # cannot offer; the full bed-type list can.
+            family = None
         if self._migration is None:
             self._migration = MigrationSnapshot.of(entry)
             self._migration_family = family
             self._manual_data = self._migration.staged(entry.title)
         if is_paired(entry.data):
             return await self.async_step_migration_split(user_input)
+        if family is None:
+            return await self.async_step_reconfigure_bed_type()
+        # The family question also offers every other bed type and app.
+        self._another_app_step = family.step
         return await getattr(self, f"async_step_{family.step}")(user_input)
+
+    async def async_step_reconfigure_bed_type(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose any bed type or app for an entry no guided family asks about.
+
+        The answer runs the same questions and checks a new bed would, on a
+        staged copy, and the change is saved only after its review.
+        """
+        assert self._manual_data is not None
+        data = self._manual_data
+        saved_variant = data.get(CONF_PROTOCOL_VARIANT)
+        current = bed_type_choice(
+            data[CONF_BED_TYPE], saved_variant if isinstance(saved_variant, str) else None
+        )
+        suggested = self.context.get(SUGGESTED_CHOICE)
+        shown = suggested if isinstance(suggested, str) else current
+        # The list keeps a default it does not offer, such as a route behind a
+        # family row.
+        picker = _bed_type_selector(shown, show_saved_id=True)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            bed_type, variant = resolve_bed_type_choice(picker(user_input[CONF_BED_TYPE]))
+            # An app that does not list the bed's model would only trade its
+            # controls for the fallback ones.
+            if bed_type == BED_TYPE_REMACRO and variant is not None:
+                problem, _ = remacro_entry_problem(
+                    {**data, CONF_PROTOCOL_VARIANT: variant},
+                    remacro_manufacturer_data(self.hass, data[CONF_ADDRESS]),
+                )
+                if problem == "not_in_app":
+                    errors[CONF_BED_TYPE] = "remacro_model_not_in_app"
+            if not errors:
+                self._select_family_route(bed_type, variant)
+                if variant is None and len(_setup_routes(bed_type)) >= 2:
+                    return await self.async_step_reconfigure_route()
+                return await self._async_reconfigure_continue(exact=variant is not None)
+        return self.async_show_form(
+            step_id="reconfigure_bed_type",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_BED_TYPE, default=picker.shown(shown)): picker}
+            ),
+            errors=errors,
+            description_placeholders={"current": self._migration_selection_label(data)},
+        )
+
+    async def async_step_reconfigure_route(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the route of a bed type with several, as new-bed setup offers."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        bed_type: str = data[CONF_BED_TYPE]
+        routes = _setup_routes(bed_type)
+        current = data.get(CONF_PROTOCOL_VARIANT)
+        if current not in routes:
+            current = next(iter(routes))
+        if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
+            chosen = user_input[CONF_PROTOCOL_VARIANT]
+            if chosen != (data.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO):
+                # The saved route, even unsaved as auto, keeps its settings.
+                self._select_family_route(bed_type, chosen)
+            return await self._async_reconfigure_continue(exact=True)
+        return self.async_show_form(
+            step_id="reconfigure_route",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_PROTOCOL_VARIANT, default=current): vol.In(routes)}
+            ),
+            description_placeholders={"bed_type": bed_type_label(bed_type)},
+        )
+
+    async def _async_reconfigure_continue(self, *, exact: bool) -> ConfigFlowResult:
+        """Ask the staged route's own questions, then pair, check and review it.
+
+        A family's own row asks the family's question; an app row or a route
+        already names the exact route, as it does at setup. The destination's
+        family check and an Octo PIN check run before the review.
+        """
+        assert self._manual_data is not None
+        bed_type = self._manual_data[CONF_BED_TYPE]
+        # The destination's own family checks its link before the review.
+        self._migration_family = next(
+            (family for family in GUIDED_FAMILIES if bed_type in family.managed | family.asks),
+            None,
+        )
+        if exact or any(
+            bed_type in family.asks and bed_type != family.row for family in APP_FAMILIES
+        ):
+            return await self._async_continue_route()
+        if app_step := await self._async_app_setup_step(
+            self._manual_data, pairing_step="manual_pairing"
+        ):
+            return app_step
+        return await self._async_finish_family_route()
 
     async def async_step_migration_split(
         self, user_input: dict[str, Any] | None = None
@@ -2260,6 +2486,28 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         """Choose by app or keep the historical setup, never infer a profile."""
         return await self._async_family_step(VIBRADORM_FAMILY, user_input)
+
+    async def _async_abort_unchanged(self) -> ConfigFlowResult:
+        """End a change that resolves to the saved setup, settling a review that opened it.
+
+        Choosing the current setup again answers a suggestion as Keep would.
+        """
+        from .const import CONF_PROFILE_REVIEW_PENDING
+        from .profile_recommendations import (
+            async_complete_profile_review,
+            async_confirm_profile_review,
+        )
+        from .profile_review import async_keep_current_profile
+
+        entry = self._get_reconfigure_entry()
+        if CONF_PROFILE_REVIEW_PENDING in entry.data and self._migration_unchanged():
+            # The upgrade review that opened this is answered too.
+            async_keep_current_profile(self.hass, entry)
+        await async_confirm_profile_review(
+            self.hass, entry, self.flow_id, {**entry.data, **entry.options}
+        )
+        async_complete_profile_review(self.hass, entry, self.flow_id)
+        return self.async_abort(reason="migration_unchanged")
 
     def _migration_unchanged(self) -> bool:
         return self._migration is not None and self._migration.matches(
@@ -2389,9 +2637,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             errors=errors,
             description_placeholders={
                 "name": entry.title,
-                "current": self._migration_selection_label(
-                    {**self._migration.data, **self._migration.options}
-                ),
+                # The bed runs the route in data; an options copy never ran.
+                "current": self._migration_selection_label(self._migration.data),
                 "selection": self._migration_selection_label(self._pending_entry),
                 "summary": summary,
             },
@@ -2428,9 +2675,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             options.pop(key, None)
         # The staged copy carries the saved route's profile id; derive the new one.
         data = with_profile_ids(data, options)
-        if {**data, **options} == {**self._migration.data, **self._migration.options}:
+        if {**data, **options} == {
+            **self._migration.data,
+            **self._migration.options,
+        } and self._migration.runs_route_of(data):
             # The answer resolves to the saved route: nothing to migrate.
-            return self.async_abort(reason="migration_unchanged")
+            return await self._async_abort_unchanged()
         kept = _limoss_remote_features_left(
             {**self._migration.data, **self._migration.options}, {**data, **options}
         )
@@ -2453,9 +2703,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={
                 "name": entry.title,
                 "selection": self._migration_selection_label({**data, **options}),
-                "current": self._migration_selection_label(
-                    {**self._migration.data, **self._migration.options}
-                ),
+                "current": self._migration_selection_label(self._migration.data),
             },
         )
         from .profile_recommendations import (
@@ -2490,6 +2738,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self._async_new_bed_settings("route")
         assert self._manual_data is not None
         data = self._manual_data
+        if self._migration is not None and data[CONF_BED_TYPE] != self._migration.data.get(
+            CONF_BED_TYPE
+        ):
+            # The previous bed type's own settings must not steer pairing, the
+            # check or the saved entry, such as a VMAT app's bond and timeout.
+            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
+                data, data[CONF_BED_TYPE]
+            )
         if self._migration is not None and grants_one_connection_per_pairing_window(
             data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)
         ):
@@ -2528,6 +2784,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         data = self._manual_data
         self._migration_verified = False
         self._migration_preview = {}
+        if self._migration is not None:
+            # Options win over data, as for the running entry.
+            saved = {**self._migration.data, **self._migration.options}
+            if bed_type == saved.get(CONF_BED_TYPE) and variant in (
+                None,
+                saved.get(CONF_PROTOCOL_VARIANT),
+            ):
+                # Back on the saved route: the generic settings another route's
+                # defaults replaced come back, such as Movement per tap. App
+                # settings stay as the family's answer left them.
+                data[CONF_BED_TYPE] = bed_type
+                for key in _ROUTE_DEFAULT_KEYS:
+                    if key in saved:
+                        data[key] = copy.deepcopy(saved[key])
+                    else:
+                        data.pop(key, None)
+                return
         if bed_type == data[CONF_BED_TYPE] and variant in (None, data.get(CONF_PROTOCOL_VARIANT)):
             return
         _apply_route_defaults(data, bed_type, variant)
@@ -2836,7 +3109,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     ) -> ConfigFlowResult:
         return self.async_show_form(
             step_id="profile_questions",
-            data_schema=vol.Schema(_profile_question_schema(profile, data, FlowContext(self.hass))),
+            data_schema=vol.Schema(
+                _profile_question_schema(profile, data, FlowContext(self.hass), errors=errors)
+            ),
             errors=errors,
             description_placeholders={
                 "profile": profile.title(data) if profile.title else bed_type_label(data[CONF_BED_TYPE])
@@ -2898,8 +3173,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # questions, then its final settings (#676 direction A).
         self._new_bed_origin: Literal["discovered", "picked", "typed"] = "discovered"
         self._typed_address: str | None = None
-        # A picked device keeps the adapter that found it as its default.
-        self._device_adapter: str = ADAPTER_AUTO
         self._final_settings_pending = False
         self._final_settings_then: Literal["route", "verify"] = "route"
         # Generic fields a family or app step asked or set itself, outside a
@@ -3657,6 +3930,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         answer = (user_input or {}).get("choice")
         if self._another_app_step is None or answer != _ANOTHER_APP:
             return None
+        if self._migration is not None:
+            # Reconfigure leaves the family for the full bed-type list.
+            self._another_app_step = None
+            self._migration_family = None
+            return await self.async_step_reconfigure_bed_type()
         return await self._async_search_every_app()
 
     async def _async_search_every_app(self) -> ConfigFlowResult:
@@ -3681,7 +3959,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             CONF_NAME: (info.name if info is not None else None) or "Adjustable Bed",
             CONF_BED_TYPE: bed_type,
             CONF_PROTOCOL_VARIANT: variant or _default_setup_route(bed_type),
-            CONF_PREFERRED_ADAPTER: self._device_adapter,
+            # Home Assistant chooses the path for every new bed: the scanner
+            # that happened to list a picked one is no preference.
+            CONF_PREFERRED_ADAPTER: ADAPTER_AUTO,
         }
         if bed_type == BED_TYPE_SOLACE and info is not None and info.name:
             data[CONF_BLE_DEVICE_NAME] = info.name
@@ -3757,10 +4037,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         await async_import_profile(self.hass, _final_settings_questions(bed_type, variant))
         info = self._discovery_info
         signals = detect_bed_type_detailed(info).signals if info is not None else None
-        hidden = {*hidden_generic_fields(bed_type, variant), *self._journey_set}
-        if len(_motor_count_options(bed_type, variant)) < 2:
-            # The route fixes its motor count.
-            hidden.add(CONF_MOTOR_COUNT)
+        hidden = {
+            *hidden_generic_fields(bed_type, variant),
+            *_unused_generic_fields(bed_type, variant),
+            *self._journey_set,
+        }
         routes = (
             {}
             if (bed_type, variant) in APP_VARIANT_CHOICES or CONF_PROTOCOL_VARIANT in hidden
@@ -3807,8 +4088,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         defaults = {
             CONF_MOTOR_COUNT: self._new_bed_motor_count(bed_type),
             # Positions are read unless the user turns them off.
-            CONF_DISABLE_ANGLE_SENSING: False,
-            **dict(zip(_PULSE_FIELDS, get_motor_pulse_defaults(bed_type, variant, signals), strict=True)),
+            CONF_READ_POSITIONS: True,
+            CONF_MOTOR_PULSE_COUNT: get_motor_pulse_defaults(bed_type, variant, signals)[0],
         }
 
         def fields(*keys: str) -> dict[vol.Marker, Any]:
@@ -3818,18 +4099,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         schema = fields(CONF_NAME, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE)
         if any(bed_type_has_position_feedback(bed_type, route) for route in (variant, *routes)):
-            schema.update(fields(CONF_DISABLE_ANGLE_SENSING))
+            schema.update(fields(CONF_READ_POSITIONS))
         if (questions := _final_settings_questions(bed_type, variant)) is not None:
             schema.update(
                 _profile_question_schema(
                     questions, data, FlowContext(self.hass), advanced_section=False
                 )
             )
-        schema.update(fields(CONF_PREFERRED_ADAPTER, CONF_DISCONNECT_AFTER_COMMAND))
+        schema.update(fields(CONF_PREFERRED_ADAPTER, CONF_CONNECTION_MODE))
         if len(routes) >= 2 and (advanced := _route_section(bed_type, variant)) is not None:
             schema[vol.Optional("advanced")] = advanced
-        timing = fields(*_PULSE_FIELDS, CONF_IDLE_DISCONNECT_SECONDS)
-        schema[vol.Optional("timing")] = section(vol.Schema(timing), {"collapsed": True})
+        if timing := fields(*_PULSE_FIELDS):
+            schema[vol.Optional("timing")] = section(vol.Schema(timing), {"collapsed": True})
         return schema
 
     def _detected_richmat_remote(self) -> str | None:
@@ -3869,17 +4150,37 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         submitted = {key: value for key, value in submitted.items() if key not in hidden}
         pulse_defaults = get_motor_pulse_defaults(bed_type, variant, signals)
         drawn = get_motor_pulse_defaults(bed_type, drawn_variant, signals)
-        shown = {key: data.get(key, value) for key, value in zip(_PULSE_FIELDS, drawn, strict=True)}
+        shown_pulse = data.get(CONF_MOTOR_PULSE_COUNT, drawn[0])
         # Left as drawn: the staged value, or the chosen route's own default.
-        answered = {
-            key: submitted[key]
-            for key in _PULSE_FIELDS
-            if submitted.get(key) not in (None, "") and str(submitted[key]) != str(shown[key])
-        }
-        pulse, errors = _parse_settings(
-            {**(shown if variant == drawn_variant else {}), **answered}, bed_type, pulse_defaults
+        answered = submitted.get(CONF_MOTOR_PULSE_COUNT) not in (None, "") and str(
+            submitted[CONF_MOTOR_PULSE_COUNT]
+        ) not in (str(shown_pulse), f"{shown_pulse}.0")
+        same_route = variant == drawn_variant
+        parsed, errors = _parse_settings(
+            {
+                **({CONF_MOTOR_PULSE_COUNT: shown_pulse} if same_route else {}),
+                **(
+                    {CONF_MOTOR_PULSE_COUNT: submitted[CONF_MOTOR_PULSE_COUNT]}
+                    if answered
+                    else {}
+                ),
+                **(
+                    {CONF_IDLE_DISCONNECT_SECONDS: submitted[CONF_IDLE_DISCONNECT_SECONDS]}
+                    if CONF_IDLE_DISCONNECT_SECONDS in submitted
+                    else {}
+                ),
+            },
+            bed_type,
+            pulse_defaults,
         )
-        pulse = {**dict(zip(_PULSE_FIELDS, pulse_defaults, strict=True)), **pulse}
+        pulse = {
+            CONF_MOTOR_PULSE_COUNT: parsed.get(CONF_MOTOR_PULSE_COUNT, pulse_defaults[0]),
+            CONF_MOTOR_PULSE_DELAY_MS: (
+                data.get(CONF_MOTOR_PULSE_DELAY_MS, pulse_defaults[1])
+                if same_route
+                else pulse_defaults[1]
+            ),
+        }
         # A count the form did not show is the route's to set; the app or its
         # name may still settle it at runtime, as for an Octo RTV.
         shown_count = (
@@ -3907,13 +4208,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             CONF_HAS_MASSAGE: submitted.get(
                 CONF_HAS_MASSAGE, data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
             ),
-            CONF_DISABLE_ANGLE_SENSING: submitted.get(
-                CONF_DISABLE_ANGLE_SENSING,
-                data.get(
-                    CONF_DISABLE_ANGLE_SENSING,
-                    not bed_type_has_position_feedback(bed_type, variant),
-                ),
-            ),
             CONF_PREFERRED_ADAPTER: submitted.get(
                 CONF_PREFERRED_ADAPTER, data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
             ),
@@ -3921,21 +4215,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # The user saw these, so a protocol migration must not treat them as
             # generated defaults, unless a route the app chose set them. Timing
             # the user changed is theirs.
-            CONF_MOTOR_PULSE_USER_SET: bool(answered) or data.get(CONF_MOTOR_PULSE_USER_SET, True),
-            CONF_DISCONNECT_AFTER_COMMAND: bool(
-                submitted.get(
-                    CONF_DISCONNECT_AFTER_COMMAND,
-                    data.get(
-                        CONF_DISCONNECT_AFTER_COMMAND,
-                        disconnect_after_command_default_enabled(bed_type, variant),
-                    ),
-                )
-            ),
-            CONF_IDLE_DISCONNECT_SECONDS: submitted.get(
+            CONF_MOTOR_PULSE_USER_SET: answered or data.get(CONF_MOTOR_PULSE_USER_SET, True),
+        }
+        if not connection_mode_is_fixed(bed_type, variant):
+            entry[CONF_CONNECTION_MODE] = submitted.get(
+                CONF_CONNECTION_MODE,
+                data.get(CONF_CONNECTION_MODE, default_connection_mode(bed_type, variant)),
+            )
+            entry[CONF_IDLE_DISCONNECT_SECONDS] = parsed.get(
                 CONF_IDLE_DISCONNECT_SECONDS,
                 data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS),
-            ),
-        }
+            )
         if CONF_PROTOCOL_VARIANT in data or variant != data.get(CONF_PROTOCOL_VARIANT, VARIANT_AUTO):
             entry[CONF_PROTOCOL_VARIANT] = variant
         if (questions := _final_settings_questions(bed_type, variant)) is not None:
@@ -3946,6 +4236,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         elif (profile := setup_profile_for(entry)) is not None and not profile.questions:
             # A fixed app still owns its defaults when it has no questions to ask.
             entry.update(profile.settled(entry))
+        read = submitted.get(CONF_READ_POSITIONS)
+        store_read_positions(
+            entry,
+            bool(read)
+            if isinstance(read, bool) and bed_type_has_position_feedback(bed_type, variant)
+            else None,
+        )
         entry = self._maybe_add_advertisement_metadata(entry, manufacturer_data=manufacturer_data)
         _LOGGER.info(
             "New bed: address=%s, type=%s, variant=%s, motors=%s, adapter=%s",
@@ -4042,6 +4339,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if address == "pair_beds":
                 _LOGGER.debug("User selected combine two beds")
                 return await self.async_step_pair_beds()
+            if address == "discovery":
+                return await self.async_step_discovery_settings()
 
             _LOGGER.info("User selected device: %s", address)
             # Normalize address to uppercase to match Bluetooth discovery
@@ -4159,6 +4458,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         ]
         if len(self._pairable_single_entries()) >= 2:
             options.append(SelectOptionDict(value="pair_beds", label="pair_beds"))
+        options.append(SelectOptionDict(value="discovery", label="discovery"))
 
         return self.async_show_form(
             step_id="user",
@@ -4230,6 +4530,29 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if step == "manual_entry":
             return await self.async_step_manual_entry()
         return await self.async_step_manual()
+
+    async def async_step_discovery_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Turn automatic discovery of new beds on or off for the whole integration.
+
+        Home Assistant has no per-integration switch for this, and it belongs to
+        no single bed, so it lives where beds are added.
+        """
+        if user_input is not None:
+            await async_set_discovery_disabled(self.hass, not user_input["discover_new_beds"])
+            return self.async_abort(reason="discovery_saved")
+        return self.async_show_form(
+            step_id="discovery_settings",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        "discover_new_beds",
+                        default=not await async_is_discovery_disabled(self.hass),
+                    ): bool
+                }
+            ),
+        )
 
     async def async_step_scan(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Run an explicit discovery sweep behind the existing progress view."""
@@ -4461,8 +4784,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._discovery_info.name, self._discovery_info.address
             )
             self._new_bed_origin = "picked"
-            source = getattr(self._discovery_info, "source", None) or ADAPTER_AUTO
-            self._device_adapter = str(source)
             if self._selected_bed_type is None:
                 # Pick any Bluetooth device: the app question follows the device.
                 self._app_after_device = "device"
@@ -4570,7 +4891,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._discovery_info = None
                 self._typed_address = address
                 self._new_bed_origin = "typed"
-                self._device_adapter = ADAPTER_AUTO
                 return await self._async_start_new_bed(
                     self._selected_bed_type, self._selected_protocol_variant
                 )
@@ -4602,7 +4922,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and self._migration.is_unchanged_by(self._manual_data)
         ):
             # A label that resolves to the saved route never migrates anything.
-            return self.async_abort(reason="migration_unchanged")
+            return await self._async_abort_unchanged()
         address = self._manual_data.get(CONF_ADDRESS, "")
         bed_type = self._manual_data.get(CONF_BED_TYPE)
         variant = self._manual_data.get(CONF_PROTOCOL_VARIANT)
@@ -5584,7 +5904,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if request_bond
                     and self._manual_data is not None
                     and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
-                    else CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE].connection_timeout
+                    else CONNECTION_SETTINGS.connection_timeout
                 ),
                 **connect_kwargs,
             )
@@ -5838,7 +6158,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if self._migration is not None:
             if self._migration_requires_check and not self._migration_verified:
                 return self.async_abort(reason="migration_verification_required")
-            self._pending_entry = dict(data)
+            data = dict(data)
+            if data.get(CONF_BED_TYPE) != self._migration.data.get(CONF_BED_TYPE):
+                # The running bed type's own settings must not steer the final
+                # one, such as a VMAT app's connection timeout.
+                AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
+                    data, data[CONF_BED_TYPE]
+                )
+            self._pending_entry = data
             return await self._async_show_migration_confirm()
         self._record_selected_app_intent(data)
         if data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:
@@ -5921,8 +6248,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
         )
         if self._migration is not None and self._migration.is_unchanged_by(entry_data):
-            return self.async_abort(reason="migration_unchanged")
-        if self._migration is not None and not self._migration_requires_check:
+            return await self._async_abort_unchanged()
+        if (
+            self._migration is not None
+            and not self._migration_requires_check
+            and not needs_pin_check
+            # AdjustableM5X4 resolves and checks its transport on the live link.
+            and entry_data.get(CONF_BED_TYPE) != BED_TYPE_STARCODE_ABM5_4
+        ):
             return await self._async_create_selected_app_entry(title=title, data=entry_data)
         if (
             self._migration is None
@@ -6001,7 +6334,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             outcome = OperationOutcome.DEVICE_UNRESOLVED
         elif report.freshness is not None and report.freshness is not FreshnessStatus.FRESH:
             outcome = OperationOutcome.NOT_ADVERTISING
-        elif not report.connected or report.starcode_transport_valid is False:
+        elif (
+            not report.connected
+            or report.starcode_transport_valid is False
+            or (
+                # Reconfigure saves an AdjustableM5X4 only on a transport the
+                # live link proved; an unresolved one fails the check.
+                self._migration is not None
+                and self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_ABM5_4
+                and report.starcode_transport_valid is not True
+            )
+        ):
             outcome = OperationOutcome.CONNECTION_FAILED
         elif report.octo_pin_status is OctoPinStatus.INCONCLUSIVE:
             outcome = OperationOutcome.PIN_VERIFICATION_INCONCLUSIVE
@@ -6328,49 +6671,27 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return report
 
     async def _format_capabilities(self, report: CapabilityReport) -> str:
-        """Build the ✅/❌/⚠️/ℹ️ markdown checklist shown in verify_connection."""
-        lines: list[str] = []
+        """Build the ✅/❌/⚠️/ℹ️ checklist shown in verify_connection."""
+
+        async def line(key: str, **values: str) -> str:
+            text = await self._get_config_translation(
+                f"step.verify_connection.data_description.{key}", _CHECK_FALLBACKS[key]
+            )
+            return text.format(**values) if values else text
 
         if report.freshness is FreshnessStatus.DEVICE_UNRESOLVED:
             # The bed answered a scan, so "wake it up" would be wrong advice.
-            # Home Assistant simply had no connectable handle for it at that
-            # instant, which is what Check again is for.
-            lines.append(
-                "⚠️ This bed is advertising, but Home Assistant could not open a connection "
-                "to it just now, so no connection was attempted."
-            )
-            lines.append(
-                "This is usually momentary. Select **Check again**, or finish setup and let "
-                "the integration keep trying."
-            )
-            return "\n".join(lines)
-
+            return await line("check_unresolved")
         if report.freshness is not None and report.freshness is not FreshnessStatus.FRESH:
             # Distinguished from a failed connection on purpose: the bed never
-            # answered a scan, so telling the user to check the bond or the
-            # adapter would send them after the wrong thing (#458).
-            lines.append(
-                "❌ This bed is not currently advertising, so no connection was attempted."
-            )
-            lines.append(
-                "Wake it (press a button on the remote), put it in pairing mode, or move it "
-                "closer to an adapter or proxy, then select **Check again**."
-            )
-            return "\n".join(lines)
-
+            # answered a scan, so the bond or adapter is not the problem (#458).
+            return await line("check_not_advertising")
         if not report.device_found:
-            lines.append("❌ Device not found - it may be out of range or not advertising.")
-            lines.append("You can still finish setup; the integration will keep trying to connect.")
-            return "\n".join(lines)
+            return await line("check_not_found")
 
-        lines.append("✅ Device found via Bluetooth")
-
+        lines = [await line("check_found")]
         if not report.connected:
-            lines.append(
-                "❌ Could not connect - another app or the bed remote may be holding the "
-                "bed's connection (beds allow only one at a time), or it is out of range. "
-                "You can still finish setup and try again later."
-            )
+            lines.append(await line("check_not_connected"))
             return "\n".join(lines)
 
         if report.actual_path is not None:
@@ -6378,62 +6699,28 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "✅ "
                 + await async_describe_actual(self.hass, report.actual_path, report.predicted_path)
             )
+        elif report.source:
+            key = "check_connected_via_proxy" if report.via_proxy else "check_connected_via"
+            lines.append(await line(key, source=report.source))
         else:
-            connected_parts = ["✅ Connected"]
-            if report.source:
-                connected_parts.append(f"via {report.source}")
-            if report.via_proxy:
-                connected_parts.append("(Bluetooth proxy)")
-            if report.rssi is not None:
-                connected_parts.append(f"(RSSI {report.rssi} dBm)")
-            lines.append(" ".join(connected_parts))
+            lines.append(await line("check_connected"))
 
-        if report.service_count:
-            services_word = "service" if report.service_count == 1 else "services"
-            writable_word = (
-                "writable characteristic"
-                if report.writable_count == 1
-                else "writable characteristics"
-            )
-            # The integration controls beds by writing commands to a
-            # characteristic, so zero writable characteristics means this setup
-            # cannot send commands - flag it instead of giving a false pass
-            # (often a sign the probe reached the wrong device).
-            marker = "✅" if report.writable_count else "⚠️"
-            lines.append(
-                f"{marker} GATT services discovered ({report.service_count} {services_word}, "
-                f"{report.writable_count} {writable_word})"
-            )
-            if not report.writable_count:
-                lines.append(
-                    "⚠️ No writable characteristic found - this device may not be "
-                    "controllable, or the probe reached the wrong device."
-                )
-        else:
-            lines.append("⚠️ Connected, but no GATT services were discovered.")
+        # Beds are controlled by writing commands, so a device that accepts none
+        # cannot be this bed's controller (often the probe reached another device).
+        if not report.writable_count:
+            lines.append(await line("check_no_commands"))
 
         if report.starcode_transport_valid is False:
-            lines.append(
-                "❌ The selected app Bluetooth transport is missing its required GATT service or characteristics."
-            )
+            lines.append(await line("check_transport_missing"))
         elif report.starcode_transport_valid is True:
-            lines.append("✅ Selected app Bluetooth transport is available")
+            lines.append(await line("check_transport_ok"))
 
-        if report.manufacturer or report.model:
-            info = " · ".join(
-                part
-                for part in (
-                    f"Manufacturer: {report.manufacturer}" if report.manufacturer else None,
-                    f"Model: {report.model}" if report.model else None,
-                )
-                if part
-            )
-            lines.append(f"ℹ️ {info}")
+        if details := " · ".join(part for part in (report.manufacturer, report.model) if part):
+            lines.append(await line("check_device_info", details=details))
 
+        # Many bed types never report their position; that is normal, not a warning.
         if report.position_feedback:
-            lines.append("✅ Position feedback supported by this bed type")
-        else:
-            lines.append("⚠️ Position feedback: not available on this bed type")
+            lines.append(await line("check_positions"))
 
         return "\n".join(lines)
 
@@ -6560,11 +6847,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         errors: dict[str, str] = {}
         if user_input is not None and self._octo_pin_form_shown:
             if status.allows_setup:
-                return self.async_create_entry(
-                    title=self._pending_title
-                    or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._pending_entry,
-                )
+                title = self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed")
+                if self._migration is not None:
+                    # Reconfigure saves only after its review is applied.
+                    return await self._async_create_selected_app_entry(
+                        title=title, data=self._pending_entry
+                    )
+                return self.async_create_entry(title=title, data=self._pending_entry)
             pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, ""))
             if not is_valid_octo_pin(pin):
                 errors[CONF_OCTO_PIN] = "invalid_pin"
@@ -6933,21 +7222,6 @@ class AdjustableBedOptionsFlow(
             return VARIANT_AUTO
         return next(iter(variants))
 
-    @classmethod
-    def _variant_for_bed_type_change(
-        cls,
-        previous_bed_type: str,
-        requested_bed_type: str,
-        data: dict[str, Any],
-    ) -> str:
-        """Reset variants unless both bed types explicitly share one variant table."""
-        previous_variants = get_variants_for_bed_type(previous_bed_type)
-        requested_variants = get_variants_for_bed_type(requested_bed_type)
-        if previous_variants is requested_variants and requested_variants is not None:
-            return cls._variant_for_bed_type(requested_bed_type, data)
-        if requested_variants and VARIANT_AUTO not in requested_variants:
-            return next(iter(requested_variants))
-        return VARIANT_AUTO
 
     @staticmethod
     def _remove_irrelevant_bed_settings(data: dict[str, Any], bed_type: str) -> None:
@@ -7044,8 +7318,6 @@ class AdjustableBedOptionsFlow(
         menu_options = ["settings"]
         data = self.config_entry.data
         await async_import_profile(self.hass, setup_profile_for(data))
-        if reconfigure_family(data) is not None:
-            menu_options.append("change_app")
         if is_paired(data):
             if data.get(CONF_PAIR_MODE) == PAIR_MODE_SEPARATE_ADDRESS:
                 menu_options.extend(["left_settings", "right_settings"])
@@ -7067,22 +7339,13 @@ class AdjustableBedOptionsFlow(
             menu_options.append("remove_bond")
         return self.async_show_menu(step_id="init", menu_options=menu_options)
 
-    async def async_step_change_app(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Point to the guided reconfigure wizard, keeping Configure read-only here.
-
-        Home Assistant cannot hand an options flow over to a config flow, so the
-        guided change runs from the entry's Reconfigure action and from Repairs.
-        """
-        if user_input is not None:
-            return self.async_abort(reason="migration_reconfigure_required")
-        from .profile_review import route_label
-
-        return self.async_show_form(
-            step_id="change_app",
-            description_placeholders={"current": route_label(self.config_entry.data)},
-        )
+    def _keep_saved_route(self, new_data: dict[str, Any]) -> None:
+        """Keep the saved route, even an unsaved automatic one: Reconfigure changes it."""
+        saved = self.config_entry.data
+        if CONF_PROTOCOL_VARIANT in saved:
+            new_data[CONF_PROTOCOL_VARIANT] = saved[CONF_PROTOCOL_VARIANT]
+        else:
+            new_data.pop(CONF_PROTOCOL_VARIANT, None)
 
     def _async_flow_manager(self) -> Any:
         """Options flows are driven by their own manager, not the config one."""
@@ -7122,13 +7385,7 @@ class AdjustableBedOptionsFlow(
             current,
             bed_type,
             variant,
-            (
-                CONF_PREFERRED_ADAPTER,
-                CONF_CONNECTION_PROFILE,
-                *_PULSE_FIELDS,
-                CONF_DISCONNECT_AFTER_COMMAND,
-                CONF_IDLE_DISCONNECT_SECONDS,
-            ),
+            (CONF_PREFERRED_ADAPTER, CONF_CONNECTION_MODE, *_PULSE_FIELDS),
         )
         if bed_type == BED_TYPE_REVERIE_PAIRLINK:
             await async_import_modules(self.hass, *_PAIRLINK_SETTINGS_MODULES)
@@ -7140,8 +7397,15 @@ class AdjustableBedOptionsFlow(
         await async_import_profile(self.hass, questions)
         context = FlowContext(self.hass, self.config_entry.entry_id)
         if questions is not None:
+            # The route changes in Reconfigure, after the pair is separated.
             schema.update(
-                _profile_question_schema(questions, current, context, advanced_section=False)
+                _profile_question_schema(
+                    questions,
+                    current,
+                    context,
+                    advanced_section=False,
+                    skip={CONF_PROTOCOL_VARIANT},
+                )
             )
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -7161,9 +7425,6 @@ class AdjustableBedOptionsFlow(
             errors.update(pulse_errors)
             if not errors:
                 shown = _shown_option_values(schema)
-                for field in (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS):
-                    if field in shown:
-                        shown[field] = int(shown[field])
                 changes = {key: value for key, value in changes.items() if shown.get(key) != value}
                 if (
                     CONF_PREFERRED_ADAPTER in user_input
@@ -7177,9 +7438,9 @@ class AdjustableBedOptionsFlow(
                     asked = {question.key for question in questions.questions}
                     changes = {key: value for key, value in changes.items() if key not in asked}
                     before = {**current, **changes}
-                    app_data = questions.staged(
-                        before, _profile_answers(questions, user_input, current, context)
-                    )
+                    answers = _profile_answers(questions, user_input, current, context)
+                    answers.pop(CONF_PROTOCOL_VARIANT, None)
+                    app_data = questions.staged(before, answers)
                     errors.update(questions.errors(app_data, context))
                     # A profile derives its settled values only from answers its
                     # checks accepted, as setup and single-entry Configure do.
@@ -7219,8 +7480,15 @@ class AdjustableBedOptionsFlow(
                 # one side, keeping unrelated entry-level options intact.
                 options = inheritable_child_fields(self.config_entry.options)
                 for receiver_side in PAIR_SIDES:
-                    if options and get_child(data, receiver_side) is not None:
-                        data = with_updated_child(data, receiver_side, options)
+                    if options and (receiver := get_child(data, receiver_side)) is not None:
+                        # Only what the receiver reads: never a setting its own
+                        # profile owns, such as its route.
+                        owned = side_owned_profile_fields(receiver)
+                        data = with_updated_child(
+                            data,
+                            receiver_side,
+                            {key: value for key, value in options.items() if key not in owned},
+                        )
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     data=with_updated_child(data, side, changes, remove=stale),
@@ -7452,9 +7720,6 @@ class AdjustableBedOptionsFlow(
 
         variants = get_variants_for_bed_type(bed_type)
         form_variant = self._variant_for_bed_type(bed_type, current_data)
-        shown_choice = bed_type_choice(bed_type, form_variant)
-        if user_input is not None:
-            _apply_bed_type_choice(user_input, shown_choice)
         has_position_feedback = bed_type_has_position_feedback(bed_type, form_variant)
         motor_count_options = _motor_count_options(bed_type, form_variant)
         try:
@@ -7470,14 +7735,15 @@ class AdjustableBedOptionsFlow(
                 form_motor_count = motor_count_options[0]
 
         adapters = get_available_adapters(self.hass)
-
-        # Global discovery toggle (shared across all beds, not stored per-entry)
-        discovery_disabled = self._pending_data.get(
-            CONF_DISABLE_DISCOVERY,
-            await async_is_discovery_disabled(self.hass),
-        )
-
         context = FlowContext(self.hass, self.config_entry.entry_id)
+        # The bed type and route change only through Reconfigure; this form
+        # shows the settings the saved route reads.
+        unused = _unused_generic_fields(bed_type, form_variant)
+        if _is_leggett_app_type(bed_type, form_variant) and current_data.get(
+            CONF_LEGGETT_APP_PROFILE
+        ):
+            # The saved Leggett app fixes the motor count.
+            unused.add(CONF_MOTOR_COUNT)
 
         def fields(*keys: str) -> dict[vol.Marker, Any]:
             return _settings_fields(
@@ -7485,52 +7751,20 @@ class AdjustableBedOptionsFlow(
                 {**current_data, CONF_MOTOR_COUNT: form_motor_count},
                 bed_type,
                 form_variant,
-                keys,
+                [key for key in keys if key not in unused],
             )
 
-        schema_dict: dict[vol.Marker, Any] = {
-            **dict([_bed_type_field(vol.Optional, shown_choice, show_saved_id=True)]),
-            **fields(
-                CONF_HAS_MASSAGE,
-                CONF_PREFERRED_ADAPTER,
-                CONF_CONNECTION_PROFILE,
-                *_PULSE_FIELDS,
-                CONF_DISCONNECT_AFTER_COMMAND,
-                CONF_IDLE_DISCONNECT_SECONDS,
-            ),
-            vol.Optional(CONF_DISABLE_DISCOVERY, default=discovery_disabled): bool,
-            **fields(CONF_MOTOR_COUNT),
-        }
+        schema_dict: dict[vol.Marker, Any] = fields(CONF_MOTOR_COUNT, CONF_HAS_MASSAGE)
         if has_position_feedback:
-            schema_dict.update(fields(CONF_DISABLE_ANGLE_SENSING, CONF_POSITION_MODE))
+            schema_dict.update(fields(CONF_READ_POSITIONS))
         if supports_passive_position_reconciliation(bed_type):
             schema_dict.update(fields(CONF_PASSIVE_POSITION_RECONCILIATION))
-
-        # Add variant selection if the bed type has variants. Handsets that moved
-        # to the FurniMove app profile stay selectable only for an entry using one.
-        if variants:
-            if bed_type == BED_TYPE_OKIN_DOT:
-                variants = {
-                    key: label
-                    for key, label in variants.items()
-                    if key not in OKIN_DOT_FURNIMOVE_VARIANTS or key == form_variant
-                }
-            schema_dict[
-                vol.Optional(
-                    CONF_PROTOCOL_VARIANT,
-                    default=form_variant,
-                )
-            ] = vol.In(variants)
+        schema_dict.update(fields(CONF_PREFERRED_ADAPTER, CONF_CONNECTION_MODE, *_PULSE_FIELDS))
 
         if bed_type == BED_TYPE_REVERIE_PAIRLINK and not separate_address_pair:
             await async_import_modules(self.hass, *_PAIRLINK_SETTINGS_MODULES)
             schema_dict.update(_pairlink_settings_schema(self.hass, current_data))
 
-        # Each route's own fields are on the form, shown only for that route.
-        route_rows = {
-            variant: (bed_type, variant)
-            for variant in (SVANE_VARIANTS if bed_type == BED_TYPE_SVANE else variants or {})
-        }
         # An app's own fields may ask a generic field its route sets, so the
         # generic ones it owns wait until those fields are in.
         held = {
@@ -7539,88 +7773,53 @@ class AdjustableBedOptionsFlow(
             if marker.schema in hidden_generic_fields(bed_type, form_variant)
         }
         # A two-address pair's shared form never shows one side's app settings.
-        leggett_routes = _rows_where(
-            route_rows, _is_leggett_app_type, field=CONF_PROTOCOL_VARIANT
-        )
-        if not separate_address_pair:
-            if leggett_routes is not None:
-                leggett: dict[vol.Marker, Any] = {}
-                _add_leggett_app_schema_field(leggett, current_data)
-                schema_dict.update(_shown_for(leggett, leggett_routes))
-            elif _is_leggett_app_type(bed_type, form_variant):
-                _add_leggett_app_schema_field(schema_dict, current_data)
-            elif (
+        # The declared questions this form asks, which keep their fields.
+        question_keys: set[str] = set()
+        # The Leggett app is chosen in Reconfigure's guided change.
+        if not separate_address_pair and not _is_leggett_app_type(bed_type, form_variant):
+            if (
                 questions := _configure_questions(
                     {**current_data, CONF_BED_TYPE: bed_type},
                     self.config_entry.data.get(CONF_BED_TYPE),
                 )
             ) is not None:
-                schema_dict.update(
-                    _profile_question_schema(
-                        questions, current_data, context, advanced_section=False
-                    )
+                # The route, such as a Reverie model or Rize product, changes in
+                # Reconfigure, which reviews it first.
+                rendered = _profile_question_schema(
+                    questions,
+                    current_data,
+                    context,
+                    advanced_section=False,
+                    skip={CONF_PROTOCOL_VARIANT},
                 )
+                schema_dict.update(rendered)
+                question_keys = {marker.schema for marker in rendered}
 
-        asked = {marker.schema for marker in schema_dict} & {marker.schema for marker in held}
+        asked = (
+            {marker.schema for marker in schema_dict} & {marker.schema for marker in held}
+        ) | question_keys
         schema_dict.update(
             {marker: validator for marker, validator in held.items() if marker.schema not in asked}
         )
-        _show_profile_fields(
-            schema_dict,
-            bed_type,
-            form_variant,
-            route_rows or None,
-            CONF_PROTOCOL_VARIANT,
-            keep=asked,
-        )
+        _show_profile_fields(schema_dict, bed_type, form_variant, keep=asked)
+        if bed_type == BED_TYPE_SVANE:
+            # Svane's app profile is a route too, chosen in Reconfigure.
+            for marker in tuple(schema_dict):
+                if marker.schema == CONF_PROTOCOL_VARIANT:
+                    del schema_dict[marker]
 
         # Angle limits apply to beds that report angles, not percentages.
         if not bed_traits(bed_type).percentage_positions and has_position_feedback:
             schema_dict.update(fields(*_ANGLE_LIMITS))
 
         if user_input is not None:
+            # Only fields this form shows are saved: the bed type, route and a
+            # guided family's app questions change in Reconfigure.
+            asked_keys = {marker.schema for marker in schema_dict}
+            user_input = {key: value for key, value in user_input.items() if key in asked_keys}
             # HA's select control uses string values; keep persisted counts numeric.
-            # A managed family changes app or layout only through the guided change.
-            original_type = self.config_entry.data.get(CONF_BED_TYPE)
-            selected_type = user_input.get(CONF_BED_TYPE, original_type)
-            family = next(
-                (family for family in GUIDED_FAMILIES if original_type in family.managed),
-                None,
-            )
-            original_profile = {**self.config_entry.data, **self.config_entry.options}
-            if original_type == BED_TYPE_VIBRADORM_APP:
-                original_profile = _vibradorm_app_data(original_profile, {})
-            elif original_type == BED_TYPE_VMATBASIC:
-                original_profile = _vmatbasic_data(original_profile, {})
-            # The form shows an unsaved variant as the route the entry runs.
-            if isinstance(original_type, str):
-                original_profile.setdefault(
-                    CONF_PROTOCOL_VARIANT,
-                    self._variant_for_bed_type(original_type, original_profile),
-                )
-            if _is_leggett_app_type(original_type, original_profile.get(CONF_PROTOCOL_VARIANT)):
-                # An entry saved before app profiles runs the default one.
-                original_profile.setdefault(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE)
-            if (
-                not separate_address_pair
-                and family is not None
-                and selected_type in family.managed
-                and (
-                    selected_type != original_type
-                    or any(
-                        key in user_input and user_input[key] != original_profile.get(key)
-                        for key in family.route_keys
-                    )
-                )
-            ):
-                return self.async_show_form(
-                    step_id=step_id,
-                    data_schema=vol.Schema(schema_dict),
-                    errors={"base": "migration_reconfigure_required"},
-                )
             if CONF_MOTOR_COUNT in user_input:
                 user_input = {**user_input, CONF_MOTOR_COUNT: int(user_input[CONF_MOTOR_COUNT])}
-            requested_bed_type = user_input.get(CONF_BED_TYPE, bed_type)
             requested_route = user_input.get(CONF_PROTOCOL_VARIANT, form_variant)
             if separate_address_pair:
                 # Check every stored side, not only the representative one: a
@@ -7636,7 +7835,7 @@ class AdjustableBedOptionsFlow(
                     },
                 }
                 if refusal := _per_side_refusal(
-                    (requested_bed_type, requested_route),
+                    (bed_type, requested_route),
                     [
                         (child.get(CONF_BED_TYPE), child.get(CONF_PROTOCOL_VARIANT))
                         for child in iter_children(self.config_entry.data)
@@ -7654,71 +7853,6 @@ class AdjustableBedOptionsFlow(
                         },
                         description_placeholders={"profile": profile},
                     )
-            if requested_bed_type != bed_type:
-                # Re-render once using the selected protocol so its variant,
-                # authentication, layout, remote, and position fields are
-                # visible before anything is persisted.
-                self._remember_pending_changes(schema_dict, user_input)
-                self._pending_data = {
-                    **self._pending_data,
-                    **user_input,
-                    CONF_BED_TYPE: requested_bed_type,
-                }
-                requested_variant = self._variant_for_bed_type_change(
-                    bed_type,
-                    requested_bed_type,
-                    self._pending_data,
-                )
-                chosen_variant = user_input.get(CONF_PROTOCOL_VARIANT)
-                if (
-                    isinstance(chosen_variant, str)
-                    and (requested_bed_type, chosen_variant) in APP_VARIANT_CHOICES
-                ):
-                    # The user picked that app's own entry; its variant is the route.
-                    requested_variant = chosen_variant
-                if get_variants_for_bed_type(requested_bed_type):
-                    self._pending_data[CONF_PROTOCOL_VARIANT] = requested_variant
-                    self._pending_changed_data[CONF_PROTOCOL_VARIANT] = requested_variant
-                else:
-                    self._pending_data.pop(CONF_PROTOCOL_VARIANT, None)
-                requested_motor_options = _motor_count_options(
-                    requested_bed_type,
-                    requested_variant,
-                )
-                requested_motor_count = self._pending_data.get(
-                    CONF_MOTOR_COUNT,
-                    DEFAULT_MOTOR_COUNT,
-                )
-                if requested_motor_count not in requested_motor_options:
-                    requested_motor_count = _default_motor_count(
-                        requested_bed_type,
-                        current_data.get(CONF_NAME),
-                    )
-                    if requested_motor_count not in requested_motor_options:
-                        requested_motor_count = requested_motor_options[0]
-                self._pending_data[CONF_MOTOR_COUNT] = requested_motor_count
-                self._pending_changed_data[CONF_MOTOR_COUNT] = requested_motor_count
-                pulse_count, pulse_delay = get_motor_pulse_defaults(
-                    requested_bed_type,
-                    requested_variant,
-                )
-                self._pending_data[CONF_MOTOR_PULSE_COUNT] = pulse_count
-                self._pending_data[CONF_MOTOR_PULSE_DELAY_MS] = pulse_delay
-                disable_angle_sensing = not bed_type_has_position_feedback(
-                    requested_bed_type,
-                    requested_variant,
-                )
-                self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
-                self._pending_changed_data.update(
-                    {
-                        CONF_MOTOR_PULSE_COUNT: pulse_count,
-                        CONF_MOTOR_PULSE_DELAY_MS: pulse_delay,
-                        CONF_DISABLE_ANGLE_SENSING: disable_angle_sensing,
-                    }
-                )
-                return await self._async_options_form(None, step_id=step_id)
-
-            bed_type = requested_bed_type
             await async_import_profile(
                 self.hass, setup_profile_for({**current_data, **user_input, CONF_BED_TYPE: bed_type})
             )
@@ -7739,16 +7873,6 @@ class AdjustableBedOptionsFlow(
                         data_schema=vol.Schema(schema_dict),
                         errors=pairlink_errors,
                     )
-            # The discovery toggle is global, not per-entry: pull it out of
-            # user_input now so it is never written into entry data, but only
-            # persist it on the success path below - otherwise a later
-            # validation failure would partially apply the rejected form.
-            pending_discovery = self._pending_data.get(CONF_DISABLE_DISCOVERY)
-            discovery_disabled_input = (
-                bool(pending_discovery) if isinstance(pending_discovery, bool) else None
-            )
-            if CONF_DISABLE_DISCOVERY in user_input:
-                discovery_disabled_input = bool(user_input.pop(CONF_DISABLE_DISCOVERY))
             requested_variant = self._variant_for_bed_type(
                 bed_type,
                 {**current_data, **user_input},
@@ -7791,7 +7915,16 @@ class AdjustableBedOptionsFlow(
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
-                    errors={CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"},
+                    # The route is not on this form: it changes in Reconfigure.
+                    errors=(
+                        {"base": "rmcontrol_needs_reconfigure_paired"}
+                        if separate_address_pair
+                        else {
+                            CONF_RMCONTROL_PRODUCT
+                            if vol.Optional(CONF_RMCONTROL_PRODUCT) in schema_dict
+                            else "base": "rmcontrol_needs_reconfigure"
+                        }
+                    ),
                 )
             # Switching a bed to an app that does not list its model would only
             # trade its controls for the fallback ones. Keeping the current app
@@ -7847,8 +7980,6 @@ class AdjustableBedOptionsFlow(
                     # Rebuild with its count instead of rejecting the value
                     # rendered for the previous variant.
                     self._pending_data = {**self._pending_data, **user_input}
-                    if discovery_disabled_input is not None:
-                        self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
                     self._remember_pending_changes(schema_dict, user_input)
                     self._pending_data[CONF_MOTOR_COUNT] = requested_motor_options[0]
                     self._pending_changed_data[CONF_MOTOR_COUNT] = requested_motor_options[0]
@@ -7860,24 +7991,6 @@ class AdjustableBedOptionsFlow(
                 )
             # A profile can hide this field; still persist its normalized default.
             user_input[CONF_MOTOR_COUNT] = requested_motor_count
-            if has_position_feedback != bed_type_has_position_feedback(
-                bed_type,
-                requested_variant,
-            ):
-                # Rebuild once more when the chosen variant changes position
-                # capability, so the user sees the new sensing default and can
-                # still explicitly override it on the following submission.
-                self._remember_pending_changes(schema_dict, user_input)
-                self._pending_data = {**self._pending_data, **user_input}
-                if discovery_disabled_input is not None:
-                    self._pending_data[CONF_DISABLE_DISCOVERY] = discovery_disabled_input
-                disable_angle_sensing = not bed_type_has_position_feedback(
-                    bed_type,
-                    requested_variant,
-                )
-                self._pending_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
-                self._pending_changed_data[CONF_DISABLE_ANGLE_SENSING] = disable_angle_sensing
-                return await self._async_options_form(None, step_id=step_id)
             if _is_leggett_app_type(bed_type, requested_variant) and not separate_address_pair:
                 profile = user_input.get(
                     CONF_LEGGETT_APP_PROFILE, current_data.get(CONF_LEGGETT_APP_PROFILE)
@@ -7897,6 +8010,8 @@ class AdjustableBedOptionsFlow(
                 )
             ) is not None:
                 answers = _profile_answers(declared, user_input, current_data, context)
+                # The route is not asked here, so it stays as saved.
+                answers.pop(CONF_PROTOCOL_VARIANT, None)
                 # The answers apply to the saved setup, as setup applies them to
                 # the staged one, so a profile can tell what they change.
                 before = {
@@ -8003,18 +8118,18 @@ class AdjustableBedOptionsFlow(
                             data_schema=vol.Schema(schema_dict),
                             errors={"base": "limoss_remote_feature_update_failed"},
                         )
-                if discovery_disabled_input is not None:
-                    await async_set_discovery_disabled(self.hass, discovery_disabled_input)
                 return None
 
-            # Update the config entry with new options
             # Record that the stored cadence is the user's choice rather than a
             # value the flow generated, so protocol migrations leave it alone.
-            # Only displayed pulse fields count; app profiles can inject their
-            # fixed cadence into user_input without offering a user override.
-            pulse_user_set = any(
-                field in user_input and vol.Optional(field) in schema_dict
-                for field in (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
+            # Only a changed Movement per tap counts: app profiles can inject
+            # their fixed cadence into user_input, and the repeat delay is not
+            # shown, so an unrelated save must not freeze it.
+            shown_pulse = _shown_option_values(schema_dict).get(CONF_MOTOR_PULSE_COUNT)
+            pulse_user_set = (
+                shown_pulse is not None
+                and CONF_MOTOR_PULSE_COUNT in user_input
+                and user_input[CONF_MOTOR_PULSE_COUNT] != shown_pulse
             )
             from .profile_recommendations import (
                 async_complete_profile_review,
@@ -8045,10 +8160,13 @@ class AdjustableBedOptionsFlow(
                         if self.config_entry.data.get(key) != value
                     },
                 }
+                if CONF_READ_POSITIONS in changed:
+                    changed[CONF_DISABLE_ANGLE_SENSING] = not changed.pop(CONF_READ_POSITIONS)
                 new_data = {**self.config_entry.data, **changed}
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
                 if self.config_entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+                    self._keep_saved_route(new_data)
                     self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
                     for key in stale_profile_keys:
                         new_data.pop(key, None)
@@ -8081,8 +8199,11 @@ class AdjustableBedOptionsFlow(
                         new_data = with_updated_child(new_data, side, child_changed)
             else:
                 new_data = {**self.config_entry.data, **self._pending_data, **user_input}
+                read = new_data.pop(CONF_READ_POSITIONS, None)
+                store_read_positions(new_data, read if isinstance(read, bool) else None)
                 if pulse_user_set:
                     new_data[CONF_MOTOR_PULSE_USER_SET] = True
+            self._keep_saved_route(new_data)
             self._apply_bed_type_change_cleanup(new_data, bed_type, requested_variant)
             for key in stale_profile_keys:
                 new_data.pop(key, None)

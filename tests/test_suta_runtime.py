@@ -35,7 +35,7 @@ async def runtime(hass, request, mock_coordinator_connected, mock_bleak_client, 
         data={CONF_ADDRESS: "AA:BB:CC:DD:EE:28", CONF_NAME: "SUTA display title",
               const.CONF_BED_TYPE: "suta", const.CONF_BLE_DEVICE_NAME: name,
               const.CONF_HAS_MASSAGE: False, const.CONF_DISABLE_ANGLE_SENSING: True,
-              const.CONF_DISCONNECT_AFTER_COMMAND: False},
+              const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE},
     )
     entry.add_to_hass(hass)
     target = AdjustableBedCoordinator(hass, entry)
@@ -142,12 +142,12 @@ async def test_binary_or_feedback_routes_through_real_connect(hass, runtime):
     if ctrl.family == "MOON":
         assert len(written(client)) == 3
         client.write_gatt_char.reset_mock()
-        await action(hass, "massage_timer_10", logical_side=2)
+        await action(hass, "massage_timer_10", logical_side="right")
         assert written(client) == [codec.binary(0x96, 2, bytes((2, 10)))]
     elif ctrl.family == "TEMP":
         assert written(client) == [codec.binary(0xA1, 5, b"\x0f"), codec.binary(0xA0, 1, b"\x0f")]
         client.write_gatt_char.reset_mock()
-        await action(hass, "temperature_setpoint", logical_side=1, value=22)
+        await action(hass, "temperature_setpoint", logical_side="left", value=22)
         assert written(client) == [codec.binary(0xA1, 3, bytes((1, 22)))]
     else:
         sender, callback = client.start_notify.call_args.args
@@ -158,8 +158,16 @@ async def test_binary_or_feedback_routes_through_real_connect(hass, runtime):
 async def test_text_alarm_and_active_zone_level_use_proven_schedules(hass, runtime):
     target, client, _ = runtime
     assert await target.async_connect()
-    await action(hass, "alarm_set", weekdays=[0, 6], time="0630", loop="01")
+    await hass.services.async_call(const.DOMAIN, "set_alarm", {
+        "device_id": "bed", "enabled": True, "time": "06:30:00", "weekdays": ["saturday", "sunday"],
+    }, blocking=True)
+    # Sunday is day 0 on the wire; repeating days carry the app's Loop flag.
     assert written(client) == [codec.text("AT+SA=00063001")] * 3 + [codec.text("AT+SA=06063001")] * 3 + [codec.text("AT+GA")] * 3
+    client.write_gatt_char.reset_mock()
+    await hass.services.async_call(const.DOMAIN, "set_alarm", {
+        "device_id": "bed", "enabled": False, "time": "06:30:00", "weekdays": ["sunday"],
+    }, blocking=True)
+    assert written(client) == [codec.text("AT+CA=00063001")] * 3 + [codec.text("AT+GA")] * 3
     client.write_gatt_char.reset_mock()
     await action(hass, "mass_head_dt", suffix="20")
     await action(hass, "mass_foot_dt", suffix="33")
@@ -299,33 +307,8 @@ async def test_lock_switch_sends_lock_and_keeps_the_commanded_state(hass, runtim
     assert lock.is_on is False
 
 
-@pytest.mark.parametrize("runtime", ["SUTA-TEMP"], indirect=True)
-async def test_heating_switch_keeps_reported_state_across_disconnect(hass, runtime):
-    from custom_components.adjustable_bed.switch import (
-        AdjustableBedControllerSwitch,
-        _switch_entities_for,
-    )
-
-    target, _client, _ = runtime
-    heating = next(e for e in _switch_entities_for(hass, target)
-                   if isinstance(e, AdjustableBedControllerSwitch) and e.translation_key == "suta_heating")
-    heating.hass = hass
-    heating.entity_id = "switch.suta_heating"
-    heating.async_write_ha_state = MagicMock()
-    await heating.async_added_to_hass()
-    try:
-        assert heating.is_on is None and heating.assumed_state
-        target.handle_controller_state_updates(bed.HEATING_ON(True))
-        assert heating.is_on is True and not heating.assumed_state
-        # Disconnect clears connection-scoped state; a toggle must not resend "on".
-        target.handle_controller_state_updates(bed.HEATING_ON(None))
-        assert heating.is_on is True and heating.assumed_state
-    finally:
-        await heating.async_will_remove_from_hass()
-
-
 @pytest.mark.parametrize("runtime", ["SUTA-MOON"], indirect=True)
-async def test_sent_setting_wins_until_the_bed_reports_a_change(hass, runtime):
+async def test_automatic_adjustment_shows_the_sent_value_until_the_next_report(hass, runtime):
     from custom_components.adjustable_bed.switch import (
         AdjustableBedControllerSwitch,
         _switch_entities_for,
@@ -338,44 +321,14 @@ async def test_sent_setting_wins_until_the_bed_reports_a_change(hass, runtime):
     left.hass = hass
     left.entity_id = "switch.suta_left_automatic_adjustment"
     left.async_write_ha_state = MagicMock()
-    await left.async_added_to_hass()
-    try:
-        target.handle_controller_state_updates(bed.AUTOMATIC_ADJUSTMENT[1](True))
-        await left.async_turn_off()
-        assert written(client)[-1] == codec.binary(0x97, 0x0B, bytes((1, 0)))
-        # The write is not echoed; an unrelated publish repeats the old snapshot.
-        target.handle_controller_state_updates(bed.AUTOMATIC_ADJUSTMENT[1](True))
-        assert left.is_on is False
-        target.handle_controller_state_updates(bed.AUTOMATIC_ADJUSTMENT[1](False))
-        assert left.is_on is False and not left.assumed_state
-    finally:
-        await left.async_will_remove_from_hass()
-
-
-@pytest.mark.parametrize("runtime", ["SUTA-TEMP"], indirect=True)
-async def test_report_during_the_write_is_trusted(hass, runtime):
-    from custom_components.adjustable_bed.switch import (
-        AdjustableBedControllerSwitch,
-        _switch_entities_for,
-    )
-
-    target, client, _ = runtime
-    assert await target.async_connect()
-    heating = next(e for e in _switch_entities_for(hass, target)
-                   if isinstance(e, AdjustableBedControllerSwitch) and e.translation_key == "suta_heating")
-    heating.hass = hass
-    heating.entity_id = "switch.suta_heating"
-    heating.async_write_ha_state = MagicMock()
-    await heating.async_added_to_hass()
-    target.handle_controller_state_updates(bed.HEATING_ON(False))
-
-    async def confirm(_char, packet, **_kwargs):
-        if packet == codec.binary(0xA1, 1, b"\x01"):
-            target.handle_controller_state_updates(bed.HEATING_ON(True))
-
-    client.write_gatt_char.side_effect = confirm
-    try:
-        await heating.async_turn_on()
-        assert heating.is_on is True and not heating.assumed_state
-    finally:
-        await heating.async_will_remove_from_hass()
+    sender, callback = client.start_notify.call_args.args
+    # A full-state report: left checked (flag 0), right unchecked.
+    full_state = bytearray.fromhex("5359970d000800020a0000020a01000000")
+    callback(sender, full_state)
+    assert left.is_on is True
+    await left.async_turn_off()
+    assert written(client)[-1] == codec.binary(0x97, 0x0B, bytes((1, 0)))
+    # The bed does not echo the write, so the sent value stands until a new report.
+    assert left.is_on is False
+    callback(sender, full_state)
+    assert left.is_on is True

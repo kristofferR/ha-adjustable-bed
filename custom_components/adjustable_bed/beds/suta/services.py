@@ -10,6 +10,9 @@ from homeassistant.exceptions import ServiceValidationError
 from ...const import DOMAIN
 from ...import_executor import async_import_modules
 
+# The payload names the mattress or heating side: 1 left, 2 right.
+_LOGICAL_SIDES = {"left": 1, "right": 2}
+
 
 async def handle_request(call: ServiceCall) -> None:
     from ...services import (
@@ -27,7 +30,8 @@ async def handle_request(call: ServiceCall) -> None:
     await async_import_modules(call.hass, "beds.suta.controller")
     from .controller import Request, SutaController
 
-    request = Request(call.data["action"], call.data["suffix"], call.data.get("logical_side"), call.data.get("value"), tuple(call.data["weekdays"]), call.data["time"], call.data["loop"])
+    logical = call.data.get("logical_side")
+    request = Request(call.data["action"], call.data["suffix"], None if logical is None else _LOGICAL_SIDES[logical], call.data.get("value"))
     preflighted = []
     try:
         # First validate every offline catalog and parameter before any live
@@ -68,11 +72,8 @@ def register_services(hass: HomeAssistant) -> None:
             vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
             vol.Required("action"): str,
             vol.Optional("suffix", default=""): str,
-            vol.Optional("logical_side"): vol.All(vol.Coerce(int), vol.In((1, 2))),
+            vol.Optional("logical_side"): vol.In(tuple(_LOGICAL_SIDES)),
             vol.Optional("value"): vol.Coerce(int),
-            vol.Optional("weekdays", default=[]): [vol.All(vol.Coerce(int), vol.Range(min=0, max=6))],
-            vol.Optional("time", default="0630"): str,
-            vol.Optional("loop", default="00"): vol.In(("00", "01")),
             **SIDE_FIELD,
         }),
     )

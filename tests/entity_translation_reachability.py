@@ -278,8 +278,8 @@ def _add_spec_keys(keys: dict[str, set[str]], controller: BedController) -> None
         ("cover", controller.motor_control_specs),
         ("button", controller.controller_button_specs),
         ("select", controller.controller_select_specs),
-        ("number", (*controller.controller_number_specs, *controller.position_number_specs)),
         ("switch", controller.controller_switch_specs),
+        ("number", (*controller.controller_number_specs, *controller.position_number_specs)),
         ("sensor", controller.controller_state_sensor_specs),
         ("binary_sensor", controller.controller_state_binary_sensor_specs),
     ):

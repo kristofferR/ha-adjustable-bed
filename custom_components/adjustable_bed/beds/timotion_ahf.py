@@ -79,25 +79,25 @@ class _ControlAction:
 
 
 _CONTROL_ACTIONS: Final = (
-    _ControlAction("control_1_up", "Control 1 Up", group1=0x01, lock_bit=0, icon="mdi:arrow-up"),
+    _ControlAction("control_1_up", "Control 1 up", group1=0x01, lock_bit=0, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_1_down", "Control 1 Down", group1=0x02, lock_bit=0, icon="mdi:arrow-down"
+        "control_1_down", "Control 1 down", group1=0x02, lock_bit=0, icon="mdi:arrow-down"
     ),
-    _ControlAction("control_2_up", "Control 2 Up", group1=0x04, lock_bit=1, icon="mdi:arrow-up"),
+    _ControlAction("control_2_up", "Control 2 up", group1=0x04, lock_bit=1, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_2_down", "Control 2 Down", group1=0x08, lock_bit=1, icon="mdi:arrow-down"
+        "control_2_down", "Control 2 down", group1=0x08, lock_bit=1, icon="mdi:arrow-down"
     ),
-    _ControlAction("control_3_up", "Control 3 Up", group1=0x10, lock_bit=2, icon="mdi:arrow-up"),
+    _ControlAction("control_3_up", "Control 3 up", group1=0x10, lock_bit=2, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_3_down", "Control 3 Down", group1=0x20, lock_bit=2, icon="mdi:arrow-down"
+        "control_3_down", "Control 3 down", group1=0x20, lock_bit=2, icon="mdi:arrow-down"
     ),
-    _ControlAction("control_4_up", "Control 4 Up", group2=0x01, lock_bit=3, icon="mdi:arrow-up"),
+    _ControlAction("control_4_up", "Control 4 up", group2=0x01, lock_bit=3, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_4_down", "Control 4 Down", group2=0x02, lock_bit=3, icon="mdi:arrow-down"
+        "control_4_down", "Control 4 down", group2=0x02, lock_bit=3, icon="mdi:arrow-down"
     ),
-    _ControlAction("control_5_up", "Control 5 Up", group2=0x04, lock_bit=4, icon="mdi:arrow-up"),
+    _ControlAction("control_5_up", "Control 5 up", group2=0x04, lock_bit=4, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_5_down", "Control 5 Down", group2=0x08, lock_bit=4, icon="mdi:arrow-down"
+        "control_5_down", "Control 5 down", group2=0x08, lock_bit=4, icon="mdi:arrow-down"
     ),
     _ControlAction("night", "Night", group2=0x10, lock_bit=5, icon="mdi:weather-night"),
     _ControlAction("light", "Light", group2=0x20, icon="mdi:lightbulb-outline"),
@@ -212,18 +212,21 @@ class TiMOTIONAhfController(BedController):
                 state_key=STATUS,
                 icon="mdi:bluetooth",
                 attribute_keys=(STATUS_ERROR,),
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 key="timotion_ahf_lock_mask",
                 translation_key="timotion_ahf_lock_mask",
                 state_key=LOCK_MASK,
                 icon="mdi:lock-outline",
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 key="timotion_ahf_lamp_display_code",
                 translation_key="timotion_ahf_lamp_display_code",
                 state_key=LAMP_DISPLAY_CODE,
                 icon="mdi:lightbulb-outline",
+                entity_registry_enabled_default=False,
             ),
         )
 

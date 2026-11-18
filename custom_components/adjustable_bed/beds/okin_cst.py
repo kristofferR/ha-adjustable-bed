@@ -10,8 +10,8 @@ Most command values are identical to existing OKIN UUID values, but the MFirm
 app routes remote actions across both CST fields. Do not infer field placement
 from the feature type alone.
 
-Protocol and fixed product profiles come from the nine accepted APK Protocol Audit cluster
-011 reports. Known devices include Rize Sanctuary, Resident, Aviada, Bob,
+Protocol and fixed product profiles come from the nine Rize and support apps.
+Known devices include Rize Sanctuary, Resident, Aviada, Bob,
 Contempo, Carefree, Clarity II, MF900, and Support.
 
 Uses standard OKIN service: 62741523-52f9-8864-b1ab-3b3a8d65950b
@@ -222,6 +222,7 @@ class OkinCstController(ProfileExecution[OkinNFrameProfile], BedController):
                 translation_key="memory_save_response_observed",
                 state_key=MEMORY_SAVE_RESPONSE_OBSERVED,
                 icon="mdi:content-save-check-outline",
+                entity_registry_enabled_default=False,
                 card=CARD_UTILITY,
             ),
         )

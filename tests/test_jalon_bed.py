@@ -387,19 +387,25 @@ async def test_alarm_service_registered_schema_and_sided_dispatch(hass) -> None:
     ):
         await hass.services.async_call(
             DOMAIN,
-            "jalon_bed_set_alarm",
+            "set_alarm",
             {
                 "device_id": "bed",
                 "side": SIDE_RIGHT,
                 "enabled": True,
                 "time": "07:30:00",
-                "weekdays": ["0", "4"],
-                "wake_mode": "memory_2",
+                "weekdays": ["monday", "friday"],
+                "wake_action": "memory_2",
             },
             blocking=True,
         )
     ctrl.configure_clock_alarm.assert_awaited_once_with(
-        enabled=True, weekdays=(0, 4), hour=7, minute=30, preset="memory_2"
+        enabled=True,
+        weekdays=(0, 4),
+        hour=7,
+        minute=30,
+        preset="memory_2",
+        head_level=0,
+        foot_level=0,
     )
 
     assert pair.async_execute_controller_command.call_args.kwargs["side"] == SIDE_RIGHT

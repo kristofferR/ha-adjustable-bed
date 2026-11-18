@@ -13,7 +13,7 @@ from custom_components.adjustable_bed.beds.svane.controller import SvaneControll
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SVANE_VARIANT_JMC,
@@ -31,7 +31,7 @@ async def lamp_runtime(hass, request):
     variant = SVANE_VARIANT_JMC if request.param == "jmc" else SVANE_VARIANT_MULTI
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Svane", CONF_BED_TYPE: BED_TYPE_SVANE,
-        CONF_PROTOCOL_VARIANT: variant, CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_PROTOCOL_VARIANT: variant, CONF_CONNECTION_MODE: "idle",
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)

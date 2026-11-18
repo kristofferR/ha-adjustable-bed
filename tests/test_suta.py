@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import UTC
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -411,3 +412,16 @@ async def test_switches_send_the_app_frames_and_read_reported_state(clock):
     assert lock.state_key is None
     await lock.set_fn(b402, True)
     assert written(c)[-1] == codec.text("AT+SETLOCK=ON")
+
+
+def test_one_off_alarm_is_the_next_day_without_the_loop_flag():
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    controller, _ = make("SUTA-B905")
+    # Wednesday 07:00, so 06:30 is next on Thursday: wire day 4 counting from Sunday 0.
+    reference = datetime(2026, 11, 18, 7, 0, tzinfo=UTC)
+    alarm = AlarmRequest(enabled=True, hour=6, minute=30, reference_time=reference)
+    assert controller._alarm_texts(alarm) == ("AT+SA=04063000",)
+    assert make("SUTA-MOON")[0].alarm_capability is None

@@ -1,5 +1,6 @@
 """Leggett app timer and held-control service validation and dispatch."""
 
+from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -8,10 +9,10 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.alarm import AlarmCapability
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
 from custom_components.adjustable_bed.beds.leggett.okin_services import (
-    SERVICE_LEGGETT_ALARM_TIMER,
     SERVICE_LEGGETT_SLEEP_TIMER,
 )
 from custom_components.adjustable_bed.const import (
@@ -29,9 +30,24 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import (
-    LEGGETT_HELD_CONTROLS,
-    SERVICE_LEGGETT_HOLD_CONTROL,
+    SERVICE_HOLD_CONTROL,
+    SERVICE_SET_ALARM,
     async_register_services,
+)
+
+LEGGETT_HELD_CONTROLS = (
+    "flat",
+    "snore",
+    "lights_toggle",
+    "massage_toggle",
+    "massage_wave",
+    "massage_head_up",
+    "massage_head_down",
+    "massage_foot_up",
+    "massage_foot_down",
+    "memory_1",
+    "memory_2",
+    "store",
 )
 
 
@@ -53,7 +69,13 @@ async def service_target(hass: HomeAssistant):
         set_alarm_timer=AsyncMock(),
         cancel_alarm_timer=AsyncMock(),
         hold_control=AsyncMock(),
+        alarm_capability=AlarmCapability(),
     )
+
+    async def configure_alarm(alarm):
+        await LeggettOkinController.configure_alarm(controller, alarm)
+
+    controller.configure_alarm = AsyncMock(side_effect=configure_alarm)
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = "Leggett bed"
     coordinator.bed_type = BED_TYPE_LEGGETT_OKIN
@@ -144,22 +166,44 @@ async def test_profile_constraints_are_preflighted_before_any_device_write(
     useries.async_execute_controller_command.assert_not_called()
 
 
-async def test_alarm_accepts_full_day_delay(hass: HomeAssistant, service_target):
+@pytest.mark.parametrize(
+    ("now", "time", "minutes"),
+    [
+        (datetime(2026, 11, 18, 7, 30, 59), "07:31:00", 1),
+        (datetime(2026, 11, 18, 22, 0), "06:30:00", 510),
+        (datetime(2026, 11, 18, 7, 30), "07:30:00", 1440),
+    ],
+)
+async def test_alarm_counts_down_to_the_next_occurrence(
+    hass: HomeAssistant, service_target, now, time, minutes
+):
+    _, controller, _ = service_target
+    with (
+        patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now),
+        patch("custom_components.adjustable_bed.beds.leggett.okin.dt_util.now", return_value=now),
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_ALARM,
+            {"device_id": "bed", "enabled": True, "time": time},
+            blocking=True,
+        )
+    controller.set_alarm_timer.assert_awaited_once_with(minutes)
+
+
+async def test_alarm_off_cancels_the_countdown(hass: HomeAssistant, service_target):
     _, controller, _ = service_target
     await hass.services.async_call(
-        DOMAIN,
-        SERVICE_LEGGETT_ALARM_TIMER,
-        {"device_id": "bed", "action": "start", "minutes": 1440},
-        blocking=True,
+        DOMAIN, SERVICE_SET_ALARM, {"device_id": "bed", "enabled": False}, blocking=True
     )
-    controller.set_alarm_timer.assert_awaited_once_with(1440)
+    controller.cancel_alarm_timer.assert_awaited_once_with()
+    controller.set_alarm_timer.assert_not_awaited()
 
 
 @pytest.mark.parametrize(
     ("service", "method"),
     [
         (SERVICE_LEGGETT_SLEEP_TIMER, "cancel_sleep_timer"),
-        (SERVICE_LEGGETT_ALARM_TIMER, "cancel_alarm_timer"),
     ],
 )
 async def test_timer_cancel_needs_no_duration(hass: HomeAssistant, service_target, service, method):
@@ -172,7 +216,7 @@ async def test_timer_cancel_needs_no_duration(hass: HomeAssistant, service_targe
     controller.set_alarm_timer.assert_not_awaited()
 
 
-@pytest.mark.parametrize("service", [SERVICE_LEGGETT_SLEEP_TIMER, SERVICE_LEGGETT_ALARM_TIMER])
+@pytest.mark.parametrize("service", [SERVICE_LEGGETT_SLEEP_TIMER])
 async def test_start_requires_duration_before_resolving_targets(
     hass: HomeAssistant, service_target, service
 ):
@@ -189,16 +233,11 @@ async def test_start_requires_duration_before_resolving_targets(
     [
         (SERVICE_LEGGETT_SLEEP_TIMER, {"action": "start", "minutes": 1440}),
         (SERVICE_LEGGETT_SLEEP_TIMER, {"action": "start", "minutes": 15, "preset": 5}),
-        (SERVICE_LEGGETT_ALARM_TIMER, {"action": "start", "minutes": 1441}),
-        (SERVICE_LEGGETT_ALARM_TIMER, {"action": "start", "minutes": 1.5}),
-        (SERVICE_LEGGETT_ALARM_TIMER, {"action": "start", "minutes": True}),
-        (SERVICE_LEGGETT_ALARM_TIMER, {"action": "start", "minutes": 0}),
-        (SERVICE_LEGGETT_HOLD_CONTROL, {"control": "snore", "duration": 0.099}),
-        (SERVICE_LEGGETT_HOLD_CONTROL, {"control": "snore", "duration": 60.001}),
-        (SERVICE_LEGGETT_HOLD_CONTROL, {"control": "snore", "duration": 1.0001}),
-        (SERVICE_LEGGETT_HOLD_CONTROL, {"control": "snore", "duration": float("nan")}),
-        (SERVICE_LEGGETT_HOLD_CONTROL, {"control": "snore", "duration": float("inf")}),
-        (SERVICE_LEGGETT_HOLD_CONTROL, {"control": "memory_4", "duration": 1}),
+        (SERVICE_HOLD_CONTROL, {"control": "snore", "duration": 0.099}),
+        (SERVICE_HOLD_CONTROL, {"control": "snore", "duration": 60.001}),
+        (SERVICE_HOLD_CONTROL, {"control": "snore", "duration": 1.0001}),
+        (SERVICE_HOLD_CONTROL, {"control": "snore", "duration": float("nan")}),
+        (SERVICE_HOLD_CONTROL, {"control": "snore", "duration": float("inf")}),
     ],
 )
 async def test_invalid_schema_prevents_dispatch(hass: HomeAssistant, service_target, service, data):
@@ -215,7 +254,7 @@ async def test_hold_control_uses_exact_milliseconds_and_cancellation(
     coordinator, controller, _ = service_target
     await hass.services.async_call(
         DOMAIN,
-        SERVICE_LEGGETT_HOLD_CONTROL,
+        SERVICE_HOLD_CONTROL,
         {"device_id": "bed", "control": control, "duration": 1.001},
         blocking=True,
     )
@@ -234,7 +273,7 @@ async def test_hold_store_rejects_profile_without_standalone_store(
     with pytest.raises(ServiceValidationError, match="does not support held control 'store'"):
         await hass.services.async_call(
             DOMAIN,
-            SERVICE_LEGGETT_HOLD_CONTROL,
+            SERVICE_HOLD_CONTROL,
             {"device_id": "bed", "control": "store", "duration": 1},
             blocking=True,
         )
@@ -245,7 +284,6 @@ async def test_hold_store_rejects_profile_without_standalone_store(
     ("service", "data", "capability"),
     [
         (SERVICE_LEGGETT_SLEEP_TIMER, {"action": "cancel"}, "supports_sleep_timer"),
-        (SERVICE_LEGGETT_ALARM_TIMER, {"action": "cancel"}, "supports_alarm_timer"),
     ],
 )
 async def test_capability_and_protocol_are_required(
@@ -275,7 +313,7 @@ async def test_hold_preserves_paired_side_dispatch(hass: HomeAssistant, service_
     resolve.return_value = ([(pair, SIDE_RIGHT)], [])
     await hass.services.async_call(
         DOMAIN,
-        SERVICE_LEGGETT_HOLD_CONTROL,
+        SERVICE_HOLD_CONTROL,
         {"device_id": "pair", "side": SIDE_RIGHT, "control": "flat", "duration": 0.1},
         blocking=True,
     )
@@ -290,9 +328,9 @@ async def test_hold_preserves_paired_side_dispatch(hass: HomeAssistant, service_
     ("service", "data", "method"),
     [
         (SERVICE_LEGGETT_SLEEP_TIMER, {"action": "cancel"}, "cancel_sleep_timer"),
-        (SERVICE_LEGGETT_ALARM_TIMER, {"action": "cancel"}, "cancel_alarm_timer"),
+        (SERVICE_SET_ALARM, {"enabled": False}, "cancel_alarm_timer"),
         (
-            SERVICE_LEGGETT_HOLD_CONTROL,
+            SERVICE_HOLD_CONTROL,
             {"control": "snore", "duration": 1},
             "hold_control",
         ),

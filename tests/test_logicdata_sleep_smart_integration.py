@@ -21,7 +21,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
@@ -35,7 +35,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import (
-    SERVICE_LOGICDATA_RENAME,
+    SERVICE_RENAME,
     async_register_services,
 )
 
@@ -115,7 +115,7 @@ async def test_entities_follow_the_app_surface(
             CONF_HAS_MASSAGE: True,
             CONF_MOTOR_PULSE_COUNT: 1,
             CONF_PREFERRED_ADAPTER: "auto",
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
         unique_id=ADDRESS,
     )
@@ -187,7 +187,7 @@ async def test_rename_validates_every_app_rule_before_any_write(hass, services):
     services.return_value = ([(phone, SIDE_BOTH), (pump, SIDE_BOTH)], [])
     with pytest.raises(ServiceValidationError, match="1..20"):
         await hass.services.async_call(
-            DOMAIN, SERVICE_LOGICDATA_RENAME, {"device_id": ["a", "b"], "name": "My Bed"},
+            DOMAIN, SERVICE_RENAME, {"device_id": ["a", "b"], "name": "My Bed"},
             blocking=True,
         )
     phone.async_execute_controller_command.assert_not_called()

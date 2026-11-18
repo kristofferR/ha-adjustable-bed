@@ -14,7 +14,8 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN, CARD_PRESETS, CARD_UTILITY
+from ...alarm import AlarmCapability, AlarmRequest
+from ...card import CARD_HIDDEN, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
 from ...codec import suta as codec
 from ...command_scheduler import current_command_context
 from ...const import CONF_BLE_DEVICE_NAME
@@ -135,9 +136,6 @@ class Request:
     suffix: str = ""
     logical_side: int | None = None
     value: int | None = None
-    weekdays: tuple[int, ...] = ()
-    time: str = "0630"
-    loop: str = "00"
 
 
 class SutaController(BedController):
@@ -322,11 +320,12 @@ class SutaController(BedController):
                     continue
                 result.append(ControllerButtonSpec(
                     "suta_" + key + suffix, label, partial(_action, key=key, suffix=suffix),
-                    translation_key="suta_preset" if command.text.startswith(("AT+MODE", "AT+SETMODE")) else "suta_action", translation_placeholders={"action": label},
+                    translation_key="suta_save" if command.text.startswith("AT+SETMODE") else "suta_preset" if command.text.startswith("AT+MODE") else "suta_action",
+                    translation_placeholders={"action": label},
                     hold=ControllerHoldSpec(key, release_button_key="suta_release") if command.kind in ("motion", "save") else None,
                     requires_confirmation=command.kind == "save" or key == "reset_on",
                     invalidates_position=command.kind in ("motion", "save") or command.text.startswith("AT+MODE"),
-                    card=CARD_PRESETS if command.text.startswith(("AT+MODE", "AT+SETMODE")) else CARD_UTILITY,
+                    card=CARD_PRESET_SAVE if command.text.startswith("AT+SETMODE") else CARD_PRESETS if command.text.startswith("AT+MODE") else CARD_UTILITY,
                 ))
         for action in BINARY.values():
             if self.family not in action.controllers or action.key in _BINARY_WITHOUT_BUTTON:
@@ -351,18 +350,21 @@ class SutaController(BedController):
     def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
         if self.family == "TEMP":
             return (
-                ControllerSwitchSpec("suta_heating", "suta_heating", HEATING_ON, partial(_binary_switch, action="heating_power"), "mdi:radiator"),
-                ControllerSwitchSpec("suta_heating_light", "suta_heating_light", HEATING_LIGHT_ON, partial(_binary_switch, action="heating_light"), "mdi:lightbulb"),
+                ControllerSwitchSpec("suta_heating", "suta_heating", partial(_binary_switch, action="heating_power"),
+                                     state_key=HEATING_ON, icon="mdi:radiator"),
+                ControllerSwitchSpec("suta_heating_light", "suta_heating_light", partial(_binary_switch, action="heating_light"),
+                                     state_key=HEATING_LIGHT_ON, icon="mdi:lightbulb"),
             )
         if self.family == "MOON":
             return tuple(
                 ControllerSwitchSpec(f"suta_automatic_adjustment_{side}", f"suta_{_SIDE_NAMES[side].lower()}_automatic_adjustment",
-                                     AUTOMATIC_ADJUSTMENT[side], partial(_binary_switch, action="automatic_adjustment_switch", side=side), "mdi:tune-variant")
+                                     partial(_binary_switch, action="automatic_adjustment_switch", side=side),
+                                     state_key=AUTOMATIC_ADJUSTMENT[side], icon="mdi:tune-variant")
                 for side in (1, 2)
             )
         if "set_lock_on" in self.commands and "set_lock_off" in self.commands:
             # The bed reports no lock state, so the switch shows the last command.
-            return (ControllerSwitchSpec("suta_lock", "suta_lock", None, _lock, "mdi:lock"),)
+            return (ControllerSwitchSpec("suta_lock", "suta_lock", _lock, icon="mdi:lock"),)
         return ()
 
     def controller_button_available(self, key: str) -> bool:
@@ -653,16 +655,8 @@ class SutaController(BedController):
     def validate_request(self, request: Request, *, live: bool = True) -> None:
         if request.action not in BINARY and (request.logical_side is not None or request.value is not None):
             raise ValueError("ASCII SUTA commands have no logical-side or numeric selector")
-        if request.action in ("alarm_set", "alarm_disable", "alarm_delete", "snore_cycle", "massage_off") and request.suffix:
+        if request.action in ("snore_cycle", "massage_off") and request.suffix:
             raise ValueError("This compound SUTA action has no text suffix")
-        if request.action in ("alarm_set", "alarm_disable", "alarm_delete"):
-            if self.family != "P1" or "get_alarm" not in self.commands:
-                raise ValueError("SUTA text alarms require a direct BED text layout")
-            if not request.weekdays or len(set(request.weekdays)) != len(request.weekdays) or any(isinstance(day, bool) or day not in range(7) for day in request.weekdays):
-                raise ValueError("Choose unique weekdays from Sunday 0 through Saturday 6")
-            if len(request.time) != 4 or not request.time.isdecimal() or int(request.time[:2]) > 23 or int(request.time[2:]) > 59 or request.loop not in ("00", "01"):
-                raise ValueError("Choose a four-digit HHmm and loop 00 or 01")
-            return
         if request.action in ("snore_cycle", "massage_off"):
             required = () if request.action == "snore_cycle" else ("mass_head_dt", "mass_foot_dt")
             if not self.commands or self.family != "P1" or not all(key in self.profile.commands for key in required):
@@ -708,17 +702,13 @@ class SutaController(BedController):
     async def execute_request(self, request: Request) -> None:
         self.validate_request(request)
         link, cancel = self._live(), self._coordinator.cancel_command
-        if request.action in ("alarm_set", "alarm_disable", "alarm_delete"):
-            operation = {"alarm_set": "SA", "alarm_disable": "CA", "alarm_delete": "DA"}[request.action]
-            for index, day in enumerate(request.weekdays):
-                if index and await pause(1, cancel):
-                    return
-                text = f"AT+{operation}=0{day}{request.time}" + ("01" if operation == "DA" else request.loop)
-                await self._schedule(link, Command(text, "tap", 3, 100, 100, (), "VM"), "", cancel)
-            await self._schedule(link, self.commands["get_alarm"], "", cancel)
-            return
         if request.action in BINARY and self.family in BINARY[request.action].controllers:
-            await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
+            sent = await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
+            if sent is not None and request.action == "automatic_adjustment_switch":
+                # The bed does not echo this write; like the app's checkbox, show the sent value
+                # until the next full-state report replaces it.
+                self.observations[f"side_{request.logical_side}_automatic_checked"] = request.value == 1
+                self._publish()
             return
         if request.action == "snore_cycle":
             # Direct BLE consequence of the excluded phone detector. This
@@ -757,6 +747,29 @@ class SutaController(BedController):
             if command.kind in ("dt", "lv", "fan") and not cancel.is_set():
                 self._cycles[request.action] = suffix
                 self._publish()
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        # Text layouts keep one alarm per weekday and time; the app lists them with get_alarm.
+        return AlarmCapability(weekdays=True) if self.family == "P1" and "get_alarm" in self.commands else None
+
+    def _alarm_texts(self, alarm: AlarmRequest) -> tuple[str, ...]:
+        """One frame per weekday, Sunday 0. The app's Loop switch repeats the days weekly."""
+        if alarm.weekdays:
+            days, loop = sorted((day + 1) % 7 for day in alarm.weekdays), "01"
+        else:
+            days, loop = [(alarm.occurrence().weekday() + 1) % 7], "00"
+        # The app turns an alarm off (CA) with the same day, time and loop it set (SA).
+        operation = "SA" if alarm.enabled else "CA"
+        return tuple(f"AT+{operation}=0{day}{alarm.hour:02d}{alarm.minute:02d}{loop}" for day in days)
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        link, cancel = self._live(), self._coordinator.cancel_command
+        for index, text in enumerate(self._alarm_texts(alarm)):
+            if index and await pause(1, cancel):
+                return
+            await self._schedule(link, Command(text, "tap", 3, 100, 100, (), "VM"), "", cancel)
+        await self._schedule(link, self.commands["get_alarm"], "", cancel)
 
     async def write_command(self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = 100, cancel_event: asyncio.Event | None = None) -> None:
         link = self._live()

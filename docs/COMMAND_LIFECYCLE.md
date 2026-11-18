@@ -13,7 +13,7 @@ notification requirements, or preset semantics of other beds.
 
 | Observation | Shared behavior | Validation |
 | --- | --- | --- |
-| Reconnecting between taps repeatedly pays startup cost | One-second renewable handoff when Disconnect After Command is enabled | Consecutive commands reuse the link, then the idle lane releases it; explicit disconnect remains immediate |
+| Reconnecting between taps repeatedly pays startup cost | One-second renewable handoff when Bluetooth connection is "Release right after each command" | Consecutive commands reuse the link, then the idle lane releases it; explicit disconnect remains immediate |
 | One side finishes while its partner is still running | Concurrent groups hold both links through completion and failure/STOP cleanup, then start their configured idle timeout together | Nested connection holds and paired success/failure cleanup |
 | Background work takes back the remote's link | Quick handoff disables periodic reconciliation; a queued light refresh rechecks whether the live link still needs hydration | No connection attempt after a queued refresh loses its link |
 | Missing initial feedback keeps the connection reserved for retries | Quick handoff permits one initial position/light-state read attempt; longer hydration retries remain available when quick disconnect is off | Missing-feedback tests read once and arm the short handoff timer |

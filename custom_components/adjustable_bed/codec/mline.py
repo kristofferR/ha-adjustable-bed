@@ -2,7 +2,7 @@
 
 P1 is raw 05/02, P2 reverses its four control bytes in E6/FE/16 with a
 complement checksum. Auxiliary commands and replies have independent formats.
-The accepted row147 literals, not the Okin name, establish these relationships.
+The M Line 1.2.2 literals, not the Okin name, establish these relationships.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Good Vibe Sleep 2.0.1/code20103 frames over the Richmat 6E codec (row116).
+"""Good Vibe Sleep 2.0.1/code20103 frames over the Richmat 6E codec.
 
 Commands and STOP are ``codec.function``, colour is ``codec.rgb``. Settings
 records put ``len`` after ``20`` (``codec.record_20_len``). The sleep sensors'

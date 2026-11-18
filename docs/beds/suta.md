@@ -933,9 +933,8 @@ jobs are not treated as fragment-owned jobs.
 
 ### Vectors
 
-`tests/test_suta_vectors.py` builds all 203 accepted final frames and 56
-constructor literals through the production codec. The private APK audit
-oracle is not imported or replayed.
+`tests/test_suta_vectors.py` builds all 203 app frames and 56 constructor
+literals through the production codec.
 
 ## Profiles
 
@@ -1487,23 +1486,25 @@ write to a replacement connection.
 
 `adjustable_bed.suta` accepts an action key from the generated catalog.
 Text DT/LV/fan actions use a proven `suffix`; MOON/TEMP actions use
-`logical_side` (1 or 2) and `value` when their payload requires them.
+`logical_side` (`left` or `right`) and `value` when their payload requires them.
 The physical paired `side` remains separate from the binary payload side.
 
-Text alarms use `alarm_set`, `alarm_disable` or `alarm_delete`,
-unique `weekdays` (Sunday 0 to Saturday 6), four-digit `time` (HHmm)
-and `loop` (`00` or `01`). Supplied locale digits are preserved.
-Clock sync uses Home Assistant's current local time.
+Text layouts take alarms through the shared `set_alarm` action. Each chosen
+weekday becomes one `AT+SA` frame (Sunday 0 on the wire) with the app's Loop
+flag `01`, so the alarm repeats weekly. Without weekdays the alarm is set once,
+on the next day the time occurs, with Loop `00`. Turning an alarm off sends
+`AT+CA` with the same days and time. The app's delete frame is not offered.
+Each write is followed by the alarm list query. Clock sync uses Home
+Assistant's current local time.
 
 `snore_cycle` sends the proven normal SNORE burst then FLAT after the
 source's delay. This explicit HA operation owns both effects and cancellation;
 it performs no phone sensing or background reconnection.
 
-#### Evidence
+#### Light schedules
 
-Accepted unit128 establishes static behavior only. Exact B212D, B903 and
-M205 light on/off schedules are not specified completely by that evidence,
-so those six controls are withheld pending the missing timing/ownership facts.
+The app does not fully specify the B212D, B903 and M205 light on/off
+schedules, so those six controls are withheld.
 
 ## Notes
 
@@ -1512,11 +1513,4 @@ sensors, analytics, phone/audio and unrelated seating/drawer/accessory
 infrastructure are outside this integration's bed feature boundary.
 Dormant resources are not capabilities.
 
-### Analysis provenance
-
-- Accepted `com.shuta.smart_home` 3.20.0 (80), acquired-set identity
-  `367cc580a20cbc35b39dc80989b734cd41a6b02862f9978e7e296578df47e98a`.
-- Frozen acquisition dated 2026-07-14: the complete delivered base and density
-  split set. This does not attest to a newer app version.
-- Report pin `02ab265b63cab488f0883b4ee15812522cd7fd4d000aafabeccdcb844ceda36b`;
-  scoped audit002 ACCEPT, no findings. Hardware remains UNVERIFIED.
+Based on SUTA Smart Home 3.20.0 (`com.shuta.smart_home`, version code 80).

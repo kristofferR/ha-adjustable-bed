@@ -1,4 +1,4 @@
-"""Rize Remedy II 1.0.1 (2), row180, over the shared OKIN Bedding controller.
+"""Rize Remedy II 1.0.1 (2), over the shared OKIN Bedding controller.
 
 The source's A0/positive-byte notification acknowledges local save intent;
 there is no position, lighting, massage or persistent-memory telemetry.
@@ -50,6 +50,7 @@ class RizeRemedyIIController(OkinBeddingAppController):
                 translation_key="rize_remedy_ii_save_acknowledged",
                 state_key=SAVE_ACK,
                 icon="mdi:content-save-check-outline",
+                entity_registry_enabled_default=False,
                 card=CARD_UTILITY,
             ),
         )
