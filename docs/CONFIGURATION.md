@@ -1034,3 +1034,10 @@ it does not write a hardware lock. Protocol, layout and local settings belong
 to each physical side of a two-address pair. See [M Line](beds/mline.md).
 
 SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-motor layout, disabled angle sensing and observed-only massage/light surface. Each physical side keeps its app settings. See [SonicSleep](beds/richmat.md#sonicsleep).
+
+### L2 Motion
+
+Select L2 Motion for beds controlled by Leon's L2Motion. Setup and Reconfigure
+ask for the original Bluetooth name; it selects the available controls without
+extra motor or massage switches. Combined beds retain each physical side's name.
+See the [L2 Motion guide](beds/motomotion.md#l2-motion) for supported features.

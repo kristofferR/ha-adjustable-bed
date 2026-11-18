@@ -3161,3 +3161,41 @@ symphony_set_light:
           min: 20
           max: 80
           mode: box
+
+l2motion:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+          translation_key: side
+    operation:
+      required: true
+      selector:
+        select:
+          options: [rgb, sync_mode]
+          translation_key: l2motion_operation
+    rgb:
+      selector:
+        object:
+    brightness:
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.01
+    wired:
+      default: false
+      selector:
+        boolean:
+    confirm:
+      default: false
+      selector:
+        boolean:

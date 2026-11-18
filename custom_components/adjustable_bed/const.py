@@ -499,6 +499,7 @@ BED_TYPE_RICHMAT_CLASSIC_APPS: Final = "richmat_classic_apps"
 # Opt-in to the classic apps' third-service fallback when no fixed service exists.
 CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
 BED_TYPE_BEDGEAR: Final = "bedgear"
+BED_TYPE_L2MOTION: Final = "l2motion"
 BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
 BED_TYPE_RICHMAT_APP: Final = "richmat_app"
@@ -726,6 +727,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_YAMADA,
     BED_TYPE_BEDGEAR,
+    BED_TYPE_L2MOTION,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_ERGOMOTION_4,
@@ -917,6 +919,7 @@ SUPPORTED_BED_TYPES: Final = [
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
         BED_TYPE_BEDGEAR,
+        BED_TYPE_L2MOTION,
         BED_TYPE_SONICSLEEP,
         BED_TYPE_MOTOMOTION,
         BED_TYPE_RICHMAT_CLASSIC_APPS,

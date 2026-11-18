@@ -90,6 +90,7 @@ class ControllerSwitchSpec:
     assumed_state: bool = field(default=False, kw_only=True)
     # A setting the integration keeps itself sends no frame: applied without connecting.
     local_set_fn: Callable[[bool], None] | None = field(default=None, kw_only=True)
+    available_fn: Callable[[BedController], bool] | None = field(default=None, kw_only=True)
     entity_registry_enabled_default: bool = field(default=True, kw_only=True)
     # Fills a translated name template, e.g. ``{side}``.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)

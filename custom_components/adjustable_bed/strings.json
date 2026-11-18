@@ -828,7 +828,8 @@
       "symphony_profile": "Choose the Symphony Sleep Sense product the app shows.",
       "symphony_unpair_first": "Separate the combined bed first, then choose this product, which has no separate sides.",
       "bedgear_profile": "Enter the bed's Bluetooth name exactly as the Bedgear app shows it. It contains HHC.",
-      "invalid_movement_per_tap": "Enter a number from 1 to 100."
+      "invalid_movement_per_tap": "Enter a number from 1 to 100.",
+      "l2motion_profile": "Enter the bed's Bluetooth name exactly as L2 Motion shows it."
     }
   },
   "options": {
@@ -3252,6 +3253,9 @@
       },
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
+      },
+      "l2motion_save_snore": {
+        "name": "Save anti-snore position"
       }
     },
     "cover": {
@@ -4760,6 +4764,9 @@
       },
       "symphony_sonic": {
         "name": "Sonic massage"
+      },
+      "l2motion_sync": {
+        "name": "Synchronization"
       }
     },
     "binary_sensor": {
@@ -5244,6 +5251,21 @@
       },
       "richmat_resource_massage_timer": {
         "name": "Massage timer"
+      },
+      "l2motion_volume": {
+        "name": "Volume"
+      },
+      "l2motion_treble": {
+        "name": "Treble"
+      },
+      "l2motion_bass": {
+        "name": "Bass"
+      },
+      "l2motion_vibration": {
+        "name": "Vibration"
+      },
+      "l2motion_light_timer": {
+        "name": "Light timer"
       }
     },
     "select": {
@@ -5925,6 +5947,15 @@
           "left": "Left",
           "right": "Right",
           "both": "Both"
+        }
+      },
+      "l2motion_sound_mode": {
+        "name": "Sound mode",
+        "state": {
+          "custom": "Custom",
+          "vocal": "Vocal",
+          "cinema": "Cinema",
+          "entertainment": "Entertainment"
         }
       }
     },
@@ -8365,6 +8396,40 @@
           "name": "Brightness (20–80)"
         }
       }
+    },
+    "l2motion": {
+      "name": "Set light color or synchronization mode",
+      "description": "Change supported light colors or explicitly confirm wired or wireless synchronization.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "Bed to control."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a combined bed."
+        },
+        "operation": {
+          "name": "Control",
+          "description": "Choose light color or synchronization mode."
+        },
+        "rgb": {
+          "name": "RGB channels",
+          "description": "Three color channels, each 0 to 255."
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Scale the supplied RGB channels from 0 to 1."
+        },
+        "wired": {
+          "name": "Wired synchronization",
+          "description": "Turn on if the two bases are connected with a cable; turn off for wireless."
+        },
+        "confirm": {
+          "name": "Confirm synchronization change",
+          "description": "Required for synchronization mode changes."
+        }
+      }
     }
   },
   "exceptions": {
@@ -8622,6 +8687,9 @@
     },
     "whole_number_required": {
       "message": "Use a whole number instead of \"{value}\"."
+    },
+    "l2motion_control_unavailable": {
+      "message": "This control is unavailable. Check the bed model, reported synchronization support and confirmation."
     }
   },
   "issues": {
@@ -10371,6 +10439,12 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "l2motion_operation": {
+      "options": {
+        "rgb": "Light color",
+        "sync_mode": "Synchronization mode"
       }
     }
   }

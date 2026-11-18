@@ -172,6 +172,11 @@ async def factory_controllers() -> list[BedController]:
     bedgear = await _create_controller_for_bed_type("bedgear")
     for pair in ("E1", "44", "97", "15", "35"):
         controllers.append(BedgearController(bedgear._coordinator, name="HHC00000" + pair + "DE0X"))
+    from custom_components.adjustable_bed.profiles.l2motion import L2MotionProfile
+    for pair in ("E1", "44", "97", "15", "35", "01"):
+        for mode in ("E", "M", "D"):
+            selected = "HHC00000" + pair + "D" + mode + "0X"
+            controllers.append(BedgearController(bedgear._coordinator, name=selected, profile=L2MotionProfile(selected)))
     # MotoMotion decodes its panels from the advertised name. This name adds the
     # users, RGB and music panels that the default name lacks.
     controller = await _create_controller_for_bed_type(BED_TYPE_MOTOMOTION)

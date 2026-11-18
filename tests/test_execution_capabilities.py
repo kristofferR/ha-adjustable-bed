@@ -109,6 +109,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
     **{f"KeesonProfile:symphony_sleep_{route}": {"hold": ("symphony078",)} for route in ("box1", "box2", "fallback")},
     "SymphonyWordProfile:symphony": {"hold": ("row133",)},
+    "L2MotionProfile:l2motion": {"hold": ("l2motion",)},
     "BedgearProfile:bedgear": {"hold": ("bedgear",)},
     **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
     "SonicSleepProfile:one": {"hold": ("sonicsleep",)},
@@ -317,6 +318,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/symphony_sleep.py:<module>.PROFILES": tuple(f"KeesonProfile:symphony_sleep_{route}" for route in ("box1", "box2", "fallback")),
     **{f"profiles/symphony.py:<module>.{site}": ("SymphonyWordProfile:symphony",)
        for site in ("EXECUTION", "SymphonyProfile", "word_profile")},
+    "profiles/l2motion.py:<module>.L2MotionProfile": ("L2MotionProfile:l2motion",),
     "profiles/bedgear.py:<module>.BedgearProfile": ("BedgearProfile:bedgear",),
     "profiles/sonicsleep.py:<module>.SonicSleepProfile": ("SonicSleepProfile:one",),
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
