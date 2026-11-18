@@ -1,4 +1,4 @@
-"""Sleep Smart Air Mattress 1.0.0 pump: frozen row053 P4 vectors and lifecycle."""
+"""Sleep Smart Air Mattress 1.0.0 pump: frozen P4 vectors and lifecycle."""
 
 from __future__ import annotations
 

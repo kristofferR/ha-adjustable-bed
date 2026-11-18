@@ -8,9 +8,6 @@
         "deviceControlBoxProtocolVersionEvent",
         7
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -22,9 +19,6 @@
         "deviceVersionOneBedModeEvent",
         11
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -40,9 +34,6 @@
           "angle": 254
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -58,9 +49,6 @@
           "angle": 0
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -77,9 +65,6 @@
           "massage3": 6
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -91,9 +76,6 @@
         "deviceDetectionStatusEvent",
         "start"
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -105,9 +87,6 @@
         "deviceDetectionStatusEvent",
         "repeat"
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -119,9 +98,6 @@
         "deviceDetectionStatusEvent",
         "start"
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -133,9 +109,6 @@
         "deviceDetectionMessageEvent",
         {}
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -147,9 +120,6 @@
         "deviceDetectionMessageEvent",
         {}
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -161,37 +131,25 @@
         "deviceDetectionMessageEvent",
         {}
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
     "id": "common-unknown-tag",
     "entry": "fields",
     "hex": "6e90420100",
-    "expected": [],
-    "evidence": [
-      "E-FIELDS"
-    ]
+    "expected": []
   },
   {
     "id": "common-wrong-prefix",
     "entry": "fields",
     "hex": "6e913bfe00",
-    "expected": [],
-    "evidence": [
-      "E-FIELDS"
-    ]
+    "expected": []
   },
   {
     "id": "common-wrong-length",
     "entry": "fields",
     "hex": "6e903bfe0000",
-    "expected": [],
-    "evidence": [
-      "E-FIELDS"
-    ]
+    "expected": []
   },
   {
     "id": "ext-white-on",
@@ -202,9 +160,6 @@
         "deviceWhiteLedStatusEvent",
         true
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -216,19 +171,13 @@
         "deviceWhiteLedStatusEvent",
         false
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
     "id": "ext-op-ignored",
     "entry": "fields",
     "hex": "6e200903010100019d",
-    "expected": [],
-    "evidence": [
-      "E-FIELDS"
-    ]
+    "expected": []
   },
   {
     "id": "ext-motor-height-full",
@@ -244,9 +193,6 @@
           "monitorHeight": 60
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -263,9 +209,6 @@
           "monitorHeight": 0
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -280,9 +223,6 @@
           "angle": 47
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -297,9 +237,6 @@
           "angle": 68
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -315,19 +252,13 @@
         "deviceMassageFootStrengthStatusEvent",
         255
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
     "id": "ext-massage-odd-payload-ignored",
     "entry": "fields",
     "hex": "6e200a020102010702a7",
-    "expected": [],
-    "evidence": [
-      "E-FIELDS"
-    ]
+    "expected": []
   },
   {
     "id": "ext-massage-mode",
@@ -338,9 +269,6 @@
         "deviceMassageModeStatusEvent",
         9
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -352,9 +280,6 @@
         "deviceMassageFrequencStatusEvent",
         255
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -366,9 +291,6 @@
         "deviceMassagePowerStatusEvent",
         true
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -380,9 +302,6 @@
         "deviceMassagePowerStatusEvent",
         false
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -399,9 +318,6 @@
           "blue": 1
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -413,9 +329,6 @@
         "deviceRGBStripTimerStatusEvent",
         150
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -427,9 +340,6 @@
         "deviceRGBStripMotionStatusEvent",
         true
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -441,9 +351,6 @@
         "deviceRGBStripStatusEvent",
         false
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -462,9 +369,6 @@
           "field_2f": 255
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -483,19 +387,13 @@
           "field_2f": 255
         }
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
     "id": "ext-alarm-short-range",
     "entry": "fields",
     "hex": "6e2008050102019f",
-    "expected": "RangeError",
-    "evidence": [
-      "E-FIELDS"
-    ]
+    "expected": "RangeError"
   },
   {
     "id": "ext-snore-on",
@@ -506,9 +404,6 @@
         "deviceAntiSnoreEvent",
         true
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -520,9 +415,6 @@
         "deviceGetOffBedStatusEvent",
         false
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -534,9 +426,6 @@
         "deviceAntiSnoreConfigCountEvent",
         7
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -548,9 +437,6 @@
         "deviceAntiSnoreConfigTimeEvent",
         30
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -562,9 +448,6 @@
         "deviceCharacteristicsSubscriptionBoxLockEvent",
         null
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -576,9 +459,6 @@
         "deviceCharacteristicsSubscriptionCancelBoxLockEvent",
         null
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -603,9 +483,6 @@
           ]
         ]
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -630,9 +507,6 @@
           ]
         ]
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -657,9 +531,6 @@
           ]
         ]
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -684,9 +555,6 @@
           ]
         ]
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -711,9 +579,6 @@
           ]
         ]
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -725,9 +590,6 @@
         "devicePressModeEvent",
         255
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -739,9 +601,6 @@
         "deviceStrandardAndSplitControlEvent",
         true
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -753,9 +612,6 @@
         "deviceStrandardAndSplitControlEvent",
         false
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
@@ -767,37 +623,25 @@
         "deviceSameAndSplitControlEvent",
         3
       ]
-    ],
-    "evidence": [
-      "E-FIELDS"
     ]
   },
   {
     "id": "ext-press-short-range",
     "entry": "fields",
     "hex": "6e20070b0102a3",
-    "expected": "RangeError",
-    "evidence": [
-      "E-FIELDS"
-    ]
+    "expected": "RangeError"
   },
   {
     "id": "ext-bad-checksum",
     "entry": "fields",
     "hex": "6e2009030102000100",
-    "expected": [],
-    "evidence": [
-      "E-FIELDS"
-    ]
+    "expected": []
   },
   {
     "id": "ext-length-mismatch",
     "entry": "fields",
     "hex": "6e200803010200019d",
-    "expected": [],
-    "evidence": [
-      "E-FIELDS"
-    ]
+    "expected": []
   },
   {
     "id": "fragment-two-then-rest",
@@ -812,10 +656,7 @@
       ],
       "buffer": "",
       "timer": false
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "fragment-extended-body",
@@ -830,10 +671,7 @@
       ],
       "buffer": "",
       "timer": false
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "coalesced-extended",
@@ -848,10 +686,7 @@
       ],
       "buffer": "",
       "timer": false
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "leading-noise",
@@ -865,10 +700,7 @@
       ],
       "buffer": "",
       "timer": false
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "trailing-header",
@@ -882,10 +714,7 @@
       ],
       "buffer": "6e",
       "timer": true
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "incomplete-expiry",
@@ -898,10 +727,7 @@
       "frames": [],
       "buffer": "",
       "timer": false
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "timer-reset-partial",
@@ -914,10 +740,7 @@
       "frames": [],
       "buffer": "6e2009",
       "timer": true
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "noheader-clears",
@@ -929,10 +752,7 @@
       "frames": [],
       "buffer": "",
       "timer": false
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "small-noise-retains",
@@ -944,10 +764,7 @@
       "frames": [],
       "buffer": "0102",
       "timer": true
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "oversized-declaration",
@@ -959,10 +776,7 @@
       "frames": [],
       "buffer": "6e20ff0102",
       "timer": true
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "common-coalesced",
@@ -977,10 +791,7 @@
       ],
       "buffer": "",
       "timer": false
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "common-premature-fragment",
@@ -995,10 +806,7 @@
       ],
       "buffer": "fe00",
       "timer": true
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "common-payload-header-splits",
@@ -1012,10 +820,7 @@
       ],
       "buffer": "6e00",
       "timer": true
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "common-literal-internal-header",
@@ -1029,10 +834,7 @@
       ],
       "buffer": "6e9f",
       "timer": true
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "declared-two-resync",
@@ -1047,10 +849,7 @@
       ],
       "buffer": "",
       "timer": false
-    },
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    }
   },
   {
     "id": "zero-length-shared-stall",
@@ -1058,10 +857,7 @@
     "steps": [
       "6e2000"
     ],
-    "expected": "zero-length non-progress",
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    "expected": "zero-length non-progress"
   },
   {
     "id": "snore-literal-collides-with-desk-framing",
@@ -1069,10 +865,7 @@
     "steps": [
       "6e2100008f"
     ],
-    "expected": "zero-length non-progress",
-    "evidence": [
-      "E-DEFRAMER"
-    ]
+    "expected": "zero-length non-progress"
   },
   {
     "id": "three-byte-ota-header-shared-range",
@@ -1081,9 +874,6 @@
       "6e4000"
     ],
     "expected": "RangeError",
-    "evidence": [
-      "E-DEFRAMER"
-    ],
     "scope": "Shared buffer boundary only, OTA payload EXCLUDED"
   },
   {
@@ -1094,10 +884,7 @@
       "notify": true,
       "indicate": false
     },
-    "expected": "0100",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "0100"
   },
   {
     "id": "notify-and-indicate",
@@ -1107,10 +894,7 @@
       "notify": true,
       "indicate": true
     },
-    "expected": "0100",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "0100"
   },
   {
     "id": "indicate-only-unselected",
@@ -1120,10 +904,7 @@
       "notify": false,
       "indicate": true
     },
-    "expected": "not-selected",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "not-selected"
   },
   {
     "id": "notify-missing-cccd",
@@ -1133,10 +914,7 @@
       "notify": true,
       "cccd": false
     },
-    "expected": "native-false; dart-true; query/completion continue",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "native-false; dart-true; query/completion continue"
   },
   {
     "id": "notify-error",
@@ -1146,10 +924,7 @@
       "notify": true,
       "error": true
     },
-    "expected": "discovery-catch; no query/completion; no retry",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "discovery-catch; no query/completion; no retry"
   },
   {
     "id": "plugin-indication-fallback",
@@ -1159,10 +934,7 @@
       "notify": false,
       "indicate": true
     },
-    "expected": "0200",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "0200"
   },
   {
     "id": "plugin-no-properties",
@@ -1172,10 +944,7 @@
       "notify": false,
       "indicate": false
     },
-    "expected": "error",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "error"
   },
   {
     "id": "mounted-query",
@@ -1187,9 +956,6 @@
     "expected": [
       "query",
       "completion-clock"
-    ],
-    "evidence": [
-      "E-SESSION-CLOSED"
     ]
   },
   {
@@ -1201,9 +967,6 @@
     },
     "expected": [
       "completion-clock"
-    ],
-    "evidence": [
-      "E-SESSION-CLOSED"
     ]
   },
   {
@@ -1215,10 +978,7 @@
       "mtu": 247,
       "success": true
     },
-    "expected": 247,
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": 247
   },
   {
     "id": "mtu-callback-status-ignored",
@@ -1229,10 +989,7 @@
       "mtu": 23,
       "success": false
     },
-    "expected": 23,
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": 23
   },
   {
     "id": "mtu-invoke-error",
@@ -1241,10 +998,7 @@
       "kind": "mtu",
       "outcome": "invoke-error"
     },
-    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run"
   },
   {
     "id": "mtu-timeout",
@@ -1253,10 +1007,7 @@
       "kind": "mtu",
       "outcome": "timeout"
     },
-    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run"
   },
   {
     "id": "mtu-disconnect",
@@ -1265,10 +1016,7 @@
       "kind": "mtu",
       "outcome": "disconnect"
     },
-    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run"
   },
   {
     "id": "mtu-adapter-off",
@@ -1277,9 +1025,6 @@
       "kind": "mtu",
       "outcome": "adapter-off"
     },
-    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run",
-    "evidence": [
-      "E-SESSION-CLOSED"
-    ]
+    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run"
   }
 ]

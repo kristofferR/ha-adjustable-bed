@@ -1,11 +1,5 @@
 {
   "scope": "Same-artifact audit001 repair only; static callback/manager call traces, not hardware outcomes or unique GATT timing. Selected current link connected and write handle valid; no target or pointer/session ownership is invented.",
-  "source_files": {
-    "apex/pages/favorites/favorites_pages.dart": "d52f9f7317cad0f6bee914f7e62afb51a6a449d4d734320a97b943ace4d67b72",
-    "apex/pages/remote/widgets/System.dart": "48d633518cb8efcd36f0d69e21fe593b254ea3334a875108fddddcb704ffcce7",
-    "apex/widgets/XCImageButton.dart": "44dcadccaddfcc4103d71c7db0cf392499221e3cf05c01cf5257bfde954989c3",
-    "flutter/src/cupertino/desktop_text_selection_toolbar_button.dart": "f32c5946133649c3851064e53ad81b225f691335f2e77ac43c53593dbf4147bc"
-  },
   "favorites_literal_map": {
     "isZg": "13",
     "isTV": "17",

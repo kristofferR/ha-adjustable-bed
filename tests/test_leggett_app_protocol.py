@@ -1,4 +1,4 @@
-"""Cluster-005 timer vectors and the additional U-Series BLE parser boundaries."""
+"""Leggett app timer vectors and the additional U-Series BLE parser boundaries."""
 
 import pytest
 

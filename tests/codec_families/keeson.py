@@ -15,7 +15,7 @@ from tests.somos_vectors import FROZEN_FRAMES as SOMOS_FRAMES
 _SOMOS = {f"somos_{key}": value for key, value in SOMOS_FRAMES.items()}
 
 # The guide's AdjustaMattress section also spells its P3/P4 Okin N-frames, which
-# its accepted report (row067) freezes in this fixture.
+# its accepted AdjustaMattress report freezes in this fixture.
 _ADJUSTAMATTRESS = frozenset(
     row["expected_bytes"].replace(" ", "").lower()
     for row in json.loads(

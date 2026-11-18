@@ -1,4 +1,4 @@
-"""Unit152: replay the accepted OKIN Comfort Bed 1.1.6 (8) command rows.
+"""Replay the accepted OKIN Comfort Bed 1.1.6 (8) command rows.
 
 Fixture literals come from the frozen report, manifest SHA-256
 313a09f8e5f9aa06cc11ca465bb8d4bbee31eb30816586296e2061a3d1229675.

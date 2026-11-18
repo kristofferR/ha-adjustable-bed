@@ -1,4 +1,4 @@
-"""Renewable holds (#483) on the Malouf profiles with stream evidence (row023).
+"""Renewable holds (#483) on the Malouf profiles with stream evidence.
 
 Each case drives the scenario's real controller the way ``timed_move`` does
 under a lease, on virtual time. While the lease lives the controller refreshes

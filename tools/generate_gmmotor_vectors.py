@@ -1,4 +1,4 @@
-"""Derive compact, immutable wire expectations from accepted row102 vectors.
+"""Derive compact, immutable wire expectations from accepted GM Control vectors.
 
 Only test inputs/expected bytes and catalog membership are emitted. No APK,
 decompiled instructions, audit report or mutable implementation output is copied.

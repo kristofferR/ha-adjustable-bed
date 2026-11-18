@@ -8,10 +8,10 @@ overwrite fixes its parameter, so both of its payloads are listed as sent.
 - Seat profiles: every value in the pre-v5 controller's SEAT tables, including
   the Neck, All and New All rows no entity sends. ``seat_1_2`` sends the Seat 1
   table; its Seat 2 equivalents are in ``SEAT_2``.
-- ``floyd``: the pre-v5 Floyd controller's tables, from the accepted row117
+- ``floyd``: the pre-v5 Floyd controller's tables, from the accepted Floyd app
   report (Floyd Home 1.0.7, product 139).
-- ``isleep``: the opcodes of ``tests/fixtures/isleep_row064_commands.json``
-  (ISleep 1.6.3 (45), accepted row064 report) and the enrollment
+- ``isleep``: the opcodes of ``tests/fixtures/isleep_commands.json``
+  (ISleep 1.6.3 (45), accepted app report) and the enrollment
   acknowledgment ``0x45`` the pre-v5 controller sent.
 
 ``SESSION_FRAMES`` are complete frames from the pre-v5 tests, the committed wire

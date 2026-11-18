@@ -154,7 +154,7 @@ async def factory_controllers() -> list[BedController]:
                         device_name=coordinator.entry.data.get(CONF_BLE_DEVICE_NAME),
                     )
                 )
-    # Both row084 product routes: the dual route adds the local side selector.
+    # Both Comfy (komfyD and ComfyDS) product routes: the dual route adds the local side selector.
     for bed_type in ("komfyd", "comfyds"):
         controller = await _create_controller_for_bed_type(bed_type)
         controller._coordinator.entry.data = {**controller._coordinator.entry.data, "product_type": 130}

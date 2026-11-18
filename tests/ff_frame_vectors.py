@@ -276,7 +276,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "ffffffff050005ff23c728",
         }
     ),
-    # Woosa Sleep 1.1.9 (row035)
+    # Woosa Sleep 1.1.9
     "woosa": frozenset(
         {
             "ffffffff01000111000000010001011204",
@@ -395,7 +395,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "ffffffff050000000796c2",
         }
     ),
-    # BedSense 1.8 (row108), including the C018 trailer anomaly
+    # BedSense 1.8, including the C018 trailer anomaly
     "bedsense": frozenset(
         {
             "ffffffff03001400035f05",
@@ -467,7 +467,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "ffffffff05000500e8c74f",
         }
     ),
-    # Motion Bed 1.24 (row032)
+    # Motion Bed 1.24
     "motion_bed": frozenset(
         {
             "ffffffff0100011107450003260930bd04",

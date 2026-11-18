@@ -16,7 +16,7 @@ from custom_components.adjustable_bed.beds.limoss.remote_state import get_limoss
 from custom_components.adjustable_bed.codec import limoss as codec
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_config import app_data
-from tests.test_limoss_remote_review_lifecycle import CAPS
+from tests.test_limoss_remote_entity_reloads import CAPS
 
 
 @asynccontextmanager
