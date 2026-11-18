@@ -9311,7 +9311,7 @@
     },
     "richmat_mh_control": {
       "name": "Nisco and MLILY Supreme: run control",
-      "description": "Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands.",
+      "description": "Run one of the selected app and model's controls, read one setting from the bed, or set the app mode used by later controls.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9319,9 +9319,9 @@
         "action": {
           "name": "Action"
         },
-        "opcode": {
-          "name": "Control number",
-          "description": "Decimal byte value from this app and model's control table."
+        "control": {
+          "name": "Control",
+          "description": "The control's name, as its button shows it, such as Flat, Memory 1 or Save M1. Add up or down for a motor, such as Back up."
         },
         "query": {
           "name": "Setting to read"
@@ -11747,7 +11747,6 @@
       "options": {
         "press": "Press control",
         "remote_long": "Save with remote button",
-        "voice_queue": "Voice command",
         "query": "Read setting",
         "app_mode": "Set app mode"
       }

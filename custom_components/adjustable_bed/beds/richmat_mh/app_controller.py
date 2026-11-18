@@ -427,6 +427,20 @@ class RichmatMHAppController(RufRichmatController):
         # Dedicated cfrm caller uses mask2, preserving fixed mode00, no STOP.
         await self._dispatch(codec.command(0xC0, 0))
 
+    def control_named(self, name: str) -> int:
+        """Return the code of the one control on this app/model page named ``name``."""
+        wanted = " ".join(name.split()).casefold()
+        codes = set()
+        for control in self._controls():
+            label = command_label(control.label, save=control.kind == "save")
+            # A motor's two directions share its label: "Back up", "Back down".
+            names = {label, f"{label} {control.kind}"} if control.kind in ("up", "down") else {label}
+            if wanted in {item.casefold() for item in names}:
+                codes.add(control.code)
+        if len(codes) != 1:
+            raise ValueError("Choose a control by the name of its button")
+        return codes.pop()
+
     def validate_control(self, code: int, *, remote_long: bool = False) -> Control:
         control = next((control for control in self._controls() if control.code == code), None)
         if control is None:

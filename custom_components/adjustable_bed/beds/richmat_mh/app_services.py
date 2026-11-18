@@ -38,8 +38,9 @@ QUERIES = {
 }
 _FIELDS: dict[vol.Marker, object] = {
     vol.Required("device_id"): DEVICE_IDS,
-    vol.Required("action"): vol.In(("press", "remote_long", "voice_queue", "query", "app_mode")),
-    vol.Optional("opcode"): cv.byte,
+    vol.Required("action"): vol.In(("press", "remote_long", "query", "app_mode")),
+    # A control's name, as its button shows it; each model resolves its own.
+    vol.Optional("control"): cv.string,
     vol.Optional("query"): vol.In(tuple(QUERIES)),
     # The app's local pickers, applied by later commands; "app_mode" sends nothing itself.
     vol.Optional("transmit_mode"): vol.In(("mode_0", "mode_1", "mode_2")),
@@ -60,21 +61,21 @@ async def handle_control(call: ServiceCall) -> None:
     # Capture every physical owner and STOP epoch before the first lazy import.
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
     action = str(call.data["action"])
-    opcode = int(call.data["opcode"]) if "opcode" in call.data else None
+    control = str(call.data["control"]) if "control" in call.data else None
     query = str(call.data["query"]) if "query" in call.data else None
     mode = call.data.get("transmit_mode")
     transmit_mode = str(mode).removeprefix("mode_") if mode is not None else None
     group = call.data.get("motor_group")
     motor_group = str(group).upper() if group is not None else None
     if action == "app_mode":
-        if opcode is not None or query is not None or (transmit_mode is None and motor_group is None):
+        if control is not None or query is not None or (transmit_mode is None and motor_group is None):
             raise ServiceValidationError("Choose a transmit mode or motor group")
     elif transmit_mode is not None or motor_group is not None:
         raise ServiceValidationError("Transmit mode and motor group belong to the app_mode action")
-    elif (action == "query" and (query is None or opcode is not None)) or (
-        action != "query" and (opcode is None or query is not None)
+    elif (action == "query" and (query is None or control is not None)) or (
+        action != "query" and (control is None or query is not None)
     ):
-        raise ServiceValidationError("Choose one query or one declared control opcode")
+        raise ServiceValidationError("Choose a setting to read, or a control to run")
     await async_import_modules(call.hass, "beds.richmat_mh.app_controller")
     from .app_controller import RichmatMHAppController
 
@@ -99,11 +100,9 @@ async def handle_control(call: ServiceCall) -> None:
 
     def validate(controller: RichmatMHAppController) -> None:
         if action != "query":
-            assert opcode is not None
-            if action == "voice_queue":
-                controller.validate_voice(opcode)
-            else:
-                controller.validate_control(opcode, remote_long=action == "remote_long")
+            assert control is not None
+            code = controller.control_named(control)
+            controller.validate_control(code, remote_long=action == "remote_long")
 
     async def execute(controller: RichmatMHAppController) -> None:
         if action == "query":
@@ -111,13 +110,12 @@ async def handle_control(call: ServiceCall) -> None:
             controller._classifier.rx_type = "INIT"
             await controller.write_command(QUERIES[query])
         else:
-            assert opcode is not None
+            assert control is not None
+            code = controller.control_named(control)
             if action == "remote_long":
-                await controller.remote_long(opcode)
-            elif action == "voice_queue":
-                await controller.voice_queue(opcode)
+                await controller.remote_long(code)
             else:
-                await controller.tap(opcode)
+                await controller.tap(code)
 
     await _preflight_and_execute(
         targets, RichmatMHAppController, "Nisco / MLILY Supreme BED controls", execute,

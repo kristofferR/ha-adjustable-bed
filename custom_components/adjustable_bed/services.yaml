@@ -3594,14 +3594,11 @@ richmat_mh_control:
       required: true
       selector:
         select:
-          options: [press, remote_long, voice_queue, query, app_mode]
+          options: [press, remote_long, query, app_mode]
           translation_key: richmat_mh_control_action
-    opcode:
+    control:
       selector:
-        number:
-          min: 0
-          max: 255
-          mode: box
+        text:
     query:
       selector:
         select:

@@ -403,3 +403,16 @@ async def test_nisco_alarm_cancel_uses_the_shared_set_alarm_route(sleeps) -> Non
     controller.validate_alarm(request)
     await controller.configure_alarm(request)
     assert frames(controller) == [frame.hex() for frame in protocol.TX_ALARM_CANCEL]
+
+
+def test_controls_are_named_as_their_buttons_show_them() -> None:
+    controller = make("nisco", "garm")
+    assert controller.control_named("Flat") == next(
+        c.code for c in controller._controls() if c.label.casefold() == "flat"
+    )
+    assert controller.control_named("save m1") != controller.control_named("Memory 1")
+    back_up, back_down = (controller.control_named(f"Back {way}") for way in ("up", "down"))
+    assert {back_up, back_down} == {36, 37}
+    for name in ("Back", "Nonexistent"):
+        with pytest.raises(ValueError, match="name of its button"):
+            controller.control_named(name)
