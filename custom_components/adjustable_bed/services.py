@@ -2137,7 +2137,7 @@ def _check_alarm(
             translation_key="alarm_sound_not_supported",
             translation_placeholders={"device_name": device_name, "sound": alarm.sound},
         )
-    resolved = _resolve_wake_action(alarm, capability, given)
+    resolved = _with_bed_defaults(alarm, capability, given)
     if (
         resolved.enabled
         and resolved.wake_action in capability.confirm_actions
@@ -2153,13 +2153,16 @@ def _check_alarm(
     return resolved
 
 
-def _resolve_wake_action(
+def _with_bed_defaults(
     alarm: AlarmRequest, capability: AlarmCapability, given: Collection[str]
 ) -> AlarmRequest:
-    """Fill in the bed's own default wake action when the caller chose none."""
-    if "wake_action" in given or not capability.wake_actions:
-        return alarm
-    return dataclasses.replace(alarm, wake_action=capability.wake_actions[0])
+    """Fill in the bed's own default wake action and sound when the caller chose none."""
+    defaults: dict[str, str] = {}
+    if "wake_action" not in given and capability.wake_actions:
+        defaults["wake_action"] = capability.wake_actions[0]
+    if "sound" not in given and capability.sounds:
+        defaults["sound"] = capability.sounds[0]
+    return dataclasses.replace(alarm, **defaults) if defaults else alarm
 
 
 async def handle_set_alarm(call: ServiceCall) -> None:
@@ -2202,7 +2205,7 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         capability = controller.alarm_capability
         if capability is None:
             raise ValueError("This bed no longer reports an alarm; reload it and try again")
-        await controller.configure_alarm(_resolve_wake_action(alarm, capability, given))
+        await controller.configure_alarm(_with_bed_defaults(alarm, capability, given))
 
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):

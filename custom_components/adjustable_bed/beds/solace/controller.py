@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...codec import ff_frame as codec
 from ...const import SOLACE_CHAR_UUID, SOLACE_VARIANT_WOOSA
 from ...controller_state import StateKey, StateUpdate
@@ -107,6 +108,10 @@ def build_solace_alarm_command(
         massage=massage,
         sound=_SOLACE_ALARM_SOUNDS[sound],
     )
+
+
+# Shared wake actions and this app's mode names, default first.
+_ALARM_MODES: Final = {"none": "no_action", "zero_g": "zero_g", "memory_1": "memory_1"}
 
 
 class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAudioActions):
@@ -595,6 +600,29 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
         await self.write_command(
             SolaceCommands.AUDIO_VOLUME_QUERY,
             cancel_event=asyncio.Event(),
+        )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if not self.supports_solace_alarm:
+            return None
+        return AlarmCapability(
+            wake_actions=tuple(_ALARM_MODES),
+            weekdays=True,
+            massage=True,
+            sounds=("alarm", *(s for s in self.solace_alarm_sound_options if s != "alarm")),
+        )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        # The app numbers Monday 1 through Sunday 7.
+        await self.program_solace_alarm(
+            enabled=alarm.enabled,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            weekdays=tuple(day + 1 for day in alarm.weekdays),
+            mode=_ALARM_MODES[alarm.wake_action],
+            massage=alarm.massage,
+            sound=alarm.sound,
         )
 
     async def program_solace_alarm(

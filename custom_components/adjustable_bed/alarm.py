@@ -72,8 +72,8 @@ OPTIONAL_FIELDS: Final = (
 class AlarmCapability:
     """What one bed's alarm accepts.
 
-    ``wake_actions`` lists the selectable wake actions, the first being the
-    default. ``slots`` above one adds a slot choice. The remaining flags admit
+    ``wake_actions`` and ``sounds`` list the selectable choices, the first
+    being the default. ``slots`` above one adds a slot choice. The remaining flags admit
     their request fields. ``cancel_running`` and ``resource`` say how the
     command is scheduled against other commands on the same bed.
     """
