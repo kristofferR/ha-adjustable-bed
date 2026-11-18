@@ -1082,6 +1082,10 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
 
     def validate_alarm(self, alarm: AlarmRequest) -> None:
         if alarm.mattress_side is not None:
+            if alarm.wake_action != "none" or alarm.massage:
+                raise ValueError(
+                    "The mattress alarm only vibrates; remove the wake action and massage"
+                )
             self._waist_repeat(alarm)
             return
         self.validate_richmat_mh_alarm(**self._alarm_fields(alarm))

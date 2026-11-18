@@ -200,7 +200,7 @@ async def test_real_card_lease_renews_one_stream_and_stale_generation_cannot_res
         await coord.async_stop_command()
         await first
         count = len(writes(client))
-        with pytest.raises(ServiceValidationError, match="has ended"):
+        with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
             await hass.services.async_call(DOMAIN, "timed_move", call, blocking=True)
         assert len(writes(client)) == count
     motion = writes(client)

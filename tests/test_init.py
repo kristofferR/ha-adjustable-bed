@@ -2239,7 +2239,7 @@ class TestServices:
 
         with pytest.raises(
             ServiceValidationError,
-            match="does not support position feedback",
+            match="does not report motor positions",
         ):
             await hass.services.async_call(
                 DOMAIN,

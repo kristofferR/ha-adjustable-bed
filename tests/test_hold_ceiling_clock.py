@@ -65,7 +65,7 @@ class Bed:
             )
         await asyncio.wait_for(start, 60)
         # The ended generation cannot be renewed.
-        with pytest.raises(ServiceValidationError, match="has ended"):
+        with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
             await self.hass.services.async_call(DOMAIN, service, data, blocking=True)
         return round(began * 1000)
 

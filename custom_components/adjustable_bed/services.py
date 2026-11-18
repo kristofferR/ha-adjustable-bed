@@ -2245,7 +2245,19 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         _check_alarm(target.name, controller, alarm, given)
         scheduling[target.operation_identity] = cast("AlarmCapability", controller.alarm_capability)
 
-    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
+    def admission(coordinator: BedTarget, side: str) -> _CommandAdmission:
+        # Capture STOP ownership for the lane the alarm writes on, before any await.
+        capabilities = [
+            controller.alarm_capability
+            for target in _command_targets(coordinator, side)
+            if (controller := target.capability_controller) is not None
+        ]
+        resource = capabilities[0].resource if capabilities and capabilities[0] else None
+        return _capture_command_admission(
+            coordinator, side, ALL_COMMAND_RESOURCES if resource is None else (resource,)
+        )
+
+    admissions = [admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
 
     def step(
@@ -2260,31 +2272,25 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         return _family_command(BedController, "alarms", execute)
 
     # Beds that must read their stored alarms check every target before any write.
-    steps = [step(lambda controller, request: controller.configure_alarm(request))]
-    if any(capability.live_check for capability in scheduling.values()):
-        steps.insert(0, step(lambda controller, request: controller.check_alarm(request)))
+    check_step = step(lambda controller, request: controller.check_alarm(request))
+    write_step = step(lambda controller, request: controller.configure_alarm(request))
     try:
-        for command in steps:
-            for (coordinator, side), admission in zip(targets, admissions, strict=True):
+        for command in (check_step, write_step):
+            for (coordinator, side), captured in zip(targets, admissions, strict=True):
                 capability = scheduling[_command_targets(coordinator, side)[0].operation_identity]
+                if command is check_step and not capability.live_check:
+                    continue
                 await _execute_sided(
                     coordinator,
                     side,
                     command,
                     cancel_running=capability.cancel_running,
                     resource=capability.resource,
-                    admission=admission,
+                    admission=captured,
                 )
     except BaseException:
         await _release_preflighted(preflighted)
         raise
-
-
-def _check_alarm_capability(controller: BedController) -> AlarmCapability:
-    capability = controller.alarm_capability
-    if capability is None:
-        raise ValueError("This bed has no alarm")
-    return capability
 
 
 async def handle_sync_clock(call: ServiceCall) -> None:
@@ -2400,6 +2406,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 "XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX.",
                 translation_domain=DOMAIN,
                 translation_key="invalid_mac_address",
+                translation_placeholders={"address": str(target_address)},
             )
         _LOGGER.info(
             "Generating support bundle for unconfigured device at %s",
@@ -2425,12 +2432,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 address,
             )
         else:
-            raise ServiceValidationError(
-                f"Could not find Adjustable Bed device with ID: {selected_device_id}. "
-                "Please verify the device is configured and try again.",
-                translation_domain=DOMAIN,
-                translation_key="device_not_found",
-            )
+            raise _missing_device_error(selected_device_id)
     else:
         raise ServiceValidationError(
             "No device_id or target_address was provided. "

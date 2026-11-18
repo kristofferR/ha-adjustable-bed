@@ -1001,6 +1001,8 @@ class RmcontrolController(RichmatController):
             # Repeating products keep seven numbered alarms; others count down once.
             weekdays=repeat,
             slots=7 if repeat else 1,
+            # The app always asks which action the alarm runs.
+            requires_wake_action=True,
         )
 
     def _alarm_action_available(self, name: str) -> bool:

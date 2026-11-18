@@ -158,11 +158,6 @@ class AlarmRequest:
     # Home Assistant local time, captured once for the whole call.
     reference_time: datetime
 
-    @property
-    def weekday_names(self) -> tuple[str, ...]:
-        """Return the selected days as names, Monday first."""
-        return tuple(WEEKDAYS[day] for day in self.weekdays)
-
     def minutes_until(self) -> int:
         """Return whole minutes from the call's minute to the next occurrence, 1 to 1440."""
         now = self.reference_time.hour * 60 + self.reference_time.minute

@@ -9096,22 +9096,48 @@
     }
   },
   "exceptions": {
-    "memory_presets_not_supported": "{device_name} has no memory presets.",
-    "memory_programming_not_supported": "{device_name} cannot save memory presets.",
-    "invalid_preset_number": "{device_name} has memory presets 1 to {max_preset}, so preset {requested_preset} is not available. Choose one of those.",
-    "device_not_found": "No adjustable bed matches device {device_id}. Choose the bed again in the action.",
-    "devices_not_found": "No adjustable bed matches devices {device_ids}. Choose the beds again in the action.",
-    "position_feedback_not_supported": "{device_name} does not report its motor positions, so it cannot move to a position. Use \"Move motor for a time\" or the motor controls instead.",
-    "angle_sensing_disabled": "Position reporting is turned off for {device_name}. Turn it on in the bed's settings to move to a position.",
-    "invalid_motor_for_bed_type": "{device_name} has no motor \"{motor}\". Choose one of: {valid_motors}.",
-    "invalid_position_range": "Position {position} is out of range for the {motor} motor. Choose 0 to {max_value}{unit}.",
+    "memory_presets_not_supported": {
+      "message": "{device_name} has no memory presets."
+    },
+    "memory_programming_not_supported": {
+      "message": "{device_name} cannot save memory presets."
+    },
+    "invalid_preset_number": {
+      "message": "{device_name} has memory presets 1 to {max_preset}, so preset {requested_preset} is not available. Choose one of those."
+    },
+    "device_not_found": {
+      "message": "No adjustable bed matches device {device_id}. Choose the bed again in the action."
+    },
+    "devices_not_found": {
+      "message": "No adjustable bed matches devices {device_ids}. Choose the beds again in the action."
+    },
+    "position_feedback_not_supported": {
+      "message": "{device_name} does not report its motor positions, so it cannot move to a position. Use \"Move motor for a time\" or the motor controls instead."
+    },
+    "angle_sensing_disabled": {
+      "message": "Position reporting is turned off for {device_name}. Turn it on in the bed's settings to move to a position."
+    },
+    "invalid_motor_for_bed_type": {
+      "message": "{device_name} has no motor \"{motor}\". Choose one of: {valid_motors}."
+    },
+    "invalid_position_range": {
+      "message": "Position {position} is out of range for the {motor} motor. Choose 0 to {max_value}{unit}."
+    },
     "multiple_device_targets_not_supported": {
       "message": "Support bundle generation only supports one configured device at a time. Select a single device or use target_address for an unconfigured bed."
     },
-    "side_not_supported": "This bed has no separate sides. Leave the side empty.",
-    "side_unavailable": "The selected side is not available. Choose the bed or its other side.",
-    "side_selection_conflict": "You chose the {inferred_side} side's device but side {side}. Choose one or the other.",
-    "side_not_available": "This bed has no {side} side. Choose a side it has.",
+    "side_not_supported": {
+      "message": "This bed has no separate sides. Leave the side empty."
+    },
+    "side_unavailable": {
+      "message": "The selected side is not available. Choose the bed or its other side."
+    },
+    "side_selection_conflict": {
+      "message": "You chose the {inferred_side} side's device but side {side}. Choose one or the other."
+    },
+    "side_not_available": {
+      "message": "This bed has no {side} side. Choose a side it has."
+    },
     "service_not_supported_for_paired": {
       "message": "{device_name} is a paired bed; {service} is not yet supported on paired beds."
     },
@@ -9127,12 +9153,24 @@
     "simmons_alarm_not_reported": {
       "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."
     },
-    "held_controls_not_supported": "{device_name} has no controls that can be held.",
-    "held_control_not_supported": "{device_name} cannot hold \"{control}\". Choose one of: {valid_controls}.",
-    "mixed_profile_targets": "These beds work differently. Run {action} for each bed separately.",
-    "device_rename_not_supported": "{device_name} cannot change its Bluetooth name.",
-    "clock_sync_not_supported": "{device_name} has no clock to set.",
-    "preset_duration_not_supported": "{device_name} recalls presets with a single press. Leave the hold duration empty.",
+    "held_controls_not_supported": {
+      "message": "{device_name} has no controls that can be held."
+    },
+    "held_control_not_supported": {
+      "message": "{device_name} cannot hold \"{control}\". Choose one of: {valid_controls}."
+    },
+    "mixed_profile_targets": {
+      "message": "These beds work differently. Run {action} for each bed separately."
+    },
+    "device_rename_not_supported": {
+      "message": "{device_name} cannot change its Bluetooth name."
+    },
+    "clock_sync_not_supported": {
+      "message": "{device_name} has no clock to set."
+    },
+    "preset_duration_not_supported": {
+      "message": "{device_name} recalls presets with a single press. Leave the hold duration empty."
+    },
     "position_estimate_not_enabled": {
       "message": "Estimated positions are not enabled or calibrated for this bed."
     },
@@ -9172,32 +9210,84 @@
     "single_address_pair_unsupported": {
       "message": "This bed's protocol has no side selector, so it cannot show separate sides. Open its options and split the pair to use it as one bed."
     },
-    "alarm_time_required": "Choose an alarm time to turn the alarm on.",
-    "alarm_time_whole_minutes": "Alarm times are set in whole minutes. Remove the seconds.",
-    "alarm_not_supported": "{device_name} has no alarm.",
-    "alarm_option_not_supported": "{device_name} has no alarm option \"{option}\". Remove it and try again.",
-    "alarm_wake_action_not_supported": "{device_name} cannot wake with \"{wake_action}\". Choose one of: {wake_actions}.",
-    "alarm_wake_action_required": "Choose a wake action to turn on the alarm of {device_name}.",
-    "alarm_value_out_of_range": "{device_name} accepts {option} {min} to {max}.",
-    "alarm_massage_duration_not_supported": "{device_name} runs the wake-up massage for {durations} minutes. Choose one of those.",
-    "alarm_massage_zone_not_supported": "{device_name} cannot massage \"{zone}\" at wake-up.",
-    "alarm_mattress_side_not_supported": "{device_name} has no mattress alarm on the {mattress_side} side.",
-    "alarm_sound_not_supported": "{device_name} cannot play \"{sound}\". Choose another sound.",
-    "alarm_confirmation_required": "Waking {device_name} at its saved position can be unsafe at extreme angles. Check the saved position, then turn on the confirmation.",
-    "pairlink_not_ready": "{device_name} is not ready over Pairlink yet. Wait a moment, then try again.",
-    "bed_unavailable": "Could not connect to {device_name}. Check that it is powered and in range, then try again.",
-    "duplicate_motor_positions": "Each motor can appear only once. Remove the duplicate.",
-    "hold_lease_duration": "Each call can hold a move for {min} to {max} milliseconds.",
-    "hold_renewal_not_supported": "{device_name} cannot keep a held move going. Use a fixed duration instead.",
-    "control_hold_renewal_not_supported": "This control cannot keep going while held. Use a fixed duration instead.",
-    "hold_one_bed": "A held move can control one bed at a time. Select one bed.",
-    "hold_needs_concurrent": "Holding both sides needs both beds connected at the same time. Select one side.",
-    "hold_select_side": "This bed holds one side at a time. Select left or right.",
-    "hold_ended": "This held move has already stopped. Start a new one.",
-    "hold_modes_differ": "The two sides hold moves differently. Hold one side at a time.",
-    "bed_changed": "The bed changed while the action was being checked. Try again.",
-    "bed_reconnected": "{device_name} reconnected while the action was being checked. Try again.",
-    "feature_not_supported": "{device_name} does not support {feature}.",
+    "alarm_time_required": {
+      "message": "Choose an alarm time to turn the alarm on."
+    },
+    "alarm_time_whole_minutes": {
+      "message": "Alarm times are set in whole minutes. Remove the seconds."
+    },
+    "alarm_not_supported": {
+      "message": "{device_name} has no alarm."
+    },
+    "alarm_option_not_supported": {
+      "message": "{device_name} has no alarm option \"{option}\". Remove it and try again."
+    },
+    "alarm_wake_action_not_supported": {
+      "message": "{device_name} cannot wake with \"{wake_action}\". Choose one of: {wake_actions}."
+    },
+    "alarm_wake_action_required": {
+      "message": "Choose a wake action to turn on the alarm of {device_name}."
+    },
+    "alarm_value_out_of_range": {
+      "message": "{device_name} accepts {option} {min} to {max}."
+    },
+    "alarm_massage_duration_not_supported": {
+      "message": "{device_name} runs the wake-up massage for {durations} minutes. Choose one of those."
+    },
+    "alarm_massage_zone_not_supported": {
+      "message": "{device_name} cannot massage \"{zone}\" at wake-up."
+    },
+    "alarm_mattress_side_not_supported": {
+      "message": "{device_name} has no mattress alarm on the {mattress_side} side."
+    },
+    "alarm_sound_not_supported": {
+      "message": "{device_name} cannot play \"{sound}\". Choose another sound."
+    },
+    "alarm_confirmation_required": {
+      "message": "Waking {device_name} at its saved position can be unsafe at extreme angles. Check the saved position, then turn on the confirmation."
+    },
+    "pairlink_not_ready": {
+      "message": "{device_name} is not ready over Pairlink yet. Wait a moment, then try again."
+    },
+    "bed_unavailable": {
+      "message": "Could not connect to {device_name}. Check that it is powered and in range, then try again."
+    },
+    "duplicate_motor_positions": {
+      "message": "Each motor can appear only once. Remove the duplicate."
+    },
+    "hold_lease_duration": {
+      "message": "Each call can hold a move for {min} to {max} milliseconds."
+    },
+    "hold_renewal_not_supported": {
+      "message": "{device_name} cannot keep a held move going. Use a fixed duration instead."
+    },
+    "control_hold_renewal_not_supported": {
+      "message": "This control cannot keep going while held. Use a fixed duration instead."
+    },
+    "hold_one_bed": {
+      "message": "A held move can control one bed at a time. Select one bed."
+    },
+    "hold_needs_concurrent": {
+      "message": "Holding both sides needs both beds connected at the same time. Select one side."
+    },
+    "hold_select_side": {
+      "message": "This bed holds one side at a time. Select left or right."
+    },
+    "hold_ended": {
+      "message": "This held move has already stopped. Start a new one."
+    },
+    "hold_modes_differ": {
+      "message": "The two sides hold moves differently. Hold one side at a time."
+    },
+    "bed_changed": {
+      "message": "The bed changed while the action was being checked. Try again."
+    },
+    "bed_reconnected": {
+      "message": "{device_name} reconnected while the action was being checked. Try again."
+    },
+    "feature_not_supported": {
+      "message": "{device_name} does not support {feature}."
+    },
     "support_bundle_ready_title": {
       "message": "Adjustable bed: support bundle ready"
     },
@@ -9224,6 +9314,9 @@
     },
     "support_bundle_failed_message": {
       "message": "The support bundle for {address} could not be created. Check the Home Assistant log for details, then run the action again."
+    },
+    "invalid_mac_address": {
+      "message": "\"{address}\" is not a Bluetooth address. Use the format AA:BB:CC:DD:EE:FF."
     }
   },
   "issues": {

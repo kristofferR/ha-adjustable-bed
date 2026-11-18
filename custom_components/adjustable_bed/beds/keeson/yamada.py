@@ -85,7 +85,8 @@ class YamadaController(KeesonController):
         self._link: _Link | None = None
         self._notifying: list[BleakGATTCharacteristic] = []
         self._alarms: dict[int, app.Alarm] = {}
-        self._prepared_alarm: tuple[AlarmRequest, AlarmPlan] | None = None
+        # Plans validated for in-flight calls, so overlapping calls keep their own.
+        self._prepared_alarms: dict[AlarmRequest, AlarmPlan] = {}
         self._alarm_revision = 0
         self._p1_pending_fields: bytes | None = None
         self._cleanup: tuple[_Link, CommandContext] | None = None
@@ -527,14 +528,13 @@ class YamadaController(KeesonController):
             )
         except ConnectionError as err:
             raise ValueError("Refresh the bed alarms, then try again") from err
-        self._prepared_alarm = (alarm, plan)
+        self._prepared_alarms[alarm] = plan
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
-        prepared = self._prepared_alarm
-        self._prepared_alarm = None
-        if prepared is None or prepared[0] != alarm:
+        plan = self._prepared_alarms.pop(alarm, None)
+        if plan is None:
             raise ValueError("The bed reconnected after checking the alarm; refresh its alarms")
-        await self.set_alarm(prepared[1])
+        await self.set_alarm(plan)
 
     def prepare_alarm(
         self,

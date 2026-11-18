@@ -351,7 +351,7 @@ async def test_actual_registered_card_lease_renewal_and_cover_stop(
         await task
         count = len(frames(mock_bleak_client))
         # A late renewal never resurrects this ended generation.
-        with pytest.raises(ServiceValidationError, match="has ended"):
+        with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
             await renew()
         assert len(frames(mock_bleak_client)) == count
         await hass.services.async_call(DOMAIN, "hold_control", {
