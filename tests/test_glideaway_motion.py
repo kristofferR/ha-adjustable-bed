@@ -1,4 +1,4 @@
-"""Row068 revision01 artifact vectors, not hardware captures.
+"""Glideaway Motion revision01 artifact vectors, not hardware captures.
 
 Accepted REPORT.SHA256 b3b4b2cc669d8050a68070aa3f9c1ad8021b0c7f9b244ab6703ae4d0caf3ec04.
 The R01-F01 timer comparison is intentional and covered explicitly.

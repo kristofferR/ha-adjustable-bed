@@ -10,12 +10,7 @@
       "command": 0,
       "duration": 5
     },
-    "expected_bytes": "0b0d0100000002580000000005",
-    "evidence": [
-      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
-      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
-      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
-    ]
+    "expected_bytes": "0b0d0100000002580000000005"
   },
   {
     "id": "schedule-head-step2",
@@ -28,12 +23,7 @@
       "command": 2048,
       "duration": 0
     },
-    "expected_bytes": "0b0d0102000000000000080000",
-    "evidence": [
-      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
-      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
-      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
-    ]
+    "expected_bytes": "0b0d0102000000000000080000"
   },
   {
     "id": "schedule-ubl-step9",
@@ -46,12 +36,7 @@
       "command": 131072,
       "duration": 0
     },
-    "expected_bytes": "0b0d09090000000a0002000000",
-    "evidence": [
-      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
-      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
-      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
-    ]
+    "expected_bytes": "0b0d09090000000a0002000000"
   },
   {
     "id": "decimal-slot-step10",
@@ -64,12 +49,7 @@
       "command": 0,
       "duration": 0
     },
-    "expected_bytes": "0b0d1010000000000000000000",
-    "evidence": [
-      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
-      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
-      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
-    ]
+    "expected_bytes": "0b0d1010000000000000000000"
   },
   {
     "id": "decimal-slot99-step24",
@@ -82,12 +62,7 @@
       "command": 16384,
       "duration": 5
     },
-    "expected_bytes": "0b0d9924000d2f000000400005",
-    "evidence": [
-      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
-      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
-      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
-    ]
+    "expected_bytes": "0b0d9924000d2f000000400005"
   },
   {
     "id": "schedule-delete-slot2",
@@ -100,12 +75,7 @@
       "command": 0,
       "duration": 0
     },
-    "expected_bytes": "0b0d0200000000000000000000",
-    "evidence": [
-      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
-      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
-      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
-    ]
+    "expected_bytes": "0b0d0200000000000000000000"
   },
   {
     "id": "schedule-wave-slot3",
@@ -118,12 +88,7 @@
       "command": 2147483648,
       "duration": 0
     },
-    "expected_bytes": "0b0d0308000000008000000000",
-    "evidence": [
-      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
-      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
-      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
-    ]
+    "expected_bytes": "0b0d0308000000008000000000"
   },
   {
     "id": "fixed-stop-equivalent",
@@ -136,11 +101,6 @@
       "command": 1024,
       "duration": 5
     },
-    "expected_bytes": "0b0d0000000000000000040005",
-    "evidence": [
-      "evidence/dart372/asm/apex/tools/alarmClock.dart:combineKeycode4e8664,_formatByteList4e87dc,_formatStep4e8944,setAlarmClock4e8e50,sendCommand4e9638",
-      "evidence/gdt372/dispatch_table.tsv;classes.jsonl;functions.jsonl;aliases.jsonl",
-      "evidence/gdt-padLeft-67c584-authoritative.asm:67c674 unboxed width;gdt-int-toString-579efc-authoritative.asm"
-    ]
+    "expected_bytes": "0b0d0000000000000000040005"
   }
 ]

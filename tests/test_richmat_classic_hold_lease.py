@@ -1,4 +1,4 @@
-"""Renewable holds (#483) on the classic Richmat apps' keep buttons (row066).
+"""Renewable holds (#483) on the classic Richmat apps' keep buttons.
 
 All five accepted reports: a keep button (worker mode 1) repeats its payload
 every worker tick with no fixed count until UP; UP sets mode 0, which sends the

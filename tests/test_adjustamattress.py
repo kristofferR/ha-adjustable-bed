@@ -1,4 +1,4 @@
-"""Row067 exact artifact vectors, all 28 layouts and finite command lifecycles."""
+"""AdjustaMattress exact artifact vectors, all 28 layouts and finite command lifecycles."""
 
 from __future__ import annotations
 

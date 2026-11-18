@@ -1,4 +1,4 @@
-"""Profile-specific BLE behavior from the four accepted cluster-005 reports."""
+"""Profile-specific BLE behavior from the four accepted Leggett app reports."""
 
 from __future__ import annotations
 

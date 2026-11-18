@@ -15,10 +15,6 @@
       1,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:6154; 0x4f0140; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -38,10 +34,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:6154; 0x4f0140; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -60,10 +52,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:6504; 0x4f04b0; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -83,10 +71,6 @@
       0,
       2,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:6504; 0x4f04b0; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -105,10 +89,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:6671; 0x4f06ac; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -128,10 +108,6 @@
       0,
       16,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:6671; 0x4f06ac; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -150,10 +126,6 @@
       12,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:6838; 0x4f08a8; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -173,10 +145,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:6838; 0x4f08a8; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -195,10 +163,6 @@
       2,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7005; 0x4f0aa4; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -218,10 +182,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7005; 0x4f0aa4; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -240,10 +200,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7172; 0x4f3780; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -263,10 +219,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7172; 0x4f3780; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -285,10 +237,6 @@
       0,
       128,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7355; 0x4f41bc; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -308,10 +256,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7355; 0x4f41bc; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -330,10 +274,6 @@
       0,
       64,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7522; 0x4f439c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -353,10 +293,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7522; 0x4f439c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -375,10 +311,6 @@
       0,
       32,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7689; 0x4f457c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -398,10 +330,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7689; 0x4f457c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -420,10 +348,6 @@
       0,
       16,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7856; 0x4f475c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -443,10 +367,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:7856; 0x4f475c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -465,10 +385,6 @@
       0,
       10,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8023; 0x4f493c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -488,10 +404,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8023; 0x4f493c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -510,10 +422,6 @@
       0,
       5,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8190; 0x4f4b1c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -533,10 +441,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8190; 0x4f4b1c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -555,10 +459,6 @@
       0,
       8,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8357; 0x4f4cfc; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -578,10 +478,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8357; 0x4f4cfc; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -600,10 +496,6 @@
       0,
       4,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8524; 0x4f4edc; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -623,10 +515,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8524; 0x4f4edc; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -645,10 +533,6 @@
       0,
       2,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8691; 0x4f50bc; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -668,10 +552,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8691; 0x4f50bc; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -690,10 +570,6 @@
       0,
       1,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8858; 0x4f529c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -713,10 +589,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:8858; 0x4f529c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -735,10 +607,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:9025; 0x4f547c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -758,10 +626,6 @@
       2,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:9025; 0x4f547c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -780,10 +644,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12098; 0x62338c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -803,10 +663,6 @@
       4,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12098; 0x62338c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -825,10 +681,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12265; 0x62356c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -848,10 +700,6 @@
       1,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12265; 0x62356c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -870,10 +718,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12432; 0x62374c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -893,10 +737,6 @@
       0,
       8,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12432; 0x62374c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -915,10 +755,6 @@
       128,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12599; 0x62392c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -938,10 +774,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12599; 0x62392c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   },
   {
@@ -960,10 +792,6 @@
       16,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12766; 0x623b0c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:469-546 writeData"
     ]
   },
   {
@@ -983,10 +811,6 @@
       0,
       0,
       0
-    ],
-    "evidence": [
-      "work/blutter/asm/mline/tool/bleManager.dart:12766; 0x623b0c; Smi array stores decoded /2",
-      "work/blutter/asm/mline/tool/bleManager.dart:548-687 gainSumList/getSumNegation"
     ]
   }
 ]

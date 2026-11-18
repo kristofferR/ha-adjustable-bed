@@ -1,4 +1,4 @@
-"""All 94 + 102 accepted row084 fixtures, independent of sibling protocols."""
+"""All 94 + 102 accepted komfyD and ComfyDS fixtures, independent of sibling protocols."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.profiles.comfy import (
 )
 
 VECTORS = {
-    key: json.loads((Path(__file__).parent / f"fixtures/{key}_row084_vectors.json").read_text())
+    key: json.loads((Path(__file__).parent / f"fixtures/{key}_vectors.json").read_text())
     for key in ("komfyd", "comfyds")
 }
 FROZEN_PAYLOADS = {

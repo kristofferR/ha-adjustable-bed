@@ -1,4 +1,4 @@
-"""Accepted row122 vectors and deliberate HA session/framing corrections."""
+"""Accepted eShine app vectors and deliberate HA session/framing corrections."""
 
 from __future__ import annotations
 

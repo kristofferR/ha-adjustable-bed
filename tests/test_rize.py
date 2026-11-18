@@ -1,4 +1,4 @@
-"""Unit149 frozen literal coverage, product gates and safe HA lifecycles."""
+"""Rize Beds frozen literal coverage, product gates and safe HA lifecycles."""
 
 from __future__ import annotations
 

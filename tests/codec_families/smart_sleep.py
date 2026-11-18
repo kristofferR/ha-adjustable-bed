@@ -1,4 +1,4 @@
-"""Two independently selected Smart Sleep bed formats from accepted row094."""
+"""Two independently selected Smart Sleep bed formats from the accepted Sleep Monitor app."""
 
 from custom_components.adjustable_bed.profiles.smart_sleep import SmartSleepProfile
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames

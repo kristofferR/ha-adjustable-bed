@@ -1,4 +1,4 @@
-"""MOTIONrelax cluster-006 literal vectors and phone/tablet divergences."""
+"""MOTIONrelax literal vectors and phone/tablet divergences."""
 
 from datetime import datetime
 

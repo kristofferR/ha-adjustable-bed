@@ -11,14 +11,6 @@
       "i4": 1
     },
     "expected_bytes": "e6 fe 16 01 00 00 00 00 04",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:97-117 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:145-173 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_a.xml view v_1",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -33,14 +25,6 @@
       "i4": 2
     },
     "expected_bytes": "e6 fe 16 02 00 00 00 00 03",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:97-117 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:145-173 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_a.xml view v_6",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -55,14 +39,6 @@
       "i4": 4
     },
     "expected_bytes": "e6 fe 16 04 00 00 00 00 01",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:97-117 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:145-173 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_a.xml view v_2",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -77,14 +53,6 @@
       "i4": 8
     },
     "expected_bytes": "e6 fe 16 08 00 00 00 00 fd",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:97-117 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:145-173 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_a.xml view v_7",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -99,14 +67,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 00 00 08 00 fd",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:83-93 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:129-143 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_a.xml view v_4",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -121,14 +81,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 10 00 00 00 f5",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:83-93 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteAFragment.java:129-143 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_a.xml view v_zg",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -143,13 +95,6 @@
       "i4": 1
     },
     "expected_bytes": "04 02 00 00 00 01",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:337-365 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:192-216 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_1"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -164,13 +109,6 @@
       "i4": 2
     },
     "expected_bytes": "04 02 00 00 00 02",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:337-365 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:192-216 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_6"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -185,13 +123,6 @@
       "i4": 4
     },
     "expected_bytes": "04 02 00 00 00 04",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:337-365 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:192-216 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_2"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -206,13 +137,6 @@
       "i4": 8
     },
     "expected_bytes": "04 02 00 00 00 08",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:337-365 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:192-216 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_7"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -227,13 +151,6 @@
       "i4": 64
     },
     "expected_bytes": "04 02 00 00 00 40",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:337-365 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:192-216 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_back_up"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -248,13 +165,6 @@
       "i4": 128
     },
     "expected_bytes": "04 02 00 00 00 80",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:337-365 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:192-216 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_back_down"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -269,13 +179,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 00 00 04 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view iv_foot_massage"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -290,13 +193,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 00 00 08 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view iv_head_massgae"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -311,13 +207,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 00 00 02 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view iv_time_massgae"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -332,13 +221,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 00 01 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view iv_m"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -353,13 +235,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 00 00 20 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view iv_light"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -374,13 +249,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 00 00 40 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view iv_tv"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -395,13 +263,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 00 00 80 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_3"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -416,13 +277,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 00 02 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_snore"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -437,13 +291,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 08 00 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_4"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -458,13 +305,6 @@
       "i4": 0
     },
     "expected_bytes": "04 02 00 00 10 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:296-333 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:180-190 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_b.xml view v_zg"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -474,12 +314,6 @@
     "action": "status_query",
     "inputs": {},
     "expected_bytes": "00 b0",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:135-156 circleQuery",
-      "jadx/sources/cn/com/somos/fragment/RemoteBFragment.java:130-133 initData",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic"
-    ],
     "origin": "static source-derived query literal/builder"
   },
   {
@@ -494,14 +328,6 @@
       "i4": 1
     },
     "expected_bytes": "e6 fe 16 01 00 00 00 00 04",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:322-344 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:197-225 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view v_1",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -516,14 +342,6 @@
       "i4": 2
     },
     "expected_bytes": "e6 fe 16 02 00 00 00 00 03",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:322-344 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:197-225 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view v_6",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -538,14 +356,6 @@
       "i4": 4
     },
     "expected_bytes": "e6 fe 16 04 00 00 00 00 01",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:322-344 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:197-225 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view v_2",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -560,14 +370,6 @@
       "i4": 8
     },
     "expected_bytes": "e6 fe 16 08 00 00 00 00 fd",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:322-344 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:197-225 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view v_7",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -582,14 +384,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 04 00 00 00 01",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:288-318 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:134-148 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view iv_foot_massage",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -604,14 +398,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 08 00 00 00 fd",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:288-318 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:134-148 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view iv_head_massgae",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -626,14 +412,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 02 00 00 00 03",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:288-318 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:134-148 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view iv_time_massgae",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -648,14 +426,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 00 01 00 00 04",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:288-318 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:134-148 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view iv_m",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -670,14 +440,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 40 00 00 00 c5",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:288-318 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:134-148 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view iv_tv",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -692,14 +454,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 00 02 00 00 03",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:288-318 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:134-148 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view iv_light",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -714,14 +468,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 80 00 00 00 85",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:288-318 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:134-148 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view v_snore",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -736,14 +482,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 00 00 08 00 fd",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:288-318 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:134-148 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view v_4",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -758,14 +496,6 @@
       "i4": 0
     },
     "expected_bytes": "e6 fe 16 00 10 00 00 00 f5",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:288-318 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:134-148 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_c.xml view v_zg",
-      "jadx/sources/cn/com/somos/utils/HexDump.java:280-286 calcChecksum"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -775,12 +505,6 @@
     "action": "status_query",
     "inputs": {},
     "expected_bytes": "e6 fe 16 00 00 00 00 00 05",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:150-178 circleQuery",
-      "jadx/sources/cn/com/somos/fragment/RemoteCFragment.java:119-122 initData",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic"
-    ],
     "origin": "static source-derived query literal/builder"
   },
   {
@@ -795,14 +519,6 @@
       "i4": 1
     },
     "expected_bytes": "05 02 00 00 00 01 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:111-137 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:156-180 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_d.xml view v_1",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_1",
     "direction": "up",
@@ -829,14 +545,6 @@
       "i4": 2
     },
     "expected_bytes": "05 02 00 00 00 02 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:111-137 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:156-180 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_d.xml view v_6",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_1",
     "direction": "down",
@@ -863,14 +571,6 @@
       "i4": 4
     },
     "expected_bytes": "05 02 00 00 00 04 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:111-137 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:156-180 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_d.xml view v_2",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_2",
     "direction": "up",
@@ -897,14 +597,6 @@
       "i4": 8
     },
     "expected_bytes": "05 02 00 00 00 08 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:111-137 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:156-180 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_d.xml view v_7",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_2",
     "direction": "down",
@@ -931,14 +623,6 @@
       "i4": 16
     },
     "expected_bytes": "05 02 00 00 00 10 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:111-137 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:156-180 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_d.xml view iv_leg_up",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_3",
     "direction": "up",
@@ -965,14 +649,6 @@
       "i4": 32
     },
     "expected_bytes": "05 02 00 00 00 20 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:111-137 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:156-180 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_d.xml view iv_leg_down",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_3",
     "direction": "down",
@@ -999,13 +675,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 00 01 00 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:95-107 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:144-154 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_d.xml view iv_m"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1020,13 +689,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 08 00 00 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:95-107 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:144-154 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_d.xml view v_4"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1041,13 +703,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 00 00 10 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:95-107 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteDFragment.java:144-154 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_d.xml view v_zg"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1062,14 +717,6 @@
       "i4": 1
     },
     "expected_bytes": "05 02 00 00 00 01 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:292-320 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:141-165 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view v_1",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_1",
     "direction": "up",
@@ -1096,14 +743,6 @@
       "i4": 2
     },
     "expected_bytes": "05 02 00 00 00 02 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:292-320 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:141-165 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view v_6",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_1",
     "direction": "down",
@@ -1130,14 +769,6 @@
       "i4": 4
     },
     "expected_bytes": "05 02 00 00 00 04 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:292-320 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:141-165 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view v_2",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_2",
     "direction": "up",
@@ -1164,14 +795,6 @@
       "i4": 8
     },
     "expected_bytes": "05 02 00 00 00 08 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:292-320 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:141-165 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view v_7",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_2",
     "direction": "down",
@@ -1198,14 +821,6 @@
       "i4": 16
     },
     "expected_bytes": "05 02 00 00 00 10 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:292-320 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:141-165 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view iv_m",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_3",
     "direction": "up",
@@ -1232,14 +847,6 @@
       "i4": 32
     },
     "expected_bytes": "05 02 00 00 00 20 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:292-320 onTouch",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:141-165 circleSend",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view iv_tv",
-      "ROW099-F01"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture",
     "axis_id": "axis_3",
     "direction": "down",
@@ -1266,13 +873,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 00 00 04 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:264-288 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:129-139 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view iv_foot_massage"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1287,13 +887,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 00 00 08 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:264-288 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:129-139 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view iv_head_massgae"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1308,13 +901,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 00 00 02 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:264-288 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:129-139 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view iv_time_massgae"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1329,13 +915,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 00 02 00 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:264-288 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:129-139 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view iv_light"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1350,13 +929,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 00 00 80 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:264-288 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:129-139 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view v_snore"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1371,13 +943,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 08 00 00 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:264-288 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:129-139 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view v_4"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1392,13 +957,6 @@
       "i4": 0
     },
     "expected_bytes": "05 02 00 00 10 00 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:264-288 onClick",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:129-139 sendCommand",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic",
-      "jadx/resources/res/layout/fragment_remote_e.xml view v_zg"
-    ],
     "origin": "static source-derived reconstruction, not a hardware capture"
   },
   {
@@ -1408,12 +966,6 @@
     "action": "status_query",
     "inputs": {},
     "expected_bytes": "01 b0 00",
-    "evidence": [
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:184-205 circleQuery",
-      "jadx/sources/cn/com/somos/fragment/RemoteEFragment.java:119-122 initData",
-      "jadx/sources/cn/com/somos/utils/bleutil/BleConnect.java:376-415 writeToDevice",
-      "jadx/sources/com/clj/fastble/bluetooth/BleConnector.java:336-366 writeCharacteristic"
-    ],
     "origin": "static source-derived query literal/builder"
   }
 ]

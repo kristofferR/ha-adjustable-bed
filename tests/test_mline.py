@@ -1,4 +1,4 @@
-"""Accepted row147 literals through production encoders and real HA callers."""
+"""Accepted M Line app literals through production encoders and real HA callers."""
 
 from __future__ import annotations
 
