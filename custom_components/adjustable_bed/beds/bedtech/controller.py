@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from ...codec import richmat as codec
 from ...const import BEDTECH_WRITE_CHAR_UUID, CONF_PROTOCOL_VARIANT, SIDE_LEFT, SIDE_RIGHT
 from ...profiles.richmat import BEDTECH, BEDTECH_APP_PROFILES, Button
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..builder import BuildContext
 from ..entity_specs import MotorControlSpec
 from ..richmat.controller import RichmatProfileController
@@ -192,9 +193,12 @@ class BedTechController(RichmatProfileController):
         if minutes != 20 or not self._supports_button("massage_timer_20"):
             raise ValueError("This BedTech model only exposes the 20-minute timer")
         await self._send("massage_timer_20")
+        # The bed reports no timer, so the select shows the last one set.
+        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, 20)
 
     async def massage_off(self) -> None:
         await self._send("massage_off")
+        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, 0)
 
     async def lights_on(self) -> None:
         """The OEM app offers a toggle, without a discrete ON."""

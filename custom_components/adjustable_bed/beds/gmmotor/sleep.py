@@ -28,7 +28,7 @@ from ..entity_specs import (
 from .notifications import Value
 from .protocol import MalformedNotification
 from .requests import GmmotorActions, Operation, Request
-from .sessions import sleep_intent
+from .sessions import LIVE_ENABLED, sleep_intent
 from .sleep_protocol import (
     LiveState,
     ReceiveBuffer,
@@ -79,7 +79,6 @@ REPORTS: Final = StateKey[dict[str, Value]]("gmmotor_sleep_reports")
 INVALID: Final = StateKey[int]("gmmotor_sleep_invalid")
 
 
-LIVE_ENABLED: Final = StateKey[bool]("gmmotor_sleep_live_enabled")
 _SIDES: Final[tuple[Literal["left", "right"], ...]] = ("left", "right")
 
 
@@ -185,7 +184,8 @@ class GmmotorSleepController(BedController, GmmotorActions):
 
     @property
     def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
-        # The clock is set and the part read on every connection, so neither is a button.
+        # The clock is set on every connection. The reported part is diagnostic
+        # state the GM Control action can still query.
         return (
             ControllerSwitchSpec(
                 "gmmotor_sleep_live",

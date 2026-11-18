@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 
 from homeassistant.util import dt as dt_util
 
@@ -72,7 +72,7 @@ def _typed_live(field: str, value: object) -> int | bool | None:
     return value if isinstance(value, bool) else None
 
 
-_SIDES: Final = {"L": "left", "R": "right"}
+_SIDES: Final[dict[str, Literal["left", "right"]]] = {"L": "left", "R": "right"}
 
 
 class CasperSleepController(BedController, CasperBaseActions):

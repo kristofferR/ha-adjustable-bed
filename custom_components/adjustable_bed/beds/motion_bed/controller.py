@@ -408,6 +408,11 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         self._operation_generation: ContextVar[int | None] = ContextVar("motion_bed_operation", default=None)
         self._started_modules: set[str] = set()
         self._active_module: str | None = None
+        # The massage timer the select shows: the last one the bed reported or
+        # the last one set here, whichever is newer. The home screen's timer
+        # keys are not always reported back.
+        self._reported_massage_timer: int | None = None
+        self._shown_massage_timer: int | None = None
         self._audio_preference = False
         self._held_session: _HeldSession | None = None
         self._module_generation = 0
@@ -643,17 +648,20 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         The app picks the frame from the reported timer, so choosing the shown
         timer is kept as is, and Off presses the shown timer's key.
         """
+        # The key's frame follows the reported timer, so Off needs a report.
         reported = self._state.massage_timer
         if minutes == 0:
             if reported not in _MASSAGE_TIMERS:
                 raise ValueError("The bed has not reported a massage timer to turn off")
             await self.async_execute_motion_bed_action(self._function_action(_MASSAGE_TIMERS[reported]))
-            return
-        if minutes not in _MASSAGE_TIMERS:
+        elif minutes not in _MASSAGE_TIMERS:
             raise ValueError("Choose 10, 20 or 30 minutes")
-        if reported == minutes:
+        elif reported == minutes:
             return
-        await self.async_execute_motion_bed_action(self._function_action(_MASSAGE_TIMERS[minutes]))
+        else:
+            await self.async_execute_motion_bed_action(self._function_action(_MASSAGE_TIMERS[minutes]))
+        self._shown_massage_timer = minutes or None
+        self._publish()
 
     @property
     def supports_light_timer(self) -> bool:
@@ -766,7 +774,9 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         )
 
     def _publish(self) -> None:
-        timer = self._state.massage_timer
+        if self._state.massage_timer != self._reported_massage_timer:
+            self._reported_massage_timer = self._shown_massage_timer = self._state.massage_timer
+        timer = self._shown_massage_timer
         self.forward_controller_state_updates(
             *(_field_key(name)(value) for name, value in self._state.to_updates().items()),
             ACTIVE_MODULE(self._active_module),

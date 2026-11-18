@@ -823,8 +823,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             return
 
         def expire() -> None:
+            # The bed's own timer runs on after an idle disconnect.
             self._auto_off_timer = None
-            if self._coordinator.controller is not controller or not self._attr_is_on:
+            if not self._attr_is_on:
                 return
             controller.on_light_auto_off()
             self._attr_is_on = False

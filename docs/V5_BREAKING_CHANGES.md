@@ -232,7 +232,10 @@ The same control now looks the same on every bed:
   Diagnostic. Every bed uses the same names ("Left heart rate", "Right in bed").
   The sensors that stay sensors keep their entity IDs; in-bed, snoring and
   movement readings that were text sensors are new binary sensors with new
-  entity IDs.
+  entity IDs. A reading that was disabled before the upgrade stays disabled:
+  enable it in its entity settings. The DoubleSleep breathing rate's unit
+  changes from brpm to breaths/min, and Home Assistant offers to update its
+  statistics.
 - **Sleep Number bed presence is enabled by default** and named "In bed",
   "Left in bed" and "Right in bed", like every other bed's occupancy.
 - **Every on/off under-bed light is a `light` entity.** It was a switch
@@ -371,7 +374,7 @@ Beds that 4.x supported. Renamed entities are not listed: they keep their IDs.
 | Svane | Head, feet and position byte sensors | |
 | V-MAT Basic | ED motor status binary sensor | |
 | Sleep sensors (Casper and Hush sleep modules, Good Vibe and MLILY sleep devices, CheersSleep, RUF and Richmat sleep receivers, DoubleSleep, Aging in Place, M Line) | | Heart and breathing rate sensors became the shared **Heart rate** and **Breathing rate** sensors (same entity IDs); in-bed, snoring and movement text sensors became **In bed**, **Snoring** and **Body movement** binary sensors |
-| GM Control sleep module | Time and Query part buttons (the clock is set and the part read on every connection) | Start and stop live data buttons became the **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
+| GM Control sleep module | Time and Query part buttons (the clock is set on every connection; the `gmmotor` action still queries the part) | Start and stop live data buttons became the **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
 | Under-bed light on CheersSleep, SUTA, Cherish, Comfort Enhancements, KomfyD, ComfyDS, iSleep, Kaidi, Keeson, Logicdata, MattressFirm, Nectar, OKIN 64-bit, 7-byte, CB24, CB35, CST and Nordic, Remacro, Rize, Rize Remedy II, Serenity, Tranquil, Sleep Number, SleepStar, Sleepy's Box25 and Elite app, Solace, Svane, Vibradorm and Vibradorm app | `switch.<bed>_under_bed_lights` | `light.<bed>_under_bed_lights` |
 | Heal Every Night (OKIN apps) | | Installation and actuator direction selects became the **Reversed installation**, **Reverse actuator 1** and **Reverse actuator 2** switches |
 | Snore Monitor | Alarm enabled binary sensors | Whether each alarm is on is an attribute of its alarm time sensor |

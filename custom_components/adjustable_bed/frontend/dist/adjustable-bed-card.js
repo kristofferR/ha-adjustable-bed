@@ -715,7 +715,7 @@ var vi=Object.defineProperty;var bi=Object.getOwnPropertyDescriptor;var T=(o,s,e
     `}_lighting(e){let t=e.lights,i=t.light??t.switch;if(!ut(e))return c;let n=i||t.state||t.level||t.numbers?.length||t.timer||t.toggle||t.cycle||t.timerMinutes||t.timerToggle||t.buttons?.length;return d`
       ${this._heading("section.lighting")}
       ${t.mood&&n?this._subheading("lighting.floor"):c}
-      ${i?i===t.switch?this._switchRow(i):this._toggleRow(i):c}
+      ${i?this._switchRow(i):c}
       ${t.switches?.map(r=>this._switchRow(r))}
       ${t.state?this._moreInfoRow(t.state):c}
       ${t.states?.map(r=>this._moreInfoRow(r))}
@@ -782,19 +782,19 @@ var vi=Object.defineProperty;var bi=Object.getOwnPropertyDescriptor;var T=(o,s,e
           <span class="knob"></span>
         </button>
       </div>
-    `}_switchRow(e){let t=this._state(e);if(t?.attributes.assumed_state!==!0&&(t?.state==="on"||t?.state==="off"))return this._toggleRow(e);let i=E(this.hass,e),n=this._t("action.off"),r=this._t("action.on");return d`
-      <div class="entity-row" role="group" aria-label=${i}>
-        <button class="entity-row-details" aria-label=${i} @click=${()=>this._moreInfo(e)}>
+    `}_switchRow(e){let t=this._state(e);if(t?.attributes.assumed_state!==!0&&(t?.state==="on"||t?.state==="off"))return this._toggleRow(e);let i=e.split(".",1)[0],n=E(this.hass,e),r=this._t("action.off"),l=this._t("action.on");return d`
+      <div class="entity-row" role="group" aria-label=${n}>
+        <button class="entity-row-details" aria-label=${n} @click=${()=>this._moreInfo(e)}>
           ${this._icon(e)}
           <span class="entity-row-text">
-            <span>${i}</span>
+            <span>${n}</span>
             <span class="secondary">${this._stateText(e)}</span>
           </span>
         </button>
-        <button class="dialog-btn" aria-label=${`${i}: ${n}`}
-          @click=${()=>this._call("switch","turn_off",e)}>${n}</button>
-        <button class="dialog-btn" aria-label=${`${i}: ${r}`}
-          @click=${()=>this._call("switch","turn_on",e)}>${r}</button>
+        <button class="dialog-btn" aria-label=${`${n}: ${r}`}
+          @click=${()=>this._call(i,"turn_off",e)}>${r}</button>
+        <button class="dialog-btn" aria-label=${`${n}: ${l}`}
+          @click=${()=>this._call(i,"turn_on",e)}>${l}</button>
       </div>
     `}_moreInfoRow(e){let t=E(this.hass,e);return d`
       <div

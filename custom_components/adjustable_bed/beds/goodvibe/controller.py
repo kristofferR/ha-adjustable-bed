@@ -10,7 +10,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import partial
 from time import monotonic
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 
 from homeassistant.util import dt as dt_util
 
@@ -93,7 +93,7 @@ def _live_key(side: str, name: str) -> StateKey[object]:
     return StateKey[object](f"goodvibe_{side}_{name}")
 
 
-_LIVE_SIDES: Final = {"L": "left", "R": "right"}
+_LIVE_SIDES: Final[dict[str, Literal["left", "right"]]] = {"L": "left", "R": "right"}
 
 
 @dataclass(frozen=True, slots=True)

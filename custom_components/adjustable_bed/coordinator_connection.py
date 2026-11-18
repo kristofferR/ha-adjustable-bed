@@ -34,6 +34,7 @@ from .adapter import (
 )
 from .address_lock import async_get_connect_lock
 from .bed_traits import bed_traits
+from .beds.gmmotor.sessions import LIVE_ENABLED as GMMOTOR_LIVE_ENABLED
 from .beds.gmmotor.sessions import sleep_intent
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
 from .bluetooth_diagnostics import connection_reachability
@@ -2148,6 +2149,7 @@ class CoordinatorConnectionMixin:
             sleep_intent(
                 self.hass, self._address, sxb=self._bed_type == BED_TYPE_GMMOTOR_SLEEP_SXB
             ).live_enabled = False
+            self.handle_controller_state_update(GMMOTOR_LIVE_ENABLED, False)
 
         # An explicit release ends app intent even if the physical link already dropped.
         for controller in (self._controller, self._offline_controller):

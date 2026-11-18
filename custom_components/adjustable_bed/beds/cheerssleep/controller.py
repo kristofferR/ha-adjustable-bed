@@ -1095,9 +1095,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
         if self.model.format != "p1":
             return []
         return [
-            (side, fields)
-            for side, fields in keys.SLEEP_KEYS.items()
-            if self.command_side not in keys.SLEEP_KEYS or side == self.command_side
+            (side, keys.SLEEP_KEYS[side])
+            for side in keys.SIDES
+            if self.command_side not in keys.SIDES or side == self.command_side
         ]
 
     @property
