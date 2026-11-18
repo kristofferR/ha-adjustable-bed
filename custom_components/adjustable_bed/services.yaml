@@ -10,7 +10,7 @@ goto_preset:
       selector:
         number:
           min: 1
-          max: 255
+          max: 8
           mode: box
     duration:
       required: false
@@ -18,7 +18,7 @@ goto_preset:
         number:
           min: 0.1
           max: 60
-          step: 0.001
+          step: 0.1
           unit_of_measurement: seconds
           mode: box
     side:
@@ -40,7 +40,7 @@ save_preset:
       selector:
         number:
           min: 1
-          max: 255
+          max: 8
           mode: box
     side:
       required: false
@@ -182,7 +182,7 @@ hold_control:
         number:
           min: 0.1
           max: 60
-          step: 0.001
+          step: 0.1
           unit_of_measurement: seconds
           mode: box
     side:
@@ -806,7 +806,7 @@ customatic_hold_memory:
         number:
           min: 0.1
           max: 60
-          step: 0.001
+          step: 0.1
           unit_of_measurement: seconds
           mode: box
     side:
@@ -833,7 +833,7 @@ customatic_move_simultaneously:
         number:
           min: 0.1
           max: 60
-          step: 0.001
+          step: 0.1
           unit_of_measurement: seconds
           mode: box
     side:
@@ -1024,15 +1024,9 @@ furnimove_action:
         number:
           min: 0.1
           max: 60
-          step: 0.001
+          step: 0.1
           mode: box
           unit_of_measurement: s
-    consumer:
-      default: app
-      selector:
-        select:
-          options: [app, widget]
-          translation_key: furnimove_action_consumer
 
 furnimove_massage_duration:
   fields:
@@ -1603,7 +1597,7 @@ limoss_remote_calibrate:
         number:
           min: 0.1
           max: 60
-          step: 0.001
+          step: 0.1
           unit_of_measurement: s
           mode: box
 
@@ -1720,7 +1714,7 @@ logicdata_hold_preset:
         number:
           min: 0.2
           max: 60
-          step: 0.001
+          step: 0.1
           unit_of_measurement: seconds
           mode: box
     side:
@@ -2825,25 +2819,7 @@ sleep_number_command:
       required: true
       selector:
         select:
-          options: [cancel_current_diagnostic_run, cancel_target_preset, create_temperature_program, delete_temperature_program,
-            firmness_favorite, firmness_favorites, foot_warming, foot_warming_status, foundation_status,
-            get_active_temperature_programs, get_actuator_movement_status, get_actuator_position, get_bed_configuration,
-            get_central_devices_metadata, get_current_preset, get_favorite_sleep_number, get_footwarming_presence,
-            get_footwarming_settings, get_frosty_mode, get_frosty_presence, get_fuzion_remote_mac_addresses,
-            get_heidi_mode, get_heidi_presence, get_manifest_name, get_responsive_air_enabled_status,
-            get_simple_diagnostic_run_results, get_sleep_number_controls, get_sleepiq_privacy_state, get_system_configuration,
-            get_system_settings_applied_status, get_system_status, get_temperature_programs, get_target_preset_with_timer,
-            get_temperature_program_info, get_temperature_program_settings, get_underbed_light_auto_mode_status,
-            get_underbed_light_settings, gets_actuator_homing_state, halt_all_actuators, head_tilt, interrupt_sleep_number_adjustment,
-            kid_outlet, kid_outlet_status, light_intensity, massage, massage_status, mcr_status, migrate_routines_to_temperature_programs,
-            outlet, outlet_status, pinch_status, position, preset_reset, preset_save, preset_timer, reboot_system,
-            responsive_air, responsive_air_status, routine_migration_status, sense_and_do, sense_and_do_status,
-            set_actuator_target_position, set_actuator_target_position_with_timer, set_articulation_preset_settings,
-            set_bed_presence, set_favorite_sleep_number, set_footwarming_settings, set_frosty_mode, set_heidi_mode,
-            set_responsive_air_enabled_status, set_sleepiq_privacy_state, set_system_time, set_target_preset_with_timer,
-            set_target_preset_without_timer, set_temperature_program, set_underbed_light_auto_mode, set_underbed_light_settings,
-            software_versions, start_sleep_number_adjustment, starts_actuator_homing, stop, underbed_auto,
-            underbed_auto_status]
+          options: [cancel_target_preset, create_temperature_program, delete_temperature_program, firmness_favorite, firmness_favorites, foot_warming, foot_warming_status, foundation_status, get_active_temperature_programs, get_actuator_movement_status, get_actuator_position, get_bed_configuration, get_current_preset, get_favorite_sleep_number, get_footwarming_presence, get_footwarming_settings, get_responsive_air_enabled_status, get_sleepiq_privacy_state, get_system_status, get_temperature_programs, get_target_preset_with_timer, get_temperature_program_info, get_temperature_program_settings, get_underbed_light_auto_mode_status, get_underbed_light_settings, halt_all_actuators, head_tilt, interrupt_sleep_number_adjustment, kid_outlet, kid_outlet_status, light_intensity, massage, massage_status, outlet, outlet_status, position, preset_reset, preset_save, preset_timer, responsive_air, responsive_air_status, sense_and_do, sense_and_do_status, set_actuator_target_position, set_actuator_target_position_with_timer, set_articulation_preset_settings, set_favorite_sleep_number, set_footwarming_settings, set_responsive_air_enabled_status, set_sleepiq_privacy_state, set_target_preset_with_timer, set_target_preset_without_timer, set_temperature_program, set_underbed_light_auto_mode, set_underbed_light_settings, start_sleep_number_adjustment, stop, underbed_auto, underbed_auto_status]
           translation_key: sleep_number_command_command
     parameters:
       selector:

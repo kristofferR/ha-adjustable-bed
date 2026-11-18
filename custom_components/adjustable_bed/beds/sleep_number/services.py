@@ -28,6 +28,35 @@ from ..base import BedController, controller_as
 from .commands import SleepNumberActions
 
 SERVICE_SLEEP_NUMBER_COMMAND = "sleep_number_command"
+# Service, firmware and internal-feature commands the bed uses itself; not user actions.
+INTERNAL_COMMANDS = frozenset(
+    {
+        "cancel_current_diagnostic_run",
+        "get_central_devices_metadata",
+        "get_frosty_mode",
+        "get_frosty_presence",
+        "get_fuzion_remote_mac_addresses",
+        "get_heidi_mode",
+        "get_heidi_presence",
+        "get_manifest_name",
+        "get_simple_diagnostic_run_results",
+        "get_sleep_number_controls",
+        "get_system_configuration",
+        "get_system_settings_applied_status",
+        "gets_actuator_homing_state",
+        "mcr_status",
+        "migrate_routines_to_temperature_programs",
+        "pinch_status",
+        "reboot_system",
+        "routine_migration_status",
+        "set_bed_presence",
+        "set_frosty_mode",
+        "set_heidi_mode",
+        "set_system_time",
+        "software_versions",
+        "starts_actuator_homing",
+    }
+)
 MOTION_COMMANDS = frozenset(
     {
         "set_actuator_target_position",
@@ -100,6 +129,7 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
                 with controller.side_scope(physical_side):
                     if (
                         sleep_number is None
+                        or command in INTERNAL_COMMANDS
                         or command not in sleep_number.sleep_number_command_names
                     ):
                         raise ServiceValidationError(
