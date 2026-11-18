@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Final
 
 from ...const import VARIANT_AUTO
-from ...profiles.richmat_cluster022 import APPS as CLUSTER022_APPS
-from ...profiles.richmat_cluster022 import models as cluster022_models
-from ...profiles.richmat_cluster022 import variants as cluster022_variants
+from ...profiles.richmat_mh_apps import APPS as MH_APP_POLICIES
+from ...profiles.richmat_mh_apps import models as mh_app_models
+from ...profiles.richmat_mh_apps import variants as mh_app_variants
 from ..ruf_richmat.models import MODEL_IDS as _RUF_MODEL_IDS
 from . import catalog as _catalog
 
@@ -31,8 +31,8 @@ RICHMAT_MH_MODEL_CHOICES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
     **{app: _richmat_mh_model_choices(app) for app in _catalog.MODELS},
     **{app: tuple((model, model.upper()) for model in models)
        for app, models in _RUF_MODEL_IDS.items()},
-    **{app: tuple((model, model.upper()) for model in cluster022_models(app))
-       for app in CLUSTER022_APPS},
+    **{app: tuple((model, model.upper()) for model in mh_app_models(app))
+       for app in MH_APP_POLICIES},
 }
 RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
     app: {
@@ -49,8 +49,8 @@ for _app in ("wsilver2", "americanstar", "tx"):
         f"model_{model}_mattress": f"{model.upper()} with normal mattress (explicit opt-in)"
         for model in _RUF_MODEL_IDS[_app]
     })
-for _app in CLUSTER022_APPS:
+for _app in MH_APP_POLICIES:
     RICHMAT_MH_VARIANTS_BY_APP[_app] = {
-        **cluster022_variants(_app),
+        **mh_app_variants(_app),
         "sleep": "Separate HJ_Bed sleep and intervention receiver",
     }

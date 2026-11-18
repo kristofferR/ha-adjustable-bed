@@ -4809,7 +4809,7 @@
   "sensor:sonicsleep": {
     "card_section": "hidden"
   },
-  "button:richmat_cluster022_smart_light_lock": {
+  "button:richmat_mh_toggle_smart_light_lock": {
     "card_section": "utility"
   },
   "button:richmat_mh_start_detection": {
@@ -4835,6 +4835,12 @@
   "number:richmat_mh_pillow_angle": {
     "card_section": "motors",
     "card_motor": "pillow"
+  },
+  "select:richmat_mh_group_type": {
+    "card_section": "utility"
+  },
+  "select:richmat_mh_transmit_mode": {
+    "card_section": "utility"
   },
   "select:richmat_mh_motor_mode": {
     "card_section": "utility"
@@ -4869,13 +4875,13 @@
   "select:richmat_mh_waist_right_pressure": {
     "card_section": "massage"
   },
-  "sensor:richmat_cluster022_last_reply": {
+  "sensor:richmat_mh_last_reply": {
     "card_section": "hidden"
   },
-  "sensor:richmat_cluster022_sleep_left_state": {
+  "sensor:richmat_mh_sleep_left_state": {
     "card_section": "hidden"
   },
-  "sensor:richmat_cluster022_sleep_right_state": {
+  "sensor:richmat_mh_sleep_right_state": {
     "card_section": "hidden"
   },
   "sensor:richmat_mh_alarm": {

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.richmat_mh import cluster022_services as actions
+from custom_components.adjustable_bed.beds.richmat_mh import app_services as actions
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_richmat_cluster022 import frames, make
@@ -136,7 +136,7 @@ async def test_real_pair_captures_both_physical_stop_epochs_before_import(hass, 
         await pair.async_shutdown()
 
 
-async def test_real_button_entity_dispatches_through_runtime(hass, sleeps) -> None:
+async def test_real_local_select_and_button_entities_dispatch_through_runtime(hass, sleeps) -> None:
     from custom_components.adjustable_bed.button import _button_entities_for
     from custom_components.adjustable_bed.select import _select_entities_for
     from tests.test_malouf_app_entities import configure_entity_runtime
@@ -144,11 +144,13 @@ async def test_real_button_entity_dispatches_through_runtime(hass, sleeps) -> No
     controller = make("mlily_supreme", "cfrm")
     controller._dev["led"] = True
     runtime = configure_entity_runtime(hass, controller, "richmat_mlily_supreme")
-    # The app's transmit mode and group picker are not entities.
-    assert not any("richmat_cluster022" in entity.unique_id
-                   for entity in _select_entities_for(hass, runtime))
+    selector = next(entity for entity in _select_entities_for(hass, runtime)
+                    if "richmat_mh_transmit_mode" in entity.unique_id)
+    await selector.async_select_option("2")
+    assert controller._transmit_mode == 2
+    runtime.async_execute_controller_command.assert_not_called()
     button = next(entity for entity in _button_entities_for(hass, runtime)
-                  if "richmat_cluster022_smart_light_lock" in entity.unique_id)
+                  if "richmat_mh_toggle_smart_light_lock" in entity.unique_id)
     button.hass = hass
 
     async def execute(command, **_kwargs):

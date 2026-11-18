@@ -1,8 +1,8 @@
 """Tables from the two shipped app catalogs, without merging capabilities."""
 
-from custom_components.adjustable_bed.beds.richmat_mh.cluster022_catalog import catalog, mode_groups
+from custom_components.adjustable_bed.beds.richmat_mh.app_catalog import catalog, mode_groups
 from custom_components.adjustable_bed.codec import richmat
-from custom_components.adjustable_bed.profiles.richmat_cluster022 import APPS, models
+from custom_components.adjustable_bed.profiles.richmat_mh_apps import APPS, models
 
 from ._common import _block, _table
 
@@ -37,4 +37,4 @@ def render() -> str:
     return _block(*lines)
 
 
-BLOCKS = [("docs/beds/richmat.md", "richmat-cluster022", render)]
+BLOCKS = [("docs/beds/richmat.md", "richmat-mh-apps", render)]

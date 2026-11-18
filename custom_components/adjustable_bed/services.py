@@ -2413,8 +2413,8 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.richmat_classic.resource_services import async_register_resource_bed_services
     from .beds.richmat_classic.rise_services import async_register_richmat_rise_services
     from .beds.richmat_classic.services import async_register_richmat_classic_services
-    from .beds.richmat_mh.cluster022_services import (
-        register_services as register_cluster022_services,
+    from .beds.richmat_mh.app_services import (
+        register_services as register_mh_app_services,
     )
     from .beds.richmat_mh.services import async_register_richmat_mh_services
     from .beds.rmcontrol.services import async_register_rmcontrol_services
@@ -2445,7 +2445,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_casper_base_services,
         async_register_gmmotor_services,
         async_register_richmat_mh_services,
-        register_cluster022_services,
+        register_mh_app_services,
         async_register_position_estimate_services,
         async_register_ruf_richmat_services,
         async_register_richmat_classic_services,

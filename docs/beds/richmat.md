@@ -292,12 +292,12 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
 | W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
@@ -8733,26 +8733,17 @@ app/model profile; a two-address pair retains each physical side's selection.
 Choose **Separate HJ_Bed sleep and intervention receiver** for the separate
 sensing module. That receiver has no motor controls. Two physical bed addresses
 can use Home Assistant's parent/Left/Right pairing. Transmit modes 0, 1 and 2
-remain app modes and do not create single-address native sides. Home Assistant
-sends mode 0 and has no mode picker, because what each mode does physically is
-not established.
+remain app modes and do not create single-address native sides.
 
 #### Controls
 
 The selected model's own ordered functions, aliases and page maps determine
 motors, presets, recall/program slots, massage, locks and other bed controls.
 The generated tables below list each app separately. Nisco CFRM retains its
-catalog LOCK entry. The transmit mode is part of ordinary command and release
+catalog LOCK entry. Selecting a mode changes ordinary command and release
 frames. Snore intervention samples the current mode at the final dispatch
-boundary. The dedicated `13`-family setting is separate from normal anti-snore
-recall/save.
-
-Button names come from the app's command names, rewritten to match the shared
-preset and massage buttons: for example `M1` is Memory 1, `Massage 10Min` is
-Massage: Timer 10 Minutes, `Zg2 Back`/`Zg2 Set` are Zero Gravity 2 and Save Zero
-Gravity 2, and `Ubl Off` is Under-Bed Light Off. The Motor mode select offers
-every mode the model declares; the app's group picker only filters that list,
-so it is not an entity.
+boundary, including a mode changed while its write waited for the BLE lane.
+The dedicated `13`-family setting is separate from normal anti-snore recall/save.
 
 Nisco's light timer preserves the high and low duration bytes. Normal and
 waist mattress controls are dormant, even though startup probes and shared
@@ -8791,16 +8782,15 @@ The accepted Nisco waist combined forms are 14, 15 and 19 bytes, distinct from
 the sibling's 14, 18 and 19. Nisco's detailed diagnostic result consumer and
 mattress cache offsets are not established by the accepted report.
 
-The sleep receiver retains local rates, occupancy, movement, user mode and
-intervention settings. Its raw `Std` value is the disabled-by-default
-diagnostic Left/Right sleep receiver state sensor. Wi-Fi, network/mesh administration, cloud,
+The sleep receiver retains local rates, occupancy, movement, raw `Std`, user
+mode and intervention settings. Wi-Fi, network/mesh administration, cloud,
 accounts, firmware administration, scoring, reports and phone/media features
 are excluded. A source-proven BED effect remains included even when its caller
 sits beside excluded infrastructure.
 
 #### Services
 
-`richmat_cluster022_control` runs a declared current-page opcode, its attached
+`richmat_mh_control` runs a declared current-page opcode, its attached
 fixed-remote long-save caller, or an included query. Arbitrary opcodes and
 unavailable model controls are rejected. Standard preset/memory actions and
 `richmat_mh_alarm`/`richmat_mh_light_color` use the same family runtime. Service
@@ -8889,7 +8879,7 @@ covered by the codec proof.
 
 #### Nisco and MLILY Supreme control tables
 
-<!-- generated:richmat-cluster022 -->
+<!-- generated:richmat-mh-apps -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
 **Nisco**

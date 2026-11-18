@@ -1434,7 +1434,7 @@ def route_scenarios() -> list[Scenario]:
     )
 
     for bed_type in sorted(const.RICHMAT_MH_BED_TYPES):
-        if bed_type in const.RICHMAT_CLUSTER022_APPS:
+        if bed_type in const.RICHMAT_MH_APP_CATALOGS:
             continue  # Own app-local scenarios below also cover their separate sleep route.
         models = selectable_models(const.RICHMAT_MH_APPS[bed_type])
         for model in dict.fromkeys([models[0], models[len(models) // 2]]):
@@ -1751,11 +1751,11 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
     return routes
 
 
-def cluster022_scenarios() -> list[Scenario]:
+def mh_app_scenarios() -> list[Scenario]:
     """Only the two accepted apps, without recapturing any existing scenario."""
     from custom_components.adjustable_bed.beds.ruf_richmat.protocol import sleep_frame
-    from custom_components.adjustable_bed.const import RICHMAT_CLUSTER022_APPS
-    from custom_components.adjustable_bed.profiles.richmat_cluster022 import models
+    from custom_components.adjustable_bed.const import RICHMAT_MH_APP_CATALOGS
+    from custom_components.adjustable_bed.profiles.richmat_mh_apps import models
 
     fixtures = REPO_ROOT / "tests/fixtures/richmat_cluster022"
     mlily = json.loads((fixtures / "mlily_supreme_vectors.json").read_text())
@@ -1769,14 +1769,15 @@ def cluster022_scenarios() -> list[Scenario]:
     def scenario(
         bed_type: str, app: str, suffix: str, model: str, *, mode: int = 0, version: bool = False,
     ) -> Scenario:
-        snapshot = {"app": app, "model": model, "transmit_mode": mode}
+        snapshot = {"app": app, "model": model, "transmit_mode": mode,
+                    "group_type": "GROUP_SYNC" if model == "3i" else None}
         return Scenario(
             id=bed_type + suffix, bed_type=bed_type, protocol_variant=f"model_{model}",
             entry_data={"capabilities": {"richmat_mh": snapshot}}, layout_id=bed_type,
             replies={**common, **({"write:6e9a000008": "6e900001ff"} if version else {})},
         )
 
-    for bed_type, app in RICHMAT_CLUSTER022_APPS.items():
+    for bed_type, app in RICHMAT_MH_APP_CATALOGS.items():
         routes.append(scenario(bed_type, app, "", "garm"))
         identifiers = models(app)
         for model in dict.fromkeys((identifiers[0], identifiers[len(identifiers) // 2])):
@@ -1808,12 +1809,12 @@ def cluster022_scenarios() -> list[Scenario]:
 
 def build_scenarios() -> list[Scenario]:
     """Every bed type once, plus the routes that change the controller or its bytes."""
-    from custom_components.adjustable_bed.const import RICHMAT_CLUSTER022_APPS, SUPPORTED_BED_TYPES
+    from custom_components.adjustable_bed.const import RICHMAT_MH_APP_CATALOGS, SUPPORTED_BED_TYPES
 
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
-                 if bed_type not in RICHMAT_CLUSTER022_APPS]
+                 if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
-    scenarios.extend(cluster022_scenarios())
+    scenarios.extend(mh_app_scenarios())
     # Bedgear A12: each selected layout, dynamic zone array and independent M gate.
     for pair in ("15", "35", "E1", "81", "51", "44", "91", "13", "71", "61", "D1", "34", "23", "97", "25", "55", "65", "75", "95", "96", "98", "41", "42", "43", "31", "32", "11", "12", "21", "22", "Z1"):
         scenarios.append(Scenario(id=f"bedgear:{pair}", bed_type="bedgear", layout_id="bedgear",
