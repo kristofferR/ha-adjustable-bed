@@ -16,7 +16,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...card import CARD_UTILITY
-from ...command_scheduler import current_command_context, note_write_not_counted
+from ...command_scheduler import current_command_context, note_frame_written
 from ...const import CONF_MOTOR_PULSE_COUNT, CONF_RICHMAT_CLASSIC_THIRD_SERVICE
 from ...controller_state import StateKey
 from ...profiles.richmat_resource_apps import APPS, worker_interval
@@ -161,7 +161,7 @@ class ResourceBedController(RichmatClassicController):
         scope = _SCOPE.get()
         return scope[1] if scope is not None and scope[0] is self else self._session
 
-    async def _send(self, packet: bytes) -> None:
+    async def _send(self, packet: bytes, cancel: asyncio.Event | None = None) -> None:
         session = self._captured_session()
         if (
             session is None
@@ -183,7 +183,7 @@ class ResourceBedController(RichmatClassicController):
             except asyncio.CancelledError:
                 cancelled = True
         task.result()
-        note_write_not_counted()
+        note_frame_written(cancel)
         if cancelled:
             raise asyncio.CancelledError
 

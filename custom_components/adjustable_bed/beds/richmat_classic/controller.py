@@ -374,13 +374,17 @@ class RichmatClassicController(BedController):
         self._publish()
 
     async def _send(self, packet: bytes, cancel: asyncio.Event | None = None) -> None:
+        """Write one packet; ``cancel`` is set for the command's own frames.
+
+        Setup, query and release writes pass none and are not counted.
+        """
         session = self._session
         if session is None or self.client is not session.client or not session.client.is_connected:
             raise ConnectionError("No current app BLE session")
         # Calls are admitted under the coordinator command lock. Never retry an
         # actuator write or carry cached Android objects across connections.
         await session.client.write_gatt_char(session.write, packet, response=session.response)
-        note_frame_written(cancel if cancel is not None else self._coordinator.cancel_command)
+        note_frame_written(cancel)
 
     async def write_command(self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = TICK_MS, cancel_event: asyncio.Event | None = None) -> None:
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
@@ -418,7 +422,7 @@ class RichmatClassicController(BedController):
                 if session.wire == "FRAMED":
                     raise ValueError("Selected app getter has no framed payload")
                 continue
-            await self._send(control(emission.payload, session.wire, mode))
+            await self._send(control(emission.payload, session.wire, mode), cancel)
         return True
 
     async def _next_tick(self, cancel: asyncio.Event) -> bool:
