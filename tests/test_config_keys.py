@@ -72,10 +72,14 @@ def test_schema_5_2_drops_exactly_the_audited_obsolete_keys():
 
 
 def test_configure_labels_only_keys_a_form_asks():
-    """Every Configure label names a key the audit says a user or a profile question sets."""
+    """Every Configure label names a key a user or a profile question sets, or a form input."""
     steps = json.loads((_PACKAGE / "strings.json").read_text())["options"]["step"]
     keys = _rows("Keys")
+    inputs = _rows("Flow inputs")
     # Each receiver step of a two-address pair asks its own profile's questions too.
     for step in ("settings", "left_settings", "right_settings"):
         for key in steps[step]["data"]:
-            assert key in keys and keys[key][1] in {"User", "Profile"}, (step, key)
+            assert key in inputs or (key in keys and keys[key][1] in {"User", "Profile"}), (
+                step,
+                key,
+            )

@@ -119,6 +119,23 @@ async def open_flow(hass, target):
     return flow
 
 
+async def finish_reconfigure(hass, handoff, action="apply"):
+    """Answer a Reconfigure handoff with its preselected answers, then its review."""
+    kind, flow_id = handoff["next_flow"]
+    assert kind == "config_flow"
+    manager = hass.config_entries.flow
+    result = await manager.async_configure(flow_id)
+    for _ in range(6):
+        if result["type"] != "form" or result.get("errors"):
+            break
+        if result["step_id"] == "migration_confirm":
+            with patch.object(hass.config_entries, "async_schedule_reload"):
+                result = await manager.async_configure(flow_id, {"action": action})
+            continue
+        result = await manager.async_configure(flow_id, result["data_schema"]({}))
+    return result
+
+
 @pytest.fixture
 def tempur_processor_available(monkeypatch):
     """Exercise the companion profile's registration without depending on PR order."""
@@ -518,15 +535,11 @@ async def test_review_hands_off_without_saving_and_options_confirms(
         form = await flow.async_step_init({"issue_id": target.issue_id})
         result = await flow.async_step_init({"action": "review"})
     assert form["step_id"] == "init"
-    assert result["type"] == "abort" and result["reason"] == "review_started"
+    assert result["type"] == "abort" and result["reason"] == "guided_change_started"
     assert target.entry.data == before
     assert issue(hass, target) is not None
-    kind, flow_id = result["next_flow"]
-    assert kind == "options_flow"
-    manager = hass.config_entries.options
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await manager.async_configure(flow_id, {})
-    assert result["type"] == "create_entry"
+    result = await finish_reconfigure(hass, result)
+    assert result["type"] == "abort" and result["reason"] == "migration_applied"
     assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     record = decisions["history"][0]
@@ -547,42 +560,10 @@ async def test_cancelled_review_keeps_configuration_and_suggestion(
     flow = await open_flow(hass, target)
     with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
-    hass.config_entries.options.async_abort(result["next_flow"][1])
+    hass.config_entries.flow.async_abort(result["next_flow"][1])
     assert target.entry.data == before
     assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
     assert issue(hass, target) is not None
-
-
-async def test_aborted_options_init_preserves_an_existing_configure_flow(
-    hass, enable_custom_integrations
-):
-    target = await watch(hass)
-    manager = hass.config_entries.options
-    existing = await manager.async_init(target.entry.entry_id)
-    before = dict(target.entry.data)
-    flow = await open_flow(hass, target)
-    with (
-        patch(HISTORY, return_value=info()),
-        patch.object(
-            manager,
-            "async_init",
-            return_value={
-                "type": "abort",
-                "flow_id": "already_finished",
-                "reason": "already_in_progress",
-            },
-        ),
-        patch.object(manager, "async_configure", wraps=manager.async_configure) as configure,
-    ):
-        result = await flow.async_step_init({"action": "review"})
-    assert result["type"] == "abort" and result["reason"] == "recommendation_changed"
-    configure.assert_not_called()
-    assert [item["flow_id"] for item in manager.async_progress()] == [existing["flow_id"]]
-    assert target.entry.data == before
-    assert target.review_flow_id is None
-    assert issue(hass, target) is not None
-    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
-    manager.async_abort(existing["flow_id"])
 
 
 async def test_accepted_unique_match_is_recorded_even_when_selected_profile_has_no_assessment(
@@ -601,10 +582,9 @@ async def test_accepted_unique_match_is_recorded_even_when_selected_profile_has_
         assert original is not None
         flow = await open_flow(hass, target)
         result = await flow.async_step_init({"action": "review"})
-        with patch.object(hass.config_entries, "async_schedule_reload"):
-            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+        result = await finish_reconfigure(hass, result)
         target.refresh()
-    assert result["type"] == "create_entry"
+    assert result["reason"] == "migration_applied"
     assert config_entry.data[CONF_BED_TYPE] == "linak"
     assert target.recommendation is None
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
@@ -749,35 +729,6 @@ def test_notice_describes_the_actual_controls_lost_and_gained():
     for button in current.controller_button_specs:
         assert button.key not in {other.key for other in suggested.controller_button_specs}
         assert button.name in text
-
-
-async def test_configuration_change_during_handoff_aborts_without_submitting_profile(
-    hass, enable_custom_integrations
-):
-    target = await watch(hass)
-    flow = await open_flow(hass, target)
-    manager = hass.config_entries.options
-    configure = manager.async_configure
-    submissions = []
-
-    async def concurrently_changed(flow_id, user_input):
-        submissions.append(user_input)
-        result = await configure(flow_id, user_input)
-        hass.config_entries.async_update_entry(
-            target.entry, data={**target.entry.data, CONF_ADDRESS: OTHER}
-        )
-        return result
-
-    with (
-        patch(HISTORY, return_value=info()),
-        patch.object(manager, "async_configure", side_effect=concurrently_changed),
-    ):
-        result = await flow.async_step_init({"action": "review"})
-    assert result["reason"] == "recommendation_changed"
-    assert submissions == [{"next_step_id": "settings"}]
-    assert target.entry.data[CONF_ADDRESS] == OTHER
-    assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_ADJUSTABLE_LUMBAR
-    assert not manager.async_progress()
 
 
 def advertisement(name, services):
@@ -1529,10 +1480,9 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
     assert decisions["history"][0]["source"] == "configure"
 
 
-@pytest.mark.parametrize("variant", ["auto", "cb24"])
-async def test_single_address_settings_records_review_decision(
-    hass, enable_custom_integrations, variant
-):
+async def test_single_address_settings_records_review_decision(hass, enable_custom_integrations):
+    """Saving the pair's settings from the review answers it; the route stays."""
+    variant = "auto"
     from custom_components.adjustable_bed.const import (
         BED_TYPE_OKIN_CB24,
         LINAK_CONTROL_SERVICE_UUID,
@@ -1562,7 +1512,7 @@ async def test_single_address_settings_records_review_decision(
         manager = hass.config_entries.options
         await manager.async_configure(flow_id, {"next_step_id": "settings"})
         with patch.object(hass.config_entries, "async_schedule_reload"):
-            result = await manager.async_configure(flow_id, {CONF_PROTOCOL_VARIANT: variant})
+            result = await manager.async_configure(flow_id, {})
         assert result["type"] == "create_entry"
         assert config_entry.data[CONF_PAIR_MODE] == PAIR_MODE_SINGLE_ADDRESS
         assert config_entry.data[CONF_PROTOCOL_VARIANT] == variant
@@ -1571,7 +1521,7 @@ async def test_single_address_settings_records_review_decision(
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     record = decisions["history"][0]
     assert record["rule"] == original.rule and record["source"] == "configure"
-    assert record["decision"] == ("dismissed" if variant == "auto" else "accepted")
+    assert record["decision"] == "dismissed"
     assert record["previous_profile"][CONF_PROTOCOL_VARIANT] == "auto"
     assert record["selected_profile"][CONF_PROTOCOL_VARIANT] == variant
     assert target.recommendation is not None
@@ -1629,21 +1579,10 @@ async def test_failed_history_write_does_not_abort_committed_settings(
     flow = await open_flow(hass, target)
     with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
-        flow_id = result["next_flow"][1]
-        with (
-            patch.object(Store, "async_save", side_effect=OSError),
-            patch(
-                "custom_components.adjustable_bed.config_flow.async_set_discovery_disabled"
-            ) as change_discovery,
-        ):
-            result = await hass.config_entries.options.async_configure(
-                flow_id, {"disable_discovery": True}
-            )
-        change_discovery.assert_awaited_once_with(hass, True)
-    # Let the entry reload the accepted settings schedule finish; left running, it
-    # registers the device after teardown's final write and leaves a save timer.
+        with patch.object(Store, "async_save", side_effect=OSError):
+            result = await finish_reconfigure(hass, result)
     await hass.async_block_till_done()
-    assert result["type"] == "create_entry"
+    assert result["reason"] == "migration_applied"
     assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
     assert issue(hass, target) is None
     # Immediate exports include the completed choice, and the retry makes it durable.
@@ -1673,14 +1612,14 @@ async def test_failed_hardware_commit_leaves_review_and_history_unconfirmed(
         with patch.object(
             coord, "async_execute_controller_command", new=AsyncMock(side_effect=ConnectionError)
         ):
-            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+            result = await finish_reconfigure(hass, result)
         assert result["errors"] == {"base": "limoss_remote_feature_update_failed"}
         assert coord.entry.data == before
         assert target.dismissed == {}
         assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
         target.refresh()
         assert issue(hass, target) is not None
-        hass.config_entries.options.async_abort(result["flow_id"])
+        hass.config_entries.flow.async_abort(result["flow_id"])
 
 
 def test_eshine_search_hint_does_not_question_an_already_matching_receiver():
@@ -1773,10 +1712,10 @@ async def test_a_saved_guided_change_answers_the_review(hass, enable_custom_inte
     assert record["selected_profile"][CONF_PROTOCOL_VARIANT] == "ksbt"
 
 
-async def test_a_review_outside_the_guided_family_stays_in_configure(
+async def test_a_review_outside_the_guided_family_opens_the_full_list(
     hass, enable_custom_integrations
 ):
-    """The Keeson wizard cannot offer Linak, so that review keeps the Configure handoff."""
+    """The Keeson question cannot offer Linak, so Reconfigure asks from the full list."""
     from custom_components.adjustable_bed.const import BED_TYPE_LINAK, LINAK_CONTROL_SERVICE_UUID
 
     config_entry = entry(
@@ -1795,6 +1734,11 @@ async def test_a_review_outside_the_guided_family_stays_in_configure(
         form = await flow.async_step_init({"issue_id": target.issue_id})
         result = await flow.async_step_init({"action": "review"})
     assert form["step_id"] == "init"
-    assert result["reason"] == "review_started"
-    assert result["next_flow"][0] == "options_flow"
-    hass.config_entries.options.async_abort(result["next_flow"][1])
+    assert result["reason"] == "guided_change_started"
+    kind, flow_id = result["next_flow"]
+    assert kind == "config_flow"
+    shown = await hass.config_entries.flow.async_configure(flow_id)
+    assert shown["step_id"] == "reconfigure_bed_type"
+    # Linak is preselected.
+    assert shown["data_schema"]({})[CONF_BED_TYPE] == "linak"
+    hass.config_entries.flow.async_abort(flow_id)

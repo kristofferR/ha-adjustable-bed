@@ -243,9 +243,10 @@ async def test_keep_for_another_route_never_asks(hass: HomeAssistant) -> None:
     assert _issue(hass, entry) is None
 
 
-async def test_switch_applies_the_app_through_the_options_flow(
+async def test_switch_applies_the_app_through_reconfigure(
     hass: HomeAssistant, enable_custom_integrations: None
 ) -> None:
+    """The chosen app opens Reconfigure preselected; its review saves the change."""
     entry = _entry(hass, BED_TYPE_OKIN_ORE, variant=None)
     entry_id = entry.entry_id
     entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
@@ -254,61 +255,30 @@ async def test_switch_applies_the_app_through_the_options_flow(
     choice = f"{BED_TYPE_KEESON}:{KEESON_VARIANT_INNOVA}"
     assert choice in _offered(form)
 
-    with patch.object(hass.config_entries, "async_schedule_reload") as reload:
-        result = await flow.async_step_init({"choice": choice})
+    handoff = await flow.async_step_init({"choice": choice})
 
-    assert result["type"] == "create_entry"
+    assert handoff["reason"] == "migration_setup_started"
+    kind, flow_id = handoff["next_flow"]
+    assert kind == "config_flow"
+    manager = hass.config_entries.flow
+    result = await manager.async_configure(flow_id)
+    assert result["step_id"] == "reconfigure_bed_type"
+    with patch.object(hass.config_entries, "async_schedule_reload") as reload:
+        result = await manager.async_configure(flow_id, result["data_schema"]({}))
+        while result["type"] == "form" and result["step_id"] != "migration_confirm":
+            result = await manager.async_configure(flow_id, result["data_schema"]({}))
+        result = await manager.async_configure(flow_id, {"action": "apply"})
+
+    assert result["reason"] == "migration_applied"
     reload.assert_called_once_with(entry_id)
-    assert entry.entry_id == entry_id
     assert (entry.data[CONF_BED_TYPE], entry.data[CONF_PROTOCOL_VARIANT]) == (
         BED_TYPE_KEESON,
         KEESON_VARIANT_INNOVA,
     )
     assert _issue(hass, entry) is None
-    # The reload's setup finds nothing left to review and retires the mark.
     async_refresh_profile_review_issue(hass, entry)
     assert CONF_PROFILE_REVIEW_PENDING not in entry.data
     assert _issue(hass, entry) is None
-
-
-@pytest.mark.parametrize(
-    ("bed_type", "choice"),
-    [
-        # The options flow refuses: no stored raw name resolves the model.
-        # (A Limoss review now opens the Limoss guided change instead.)
-        (BED_TYPE_RICHMAT, BED_TYPE_RICHMAT_REVIVE),
-    ],
-)
-async def test_app_that_cannot_be_applied_here_points_to_configure(
-    hass: HomeAssistant, enable_custom_integrations: None, bed_type: str, choice: str
-) -> None:
-    entry = _entry(hass, bed_type)
-    before = dict(entry.data)
-    async_refresh_profile_review_issue(hass, entry)
-    flow, _form = await _open(hass, entry)
-
-    result = await flow.async_step_init({"choice": choice})
-
-    assert result["step_id"] == "configure"
-    assert result["description_placeholders"]["app"] == choice_label(choice)
-    assert dict(entry.data) == before
-    assert not hass.config_entries.options.async_progress()
-    result = await flow.async_step_configure({})
-
-    # The handoff opens Configure with the app selected, or leaves the review
-    # open when that form cannot be prepared. Either way nothing is answered.
-    assert result["type"] == "abort"
-    assert dict(entry.data) == before
-    assert _issue(hass, entry) is not None
-    if result["reason"] == "profile_review_handoff":
-        flow_type, flow_id = result["next_flow"]
-        assert flow_type == "options_flow"
-        handoff = hass.config_entries.options.async_get(flow_id)
-        assert handoff["step_id"] == "settings"
-        hass.config_entries.options.async_abort(flow_id)
-    else:
-        assert result["reason"] == "profile_review_open"
-    assert dict(entry.data) == before
 
 
 async def test_detection_drift_names_the_matching_profile(hass: HomeAssistant) -> None:

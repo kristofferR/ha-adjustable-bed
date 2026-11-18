@@ -2316,19 +2316,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         current = bed_type_choice(
             data[CONF_BED_TYPE], saved_variant if isinstance(saved_variant, str) else None
         )
-        picker = _bed_type_selector(current, show_saved_id=True)
         suggested = self.context.get(SUGGESTED_CHOICE)
-        shown = suggested if isinstance(suggested, str) and suggested in picker.rows().values() else current
+        shown = suggested if isinstance(suggested, str) else current
+        # The list keeps a default it does not offer, such as a route behind a
+        # family row.
+        picker = _bed_type_selector(shown, show_saved_id=True)
         if user_input is not None:
             bed_type, variant = resolve_bed_type_choice(picker(user_input[CONF_BED_TYPE]))
             self._select_family_route(bed_type, variant)
-            # A row a guided family asks about runs that family's checks too.
-            self._migration_family = next(
-                (family for family in GUIDED_FAMILIES if bed_type in family.asks), None
-            )
             if variant is None and len(_setup_routes(bed_type)) >= 2:
                 return await self.async_step_reconfigure_route()
-            return await self._async_reconfigure_continue()
+            return await self._async_reconfigure_continue(exact=variant is not None)
         return self.async_show_form(
             step_id="reconfigure_bed_type",
             data_schema=vol.Schema(
@@ -2350,7 +2348,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             current = next(iter(routes))
         if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
             self._select_family_route(bed_type, user_input[CONF_PROTOCOL_VARIANT])
-            return await self._async_reconfigure_continue()
+            return await self._async_reconfigure_continue(exact=True)
         return self.async_show_form(
             step_id="reconfigure_route",
             data_schema=vol.Schema(
@@ -2359,9 +2357,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             description_placeholders={"bed_type": bed_type_label(bed_type)},
         )
 
-    async def _async_reconfigure_continue(self) -> ConfigFlowResult:
-        """Ask the staged route's own questions, then pair, check and review it."""
+    async def _async_reconfigure_continue(self, *, exact: bool) -> ConfigFlowResult:
+        """Ask the staged route's own questions, then pair, check and review it.
+
+        A family's own row asks the family's question; an app row or a route
+        already names the exact route, as it does at setup. Like the change
+        Configure used to make, it is saved without the family's link check.
+        """
         assert self._manual_data is not None
+        bed_type = self._manual_data[CONF_BED_TYPE]
+        if exact or any(
+            bed_type in family.asks and bed_type != family.row for family in APP_FAMILIES
+        ):
+            return await self._async_continue_route()
         if app_step := await self._async_app_setup_step(
             self._manual_data, pairing_step="manual_pairing"
         ):
