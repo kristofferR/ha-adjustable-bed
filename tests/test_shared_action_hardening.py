@@ -557,7 +557,49 @@ async def test_stop_on_another_bed_while_a_seek_connects_moves_neither(hass) -> 
             await task
         first.async_seek_position.assert_not_awaited()
         second.async_seek_position.assert_not_awaited()
+        # The link the seek opened gets its idle timer back.
+        first.async_ensure_connected.assert_awaited_with(reset_timer=True)
 
 
 def test_whole_number_keeps_large_integers_for_the_range_check() -> None:
     assert services._whole_number(10**400) == 10**400
+
+
+async def test_every_axis_is_checked_live_before_the_first_one_moves(hass) -> None:
+    async with beds(hass, 1) as made:
+        bed = made.items[0]
+        bed.async_seek_position = AsyncMock()  # type: ignore[method-assign]
+        planned: list[str] = []
+
+        def plan(_target: Any, _controller: Any, motor: str, _position: float) -> dict:
+            planned.append(motor)
+            # Preflight saw both axes; the live controller no longer has legs.
+            if motor == "legs" and planned.count("legs") > 1:
+                raise ServiceValidationError("Motor 'legs' is not valid")
+            return {
+                "position_key": motor,
+                "move_up_fn": AsyncMock(),
+                "move_down_fn": AsyncMock(),
+                "move_stop_fn": AsyncMock(),
+                "max_value": 60.0,
+            }
+
+        with (
+            patch.object(services, "_position_config", side_effect=plan),
+            patch.object(services, "_resolve_sided_targets", return_value=([(bed, "both")], [])),
+            virtual_clock(),
+            pytest.raises(ServiceValidationError, match="legs"),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                "set_positions",
+                {
+                    "device_id": "bed",
+                    "positions": [
+                        {"motor": "back", "position": 30},
+                        {"motor": "legs", "position": 20},
+                    ],
+                },
+                blocking=True,
+            )
+        bed.async_seek_position.assert_not_awaited()

@@ -666,7 +666,11 @@ class _LiveCheck:
                 target = next(
                     (item for item in physical if item.controller is controller), physical[0]
                 )
-                self.check(target, controller)
+                try:
+                    self.check(target, controller)
+                except ValueError as err:
+                    # The same rejection preflight would have shown.
+                    raise _validation_error(err) from err
             await command(controller)
 
         return run
@@ -1249,17 +1253,30 @@ async def _execute_position_requests(
             f"motor:{plans[(_plan_key(target), motor)]['position_key']}" for motor, _ in requests
         )
 
+    async def recheck(target: BedChild) -> dict[str, dict[str, Any]] | None:
+        """Plan every axis again on the controller that moves the bed.
+
+        Returns None when a STOP reached any selected bed meanwhile.
+        """
+        controller = await _get_controller_for_service(target)
+        # A link this opened gets its idle timer back if the call ends early.
+        preflighted.append((target, target))
+        configs: dict[str, dict[str, Any]] = {}
+        with controller_side_scope(target):
+            for motor, position in requests:
+                configs[motor] = _position_config(target, controller, motor, position)
+        for motor, _ in requests:
+            checked = plans[(_plan_key(target), motor)]
+            if any(configs[motor].get(key) != checked.get(key) for key in _CHECKED_SEEK_FIELDS):
+                raise _bed_changed()
+        return None if selection.stopped() else configs
+
     async def seek(target: BedChild, motor: str, position: float) -> None:
         # Seek only what preflight checked, on the controller that moves the bed.
-        controller = await _get_controller_for_service(target)
-        checked = plans[(_plan_key(target), motor)]
-        with controller_side_scope(target):
-            config = _position_config(target, controller, motor, position)
-        if any(config.get(key) != checked.get(key) for key in _CHECKED_SEEK_FIELDS):
-            raise _bed_changed()
-        # A STOP on any selected bed while this one connected keeps it still.
-        if selection.stopped():
+        configs = await recheck(target)
+        if configs is None:
             return
+        config = configs[motor]
         await target.async_seek_position(
             position_key=cast(str, config["position_key"]),
             target_angle=position,
@@ -1272,7 +1289,11 @@ async def _execute_position_requests(
         stop_epochs: Mapping[int, int],
     ) -> Callable[[BedChild], Coroutine[Any, Any, None]]:
         async def run(target: BedChild) -> None:
-            operations: list[Callable[[], Coroutine[Any, Any, None]]] = []
+            async def check_all() -> None:
+                await recheck(target)
+
+            # Every axis is checked before the first one moves.
+            operations: list[Callable[[], Coroutine[Any, Any, None]]] = [check_all]
             for motor, position in requests:
 
                 async def operation(
@@ -1318,6 +1339,8 @@ async def _execute_position_requests(
     except Exception:
         await _release_preflighted(preflighted)
         raise
+    if selection.stopped():
+        await _release_preflighted(preflighted)
 
 
 # A seek runs only when the live controller plans the same axis and range.
