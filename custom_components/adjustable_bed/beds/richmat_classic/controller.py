@@ -16,7 +16,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_UTILITY
+from ...card import CARD_HIDDEN, CARD_UTILITY
 from ...command_scheduler import current_command_context
 from ...const import (
     CONF_MOTOR_PULSE_COUNT,
@@ -29,6 +29,7 @@ from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import RICHMAT_CLASSIC
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button, classify, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -608,7 +609,7 @@ class RichmatClassicController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        result: list[ControllerButtonSpec] = []
+        result: list[ControllerButtonSpec | None] = []
         for button in self._controls:
             if not button.rich_button or button.status not in (1, 2, 3):
                 continue
@@ -621,27 +622,31 @@ class RichmatClassicController(BedController):
             key = f"richmat_classic_{button.node}"
             label = resource_label(button.label)
             if not button.excluded_short:
-                result.append(ControllerButtonSpec(
+                result.append(catalog_button(
                 key, label, partial(_press, node=button.node),
-                translation_key="richmat_classic_action", translation_placeholders={"action": label},
                 hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if button.status == 1 or button.mem_special and not self._selection.armed else None,
                 ))
             if button.hold_affected and not button.view_id.endswith("Long"):
                 held_key = key + "_hold"
-                name = f"{label} (hold)"
-                result.append(ControllerButtonSpec(
-                    held_key, name, partial(_press, node=button.node),
-                    translation_key="richmat_classic_action", translation_placeholders={"action": name},
+                control = classify(label)
+                result.append(catalog_button(
+                    held_key, f"{label} (hold)", partial(_press, node=button.node),
+                    kind=control.kind if control is not None else None,
                     hold=ControllerHoldSpec(held_key, release_button_key="richmat_classic_release"),
                 ))
             if button.status == 3 and button.long and not button.excluded_long and not button.mem_special and not button.select_special:
-                name = f"{label} (long press)"
-                result.append(ControllerButtonSpec(
-                    key + "_long", name, partial(_press, node=button.node, long=True),
-                    translation_key="richmat_classic_action", translation_placeholders={"action": name},
-                ))
-        result.append(ControllerButtonSpec("richmat_classic_release", "Release", lambda c: c.stop_all(), translation_key="richmat_classic_release", release_only=True))
-        return tuple(result)
+                long = partial(_press, node=button.node, long=True)
+                if button.short is None and button.short_old is None:
+                    # The long press is this button's only action.
+                    result.append(catalog_button(key + "_long", label, long))
+                elif (control := classify(label)) is not None and control.kind in (Kind.PRESET, Kind.MEMORY):
+                    # A preset's long press saves the position there.
+                    result.append(catalog_button(key + "_long", "Save " + label, long, kind=Kind.SAVE))
+        result.append(ControllerButtonSpec(
+            "richmat_classic_release", "Release", lambda c: c.stop_all(),
+            translation_key="richmat_classic_release", release_only=True, card=CARD_HIDDEN,
+        ))
+        return unique_buttons(result)
 
     def _select(self, kind: str, value: str) -> None:
         if kind == "mode" and int(value) in self._model.modes:

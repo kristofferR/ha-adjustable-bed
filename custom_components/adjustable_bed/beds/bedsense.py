@@ -16,10 +16,8 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from ..card import (
     CARD_HIDDEN,
     CARD_LIGHT_STATE,
-    CARD_LIGHTING,
     CARD_MASSAGE,
     CARD_MASSAGE_TIMER,
-    CARD_UTILITY,
 )
 from ..codec import ff_frame as codec
 from ..const import CONF_BLE_DEVICE_NAME
@@ -28,6 +26,7 @@ from ..detection import is_mac_like_name
 from ..profiles.ff_frame import BEDSENSE, BedSenseProfile, bedsense_layout
 from .base import BedController, ProfileExecution
 from .builder import BuildContext
+from .catalog_buttons import Kind, catalog_button, unique_buttons
 from .entity_specs import (
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
@@ -185,6 +184,11 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
         )
 
     @property
+    def memory_slots_recalled_by_presets(self) -> frozenset[int]:
+        # TV, Zero Gravity and Anti-Snore (Flat on layouts 6 and 8) recall slots 3 to 5.
+        return frozenset({3, 4, 5})
+
+    @property
     def supports_preset_tv(self) -> bool:
         return True
 
@@ -226,30 +230,27 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
                 or k in ("lumbar", "music", "leg_relax", "rise", "decline")
             )
         ]
-        specs = []
+        specs: list[ControllerButtonSpec | None] = []
         for key in keys:
-            category = (
-                "massage"
-                if key.startswith("massage_")
-                else "light"
-                if key.startswith("light_")
-                else "action"
-            )
-            name = _button_name(key)
             specs.append(
-                ControllerButtonSpec(
+                catalog_button(
                     f"bedsense_{key}",
-                    name,
+                    _button_name(key),
                     _action(key),
+                    kind=Kind.MASSAGE
+                    if key.startswith(("massage_", "circulation_"))
+                    else Kind.LIGHT
+                    if key.startswith("light_")
+                    # Shortcuts to a position the bed knows.
+                    else Kind.PRESET
+                    if key in ("lumbar", "leg_relax", "rise", "decline")
+                    else None,
                     scheduler_resource="*",
-                    translation_key=f"bedsense_{category}",
-                    translation_placeholders={"action": name},
-                    card={"massage": CARD_MASSAGE, "light": CARD_LIGHTING}.get(
-                        category, CARD_UTILITY
-                    ),
+                    # Clearing forgets a saved position.
+                    requires_confirmation=key.startswith("clear_"),
                 )
             )
-        return tuple(specs)
+        return unique_buttons(specs)
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:

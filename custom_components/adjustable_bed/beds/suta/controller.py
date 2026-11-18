@@ -15,7 +15,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_HIDDEN, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_HIDDEN
 from ...codec import suta as codec
 from ...command_scheduler import current_command_context
 from ...const import CONF_BLE_DEVICE_NAME
@@ -32,6 +32,7 @@ from ...profiles.suta import (
     service_for_name,
 )
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -308,7 +309,7 @@ class SutaController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        result: list[ControllerButtonSpec] = []
+        result: list[ControllerButtonSpec | None] = []
         standard = {"mode_flat", "mode_zerog", "both_tv", "both_snore", "both_stop", "light_enable", "light_disable",
                     *(f"mode_both_m{i}" for i in range(1, 5)), *(f"set_mode_both_m{i}" for i in range(1, 5))}
         standard.update(control for spec in self.motor_control_specs if spec.hold is not None for control in (spec.hold.up_control, spec.hold.down_control))
@@ -320,34 +321,33 @@ class SutaController(BedController):
                 label = self._text_label(key, suffix)
                 if label is None:
                     continue
-                result.append(ControllerButtonSpec(
+                result.append(catalog_button(
                     "suta_" + key + suffix, label, partial(_action, key=key, suffix=suffix),
-                    translation_key="suta_save" if command.text.startswith("AT+SETMODE") else "suta_preset" if command.text.startswith("AT+MODE") else "suta_action",
-                    translation_placeholders={"action": label},
+                    kind=Kind.SAVE if command.text.startswith("AT+SETMODE") or command.kind == "save"
+                    else Kind.PRESET if command.text.startswith("AT+MODE")
+                    else Kind.MOTOR if command.kind == "motion" else None,
                     # The card confirms a save and sends it whole; hold_control still runs saves.
                     hold=ControllerHoldSpec(key, release_button_key="suta_release") if command.kind == "motion" else None,
-                    requires_confirmation=command.kind == "save" or key == "reset_on",
+                    requires_confirmation=key == "reset_on",
                     invalidates_position=command.kind in ("motion", "save") or command.text.startswith("AT+MODE"),
-                    card=CARD_PRESET_SAVE if command.text.startswith("AT+SETMODE") else CARD_PRESETS if command.text.startswith("AT+MODE") else CARD_UTILITY,
                 ))
         for action in BINARY.values():
             if self.family not in action.controllers or action.key in _BINARY_WITHOUT_BUTTON:
                 continue
             for prefix in action.prefixes:
                 label = self._binary_label(action.key, prefix[6:])
-                result.append(ControllerButtonSpec(
+                result.append(catalog_button(
                     "suta_" + action.key + "_" + prefix[6:].hex(), label,
                     partial(_binary_action, action=action.key, payload=prefix[6:]),
-                    translation_key="suta_action", translation_placeholders={"action": label},
                 ))
         if self.supports_stop_all:
             # The card presses this when a held gesture ends.
             result.append(ControllerButtonSpec("suta_release", "Release held control", lambda c: c.stop_all(), release_only=True, translation_key="suta_release", card=CARD_HIDDEN))
         if self.family == "P1" and {"both_snore", "mode_flat"} <= commands.keys():
-            result.append(ControllerButtonSpec("suta_snore_cycle", "Anti-snore then flat", partial(_action, key="snore_cycle"), translation_key="suta_action", translation_placeholders={"action": "Anti-snore then flat"}))
+            result.append(catalog_button("suta_snore_cycle", "Anti-snore then flat", partial(_action, key="snore_cycle"), kind=Kind.PRESET))
         if "mass_head_dt" in commands and "mass_foot_dt" in commands:
-            result.append(ControllerButtonSpec("suta_massage_off", "Stop massage", partial(_action, key="massage_off"), translation_key="suta_action", translation_placeholders={"action": "Stop massage"}))
-        return tuple(result)
+            result.append(catalog_button("suta_massage_off", "Stop massage", partial(_action, key="massage_off")))
+        return unique_buttons(result)
 
     @property
     def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:

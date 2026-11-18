@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
-from ...card import CARD_HIDDEN, CARD_PRESET_SAVE, CARD_UTILITY, CardPlacement, CardSection
+from ...card import CARD_HIDDEN, CARD_UTILITY, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
@@ -24,6 +24,7 @@ from ...profiles.richmat import GOODVIBE, RichmatProfile
 from ...profiles.richmat_catalog import Catalog
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
+from ..catalog_buttons import EXTRA_KEY, Kind, catalog_button, is_placeholder, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -962,14 +963,18 @@ class GoodVibeController(BedController):
 
     @property
     def control_actions(self) -> tuple[str, ...]:
-        return (
-            tuple(
-                child
-                for detail in self.product.actions
-                for child in self.catalog.expansions.get(detail, (detail,))
-            )
-            if self.product is not None
-            else ()
+        """The product's controls once each, in app order, without empty slots."""
+        if self.product is None:
+            return ()
+        details = (
+            child
+            for detail in self.product.actions
+            for child in self.catalog.expansions.get(detail, (detail,))
+        )
+        return tuple(
+            detail
+            for detail in dict.fromkeys(details)
+            if not is_placeholder(label(self.actions[detail]))
         )
 
     @property
@@ -986,23 +991,17 @@ class GoodVibeController(BedController):
             async def stop(controller: BedController) -> None:
                 await selected(controller).stop_all()
 
-            return (
+            return tuple(
                 ControllerButtonSpec(
-                    "goodvibe_monitor",
-                    "Start live sleep data",
-                    start,
-                    translation_key="goodvibe_action",
-                    translation_placeholders={"action": "Start live sleep data"},
-                ),
-                ControllerButtonSpec(
-                    "goodvibe_stop_monitor",
-                    "Stop live sleep data",
-                    stop,
-                    translation_key="goodvibe_action",
-                    translation_placeholders={"action": "Stop live sleep data"},
-                ),
+                    key, name, press, translation_key=EXTRA_KEY,
+                    translation_placeholders={"action": name},
+                )
+                for key, name, press in (
+                    ("goodvibe_monitor", "Start live sleep data", start),
+                    ("goodvibe_stop_monitor", "Stop live sleep data", stop),
+                )
             )
-        buttons = []
+        buttons: list[ControllerButtonSpec | None] = []
         labels = self.catalog.labels
         if self.product.light and (self.catalog.bed is None or self.menu_available("light")):
 
@@ -1011,46 +1010,37 @@ class GoodVibeController(BedController):
 
                 await selected(controller).async_execute_goodvibe_request(Request("light_off"))
 
-            off = labels.get("light_off", "Bed light off")
             buttons.append(
-                ControllerButtonSpec(
-                    "goodvibe_light_off",
-                    off,
-                    light_off,
-                    translation_key="goodvibe_action",
-                    translation_placeholders={"action": off},
+                catalog_button(
+                    "goodvibe_light_off", labels.get("light_off", "Bed light off"), light_off,
+                    kind=Kind.LIGHT,
                 )
             )
         for detail in self.control_actions:
             action = self.actions[detail]
             if action.local or action.hidden or not action.interactive:
                 continue
+            # A forced long press has no known effect outside Power Bob Base.
+            if action.force_long and self.catalog.bed is None:
+                continue
             key = "goodvibe_" + detail
-            name = labels.get(detail, label(action))
             buttons.append(
-                ControllerButtonSpec(
+                catalog_button(
                     key,
-                    name,
+                    labels.get(detail, label(action)),
                     partial(_press, detail=detail),
-                    translation_key="goodvibe_action",
-                    translation_placeholders={"action": name},
                     hold=(ControllerHoldSpec(key, 0, 0, "goodvibe_release")
                           if self.catalog.bed is None or action.gesture != "shortPress" else None),
                 )
             )
-            if action.gesture in ("longPress", "shortAndLongPress"):
-                long_name = labels.get(detail + "_long", label(action) + " (long press)")
-                # A Power Bob Base long press saves the preset: confirm it first.
-                saves = self.catalog.bed is not None
+            # Only Power Bob Base's long press has a known effect: it saves the preset.
+            if action.gesture in ("longPress", "shortAndLongPress") and self.catalog.bed is not None:
                 buttons.append(
-                    ControllerButtonSpec(
+                    catalog_button(
                         key + "_long",
-                        long_name,
+                        labels.get(detail + "_long", "Save " + label(action)),
                         partial(_press, detail=detail, duration=3100),
-                        translation_key="goodvibe_save_action" if saves else "goodvibe_action",
-                        translation_placeholders={"action": long_name},
-                        requires_confirmation=saves,
-                        card=CARD_PRESET_SAVE if saves else CARD_UTILITY,
+                        kind=Kind.SAVE,
                     )
                 )
         buttons.append(
@@ -1063,15 +1053,15 @@ class GoodVibeController(BedController):
                 card=CARD_HIDDEN,
             )
         )
-        return tuple(buttons)
+        return unique_buttons(buttons)
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
-        return (
-            tuple("goodvibe_" + d for d in self.control_actions if not self.actions[d].local and not self.actions[d].hidden
-                  and self.actions[d].interactive)
-            if self.product
-            else ()
+        return tuple(
+            "goodvibe_" + d
+            for d in self.control_actions
+            if not self.actions[d].local and not self.actions[d].hidden
+            and self.actions[d].interactive
         )
 
     def _effective_gesture(self, action: Action) -> tuple[str, bool]:

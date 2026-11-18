@@ -11,7 +11,7 @@ from math import isfinite
 from time import monotonic
 from typing import TYPE_CHECKING, Final
 
-from ...card import CARD_UTILITY
+from ...card import CARD_HIDDEN, CARD_UTILITY
 from ...codec import motomotion as codec
 from ...codec.motomotion import Position, ascii_command, binary_command, music_command
 from ...const import CONF_BLE_DEVICE_NAME
@@ -19,6 +19,7 @@ from ...controller_state import StateKey
 from ...profiles.motomotion import Profile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import EXTRA_KEY, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -999,29 +1000,31 @@ class MotoMotionController(BedController):
         if self.held_control_options:
             keys.append("motomotion_release")
         keys.append("motomotion_unbind")
-        return tuple(
-            ControllerButtonSpec(
-                key,
-                self._action_label(key),
-                partial(action, key=key),
-                translation_key="motomotion_release"
-                if key == "motomotion_release"
-                else "motomotion_action",
-                translation_placeholders=None
-                if key == "motomotion_release"
-                else {"action": self._action_label(key)},
-                release_only=key == "motomotion_release",
-                diagnostic=key == "motomotion_unbind",
-                # The admitted controller owns both the first tick and cleanup delay.
-                hold=ControllerHoldSpec(
-                    key,
-                    release_button_key="motomotion_release",
-                )
+        specs: list[ControllerButtonSpec | None] = []
+        for key in keys:
+            # The admitted controller owns both the first tick and cleanup delay.
+            hold = (
+                ControllerHoldSpec(key, release_button_key="motomotion_release")
                 if key in self.held_control_options
-                else None,
+                else None
             )
-            for key in keys
-        )
+            if key == "motomotion_release":
+                specs.append(ControllerButtonSpec(
+                    key, self._action_label(key), partial(action, key=key),
+                    translation_key="motomotion_release", release_only=True, card=CARD_HIDDEN,
+                ))
+            elif key == "motomotion_unbind":
+                specs.append(ControllerButtonSpec(
+                    key, self._action_label(key), partial(action, key=key),
+                    translation_key=EXTRA_KEY,
+                    translation_placeholders={"action": self._action_label(key)},
+                    diagnostic=True,
+                ))
+            else:
+                specs.append(catalog_button(
+                    key, self._action_label(key), partial(action, key=key), hold=hold
+                ))
+        return unique_buttons(specs)
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:

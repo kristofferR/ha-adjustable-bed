@@ -1107,6 +1107,11 @@ def _should_add_button(
     if description.memory_slot is not None and controller is not None:
         if description.memory_slot > controller.memory_slot_count:
             return False
+        if (
+            not description.is_program_button
+            and description.memory_slot in controller.memory_slots_recalled_by_presets
+        ):
+            return False
 
     if description.is_program_button and controller is not None:
         # Per-slot, not controller-wide: a bed can report some slots as locked
@@ -1339,6 +1344,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         self._attr_icon = spec.icon
         if spec.diagnostic:
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        if spec.diagnostic or not spec.entity_registry_enabled_default:
             self._attr_entity_registry_enabled_default = False
         if spec.release_only or spec.key == "hjbed_release":
             # The card presses it to end a held gesture, so it stays enabled
