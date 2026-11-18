@@ -347,3 +347,13 @@ its own name gates, axes and controls. The shared letter runtime preserves
 Bedgear's timing while L2Motion delays the first periodic write until its first
 timer tick. Neither synchronization commands nor accessory replies establish
 concurrent motors, position feedback or native side routing.
+
+## Linx
+
+Linx 1.0.7 (27) adds `codec/linx.py` and typed Quest/Orbes
+profiles. The existing Keeson JSON encoder does not reproduce the frozen Gson
+field order, and no existing carrier reproduces its complete AA, ASCII startup
+and AB intervention literals. The production harness compares all 39 accepted
+literals byte for byte. The independent transport selection and connection-owned
+release, cache and callback behavior belong to `beds/linx/`, without changing
+any legacy JSON wire scenario. See [Linx](../beds/linx.md).

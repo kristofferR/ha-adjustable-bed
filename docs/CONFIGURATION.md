@@ -410,6 +410,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series app (older bases) | `linak` `performance_legacy` | 4 | 300 ms |
+| Linx app | `linx` | 334 | 3 ms |
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |
 | Malouf Base / Lucid Base apps | `malouf_app` | 7 | 150 ms |
 | Malouf remote, older receiver | `malouf_legacy_okin` | 7 | 150 ms |
@@ -1050,3 +1051,11 @@ are profile-owned. Keep the actual Bluetooth name: saved queries, alarm side
 modes and the QMS2 alarm-massage gate use independent name predicates. Each
 physical side keeps its own name when combining two beds. See the
 [Sophie profile](beds/ff_frame.md#sophie) for controls and reported-state gates.
+
+### Linx app
+
+Choose the [Linx](beds/linx.md) model, independent A00A or Nordic UART BLE
+transport and exact Bluetooth name. These belong to each physical receiver,
+including each side of a two-address pair. New app sessions default to Linx
+2.5 Q and A00A. The app profile fixes the motor count, massage gate and held
+refresh interval. No bed Wi-Fi or account setting is needed.

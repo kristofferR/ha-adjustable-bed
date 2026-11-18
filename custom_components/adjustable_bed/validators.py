@@ -101,6 +101,7 @@ from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.hush import HUSH_BASE_VARIANTS
+from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
@@ -136,6 +137,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "ormatek": {"okin15": "Okin", "okin24": "SmartBed"},
+    "linx": LINX_TRANSPORTS,
     "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
     "comfort_enhancement3": APEX_CHOICES,
     "symphony_sleep": {"box1": "Box 1 (P1)", "box2": "Box 2 (P2)", "fallback": "Box 1, without position readings"},

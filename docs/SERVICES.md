@@ -65,6 +65,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`limoss_remote_features`](#limoss_remote_features) | Limoss Remote: configure controls | Set local layout selections. Disabling a selected feature sends its ten OFF commands before saving. |
 | [`limoss_remote_rename_memory`](#limoss_remote_rename_memory) | Limoss Remote: rename memory | Rename a local memory. Empty names are permitted. |
 | [`linak_move_simultaneously`](#linak_move_simultaneously) | Linak: move two motors together | Move two different sections with one native command (Linak Bed Control, Jensen JMC400), then send STOP. |
+| [`linx_snore_intervention`](#linx_snore_intervention) | Linx: snore intervention | Run the bed's anti-snore movement once, then ask the bed for its status. It does not listen for snoring. |
 | [`logicdata_hold_preset`](#logicdata_hold_preset) | Logicdata: hold preset | Hold a flat, preset or memory recall with repeated commands for a specified duration, then release. |
 | [`luuna`](#luuna) | Luuna: settings | Configure the Luuna alarm, light or query the bed-provided sleep accessory name. Requires the selected product and reported capability. |
 | [`richmat_rise`](#richmat_rise) | Luuna Rise and Power Cool: settings | Bed settings for Luuna Rise and Power Cool beds. Alarm and lamp settings need the bed to report them first. |
@@ -426,6 +427,7 @@ data:
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
+| Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
 | Logicdata app | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2` | `weekdays`, head and foot massage levels 0–3 |
 | M Line | `zero_g`, `flat`, `memory_1`, `memory_2`, `massage`, `anti_snore` | `weekdays` |
 | Malouf / Lucid app | `zero_g`, `lounge`, `tv`, `anti_snore`, memories | `weekdays` |
@@ -1037,6 +1039,20 @@ The explicit [Limoss Remote app profile](beds/limoss.md#limoss-remote) adds `lim
 | `second_motor` | Second motor |  |
 | `second_direction` | Second direction |  |
 | `duration_ms` | Duration | How long to hold the combined movement before STOP. |
+
+## Linx
+
+<a id="linx_snore_intervention"></a>
+**`linx_snore_intervention`**: Run the bed's anti-snore movement once, then ask the bed for its status. It does not listen for snoring.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `hold_minutes` | Hold duration | Minutes the bed holds the anti-snore position (default 10). |
+| `up_speed` | Up speed | The app's up-speed setting (default 10). |
+| `lift_time` | Lift time | The app's lift-time setting (default 10). |
+
+The status query runs once on the same connection; it never reconnects. See the
+[Linx guide](beds/linx.md).
 
 ## Logicdata
 

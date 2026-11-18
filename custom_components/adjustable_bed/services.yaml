@@ -3073,6 +3073,42 @@ svane_release_axis:
           options: [both, left, right]
           translation_key: side
 
+linx_snore_intervention:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      default: both
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+    hold_minutes:
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 2147483647
+          mode: box
+    up_speed:
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 2147483647
+          mode: box
+    lift_time:
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 2147483647
+          mode: box
+
 symphony_anti_snore:
   fields:
     device_id:

@@ -1203,6 +1203,10 @@ def default_scenario(bed_type: str) -> Scenario:
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
+    if bed_type == const.BED_TYPE_LINX:
+        variant = "a00a"
+        data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
+                     const.CONF_BLE_DEVICE_NAME: "KSWF07D00000000"})
     if bed_type == const.BED_TYPE_SONICSLEEP:
         data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
@@ -1808,6 +1812,15 @@ def build_scenarios() -> list[Scenario]:
 
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES]
     scenarios.extend(route_scenarios())
+    # Linx 1.0.7: all independent model/route combinations, preserving
+    # the existing Keeson JSON scenarios and their characteristic fixtures.
+    for model in ("quest", "orbes"):
+        for route in ("a00a", "uart", "uart_json", "a00a_uart"):
+            scenarios.append(dataclasses.replace(
+                default_scenario("linx"), id=f"linx:{model}:{route}",
+                protocol_variant=route, layout_id="linx",
+                entry_data={"product_type": model, "ble_device_name": "KSWF07D00000000"},
+            ))
     # Bedgear A12: each selected layout, dynamic zone array and independent M gate.
     for pair in ("15", "35", "E1", "81", "51", "44", "91", "13", "71", "61", "D1", "34", "23", "97", "25", "55", "65", "75", "95", "96", "98", "41", "42", "43", "31", "32", "11", "12", "21", "22", "Z1"):
         scenarios.append(Scenario(id=f"bedgear:{pair}", bed_type="bedgear", layout_id="bedgear",
@@ -1933,7 +1946,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"rize_home", "okin_64bit"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
-        if controller._coordinator.bed_type == "symphony":
+        if controller._coordinator.bed_type in {"symphony", "linx"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

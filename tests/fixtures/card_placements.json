@@ -902,6 +902,19 @@
   "card_section": "lighting",
   "card_role": "cycle"
  },
+ "button:linx_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:linx_massage_head": {
+  "card_section": "massage"
+ },
+ "button:linx_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:linx_self_check": {
+  "card_section": "utility"
+ },
  "button:logicdata_air_pump_deflate": {
   "card_section": "utility"
  },
@@ -3649,6 +3662,19 @@
   "card_section": "hidden"
  },
  "sensor:linak_protocol_error": {
+  "card_section": "hidden"
+ },
+ "sensor:linx_device_version": {
+  "card_section": "hidden"
+ },
+ "sensor:linx_massage_minutes": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "sensor:linx_massage_mode": {
+  "card_section": "massage"
+ },
+ "sensor:linx_self_check": {
   "card_section": "hidden"
  },
  "sensor:logicdata_air_pump_pressure": {

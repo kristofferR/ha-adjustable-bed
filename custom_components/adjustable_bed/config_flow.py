@@ -1933,7 +1933,7 @@ _IDLE_SECONDS_SELECTOR: Final = NumberSelector(
 
 
 def _pulse_count_selector(bed_type: str, saved: object) -> NumberSelector:
-    """Return Movement per tap's field, keeping room for a larger count saved earlier."""
+    """Return Movement per tap's field, keeping room for a larger saved or default count."""
     high = _PULSE_COUNT_RANGE[1]
     if bed_type in {BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}:
         # These apps' 100 ms taps have their own, longer range.
@@ -2025,7 +2025,9 @@ def _settings_fields(
         CONF_NAME: str,
         CONF_MOTOR_COUNT: vol.All(vol.Coerce(int), vol.In(_motor_count_options(bed_type, variant))),
         CONF_PREFERRED_ADAPTER: vol.In(adapters),
-        CONF_MOTOR_PULSE_COUNT: _pulse_count_selector(bed_type, data.get(CONF_MOTOR_PULSE_COUNT)),
+        CONF_MOTOR_PULSE_COUNT: _pulse_count_selector(
+            bed_type, data.get(CONF_MOTOR_PULSE_COUNT, route_defaults[CONF_MOTOR_PULSE_COUNT])
+        ),
         **dict.fromkeys(_ANGLE_LIMITS, _TEXT),
     }
     fields: dict[vol.Marker, Any] = {}

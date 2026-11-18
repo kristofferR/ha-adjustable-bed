@@ -3254,6 +3254,18 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "linx_self_check": {
+        "name": "Run self-check"
+      },
+      "linx_massage_head": {
+        "name": "Head massage"
+      },
+      "linx_massage_foot": {
+        "name": "Foot massage"
+      },
+      "linx_massage_timer": {
+        "name": "Cycle massage timer"
+      },
       "sophie_program_tv": {
         "name": "Save or clear TV position"
       },
@@ -4679,6 +4691,18 @@
       },
       "sonicsleep": {
         "name": "Model"
+      },
+      "linx_massage_minutes": {
+        "name": "Massage timer"
+      },
+      "linx_massage_mode": {
+        "name": "Active massage mode"
+      },
+      "linx_device_version": {
+        "name": "Firmware version"
+      },
+      "linx_self_check": {
+        "name": "Self-check result"
       },
       "sophie_head_level": {
         "name": "Head massage level"
@@ -8485,6 +8509,30 @@
         }
       }
     },
+    "linx_snore_intervention": {
+      "name": "Linx: snore intervention",
+      "description": "Run the bed's anti-snore movement once, then ask the bed for its status. It does not listen for snoring.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "hold_minutes": {
+          "name": "Hold duration",
+          "description": "Minutes the bed holds the anti-snore position."
+        },
+        "up_speed": {
+          "name": "Up speed",
+          "description": "The app's up-speed setting for this movement."
+        },
+        "lift_time": {
+          "name": "Lift time",
+          "description": "The app's lift-time setting for this movement."
+        }
+      }
+    },
     "personal_comfort_sequence": {
       "name": "Personal Comfort sequence",
       "description": "Run full body massage, or a preset with the other base lowering its feet for 30 seconds.",
@@ -8791,6 +8839,9 @@
     },
     "whole_number_required": {
       "message": "Use a whole number instead of \"{value}\"."
+    },
+    "alarm_turn_off_only": {
+      "message": "This bed's alarms can only be turned off from Home Assistant. Set them in the bed's app."
     },
     "personal_comfort_sequence": {
       "message": "This sequence needs supported Personal Comfort bases and current connections. For a peer-foot sequence, choose one side of a combined pair with both bases connected."

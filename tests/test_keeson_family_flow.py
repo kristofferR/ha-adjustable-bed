@@ -115,10 +115,21 @@ async def test_an_app_row_skips_the_question(hass):
 async def test_each_purple_base_or_json_answer_selects_its_route(hass, choice, variant):
     flow = setup_flow(hass, const.BED_TYPE_KEESON)
     result = await flow.async_step_keeson_family({"choice": "purple_base_json"})
-    assert options(result) == ["keeson:purple", "keeson:base", "keeson:json"]
+    assert options(result) == ["keeson:purple", "keeson:base", "linx", "keeson:json"]
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await flow.async_step_keeson_app({"choice": choice})
     assert finish.call_args.args[0][const.CONF_PROTOCOL_VARIANT] == variant
+
+
+async def test_linx_family_answer_opens_its_model_and_transport_questions(hass):
+    flow = setup_flow(hass, const.BED_TYPE_KEESON)
+    await flow.async_step_keeson_family({"choice": "purple_base_json"})
+    result = await flow.async_step_keeson_app({"choice": const.BED_TYPE_LINX})
+    assert result["step_id"] == "profile_questions"
+    assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_LINX
+    assert options(result, const.CONF_PRODUCT_TYPE) == ["quest", "orbes"]
+    assert options(result, const.CONF_PROTOCOL_VARIANT) == ["a00a", "uart", "uart_json", "a00a_uart"]
+    assert const.CONF_BLE_DEVICE_NAME in result["data_schema"].schema
 
 
 async def test_ergomotion_apps_continue_in_their_own_app_step(hass):

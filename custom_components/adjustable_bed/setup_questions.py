@@ -68,6 +68,7 @@ from .const import (
     BED_TYPE_KOMFYD,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_LINX,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
@@ -1999,6 +2000,35 @@ def _smart_sleep_normalize(previous: Mapping[str, Any], answers: Mapping[str, An
     return result
 
 
+def _linx_models(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.linx import PROFILES
+    return {key: profile.label for key, profile in PROFILES.items()}
+
+
+def _linx_transports(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.linx import TRANSPORT_CHOICES
+    return dict(TRANSPORT_CHOICES)
+
+
+def _linx_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .codec.linx import startup_query
+    from .profiles.linx import ROUTES
+    errors = {}
+    if data.get(CONF_PRODUCT_TYPE) not in _linx_models(data):
+        errors[CONF_PRODUCT_TYPE] = "invalid_selection"
+    if data.get(CONF_PROTOCOL_VARIANT) not in _linx_transports(data):
+        errors[CONF_PROTOCOL_VARIANT] = "invalid_selection"
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    if not isinstance(name, str) or not name or len(name.encode()) > 248:
+        errors[CONF_BLE_DEVICE_NAME] = "invalid_selection"
+    elif (route := ROUTES.get(str(data.get(CONF_PROTOCOL_VARIANT)))) is not None and route.event_transport == "uart":
+        try:
+            startup_query(name)
+        except (ValueError, UnicodeError):
+            errors[CONF_BLE_DEVICE_NAME] = "invalid_selection"
+    return errors
+
+
 def _symphony_sleep_choices(_data: Mapping[str, Any]) -> dict[str, str]:
     from .profiles.symphony_sleep import MODELS
     return {key: model.label for key, model in MODELS.items()}
@@ -2743,6 +2773,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 200,
         },
+    ),
+    BED_TYPE_LINX: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 3},
+        questions=(Question(CONF_PRODUCT_TYPE, _linx_models, "quest"),
+                   Question(CONF_PROTOCOL_VARIANT, _linx_transports, "a00a"),
+                   Question(CONF_BLE_DEVICE_NAME, text=True)),
+        validate=_linx_errors,
+        derive=lambda data: {CONF_HAS_MASSAGE: data.get(CONF_PRODUCT_TYPE) == "quest"},
+        seed=_discovered_name_seed, title=lambda _data: "Linx",
+        imports=("profiles.linx",),
     ),
     BED_TYPE_SYMPHONY_SLEEP: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,
