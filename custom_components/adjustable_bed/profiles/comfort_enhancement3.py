@@ -1,4 +1,4 @@
-"""Comfort Enhancement 3 / Comfort Plus3 1.4.0 (5), accepted row083.
+"""Comfort Enhancement 3 / Comfort Plus3 1.4.0 (5).
 
 Hand-maintained from the accepted APK Protocol Audit variant inventory and
 literal vectors. Group names describe app controls, not measured anatomy.

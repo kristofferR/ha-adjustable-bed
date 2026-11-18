@@ -43,7 +43,7 @@
 The bed-type list has one **Leggett & Platt: Prodigy CE, Prodigy 2, Prodigy 2L,
 U Series, LP Control and L&P Adjustable Base apps** row; the Gen2 and MlRM rows
 are behind it. Setup then asks which app or remote you use. Each answer comes
-from that app's accepted report; the bed's name never decides it.
+from that app; the bed's name never decides it.
 
 | Answer | Route |
 |---|---|
@@ -212,7 +212,7 @@ it builds the same Gen2 controller with the same timing as `leggett_gen2`, so
 the two send identical bytes; with variant
 `okin` it is an alias of `leggett_okin` (see the
 [Okin N-frame aliases](okin-nframe.md#aliases)). The
-[protocol inventory](../design/protocol-inventory.md) proves both by capture.
+wire snapshot (`tests/test_wire_snapshot.py`) proves both by capture.
 
 ## Gen2 Variant (ASCII Commands)
 

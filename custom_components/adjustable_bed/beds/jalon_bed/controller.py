@@ -1,4 +1,4 @@
-"""Session, gesture and alarm behavior of OkinComfortBed Ⅱ (Jalon), row135."""
+"""Session, gesture and alarm behavior of OkinComfortBed Ⅱ (Jalon) 1.4."""
 
 from __future__ import annotations
 

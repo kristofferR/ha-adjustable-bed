@@ -398,21 +398,6 @@ another controller.
 
 ### Analysis provenance
 
-The clean-room analysis and independent audit covered the complete application,
-both BLE stacks, generated command catalogs, call sites and decompiler failures.
-The frozen report remains machine-local with the APK and decompilation output.
-
-- Package: `com.selectcomfort.SleepIQ`, version `5.4.11`, code `1787576046`.
-- APK SHA-256: `710b7dfd536007fc4812ad9a16402be3c1bf882cfc27fa9214ad72154bf36f5f`.
-- Frozen `REPORT.SHA256` digest: `1c751b8ba76fd89d85eb0fb96f20d1f7fbc40171e3c3e3a7c59be3d36463475d`.
-- Audit: the SleepIQ 5.4.11 Fuzion and MCR discovery dispositions.
-
-These machine-local ledgers distinguish implemented controls, internal transport behavior,
-unreachable generated methods and explicit exclusions. Wi-Fi/account
-provisioning, firmware/file transfers, destructive factory operations and cloud
-report export are outside the integration's bed-control scope. Hardware testing
-is deferred to users of the beta or release; static protocol evidence does not
-establish compatibility with every firmware/model combination.
-
-This supplemental 5.4.11 analysis does not replace the separately frozen 5.4
-acquisition item or silently change its completion status.
+Based on SleepIQ 5.4.11 (`com.selectcomfort.SleepIQ`). Wi-Fi and account
+provisioning, firmware and file transfers, destructive factory operations and
+cloud report export are outside the integration's scope.

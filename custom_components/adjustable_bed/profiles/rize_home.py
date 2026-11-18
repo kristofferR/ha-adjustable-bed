@@ -1,6 +1,6 @@
 """Rize Home 1.1.2 (12), com.okin.rize: two explicit product layouts.
 
-Unit163's 34 frozen literals reproduce with the existing Okin prefixed-record
+Rize Home 1.1.2's 34 frozen literals reproduce with the existing Okin prefixed-record
 and request builders. The 05 prefix is fixed, including on four-field records.
 These are not the Kaidi Rize Beds or CST Rize product profiles.
 """

@@ -1,4 +1,4 @@
-"""Floyd Home 1.0.7, product 139. See the row117 disposition ledger.
+"""Floyd Home 1.0.7, product 139.
 
 Session glue is shared with the Kaidi Seat controller; commands, capabilities
 and write spacing come from this app's profile (``profiles/kaidi.py``).

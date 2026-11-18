@@ -108,11 +108,9 @@ Names use the app's edit-field alphabet (`0-9`, `a-z`, `A-Z`, `ä`, `ö`, `ü`,
 
 ### Analysis provenance
 
-- Package `com.logicdata.app.mattress.bed` **1.0.0 (1)**. Both devices follow
-  the accepted APK Protocol Audit report for this version.
-- Bed frames, startup and timing are generated from `profiles/logicdata.py` in
-  the [Jiecang codec guide](jiecang.md#logicdata-app-family).
-- Audit: APK Protocol Audit row053.
+Based on Sleep Smart 1.0.0 (`com.logicdata.app.mattress.bed`). Bed frames,
+startup and timing are generated from `profiles/logicdata.py` in the
+[Jiecang codec guide](jiecang.md#logicdata-app-family).
 
 ### Deferred hardware checks
 

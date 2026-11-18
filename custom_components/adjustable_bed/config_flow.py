@@ -2123,8 +2123,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # version 2 stores v4.0.2 aliases and per-app keys under one name. Minor
     # version 3 marks older entries for the one-time app profile review. v5
     # stores the profile id each entry runs (profile_id.py); setup derives it
-    # for new entries. Minor version 2 drops the obsolete keys recorded in
-    # docs/design/config-keys.md; minor version 3 turns Massage off on layouts
+    # for new entries. Minor version 2 drops the obsolete keys in
+    # V5_2_OBSOLETE_KEYS; minor version 3 turns Massage off on layouts
     # whose profile has no massage; minor version 5 stores each Octo setup's
     # motor layout as its override.
     VERSION = 5

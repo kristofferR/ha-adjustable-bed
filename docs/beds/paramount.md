@@ -266,9 +266,4 @@ complete outgoing command set; hardware validation remains for beta/release user
 
 ### Analysis provenance
 
-- `com.paramount.bedcontrol` 3.0.4 (300042), accepted independent APK Protocol Audit.
-- Complete supplied XAPK with base plus arm64-v8a, en, ja and xxhdpi splits.
-- Artifact SHA-256: `e0a9123ae44b693932a2eca88694e877b49f59f4c109e1849cf9e86144828c55`.
-- Report manifest SHA-256: `6cb3bb085436fd0485a77eb1123b07a2b272bf2694a65a5ee6b0758444de03fe`.
-- Signer certificate SHA-256: `a134f0b0915781069078053053c381e69af2d0011aa47de094e8342c0579a8bc`.
-- Source: [APKPure acquisition listing](https://apkpure.net/bed-operation/com.paramount.bedcontrol), 2026-11-09. Supplied delivery coverage and public-mirror freshness do not establish authenticated Play Store or signer ownership attestations.
+Based on Bed Operation 3.0.4 (`com.paramount.bedcontrol`).

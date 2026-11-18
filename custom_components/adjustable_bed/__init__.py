@@ -318,7 +318,7 @@ def _with_migration_record(
     return data
 
 
-# Keys no code reads on v5; docs/design/config-keys.md records the evidence.
+# Keys no code reads on v5.
 # Schema 5.2 drops them wherever an entry stores configuration.
 V5_2_OBSOLETE_KEYS: Final = frozenset(
     {
