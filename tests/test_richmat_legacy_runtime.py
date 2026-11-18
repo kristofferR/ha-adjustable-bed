@@ -117,9 +117,17 @@ async def test_renewable_motion_expires_but_programming_never_renews(runtime):
             blocking=True,
         )
 
+    first = asyncio.Event()
+    client.write_gatt_char.side_effect = lambda *_args, **_kwargs: first.set()
     task = asyncio.create_task(hold())
-    while not values(client):  # The first movement write, after the lazy import.
-        await asyncio.sleep(0)
+    # The first movement write, after the lazy import; an early end fails here.
+    waiter = asyncio.ensure_future(first.wait())
+    done, _ = await asyncio.wait({task, waiter}, timeout=5, return_when=asyncio.FIRST_COMPLETED)
+    waiter.cancel()
+    if task in done:
+        task.result()
+        pytest.fail("The hold ended before its first write")
+    assert done, "No movement write within the hold"
     starts = len(c._command_scheduler.recent_records)
     await hold()  # Renewal extends the running hold; it starts no second one.
     assert len(c._command_scheduler.recent_records) == starts
