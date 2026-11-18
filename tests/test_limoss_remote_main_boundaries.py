@@ -16,7 +16,7 @@ from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_entities import runtime
-from tests.test_limoss_remote_review_lifecycle import live_controller
+from tests.test_limoss_remote_entity_reloads import live_controller
 
 
 @pytest.mark.parametrize("invalid", ["missing", "different_layout"])

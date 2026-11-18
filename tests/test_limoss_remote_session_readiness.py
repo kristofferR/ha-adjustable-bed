@@ -20,8 +20,8 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
-from tests.test_limoss_remote_preflight_review import prepare_live
-from tests.test_limoss_remote_review_lifecycle import CAPS
+from tests.test_limoss_remote_preflight import prepare_live
+from tests.test_limoss_remote_entity_reloads import CAPS
 
 
 async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(hass):
