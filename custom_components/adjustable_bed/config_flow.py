@@ -732,23 +732,6 @@ def _per_side_refusal(
     return None
 
 
-def _apply_bed_type_choice(user_input: dict[str, Any], shown_choice: str | None) -> None:
-    """Resolve an app entry of the bed-type selector into bed type and variant.
-
-    The app's variant applies only when the user picked that entry; an
-    unchanged selector leaves the variant field in charge.
-    """
-    choice = user_input.get(CONF_BED_TYPE)
-    if not isinstance(choice, str):
-        return
-    bed_type, variant = resolve_bed_type_choice(choice)
-    if variant is None:
-        return
-    user_input[CONF_BED_TYPE] = bed_type
-    if choice != shown_choice:
-        user_input[CONF_PROTOCOL_VARIANT] = variant
-
-
 def _setup_routes(bed_type: str | None) -> dict[str, str]:
     """Return the labelled routes a generic setup may choose for a bed type.
 
@@ -7141,21 +7124,6 @@ class AdjustableBedOptionsFlow(
             return VARIANT_AUTO
         return next(iter(variants))
 
-    @classmethod
-    def _variant_for_bed_type_change(
-        cls,
-        previous_bed_type: str,
-        requested_bed_type: str,
-        data: dict[str, Any],
-    ) -> str:
-        """Reset variants unless both bed types explicitly share one variant table."""
-        previous_variants = get_variants_for_bed_type(previous_bed_type)
-        requested_variants = get_variants_for_bed_type(requested_bed_type)
-        if previous_variants is requested_variants and requested_variants is not None:
-            return cls._variant_for_bed_type(requested_bed_type, data)
-        if requested_variants and VARIANT_AUTO not in requested_variants:
-            return next(iter(requested_variants))
-        return VARIANT_AUTO
 
     @staticmethod
     def _remove_irrelevant_bed_settings(data: dict[str, Any], bed_type: str) -> None:
