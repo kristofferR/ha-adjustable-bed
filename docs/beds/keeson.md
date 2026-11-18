@@ -5395,7 +5395,8 @@ module version does not expose Wi-Fi administration. A provisioning response
 invalidates shared BED admission and the link, after which HA must subscribe again.
 Provisioning payloads and credentials are neither generated nor published.
 
-The **Self check status** sensor shows waiting, running, observed, complete or
+The **Self check** button and **Self check status** sensor are diagnostic and
+disabled by default. The sensor shows waiting, running, observed, complete or
 timeout. Its attributes hold the complete observed response, the maximum
 head/foot/lift ripple values and the mask-derived head, foot, lift and massage
 connectivity. Diagnostic ripple is not position feedback. The app's Random-generated current

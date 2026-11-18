@@ -2084,7 +2084,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_AGINGPLACE_BED_MODE, {"auto": "Automatic (recommended)", "0": "Single sensor", "1": "Two sensors", "2": "Single display"}, "auto", advanced=True),
             Question(CONF_AGINGPLACE_BED_SIDE, {0: "Left", 1: "Right", 2: "Selectable side"}, 0),
             Question(CONF_AGINGPLACE_SELECTED_SIDE, {0: "Left", 1: "Right"}, 0,
-                     when={"field": CONF_AGINGPLACE_BED_SIDE, "value": 2}),
+                     # The form submits the choice as text before it is coerced.
+                     when={"field": CONF_AGINGPLACE_BED_SIDE, "operator": ConditionOperator.IN, "value": [2, "2"]}),
         ),
         seed=_motion_bed_seed,
         title=lambda _data: "Aging in Place / Dawn House",

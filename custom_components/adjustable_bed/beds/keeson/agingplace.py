@@ -580,7 +580,9 @@ class AgingPlaceController(KeesonController):
                 _action(name),
                 translation_key=f"agingplace_{name}",
                 hold=ControllerHoldSpec(name) if app.ACTIONS[name].held else None,
-                card=CARD_UTILITY,
+                # Self check is maintenance: diagnostic, disabled and off the card.
+                diagnostic=name == "diagnostic",
+                card=CARD_HIDDEN if name == "diagnostic" else CARD_UTILITY,
             )
             for name in names
         )
@@ -679,7 +681,7 @@ class AgingPlaceController(KeesonController):
                 TEXT["diagnostic_status"],
                 "mdi:clipboard-check-outline",
                 attribute_keys=self_check,
-                entity_registry_enabled_default=True,
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 "agingplace_version",

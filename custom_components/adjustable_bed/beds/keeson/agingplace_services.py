@@ -19,6 +19,7 @@ from ...services import (
     _capture_command_admission,
     _command_targets,
     _preflight_and_execute,
+    _whole_number,
 )
 
 ACTIONS = tuple(name for name, action in app.ACTIONS.items() if not action.held) + (
@@ -54,12 +55,6 @@ def _admit(call: ServiceCall, resource: str | None):
                 )
 
     return targets, admissions, verify
-
-
-def _integer(value: object) -> int:
-    if type(value) is not int:
-        raise vol.Invalid("Expected a whole number")
-    return value
 
 
 async def handle_action(call: ServiceCall) -> None:
@@ -138,7 +133,7 @@ def register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required("setting"): vol.In(SETTINGS),
-                vol.Required("value"): _integer,
+                vol.Required("value"): _whole_number,
                 **SIDE_FIELD,
             }
         ),

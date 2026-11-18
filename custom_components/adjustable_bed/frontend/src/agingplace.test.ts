@@ -26,7 +26,8 @@ test("Dawn House factory projections retain three motors, app controls and bound
   expect(bed.motors).toHaveLength(3);
   expect(bed.motors.map((motor) => motor.cover)).toEqual(expect.arrayContaining(["cover.back", "cover.legs", "cover.bed_height"]));
   expect(bed.motors.every((motor) => !motor.angle && !motor.position)).toBe(true);
-  expect(bed.utility).toEqual(expect.arrayContaining(["button.agingplace_in", "button.agingplace_out", "button.agingplace_diagnostic"]));
+  expect(bed.utility).toEqual(expect.arrayContaining(["button.agingplace_in", "button.agingplace_out"]));
+  expect(bed.utility).not.toContain("button.agingplace_diagnostic");
   expect(bed.lights.numbers).toEqual(["number.agingplace_brightness", "number.agingplace_motion_minutes"]);
   expect(bed.massage.timer).toBe("number.agingplace_massage_minutes");
   expect(bed.memory).toEqual([]);

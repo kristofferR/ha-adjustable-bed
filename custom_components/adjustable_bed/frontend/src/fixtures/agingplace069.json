@@ -94,7 +94,7 @@
       "key": "agingplace_diagnostic",
       "translation_key": "agingplace_diagnostic",
       "attributes": {
-        "card_section": "utility"
+        "card_section": "hidden"
       }
     },
     {

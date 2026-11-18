@@ -266,7 +266,7 @@
   "card_section": "hidden"
  },
  "button:agingplace_diagnostic": {
-  "card_section": "utility"
+  "card_section": "hidden"
  },
  "button:agingplace_in": {
   "card_section": "utility"
