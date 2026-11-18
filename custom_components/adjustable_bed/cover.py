@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from homeassistant.components.cover import (
     CoverDeviceClass,
@@ -53,6 +53,7 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     max_angle: float = 68
     scheduler_resource: str | None = None
     hold: ControllerMotorHoldSpec | None = None
+    stop_scope: Literal["motor", "side"] | None = None
 
 
 # Note: For Linak beds:
@@ -273,6 +274,7 @@ def _build_cover_description(
         max_angle=spec.max_angle,
         scheduler_resource=spec.scheduler_resource,
         hold=spec.hold,
+        stop_scope=spec.stop_scope,
     )
 
 
@@ -342,7 +344,17 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
             )
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
+        elif self.entity_description.stop_scope is not None:
+            attributes["held_stop_scope"] = self.entity_description.stop_scope
         return attributes
+
+    @property
+    def _stop_scope(self) -> Literal["motor", "side"]:
+        """What this cover's STOP halts: its own motor, or every motor on the side."""
+        hold = self.entity_description.hold
+        if hold is not None:
+            return hold.stop_scope
+        return self.entity_description.stop_scope or "motor"
 
     @property
     def _position_key(self) -> str:
@@ -511,8 +523,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         # otherwise the STOP pre-empts the motion holding the writer, on a
         # standalone bed or one side of a pair. A side-wide declared Stop ends
         # every motor's work, the stream too.
-        hold = self.entity_description.hold
-        motor_scoped = hold is None or hold.stop_scope == "motor"
+        motor_scoped = self._stop_scope == "motor"
         try:
             await self._coordinator.async_stop_motor(
                 self.entity_description.stop_fn,

@@ -104,6 +104,8 @@ def memory_card(slot: int, *, save: bool = False) -> CardPlacement:
 CARD_HIDDEN: Final = CardPlacement(CardSection.HIDDEN)
 # A STOP for the whole side, shown with the motors.
 CARD_STOP: Final = CardPlacement(CardSection.MOTORS, CardRole.STOP)
+# A split bed's "Controlled side" select, which routes the motor rows below it.
+CARD_CONTROLLED_SIDE: Final = CardPlacement(CardSection.MOTORS)
 CARD_UTILITY: Final = CardPlacement(CardSection.UTILITY)
 CARD_PRESETS: Final = CardPlacement(CardSection.PRESETS)
 # Saves the current position over a named preset: a confirmed save, not a recall.
