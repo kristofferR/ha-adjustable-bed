@@ -387,7 +387,8 @@ def _display_label(label: str, group: str | None = None) -> str:
     text = _clean_label(label)
     text = re.sub(r"(?<=\d)(?=[A-Za-z])|(?<=[a-z])(?=\d)|(?<=[A-Z]{2})(?=\d)", " ", text)
     text = re.sub(r"\bMins?\b", "min", text).replace("Hours", "hours")
-    text = re.sub(r"\s*\+$", " up", re.sub(r"\s*-$", " down", text))
+    # A trailing + or - is a direction; "+/-" names the button itself.
+    text = re.sub(r"(?<!/)\s*\+$", " up", re.sub(r"(?<!/)\s*-$", " down", text))
     if re.fullmatch(r"\d+ (?:min|hours)", text):
         text = f"Timer {text}"
     elif group in _GROUP_CONTEXT and text.lower() in _BARE_LABELS:

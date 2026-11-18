@@ -48,6 +48,7 @@ from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace, hold_leas
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope
 from .entity_sweep import PlatformEntities, records_entities
+from .labels import display_label
 from .paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
@@ -1171,7 +1172,7 @@ class AdjustableBedProductButton(AdjustableBedEntity, ButtonEntity):
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(f"product_action_{spec.key}")
         self._attr_translation_key = "product_action"
-        self._attr_translation_placeholders = {"action": spec.name}
+        self._attr_translation_placeholders = {"action": display_label(spec.name)}
         self._attr_icon = spec.icon
         self._attr_entity_registry_enabled_default = spec.entity_registry_enabled_default
 
@@ -1348,11 +1349,17 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         if spec.translation_key is None or spec.key.startswith(
             ("preset_memory_", "program_memory_")
         ):
-            self._attr_name = spec.name
+            # A memory carries the name its user gave it; others an artifact label.
+            self._attr_name = (
+                spec.name if spec.translation_key is not None else display_label(spec.name)
+            )
         if spec.translation_key is not None:
             self._attr_translation_key = spec.translation_key
             if spec.translation_placeholders is not None:
-                self._attr_translation_placeholders = dict(spec.translation_placeholders)
+                self._attr_translation_placeholders = {
+                    name: display_label(value)
+                    for name, value in spec.translation_placeholders.items()
+                }
 
     async def async_added_to_hass(self) -> None:
         """Refresh availability when the controller publishes new state."""

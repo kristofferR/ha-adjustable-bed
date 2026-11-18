@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.beds.motion_bed.controller import (
     button_actions_for,
     motion_bed_button_name,
 )
+from custom_components.adjustable_bed.labels import display_label
 
 STRINGS = Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json"
 
@@ -59,7 +60,8 @@ def problems(name: str) -> list[str]:
     found += [
         f"all-caps {word!r}"
         for word in re.findall(r"\b[A-Z]{2,}\b", name)
-        if word.upper() not in ACRONYMS and not re.fullmatch(r"M\d", word)
+        # M1-M9 are memory slots and II, III preset numbers, not shouting.
+        if word.upper() not in ACRONYMS and not re.fullmatch(r"M\d|[IVX]+", word)
     ]
     if match := TITLE_ARTIFACTS.search(name):
         found.append(f"title() artifact {match.group(0)!r}")
@@ -102,7 +104,41 @@ def test_translated_entity_names_and_states_follow_the_rules() -> None:
 def test_motion_bed_runtime_button_names_follow_the_rules() -> None:
     owners = frozenset(action.owner for action in MOTION_BED_ACTIONS)
     names = {
-        key: motion_bed_button_name(key, action)
+        key: display_label(motion_bed_button_name(key, action))
         for key, action in button_actions_for(owners).items()
     }
     assert {key: problems(name) for key, name in names.items() if problems(name)} == {}
+
+
+async def test_runtime_action_labels_follow_the_rules() -> None:
+    """Entities named after an app or manual label show its display form."""
+    from custom_components.adjustable_bed.beds.entity_specs import ProductButtonSpec
+    from tests.entity_translation_reachability import factory_controllers
+
+    labels = {
+        value
+        for controller in await factory_controllers()
+        for spec in controller.controller_button_specs
+        for value in (
+            [spec.name]
+            if isinstance(spec, ProductButtonSpec) or spec.translation_key is None
+            else list((spec.translation_placeholders or {}).values())
+        )
+    }
+    offenders = {label: issues for label in labels if (issues := problems(display_label(label)))}
+    assert offenders == {}
+
+
+@pytest.mark.parametrize(
+    ("label", "shown"),
+    [
+        ("Anti Snore (app gesture)", "Anti-snore"),
+        ("Massage TIMER / ALL OFF", "Massage timer / all off"),
+        ("Tv Iii", "TV III"),
+        ("ZERO-G preset", "Zero G"),
+        ("bed head-and-foot up pictogram", "Head and foot up"),
+        ("Lumbar down (unlabeled touch area)", "Lumbar down"),
+    ],
+)
+def test_display_label_drops_artifact_notes_and_shouting(label: str, shown: str) -> None:
+    assert display_label(label) == shown
