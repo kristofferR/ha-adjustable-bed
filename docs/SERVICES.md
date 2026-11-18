@@ -113,7 +113,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`solace_audio`](#solace_audio) | Solace: audio | Select or preview MotionFlex music, query volume, or set volume. |
 | [`somos_action`](#somos_action) | Somos: press button | Press one of the selected Somos product's buttons. Every bed is checked before any is changed. |
 | [`sonicsleep`](#sonicsleep) | SonicSleep: settings | Read the alarms, create or edit an alarm, turn an alarm on or off without changing it, delete an alarm, or read the bed's link name. |
-| [`suta`](#suta) | SUTA Smart Home: run control | Send one command from the bed's SUTA layout, picked by its exact Bluetooth name. Alarms use Set alarm. |
+| [`suta`](#suta) | SUTA Smart Home: run control | Run one control from the bed's SUTA layout, which its Bluetooth name decides. Set alarms with Set alarm and the clock with Set bed clock. |
 | [`starcode_move_lifts`](#starcode_move_lifts) | StarCode: move lifts | Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action. |
 | [`svane_release_axis`](#svane_release_axis) | Svane: release motor | Stop one motor while the other keeps moving. |
 | [`symphony_anti_snore`](#symphony_anti_snore) | Symphony: anti-snore | Configure Head or Elevation. Legacy strengths are 1, 3 and 6; SoundWave strengths are 1, 2 and 3. |
@@ -2058,7 +2058,7 @@ See [Somos](beds/keeson.md#somos--somosbeds).
 ## SUTA Smart Home
 
 <a id="suta"></a>
-**`suta`**: Send one command from the bed's SUTA layout, picked by its exact Bluetooth name. Alarms use Set alarm.
+**`suta`**: Run one control from the bed's SUTA layout, which its Bluetooth name decides. Set alarms with Set alarm and the clock with Set bed clock.
 
 | Field | Name | Meaning |
 |-------|------|---------|

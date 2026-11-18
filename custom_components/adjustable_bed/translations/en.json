@@ -9280,7 +9280,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "For two separate receivers, the side to set. When both sides share one receiver, select the bed: its clock and alarm are shared and the anti-snore intervention runs on the left."
+          "description": "For two separate receivers, the side to set. When both sides share one receiver, select the bed: its alarm is shared and the anti-snore movement runs on the left."
         }
       }
     },
@@ -9564,7 +9564,7 @@
     },
     "suta": {
       "name": "SUTA Smart Home: run control",
-      "description": "Send one command from the bed's SUTA layout, picked by its exact Bluetooth name. Alarms use Set alarm.",
+      "description": "Run one control from the bed's SUTA layout, which its Bluetooth name decides. Set alarms with Set alarm and the clock with Set bed clock.",
       "fields": {
         "device_id": {
           "name": "Bed"
