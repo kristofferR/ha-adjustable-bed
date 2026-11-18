@@ -68,6 +68,26 @@ class ControllerNumberSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class ControllerSwitchSpec:
+    """An immutable controller-declared on/off setting.
+
+    ``state_key`` holds a bool, or a string equal to ``on_value`` when on.
+    Without one the switch shows the last command it sent as assumed state.
+    """
+
+    key: str
+    translation_key: str
+    set_fn: Callable[[BedController, bool], Awaitable[None]]
+    state_key: StateKey[bool | None] | StateKey[str | None] | None = None
+    on_value: bool | str = True
+    icon: str | None = None
+    # The published state echoes the last command rather than a bed readback.
+    assumed_state: bool = field(default=False, kw_only=True)
+    entity_registry_enabled_default: bool = field(default=True, kw_only=True)
+    card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
+
+
+@dataclass(frozen=True, slots=True)
 class ProductButtonSpec(ControllerButtonSpec):
     """An optional product action with its own entity namespace."""
 
