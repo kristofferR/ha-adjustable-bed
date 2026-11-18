@@ -210,7 +210,7 @@ async def test_hold_services_preflight_profile_and_literal_action(
     ("bed_type", "available", "error"),
     [
         (BED_TYPE_ZSERIES, True, None),
-        (BED_TYPE_ZSERIES, False, "does not support"),
+        (BED_TYPE_ZSERIES, False, "has no alarm"),
         (BED_TYPE_TRANQUIL, True, "has no alarm"),
     ],
 )
@@ -487,7 +487,7 @@ async def test_persisted_capability_survives_disconnect_and_a_later_failed_read(
 async def test_confirmed_other_manufacturer_is_rejected_without_reconnecting(hass):
     controller = zseries("z280")
     _persisting(controller, {"zseries_alarm_available": False})
-    with pytest.raises(ServiceValidationError, match="does not support"):
+    with pytest.raises(ServiceValidationError, match="has no alarm"):
         await _set_alarm(hass, controller)
     controller.client.read_gatt_char.assert_not_awaited()
     assert written(controller) == []
@@ -745,3 +745,22 @@ async def test_pair_profile_changes_to_or_from_these_apps_require_unpair(hass):
             assert [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]] == children
         else:
             assert "app_profile_unpair_first" not in (result.get("errors") or {}).values()
+
+
+async def test_zseries_missing_wake_action_fails_before_scheduling(hass):
+    await async_register_services(hass)
+    controller = zseries("z280")
+    controller._alarm_available = True
+    coordinator = _target(BED_TYPE_ZSERIES, controller)
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ),
+        pytest.raises(ServiceValidationError, match="Choose a wake action"),
+    ):
+        await hass.services.async_call(
+            DOMAIN, "set_alarm", {"device_id": "bed", "enabled": True, "time": "07:00:00"},
+            blocking=True,
+        )
+    coordinator.async_execute_controller_command.assert_not_awaited()

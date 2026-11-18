@@ -50,7 +50,8 @@ def _target(name: str = "Bed") -> tuple[MagicMock, SimpleNamespace]:
     # The controller's own request mapping, on a mock bed.
     controller._multi_alarm = MagicMock(return_value=False)
     controller._waist_repeat = RichmatMhController._waist_repeat
-    for name in ("_alarm_fields", "validate_alarm", "configure_alarm"):
+    controller.richmat_mh_alarm_massages = ("head_massage",)
+    for name in ("_alarm_fields", "_massage_options", "validate_alarm", "configure_alarm"):
         setattr(
             controller,
             name,
@@ -235,3 +236,12 @@ async def test_light_colour_action_writes_every_target_with_a_light_page(hass, t
             "device_id": "bed", "rgb_color": [1, 2, 3],
         }, blocking=True)
     assert second.async_execute_controller_command.await_count == 1
+
+
+def test_both_massage_zone_uses_head_and_foot_on_legacy_pages() -> None:
+    _, controller = _target()
+    controller.richmat_mh_alarm_massages = ("head_massage", "foot_massage")
+    assert controller._massage_options("both") == ("head_massage", "foot_massage")
+    controller.richmat_mh_alarm_massages = ("head_massage", "head_foot_massage")
+    assert controller._massage_options("both") == ("head_foot_massage",)
+    assert controller._massage_options("feet") == ()

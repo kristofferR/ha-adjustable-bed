@@ -10,14 +10,13 @@ import contextlib
 import logging
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 from time import monotonic
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...alarm import AlarmCapability, AlarmRequest
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
@@ -2114,34 +2113,29 @@ class LinakController(BedController):
         ]
         if not actions:
             if alarm.enabled:
-                raise ValueError("Choose a wake position, massage or light for the alarm")
+                raise AlarmError(
+                    "alarm_needs_effect", "Choose a wake position, massage or light for the alarm"
+                )
             # Turning the timer off still carries one action record.
             actions = [LinakAlarmAction.MEMORY_1]
         return tuple(LinakAlarmStep(action) for action in actions)
 
-    @staticmethod
-    def _alarm_seconds(alarm: AlarmRequest, now: datetime | None = None) -> int:
-        """Seconds from ``now`` to the call's selected occurrence; zero turns the timer off."""
-        if not alarm.enabled:
-            return 0
-        start = alarm.reference_time
-        target = start.replace(hour=alarm.hour, minute=alarm.minute, second=0, microsecond=0)
-        if target <= start:
-            target += timedelta(days=1)
-        # Absolute timestamps keep a slow connection or a clock change from delaying it.
-        return max(1, int(target.timestamp() - (now or start).timestamp()))
-
     def validate_alarm(self, alarm: AlarmRequest) -> None:
-        build_timer_event(self._alarm_seconds(alarm), self._alarm_steps(alarm))
+        seconds = alarm.seconds_until(alarm.reference_time) if alarm.enabled else 0
+        build_timer_event(seconds, self._alarm_steps(alarm))
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        # Count down from the moment the timer event is built; zero turns it off.
         await self.program_alarm(
-            self._alarm_seconds(alarm, dt_util.now()), self._alarm_steps(alarm), 0, 0
+            (lambda: alarm.seconds_until(dt_util.now())) if alarm.enabled else 0,
+            self._alarm_steps(alarm),
+            0,
+            0,
         )
 
     async def program_alarm(
         self,
-        seconds: int,
+        seconds: int | Callable[[], int],
         actions: Sequence[Any],
         recurrence_count: int,
         recurrence_minutes: int,
@@ -2153,6 +2147,8 @@ class LinakController(BedController):
             raise TypeError("Linak alarms require LinakAlarmStep actions")
         alarm_steps = tuple(action for action in actions if isinstance(action, LinakAlarmStep))
         await self.set_automatic_drive(True)
+        if callable(seconds):
+            seconds = seconds()
         for packet in (
             build_timer_event(seconds, alarm_steps),
             build_timer_recurrence(recurrence_count, recurrence_minutes),

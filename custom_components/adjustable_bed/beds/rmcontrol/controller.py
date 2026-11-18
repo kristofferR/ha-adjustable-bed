@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Final, Literal, cast
 from bleak import BleakClient
 from homeassistant.util import dt as dt_util
 
-from ...alarm import AlarmCapability, AlarmRequest
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...codec import richmat as codec
 from ...const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatFeatures
 from ...controller_state import StateKey
@@ -1025,7 +1025,9 @@ class RmcontrolController(RichmatController):
         if alarm.enabled:
             self.validate_rmcontrol_alarm_action(self._alarm_action(alarm))
             if self.supports_rmcontrol_repeat_alarm and not alarm.weekdays:
-                raise ValueError("Choose at least one day for this bed's repeating alarms")
+                raise AlarmError(
+                    "alarm_weekdays_required", "Choose at least one day for this bed's repeating alarms"
+                )
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         action = self._alarm_action(alarm) if alarm.enabled else None

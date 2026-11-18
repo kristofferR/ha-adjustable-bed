@@ -359,6 +359,19 @@ def _invalid(key: str, message: str, **placeholders: object) -> ServiceValidatio
     )
 
 
+def _validation_error(err: ValueError) -> ServiceValidationError:
+    """Turn a controller's rejection into a validation error, translated where it can be."""
+    key = getattr(err, "translation_key", None)
+    if key is None:
+        return ServiceValidationError(str(err))
+    return ServiceValidationError(
+        str(err),
+        translation_domain=DOMAIN,
+        translation_key=key,
+        translation_placeholders=getattr(err, "translation_placeholders", None),
+    )
+
+
 def _missing_device_error(device_id: str) -> ServiceValidationError:
     """Build the error for a service target that resolved to no bed."""
     return ServiceValidationError(
@@ -1673,7 +1686,7 @@ async def _preflight_each(
     except (ServiceValidationError, ValueError) as err:
         await _release_preflighted(preflighted)
         if isinstance(err, ValueError):
-            raise ServiceValidationError(str(err)) from err
+            raise _validation_error(err) from err
         raise
     return preflighted
 
@@ -1723,7 +1736,7 @@ def _family_command[T](
         try:
             await command(family)
         except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
+            raise _validation_error(err) from err
 
     return execute
 
@@ -2232,6 +2245,11 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         await set_symphony_alarm(call, alarm, given)
         return
     if route == "zseries":
+        # Check the options on every target before anything can be scheduled.
+        for coordinator, side in targets:
+            for target in _command_targets(coordinator, side):
+                if (controller := target.capability_controller) is not None:
+                    _check_alarm(target.name, controller, alarm, given)
         # Z-Series alarms exist only after a live manufacturer read; every
         # target is the same profile, so the first check fails before any write.
         async def write_zseries(controller: BedController) -> None:

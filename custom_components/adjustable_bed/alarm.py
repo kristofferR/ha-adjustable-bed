@@ -9,7 +9,7 @@ turns that request into its own frames, so wire output stays per bed.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Final
 
 # Monday is index 0 everywhere in a request; controllers map to their own order.
@@ -158,17 +158,32 @@ class AlarmRequest:
     # Home Assistant local time, captured once for the whole call.
     reference_time: datetime
 
-    def minutes_until(self, now: datetime | None = None) -> int:
-        """Return whole minutes left to the call's selected occurrence, 1 to 1440.
+    def occurrence(self) -> datetime:
+        """Return the next local occurrence of the time, selected when the call arrived."""
+        start = self.reference_time
+        target = start.replace(hour=self.hour, minute=self.minute, second=0, microsecond=0)
+        if target.timestamp() <= start.timestamp():
+            target += timedelta(days=1)
+        return target
 
-        The occurrence is chosen from the call's reference time; ``now`` is the
-        moment the bed is written, so a slow connection does not delay the alarm.
+    def seconds_until(self, now: datetime) -> int:
+        """Return whole seconds from ``now`` to the selected occurrence, at least 1."""
+        return max(1, int(self.occurrence().timestamp() - now.timestamp()))
+
+    def minutes_until(self, now: datetime | None = None) -> int:
+        """Return whole minutes from ``now``'s minute to the selected occurrence, 1 to 1440.
+
+        Absolute timestamps keep a slow connection or a clock change from
+        moving the alarm.
         """
-        start = self.reference_time.hour * 60 + self.reference_time.minute
-        selected = (self.hour * 60 + self.minute - start - 1) % 1440 + 1
-        if now is None:
-            return selected
-        # Timestamps are absolute, so a daylight saving change cannot skew this.
-        start_minute = self.reference_time.replace(second=0, microsecond=0).timestamp()
-        elapsed = int((now.timestamp() - start_minute) // 60)
-        return max(1, selected - elapsed)
+        start = (now or self.reference_time).replace(second=0, microsecond=0).timestamp()
+        return min(1440, max(1, round((self.occurrence().timestamp() - start) / 60)))
+
+
+class AlarmError(ValueError):
+    """A request a bed cannot accept, with a translated message for the user."""
+
+    def __init__(self, key: str, message: str, **placeholders: object) -> None:
+        super().__init__(message)
+        self.translation_key = key
+        self.translation_placeholders = {k: str(v) for k, v in placeholders.items()}

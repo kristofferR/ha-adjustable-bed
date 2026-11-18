@@ -9311,6 +9311,21 @@
     },
     "invalid_mac_address": {
       "message": "\"{address}\" is not a Bluetooth address. Use the format AA:BB:CC:DD:EE:FF."
+    },
+    "alarm_needs_effect": {
+      "message": "Choose a wake position, massage or light for the alarm."
+    },
+    "alarm_weekdays_required": {
+      "message": "This bed's alarms repeat. Choose at least one day."
+    },
+    "alarm_runs_once": {
+      "message": "The bed alarm runs once. Repeating days apply only to the mattress alarm."
+    },
+    "alarm_once_or_daily": {
+      "message": "The mattress alarm runs once or every day. Select no days or all seven."
+    },
+    "alarm_mattress_vibrates_only": {
+      "message": "The mattress alarm only vibrates. Remove the wake action and massage."
     }
   },
   "issues": {

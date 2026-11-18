@@ -645,3 +645,17 @@ def test_countdown_counts_from_the_write_time() -> None:
     assert alarm.minutes_until() == 5
     # Admission took a minute: the bed still fires at 07:05.
     assert alarm.minutes_until(datetime(2026, 11, 18, 7, 1, 10)) == 4
+
+
+def test_countdown_uses_real_time_across_a_clock_change() -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    oslo = ZoneInfo("Europe/Oslo")
+    # Clocks spring forward from 02:00 to 03:00 on 2026-03-29.
+    alarm = AlarmRequest(
+        enabled=True, hour=3, minute=30, reference_time=datetime(2026, 3, 29, 1, 30, tzinfo=oslo)
+    )
+    assert alarm.minutes_until() == 60

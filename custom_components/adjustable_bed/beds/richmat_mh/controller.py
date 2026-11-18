@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
 
-from ...alarm import AlarmCapability, AlarmRequest
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import (
     CARD_MASSAGE,
     CARD_PRESETS,
@@ -102,7 +102,6 @@ from .protocol import (
     Classifier,
     Event,
     alarm_action,
-    alarm_countdown_minutes,
     alarm_delete_frames,
     alarm_frames,
     angle_frame,
@@ -410,9 +409,9 @@ _ALARM_POSITIONS: Final = {
 }
 # Wake massage zones and the legacy alarm page's massage options.
 _ALARM_MASSAGE_ZONES: Final = {
-    "head": "head_massage",
-    "feet": "foot_massage",
-    "both": "head_foot_massage",
+    "head": ("head_massage",),
+    "feet": ("foot_massage",),
+    "both": ("head_foot_massage",),
 }
 
 
@@ -1046,8 +1045,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         alarm, waist = self._alarm_page(), self._waist
         if not alarm and not waist:
             return None
-        positions, massages = self.richmat_mh_alarm_positions, self.richmat_mh_alarm_massages
-        zones = tuple(zone for zone, option in _ALARM_MASSAGE_ZONES.items() if option in massages)
+        positions = self.richmat_mh_alarm_positions
+        zones = tuple(zone for zone in _ALARM_MASSAGE_ZONES if self._massage_options(zone))
         wake_actions = tuple(a for a, option in _ALARM_POSITIONS.items() if option in positions)
         return AlarmCapability(
             wake_actions=("none", *wake_actions) if wake_actions else (),
@@ -1062,9 +1061,15 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
 
     def _alarm_fields(self, alarm: AlarmRequest) -> dict[str, Any]:
         position = None if alarm.wake_action == "none" else _ALARM_POSITIONS[alarm.wake_action]
-        massage = (_ALARM_MASSAGE_ZONES[alarm.massage_zone],) if alarm.massage and alarm.massage_zone else ()
+        massage = (
+            self._massage_options(alarm.massage_zone)
+            if alarm.massage and alarm.massage_zone
+            else ()
+        )
         if alarm.weekdays:
-            raise ValueError("The bed alarm runs once; repeating days apply to the mattress alarm")
+            raise AlarmError(
+                "alarm_runs_once", "The bed alarm runs once; repeating days apply to the mattress alarm"
+            )
         return {
             "enabled": alarm.enabled,
             "position": position,
@@ -1072,19 +1077,33 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             "slot": alarm.slot if self._multi_alarm() else None,
         }
 
+    def _massage_options(self, zone: str) -> tuple[str, ...]:
+        """The page options that run ``zone``; both may be head and foot together."""
+        massages = self.richmat_mh_alarm_massages
+        options = _ALARM_MASSAGE_ZONES[zone]
+        if all(option in massages for option in options):
+            return options
+        if zone == "both" and {"head_massage", "foot_massage"} <= set(massages):
+            return ("head_massage", "foot_massage")
+        return ()
+
     @staticmethod
     def _waist_repeat(alarm: AlarmRequest) -> str:
         if not alarm.weekdays:
             return "once"
         if len(alarm.weekdays) == 7:
             return "daily"
-        raise ValueError("The mattress alarm runs once or every day; select no days or all seven")
+        raise AlarmError(
+            "alarm_once_or_daily",
+            "The mattress alarm runs once or every day; select no days or all seven",
+        )
 
     def validate_alarm(self, alarm: AlarmRequest) -> None:
         if alarm.mattress_side is not None:
             if alarm.wake_action != "none" or alarm.massage:
-                raise ValueError(
-                    "The mattress alarm only vibrates; remove the wake action and massage"
+                raise AlarmError(
+                    "alarm_mattress_vibrates_only",
+                    "The mattress alarm only vibrates; remove the wake action and massage",
                 )
             self._waist_repeat(alarm)
             return
@@ -1105,12 +1124,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 intensity=alarm.massage_intensity,
             )
             return
-        minutes = 0
-        if alarm.enabled:
-            # The bed counts down the minutes to the next occurrence.
-            minutes = alarm_countdown_minutes(
-                alarm.hour * 60 + alarm.minute, now.hour * 60 + now.minute
-            )
+        # The bed counts down to the occurrence selected when the call arrived.
+        minutes = alarm.minutes_until(now) if alarm.enabled else 0
         await self.richmat_mh_alarm(minutes=minutes, **self._alarm_fields(alarm))
 
     def validate_richmat_mh_alarm(

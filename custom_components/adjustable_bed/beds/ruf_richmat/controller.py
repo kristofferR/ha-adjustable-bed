@@ -6,7 +6,7 @@ import asyncio
 import re
 from typing import TYPE_CHECKING, Final
 
-from ...alarm import AlarmCapability
+from ...alarm import AlarmCapability, AlarmError
 from ...alarm import AlarmRequest as SharedAlarm
 from ...card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
 from ...codec import richmat as codec
@@ -846,8 +846,9 @@ class RufRichmatController(RichmatMhController):
             if not self._normal_ready:
                 return None
             if alarm.wake_action != "none" or alarm.massage:
-                raise ValueError(
-                    "The mattress alarm only vibrates; remove the wake action and massage"
+                raise AlarmError(
+                    "alarm_mattress_vibrates_only",
+                    "The mattress alarm only vibrates; remove the wake action and massage",
                 )
             return AlarmRequest(
                 family="mattress",
