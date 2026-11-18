@@ -1,6 +1,6 @@
 // Compact layouts use the same entity buckets and commands as the full card.
 import { SECTION_ORDER, bedEntitiesForDevice, isSingleAddressPairedDevice,
-  pairedChildDeviceIds, resolvePairedParentId } from "./discovery";
+  nameCombinedMotors, pairedChildDeviceIds, resolvePairedParentId } from "./discovery";
 import { localize } from "./localize";
 import { deviceName, entityLabel } from "./names";
 import type { AdjustableBedCardConfig, BedEntities, HomeAssistant } from "./types";
@@ -178,18 +178,22 @@ export function compactTargets(hass: HomeAssistant, deviceId?: string): CompactT
   const parent = resolvePairedParentId(hass, deviceId);
   const children = pairedChildDeviceIds(hass, parent);
   if (parent && children.length) {
-    return [{ key: "both", label: localize(hass, "card.both_sides"),
-      bed: bedEntitiesForDevice(hass, parent) }, ...children.map((id) => ({
-        key: id, label: deviceName(hass, id) ?? id,
-        bed: bedEntitiesForDevice(hass, id),
-      }))];
+    const sides = children.map((id) => ({
+      key: id, label: deviceName(hass, id) ?? id,
+      bed: bedEntitiesForDevice(hass, id),
+    }));
+    const both = bedEntitiesForDevice(hass, parent);
+    nameCombinedMotors(both, sides.map((side) => side.bed));
+    return [{ key: "both", label: localize(hass, "card.both_sides"), bed: both }, ...sides];
   }
   if (isSingleAddressPairedDevice(hass, deviceId)) {
-    return (["both", "left", "right"] as const).map((side) => ({
+    const targets = (["both", "left", "right"] as const).map((side) => ({
       key: side,
       label: localize(hass, `card.${side === "both" ? "both_sides" : `${side}_side`}`),
       bed: bedEntitiesForDevice(hass, deviceId, side),
     }));
+    nameCombinedMotors(targets[0].bed, [targets[1].bed, targets[2].bed]);
+    return targets;
   }
   return [{ key: "both", label: localize(hass, "card.both_sides"),
     bed: bedEntitiesForDevice(hass, deviceId) }];

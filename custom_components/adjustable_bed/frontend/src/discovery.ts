@@ -63,14 +63,6 @@ export const PRESET_ORDER = [
   "preset_yoga",
 ];
 
-// These covers use a side-wide controller STOP rather than an actuator STOP.
-const SIDE_WIDE_STOP_KEYS = new Set([
-  "elevate_both",
-  "starcode_m1x12_part_1",
-  "starcode_m1x12_part_2",
-  "starcode_m1x12_part_4",
-]);
-
 const domainOf = (entityId: string): string => entityId.split(".", 1)[0];
 
 const keyOf = (entry: EntityRegistryDisplayEntry): string =>
@@ -134,7 +126,7 @@ export function bedEntitiesForDevice(
   const motor = (key: string): MotorEntity => {
     let m = motorMap.get(key);
     if (!m) {
-      m = SIDE_WIDE_STOP_KEYS.has(key) ? { key, coverStopScope: "side" } : { key };
+      m = { key };
       motorMap.set(key, m);
     }
     return m;
@@ -227,6 +219,44 @@ export function bedEntitiesForDevice(
   };
 
   const lights = bed.lights;
+  // A single-slot role keeps the entity with the smallest entity ID, so the
+  // choice never depends on registry order. Any further one a bed places there
+  // is still shown, as an ordinary control of the same section.
+  const claim = (current: string | undefined, id: string, overflow: (id: string) => void): string => {
+    if (current === undefined) return id;
+    if (id < current) {
+      overflow(current);
+      return id;
+    }
+    overflow(id);
+    return current;
+  };
+  const lightExtra = (id: string, domain: string): void => {
+    if (domain === "switch") (lights.switches ??= []).push(id);
+    else if (domain === "number") (lights.numbers ??= []).push(id);
+    else if (domain === "button") (lights.buttons ??= []).push(id);
+    else (lights.states ??= []).push(id);
+  };
+  type LightSlot = "light" | "switch" | "state" | "level" | "toggle" | "cycle" | "timer" |
+    "timerMinutes" | "timerToggle";
+  const lightSlot = (slot: LightSlot, id: string): boolean => {
+    lights[slot] = claim(lights[slot], id, (extra) => lightExtra(extra, domainOf(extra)));
+    return lights[slot] === id;
+  };
+  const massageExtra = (id: string, domain: string): void => {
+    if (domain === "button") bed.massage.buttons.push(id);
+    else if (domain === "number") bed.massage.numbers.push(id);
+    else if (domain === "select") (bed.massage.selects ??= []).push(id);
+    else if (domain === "switch") (bed.massage.switches ??= []).push(id);
+    else (bed.massage.states ??= []).push(id);
+  };
+  const utilityExtra = (id: string, domain: string): void => {
+    if (domain === "number") (bed.utilityNumbers ??= []).push(id);
+    else if (domain === "select") (bed.utilitySelects ??= []).push(id);
+    else if (domain === "sensor" || domain === "binary_sensor") (bed.utilityStates ??= []).push(id);
+    else if (domain === "switch") (bed.utilitySwitches ??= []).push(id);
+    else bed.utility.push(id);
+  };
   const presets: { key: string; id: string }[] = [];
   const presetSaves: { key: string; id: string }[] = [];
 
@@ -243,10 +273,13 @@ export function bedEntitiesForDevice(
 
     switch (place.section) {
       case "motors":
-        if (role === "stop") bed.stop = id;
-        else if (domain === "switch") bed.synchro = id;
-        // A split bed's local left/right selector routes the motor controls.
-        else if (domain === "select") bed.controlSide = id;
+        if (role === "stop") {
+          bed.stop = claim(bed.stop, id, (extra) => (bed.extraStops ??= []).push(extra));
+        } else if (domain === "switch" || domain === "select") {
+          // A split bed's local left/right selector routes the motor controls.
+          const slot = domain === "switch" ? "synchro" : "controlSide";
+          bed[slot] = claim(bed[slot], id, (extra) => (bed.motorExtras ??= []).push(extra));
+        }
         else if (place.motor === undefined) break;
         else if (domain === "cover") motorCover(id, place.motor, entry.device_id);
         else if (role === "up" || role === "down") motorButton(id, place.motor, role, entry.device_id);
@@ -283,43 +316,42 @@ export function bedEntitiesForDevice(
 
       case "lighting":
         switch (role) {
-          case "state": lights.state = id; break;
-          case "level": lights.level = id; break;
-          case "toggle": lights.toggle = id; break;
-          case "cycle": lights.cycle = id; break;
-          case "timer": lights.timer = id; break;
+          case "state": lightSlot("state", id); break;
+          case "level": lightSlot("level", id); break;
+          case "toggle": lightSlot("toggle", id); break;
+          case "cycle": lightSlot("cycle", id); break;
+          case "timer": lightSlot("timer", id); break;
           case "timer_minutes":
-            lights.timerMinutes = id;
-            lights.timerAppliesImmediately = true;
+            if (lightSlot("timerMinutes", id)) lights.timerAppliesImmediately = true;
             break;
-          case "pending_timer_minutes": lights.timerMinutes = id; break;
-          case "timer_toggle": lights.timerToggle = id; break;
-          case "mood_toggle": mood().toggle = id; break;
+          case "pending_timer_minutes":
+            if (lightSlot("timerMinutes", id)) lights.timerAppliesImmediately = false;
+            break;
+          case "timer_toggle": lightSlot("timerToggle", id); break;
+          case "mood_toggle":
+            mood().toggle = claim(mood().toggle, id, (extra) => (mood().buttons ??= []).push(extra));
+            break;
           case "mood":
             if (domain === "select") mood().selects.push(id);
             else if (domain === "number") mood().numbers.push(id);
             else (mood().buttons ??= []).push(id);
             break;
           default:
-            if (domain === "light") lights.light = id;
+            if (domain === "light") lightSlot("light", id);
             // The floor light is the main switch; others are accessory lights.
-            else if (domain === "switch" && keyOf(entry) === "under_bed_lights") lights.switch = id;
-            else if (domain === "switch") (lights.switches ??= []).push(id);
-            else if (domain === "binary_sensor") lights.state = id;
-            else if (domain === "sensor") (lights.states ??= []).push(id);
-            else if (domain === "number") (lights.numbers ??= []).push(id);
-            else if (domain === "select") lights.timer = id;
-            else (lights.buttons ??= []).push(id);
+            else if (domain === "switch" && keyOf(entry) === "under_bed_lights") lightSlot("switch", id);
+            else if (domain === "binary_sensor") lightSlot("state", id);
+            else if (domain === "select") lightSlot("timer", id);
+            else lightExtra(id, domain);
         }
         break;
 
       case "massage":
-        if (role === "timer") bed.massage.timer = id;
-        else if (domain === "button") bed.massage.buttons.push(id);
-        else if (domain === "number") bed.massage.numbers.push(id);
-        else if (domain === "select") (bed.massage.selects ??= []).push(id);
-        else if (domain === "switch") (bed.massage.switches ??= []).push(id);
-        else (bed.massage.states ??= []).push(id);
+        // A timer button is a tile, so a held one keeps its hold; the timer
+        // slot is the timer's state or setting.
+        if (role === "timer" && domain !== "button") {
+          bed.massage.timer = claim(bed.massage.timer, id, (extra) => massageExtra(extra, domainOf(extra)));
+        } else massageExtra(id, domain);
         break;
 
       case "climate":
@@ -329,11 +361,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "utility":
-        if (domain === "number") (bed.utilityNumbers ??= []).push(id);
-        else if (domain === "select") (bed.utilitySelects ??= []).push(id);
-        else if (domain === "sensor" || domain === "binary_sensor") (bed.utilityStates ??= []).push(id);
-        else if (domain === "switch") (bed.utilitySwitches ??= []).push(id);
-        else bed.utility.push(id);
+        utilityExtra(id, domain);
         break;
     }
   }
@@ -447,6 +475,8 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.presetSaves.length === 0 &&
     bed.memory.length === 0 &&
     !bed.stop &&
+    !bed.extraStops?.length &&
+    !bed.motorExtras?.length &&
     !bed.connect &&
     !bed.disconnect &&
     !bed.connectivity &&
@@ -476,4 +506,14 @@ export function hasLightingControls(lights: LightEntities): boolean {
     lights.numbers?.length || lights.buttons?.length || lights.states?.length || lights.cycle || lights.timer || lights.timerMinutes || lights.timerToggle ||
     lights.mood?.toggle || lights.mood?.selects.length || lights.mood?.numbers.length || lights.mood?.buttons?.length
   );
+}
+
+// A combined pane drives bed-specific motors with buttons, which have no cover
+// to take a name from. Name them as the side panes do, after a side's cover.
+export function nameCombinedMotors(both: BedEntities, sides: BedEntities[]): void {
+  for (const motor of both.motors) {
+    if (motor.cover) continue;
+    motor.nameFrom = sides.flatMap((side) => side.motors)
+      .find((m) => m.key === motor.key && m.cover)?.cover;
+  }
 }
