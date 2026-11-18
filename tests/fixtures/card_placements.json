@@ -3982,9 +3982,6 @@
  "sensor:starcode_sonic_mode": {
   "card_section": "hidden"
  },
- "sensor:suta": {
-  "card_section": "hidden"
- },
  "sensor:svane_firmware": {
   "card_section": "hidden"
  },

@@ -37,7 +37,6 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
-    ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
 )
@@ -51,8 +50,6 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
     from ..builder import BuildContext
 
-MODEL: Final = StateKey[str]("suta_model")
-OBSERVATIONS: Final = StateKey[dict[str, object]]("suta_observations")
 LEFT_SETPOINT: Final = StateKey[int | None]("suta_left_setpoint")
 RIGHT_SETPOINT: Final = StateKey[int | None]("suta_right_setpoint")
 HEATING_ON: Final = StateKey[bool | None]("suta_heating_on")
@@ -394,9 +391,9 @@ class SutaController(BedController):
         )
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (ControllerStateSensorSpec("suta", "suta", MODEL, "mdi:bed", attribute_keys=(OBSERVATIONS,),
-                                          entity_registry_enabled_default=False),)
+    def protocol_diagnostics(self) -> dict[str, object]:
+        # Decoded notifications stay out of entities; diagnostics and the support bundle keep them.
+        return {"name": self.name, "layout": self.profile.key, "observations": dict(self.observations)}
 
     @property
     def commands(self) -> dict[str, Command]:
@@ -520,7 +517,6 @@ class SutaController(BedController):
         power, light = self.observations.get("power"), self.observations.get("light")
         automatic = {side: self.observations.get(f"side_{side}_automatic_checked") for side in (1, 2)}
         self.forward_controller_state_updates(
-            MODEL(self.name), OBSERVATIONS(dict(self.observations)),
             LEFT_SETPOINT(left if isinstance(left, int) else None),
             RIGHT_SETPOINT(right if isinstance(right, int) else None),
             HEATING_ON(power == 1 if power in (0, 1) else None),

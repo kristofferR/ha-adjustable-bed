@@ -895,7 +895,7 @@ and a 54 43 suffix. MOON and TEMP share framing but have separate parsers.
 
 ### Responses
 
-The SUTA model sensor publishes connection-scoped observations as attributes.
+Diagnostics and support bundles carry the connection-scoped observations.
 Binary callbacks use complete notification frames; malformed short input is
 ignored safely, without assuming a different packet or reassembling fragments.
 
@@ -960,8 +960,7 @@ Lock/unlock, MOON automatic adjustment and TEMP heating power and light are
 switches. Lock state is not reported, so its switch shows the last command.
 Version, date and alarm queries, the post-connect state queries and the
 unlabelled RBHC/N520 angle commands stay available through the SUTA action
-only. The Model sensor (disabled by default) carries the observations as
-attributes. B702 offers four programmable
+only. Diagnostics carry the decoded observations. B702 offers four programmable
 memory slots, B803 three; other panels retain their own exact slots.
 Preset M8 does not imply eight programmable memories.
 
