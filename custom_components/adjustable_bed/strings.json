@@ -3729,10 +3729,10 @@
         "name": "Audio Volume"
       },
       "leggett_led_mask": {
-        "name": "LED mask"
+        "name": "Display indicators"
       },
       "leggett_status": {
-        "name": "Status byte"
+        "name": "Status"
       },
       "logicdata_app_family_match": {
         "name": "Command family matches"
@@ -3741,7 +3741,7 @@
         "name": "Bed alarm"
       },
       "lp_legacy_notification": {
-        "name": "App response"
+        "name": "Last bed response"
       },
       "malouf_massage_remaining": {
         "name": "Massage remaining time"
@@ -4306,23 +4306,14 @@
       "fsm_relax_serial": {
         "name": "Serial number"
       },
-      "svane_head_raw": {
-        "name": "Observed head bytes"
-      },
-      "svane_feet_raw": {
-        "name": "Observed feet bytes"
-      },
-      "svane_position_raw": {
-        "name": "Observed position bytes"
-      },
       "svane_firmware": {
-        "name": "Observed firmware"
+        "name": "Firmware"
       },
       "svane_hardware": {
-        "name": "Observed hardware"
+        "name": "Hardware"
       },
       "svane_manufacturer": {
-        "name": "Observed manufacturer"
+        "name": "Manufacturer"
       },
       "limoss_remote_motor_2_position_raw": {
         "name": "Motor 2 Raw Position"
@@ -5094,10 +5085,10 @@
         "name": "Breathing signal"
       },
       "mline_anti_angle": {
-        "name": "Anti-snore angle code"
+        "name": "Anti-snore angle"
       },
       "mline_alarm": {
-        "name": "Alarm fields"
+        "name": "Alarm"
       },
       "mline_alarm_mode": {
         "name": "Alarm wake mode"
@@ -5205,10 +5196,10 @@
         "name": "Right Bed Presence"
       },
       "leggett_alarm_indicator": {
-        "name": "Alarm indicator"
+        "name": "Alarm"
       },
       "leggett_sleep_timer_indicator": {
-        "name": "Sleep timer indicator"
+        "name": "Sleep timer"
       },
       "under_bed_lights": {
         "name": "Under Bed Lights"
@@ -5458,9 +5449,6 @@
       },
       "mline_motion": {
         "name": "Motion"
-      },
-      "mline_boolean_projection": {
-        "name": "Sensor Boolean projection"
       },
       "mline_privacy": {
         "name": "Privacy mode"
