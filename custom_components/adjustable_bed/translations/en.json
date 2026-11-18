@@ -169,13 +169,37 @@
       },
       "verify_connection": {
         "title": "Check the connection",
-        "description": "Checked the connection to **{name}** before finishing setup:\n\n{capabilities}\n\nSubmitting finishes setup. A failed check never blocks it, and the integration keeps trying to connect afterwards.",
+        "description": "Checked the connection to **{name}**:\n\n{capabilities}\n\nSubmitting finishes setup. A failed check never blocks it, and the integration keeps trying to connect afterwards.",
         "submit": "Finish setup",
         "data": {
-          "action": "What next"
+          "action": "What next",
+          "check_unresolved": "Check: not reachable",
+          "check_not_advertising": "Check: not advertising",
+          "check_not_found": "Check: not found",
+          "check_found": "Check: found",
+          "check_not_connected": "Check: not connected",
+          "check_connected": "Check: connected",
+          "check_connected_via": "Check: connected through",
+          "check_no_commands": "Check: no commands",
+          "check_transport_missing": "Check: connection type missing",
+          "check_transport_ok": "Check: connection type available",
+          "check_device_info": "Check: device information",
+          "check_positions": "Check: positions"
         },
         "data_description": {
-          "action": "Retry checks the bed again without losing the settings you just entered."
+          "action": "Retry checks the bed again without losing the settings you just entered.",
+          "check_unresolved": "⚠️ The bed is advertising, but Home Assistant couldn't open a connection just now. This is usually momentary. Select **Check again**, or finish setup and let the integration keep trying.",
+          "check_not_advertising": "❌ The bed isn't advertising, so no connection was attempted. Wake it with its remote, or move it closer to a Bluetooth adapter or proxy, then select **Check again**.",
+          "check_not_found": "❌ The bed wasn't found. It may be out of range or asleep. You can still finish setup; the integration keeps trying to connect.",
+          "check_found": "✅ Bed found over Bluetooth",
+          "check_not_connected": "❌ Couldn't connect. Beds allow one connection at a time, so close the bed's app and put the remote down, or move the bed closer. You can still finish setup and try again later.",
+          "check_connected": "✅ Connected",
+          "check_connected_via": "✅ Connected through {source}",
+          "check_no_commands": "⚠️ The device connected but accepts no commands. It may not be your bed's controller. Check that you chose the right device.",
+          "check_transport_missing": "❌ The connection type chosen for this app isn't available on this bed. Choose Automatic, or another type.",
+          "check_transport_ok": "✅ The app's connection type is available",
+          "check_device_info": "ℹ️ The bed reports: {details}",
+          "check_positions": "✅ The bed reports its position"
         }
       },
       "diagnostic": {

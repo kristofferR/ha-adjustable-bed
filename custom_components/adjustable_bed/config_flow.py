@@ -463,6 +463,44 @@ async def _async_translation(hass: HomeAssistant, category: str, key: str, defau
     return translations.get(f"component.{DOMAIN}.{category}.{key}", default)
 
 
+# English fallbacks for the connection check's lines; the shipped text lives in
+# strings.json under step.verify_connection.data_description.
+_CHECK_FALLBACKS: Final[dict[str, str]] = {
+    "check_unresolved": (
+        "⚠️ The bed is advertising, but Home Assistant couldn't open a connection just "
+        "now. This is usually momentary. Select **Check again**, or finish setup and let "
+        "the integration keep trying."
+    ),
+    "check_not_advertising": (
+        "❌ The bed isn't advertising, so no connection was attempted. Wake it with its "
+        "remote, or move it closer to a Bluetooth adapter or proxy, then select **Check again**."
+    ),
+    "check_not_found": (
+        "❌ The bed wasn't found. It may be out of range or asleep. You can still finish "
+        "setup; the integration keeps trying to connect."
+    ),
+    "check_found": "✅ Bed found over Bluetooth",
+    "check_not_connected": (
+        "❌ Couldn't connect. Beds allow one connection at a time, so close the bed's app "
+        "and put the remote down, or move the bed closer. You can still finish setup and "
+        "try again later."
+    ),
+    "check_connected": "✅ Connected",
+    "check_connected_via": "✅ Connected through {source}",
+    "check_no_commands": (
+        "⚠️ The device connected but accepts no commands. It may not be your bed's "
+        "controller. Check that you chose the right device."
+    ),
+    "check_transport_missing": (
+        "❌ The connection type chosen for this app isn't available on this bed. Choose "
+        "Automatic, or another type."
+    ),
+    "check_transport_ok": "✅ The app's connection type is available",
+    "check_device_info": "ℹ️ The bed reports: {details}",
+    "check_positions": "✅ The bed reports its position",
+}
+
+
 # English fallbacks for the pairing form's bond-state line. The shipped text
 # lives in strings.json; these only apply if a translation is missing.
 _BOND_STATE_FALLBACKS: Final[dict[str, str]] = {
@@ -6327,49 +6365,27 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return report
 
     async def _format_capabilities(self, report: CapabilityReport) -> str:
-        """Build the ✅/❌/⚠️/ℹ️ markdown checklist shown in verify_connection."""
-        lines: list[str] = []
+        """Build the ✅/❌/⚠️/ℹ️ checklist shown in verify_connection."""
+
+        async def line(key: str, **values: str) -> str:
+            text = await self._get_config_translation(
+                f"step.verify_connection.data_description.{key}", _CHECK_FALLBACKS[key]
+            )
+            return text.format(**values) if values else text
 
         if report.freshness is FreshnessStatus.DEVICE_UNRESOLVED:
             # The bed answered a scan, so "wake it up" would be wrong advice.
-            # Home Assistant simply had no connectable handle for it at that
-            # instant, which is what Check again is for.
-            lines.append(
-                "⚠️ This bed is advertising, but Home Assistant could not open a connection "
-                "to it just now, so no connection was attempted."
-            )
-            lines.append(
-                "This is usually momentary. Select **Check again**, or finish setup and let "
-                "the integration keep trying."
-            )
-            return "\n".join(lines)
-
+            return await line("check_unresolved")
         if report.freshness is not None and report.freshness is not FreshnessStatus.FRESH:
             # Distinguished from a failed connection on purpose: the bed never
-            # answered a scan, so telling the user to check the bond or the
-            # adapter would send them after the wrong thing (#458).
-            lines.append(
-                "❌ This bed is not currently advertising, so no connection was attempted."
-            )
-            lines.append(
-                "Wake it (press a button on the remote), put it in pairing mode, or move it "
-                "closer to an adapter or proxy, then select **Check again**."
-            )
-            return "\n".join(lines)
-
+            # answered a scan, so the bond or adapter is not the problem (#458).
+            return await line("check_not_advertising")
         if not report.device_found:
-            lines.append("❌ Device not found - it may be out of range or not advertising.")
-            lines.append("You can still finish setup; the integration will keep trying to connect.")
-            return "\n".join(lines)
+            return await line("check_not_found")
 
-        lines.append("✅ Device found via Bluetooth")
-
+        lines = [await line("check_found")]
         if not report.connected:
-            lines.append(
-                "❌ Could not connect - another app or the bed remote may be holding the "
-                "bed's connection (beds allow only one at a time), or it is out of range. "
-                "You can still finish setup and try again later."
-            )
+            lines.append(await line("check_not_connected"))
             return "\n".join(lines)
 
         if report.actual_path is not None:
@@ -6377,62 +6393,27 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "✅ "
                 + await async_describe_actual(self.hass, report.actual_path, report.predicted_path)
             )
+        elif report.source:
+            lines.append(await line("check_connected_via", source=report.source))
         else:
-            connected_parts = ["✅ Connected"]
-            if report.source:
-                connected_parts.append(f"via {report.source}")
-            if report.via_proxy:
-                connected_parts.append("(Bluetooth proxy)")
-            if report.rssi is not None:
-                connected_parts.append(f"(RSSI {report.rssi} dBm)")
-            lines.append(" ".join(connected_parts))
+            lines.append(await line("check_connected"))
 
-        if report.service_count:
-            services_word = "service" if report.service_count == 1 else "services"
-            writable_word = (
-                "writable characteristic"
-                if report.writable_count == 1
-                else "writable characteristics"
-            )
-            # The integration controls beds by writing commands to a
-            # characteristic, so zero writable characteristics means this setup
-            # cannot send commands - flag it instead of giving a false pass
-            # (often a sign the probe reached the wrong device).
-            marker = "✅" if report.writable_count else "⚠️"
-            lines.append(
-                f"{marker} GATT services discovered ({report.service_count} {services_word}, "
-                f"{report.writable_count} {writable_word})"
-            )
-            if not report.writable_count:
-                lines.append(
-                    "⚠️ No writable characteristic found - this device may not be "
-                    "controllable, or the probe reached the wrong device."
-                )
-        else:
-            lines.append("⚠️ Connected, but no GATT services were discovered.")
+        # Beds are controlled by writing commands, so a device that accepts none
+        # cannot be this bed's controller (often the probe reached another device).
+        if not report.writable_count:
+            lines.append(await line("check_no_commands"))
 
         if report.starcode_transport_valid is False:
-            lines.append(
-                "❌ The selected app Bluetooth transport is missing its required GATT service or characteristics."
-            )
+            lines.append(await line("check_transport_missing"))
         elif report.starcode_transport_valid is True:
-            lines.append("✅ Selected app Bluetooth transport is available")
+            lines.append(await line("check_transport_ok"))
 
-        if report.manufacturer or report.model:
-            info = " · ".join(
-                part
-                for part in (
-                    f"Manufacturer: {report.manufacturer}" if report.manufacturer else None,
-                    f"Model: {report.model}" if report.model else None,
-                )
-                if part
-            )
-            lines.append(f"ℹ️ {info}")
+        if details := " · ".join(part for part in (report.manufacturer, report.model) if part):
+            lines.append(await line("check_device_info", details=details))
 
+        # Many beds never report their position; that is normal, not a warning.
         if report.position_feedback:
-            lines.append("✅ Position feedback supported by this bed type")
-        else:
-            lines.append("⚠️ Position feedback: not available on this bed type")
+            lines.append(await line("check_positions"))
 
         return "\n".join(lines)
 
