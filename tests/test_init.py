@@ -212,7 +212,7 @@ class TestIntegrationSetup:
             await hass.async_block_till_done()
 
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
-        mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
+        mock_disconnect.assert_any_await(reason="setup timeout cleanup")
 
     async def test_setup_entry_timeout_bounds_disconnect_cleanup(
         self,
@@ -245,7 +245,7 @@ class TestIntegrationSetup:
                 await hass.async_block_till_done()
 
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
-        mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
+        mock_disconnect.assert_any_await(reason="setup timeout cleanup")
 
     @pytest.mark.parametrize(
         "attempts,expected",
@@ -311,6 +311,40 @@ class TestIntegrationSetup:
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
+
+    async def test_failed_setup_stops_its_coordinator(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_bluetooth_api,
+        enable_custom_integrations,
+    ):
+        """A link that came up and dropped must not leave its recovery running.
+
+        Otherwise the setup retry's new coordinator competes with the abandoned
+        one for the bed's single connection.
+        """
+        coordinators = []
+
+        async def _connect_then_drop(coordinator) -> bool:
+            coordinators.append(coordinator)
+            coordinator._reconnect_timer = hass.loop.call_later(
+                5.0, coordinator._schedule_auto_reconnect
+            )
+            return False
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_connect",
+            new=_connect_then_drop,
+        ):
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
+        assert len(coordinators) == 1
+        assert coordinators[0]._shutting_down is True
+        assert coordinators[0]._reconnect_timer is None
+        assert mock_config_entry.entry_id not in hass.data.get(DOMAIN, {})
 
     async def test_setup_entry_connection_failed_still_creates_device(
         self,

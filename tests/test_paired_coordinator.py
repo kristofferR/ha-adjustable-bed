@@ -41,7 +41,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     DOMAIN,
     PAIR_CONNECTION_MODE_AUTO,
@@ -62,6 +61,7 @@ from custom_components.adjustable_bed.position_seek import (
     SeekOutcome,
     SeekResult,
 )
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 ADDR = {SIDE_LEFT: "AA:BB:CC:DD:EE:01", SIDE_RIGHT: "AA:BB:CC:DD:EE:02"}
 

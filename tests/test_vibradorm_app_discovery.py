@@ -236,6 +236,7 @@ async def test_paired_diagnostics_parse_each_observed_physical_side_and_redact_a
             is_connected=False,
             position_data={},
             command_timing={},
+            connection_settings={},
             entry=SimpleNamespace(data={CONF_BED_TYPE: BED_TYPE_VIBRADORM_APP}),
         )
         for side, address in addresses.items()
