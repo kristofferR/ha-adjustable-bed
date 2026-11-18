@@ -1,7 +1,10 @@
 name: Validate
 
+# A pull request runs once through pull_request; push covers only the
+# integration branches, so a same-repo PR branch is not validated twice.
 on:
   push:
+    branches: [main, v5]
   pull_request:
   schedule:
     - cron: "0 0 * * *"
@@ -17,7 +20,7 @@ jobs:
         with:
           persist-credentials: false
       - name: HACS validation
-        uses: hacs/action@main
+        uses: hacs/action@1ebf01c408f29afcb6406bd431bc98fd8cbb15aa # main, 2026-06-08
         with:
           category: integration
 
@@ -28,7 +31,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Hassfest validation
-        uses: home-assistant/actions/hassfest@master
+        uses: home-assistant/actions/hassfest@86d4564712fa02543c808e3a693dd04f9d3f8361 # master, 2026-10-26
 
   lint:
     runs-on: ubuntu-latest
@@ -105,8 +108,51 @@ jobs:
           uv sync --extra dev
           uv run --no-sync python scripts/ha_bluetooth_test_requirements.py > /tmp/ha-bluetooth-requirements.txt
           uv pip install -r /tmp/ha-bluetooth-requirements.txt
+      # Scheduled and manual runs also record each shard's test durations
+      # (see the durations job). Splitting reads .test_durations first.
       - name: Run tests (shard ${{ matrix.group }}/3)
-        run: uv run --no-sync pytest -q --splits 3 --group ${{ matrix.group }}
+        env:
+          GROUP: ${{ matrix.group }}
+          STORE_DURATIONS: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          args=(-q --splits 3 --group "$GROUP")
+          if [ "$STORE_DURATIONS" = true ]; then
+            cp .test_durations "durations-$GROUP.json"
+            args+=(--store-durations --clean-durations --durations-path "durations-$GROUP.json")
+          fi
+          uv run --no-sync pytest "${args[@]}"
+      - name: Upload shard durations
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: durations-${{ matrix.group }}
+          path: durations-${{ matrix.group }}.json
+          retention-days: 7
+
+  # pytest-split balances the shards on .test_durations. Refresh it only from
+  # this job: download the test-durations artifact of a scheduled or manually
+  # dispatched run and commit it on its own. Durations recorded locally, on a
+  # loaded machine, skew the shards.
+  durations:
+    needs: test
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: durations-*
+          merge-multiple: true
+      - name: Merge shard durations
+        run: python3 .github/scripts/merge_test_durations.py durations-*.json > .test_durations
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-durations
+          path: .test_durations
+          include-hidden-files: true
+          retention-days: 30
 
   minimum-ha:
     runs-on: ubuntu-latest
