@@ -817,6 +817,8 @@ class TestSleepNumberMcrCoordinatorLifecycle:
         )
         entry.add_to_hass(hass)
         coordinator = AdjustableBedCoordinator(hass, entry)
+        # The link dropped inside the idle window, so recovery may run.
+        coordinator._idle_deadline = hass.loop.time() + 30
         coordinator._cancel_command.set()
         seen: list[bool] = []
 

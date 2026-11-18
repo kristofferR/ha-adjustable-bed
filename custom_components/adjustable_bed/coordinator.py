@@ -450,6 +450,11 @@ class AdjustableBedCoordinator(
         self._reconnect_stalled = False
         self._holds_link_after_stall_resolved = False
         self._disconnect_timer: asyncio.TimerHandle | None = None
+        # Loop time at which the current idle window ends (None when unarmed or
+        # persistent). Recovering a dropped link must not extend it.
+        self._idle_deadline: float | None = None
+        # The link was recovered without a command: re-arming keeps _idle_deadline.
+        self._recovered_link_window = False
         self._reconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_task: asyncio.Task[None] | None = None
         self._lock = asyncio.Lock()
@@ -1838,7 +1843,7 @@ class AdjustableBedCoordinator(
 
         async with self._command_lock:
             # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
-            self._cancel_disconnect_timer()
+            self._hold_link_for_command()
 
             # Check if we were cancelled while waiting for the lock
             if self._cancel_counter > entry_cancel_count:
@@ -1981,7 +1986,7 @@ class AdjustableBedCoordinator(
         # STOP remains outside the ordinary scheduler lane so it can preempt it,
         # then waits for any cancelled controller cleanup to release the wire lock.
         async with self._command_lock:
-            self._cancel_disconnect_timer()
+            self._hold_link_for_command()
             if getattr(self, "_pairing_transfer_active", False) is True:
                 raise ConnectionError("Bed ownership is being transferred")
             controller = self._controller
@@ -2243,7 +2248,7 @@ class AdjustableBedCoordinator(
                 and controller_before_prepare.requires_disconnected_transport is True
             )
             if not preserve_idle_deadline:
-                self._cancel_disconnect_timer()
+                self._hold_link_for_command()
 
             cancelled_while_waiting = (
                 cancel_event.is_set()

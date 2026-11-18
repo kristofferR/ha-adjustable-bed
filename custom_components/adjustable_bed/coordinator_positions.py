@@ -657,7 +657,7 @@ class CoordinatorPositionsMixin:
 
         async with self._command_lock:
             # Cancel disconnect timer during seeking
-            self._cancel_disconnect_timer()
+            self._hold_link_for_command()
 
             # Check if cancelled while waiting for lock
             if cancel_event.is_set():
