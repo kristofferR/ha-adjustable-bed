@@ -866,7 +866,7 @@ class BedController(GattWriter):
     def light_state_is_assumed(self) -> bool:
         """Return True when discrete light commands have no state readback.
 
-        The light switch then starts unknown and reports the commanded value
+        The on/off light then starts unknown and reports the commanded value
         as assumed state, so a restart or the physical remote is not shown as
         a confirmed state.
         """
@@ -1022,18 +1022,13 @@ class BedController(GattWriter):
         return False
 
     @property
-    def exposes_discrete_light_as_light(self) -> bool:
-        """Whether discrete light on/off is a light entity rather than a switch."""
-        return False
-
-    @property
     def light_state_starts_off(self) -> bool:
         """Whether an on/off light assumes off until the bed reports otherwise."""
         return False
 
     @property
     def light_switch_follows_level_intent(self) -> bool:
-        """Whether the light switch shows the app's intended level, not readback."""
+        """Whether the on/off light shows the app's intended level, not readback."""
         return False
 
     @property

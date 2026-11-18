@@ -263,6 +263,11 @@ class OkinBeddingAppController(OkinCstController):
         return StateKey[object](self._key(name))
 
     @property
+    def light_state_is_assumed(self) -> bool:
+        # The app sends light on/off but reads no light state back.
+        return True
+
+    @property
     def requires_notification_channel(self) -> bool:
         return True
 
