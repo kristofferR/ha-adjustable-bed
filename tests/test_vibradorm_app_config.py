@@ -12,6 +12,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children, const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.vibradorm.app import (
     VibradormAppController,
     VibradormAppMetadata,
@@ -97,7 +98,7 @@ async def test_every_setup_route_collects_app_then_pairs(hass, mock_bluetooth_se
         await finish_new_bed(flow, await flow.async_step_profile_questions({const.CONF_VIBRADORM_RESTORED: False}), settings)
     resume.assert_awaited_once_with()
     assert flow._manual_data[const.CONF_VIBRADORM_CONTROL_TYPE] == "2"
-    assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(flow._manual_data)
     assert flow._manual_data[const.CONF_HAS_MASSAGE] is False
 
 

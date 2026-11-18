@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.bed_traits import bed_traits, reads_positions
 from custom_components.adjustable_bed.beds.rize_home import controller as rize
 from custom_components.adjustable_bed.profiles import rize_home as p
 from tests.hold_lease_wire import virtual_clock
@@ -305,7 +305,7 @@ async def test_setup_saves_each_product_profile_and_configure_reloads(hass, prod
     assert data[const.CONF_PROFILE_ID] == f"rize_home:{product}"
     assert data[const.CONF_PROTOCOL_VARIANT] == product
     assert data[const.CONF_HAS_MASSAGE] is True
-    assert data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(data)
     assert const.CONF_MOTOR_COUNT in hidden_generic_fields("rize_home", product)
     entry = MockConfigEntry(domain=const.DOMAIN, title="Rize Home", data=data)
     entry.add_to_hass(hass)

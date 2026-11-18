@@ -9,7 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.bed_traits import bed_traits, reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -75,7 +75,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     assert saved[CONF_JIECANG_APP_LAYOUT] == "split_after_bilateral"
     assert saved[CONF_JIECANG_APP_TRANSPORT] == "auto"
     assert saved[CONF_HAS_LIGHT] is True
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(saved)
     assert saved[CONF_HAS_MASSAGE] is True
 
 

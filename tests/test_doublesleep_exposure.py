@@ -9,6 +9,7 @@ import pytest
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.doublesleep.services import build_request
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, AdjustableBedButton
 from custom_components.adjustable_bed.config_flow import (
@@ -44,7 +45,7 @@ async def test_all_setup_routes_collect_separate_saved_model_and_driver(
         )
     saved = finish.call_args.args[0]
     assert saved["product_type"] == "11136" and saved["protocol_variant"] == "p2"
-    assert saved["disable_angle_sensing"] and saved["motor_pulse_delay_ms"] == 300
+    assert not reads_positions(saved) and saved["motor_pulse_delay_ms"] == 300
 
 
 def test_profile_findability_and_per_address_options():

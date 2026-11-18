@@ -10,7 +10,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.bed_traits import bed_traits, reads_positions
 from custom_components.adjustable_bed.beds.fsm_relax.controller import FsmRelaxController
 from custom_components.adjustable_bed.beds.limoss.controller import LimossController
 from custom_components.adjustable_bed.config_flow import (
@@ -71,7 +71,7 @@ async def test_explicit_profile_step_validates_and_persists_all_values(hass):
     await flow.async_step_profile_questions(data())
     assert flow._manual_data[const.CONF_PRODUCT_TYPE] == "bed"
     assert flow._manual_data[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
-    assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(flow._manual_data)
     # The app step's massage choice is the entry's has_massage, never overwritten.
     assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
     flow._finish_with_verify.assert_awaited_once_with(flow._manual_data, "Adjustable Bed")
@@ -265,7 +265,7 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
         assert saved[const.CONF_PRODUCT_TYPE] == "bed"
         assert saved[const.CONF_REVERSE_MOTORS[0]] is True
         assert saved[const.CONF_FSM_RELAX_MEMORY_NAMES][0] == "Sleep"
-        assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True
+        assert not reads_positions(saved)
         assert const.BED_TYPE_FSM_RELAX not in const.BEDS_REQUIRING_PAIRING
         connect.assert_not_called()
         await hass.async_block_till_done()

@@ -9,6 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -90,7 +91,7 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
     assert completed["data"][const.CONF_STARCODE_TRANSPORT_SELECTOR] == "BOX3633"
     assert flow._manual_data[const.CONF_MOTOR_COUNT] == 2
     assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
-    assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(flow._manual_data)
 
 
 @pytest.mark.parametrize(

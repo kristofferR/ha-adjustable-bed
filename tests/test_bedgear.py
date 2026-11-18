@@ -16,6 +16,7 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.bedgear import controller as module
 from custom_components.adjustable_bed.beds.bedgear.controller import (
     ALARM,
@@ -153,7 +154,7 @@ async def test_real_setup_saved_profile_factory_and_configure(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     data = result["data"]
     assert data[const.CONF_BLE_DEVICE_NAME] == selected
-    assert data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(data)
     entry = result["result"]
     co = AdjustableBedCoordinator(hass, entry)
     co._client = client()

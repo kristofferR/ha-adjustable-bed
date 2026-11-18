@@ -12,6 +12,7 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.motomotion.controller import MotoMotionController
 from custom_components.adjustable_bed.beds.motomotion.protocol import posture
 from custom_components.adjustable_bed.codec.motomotion import (
@@ -317,7 +318,7 @@ async def test_setup_step_and_options_ownership_use_same_identity_validation(has
     values = {CONF_BED_TYPE: "motomotion", CONF_BLE_DEVICE_NAME: "SOFA000001S000H"}
     assert profile.validate(values) == {}
     settled = profile.settled(values)
-    assert settled["disable_angle_sensing"] is True and settled["has_massage"] is False
+    assert not reads_positions(settled) and settled["has_massage"] is False
     assert _name_rule_setup_name("motomotion", "SOFA000001S000H") == {
         CONF_BLE_DEVICE_NAME: "SOFA000001S000H"
     }
@@ -1205,5 +1206,5 @@ async def test_configure_switch_of_a_single_address_pair_applies_the_profile(has
     assert entry.data[CONF_BED_TYPE] == "motomotion"
     assert entry.data[CONF_BLE_DEVICE_NAME] == "SOFA000001S000M"
     assert entry.data["has_massage"] is False
-    assert entry.data["disable_angle_sensing"] is True
+    assert not reads_positions(entry.data)
     assert entry.data["motor_pulse_user_set"] is False

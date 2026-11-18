@@ -10,6 +10,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.config_flow import (
     CONF_PAIR_SELECTION,
     AdjustableBedConfigFlow,
@@ -66,7 +67,7 @@ async def test_all_setup_routes_collect_explicit_profile_without_bond(
     data = finish.call_args.args[0]
     assert data[const.CONF_VMATBASIC_PROFILE] == "basic"
     assert data[const.CONF_MOTOR_PULSE_DELAY_MS] == 30
-    assert data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(data)
     assert not const.requires_pairing(const.BED_TYPE_VMATBASIC)
     assert not const.requires_pairing_after_service_discovery(const.BED_TYPE_VMATBASIC)
 

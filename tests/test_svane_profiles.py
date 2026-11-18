@@ -8,7 +8,10 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
+from custom_components.adjustable_bed.bed_traits import (
+    bed_type_has_position_feedback,
+    reads_positions,
+)
 from custom_components.adjustable_bed.beds.jensen.linon import JensenLinonController
 from custom_components.adjustable_bed.beds.svane.controller import HEAD, POSITION, SvaneController
 from custom_components.adjustable_bed.beds.svane.state import get_svane_session
@@ -136,7 +139,7 @@ async def test_preverification_normalizes_legacy_options_before_probe(hass):
     await flow._finish_with_verify(entry, "Bed")
     assert flow._pending_entry[CONF_MOTOR_COUNT] == 2
     assert flow._pending_entry[CONF_HAS_MASSAGE] is False
-    assert flow._pending_entry[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(flow._pending_entry)
 
 
 async def test_explicit_jmc_change_persists_with_its_own_session(hass, enable_custom_integrations):
@@ -470,7 +473,7 @@ async def test_untouched_fields_take_the_chosen_bed_types_defaults(hass):
     from custom_components.adjustable_bed.const import BED_TYPE_LINAK
 
     saved = await _accept_final_settings_as(hass, BED_TYPE_LINAK)
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is False
+    assert reads_positions(saved)
     assert (saved[CONF_MOTOR_PULSE_COUNT], saved[CONF_MOTOR_PULSE_DELAY_MS]) == (
         get_motor_pulse_defaults(BED_TYPE_LINAK)
     )
@@ -483,4 +486,4 @@ async def test_a_field_the_user_changed_keeps_its_value(hass):
         hass, BED_TYPE_LINAK, **{CONF_MOTOR_COUNT: 4, CONF_MOTOR_PULSE_COUNT: "7"}
     )
     assert (saved[CONF_MOTOR_COUNT], saved[CONF_MOTOR_PULSE_COUNT]) == (4, 7)
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is False
+    assert reads_positions(saved)

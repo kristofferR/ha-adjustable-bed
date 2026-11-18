@@ -15,7 +15,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.bed_traits import bed_traits, reads_positions
 from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -60,7 +60,7 @@ async def test_every_setup_route_collects_processor_profile(
     assert data["product_type"] == "activebreeze_small"
     assert data["sleeptracker_unit_number"] == 2
     assert data["sleeptracker_restricted"] is False
-    assert data["has_massage"] is True and data["disable_angle_sensing"] is True
+    assert data["has_massage"] is True and not reads_positions(data)
     assert data["motor_count"] == 3
     assert data["sleeptracker_foundation"] == "Unspecified"
     assert bed_traits(const.BED_TYPE_SLEEPTRACKER).no_angle_feedback

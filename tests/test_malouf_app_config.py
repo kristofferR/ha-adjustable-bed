@@ -9,6 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -19,7 +20,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     CONF_BED_TYPE,
     CONF_CONNECTION_MODE,
-    CONF_DISABLE_ANGLE_SENSING,
     CONF_MALOUF_APP_MODEL,
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
@@ -60,7 +60,7 @@ async def test_setup_routes_require_app_and_model(hass, mock_bluetooth_service_i
     assert saved[CONF_MALOUF_APP_MODEL] == "Premium"
     assert saved[CONF_MALOUF_APP_TRANSPORT] == "auto"
     assert saved[CONF_MALOUF_APP_PRIMARY] is True
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(saved)
 
 
 @pytest.mark.parametrize("profile,models,rejected", [
@@ -182,7 +182,7 @@ async def test_switching_another_bed_type_to_the_app_asks_app_and_model(hass):
         "Premium",
     )
     assert entry.data[CONF_MALOUF_APP_PRIMARY] is True
-    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(entry.data)
 
 
 async def test_a_receiver_entry_changes_to_the_app_in_reconfigure(hass):

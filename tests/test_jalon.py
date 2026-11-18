@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bleak.exc import BleakError
 
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.builder import BuildContext
 from custom_components.adjustable_bed.beds.keeson import jalon as controller
 from custom_components.adjustable_bed.beds.keeson.jalon_state import parse_notification
@@ -394,7 +395,6 @@ async def test_alarm_action_uses_scheduler_and_validates_before_writes(hass):
 async def test_manual_setup_saves_app_owned_layout(hass, layout, axes):
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import (
-        CONF_DISABLE_ANGLE_SENSING,
         CONF_MOTOR_PULSE_DELAY_MS,
     )
     from tests.form_helpers import finish_new_bed, start_new_bed
@@ -410,7 +410,7 @@ async def test_manual_setup_saves_app_owned_layout(hass, layout, axes):
     assert saved[CONF_PRODUCT_TYPE] == layout
     assert saved[CONF_MOTOR_COUNT] == len(axes)
     assert saved[CONF_MOTOR_PULSE_DELAY_MS] == 300
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(saved)
 
 
 @pytest.mark.parametrize(
