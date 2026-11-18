@@ -1,4 +1,4 @@
-"""Row083 app-specific gestures and wake-up sessions over the shared Okin controller."""
+"""Comfort Enhancement 3 1.4.0 app-specific gestures and wake-up sessions over the shared Okin controller."""
 
 from __future__ import annotations
 

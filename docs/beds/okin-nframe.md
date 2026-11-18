@@ -93,9 +93,8 @@ Customatic app profiles.
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
 | ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | [eShine](#eshine) (E2000, E3000/E3100, E5000) |
 
-⚠️ Legacy analysis only: these apps have no accepted APK Protocol Audit report,
-so the profile listed for them is unverified and setup does not name them. An
-accepted report replaces the profile column of the rows it covers.
+⚠️ Legacy analysis only: these apps have not been analyzed in full, so the
+profile listed for them is unverified and setup does not name them.
 
 Beds controlled with FurniMove handset IDs normally use the explicit
 [FurniMove / OKIN Smart Remote](furnimove.md) app profile.
@@ -428,7 +427,7 @@ save chord has no threshold; see their profiles.
 Bed types that build the same controller over the same profile with the same
 default timing, so they send identical bytes. They stay separate bed types so
 existing entries keep their identities; the
-[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+wire snapshot (`tests/test_wire_snapshot.py`) proves the equality by capture.
 
 | Bed type | Same as | Profile |
 |----------|---------|---------|
@@ -1033,7 +1032,7 @@ and intervals.
 ### Vectors
 
 `tests/okin_nframe_vectors.py` lists each profile's frozen frames: app profiles
-take every N-frame literal from their accepted report (SIMMONS also its Keeson
+take every N-frame literal from their app (SIMMONS also its Keeson
 E6 frames, SleepEase its pinned P1 vectors), and the Okimat, DewertOkin, RF ECO
 BT, CB24, DOT, Sleepy's legacy CB25 and AdjustableM5X4 routes take the frames
 the pre-v5 controllers sent, including the RF-Gateway envelopes. `tests/test_okin_nframe_vectors.py` checks that every
@@ -1104,10 +1103,9 @@ provably complete catalog.
 - Motors held together send the sum of their words in one frame. This is
   integration behavior carried over from
   [smartbed-mqtt #66](https://github.com/richardhopton/smartbed-mqtt/pull/66),
-  not app evidence: the Okimat route has no accepted app report (its frozen
-  vectors are the pre-v5 controller's frames), and the
-  FurniMove audit (unit 157) describes
-  only a single held key's refresh (D038), with no combined held keys.
+  not app evidence: the Okimat route has no app evidence (its frozen
+  vectors are the pre-v5 controller's frames), and FurniMove shows
+  only a single held key's refresh, with no combined held keys.
   FurniMove's two-axis movement is its explicit
   [`furnimove_move_simultaneously`](furnimove.md) action.
 - Flat, memory recall, zero-gravity and anti-snore stream their key, then STOP.
@@ -1220,8 +1218,8 @@ channel.
 
 #### Evidence
 
-Okimat sends only its frozen frames. FurniMove handset evidence comes from the
-FurniMove audit (unit 157).
+Okimat sends only its frozen frames. FurniMove handset evidence comes from
+FurniMove 2.2.0.
 
 ### DewertOkin
 
@@ -1413,12 +1411,12 @@ including when **Disconnect After Command** is enabled.
 
 #### Evidence
 
-The accepted audit of `com.okin.okinsmartcomfort` 2.2.0 (19) proves the shipped
+FurniMove 2.2.0 (`com.okin.okinsmartcomfort`) proves the shipped
 offline two-axis fallback table's M2 keys and the six-byte frame; the M2
 staircase mapping comes from #344. If M2 is not the right channel for another
 installation, mapping it needs that owner's OKIN Smart Remote ID or QR contents;
 do not add M3, reversed, DOT or RF-Gateway variants to this profile without new
-evidence. Evidence: the FurniMove audit (unit 157).
+evidence.
 
 ### Customatic family
 
@@ -1576,8 +1574,7 @@ constant-true connection check.
 
 #### Evidence
 
-Each Customatic profile sends only its frozen frames. The Customatic audit
-(row028) records the exclusions and the app behaviors HA does not replay. Physical
+Each Customatic profile sends only its frozen frames. Physical
 verification of movement labels, save and reset effects, light behavior and
 write-property compatibility is deferred to users after release.
 
@@ -1768,8 +1765,7 @@ ranges before writing; see their action descriptions for fields.
 #### Evidence
 
 Each Leggett profile sends only its frozen frames, plus the CU170 stop on Prodigy
-CE. The Leggett app audit covers the four accepted reports, app differences and
-transport exclusions.
+CE.
 
 ### Prodigy 2L
 
@@ -1929,8 +1925,8 @@ massage level with `03 03 <zone> <level> <selector>`.
 > [!WARNING]
 > On the CBNew variants, overall massage intensity up and down still send the
 > legacy [CB24 keys](#cb24-keys), and the exact massage level sends the legacy
-> `03 03` frame. Every other CBNew control uses CBNew packets. No accepted report
-> covers this app (the SmartBed 2.4.2 analysis is PARTIAL), so whether CBNew
+> `03 03` frame. Every other CBNew control uses CBNew packets. The SmartBed 2.4.2
+> analysis is incomplete, so whether CBNew
 > receivers accept these frames is unproven.
 
 #### Timing
@@ -2135,7 +2131,7 @@ one of the reasons these codes must not be driven with the Okimat profile.
 
 **App:** [SIMMONS](https://play.google.com/store/apps/details?id=com.okin.simmons) 1.12.9 (code 99), `com.okin.simmons`
 
-**Status:** ❓ Needs testing (static-verified only, **hardware unverified**)
+**Status:** ❓ Needs testing (hardware unverified)
 
 #### Setup
 
@@ -2422,17 +2418,13 @@ For real users after a beta or release:
 
 ###### Analysis provenance
 
-- Accepted APK Protocol Audit of `com.okin.simmons` version 1.12.9 (code 99), a
-  20-APK XAPK.
-- Artifact-set SHA-256: `b5ef1222e24ad9bdf5b2d513fbc7a9aece2b63269c0e8d9632e2596837ffc70f`
-- Behavior is static-verified only: **hardware unverified**.
-- Audit: APK Protocol Audit row049.
+Based on SIMMONS 1.12.9 (`com.okin.simmons`).
 
 ### OKIN SleepEase
 
 **App:** [OKIN SleepEase / DoubleSleep](https://play.google.com/store/apps/details?id=com.okin.doublesleep) 1.2.24 (code 109), `com.okin.doublesleep`
 
-**Status:** ❓ Needs testing (static BLE evidence; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 Select **OKIN SleepEase (DoubleSleep / XiaoBao)** for the `com.okin.doublesleep`
 app. Support is based on the independently accepted 1.2.24 / code 109 artifact.
@@ -2866,9 +2858,7 @@ confirmation finish.
 
 ###### Analysis provenance
 
-APK Protocol Audit row107 records the accepted identities, exhaustive coverage,
-safety differences and exclusions. Actual negotiation, ATT/firmware effects and physical movement/sensor meanings
-remain checks for real users after a beta or release.
+Based on OKIN SleepEase / DoubleSleep 1.2.24 (`com.okin.doublesleep`).
 
 ### Sleepy's legacy CB25
 
@@ -2901,7 +2891,7 @@ STOP commits it (#372).
 #### Evidence
 
 Frames are the pre-v5 translation table's, frozen in
-`tests/okin_nframe_vectors.py`. The app ledger is in the [Sleepy's guide](sleepys.md).
+`tests/okin_nframe_vectors.py`. The app is described in the [Sleepy's guide](sleepys.md).
 
 ### AdjustableM5X4
 
@@ -2912,8 +2902,7 @@ Frames are the pre-v5 translation table's, frozen in
 This profile belongs to `com.starcode.abm5_4` 1.0.1 (3), delivered as five APK
 members. It preserves this app's commands and state rules separately from other
 StarCode, Sleepys and shared-UART applications. A brand, device-name prefix or
-service UUID alone does not identify the app profile. Evidence: APK Protocol
-Audit row004.
+service UUID alone does not identify the app profile.
 
 #### Setup
 
@@ -3385,23 +3374,13 @@ public-domain rejection tests; no accepted evidence or exclusion is rewritten.
 
 ###### Analysis provenance
 
-- Package `com.starcode.abm5_4` 1.0.1 (3), delivered as five APK members
-  (row004).
-- The implemented profile has the fixed selector schema, paired dispatch, owned
-  cancellation and public entities covered by artifact vectors and focused
-  tests. The README remains the supported-bed status index.
-- The accepted evidence is complete. Final integration acceptance is pending:
-  every required row needs actual code and passing focused test references, all
-  platform exposure and ownership tests must pass, and the complete standalone
-  PR must finish its review/CI/merge gates.
-- Hardware checks HW01–HW06 remain deferred to real users after beta/release;
-  they do not defer artifact-backed implementation.
+Based on AdjustableM5X4 1.0.1 (`com.starcode.abm5_4`).
 
 ### eShine
 
 **App:** [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22), `com.okin.eshine`
 
-**Status:** ❓ Needs testing (static APK evidence; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 One profile per product selector in the app: E2000 (`eshine_e2000`),
 E3000/E3100 (`eshine_e30003100`, one selector) and E5000 (`eshine_e5000`). They
@@ -3529,8 +3508,6 @@ remain available. Received actions never enable additional product capabilities.
 HA ignores incomplete or unknown notifications atomically. In particular, the
 app's unknown `fe 16` marker is not treated as a proven fragmentation format and
 cannot suppress the next valid delivery. State is invalidated on disconnect.
-The row122 audit records every intentional app-to-HA framing and lifecycle
-correction.
 
 #### Services
 
@@ -3560,7 +3537,7 @@ data:
 
 #### Evidence
 
-eShine sends only its frozen row122 frames: its key frames, requests, clock and
+eShine sends only its frozen frames: its key frames, requests, clock and
 alarm frames are frozen in `tests/okin_nframe_vectors.py`.
 
 - All physical behavior remains unverified, including STOP scope and long-hold
@@ -3570,10 +3547,7 @@ alarm frames are frozen in `tests/okin_nframe_vectors.py`.
 
 ###### eShine analysis provenance
 
-- Package `com.okin.eshine` 1.1.8, version code 22.
-- Six-file artifact set SHA-256: `fbf9cbc16b7f016c296821899e11e0d540f609af5ad9fb05bd3842a63acf9a5a`.
-- Base APK SHA-256: `aa46126cc2dacb0ac8ecbdfb7968624cce4efba419c66ef3d1aa8000c45af7cd`.
-- Audit: APK Protocol Audit row122.
+Based on eShine 1.1.8 (`com.okin.eshine`).
 
 ### Okin CST
 
@@ -3581,8 +3555,8 @@ alarm frames are frozen in `tests/okin_nframe_vectors.py`.
 
 **Status:** ⚠️ Partially tested (the MFirm 900 - O profile works on a CB3633A in [#501](https://github.com/kristofferR/ha-adjustable-bed/issues/501); Okin CST movement worked on an MFirm 900-O, a Jordan's Serenity bed and a Nectar Premium in [#365](https://github.com/kristofferR/ha-adjustable-bed/issues/365), [#573](https://github.com/kristofferR/ha-adjustable-bed/issues/573) and [#605](https://github.com/kristofferR/ha-adjustable-bed/issues/605); the other app profiles need testing)
 
-**Android:** all ten analyzed packages are Android apps. The nine cluster 011
-artifact hashes are listed under [Analysis provenance](#cst-analysis-provenance).
+**Android:** all ten analyzed packages are Android apps, listed under
+[Analysis provenance](#cst-analysis-provenance).
 
 #### Setup
 
@@ -3838,7 +3812,7 @@ fields above.
 
 ##### CST command timing
 
-###### Cluster 011 profiles
+###### Rize and support app profiles
 
 - The Android app sends the active command immediately and every 100 ms while a
   button is held.
@@ -3884,36 +3858,18 @@ and in which 32-bit field carries each remote action.
 > Earlier versions of this page listed Head Tilt `0x00000010`/`0x00000020`,
 > Lumbar `0x00000040`/`0x00000080`, a Massage Toggle `0x04000000`, a position
 > notify characteristic `62741524-...` and Okimat-style position feedback. The
-> accepted cluster 011 reports and the current controller use Lumbar
+> apps and the current controller use Lumbar
 > `0x00000010`/`0x00000020`, have no tilt axis or `0x04000000` command, and
 > decode no positions.
 
 ###### CST analysis provenance
 
-**Ref:** Nine frozen APK Protocol Audit cluster 011 clean-room reports and
-accepted cluster reconciliation. The protocol was first reverse-engineered from
-`CSTProtocol.java` in the Rize MF900 and Nectar Motion APKs.
-
-The command table, product profiles, and timing come from nine COMPLETE, frozen
-APK Protocol Audit cluster 011 reports. Their accepted artifact-set SHA-256
-identities are:
-
-| Package | Version | Artifact-set SHA-256 |
-|---|---|---|
-| `com.okin.bedding.rizeSanctuary` | 1.0.1 (2) | `90b494007dd120b4da9498c8d259411bb2a8f2e643a22433792486d896f535d0` |
-| `com.okin.bedding.rizeResident` | 1.0.1 (2) | `26a33ef79aa50f0b899d934c01aad8641b97da58bd9b78134122ac56d33eeaa9` |
-| `com.okin.bedding.rizeaviada` | 1.0.1 (2) | `fc1cbef8715de115455a4931264941bf44ad10adc819811496a82221e85b6241` |
-| `com.okin.bedding.rizebob` | 1.0.1 (2) | `237ffd39af4e8179a1c83f07cfd53364d66d127f3ccdd7ea1394ea3c6bfca437` |
-| `com.okin.bedding.rizecontempo` | 1.0.2 (3) | `9c8ef59a2addb92c9b81c330d629d495c606e6b0d06f67e31c19e7cd8e112ea9` |
-| `com.okin.bedding.rizeiicarefree` | 1.0.1 (2) | `204617a5b4b60247478125dd6cfdfaadf769581fe77b874b3f9fc47ff271234f` |
-| `com.okin.bedding.rizeiiclarity` | 1.0.1 (2) | `998bcd5962de74c85d3ebf36778007f6cbe11b4c1992477a454fca1a3ab80c1a` |
-| `com.okin.bedding.rizemf900` | 1.1.2 (4) | `a4f5ae67b2b9b870e6413d08597364041ac6947c7ba5445eb1979498895ff46f` |
-| `com.okin.bedding.support` | 1.0.4 (5) | `c2e01cdc9727f3608bcbd58076fecfa9c84176b343750079284b246e6aba2e00` |
-
-The cluster reconciliation closed all 99 package/domain comparisons with no
-blocker. The Nectar Move profile comes from the row042 accepted audit and
-convergence proof for `com.okin.bedding.nectarmotion` 1.0.1 (2). Physical
-behavior remains unverified on target hardware.
+Based on nine Rize and support apps: `com.okin.bedding.rizeSanctuary`,
+`rizeResident`, `rizeaviada`, `rizebob`, `rizeiicarefree` and `rizeiiclarity`
+1.0.1, `rizecontempo` 1.0.2, `rizemf900` 1.1.2 and `com.okin.bedding.support`
+1.0.4, plus Nectar Move 1.0.1 (`com.okin.bedding.nectarmotion`). The protocol
+was first reverse-engineered from `CSTProtocol.java` in the Rize MF900 and
+Nectar Motion apps.
 
 ### Jordan's Serenity
 
@@ -4191,10 +4147,7 @@ HA-specific handling:
 
 ###### Serenity analysis provenance
 
-- Independently accepted S01 FULL analysis of `com.okin.bedding.serenity`
-  version 1.0.1/code 2, with four verified APK/split members.
-- Artifact-set SHA-256: `b0729dc3a4eae2644cc5035b984a05ac116a658b79c886ab1b02eebdea584cc6`
-- Audit: APK Protocol Audit S01.
+Based on Serenity 1.0.1 (`com.okin.bedding.serenity`).
 
 ### Jordan's Tranquil
 
@@ -4390,11 +4343,7 @@ and light semantics, and notification contents.
 
 ###### Tranquil analysis provenance
 
-- Independently accepted APK Protocol Audit of `com.okin.bedding.tranquil`
-  version 1.0.2/code 3, and the cluster 010 reconciliation with the
-  [Customatic Z-Series](#customatic-z-series) app.
-- Artifact SHA-256: `595749e9f8eb2b654d88ad477fa80e4dfe5849335889b8c241fbd22faf3f5bda`
-- Audit: APK Protocol Audit row052.
+Based on Jordan's Tranquil 1.0.2 (`com.okin.bedding.tranquil`).
 
 ### Customatic Z-Series
 
@@ -4615,11 +4564,7 @@ the back-to-back clock and alarm frames) and notification contents.
 
 ###### Z-Series analysis provenance
 
-- Independently accepted APK Protocol Audit of `com.okin.bedding.glory`
-  version 1.0.4/code 5, and the cluster 010 reconciliation with
-  [Jordan's Tranquil](#jordans-tranquil).
-- XAPK SHA-256: `3a700cc4869080ec570c2e8653601b2755c08c7d3e3b13fa6a233e2af2bce7a8`
-- Audit: APK Protocol Audit row052.
+Based on Customatic Z-Series 1.0.4 (`com.okin.bedding.glory`).
 
 ### Okin 64-Bit
 
@@ -4914,7 +4859,7 @@ Standard movement, STOP and held-control actions work through the command queue.
 
 #### Evidence
 
-APK Protocol Audit queue unit087, `com.okin.bedding.adjustbed` 1.2.1 (33), accepted report `com.okin.bedding.adjustbed-1.2.1-2026-11-09-queue002/report/`. Artifact SHA256: `2e57cd4265104beac0821850bda6223efe9213d989cd95328730f80cbfb4ae0a`. Report manifest SHA256: `80909e22552bf2c524115375e7da5a255a5a25f3683aa54915fe1635c4e638c1`. The scoped recheck accepted the corrected missing-GATT setup branches. Frozen literals cover all reachable command rows in `tests/fixtures/adjustable_bed_vectors.json`.
+Based on `com.okin.bedding.adjustbed` 1.2.1 (33). Frozen literals cover all reachable command rows in `tests/fixtures/adjustable_bed_vectors.json`.
 
 Hardware effects, watchdogs, retail compatibility, real replies and preset storage need beta-user validation. Home Assistant uses its own Bluetooth connection policy; the app SDK's MTU, timeout and Android calls are not firmware requirements. Speech/audio/help, Wi-Fi/cloud/accounts and firmware updates are outside the integration. The legacy Okin 64-Bit profile remains separate, with its historical additional commands, for existing entries.
 
@@ -5104,10 +5049,7 @@ consumers. Raw replies still appear in support bundles.
 
 ###### Lumbar analysis provenance
 
-The profile follows the accepted APK Protocol Audit of version 1.2.2 (code 33),
-a 20-APK Flutter XAPK with SHA-256
-`ed65ed1b4970c95c2b1744687f94401447f851f23e81f8af6699a68854988b08`. Behavior is
-static-verified only: **hardware unverified**. Audit: APK Protocol Audit row054.
+Based on Adjustable bed (Lumbar) 1.2.2.
 
 ### Rize Home (Remedy III / Contempo IV)
 
@@ -5251,9 +5193,7 @@ There is no native side selector; separate addresses can use HA's paired facade.
 
 #### Evidence
 
-Accepted APK Protocol Audit unit163, `com.okin.rize` 1.1.2 (12), application label
-Rize Home. Artifact SHA-256:
-`fe031e5d003051c522e1ff6a80108820dd16d6694e7ced190a0df0265eabfa0d`.
+Based on Rize Home 1.1.2 (`com.okin.rize`).
 The original 34 literals, 39 semantic rows and eight parser cases are replayed by
 `tests/test_rize_home.py`. The existing codec's prefixed-record/request encoders
 reproduce all literals, including the fixed prefix on different record lengths.
@@ -5361,8 +5301,7 @@ and preset-stop buttons are also callable through `button.press`.
 
 #### Evidence
 
-Accepted row150 APK Protocol Audit and scoped audit002, `com.okin.motionbed`
-1.0 (2). All reachable command literals reproduce through the existing gateway
+Based on `com.okin.motionbed` 1.0 (2). All reachable command literals reproduce through the existing gateway
 encoder. Hardware remains unverified. External beta/release users can validate
 mechanical mappings, light polarity, memory/preset behavior, release latency,
 GATT properties and reconnect ordering. Notification interpretation needs future
@@ -5477,8 +5416,7 @@ same slot. No capacity beyond these three UI slots is asserted.
 
 #### Evidence
 
-Accepted APK Protocol Audit row080, `com.okin.simmonskorea` 1.1.14 (38),
-artifact SHA-256 `b7ab9227acf33772e0421baf45f372fa79b592d91357bd7c3112583b556d96b2`.
+Based on `com.okin.simmonskorea` 1.1.14 (38).
 The 20 raw masks, original 28 vectors and 36 corrected alarm/identity cases
 are preserved in the N32 test fixture. The former `v-alarm-delete-3` is a
 retained-fields disable, distinct from cleared UI deletion. Physical behavior
@@ -5583,7 +5521,7 @@ time zone, then query the clock. Clock setting is unrelated to motor calibration
 
 #### Evidence
 
-APK Protocol Audit unit160, accepted audit001, proves the single fixed profile,
+Resident 1.0.0 proves the single fixed profile,
 all command builders, response handling and lifecycle timings from Resident
 1.0.0. Its frozen vectors are in `tests/fixtures/resident_vectors.json` and the
 N-frame command census.
@@ -5628,27 +5566,12 @@ detection priority and troubleshooting.
 
 ### Analysis provenance
 
-- **Customatic:** accepted, frozen COMPLETE/FULL analyses of the three 1.0.1
-  packages, cluster 009 reconciliation and an independent acceptance check.
-  Artifact-set SHA-256: Clarity
-  `1b1aeb6dc79d51b0b0ff4cce9fcb1e3fc0c1a99bc9fab12df683860d6e881c0d`, Jerome's
-  `056431dcd500bbf02f3279d052e66f8f59ca5cd30bd51d1aab18c23a1782f268`, Remedy
-  `382e76adcf0750d937b9f84669db0100111ba95ad92122b45a8547be6d609c57`. Focused
-  tests are in `tests/test_customatic.py`.
-- **Leggett Okin:** command values, framing, timing, notification parsing and
-  release semantics come from the accepted clean-room analysis of
-  `com.leggett.prodigy4` 1.2.0 (versionCode 18, artifact SHA-256
-  `45922c518c9e8070…`), traced from layout binding to the GATT boundary and
-  independently audited; the CU170 status mapping supplements it. The
-  Leggett app audit records all four report identities.
-- **FurniMove:** `com.okin.okinsmartcomfort` 2.2.0 (19), audit unit 157.
-
-Raw APKs, decompilation output and frozen reports stay machine-local.
-
-- Resident Adjustable Base: `com.okin.resident.release` 1.0.0 (1), artifact SHA-256
-  `583dd003df0478419935bb1c6649a8e8b0228988e0b38b12c6919efa275e85f7`,
-  accepted unit160 audit001. This app is separate from the Rize Resident CST profile.
-
+- **Customatic:** based on the Clarity, Jerome's and Remedy 1.0.1 apps.
+- **Leggett Okin:** based on Prodigy 4 1.2.0 (`com.leggett.prodigy4`); the
+  CU170 status mapping supplements it.
+- **FurniMove:** based on FurniMove 2.2.0 (`com.okin.okinsmartcomfort`).
+- **Resident Adjustable Base:** based on `com.okin.resident.release` 1.0.0. This
+  app is separate from the Rize Resident CST profile.
 
 ### Rize Remedy II
 
@@ -5788,9 +5711,7 @@ safe unload cleanup.
 
 #### Evidence
 
-Canonical row180, accepted APK Protocol Audit for `com.okin.bedding.rizeii`
-1.0.1 (2), artifact SHA-256
-`b539d643486912e434f057c3866be9d87b39e1552b057cf753024bccd26bfbd0`.
+Based on `com.okin.bedding.rizeii` 1.0.1 (2).
 The profile reproduces all 24 live command literals. GATT/write-mode behavior,
 physical axis mapping, release effects, save acknowledgments and memory
 persistence need external user validation after a beta or release.
@@ -5944,10 +5865,7 @@ live session. Phone reminders, music and notifications are separate.
 
 #### Evidence
 
-APK Protocol Audit row083, accepted report plus repaired F1/F2 audit002.
 All original 29 literal and eight dynamic vectors are reproduced by the Okin
 N-frame codec, including its schedule encoder. External beta/release users may
 validate firmware acceptance; maintainer hardware acquisition is not required.
 
-Artifact XAPK SHA-256:
-`ae413a85a99d7fc6aa8ead9e1a1effc280d42470e02a8f28fb435f223dbe99e5`.

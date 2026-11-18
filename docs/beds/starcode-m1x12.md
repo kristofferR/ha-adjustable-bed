@@ -1,6 +1,6 @@
 # Adjustable Comfort M1X12 app
 
-**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -297,25 +297,17 @@ integration.
 ### Scope and validation
 
 - Nordic DFU transfer/bootloader, cloud/account services, Wi-Fi provisioning
-  and network administration remain excluded at the accepted source rows.
+  and network administration are out of scope.
   Normal 2A28 version state and ordinary BLE session readiness remain
   implemented.
-- The machine-local accepted report and comparison are sealed; this task does
-  not reopen the APK or create a new analysis claim. The implementation ledger
-  preserves all 126 accepted exclusions with their original evidence and
-  reasons.
 - Focused validation covers the 165 command rows, 151 literal packet vectors,
   notification/parser guards, startup ordering and version-read failures,
   explicit ELEVATE selection, app profile capabilities, group validation,
   paired-side ownership, card hold/release, and actual cover/button/service STOP
-  paths. Full-suite scheduling and independent conformance review belong to the
-  root task owner.
+  paths.
 - Hardware operation remains unverified. Real-user checks are deferred until a
   beta or release.
 
 ### Analysis provenance
 
-- This implementation follows accepted artifact evidence, including the frozen
-  report SHA-256 `ed4d010495b70c6ceb31ef7c2f896b872e67b95b14e44c6f8844bc9f46ff6ae1`.
-- The machine-local M1X12 implementation ledger holds the full 970-ID mapping,
-  including all exclusions.
+Based on AdjustableM1X12 1.1.3 (`com.starcode.adjustablem1x12`).

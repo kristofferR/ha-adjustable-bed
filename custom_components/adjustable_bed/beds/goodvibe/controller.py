@@ -963,7 +963,7 @@ class GoodVibeController(BedController):
         )
 
     def _effective_gesture(self, action: Action) -> tuple[str, bool]:
-        """The gesture a press runs, and whether local memory mode applies (row116).
+        """The gesture a press runs, and whether local memory mode applies.
 
         Memory mode replaces an eligible sustained press with one long operand.
         """
@@ -977,7 +977,7 @@ class GoodVibeController(BedController):
     def execution(self) -> ExecutionCapabilities:
         """Renewable holds on the held controls that run a sustained press (#483).
 
-        Row116: a sustained press first sends after 100 ms, repeats every 100 ms
+        Good Vibe Sleep: a sustained press first sends after 100 ms, repeats every 100 ms
         with no fixed count and, once a tick fired, releases with the generic
         STOP. Short, long and short-and-long gestures, and sustained controls
         local memory mode turns into one long operand, keep their gestures.

@@ -1,4 +1,4 @@
-"""M Line com.okin.mline 1.2.2 (38), accepted standalone row147.
+"""M Line com.okin.mline 1.2.2 (38).
 
 No hardware models or single-address side routing are inferred from these enums.
 """

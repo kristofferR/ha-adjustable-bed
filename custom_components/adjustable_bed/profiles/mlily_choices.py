@@ -1,4 +1,4 @@
-"""MLILY Control 5.0.2 exact setup choices (accepted APK audit row159).
+"""MLILY Control 5.0.2 exact setup choices.
 
 Only the identifiers needed before loading the selected app catalog. Keep the
 original product order and explicit remote-selection routes.

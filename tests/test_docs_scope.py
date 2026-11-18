@@ -1,8 +1,7 @@
 """docs/ holds documentation only: discovery ledgers and disposition files are audit records.
 
-AGENTS.md keeps a ledger machine-local with its APK Protocol Audit report. The
-implementation PR states its totals and exclusions, and a ledger a test reads is
-a fixture under tests/fixtures/.
+AGENTS.md keeps a ledger machine-local with its APK Protocol Audit report, and the
+implementation PR states its totals and exclusions.
 """
 
 from __future__ import annotations
@@ -32,6 +31,5 @@ def test_docs_hold_no_disposition_or_ledger_files() -> None:
     )
     assert not found, (
         "Audit records do not belong in docs/. Keep the ledger machine-local with its "
-        "APK Protocol Audit report, put its totals and exclusions in the PR body, and "
-        f"commit a ledger only as a test fixture under tests/fixtures/: {found}"
+        f"APK Protocol Audit report, and put its totals and exclusions in the PR body: {found}"
     )

@@ -1,4 +1,4 @@
-"""Adjustable bed 1.2.1 (33), accepted queue unit087.
+"""Adjustable bed 1.2.1 (33).
 
 The 80 frozen rows reproduce Okin N-frame and Okin 5A byte for byte.
 The app route stays distinct from Lumbar and the legacy 64-bit receiver.
@@ -24,7 +24,7 @@ class AdjustableAppProfile:
     execution: ExecutionCapabilities
 
 
-# Literal parameters independently matched to unit087's frozen command rows.
+# Literal parameters matched to the app's frozen command rows.
 STAR_KEYS: Final = MappingProxyType(
     {
         "head_up": (0x30, 0x00),

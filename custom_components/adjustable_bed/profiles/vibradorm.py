@@ -4,7 +4,7 @@
   Remote (``de.vibradorm.vra``) and V-MAT Basic apps as the pre-v5 controller
   sent them.
 - ``VibradormAppProfile`` serves the ``vibradorm_app`` bed type: one validated
-  layout of the Caresse Remote or Werkmeister app (accepted row031 report) or of
+  layout of the Caresse Remote or Werkmeister app or of
   the VMAT 1.11 (49) app, keyed by app.
 
 V-MAT Basic has its own profile module, ``profiles/vmatbasic.py``. Each app keeps

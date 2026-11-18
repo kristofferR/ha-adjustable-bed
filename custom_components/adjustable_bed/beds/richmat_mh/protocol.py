@@ -1,7 +1,7 @@
 """Wire format and notification classifier of the Richmat MH apps.
 
 Revive Control, Best Mattress, Blvd Home, HARMONY and Idealbed share one
-Java/Kotlin BLE library (accepted APK audit row055, cluster-020). The packet
+Java/Kotlin BLE library. The packet
 builders, framing and checksums are identical across the five apps; the
 notification classifier differs in two places, recorded per app group.
 

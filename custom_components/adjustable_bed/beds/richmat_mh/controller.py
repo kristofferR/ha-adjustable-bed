@@ -1,6 +1,6 @@
 """Richmat MH app profiles: Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed.
 
-Accepted as APK audit row055 (formal cluster-020). All five apps ship one BLE
+All five apps ship one BLE
 library; their per-model catalogs, version-dependent pages and a few callbacks
 differ. The app selects the model from the first four characters of the raw
 Bluetooth name (``qrrm`` asks the user), or from its own model picker.

@@ -1,6 +1,6 @@
 # Hush Base
 
-**Status:** ❓ Needs testing (artifact verified; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -130,5 +130,4 @@ Hardware validation is deferred to real users after beta/release. No maintainer 
 
 ### Analysis provenance
 
-- `com.richmat.hushbase` 1.0.5 (10501), artifact set `d24ad2c95ea839969a5406fa8219f62048386598152608554641586041293cd7`.
-- APK Protocol Audit row126 records the exact accepted source references, exhaustive dispositions and exclusions. Its item closure is the [ledger fixture](../../tests/fixtures/hush_ledger.json) that `tests/test_hush_dispositions.py` checks.
+Based on Hush Base 1.0.5 (`com.richmat.hushbase`).

@@ -1,4 +1,4 @@
-"""Hush Base 1.0.5 accepted row126 product specifications.
+"""Hush Base 1.0.5 product specifications.
 
 Exact package-local ordered memberships; no transport-to-profile inference.
 Generated outside this repository from the accepted report's PRODUCT-JOINS,

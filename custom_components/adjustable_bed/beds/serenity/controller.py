@@ -1,8 +1,8 @@
 """Explicit OKIN Bedding app profiles that share one OREBleDeviceManager core.
 
-Jordan's Serenity 1.0.1 (S01), Jordan's Tranquil 1.0.2 and the Customatic
-Z-Series 1.0.4 Z-230/Z-280 pages (row 052, cluster 010) were each frozen and
-accepted independently. They reuse the same CST frame, refresh/release
+Jordan's Serenity 1.0.1, Jordan's Tranquil 1.0.2 and the Customatic
+Z-Series 1.0.4 Z-230/Z-280 pages were each frozen
+independently. They reuse the same CST frame, refresh/release
 lifecycle and notification parser, but every action table, save code, button
 and alarm capability below comes from its own app. Nothing is inherited from
 another app's capabilities.

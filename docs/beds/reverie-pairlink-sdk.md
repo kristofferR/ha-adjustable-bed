@@ -177,9 +177,8 @@ write is suspended. Physical teardown still invalidates queued work.
 
 ## Notes
 
-Hardware delivery remains unverified. The row041 audit records the source
-scope, release adoption and root source overlays.
+Hardware delivery remains unverified.
 
 ### Analysis provenance
 
-- Package `com.reverie.reverie`, version 3.3.3.8, accepted row041 audit.
+Based on Reverie 3.3.3.8 (`com.reverie.reverie`).
