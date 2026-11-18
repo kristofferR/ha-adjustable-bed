@@ -581,6 +581,30 @@ async def test_new_setup_and_configure_apply_the_same_profile(hass, monkeypatch)
     assert resolve_profile_id(saved) == "agingplace"
 
 
+@pytest.mark.parametrize("mtu_property", (None, "write-without-response", "notify"))
+async def test_startup_acquires_mtu_only_with_supported_gatt(hass, monkeypatch, mtu_property):
+    _, controller, client, _, _ = await target(hass, monkeypatch)
+    await controller.stop_notify()
+    if mtu_property is not None:
+        client.services.append(
+            SimpleNamespace(characteristics=[SimpleNamespace(properties=[mtu_property])])
+        )
+    acquire = AsyncMock(
+        side_effect=RuntimeError("coroutine raised StopIteration") if mtu_property is None else None
+    )
+    client._backend = SimpleNamespace(_acquire_mtu=acquire)
+    client.start_notify.reset_mock()
+
+    with virtual_clock():
+        await controller.start_notify()
+
+    assert acquire.await_count == (0 if mtu_property is None else 1)
+    client.start_notify.assert_awaited_once()
+    assert client.start_notify.call_args.kwargs == {"force_indicate": True}
+    await controller.run_action("flat")
+    assert packets(client)
+
+
 async def test_startup_failure_fixed_gatt_and_retired_notification_owner(hass, monkeypatch):
     coordinator, controller, client, callbacks, _ = await target(hass, monkeypatch)
     assert not packets(client)  # indication setup has no query/startup command

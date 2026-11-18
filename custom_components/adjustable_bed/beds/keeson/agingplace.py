@@ -220,7 +220,12 @@ class AgingPlaceController(KeesonController):
         # proxy/platform backends negotiate themselves. Never invent ATT bytes.
         backend = getattr(client, "_backend", None)
         acquire = getattr(backend, "_acquire_mtu", None)
-        if callable(acquire):
+        # BlueZ's AcquireWrite/AcquireNotify cannot use write-only or indicate-only roles.
+        if callable(acquire) and any(
+            {"write-without-response", "notify"}.intersection(characteristic.properties)
+            for service in client.services
+            for characteristic in service.characteristics
+        ):
             await cast(Callable[[], Awaitable[object]], acquire)()
         _LOGGER.debug(
             "Dawn House app requests MTU %d; negotiated %s, literal chunk size %d",
