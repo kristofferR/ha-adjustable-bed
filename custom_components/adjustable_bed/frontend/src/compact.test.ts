@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { applyCompactPreset, cardNavigationPath, compactActions,
+import { applyCompactPreset, cardNavigationPath, compactActionChoices, compactActions,
   compactActionOptions, compactStopEntities, compactTargets, fullCardDialogConfig } from "./compact";
 import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant } from "./types";
@@ -83,7 +83,8 @@ test("favourites resolve only within the selected side, in user order, never sav
   const hass = fixture();
   const left = bedEntitiesForDevice(hass, "left");
   const right = bedEntitiesForDevice(hass, "right");
-  const selection = ["preset_tv", "preset_memory_1", "preset_flat", "preset_flat"];
+  const selection = ["button.left_preset_tv", "button.left_preset_memory_1",
+    "button.left_preset_flat", "button.right_preset_flat"];
   expect(compactActions(hass, left, selection).map((a) => a.entityId)).toEqual([
     "button.left_preset_tv", "button.left_preset_memory_1", "button.left_preset_flat",
   ]);
@@ -94,6 +95,48 @@ test("favourites resolve only within the selected side, in user order, never sav
   expect(compactActions(hass, both).map((a) => a.key)).toEqual(["preset_flat", "preset_memory_1"]);
   expect(compactActionOptions(hass, both).some((a) => a.key === "program_memory_2")).toBe(false);
   expect(compactActions(hass, both, [])).toEqual([]);
+});
+
+test("presets sharing a translation key stay separate and follow their name to the other side", () => {
+  const hass = fixture();
+  for (const [device, names] of Object.entries({ left: ["Zero G", "Snore"], right: ["Snore", "Zero G"] })) {
+    names.forEach((name, i) => {
+      const id = `button.${device}_app_${i}`;
+      hass.entities[id] = { entity_id: id, translation_key: "app_preset", name,
+        device_id: device, platform: "adjustable_bed" };
+      hass.states[id] = { entity_id: id, state: "unknown", attributes: { card_section: "presets" },
+        last_changed: "", last_updated: "" };
+    });
+  }
+  hass.formatEntityName = (stateObj) => hass.entities[stateObj.entity_id]?.name ?? "";
+  const left = bedEntitiesForDevice(hass, "left");
+  const right = bedEntitiesForDevice(hass, "right");
+  expect(compactActionOptions(hass, left).filter((a) => a.key === "app_preset")).toHaveLength(2);
+  const selection = ["button.left_app_1", "button.left_app_0"];
+  expect(compactActions(hass, left, selection).map((a) => a.entityId))
+    .toEqual(["button.left_app_1", "button.left_app_0"]);
+  expect(compactActions(hass, right, selection).map((a) => a.entityId))
+    .toEqual(["button.right_app_0", "button.right_app_1"]);
+});
+
+test("cards saved with translation keys keep their quick actions", () => {
+  const hass = fixture();
+  const left = bedEntitiesForDevice(hass, "left");
+  expect(compactActions(hass, left, ["preset_tv", "preset_flat", "missing"]).map((a) => a.entityId))
+    .toEqual(["button.left_preset_tv", "button.left_preset_flat"]);
+});
+
+test("the editor lists each action once across sides and saves entity ids", () => {
+  const hass = fixture();
+  const targets = compactTargets(hass, "pair");
+  const left = targets.find((t) => t.key === "left");
+  const choices = compactActionChoices(hass, targets, left, ["preset_tv", "button.right_preset_flat"]);
+  expect(choices.options.map((a) => a.entityId)).toEqual([
+    "button.left_preset_flat", "button.left_preset_tv", "button.left_preset_memory_1",
+  ]);
+  expect(choices.selected).toEqual(["button.left_preset_tv", "button.left_preset_flat"]);
+  expect(compactActionChoices(hass, targets, left, undefined).selected)
+    .toEqual(["button.left_preset_flat", "button.left_preset_memory_1"]);
 });
 
 test("native pair targets preserve device identity when names reorder and when selecting a child", () => {

@@ -9,8 +9,8 @@
 import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { SECTION_ORDER } from "./discovery";
-import { applyCompactPreset, COMPACT_PRESETS, compactActionOptions,
-  compactActions, compactTargets, FULL_CARD_EDITOR_DEFAULTS, fullCardDialogConfig } from "./compact";
+import { applyCompactPreset, COMPACT_PRESETS, compactActionChoices, compactTargets,
+  FULL_CARD_EDITOR_DEFAULTS, fullCardDialogConfig } from "./compact";
 import { presentSections } from "./sections";
 import { defineElement } from "./registration";
 import { localize } from "./localize";
@@ -349,13 +349,9 @@ export class AdjustableBedCardEditor
     const c = this._config!;
     const targets = compactTargets(this.hass!, c.device_id);
     const target = targets.find((t) => t.key === (c.default_target ?? "both"));
-    // The union includes capabilities that exist only on an individual side.
-    const options = targets.flatMap((t) => compactActionOptions(this.hass!, t.bed))
-      .filter((action, index, all) => all.findIndex((a) => a.key === action.key) === index);
-    const selected = c.compact_actions ?? (target
-      ? compactActions(this.hass!, target.bed).map((a) => a.key) : []);
-    const ordered = [...selected.filter((key) => options.some((a) => a.key === key)),
-      ...options.map((a) => a.key).filter((key) => !selected.includes(key))];
+    const { options, selected } = compactActionChoices(this.hass!, targets, target, c.compact_actions);
+    const ordered = [...selected,
+      ...options.map((a) => a.entityId).filter((id) => !selected.includes(id))];
     return html`
       <div class="group">
         <div class="group-title">${localize(this.hass, "editor.compact_appearance")}</div>
@@ -407,7 +403,7 @@ export class AdjustableBedCardEditor
           <button @click=${() => this._setOption("compact_actions", [])}>${localize(this.hass, "editor.labels_none")}</button>
         </div>
         ${ordered.map((key) => {
-          const action = options.find((a) => a.key === key)!;
+          const action = options.find((a) => a.entityId === key)!;
           const checked = selected.includes(key);
           const index = selected.indexOf(key);
           const move = (delta: number) => {
@@ -418,7 +414,7 @@ export class AdjustableBedCardEditor
           return html`<div class="row">
             <ha-checkbox .checked=${checked} @change=${(e: Event) => this._setOption("compact_actions",
               (e.target as HTMLInputElement).checked ? [...selected, key] : selected.filter((k) => k !== key))}
-            >${entityLabel(this.hass, action.entityId, key)}</ha-checkbox>
+            >${entityLabel(this.hass, action.entityId)}</ha-checkbox>
             <button class="icon-btn" ?disabled=${!checked || index === 0}
               aria-label=${localize(this.hass, "editor.move_up")} @click=${() => move(-1)}>↑</button>
             <button class="icon-btn" ?disabled=${!checked || index === selected.length - 1}

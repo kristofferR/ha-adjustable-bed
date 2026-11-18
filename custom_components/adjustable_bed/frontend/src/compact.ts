@@ -2,7 +2,7 @@
 import { SECTION_ORDER, bedEntitiesForDevice, isSingleAddressPairedDevice,
   pairedChildDeviceIds, resolvePairedParentId } from "./discovery";
 import { localize } from "./localize";
-import { deviceName } from "./names";
+import { deviceName, entityLabel } from "./names";
 import type { AdjustableBedCardConfig, BedEntities, HomeAssistant } from "./types";
 
 export type CompactPreset = "glance" | "quick" | "controls";
@@ -61,6 +61,7 @@ export function applyCompactPreset(
 }
 
 export interface CompactAction {
+  // The entity's translation key, shared by its counterparts on other sides.
   key: string;
   entityId: string;
 }
@@ -73,6 +74,26 @@ export function compactActionOptions(hass: HomeAssistant, bed: BedEntities): Com
     });
 }
 
+// `compact_actions` stores entity ids, because several presets can share one
+// translation key (app-labelled presets). A side resolves an id saved from
+// another side to its counterpart: the same key and, when the key is shared,
+// the same name. Older cards stored translation keys; those still resolve to
+// the first action with that key.
+export function resolveCompactAction(
+  hass: HomeAssistant,
+  options: CompactAction[],
+  saved: string,
+): CompactAction | undefined {
+  if (!saved.includes(".")) return options.find((a) => a.key === saved);
+  const exact = options.find((a) => a.entityId === saved);
+  if (exact) return exact;
+  const key = hass.entities[saved]?.translation_key;
+  const sameKey = options.filter((a) => a.key === key);
+  if (sameKey.length <= 1) return sameKey[0];
+  const name = entityLabel(hass, saved);
+  return sameKey.find((a) => entityLabel(hass, a.entityId) === name);
+}
+
 export function compactActions(
   hass: HomeAssistant,
   bed: BedEntities,
@@ -80,17 +101,47 @@ export function compactActions(
 ): CompactAction[] {
   const options = compactActionOptions(hass, bed);
   if (selected) {
-    const byKey = new Map(options.map((action) => [action.key, action]));
-    return [...new Set(selected)].flatMap((key) => {
-      const action = byKey.get(key);
+    const resolved = selected.flatMap((saved) => {
+      const action = resolveCompactAction(hass, options, saved);
       return action ? [action] : [];
     });
+    return resolved.filter((a, i) => resolved.findIndex((b) => b.entityId === a.entityId) === i);
   }
   // Do not assume which memory means "sit". Names and icons follow the entity.
   const flat = options.find((a) => a.key === "preset_flat");
   const favourite = options.find((a) => a.key.startsWith("preset_memory_")) ??
     options.find((a) => a !== flat);
   return [flat, favourite].filter((a): a is CompactAction => a !== undefined);
+}
+
+// The editor's list: every action of the default side first, then actions only
+// another side has. Each option stands for its counterparts on the other sides.
+// The selection is returned as entity ids, so saving it migrates a card that
+// stored translation keys.
+export function compactActionChoices(
+  hass: HomeAssistant,
+  targets: CompactTarget[],
+  defaultTarget: CompactTarget | undefined,
+  saved: string[] | undefined,
+): { options: CompactAction[]; selected: string[] } {
+  const listed: { action: CompactAction; sideOptions: CompactAction[] }[] = [];
+  const findListed = (savedId: string) => listed.find(({ action, sideOptions }) =>
+    resolveCompactAction(hass, sideOptions, savedId)?.entityId === action.entityId);
+  const ordered = defaultTarget
+    ? [defaultTarget, ...targets.filter((t) => t !== defaultTarget)] : targets;
+  for (const target of ordered) {
+    const sideOptions = compactActionOptions(hass, target.bed);
+    for (const action of sideOptions) {
+      if (!findListed(action.entityId)) listed.push({ action, sideOptions });
+    }
+  }
+  const selectedIds = (saved ?? (defaultTarget
+    ? compactActions(hass, defaultTarget.bed).map((a) => a.entityId) : []))
+    .flatMap((value) => {
+      const match = findListed(value);
+      return match ? [match.action.entityId] : [];
+    });
+  return { options: listed.map(({ action }) => action), selected: [...new Set(selectedIds)] };
 }
 
 export function compactStopEntities(bed: BedEntities): string[] {
