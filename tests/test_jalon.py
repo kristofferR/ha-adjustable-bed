@@ -1,4 +1,4 @@
-"""Unit132's 100 frozen vectors and app-specific runtime behavior, hardware unverified."""
+"""The Jalon 2.0.2 app's 100 frozen vectors and app-specific runtime behavior, hardware unverified."""
 
 from __future__ import annotations
 

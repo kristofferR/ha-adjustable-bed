@@ -35,6 +35,7 @@ from custom_components.adjustable_bed import (
     switch,
 )
 from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
@@ -153,11 +154,9 @@ def _shown(entity: Entity, domain: str, strings: Mapping[str, Any]) -> ShownEnti
         name=_shown_name(entity, domain, strings),
         card=tuple(sorted(entity._card.attributes.items())),  # type: ignore[attr-defined]
         enabled=entity.entity_registry_enabled_default,
-        requires_confirmation=bool(
-            (entity.extra_state_attributes or {}).get("requires_confirmation")
-            if domain == "button"
-            else False
-        ),
+        # Only controller-declared buttons ask first (``requires_confirmation``).
+        requires_confirmation=isinstance(entity, ControllerActionButton)
+        and entity._spec.requires_confirmation,
         category=category.value if category is not None else None,
     )
 

@@ -1,4 +1,4 @@
-"""Row101 independent-review regressions through coordinator, flow and live consumers."""
+"""Casper Base 1.0.8 pairing, side routing and flow paths through real coordinators."""
 
 from __future__ import annotations
 

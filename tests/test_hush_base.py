@@ -1,4 +1,4 @@
-"""Accepted row126 catalog vectors, target ownership and public surface."""
+"""Hush Base catalog vectors, target ownership and public surface."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Frozen Luuna + 2.0.1 unit146 sent frames; hardware unverified."""
+"""Frozen Luuna + 2.0.1 sent frames; hardware unverified."""
 
 SHARED_FRAMES = frozenset(
     [

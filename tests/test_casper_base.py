@@ -1,4 +1,4 @@
-"""Row101 product, transport, cleanup and live sensor integration contracts."""
+"""Casper Base 1.0.8 product, transport, cleanup and live sensor integration contracts."""
 
 from __future__ import annotations
 

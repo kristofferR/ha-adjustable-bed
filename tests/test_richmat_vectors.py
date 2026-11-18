@@ -76,7 +76,7 @@ _NISCO_QUERY_IDS = (
 
 
 def _nisco_query_addendum() -> dict[str, dict]:
-    path = Path(__file__).parent / "fixtures/richmat_cluster022/nisco_query_addendum.json"
+    path = Path(__file__).parent / "fixtures/richmat_nisco_supreme/nisco_query_addendum.json"
     rows = json.loads(path.read_text())
     assert tuple(row["source_id"] for row in rows) == _NISCO_QUERY_IDS
     assert sum(row["provenance_kind"] == "accepted_finalized_literal" for row in rows) == 15

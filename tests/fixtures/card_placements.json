@@ -725,6 +725,26 @@
   "card_section": "connection",
   "card_role": "connect"
  },
+ "button:control_1_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "control_1"
+ },
+ "button:control_1_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "control_1"
+ },
+ "button:control_2_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "control_2"
+ },
+ "button:control_2_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "control_2"
+ },
  "button:control_3_down": {
   "card_section": "motors",
   "card_role": "down",

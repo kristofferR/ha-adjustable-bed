@@ -1,4 +1,4 @@
-"""Renewable holds (#483) on Good Vibe Sleep's sustained-press controls (row116).
+"""Renewable holds (#483) on Good Vibe Sleep's sustained-press controls.
 
 The accepted report: a sustained press first sends after 100 ms, repeats every
 100 ms with no fixed count and, once a tick fired, releases with the generic
