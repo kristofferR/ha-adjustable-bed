@@ -822,11 +822,12 @@ class TestSleepNumberMcrCoordinatorLifecycle:
         coordinator._cancel_command.set()
         seen: list[bool] = []
 
-        async def _connect() -> bool:
+        async def _connect(reset_timer: bool = True) -> bool:
+            del reset_timer
             seen.append(coordinator.cancel_command.is_set())
             return True
 
-        coordinator.async_connect = _connect
+        coordinator._async_connect_locked = _connect
         if command_running:
             async with coordinator._command_lock:
                 await coordinator._async_auto_reconnect()

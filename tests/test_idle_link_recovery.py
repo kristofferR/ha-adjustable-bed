@@ -8,7 +8,7 @@ bed that drops idle links cannot be held connected forever.
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -180,16 +180,16 @@ async def test_recovery_keeps_the_deadline_when_startup_re_arms(
     _drop(coordinator, mock_bleak_client)
     assert _take_reconnect_timer(coordinator)
     mock_bleak_client.is_connected = True
-    connect = coordinator.async_connect
+    connect = coordinator._async_connect_locked
 
-    async def _connect_with_late_drop() -> bool:
-        connected = await connect()
+    async def _connect_with_late_drop(reset_timer: bool = True) -> bool:
+        connected = await connect(reset_timer)
         # As if a late drop callback cleared the window and a retry re-armed it.
         coordinator._recovered_link_window = False
         coordinator._reset_disconnect_timer()
         return connected
 
-    coordinator.async_connect = _connect_with_late_drop
+    coordinator._async_connect_locked = _connect_with_late_drop
     await coordinator._async_auto_reconnect()
 
     assert coordinator._idle_deadline == deadline
@@ -217,29 +217,51 @@ async def test_recovered_link_skips_position_hydration(
 async def test_recovery_connect_cannot_outlast_the_window(
     hass: HomeAssistant, command_waiting: bool
 ) -> None:
-    """A slow recovery connect is abandoned and its unready link released."""
+    """A slow recovery connect is abandoned and its unready link released.
+
+    The release happens before a command queued on the connection lock runs,
+    so the command never sees the half-open link.
+    """
     coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
     # The window ends before the connect can finish.
     coordinator._idle_deadline = hass.loop.time()
     hang = asyncio.Event()
+    half_open = MagicMock(is_connected=True)
+    seen_by_command: list[object] = []
 
-    async def _slow_connect() -> bool:
-        if command_waiting:
-            # A command queued behind the startup that never became ready.
-            coordinator._command_link_generation += 1
+    async def _command() -> None:
+        coordinator._command_link_generation += 1
+        async with coordinator._lock:
+            seen_by_command.append(coordinator._client)
+
+    async def _slow_connect(reset_timer: bool = True) -> bool:
+        del reset_timer
+        coordinator._client = half_open
+        coordinator._link_ready = False
         await hang.wait()
         return True
 
-    coordinator.async_connect = _slow_connect
+    async def _release(reason: str) -> bool:
+        assert reason == "idle_timeout"
+        coordinator._client = None
+        return True
+
+    coordinator._async_connect_locked = _slow_connect
     with (
         patch.object(coordinator, "_idle_window_allows_recovery", return_value=True),
-        patch.object(coordinator, "async_disconnect", AsyncMock()) as disconnect,
+        patch.object(coordinator, "_async_disconnect_locked", side_effect=_release) as release,
     ):
-        await coordinator._async_auto_reconnect()
+        recovery = hass.async_create_task(coordinator._async_auto_reconnect())
+        await asyncio.sleep(0)
+        command = hass.async_create_task(_command()) if command_waiting else None
+        await recovery
+        if command is not None:
+            await command
 
     assert not coordinator._recovered_link_window
-    # Releases a link a cancelled startup may have left half open.
-    disconnect.assert_awaited_once_with(reason="idle_timeout")
+    release.assert_awaited_once()
+    if command_waiting:
+        assert seen_by_command == [None]
 
 
 async def test_internal_retry_teardown_keeps_the_recovered_window(

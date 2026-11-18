@@ -2002,23 +2002,12 @@ class CoordinatorConnectionMixin:
         generation = self._command_link_generation
         self._recovered_link_window = bounded
         try:
-            # Recovery may not outlast the window; commands connect on demand.
-            window = asyncio.timeout_at(deadline if bounded else None)
-            try:
-                async with window:
-                    connected = await self.async_connect()
-            except TimeoutError:
-                if not window.expired():
-                    raise
-                _LOGGER.debug(
-                    "Auto-reconnect for %s outlasted the idle window", self._address
-                )
-                self._recovered_link_window = False
-                # A cancelled startup error handler can leave a half-open link,
-                # which a waiting command must not reuse.
-                if generation == self._command_link_generation or not self._link_ready:
-                    await self.async_disconnect(reason="idle_timeout")
-                return
+            if bounded:
+                connected = await self._async_connect_within_window(deadline, generation)
+                if connected is None:
+                    return
+            else:
+                connected = await self.async_connect()
             if connected:
                 _LOGGER.debug("Auto-reconnection successful for %s", self._address)
                 if bounded and generation == self._command_link_generation:
@@ -2055,6 +2044,30 @@ class CoordinatorConnectionMixin:
                 self._reconnect_timer = self.hass.loop.call_later(
                     _AUTO_RECONNECT_DELAY_SECONDS, self._schedule_auto_reconnect
                 )
+
+    async def _async_connect_within_window(
+        self: AdjustableBedCoordinator, deadline: float | None, generation: int
+    ) -> bool | None:
+        """Connect for a bounded recovery; return None when the window ran out.
+
+        Cleanup runs under the same connection lock as the attempt, so a
+        command queued on it never sees the abandoned link and connects on
+        demand afterwards.
+        """
+        async with self._lock:
+            window = asyncio.timeout_at(deadline)
+            try:
+                async with window:
+                    return await self._async_connect_locked()
+            except TimeoutError:
+                if not window.expired():
+                    raise
+            _LOGGER.debug("Auto-reconnect for %s outlasted the idle window", self._address)
+            self._recovered_link_window = False
+            # A cancelled startup error handler can leave a half-open link.
+            if generation == self._command_link_generation or not self._link_ready:
+                await self._async_disconnect_locked("idle_timeout")
+            return None
 
     async def async_disconnect(
         self: AdjustableBedCoordinator,
