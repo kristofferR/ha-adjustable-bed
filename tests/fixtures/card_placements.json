@@ -140,6 +140,24 @@
  "binary_sensor:solace_alarm_enabled": {
   "card_section": "hidden"
  },
+ "binary_sensor:sophie_alarm_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_anti_snore_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_memory_1_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_memory_2_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_tv_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sophie_zero_g_saved": {
+  "card_section": "hidden"
+ },
  "binary_sensor:starcode_abm5_4_massage_active": {
   "card_section": "massage"
  },
@@ -1853,6 +1871,18 @@
   "card_section": "presets"
  },
  "button:sonicsleep_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:sophie_program_anti_snore": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:sophie_program_tv": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:sophie_program_zero_g": {
   "card_section": "presets",
   "card_role": "save"
  },
@@ -3850,6 +3880,15 @@
   "card_section": "hidden"
  },
  "sensor:sonicsleep": {
+  "card_section": "hidden"
+ },
+ "sensor:sophie_foot_level": {
+  "card_section": "hidden"
+ },
+ "sensor:sophie_head_level": {
+  "card_section": "hidden"
+ },
+ "sensor:sophie_wave": {
   "card_section": "hidden"
  },
  "sensor:starcode_abm5_4_firmware": {

@@ -342,13 +342,16 @@ class SophieController(SolaceController):
         modes = {
             _WAKE_ACTIONS[mode]: mode for mode in app.alarm_modes(self._coordinator.ble_device_name)
         }
+        if (mode := modes.get(alarm.wake_action)) is None:
+            # The live Bluetooth name can name another model than preflight saw.
+            raise ValueError("This Sophie model does not offer the selected wake action")
         # The app numbers Monday 1 through Sunday 7.
         await self.set_alarm(
             enabled=alarm.enabled,
             hour=alarm.hour,
             minute=alarm.minute,
             weekdays=tuple(day + 1 for day in alarm.weekdays),
-            mode=modes[alarm.wake_action],
+            mode=mode,
             massage=alarm.massage,
             ring=alarm.sound == "alarm",
         )
