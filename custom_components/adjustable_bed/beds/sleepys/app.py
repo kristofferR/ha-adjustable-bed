@@ -19,6 +19,7 @@ from ...card import (
     CARD_LIGHT_LEVEL,
     CARD_LIGHTING,
     CARD_MASSAGE,
+    CARD_PRESET_SAVE,
     CARD_PRESETS,
     CARD_UTILITY,
     CardPlacement,
@@ -74,9 +75,22 @@ _MOTION_SENSOR_REFRESH_MS = 5_000
 _DEADLINE_EPSILON_SECONDS = 1e-9
 
 
+_SAVE_BUTTONS: Final = frozenset(
+    {
+        "sleepys_app_program",
+        "sleepys_app_reset_memory",
+        "sleepys_app_save_zero_gravity",
+        "sleepys_app_save_lounge",
+        "sleepys_app_save_tv",
+    }
+)
+
+
 def _button_card(key: str) -> CardPlacement:
     """Place an app button in the card by its key."""
     name = key.removeprefix("sleepys_app_")
+    if name.startswith("save_"):
+        return CARD_PRESET_SAVE
     if name.startswith("preset_"):
         return CARD_PRESETS
     if name.startswith("memory_"):
@@ -1071,6 +1085,9 @@ class SleepysEliteAppController(BedController):
                         SleepysEliteAppController, ctrl
                     )._press_app_action(key, builder),
                     card=_button_card(key),
+                    # Saving, programming or resetting overwrites stored
+                    # positions, so the card asks first.
+                    requires_confirmation=key in _SAVE_BUTTONS,
                     # The bed reports both itself; the queries are fallbacks.
                     diagnostic=key
                     in ("sleepys_app_query_position", "sleepys_app_massage_query"),

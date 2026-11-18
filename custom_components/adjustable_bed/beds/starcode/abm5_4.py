@@ -11,7 +11,14 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ...card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ...card import (
+    CARD_LIGHT_LEVEL,
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_MASSAGE_TIMER,
+    CARD_PRESET_SAVE,
+    CARD_UTILITY,
+)
 from ...command_scheduler import copy_context_without_command
 from ...const import (
     CONF_BLE_DEVICE_NAME,
@@ -413,7 +420,11 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 else None,
                 card=CARD_LIGHTING
                 if action in ("light_plus", "light_minus", "light_on", "light_off")
+                else CARD_PRESET_SAVE
+                if action.startswith("save_")
                 else CARD_UTILITY,
+                # Saving or resetting overwrites stored positions, so the card asks first.
+                requires_confirmation=action.startswith("save_") or action == "reset",
                 diagnostic=action == "refresh",
             )
             for action in actions

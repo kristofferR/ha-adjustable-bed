@@ -17,6 +17,7 @@ from homeassistant.util import dt as dt_util
 from ...card import (
     CARD_LIGHT_LEVEL,
     CARD_LIGHT_MOOD,
+    CARD_PRESET_SAVE,
     CARD_UTILITY,
     CardPlacement,
     CardRole,
@@ -373,7 +374,11 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 translation_key=f"starcode_{key}",
                 card=CardPlacement(CardSection.LIGHTING, CardRole.CYCLE)
                 if key == "light_cycle"
+                else CARD_PRESET_SAVE
+                if key.startswith("save_")
                 else CARD_UTILITY,
+                # Saving or resetting overwrites stored positions, so the card asks first.
+                requires_confirmation=key.startswith("save_") or key == "reset",
                 # The bed reports this state itself; the query is a fallback.
                 diagnostic=key == "query",
             )

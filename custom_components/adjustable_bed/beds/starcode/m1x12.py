@@ -21,6 +21,7 @@ from ...card import (
     CARD_LIGHT_LEVEL,
     CARD_LIGHTING,
     CARD_MASSAGE,
+    CARD_PRESET_SAVE,
     CARD_UTILITY,
     CardPlacement,
     CardRole,
@@ -429,6 +430,9 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 name=name,
                 press_fn=_action(key),
                 translation_key=f"starcode_m1x12_{key}",
+                # Saving or resetting overwrites stored positions, so the card asks first.
+                requires_confirmation=key in _SAVE_ACTIONS,
+                card=CARD_PRESET_SAVE if key.startswith("save_") else CARD_UTILITY,
                 diagnostic=key == "query",
             )
             for key, name in buttons

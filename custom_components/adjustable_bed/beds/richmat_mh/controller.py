@@ -25,6 +25,7 @@ from homeassistant.util import dt as dt_util
 
 from ...card import (
     CARD_MASSAGE,
+    CARD_PRESET_SAVE,
     CARD_PRESETS,
     CARD_UTILITY,
     CardPlacement,
@@ -837,6 +838,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                         icon="mdi:content-save",
                         translation_key="richmat_mh_save",
                         translation_placeholders={"action": label},
+                        requires_confirmation=True,
+                        card=CARD_PRESET_SAVE,
                     )
                 )
         for tap in self._taps():
@@ -848,7 +851,10 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     icon="mdi:content-save" if tap.translation_key == "richmat_mh_save" else "mdi:gesture-tap",
                     translation_key=tap.translation_key,
                     translation_placeholders={"action": tap.name},
-                    card=_TAP_CARDS.get(tap.translation_key, CARD_UTILITY),
+                    requires_confirmation=tap.translation_key == "richmat_mh_save",
+                    card=CARD_PRESET_SAVE
+                    if tap.translation_key == "richmat_mh_save"
+                    else _TAP_CARDS.get(tap.translation_key, CARD_UTILITY),
                 )
             )
         if self._detection_page():

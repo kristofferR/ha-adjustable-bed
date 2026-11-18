@@ -14,7 +14,7 @@ export function presentSections(
       !!bed.stop ||
       !!bed.synchro,
     firmness: bed.firmness.length > 0,
-    presets: bed.presets.length > 0,
+    presets: bed.presets.length + bed.presetSaves.length > 0,
     saved_positions: !!bed.savedPositions,
     memory: bed.memory.length > 0,
     lighting: hasLightingControls(bed.lights) || !!bed.lights.state,

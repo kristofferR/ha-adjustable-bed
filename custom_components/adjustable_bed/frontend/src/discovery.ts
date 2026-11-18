@@ -108,6 +108,7 @@ function emptyBed(): BedEntities {
     motors: [],
     firmness: [],
     presets: [],
+    presetSaves: [],
     memory: [],
     lights: {},
     massage: { buttons: [], numbers: [] },
@@ -227,6 +228,7 @@ export function bedEntitiesForDevice(
 
   const lights = bed.lights;
   const presets: { key: string; id: string }[] = [];
+  const presetSaves: { key: string; id: string }[] = [];
 
   for (const entry of deviceEntries) {
     if (entry.hidden) continue;
@@ -259,7 +261,7 @@ export function bedEntitiesForDevice(
         break;
 
       case "presets":
-        presets.push({ key: keyOf(entry), id });
+        (role === "save" ? presetSaves : presets).push({ key: keyOf(entry), id });
         break;
 
       case "memory":
@@ -348,12 +350,15 @@ export function bedEntitiesForDevice(
     const index = PRESET_ORDER.indexOf(key);
     return index < 0 ? PRESET_ORDER.length : index;
   };
-  bed.presets = presets
-    .sort((a, b) =>
-      rank(a.key) - rank(b.key) ||
-      (a.key < b.key ? -1 : a.key > b.key ? 1 : 0) ||
-      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-    .map((p) => p.id);
+  const order = (list: { key: string; id: string }[]): string[] =>
+    list
+      .sort((a, b) =>
+        rank(a.key) - rank(b.key) ||
+        (a.key < b.key ? -1 : a.key > b.key ? 1 : 0) ||
+        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+      .map((p) => p.id);
+  bed.presets = order(presets);
+  bed.presetSaves = order(presetSaves);
 
   // Order memory slots ascending; keep only slots with at least one action.
   bed.memory = [...memoryMap.values()]
@@ -429,6 +434,7 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     !bed.controlSide &&
     bed.firmness.length === 0 &&
     bed.presets.length === 0 &&
+    bed.presetSaves.length === 0 &&
     bed.memory.length === 0 &&
     !bed.stop &&
     !bed.connect &&

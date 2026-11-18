@@ -1339,11 +1339,12 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _presets(bed: BedEntities): typeof nothing | TemplateResult {
-    if (bed.presets.length === 0) return nothing;
+    if (bed.presets.length === 0 && bed.presetSaves.length === 0) return nothing;
     return html`
       ${this._heading("section.presets")}
       <div class="tiles">
         ${bed.presets.map((id) => this._actionTile(id, bed.stop))}
+        ${bed.presetSaves.map((id) => this._actionTile(id))}
       </div>
     `;
   }
@@ -2100,7 +2101,7 @@ export class AdjustableBedCard extends LitElement {
       );
     }
     [bed.estimateRemote, bed.savedPositions].forEach((x) => x && ids.add(x));
-    bed.presets.forEach((x) => ids.add(x));
+    [...bed.presets, ...bed.presetSaves].forEach((x) => ids.add(x));
     for (const s of bed.memory) {
       [s.goto, s.save].forEach((x) => x && ids.add(x));
     }

@@ -192,6 +192,8 @@ export interface BedEntities {
   controlSide?: string; // select.* choosing which side shared controls drive
   firmness: string[]; // number.* sleep_number_setting[_left|_right]
   presets: string[]; // button.* in preferred display order
+  // button.* overwriting a named preset: confirmed, never a quick action.
+  presetSaves: string[];
   stop?: string; // button.* stop
   memory: MemorySlot[];
   connect?: string;
