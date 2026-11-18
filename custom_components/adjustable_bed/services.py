@@ -2283,7 +2283,7 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         capability = cast("AlarmCapability", controller.alarm_capability)
         if not alarm.enabled and capability.time_to_turn_off and ATTR_TIME not in call.data:
             raise ServiceValidationError(
-                f"Choose the time of the alarm to turn off on '{target.name}'",
+                f"Choose the time of the alarm to turn off on {target.name}",
                 translation_domain=DOMAIN,
                 translation_key="alarm_time_required_to_turn_off",
                 translation_placeholders={"device_name": target.name},
