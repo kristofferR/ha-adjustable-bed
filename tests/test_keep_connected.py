@@ -1,11 +1,10 @@
-"""An idle timeout of 0 keeps a bed connected (issue #700)."""
+"""The Bluetooth connection mode decides how long a bed keeps its link (issue #700)."""
 
 from __future__ import annotations
 
 from unittest.mock import MagicMock
 
 import pytest
-import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
@@ -17,9 +16,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from .conftest import TEST_ADDRESS, TEST_NAME
 
 
-def _keeson_entry(
-    hass: HomeAssistant, *, idle_seconds: int, disconnect_after_command: bool
-) -> MockConfigEntry:
+def _keeson_entry(hass: HomeAssistant, **settings: object) -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=const.DOMAIN,
         title=TEST_NAME,
@@ -31,8 +28,7 @@ def _keeson_entry(
             const.CONF_MOTOR_COUNT: 2,
             const.CONF_DISABLE_ANGLE_SENSING: True,
             const.CONF_PREFERRED_ADAPTER: "auto",
-            const.CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command,
-            const.CONF_IDLE_DISCONNECT_SECONDS: idle_seconds,
+            **settings,
         },
         unique_id=TEST_ADDRESS,
     )
@@ -41,31 +37,33 @@ def _keeson_entry(
 
 
 @pytest.mark.parametrize(
-    ("idle_seconds", "disconnect_after_command", "keeps_link"),
+    ("mode", "keeps_link", "handoff"),
     [
-        (const.IDLE_DISCONNECT_KEEP_CONNECTED, False, True),
-        # Disconnect After Command keeps priority over the idle timeout.
-        (const.IDLE_DISCONNECT_KEEP_CONNECTED, True, False),
-        (const.DEFAULT_IDLE_DISCONNECT_SECONDS, False, False),
+        (const.CONNECTION_MODE_ALWAYS, True, False),
+        (const.CONNECTION_MODE_RELEASE, False, True),
+        (const.CONNECTION_MODE_IDLE, False, False),
     ],
 )
-async def test_zero_idle_timeout_skips_idle_disconnect(
+async def test_connection_mode_sets_the_link_lifetime(
     hass: HomeAssistant,
     mock_coordinator_connected: None,
-    idle_seconds: int,
-    disconnect_after_command: bool,
+    mode: str,
     keeps_link: bool,
+    handoff: bool,
 ) -> None:
     del mock_coordinator_connected
     coordinator = AdjustableBedCoordinator(
         hass,
         _keeson_entry(
-            hass, idle_seconds=idle_seconds, disconnect_after_command=disconnect_after_command
+            hass, **{const.CONF_CONNECTION_MODE: mode, const.CONF_IDLE_DISCONNECT_SECONDS: 25}
         ),
     )
 
     assert await coordinator.async_connect()
     assert (coordinator._disconnect_timer is None) is keeps_link
+    assert coordinator._disconnect_after_operation_enabled() is handoff
+    if mode == const.CONNECTION_MODE_IDLE:
+        assert coordinator._idle_disconnect_delay() == 25
 
     # Command completion re-arms the idle timer through the same path.
     coordinator._reset_disconnect_timer()
@@ -85,12 +83,7 @@ async def test_kept_link_reconnects_on_demand_after_drop(
     """
     del mock_coordinator_connected
     coordinator = AdjustableBedCoordinator(
-        hass,
-        _keeson_entry(
-            hass,
-            idle_seconds=const.IDLE_DISCONNECT_KEEP_CONNECTED,
-            disconnect_after_command=False,
-        ),
+        hass, _keeson_entry(hass, **{const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_ALWAYS})
     )
     assert await coordinator.async_connect()
     mock_bleak_client.is_connected = False
@@ -101,22 +94,45 @@ async def test_kept_link_reconnects_on_demand_after_drop(
     assert coordinator.client is None
 
 
-async def test_options_accept_zero_idle_timeout(hass: HomeAssistant) -> None:
-    entry = _keeson_entry(
-        hass,
-        idle_seconds=const.DEFAULT_IDLE_DISCONNECT_SECONDS,
-        disconnect_after_command=False,
-    )
+async def test_options_save_the_connection_mode_and_its_seconds(hass: HomeAssistant) -> None:
+    entry = _keeson_entry(hass)
     flow = AdjustableBedOptionsFlow(entry)
     flow.handler, flow.hass = entry.entry_id, hass
 
     rendered = await flow.async_step_settings()
-    schema = rendered["data_schema"]
-    assert isinstance(schema, vol.Schema)
-    submitted = schema({const.CONF_IDLE_DISCONNECT_SECONDS: "0"})
-    with pytest.raises(vol.Invalid):
-        schema({const.CONF_IDLE_DISCONNECT_SECONDS: -1})
+    fields = {marker.schema for marker in rendered["data_schema"].schema}
+    assert {const.CONF_CONNECTION_MODE, const.CONF_IDLE_DISCONNECT_SECONDS} <= fields
+    assert "disconnect_after_command" not in fields
 
-    await flow.async_step_settings(submitted)
+    result = await flow.async_step_settings(
+        {const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE, const.CONF_IDLE_DISCONNECT_SECONDS: 90.0}
+    )
 
-    assert entry.data[const.CONF_IDLE_DISCONNECT_SECONDS] == const.IDLE_DISCONNECT_KEEP_CONNECTED
+    assert result["type"] == "create_entry"
+    assert entry.data[const.CONF_CONNECTION_MODE] == const.CONNECTION_MODE_IDLE
+    assert entry.data[const.CONF_IDLE_DISCONNECT_SECONDS] == 90
+
+
+async def test_options_reject_seconds_out_of_range(hass: HomeAssistant) -> None:
+    entry = _keeson_entry(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.handler, flow.hass = entry.entry_id, hass
+
+    result = await flow.async_step_settings({const.CONF_IDLE_DISCONNECT_SECONDS: 301})
+
+    assert result["errors"] == {const.CONF_IDLE_DISCONNECT_SECONDS: "invalid_number"}
+
+
+@pytest.mark.parametrize("bed_type", ["doublesleep", "sleep_number_mcr", "okin_rf_eco_bt"])
+async def test_beds_that_hold_their_link_hide_the_connection_mode(
+    hass: HomeAssistant, bed_type: str
+) -> None:
+    entry = _keeson_entry(hass, **{const.CONF_BED_TYPE: bed_type})
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.handler, flow.hass = entry.entry_id, hass
+
+    rendered = await flow.async_step_settings()
+
+    fields = {marker.schema for marker in rendered["data_schema"].schema}
+    assert const.CONF_CONNECTION_MODE not in fields
+    assert const.CONF_IDLE_DISCONNECT_SECONDS not in fields

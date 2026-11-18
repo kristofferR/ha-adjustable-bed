@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable, Mapping
+from functools import partial
 from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -26,6 +27,7 @@ from ..entity_specs import (
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
@@ -298,6 +300,8 @@ class ParamountController(ProfileExecution, BedController):
                 "Enter registration mode",
                 register,
                 icon="mdi:bluetooth-connect",
+                # One-time setup, like the app's registration screen.
+                diagnostic=True,
             )
         ]
         if self._mask & 15:
@@ -313,50 +317,67 @@ class ParamountController(ProfileExecution, BedController):
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        specs = []
-        for name, key in SETTING_KEYS.items():
-            options = ("slow", "fast") if name == "speed" else ("allowed", "prohibited")
-
-            async def select(
-                ctrl: BedController,
-                option: str,
-                setting: str = name,
-                choices: tuple[str, ...] = options,
-            ) -> None:
-                if isinstance(ctrl, ParamountController):
-                    await ctrl._change_setting(setting, option == choices[1])
-
-            specs.append(
-                ControllerSelectSpec("paramount_" + name, "paramount_" + name, key, options, select)
-            )
+        async def speed(ctrl: BedController, option: str) -> None:
+            if isinstance(ctrl, ParamountController):
+                await ctrl._change_setting("speed", option == "fast")
 
         async def duration(ctrl: BedController, option: str) -> None:
             if isinstance(ctrl, ParamountController):
                 ctrl._duration = option
                 ctrl._publish_preferences()
 
-        specs.append(
+        return (
+            ControllerSelectSpec(
+                "paramount_speed", "paramount_speed", SETTING_KEYS["speed"], ("slow", "fast"), speed
+            ),
             ControllerSelectSpec(
                 "paramount_duration",
                 "paramount_duration",
                 DURATION,
                 ("hold", "1", "2", "3", "4"),
                 duration,
-            )
+            ),
         )
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        specs = []
+        # On allows the physical control; the bed stores a prohibition bit.
+        for name in ("call_prohibition", "switch_prohibition"):
+
+            async def allow(ctrl: BedController, on: bool, setting: str = name) -> None:
+                if isinstance(ctrl, ParamountController):
+                    await ctrl._change_setting(setting, not on)
+
+            specs.append(
+                ControllerSwitchSpec(
+                    "paramount_" + name, "paramount_" + name, allow, SETTING_KEYS[name], "allowed"
+                )
+            )
         for axis, key in RANGE_ENABLED_KEYS.items():
             if not self._mask & codec.CAPABILITIES[axis]:
                 continue
 
-            async def enabled(ctrl: BedController, option: str, name: str = axis) -> None:
+            async def enabled(ctrl: BedController, on: bool, name: str = axis) -> None:
                 if isinstance(ctrl, ParamountController):
-                    ctrl._range_enabled[name] = option == "enabled"
-                    ctrl._publish_preferences()
+                    ctrl._set_range_enabled(name, on)
 
             specs.append(
-                ControllerSelectSpec(str(key), str(key), key, ("enabled", "disabled"), enabled)
+                ControllerSwitchSpec(
+                    str(key),
+                    str(key),
+                    enabled,
+                    key,
+                    "enabled",
+                    # An integration movement preference: no frame, no connection.
+                    local_set_fn=partial(self._set_range_enabled, axis),
+                )
             )
         return tuple(specs)
+
+    def _set_range_enabled(self, axis: str, enabled: bool) -> None:
+        self._range_enabled[axis] = enabled
+        self._publish_preferences()
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -406,26 +427,39 @@ class ParamountController(ProfileExecution, BedController):
                 CAPABILITY,
                 "mdi:bed",
                 attribute_keys=(DEVICE_DATA,),
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
-                "paramount_height", "paramount_height", HEIGHT, "mdi:arrow-expand-vertical", "cm"
-            ),
-            ControllerStateSensorSpec("paramount_tilt", "paramount_tilt", TILT, "mdi:angle-acute"),
-            ControllerStateSensorSpec(
-                "paramount_rssi", "paramount_rssi", RSSI, "mdi:signal", "dBm"
-            ),
-            ControllerStateSensorSpec(
-                "paramount_serial", "paramount_serial", SERIAL, "mdi:identifier"
+                "paramount_height",
+                "paramount_height",
+                HEIGHT,
+                "mdi:arrow-expand-vertical",
+                "cm",
+                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
-                "paramount_session_state", "paramount_session_state", SESSION_STATE, "mdi:bluetooth"
+                "paramount_tilt",
+                "paramount_tilt",
+                TILT,
+                "mdi:angle-acute",
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
-                "paramount_registration_result",
-                "paramount_registration_result",
-                REGISTRATION_RESULT,
-                "mdi:bluetooth-connect",
+                "paramount_rssi",
+                "paramount_rssi",
+                RSSI,
+                "mdi:signal",
+                "dBm",
+                entity_registry_enabled_default=False,
             ),
+            ControllerStateSensorSpec(
+                "paramount_serial",
+                "paramount_serial",
+                SERIAL,
+                "mdi:identifier",
+                entity_registry_enabled_default=False,
+            ),
+            # Session and registration replies stay in published state for diagnostics.
         )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:

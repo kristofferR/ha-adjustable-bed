@@ -234,7 +234,7 @@ async def test_avanti_app_choice_and_side_owned_layout(hass: HomeAssistant) -> N
     choice = bed_type_choice(BED_TYPE_KEESON, APP)
     assert {o["value"]: o["label"] for o in get_bed_type_options()}[
         choice
-    ] == "Avanti Bases app (Keeson)"
+    ] == "Avanti Bases app"
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}

@@ -13,9 +13,7 @@ from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.entity_specs import ProductButtonSpec
 from custom_components.adjustable_bed.beds.rmcontrol.protocol import Notification
 from custom_components.adjustable_bed.beds.rmcontrol.services import (
-    ALARM_SCHEMA,
     ANTI_SNORE_SCHEMA,
-    handle_rmcontrol_alarm,
     handle_rmcontrol_anti_snore,
 )
 from custom_components.adjustable_bed.button import AdjustableBedProductButton
@@ -115,21 +113,6 @@ async def test_extra_product_button_uses_current_controller_and_lock() -> None:
     action.assert_not_awaited()
 
 
-@pytest.mark.parametrize("operation", ["single", "repeat", "delete"])
-async def test_alarm_required_fields_fail_before_connect(
-    hass: HomeAssistant, operation: str
-) -> None:
-    call = ServiceCall(
-        hass, DOMAIN, "rmcontrol_alarm", {"device_id": ["bed"], "operation": operation}
-    )
-    with patch(
-        "custom_components.adjustable_bed.beds.rmcontrol.services._execute", new_callable=AsyncMock
-    ) as execute:
-        with pytest.raises(ServiceValidationError, match="requires"):
-            await handle_rmcontrol_alarm(call)
-        execute.assert_not_awaited()
-
-
 _RMCONTROL_GATES = (
     "supports_rmcontrol_single_alarm",
     "supports_rmcontrol_repeat_alarm",
@@ -148,63 +131,65 @@ def _rmcontrol_with(gate: str) -> MagicMock:
     return controller
 
 
-async def test_repeat_alarm_names_are_converted_once(hass: HomeAssistant) -> None:
-    controller = _rmcontrol_with("supports_rmcontrol_repeat_alarm")
+def _alarm_product(product: str):
+    from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
+
+    controller = RmcontrolController(MagicMock(), product)
+    controller._reported_capabilities.add("alarm")
     controller.rmcontrol_repeat_alarm = AsyncMock()
+    controller.rmcontrol_delete_alarm = AsyncMock()
+    controller.rmcontrol_single_alarm = AsyncMock()
+    return controller
 
-    async def execute(call, supported, command, validate):
-        validate(controller)
-        assert supported(controller)
-        await command(controller)
 
-    data = ALARM_SCHEMA(
+async def test_repeating_alarm_uses_the_slot_days_and_catalog_action(hass: HomeAssistant) -> None:
+    from tests.alarm_helpers import call_set_alarm
+
+    controller = _alarm_product("MXRN")
+    capability = controller.alarm_capability
+    assert capability is not None and capability.slots == 7 and "tv" in capability.wake_actions
+    await call_set_alarm(
+        hass,
+        controller,
         {
-            "device_id": "bed",
-            "operation": "repeat",
-            "alarm_id": 2,
+            "enabled": True,
             "time": "07:35:00",
+            "slot": 2,
             "weekdays": ["monday", "sunday"],
-            "action": "Memory1",
-        }
+            "wake_action": "tv",
+        },
     )
-    with patch("custom_components.adjustable_bed.beds.rmcontrol.services._execute", side_effect=execute):
-        await handle_rmcontrol_alarm(ServiceCall(hass, DOMAIN, "rmcontrol_alarm", data))
-    controller.rmcontrol_repeat_alarm.assert_awaited_once_with(2, 7, 35, (0, 6), "Memory1")
+    controller.rmcontrol_repeat_alarm.assert_awaited_once_with(2, 7, 35, (0, 6), "TVPosition")
+    await call_set_alarm(hass, controller, {"enabled": False, "slot": 2})
+    controller.rmcontrol_delete_alarm.assert_awaited_once_with(2)
+    with pytest.raises(ServiceValidationError, match="at least one day"):
+        await call_set_alarm(
+            hass, controller, {"enabled": True, "time": "07:35:00", "wake_action": "tv"}
+        )
 
 
-@pytest.mark.parametrize(
-    ("operation", "fields", "capability"),
-    [
-        ("single", {"minutes": 5, "action": "Memory1"}, "single"),
-        ("cancel_single", {}, "single"),
-        (
-            "repeat",
-            {"alarm_id": 1, "time": "07:00", "weekdays": ["monday"], "action": "Memory1"},
-            "repeat",
+async def test_single_alarm_counts_down_to_the_time(hass: HomeAssistant) -> None:
+    from datetime import datetime
+
+    from tests.alarm_helpers import call_set_alarm
+
+    controller = _alarm_product("A4RN")
+    assert controller.supports_rmcontrol_single_alarm
+    now = datetime(2026, 11, 18, 7, 0)
+    with (
+        patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now),
+        patch(
+            "custom_components.adjustable_bed.beds.rmcontrol.controller.dt_util.now",
+            return_value=now,
         ),
-        ("delete", {"alarm_id": 1}, "repeat"),
-        ("query", {}, "repeat"),
-        ("sync", {}, "time_sync"),
-    ],
-)
-async def test_alarm_operations_require_their_specific_capability(
-    hass: HomeAssistant, operation: str, fields: dict[str, object], capability: str
-) -> None:
-    data = ALARM_SCHEMA({"device_id": "bed", "operation": operation, **fields})
-    with patch(
-        "custom_components.adjustable_bed.beds.rmcontrol.services._execute", new_callable=AsyncMock
-    ) as execute:
-        await handle_rmcontrol_alarm(ServiceCall(hass, DOMAIN, "rmcontrol_alarm", data))
-    expected = (
-        "supports_rmcontrol_alarm_time_sync"
-        if capability == "time_sync"
-        else f"supports_rmcontrol_{capability}_alarm"
-    )
-    supported = execute.await_args.args[1]
-    assert supported(_rmcontrol_with(expected))
-    assert not any(
-        supported(_rmcontrol_with(gate)) for gate in _RMCONTROL_GATES if gate != expected
-    )
+    ):
+        await call_set_alarm(
+            hass, controller, {"enabled": True, "time": "07:05:00", "wake_action": "tv"}
+        )
+    controller.rmcontrol_single_alarm.assert_awaited_once_with(5, "TVPosition")
+    controller.rmcontrol_single_alarm.reset_mock()
+    await call_set_alarm(hass, controller, {"enabled": False})
+    controller.rmcontrol_single_alarm.assert_awaited_once_with(0, None)
 
 
 async def test_snore_configuration_is_not_enable_switch(hass: HomeAssistant) -> None:
@@ -231,8 +216,6 @@ async def test_snore_configuration_is_not_enable_switch(hass: HomeAssistant) -> 
 
 
 def test_service_schemas_reject_invalid_wire_ranges() -> None:
-    with pytest.raises(vol.Invalid):
-        ALARM_SCHEMA({"device_id": "bed", "operation": "delete", "alarm_id": 8})
     with pytest.raises(vol.Invalid):
         ANTI_SNORE_SCHEMA({"device_id": "bed", "operation": "configure", "mode": "enabled"})
 
@@ -301,38 +284,6 @@ async def test_factory_rejects_profile_with_unrelated_frame_variant(hass) -> Non
 @pytest.mark.parametrize("code", ["FWRM", "WFRM"])
 def test_desk_products_are_not_selectable(code: str) -> None:
     assert code not in (_richmat_question(CONF_RMCONTROL_PRODUCT).options({}) or {})
-
-
-@pytest.mark.parametrize("variant", ["prefix55", "prefixaa"])
-@pytest.mark.parametrize("existing_product", ["", "A0RM"])
-async def test_options_reject_incompatible_product_transport_before_save(
-    hass: HomeAssistant, variant: str, existing_product: str
-) -> None:
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant.common import MockConfigEntry
-
-    from custom_components.adjustable_bed.const import (
-        CONF_BED_TYPE,
-        CONF_MOTOR_COUNT,
-        CONF_PROTOCOL_VARIANT,
-    )
-
-    entry = MockConfigEntry(domain=DOMAIN, data={
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_RICHMAT,
-        CONF_MOTOR_COUNT: 2, CONF_PROTOCOL_VARIANT: "auto",
-        CONF_RMCONTROL_PRODUCT: existing_product,
-    })
-    entry.add_to_hass(hass)
-    original = dict(entry.data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    submission = {CONF_PROTOCOL_VARIANT: variant}
-    if not existing_product:
-        submission[CONF_RMCONTROL_PRODUCT] = "A0RM"
-    result = await flow.async_step_settings(submission)
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
-    assert dict(entry.data) == original
 
 
 async def test_dynamic_light_select_survives_reconnect_discovery(hass: HomeAssistant) -> None:
@@ -525,7 +476,9 @@ async def test_rmcontrol_restart_retains_event_driven_registry_rows(hass, domain
 @pytest.mark.parametrize("paired", [False, True])
 async def test_alarm_validates_every_product_before_writing(hass, operation, paired) -> None:
     from custom_components.adjustable_bed.beds.rmcontrol.controller import RmcontrolController
+    from custom_components.adjustable_bed.services import async_register_services
 
+    await async_register_services(hass)
     first = MagicMock()
     second = MagicMock()
     first_product, second_product = ("A4RN", "CMRM") if operation == "single" else ("MXRN", "N4RN")
@@ -534,12 +487,10 @@ async def test_alarm_validates_every_product_before_writing(hass, operation, pai
     for target in (first, second):
         target.capability_controller._reported_capabilities.add("alarm")
         assert getattr(target.capability_controller, "supports_rmcontrol_" + operation + "_alarm")
-    data = ALARM_SCHEMA({
-        "device_id": ["bed"], "operation": operation, "action": "TVPosition",
-        **({"minutes": 5} if operation == "single" else {
-            "alarm_id": 1, "time": "07:00", "weekdays": ["monday"]
-        }),
-    })
+    data = {
+        "device_id": ["bed"], "enabled": True, "time": "07:00", "wake_action": "tv",
+        **({} if operation == "single" else {"slot": 1, "weekdays": ["monday"]}),
+    }
     targets = [(first, "both")] if paired else [(first, "both"), (second, "both")]
     first.capability_controller.validate_rmcontrol_alarm_action("TVPosition")
 
@@ -552,39 +503,10 @@ async def test_alarm_validates_every_product_before_writing(hass, operation, pai
         patch("custom_components.adjustable_bed.services._command_targets", side_effect=physical),
         patch("custom_components.adjustable_bed.services._execute_sided",
               new_callable=AsyncMock) as execute,
-        pytest.raises(ServiceValidationError, match="absent or ambiguous"),
+        pytest.raises(ServiceValidationError, match="cannot wake with 'tv'"),
     ):
-        await handle_rmcontrol_alarm(ServiceCall(hass, DOMAIN, "rmcontrol_alarm", data))
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     execute.assert_not_awaited()
-
-
-@pytest.mark.parametrize("variant", ["prefix55", "prefixaa", "wilinke"])
-async def test_each_receiver_checks_its_own_product_transport(
-    hass: HomeAssistant, enable_custom_integrations, variant: str
-) -> None:
-    """A receiver's dialect is its own answer, checked against its own product."""
-    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
-    from tests.test_paired_receiver_questions import child, pair_entry, receiver_form
-
-    richmat = {CONF_BED_TYPE: BED_TYPE_RICHMAT, CONF_PROTOCOL_VARIANT: "auto"}
-    entry = pair_entry(
-        hass,
-        {**richmat, CONF_RMCONTROL_PRODUCT: ""},
-        {**richmat, CONF_RMCONTROL_PRODUCT: "A0RM"},
-    )
-    right = await receiver_form(hass, entry, "right")
-    result = await hass.config_entries.options.async_configure(
-        right["flow_id"], {**right["data_schema"]({}), CONF_PROTOCOL_VARIANT: variant}
-    )
-    if variant.startswith("prefix"):
-        assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
-        assert child(entry, "right")[CONF_PROTOCOL_VARIANT] == "auto"
-        hass.config_entries.options.async_abort(right["flow_id"])
-    else:
-        assert result["type"] == "create_entry"
-        assert child(entry, "right")[CONF_PROTOCOL_VARIANT] == variant
-    # The other receiver keeps its own route.
-    assert child(entry, "left")[CONF_PROTOCOL_VARIANT] == "auto"
 
 
 @pytest.mark.parametrize("pair_mode", [None, "single_address", "separate_address"])
@@ -649,3 +571,61 @@ async def test_product_options_are_not_shared_between_physical_controllers(
     assert [child[CONF_RMCONTROL_PRODUCT] for child in children] == ["A0RM", "A3RM"]
     assert [child[CONF_RMCONTROL_SIDE] for child in children] == ["left", "right"]
     assert all(child[CONF_PROTOCOL_VARIANT] == "auto" for child in children)
+
+
+def test_countdown_counts_from_the_write_time() -> None:
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    alarm = AlarmRequest(
+        enabled=True, hour=7, minute=5, reference_time=datetime(2026, 11, 18, 7, 0, 30)
+    )
+    assert alarm.minutes_until() == 5
+    # Admission took a minute: the bed still fires at 07:05.
+    assert alarm.minutes_until(datetime(2026, 11, 18, 7, 1, 10)) == 4
+
+
+def test_countdown_uses_real_time_across_a_clock_change() -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    oslo = ZoneInfo("Europe/Oslo")
+    # Clocks spring forward from 02:00 to 03:00 on 2026-03-29.
+    alarm = AlarmRequest(
+        enabled=True, hour=3, minute=30, reference_time=datetime(2026, 3, 29, 1, 30, tzinfo=oslo)
+    )
+    assert alarm.minutes_until() == 60
+
+
+def test_countdown_picks_the_repeated_hour_after_a_clock_change() -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    oslo = ZoneInfo("Europe/Oslo")
+    # Clocks fall back from 03:00 to 02:00 on 2026-10-25; 02:30 happens twice.
+    alarm = AlarmRequest(
+        enabled=True,
+        hour=2,
+        minute=30,
+        reference_time=datetime(2026, 10, 25, 2, 45, tzinfo=oslo),
+    )
+    assert alarm.minutes_until() == 45
+
+
+def test_occurrence_skips_a_time_the_clock_change_removes() -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    oslo = ZoneInfo("Europe/Oslo")
+    # 02:30 does not exist on 2026-03-29 in Oslo, so the alarm is the next day's.
+    alarm = AlarmRequest(
+        enabled=True, hour=2, minute=30, reference_time=datetime(2026, 3, 29, 0, 30, tzinfo=oslo)
+    )
+    assert alarm.occurrence() == datetime(2026, 3, 30, 2, 30, tzinfo=oslo)

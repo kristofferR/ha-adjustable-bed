@@ -342,9 +342,9 @@ async def test_held_entity_metadata_reaches_real_bounded_service_and_controller(
             {
                 "starcode_m1x12_alarm_0",
                 "starcode_m1x12_eq_volume",
-                "starcode_m1x12_kneading_time_raw",
+                "starcode_m1x12_kneading_mode",
             },
-            {"starcode_m1x12_kneading_on", "starcode_m1x12_kneading_demo"},
+            {"starcode_m1x12_kneading_on"},
         ),
     ),
 )
@@ -361,9 +361,11 @@ async def test_m1x12_entities_follow_explicit_app_profile(
         "m1x12_part_1",
         "m1x12_part_2",
         "m1x12_part_4",
-        "m1x12_part_8",
-        "m1x12_part_16",
     }
+    # Parts 8 and 16 have no physical label: held controls only, never entities.
+    assert {"part_8_up", "part_8_down", "part_16_up", "part_16_down"} <= set(
+        controller.held_control_options
+    )
     assert all(spec.hold is not None for spec in controller.motor_control_specs)
     number_ids = {entity.unique_id for entity in _number_entities_for(hass, coordinator)}
     assert (

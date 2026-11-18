@@ -1,4 +1,4 @@
-"""Richmat 4.2.0's individual products and class-indexed controls (row173).
+"""Richmat 4.2.0's individual products and class-indexed controls.
 
 The compact catalog preserves product identity and both protocol branches.
 Equal selector values do not merge products. No advertisement selects a product.

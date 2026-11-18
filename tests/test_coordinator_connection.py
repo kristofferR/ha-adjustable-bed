@@ -1072,7 +1072,7 @@ class TestCoordinatorConnection:
                 CONF_BED_TYPE: BED_TYPE_OKIN_CST,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_BLE_BOND_ESTABLISHED: True,
-                "disconnect_after_command": True,
+                "connection_mode": "release",
             },
             unique_id=TEST_ADDRESS,
         )

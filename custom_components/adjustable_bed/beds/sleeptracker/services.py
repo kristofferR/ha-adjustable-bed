@@ -117,7 +117,11 @@ def async_register_sleeptracker_services(hass: HomeAssistant) -> None:
             vol.Optional("minutes", default=30): vol.All(_integer, vol.In(range(5, 106, 5))),
         },
         "sleeptracker_massage": {
-            vol.Required("action"): vol.In(("head", "foot", "pattern", "28Hz", "40Hz", "off"))
+            # Public choices are lowercase; the app's own names say Hz.
+            vol.Required("action"): vol.All(
+                vol.In(("head", "foot", "pattern", "28hz", "40hz", "28Hz", "40Hz", "off")),
+                lambda value: {"28hz": "28Hz", "40hz": "40Hz"}.get(value, value),
+            )
         },
         "sleeptracker_relaxation": {
             vol.Required("action"): vol.In(("wind_down_1", "wind_down_2", "local_animation"))

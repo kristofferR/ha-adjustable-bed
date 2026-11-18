@@ -1,4 +1,4 @@
-"""Hush Base 1.0.5, explicit row126 product and auxiliary policies."""
+"""Hush Base 1.0.5, explicit product and auxiliary policies."""
 
 from __future__ import annotations
 

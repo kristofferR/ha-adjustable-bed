@@ -63,7 +63,7 @@ from .const import (
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_KAIDI_RESOLVED_VARIANT,
@@ -587,7 +587,7 @@ def single_options_from_child(descriptor: Mapping[str, Any]) -> dict[str, Any]:
 SPLIT_RETAINED_KEYS: Final = (
     CONF_PREFERRED_ADAPTER,
     CONF_IDLE_DISCONNECT_SECONDS,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
 )
 
 
@@ -679,7 +679,6 @@ def build_pair_entry_data(
     right_data: Mapping[str, Any],
     *,
     name: str,
-    connection_mode: str | None = None,
     left_octo_snapshot: Mapping[str, Any] | None = None,
     right_octo_snapshot: Mapping[str, Any] | None = None,
     left_layout_snapshot: Mapping[str, Any] | None = None,
@@ -747,8 +746,6 @@ def build_pair_entry_data(
             ),
         ],
     }
-    if connection_mode is not None:
-        data[CONF_PAIR_CONNECTION_MODE] = connection_mode
     return data
 
 

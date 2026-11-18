@@ -1,4 +1,4 @@
-"""Exact RMControl 21.3.7 product catalogs from accepted row018 evidence.
+"""Exact RMControl 21.3.7 product catalogs.
 
 These are app product identities, not inferred physical-remote models. A caller
 must explicitly select one. Empty catalogs are retained and conflicting getter
@@ -148,7 +148,6 @@ def get_product_profile(code: str) -> RichmatProductProfile | None:
 
 # BEGIN GENERATED CATALOG
 # fmt: off
-# Accepted row018 report manifest: 3038c935d219550968b21a2a5c8f363d17aac4ef38f668fb5f58a3e4d9bc745d
 # 1167 concrete products; 16578 ordered occurrences; 397 shared specs.
 _GETTERS: tuple[str, ...] = ('get _ detailsPageDisplayList', 'get _ massageList', 'get _ memoryList', 'get _ speechRecognitionList', 'get _ versionOneMotorList', 'get _ alarmList', 'get _ motorList', 'get _ versionOneMassageList', 'get _ richmatAlarmList', 'get _ versionOneMemoryList', 'get _ richmatBedConfigList')
 _ACTION_SPECS: tuple[_ActionSpec, ...] = (

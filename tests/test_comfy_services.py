@@ -100,15 +100,17 @@ async def test_actual_platform_builders_expose_source_named_controls(hass, app):
         "custom_components.adjustable_bed.button._async_migrate_massage_intensity_button_unique_ids"
     ):
         buttons = _button_entities_for(hass, runtime)
-    assert {f"comfy_{a}" for a in COMFY_ACTIONS} <= {b.translation_key for b in buttons}
+    switched = {"lock", "unlock", "query", "timer_start", "timer_stop"}
+    assert {f"comfy_{a}" for a in COMFY_ACTIONS if a not in switched} <= {
+        b.translation_key for b in buttons
+    }
     assert {e.entity_description.translation_key for e in _cover_entities_for(hass, runtime)} == {
         "comfy_head",
         "comfy_foot",
         "comfy_waist",
     }
     assert {e.translation_key for e in _select_entities_for(hass, runtime)} >= {
-        "comfy_selected_side",
-        "comfy_timer_selection",
+        "comfy_timer_selection"
     }
     assert {e.translation_key for e in _sensor_entities_for(hass, runtime)} >= {
         "comfy_lock_status",

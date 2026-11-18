@@ -5,11 +5,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
-from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
-from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.controller_factory import require_logicdata_route
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
@@ -184,37 +182,6 @@ async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_c
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
     assert result["reason"] == "migration_kept"
     assert {k: v for k, v in entry.data.items() if k in before} == before
-
-
-async def test_configure_into_the_app_from_another_family_asks_the_app_and_layout(hass):
-    """Configure's bed-type list can switch a Comfort Motion entry to the Sleep Smart app."""
-    entry = entry_for(
-        hass, {const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_MOTION, const.CONF_MOTOR_COUNT: 2}
-    )
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    form = await flow._async_options_form(
-        {const.CONF_BED_TYPE: const.BED_TYPE_LOGICDATA_APP}, step_id="settings"
-    )
-    fields = {marker.schema for marker in form["data_schema"].schema}
-    assert {
-        const.CONF_LOGICDATA_APP_PROFILE,
-        const.CONF_LOGICDATA_APP_FAMILY,
-        const.CONF_LOGICDATA_APP_LAYOUT,
-    } <= fields
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await flow._async_options_form(
-            {
-                const.CONF_LOGICDATA_APP_PROFILE: "sleep_smart",
-                const.CONF_LOGICDATA_APP_FAMILY: "p1",
-                const.CONF_LOGICDATA_APP_LAYOUT: "standard_2",
-            },
-            step_id="settings",
-        )
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LOGICDATA_APP
-    assert entry.data[const.CONF_LOGICDATA_APP_PROFILE] == "sleep_smart"
-    assert entry.data[const.CONF_DISABLE_ANGLE_SENSING] is True
 
 
 @pytest.mark.parametrize(

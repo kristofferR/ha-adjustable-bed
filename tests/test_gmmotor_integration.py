@@ -42,7 +42,7 @@ def physical(hass, product="6BRM", address="AA:BB:CC:DD:EE:01"):
             "product_type": product,
             "gmmotor_side": "left",
             "disable_angle_sensing": True,
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
         },
     )
     c = AdjustableBedCoordinator(hass, entry)
@@ -247,7 +247,7 @@ async def test_sleep_stop_service_waits_for_the_entire_active_frame(hass, sxb):
         data={
             "address": "AA:BB:CC:DD:EE:01",
             "bed_type": "gmmotor_sleep_sxb" if sxb else "gmmotor_sleep_mm",
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
         },
     )
     c = AdjustableBedCoordinator(hass, entry)
