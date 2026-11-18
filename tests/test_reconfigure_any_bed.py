@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
@@ -141,10 +142,15 @@ async def test_reconfigure_to_a_checked_route_checks_its_link_first(
     manager.async_abort(result["flow_id"])
 
 
+@pytest.mark.parametrize("options", [{}, {const.CONF_BED_TYPE: const.BED_TYPE_SERTA}])
 async def test_reconfigure_drops_the_previous_apps_own_settings(
-    hass: HomeAssistant, enable_custom_integrations
+    hass: HomeAssistant, enable_custom_integrations, options: dict[str, str]
 ) -> None:
-    """A VMAT app's settings must not follow the bed to another bed type."""
+    """A VMAT app's settings must not follow the bed to another bed type.
+
+    The bed runs the bed type in data, so an options copy of the new one does
+    not make the change a no-op for cleanup.
+    """
     del enable_custom_integrations
     entry = MockConfigEntry(
         domain=const.DOMAIN,
@@ -155,6 +161,7 @@ async def test_reconfigure_drops_the_previous_apps_own_settings(
             const.CONF_BED_TYPE: const.BED_TYPE_LINAK,
             const.CONF_VIBRADORM_APP_PROFILE: "vmat",
         },
+        options=options,
         unique_id="AA:BB:CC:DD:EE:45",
     )
     entry.add_to_hass(hass)
@@ -361,8 +368,13 @@ async def test_a_route_saved_only_in_options_is_written_where_the_bed_reads_it(
             break
         result = await manager.async_configure(result["flow_id"], _schema(result)({}))
     assert result.get("step_id") == "migration_confirm", result
+    # The review names the route the bed runs, not the options copy.
+    placeholders = result["description_placeholders"]
+    assert placeholders["current"] != placeholders["selection"]
     with patch.object(hass.config_entries, "async_schedule_reload"):
         result = await manager.async_configure(result["flow_id"], {"action": "apply"})
 
     assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == "performance_legacy"
+    # The way back names the route that ran before.
+    assert result["description_placeholders"]["current"] == placeholders["current"]
