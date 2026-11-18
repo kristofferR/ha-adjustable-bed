@@ -216,6 +216,7 @@ These steps serve every bed type or route, so no profile owns them.
 | Step | Purpose |
 |---|---|
 | `user`, `scan`, `scan_result`, `manual`, `select_app`, `select_family`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its app or bed type: `select_app` lists the bed-type list's rows, and its last answer opens the brand list (`select_family`), whose rows are the family rows and the brands without one |
+| `okin_receiver` | The brand list's "Okin (other receivers)" row: the Okin routes named after their protocol, each by the beds and remotes it came with |
 | `bluetooth_confirm` | A discovered bed's app question, from its bed type's own rows, when no family question asks it |
 | `manual_entry` | The address of a bed that is not in range |
 | `finish_settings` | The [final settings](#the-new-bed-journey) |

@@ -120,7 +120,7 @@ def test_configure_lists_each_mh_app_by_its_own_label():
 async def test_the_richmat_row_asks_the_app(hass):
     result = await setup_flow(hass).async_step_richmat_family()
     assert result["step_id"] == "richmat_family"
-    assert choices(result) == APPS
+    assert sorted(choices(result)) == sorted(APPS)
 
 
 async def test_rmcontrol_asks_its_product_and_side(hass):
@@ -392,3 +392,17 @@ async def test_an_app_found_by_its_own_row_skips_the_richmat_question(hass, labe
     result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:36"})
     assert result["step_id"] != "richmat_family"
     assert flow._manual_data[const.CONF_BED_TYPE] == route
+
+
+async def test_the_long_app_question_reads_alphabetically(hass):
+    """Richmat's many apps are sorted by their shown name; Keep would stay last."""
+    import json
+    from pathlib import Path
+
+    result = await setup_flow(hass).async_step_richmat_family()
+    keys = result["data_schema"].schema["choice"].config["options"]
+    labels = json.loads(
+        (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
+    )["selector"]["richmat_family_choice"]["options"]
+    shown = [labels[key].casefold() for key in keys if key not in ("keep", "another")]
+    assert shown == sorted(shown)

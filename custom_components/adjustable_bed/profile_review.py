@@ -21,7 +21,7 @@ IDs. A family with a managed wizard (``profile_migration``) hands off to its
 verified reconfigure flow, and an app with its own settings hands off to
 Configure with the app preselected. A handoff never answers the review: it
 stays pending until a saved change of bed type or variant, or an explicit
-"Keep current setup". Splitting a reviewed pair carries the review to each
+"Keep the current setup". Splitting a reviewed pair carries the review to each
 standalone bed. Entries created later never get the mark. FurniMove is not
 offered: its own repairs cover the routes its handsets used.
 
@@ -61,9 +61,13 @@ from .const import (
     BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_MAJESTICHOME,
+    BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
@@ -95,12 +99,14 @@ from .const import (
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_ORE_ULTRAMATIC,
     KEESON_VARIANT_RESTONIC_A,
     KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SIMON_LI,
@@ -109,6 +115,7 @@ from .const import (
     REMACRO_VARIANT_JEROMES,
     REMACRO_VARIANT_THE_BRICK,
     RICHMAT_MH_BED_TYPES,
+    SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     VARIANT_AUTO,
     ZSERIES_VARIANT_Z230,
@@ -128,8 +135,6 @@ from .validators import get_variants_for_bed_type
 ISSUE_PREFIX: Final = "app_profile_review_"
 _REVIEW: Final = "app_profile_review"
 _MATCH: Final = "app_profile_match"
-# The review offers only Woosa Sleep, so its title can ask about that app.
-_WOOSA: Final = "app_profile_woosa"
 _KEEP: Final = "keep"
 # Detection must be this sure before it may contradict a stored route.
 _DRIFT_MIN_CONFIDENCE: Final = 0.7
@@ -183,7 +188,33 @@ _V5_ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(
         frozenset({BED_TYPE_SOLACE}),
         _AUTO,
-        (bed_type_choice(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA),),
+        (
+            bed_type_choice(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA),
+            # Sophie shares the same frame and names.
+            bed_type_choice(BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE),
+        ),
+    ),
+    # ORE apps on the same Keeson frame as the ORE apps v4.3 already offered
+    # these routes.
+    _RouteApps(
+        frozenset({BED_TYPE_KEESON}),
+        frozenset({VARIANT_AUTO, KEESON_VARIANT_BASE, KEESON_VARIANT_SINO}),
+        _keeson(KEESON_VARIANT_COMFORTFURNITURE, KEESON_VARIANT_ORE_ULTRAMATIC),
+    ),
+    # v4.0.2 detected these apps' advertised names on the Richmat Nordic UART
+    # and WiLinke services as the generic Richmat route.
+    _RouteApps(
+        frozenset({BED_TYPE_RICHMAT}),
+        None,
+        (
+            "luniosmart",
+            "sleep_evolution",
+            "wsilver_legacy",
+            BED_TYPE_MLILY,
+            BED_TYPE_MLILY_REMOTE,
+            BED_TYPE_OKIMIKI,
+            BED_TYPE_MAJESTICHOME,
+        ),
     ),
 )
 
@@ -590,11 +621,7 @@ def async_refresh_profile_review_issue(hass: HomeAssistant, entry: ConfigEntry) 
         is_fixable=True,
         is_persistent=False,
         severity=IssueSeverity.WARNING,
-        translation_key=_MATCH
-        if review.drift
-        else _WOOSA
-        if review.choices == (bed_type_choice(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA),)
-        else _REVIEW,
+        translation_key=_MATCH if review.drift else _REVIEW,
         translation_placeholders=_placeholders(entry, review.choices, review.choices[0]),
         data={"entry_id": entry.entry_id},
     )

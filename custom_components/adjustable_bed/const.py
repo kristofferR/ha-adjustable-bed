@@ -1815,7 +1815,7 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 VARIANT_AUTO: Final = "auto"
 STAR_ELEVATE_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
-    STAR_ELEVATE_VARIANT_M1X12: "Adjustable Comfort M1X12 ELEVATE",
+    STAR_ELEVATE_VARIANT_M1X12: "Adjustable Comfort M1X12 app, Elevate lift",
 }
 
 # SIMMONS app: the regular/inclined bed type is independent of the packet

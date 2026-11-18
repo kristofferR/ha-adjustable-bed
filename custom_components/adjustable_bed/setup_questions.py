@@ -2244,7 +2244,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True},
         questions=(Question(CONF_PRODUCT_TYPE, {"new": "Techno Smart New", "lite": "Techno Smart Lite"}, "new"),
-                   Question(CONF_PROTOCOL_VARIANT, {"okin15": "Okin", "okin24": "SmartBed"}, "okin15")),
+                   Question(CONF_PROTOCOL_VARIANT, {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"}, "okin15")),
         derive=lambda data: {CONF_HAS_MASSAGE: data.get(CONF_PRODUCT_TYPE, "new") == "new"},
         title=lambda _data: "OrmatekTechnoSmart",
     ),
@@ -2841,7 +2841,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             validate=_legacy_errors,
             # The prefix names the layout, so a prefix change shows in the review.
             title=lambda data: (
-                "SleepEvolution" if data[CONF_BED_TYPE] == "sleep_evolution" else "W.Silver Products 3.x"
+                "SleepEvolution" if data[CONF_BED_TYPE] == "sleep_evolution" else "W.Silver Products (older version)"
             ) + (f" {data[CONF_PROTOCOL_VARIANT]}" if data.get(CONF_PROTOCOL_VARIANT) else ""),
             imports=("profiles.richmat_legacy",),
         )

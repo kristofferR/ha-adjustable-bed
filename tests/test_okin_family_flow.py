@@ -149,7 +149,14 @@ async def test_keep_detected_controls_collects_motors_without_changing_route(
     # Only the answers change: the route stays, and the massage and angle
     # sensing the FurniMove row's form never showed take their defaults.
     assert answers[const.CONF_MOTOR_COUNT] == motor_count
-    assert flow._manual_data == {**before, **answers}
+    # Read bed position is stored as the inverse "disable" setting.
+    stored = {
+        const.CONF_DISABLE_ANGLE_SENSING if key == "read_positions" else key: (
+            not value if key == "read_positions" else value
+        )
+        for key, value in answers.items()
+    }
+    assert flow._manual_data == {**before, **stored}
 
 
 async def test_family_row_has_no_route_to_keep(hass):
@@ -454,3 +461,4 @@ async def test_a_cst_entry_changes_to_an_okin_route_after_checking_its_endpoint(
     assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_OKIN_DOT
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
+

@@ -217,10 +217,11 @@ async def test_the_brand_list_names_families_and_their_apps(hass, enable_custom_
     } <= choices
     # An app's own row stays in the app question's full list.
     assert "keeson:heal_every_night" not in choices
-    # A protocol-named route is off the app question, so the brand list keeps it.
+    # Protocol-named routes are behind one plain-words Okin receiver row.
     from custom_components.adjustable_bed.detection import PROTOCOL_ROUTES
 
-    assert choices >= PROTOCOL_ROUTES
+    assert not choices & PROTOCOL_ROUTES
+    assert "okin_receivers" in choices
     # Each family row names its brand first.
     okin = next(label for label, choice in rows.items() if choice == const.BED_TYPE_FURNIMOVE)
     assert okin.startswith("Okin: ")

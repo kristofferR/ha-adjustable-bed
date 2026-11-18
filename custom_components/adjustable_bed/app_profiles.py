@@ -190,7 +190,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "suta": SideProfile("SUTA Smart Home name-selected layout"),
     "luniosmart": SideProfile("Lunio Smart+", frozenset()),
     "sleep_evolution": SideProfile("SleepEvolution", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
-    "wsilver_legacy": SideProfile("W.Silver Products 3.x", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "wsilver_legacy": SideProfile("W.Silver Products (older version)", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "sonicsleep": SideProfile("SonicSleep IQRM", frozenset({"product_type"})),
     "casper_sleep_mm": SideProfile("Casper Base MM sensor"),
     "casper_sleep_sxb": SideProfile("Casper Base SXB sensor"),
@@ -293,7 +293,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): SideProfile(
-        "Adjustable Comfort M1X12 ELEVATE", frozenset({CONF_PROTOCOL_VARIANT})
+        "Adjustable Comfort M1X12 Elevate lift", frozenset({CONF_PROTOCOL_VARIANT})
     ),
     (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): SideProfile(
         "Floyd Home", frozenset({CONF_KAIDI_ROOM_ID, CONF_KAIDI_TARGET_VADDR,
