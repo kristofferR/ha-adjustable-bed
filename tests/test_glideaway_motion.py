@@ -494,25 +494,29 @@ async def alarm_target(hass):
 
 async def test_alarm_service_validation_and_queue(hass, alarm_target):
     coordinator, device_id = alarm_target
-    calls = {"device_id": [device_id], "enabled": True, "time": "06:30:00", "wake_mode": "memory_1"}
-    await hass.services.async_call(DOMAIN, "glideaway_set_alarm", calls, blocking=True)
+    calls = {"device_id": [device_id], "enabled": True, "time": "06:30:00", "wake_action": "memory_1"}
+    await hass.services.async_call(DOMAIN, "set_alarm", calls, blocking=True)
     coordinator.async_execute_controller_command.assert_awaited_once()
     command = coordinator.async_execute_controller_command.await_args.args[0]
+    assert coordinator.async_execute_controller_command.await_args.kwargs["resource"] is None
     controller = MagicMock(spec=gm.GlideawayMotionController)
     controller.configure_clock_alarm = AsyncMock()
     await command(controller)
-    controller.configure_clock_alarm.assert_awaited_once_with(
-        enabled=True, weekdays=(), hour=6, minute=30, preset="memory_1"
+    alarm = controller.configure_alarm.await_args.args[0]
+    assert (alarm.enabled, alarm.weekdays, alarm.hour, alarm.minute, alarm.wake_action) == (
+        True, (), 6, 30, "memory_1"
     )
     coordinator.async_execute_controller_command.reset_mock()
     for invalid in ({**calls, "time": "06:30:01"}, {"device_id": [device_id], "enabled": True}):
         with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(DOMAIN, "glideaway_set_alarm", invalid, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", invalid, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
     coordinator._bed_type = BED_TYPE_OKIN_ORE
-    coordinator._controller = MagicMock(spec=BedController, requires_disconnected_transport=False)
-    with pytest.raises(ServiceValidationError, match="does not support Glideaway alarms"):
-        await hass.services.async_call(DOMAIN, "glideaway_set_alarm", calls, blocking=True)
+    coordinator._controller = MagicMock(
+        spec=BedController, requires_disconnected_transport=False, alarm_capability=None
+    )
+    with pytest.raises(ServiceValidationError, match="has no alarm"):
+        await hass.services.async_call(DOMAIN, "set_alarm", calls, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 
 
@@ -654,7 +658,7 @@ async def test_alarm_whole_selection_validation_before_dispatch(hass, alarm_targ
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
-            "glideaway_set_alarm",
+            "set_alarm",
             {"device_id": [device_id, device.id], "enabled": True, "time": "06:30:00"},
             blocking=True,
         )

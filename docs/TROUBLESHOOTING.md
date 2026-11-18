@@ -44,14 +44,13 @@ apps apart, so an upgraded bed whose bed type gained app profiles shows one
 repair under **Settings > System > Repairs**. It lists only the apps that fit
 that bed type:
 
-- **Choose the app you use.** Most apps are applied right away, with the same
-  checks as **Configure**. The bed reloads with that app's controls and keeps
-  its device and matching entity IDs.
-- Apps with their own settings (Motion Bed, AdjustableM5X4, AdjustableM5X5),
-  or a change **Configure** would refuse, are not applied here. The repair
-  opens **Configure** with the app selected.
+- **Choose the app you use.** The repair opens **Reconfigure** with that app
+  selected. It asks the app's own questions, checks the bed where the app
+  needs it, and shows which controls change before anything is saved. The bed
+  then reloads with that app's controls and keeps its device and matching
+  entity IDs.
 - A family with a
-  [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
+  [guided change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
   is offered that guided change or **Keep current configuration** instead,
   because **Configure** refuses its app and route changes.
 - **Keep current configuration** if the bed already works. The repair comes
@@ -59,8 +58,8 @@ that bed type:
   been shown.
 - A paired bed cannot switch app in its shared settings, because app profiles
   belong to one physical bed and none supports paired controls. In
-  **Configure**, choose **Split into two beds** (or **Restore standalone
-  controls**). Each bed then gets its own repair. A working pair can keep its
+  **Configure**, choose **Separate into two beds** (or **Remove Left,
+  Right and Both controls**). Each bed then gets its own repair. A working pair can keep its
   current configuration instead.
 
 Handing off to **Configure** or the guided change does not answer the repair.
@@ -288,7 +287,7 @@ Configure the PIN in the integration's options.
 
 **Solutions:**
 1. **Try a different variant:** For a family with a
-   [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
+   [guided change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
    (Vibradorm, Jiecang, Okin, Keeson, Solace, Leggett & Platt, Sleepy's Elite,
    Customatic, Jordan's, Malouf / Lucid, LOGICDATA, Jensen / Svane and Limoss),
    open **Reconfigure** from the entry's three-dot menu and answer the app
@@ -321,7 +320,7 @@ Configure the PIN in the integration's options.
 
 **Solutions:**
 1. **Improve signal:** Move Bluetooth adapter/proxy closer to the bed
-2. **Compare connected and cold commands:** A cold connection may need authentication and several proxy attempts. With Disconnect After Command enabled, commands within the one-second handoff window reuse the link.
+2. **Compare connected and cold commands:** A cold connection may need authentication and several proxy attempts. With **Bluetooth connection** set to "Release right after each command", commands within the one-second handoff window reuse the link.
 3. **Use Stop All when movement must end:** STOP invalidates queued movement and interrupts active movement and position reads. A replacement movement for the same motor supersedes the older request; independent motor commands are serialized.
 4. **Inspect connection diagnostics:** Repeated failures on the strongest proxy can delay access to a working alternative. Multiple paths receive a bounded extra retry budget; this cannot repair an unusable proxy or an unreachable bed.
 
@@ -358,8 +357,8 @@ up. Motor pulse settings cannot bridge that gap.
 3. Notification subscription failed
 
 **Solutions:**
-1. **Check settings:** The initial "Disable angle sensing" value depends on bed type and setup route. Check the saved value rather than assuming feedback is enabled or disabled.
-2. **Enable angle sensing:** If you want position data, disable "Disable angle sensing" in options
+1. **Check settings:** **Read bed position** is on by default for beds that report a position, and shown only for them.
+2. **Turn on Read bed position:** If you want position data, turn it on in **Configure**
 3. **Check the controller:** Feedback is available on supported Linak, Okimat, Reverie, Keeson/Ergomotion, Jensen, Limoss, Vibradorm, Sleep Number, BOX25, and SleepSpa profiles. Availability and units depend on the actual controller; see its [protocol guide](SUPPORTED_ACTUATORS.md).
 
 ### Position values seem incorrect
@@ -381,17 +380,18 @@ up. Motor pulse settings cannot bridge that gap.
 **This is expected behavior.** Most BLE beds only support one connection at a time.
 
 **Solutions:**
-1. **Enable "Disconnect after each command" where supported:** The connection is released one second after operations finish; rapid commands reuse that window
-2. **Disable position monitoring if necessary:** Enable "Disable angle sensing"; Linak's "Refresh positions while idle" can also be turned off
+1. **Set Bluetooth connection to "Release right after each command" where it is offered:** The connection is released one second after operations finish; rapid commands reuse that window
+2. **Disable position monitoring if necessary:** Turn off **Read bed position**; Linak's "Refresh positions while idle" can also be turned off
 3. **Press "Disconnect" button:** Manually disconnect HA to use the physical remote
-4. **Idle timeout:** When quick handoff is off, the configured idle timeout applies (default 40 seconds). An idle timeout of `0` and controllers requiring persistent connections hold the link instead.
+4. **Stay connected for a while:** This mode keeps the link for its seconds (default 40). "Always stay connected" and controllers requiring persistent connections hold the link instead.
 
 ### BLE connection shows "Disconnected" shortly after adding the bed
 
 **This is normal for beds that release their connection while idle.** With
-Disconnect After Command enabled, the link is released one second after the
-last operation finishes. Otherwise the configured idle timeout applies (default
-40 seconds), except for controllers requiring a persistent connection. The next
+**Bluetooth connection** set to "Release right after each command", the link is
+released one second after the last operation finishes. "Stay connected for a
+while" keeps it for its seconds (default 40); controllers requiring a
+persistent connection keep it. The next
 Home Assistant command reconnects automatically.
 
 - The connection sensor reports `state_detail: idle` (and a `disconnect_reason`
@@ -421,7 +421,7 @@ Home Assistant command reconnects automatically.
 2. OEM bed using different manufacturer's controller
 
 **Solutions:**
-1. **Change settings:** Open **Configure → Change settings** and correct **Bed type** and **Protocol variant** using the matching protocol guide. Keep the existing entry and its entity history. Within a family with a [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed), Configure refuses an app or route change: use **Reconfigure** from the entry's three-dot menu instead.
+1. **Change the bed type:** Open **Reconfigure** from the entry's three-dot menu and choose the bed type, app or bed model the matching protocol guide names. It [reviews the change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed) before saving, and keeps the existing entry and its entity history.
 2. **Capture evidence if uncertain:** Generate a support bundle. A retail brand or a shared service UUID alone may not distinguish the protocols.
 3. **Paired entries:** Some profile changes require splitting the pair and configuring each side separately before combining again.
 
@@ -468,7 +468,7 @@ If motors move too briefly or movement is choppy, adjust **Motor Pulse Settings*
 | Movement is choppy | Decrease pulse delay |
 | Commands get dropped | Increase pulse delay |
 
-See [Motor Pulse Settings](CONFIGURATION.md#motor-pulse-settings) for default values by bed type.
+See [Motor Pulse Settings](CONFIGURATION.md#movement-per-tap) for default values by bed type.
 
 ---
 

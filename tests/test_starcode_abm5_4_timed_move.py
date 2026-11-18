@@ -30,7 +30,7 @@ async def connected_child(hass, address, delay):
             const.CONF_MOTOR_PULSE_COUNT: 9,
             const.CONF_MOTOR_PULSE_DELAY_MS: delay,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     co = AdjustableBedCoordinator(hass, entry)

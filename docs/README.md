@@ -58,29 +58,13 @@ testing status.
 
 | Design note | Contents |
 |-------------|----------|
-| [Protocol codecs and app profiles](design/protocol-codecs.md) | The codec, profile and controller layers, family registration, the app catalog convention and the vector harness |
+| [Protocol codecs and app profiles](design/protocol-codecs.md) | The codec, profile and controller layers, family registration, the app catalog convention, the vector harness and execution capabilities |
 | [Bluetooth discovery hints](design/discovery-hints.md) | Per-family hints, the generated manifest matchers and detection's first pass |
-| [Protocol inventory](design/protocol-inventory.md) | Every bed type's wire format, proven by encoding, and its byte-identical aliases |
 | [Profile ids and schema 5](design/profile-id.md) | The profile id each entry and paired side runs, its migration record and which aliases share one |
-| [Execution capabilities](design/execution-capabilities.md) | Hold, concurrent-motor and motor-speed evidence and design |
 | [Command lifecycle](COMMAND_LIFECYCLE.md) | Serialization, cancellation, STOP, timed movement and connection handoff |
 | [Paired runtimes and registry ownership](design/paired-runtime-and-registry.md) | Runtime interfaces and registry transfer and rollback |
 | [Guided setup changes](design/guided-setup-changes.md) | Staged app and layout changes, Repairs, Keep and the paired split rules |
 | [Setup questions](design/setup-questions.md) | Profile-declared setup questions, owned generic fields and the generic setup step |
-| [Config keys](design/config-keys.md) | Every saved `CONF_*` key: its class, writer and reader, the keys schema 5.2 drops and the setting schema 5.3 corrects |
-
-## Protocol Research
-
-Bed guides state what an app does in reference form. Each guide's Status line
-says what is tested on hardware, and its Analysis provenance names the APK
-Protocol Audit behind it.
-
-Discovery ledgers and disposition records are audit records, not
-documentation, so they never go in `docs/`. They stay machine-local with each
-audit report, and the implementation PR states the ledger totals and every
-exclusion. A ledger that a test reads is a fixture in
-[`tests/fixtures/`](../tests/fixtures/). See the
-[repository instructions](../AGENTS.md#mandatory-post-freeze-implementation-convergence).
 
 ## Development and Validation
 
@@ -92,13 +76,11 @@ dependencies from Home Assistant's own manifests.
 | Reference | Contents |
 |-----------|----------|
 | [Repository instructions](../AGENTS.md) | Architecture, controller contracts, contribution and release rules |
-| [Design notes](#controller-and-protocol-reference) | Codecs and profiles, protocol inventory, execution capabilities, command lifecycle and paired runtimes |
-| [Linak reversal assessment](design/linak-reversal-assessment.md) | Dated evidence and bounded follow-up |
+| [Design notes](#controller-and-protocol-reference) | Codecs and profiles, execution capabilities, command lifecycle and paired runtimes |
 | [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |
 | [APK tracker rules](apk-analysis/TRACKERS.md) | What the #436, #443 and #447 issue bodies hold, and the guard that keeps them clean |
 | [Analysis tooling](apk-analysis/TOOLING.md) | Protocol-neutral decompiler setup and stack coverage |
 | [Analyst prompt](apk-analysis/phase4-analyst-prompt.md) and [schema](apk-analysis/analysis.schema.json) | Pinned clean-room inputs |
-| [Audit tooling](../tools/phase4_v2/README.md) and [preflight](../tools/phase4_v2/preflight/README.md) | Artifact identity, routing and historical inventory |
 
 APK artifacts and frozen reports stay local and ignored. Consult the repository's
 clean-room rules before protocol work. Documentation updates do not establish new

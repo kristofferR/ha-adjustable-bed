@@ -15,7 +15,7 @@ from custom_components.adjustable_bed.button import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -40,7 +40,7 @@ async def mixed_pair(hass, request):
         entry = MockConfigEntry(domain=DOMAIN, data={
             CONF_ADDRESS: address, CONF_NAME: side, CONF_BED_TYPE: BED_TYPE_SVANE,
             CONF_PROTOCOL_VARIANT: SVANE_VARIANT_MULTI if profile == "multi" else SVANE_VARIANT_JMC,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         })
         entry.add_to_hass(hass)
         child = AdjustableBedCoordinator(hass, entry)

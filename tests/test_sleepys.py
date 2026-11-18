@@ -1597,9 +1597,9 @@ class TestSleepysBox25RuntimeDialect:
 
     def test_box25_variants_are_available_to_config_flow(self) -> None:
         assert get_variants_for_bed_type(BED_TYPE_SLEEPYS_BOX25) == {
-            VARIANT_AUTO: "Auto (Device Information manufacturer)",
-            SLEEPYS_BOX25_VARIANT_STAR: "StarCode (5A-framed)",
-            SLEEPYS_BOX25_VARIANT_LEGACY: "Legacy CB25 (05/04/08/03 frames)",
+            VARIANT_AUTO: "Automatic (recommended)",
+            SLEEPYS_BOX25_VARIANT_STAR: "Newer control box (StarCode)",
+            SLEEPYS_BOX25_VARIANT_LEGACY: "Older control box (CB25)",
         }
 
     @pytest.mark.parametrize(

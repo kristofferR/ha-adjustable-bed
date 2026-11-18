@@ -1,4 +1,4 @@
-"""Casper Base 1.0.8 requests and notifications, independently accepted row101 evidence.
+"""Casper Base 1.0.8 requests and notifications.
 
 The frames are built by ``codec/richmat.py``. These specifications belong to this
 package. Shared UUIDs do not identify an app.

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Final
 
-from ...const import VARIANT_AUTO
+from ...const import AUTOMATIC_LABEL, VARIANT_AUTO
 from ..ruf_richmat.models import MODEL_IDS as _RUF_MODEL_IDS
 from . import catalog as _catalog
 
@@ -31,7 +31,7 @@ RICHMAT_MH_MODEL_CHOICES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
 }
 RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
     app: {
-        VARIANT_AUTO: "Model from the Bluetooth name (first four characters)",
+        VARIANT_AUTO: AUTOMATIC_LABEL,
         **{
             f"model_{model}": label if label == model.upper() else f"{label} ({model.upper()})"
             for model, label in choices

@@ -80,7 +80,7 @@ class PowerLayerProfile:
     foot_angles: tuple[tuple[int, float], ...]
     head_max_angle: float
     foot_max_angle: float
-    # No accepted app report proves a hold (docs/design/execution-capabilities.md).
+    # The app does not prove a hold.
     execution: ExecutionCapabilities = NO_EXECUTION_CAPABILITIES
 
     @property

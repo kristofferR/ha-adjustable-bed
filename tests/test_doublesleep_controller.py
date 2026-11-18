@@ -65,7 +65,8 @@ class Bed:
 
     async def connect(self):
         with patch(
-            "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep", new=AsyncMock()
+            "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+            new=AsyncMock(),
         ):
             await self.bed.start_notify()
         self.client.write_gatt_char.reset_mock()
@@ -216,7 +217,8 @@ async def test_save_releases_and_massage_queries_follow_source_delay():
     assert bed.packets() == [bytes.fromhex("aa000001050125"), bytes.fromhex("aa000001010400000000")]
     bed.client.write_gatt_char.reset_mock()
     with patch(
-        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep", new=AsyncMock()
+        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+        new=AsyncMock(),
     ) as delay:
         await bed.bed.press(35)
     delay.assert_awaited_once_with(0.2)
@@ -235,7 +237,10 @@ async def test_cancellation_before_first_fragment_does_not_publish_privacy():
 async def test_alarm_and_anti_snore_workflows_are_distinct_and_capability_gated():
     bed = Bed()
     await bed.connect()
-    with patch("custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep", new=AsyncMock()):
+    with patch(
+        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+        new=AsyncMock(),
+    ):
         await bed.bed.request(Request("alarm", (6, 30, 130, 9, 1)))
     assert bed.packets()[0][:6] == bytes.fromhex("aa0000030108")
     assert bed.packets()[1] == bytes.fromhex("aa000003020801820901061e0001")
@@ -319,9 +324,9 @@ def test_child_lock_restore_and_local_change_do_not_republish_stale_sensor_state
     assert bed.states["doublesleep_child_lock"] == "on"
     bed.states["doublesleep_left_heart_rate"] = 77
     bed.bed.parser.state["left_heart_rate"] = 45
-    spec = bed.bed.controller_select_specs[0]
-    assert spec.local_select_fn is not None
-    spec.local_select_fn("off")
+    spec = bed.bed.controller_switch_specs[0]
+    assert spec.local_set_fn is not None
+    spec.local_set_fn(False)
     assert bed.states["doublesleep_child_lock"] == "off"
     assert bed.states["doublesleep_left_heart_rate"] == 77
     assert not bed.client.write_gatt_char.called
@@ -374,7 +379,8 @@ async def test_sensitivity_change_retains_unselected_reported_values(driver, mod
     await bed.connect()
     bed.bed.parser.state.update(use_side=2, left_sensitivity=3, right_sensitivity=9)
     with patch(
-        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep", new=AsyncMock()
+        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+        new=AsyncMock(),
     ) as delay:
         await bed.bed.request(Request("sensitivities", (-1, 1, -1)))
     delay.assert_awaited_once_with(0.2)
@@ -411,6 +417,7 @@ async def test_unexpected_disconnect_retires_old_timers_tasks_and_report_future(
     callbacks = [(timer._callback, timer._args) for timer in timers if timer is not None]
     assert len(callbacks) == 2
     old._report_future = asyncio.get_running_loop().create_future()
+
     async def queued(*args, **kwargs):
         await asyncio.Event().wait()
 

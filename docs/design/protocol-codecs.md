@@ -14,6 +14,12 @@ it.
 Imports point one way: controllers use profiles and codecs, profiles use the
 codec, and the codec imports neither.
 
+A family is proven by encoding: its framing rule holds byte for byte for the
+command writes of every route in it, never because apps share a name, UUID or
+vendor. Bed types that send identical bytes stay separate bed types so existing
+entries keep their identities; the wire snapshot (`tests/test_wire_snapshot.py`)
+captures every route's writes and shows the equality.
+
 The independently audited OkinComfortBed Ⅱ (Jalon) profile reproduces all of its
 control, current-time and alarm literals through `codec/keeson.py`. Its model
 byte stays zero and establishes no side addressing; its session and gesture
@@ -77,7 +83,7 @@ See the [Snore Monitor BED guide](../beds/onlysnore.md).
 
 ## Smart Comfort seat codec
 
-The accepted cluster-024 SYNARGY and SYNERGY literals are reproduced by
+The Smart Comfort SYNARGY and SYNERGY literals are reproduced by
 `codec/smart_comfort.py`, with independent profiles in `profiles/smart_comfort.py`.
 Keeson's checked E5 carrier can reproduce the outer motor envelope, but its key
 word semantics do not cover seat-scoped accessory groups, BGR/mask color fields,
@@ -165,7 +171,7 @@ Two payload shapes address the controller: `STANDARD` (`01`) and `BILATERAL`
 | Profile | Evidence |
 | --- | --- |
 | `LEGACY` | Pre-v5 controller tests (bed types `jiecang` and `comfort_motion`) |
-| `COMFORT_MOTION` | Comfort Motion 2.2.1 (row115) |
+| `COMFORT_MOTION` | Comfort Motion 2.2.1 |
 | `DREAMASK` | Dreamask (ERGOBALANCE) 1.0.8 |
 | `DREAMOTION` | Dreamotion 1.0.5 |
 | `DREAMHD` | Dream Motion HD 1.0.4 |
@@ -217,7 +223,6 @@ one section per profile. Tables the profile data already knows sit between
 `<!-- generated:<name> -->` markers and are rewritten by
 `scripts/generate_codec_docs.py` from each family's `scripts/codec_docs/` module;
 `tests/test_codec_docs.py` fails when one is stale. The layout is described in [Bed guide format](../BED_GUIDE_FORMAT.md#codec-guides).
-Discovery ledgers stay separate documents linked from each profile section.
 
 Byte-identical bed types kept for existing entries are listed under each codec
 guide's **Aliases**; `tests/test_codec_docs.py` fails when two codec-backed bed
@@ -260,6 +265,35 @@ To add a profile, add its literals to the vector file and its entry to the
 census in the test. A profile whose literals the codec cannot reproduce gets
 its own codec, with the reason recorded here.
 
+## Execution capabilities
+
+Held motion and concurrent motors are declared in `execution.py`'s
+`ExecutionCapabilities`: a family profile's `execution` field,
+or an `execution` override on a standalone controller. The codec states what
+the wire can express; the profile states what its own app is proven to do.
+Nothing is declared by analogy with another app, family or shared codec. The
+Okin N-frame codec can OR any motor words, but only the profiles whose apps
+compose two axes and release one without stopping the other declare
+`concurrent`. Prodigy 2 composes keys but its release clears them all, so it
+stays serialized.
+
+- **Hold** is `stream` (the app refreshes a held frame until release) or
+  `latched` (one start frame and an explicit stop). `hold_controls` scopes it to
+  the held controls whose gesture is a sustained press, for controllers whose
+  buttons also carry other gestures (Good Vibe Sleep and the classic Richmat
+  apps, recomputed from their mode selectors on every read). Leases, renewal and
+  STOP pre-emption are in the [command lifecycle](../COMMAND_LIFECYCLE.md#renewable-hold-leases).
+- **Concurrent motors** run as one streamer per device that writes the composed
+  frame each tick, so there is never extra BLE concurrency. A combined control
+  of a pair uses the intersection of both sides' capabilities.
+- **Motor speed** has no field: no app is proven to offer a selectable speed.
+
+Linak keeps its conservative reversal: a seek refreshes the held movement
+without an intermediate release and sends STOP on cleanup, and no extra
+reversal packet or settle delay is added between seeks. A replacement waits
+for the previous STOP; the physical pause users once reported is unverified on
+current firmware.
+
 ## Route decisions
 
 - **Comfort Motion keeps two routes.** The UUID-detected `comfort_motion` bed
@@ -284,7 +318,7 @@ its own codec, with the reason recorded here.
 - The legacy route no longer defines the unused `BOTH`, `HEAD_ALT`, `WAIST`,
   `TIMER` and right-side split constants. It never sent them.
 
-ComfortBaseForBluetooth 1.1.2 (6), row161, reuses Keeson K1 only after all
+ComfortBaseForBluetooth 1.1.2 (6) reuses Keeson K1 only after all
 43 frozen builders reproduce literally through `frame`, `clock_fields` and
 `alarm_table`. Its product catalog is UI data over one `comfortbase` profile.
 The Keeson controller supplies hold/release and recall; its ComfortBase extension
@@ -292,7 +326,7 @@ adds the bounded save gesture, product gates, fixed GATT roles and timer parser.
 
 ## OKIN Smart Sleep
 
-Row094 P1 motor/preset literals reproduce through Keeson's `p2_side` carrier,
+OKIN Smart Sleep 2.4.9's P1 motor/preset literals reproduce through Keeson's `p2_side` carrier,
 which `codec/smart_sleep.py` reuses. No existing codec reproduces P1's complete
 settings and reply shapes plus P2's AA/2A commands and notifications, including
 its distinct motor-neutral and global STOP. `profiles/smart_sleep.py` declares
@@ -300,14 +334,14 @@ both formats and their catalogs; one family controller owns their session.
 The vector harness compares every accepted in-scope literal before reuse.
 See [Smart Sleep](../beds/smart-sleep.md).
 
-N32 Motion Bed 1.1.14 (38), row080, reproduces its four-mask held frames,
+N32 Motion Bed 1.1.14 (38) reproduces its four-mask held frames,
 clock and slot queries through Okin N-frame. Its alarm uses the same seven
 counted fields plus an uncounted reserved byte and a third proven slot.
 `alarm(..., reserved=0)` expresses that trailer without changing existing
 profiles' records. Its typed fixed profile uses the shared Okin family
 controller; its own session and alarm callback live in `beds/n32_motion_bed/`.
 
-アシステック / Yamada 1.0.1 (6), row178, adds explicit P1/P2 profiles only after
+アシステック / Yamada 1.0.1 (6) adds explicit P1/P2 profiles only after
 all 35 packet literals match existing Keeson and Okin N-frame encoders. Its
 shared-family controller extension owns alarm parsing, session fences, raw clock
 fields and captured release scheduling. No new codec or product alias is needed.

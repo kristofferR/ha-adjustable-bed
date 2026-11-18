@@ -512,3 +512,94 @@ async def test_diagnostic_controller_button_is_hidden_maintenance(hass):
     assert plain.entity_category is None and plain.entity_registry_enabled_default
     assert hidden.entity_category is EntityCategory.DIAGNOSTIC
     assert not hidden.entity_registry_enabled_default
+
+
+async def test_local_controller_switch_applies_without_the_bed_link(hass):
+    controller = SwitchController()
+    applied = []
+    spec = ControllerSwitchSpec(
+        "child", "child_mode", AsyncMock(), "child_state", local_set_fn=applied.append
+    )
+    runtime = runtime_for(hass, controller)
+    with patch.object(SwitchController, "controller_switch_specs", (spec,)):
+        switch = AdjustableBedControllerSwitch(runtime, spec)
+        await switch.async_turn_on()
+    assert applied == [True]
+    runtime.async_execute_controller_command.assert_not_called()
+
+
+async def test_controller_switch_records_only_a_command_that_was_sent(hass):
+    runtime = runtime_for(hass, SwitchController())
+    _readback, assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    # A STOP or replacing command settles the call without running it.
+    runtime.async_execute_controller_command = AsyncMock(return_value=None)
+    await assumed.async_turn_on()
+    assert assumed.is_on is None
+    runtime.async_execute_controller_command = AsyncMock(side_effect=asyncio.CancelledError)
+    with pytest.raises(asyncio.CancelledError):
+        await assumed.async_turn_on()
+    assert assumed.is_on is None
+
+
+async def test_controller_switch_ignores_a_command_stop_cancelled_before_writing(hass):
+    runtime = runtime_for(hass, SwitchController())
+    _readback, assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    cancelled = MagicMock()
+    cancelled.cancel_event.is_set.return_value = True
+    with patch(
+        "custom_components.adjustable_bed.switch.current_command_context", return_value=cancelled
+    ):
+        await assumed.async_turn_on()
+    assert assumed.is_on is None
+
+
+async def test_controller_switch_forgets_assumed_state_when_the_link_drops(hass):
+    runtime = runtime_for(hass, SwitchController())
+    _readback, assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    assumed.hass = hass
+    with patch.object(assumed, "async_write_ha_state"):
+        await assumed.async_added_to_hass()
+        (on_connection,) = (
+            call.args[0] for call in runtime.register_connection_state_callback.call_args_list
+        )
+        await assumed.async_turn_on()
+        on_connection(True)
+        assert assumed.is_on is True
+        on_connection(False)
+    assert assumed.is_on is None
+
+
+async def test_controller_switch_reads_a_cleared_or_mistyped_report_as_unknown(hass):
+    runtime = runtime_for(hass, SwitchController())
+    readback, _assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    runtime.controller_state = {"lock_state": "on"}
+    assert readback.is_on is True
+    # A controller clears a connection-scoped setting on disconnect.
+    runtime.controller_state = {"lock_state": None}
+    assert readback.is_on is None
+    runtime.controller_state = {"lock_state": False}
+    assert readback.is_on is None
+
+
+async def test_controller_switch_fills_its_name_template(hass):
+    spec = ControllerSwitchSpec(
+        "sync", "side_sync", AsyncMock(), translation_placeholders={"side": "Left"}
+    )
+    switch = AdjustableBedControllerSwitch(runtime_for(hass, SwitchController()), spec)
+    assert switch.translation_placeholders == {"side": "Left"}

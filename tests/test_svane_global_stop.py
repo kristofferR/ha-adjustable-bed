@@ -12,7 +12,7 @@ from custom_components.adjustable_bed.beds.svane.controller import HEAD, OLD, OL
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SIDE_BOTH,
@@ -31,7 +31,7 @@ async def real_bed(hass, request):
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Svane",
         CONF_BED_TYPE: BED_TYPE_SVANE,
         CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC if profile == "jmc" else SVANE_VARIANT_MULTI,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: "idle",
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)

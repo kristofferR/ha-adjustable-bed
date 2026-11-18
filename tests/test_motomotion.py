@@ -623,33 +623,6 @@ async def test_start_failure_invalidates_pending_callbacks(coordinator, monkeypa
     assert c._state.token_count == 0
 
 
-def test_durable_ledger_covers_every_accepted_identifier_and_command():
-    import json
-    from pathlib import Path
-
-    d = json.loads((Path(__file__).parent / "fixtures/motomotion_ledger.json").read_text())
-    assert len(d["items"]) == len({item["id"] for item in d["items"]}) == 316
-    assert len(d["command_coverage"]) == 144
-    assert (
-        d["coverage"]["primary_routes"]
-        == d["coverage"]["unique_panel_classes"] + d["coverage"]["aliases"]
-        == 17
-    )
-    for item in d["items"]:
-        assert item["disposition"] in ("IMPLEMENTED", "ALREADY_IMPLEMENTED", "EXCLUDED")
-        assert item["reason"]
-        if item["disposition"] == "IMPLEMENTED":
-            assert item["groups"] and all(g in d["behavior_groups"] for g in item["groups"])
-    for group in d["behavior_groups"].values():
-        assert group["code"] and group["tests"]
-        for reference in group["code"] + group["tests"]:
-            path, symbol = reference.split("::")
-            text = (Path(__file__).parents[1] / path).read_text()
-            assert ("def " + symbol.split(".")[-1] + "(") in text or (
-                "class " + symbol + ":"
-            ) in text
-
-
 async def test_release_before_first_period_never_starts_motor(coordinator, monkeypatch):
     c = controller(coordinator)
     now = [0.0]

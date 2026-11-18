@@ -23,7 +23,7 @@ def runtime_entry(hass: HomeAssistant, selected: str):
         const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
         const.CONF_STARCODE_UI_SELECTOR: "BOX25",
         const.CONF_STARCODE_TRANSPORT_SELECTOR: stored,
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_DISABLE_ANGLE_SENSING: True,
     }
     entry = MockConfigEntry(domain=const.DOMAIN, data=data)

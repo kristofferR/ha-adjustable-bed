@@ -1,6 +1,6 @@
 """Symphony Sleep Sense 2.8.0 (194): independent product and driver choices.
 
-Source: accepted row133, E-MODEL/E-CLOSURE/E-CALENDAR/E-ALARM. This is the
+Source: Symphony Sleep Sense 2.8.0 models, closures, calendar and alarms. This is the
 app's dispatch domain. It does not assert hardware compatibility for every cell.
 """
 

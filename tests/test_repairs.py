@@ -89,6 +89,7 @@ def _bed_entry(
     address: str,
     name: str,
     state: ConfigEntryState = ConfigEntryState.LOADED,
+    bed_type: str = "linak",
 ) -> MockConfigEntry:
     """Add a standalone bed entry in the requested lifecycle state."""
     entry = MockConfigEntry(
@@ -97,7 +98,7 @@ def _bed_entry(
         data={
             CONF_ADDRESS: address,
             CONF_NAME: name,
-            CONF_BED_TYPE: "linak",
+            CONF_BED_TYPE: bed_type,
         },
         unique_id=address,
         version=4,
@@ -141,6 +142,22 @@ async def test_combine_suggestion_tracks_active_standalone_entries(
 
     right._async_set_state(hass, ConfigEntryState.UNLOAD_IN_PROGRESS, None)
     assert registry.async_get_issue(DOMAIN, COMBINE_BEDS_ISSUE_ID) is None
+
+
+async def test_combine_suggestion_needs_two_beds_of_one_protocol(hass: HomeAssistant) -> None:
+    """Two beds of different protocols can never be one bed's sides."""
+    hass.set_state(CoreState.running)
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:01", name="Linak")
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:02", name="Octo", bed_type="octo")
+    registry = ir.async_get(hass)
+
+    async_refresh_combine_beds_issue(hass)
+    assert registry.async_get_issue(DOMAIN, COMBINE_BEDS_ISSUE_ID) is None
+
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:03", name="Second Linak")
+    async_refresh_combine_beds_issue(hass)
+    issue = registry.async_get_issue(DOMAIN, COMBINE_BEDS_ISSUE_ID)
+    assert issue is not None and issue.data == {"entry_count": 2}
 
 
 async def test_combine_suggestion_preserves_dismissal_during_startup(

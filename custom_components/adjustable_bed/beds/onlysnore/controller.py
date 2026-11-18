@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESETS
+from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESET_SAVE
 from ...codec import onlysnore as codec
 from ...command_scheduler import current_command_context
 from ...const import CONF_PRODUCT_TYPE
@@ -478,7 +478,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 lambda ctrl, name=name: require_controller(ctrl, OnlySnoreController).save(name),
                 translation_key=f"onlysnore_save_{name}",
                 requires_confirmation=True,
-                card=CARD_PRESETS,
+                card=CARD_PRESET_SAVE,
             )
             for name in app.PRESETS
             if not name.startswith("memory_")

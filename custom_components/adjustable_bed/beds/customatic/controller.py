@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 
+from ...card import CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...codec.okin_nframe import SERVICE_UUID, WRITE_UUID
 from ...controller_state import StateKey
@@ -172,6 +173,7 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
                 translation_key=f"customatic_{field}",
                 state_key=_info_key(field),
                 icon="mdi:information-outline",
+                entity_registry_enabled_default=False,
             )
             for field, _ in DEVICE_INFO_FIELDS
         )
@@ -438,9 +440,11 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
         buttons = [
             ControllerButtonSpec(
                 "customatic_refresh_device_info",
-                "Refresh Device Information",
+                "Refresh device information",
                 _button_callback("refresh_device_info"),
                 "mdi:refresh",
+                # Connecting reads it; this is a maintenance fallback.
+                diagnostic=True,
             )
         ]
         if not self._has_memory_page:
@@ -462,11 +466,18 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
                 ("program+incline", "Save Incline"),
                 ("flat+program", "Reset"),
             ):
+                # Programming and reset overwrite stored positions: ask first.
+                saves = "program" in action
                 buttons.append(
                     ControllerButtonSpec(
                         f"customatic_{name.lower().replace(' ', '_')}",
                         name,
                         _button_callback(action),
+                        translation_key=f"customatic_{name.lower().replace(' ', '_')}"
+                        if action.startswith("program+")
+                        else None,
+                        requires_confirmation=saves,
+                        card=CARD_PRESET_SAVE if action.startswith("program+") else CARD_UTILITY,
                     )
                 )
         return tuple(buttons)
