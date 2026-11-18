@@ -15,7 +15,8 @@ from .requests import GmmotorActions, Operation, Request
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolSchemaType
 
-OPERATIONS = get_args(Operation.__value__)
+# The bed clock belongs to the shared Set bed clock action.
+OPERATIONS = tuple(op for op in get_args(Operation.__value__) if op != "clock_sync")
 
 
 def _integer(value: object) -> int:

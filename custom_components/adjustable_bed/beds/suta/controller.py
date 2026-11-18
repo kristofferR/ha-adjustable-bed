@@ -50,6 +50,8 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
     from ..builder import BuildContext
 
+# The shared command that sets the bed clock; the Set bed clock action owns it.
+CLOCK_COMMAND: Final = "set_date"
 LEFT_SETPOINT: Final = StateKey[int | None]("suta_left_setpoint")
 RIGHT_SETPOINT: Final = StateKey[int | None]("suta_right_setpoint")
 HEATING_ON: Final = StateKey[bool | None]("suta_heating_on")
@@ -749,6 +751,14 @@ class SutaController(BedController):
             if command.kind in ("dt", "lv", "fan") and not cancel.is_set():
                 self._cycles[request.action] = suffix
                 self._publish()
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        return CLOCK_COMMAND in self.commands
+
+    async def sync_clock(self) -> None:
+        # An empty suffix makes the clock command send Home Assistant's local time.
+        await self.execute_request(Request(CLOCK_COMMAND))
 
     @property
     def alarm_capability(self) -> AlarmCapability | None:

@@ -581,6 +581,13 @@ class GmmotorController(BedController, GmmotorActions):
         for packet in packets:
             await self.write_command(packet)
 
+    @property
+    def supports_clock_sync(self) -> bool:
+        return bool(self.profile.alarm_choices)
+
+    async def sync_clock(self) -> None:
+        await self.async_execute_gmmotor_request(Request("clock_sync"))
+
     async def _unmapped_axis(self) -> None:
         raise NotImplementedError("Use this product's named GM Control actions")
 

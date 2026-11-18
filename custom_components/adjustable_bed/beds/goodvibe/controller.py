@@ -1675,6 +1675,20 @@ class GoodVibeController(BedController):
             await self._send(p.QUERIES["alarms"])
         self._publish()
 
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    def validate_clock_sync(self) -> None:
+        from .services import Request
+
+        self.validate_goodvibe_request(Request("sync"))
+
+    async def sync_clock(self) -> None:
+        from .services import Request
+
+        await self.async_execute_goodvibe_request(Request("sync"))
+
     async def move_head_up(self) -> None:
         raise NotImplementedError("Use the exact app-labelled action")
 

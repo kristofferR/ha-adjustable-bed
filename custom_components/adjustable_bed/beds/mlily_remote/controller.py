@@ -487,6 +487,13 @@ class MlilyRemoteController(CasperBaseController):
             self._pending_alarm = None
             raise
 
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    async def sync_clock(self) -> None:
+        await self.async_execute_casper_base_request(Request("time_sync"))
+
     async def stop_all(self) -> None:
         link = self._current()
         await self._write(

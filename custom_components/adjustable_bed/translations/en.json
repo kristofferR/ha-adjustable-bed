@@ -8410,27 +8410,6 @@
         }
       }
     },
-    "motion_bed_clock": {
-      "name": "Motion Bed: set clock",
-      "description": "Set the motor or thermal module clock.",
-      "fields": {
-        "device_id": {
-          "name": "Bed"
-        },
-        "side": {
-          "name": "Side"
-        },
-        "confirmed": {
-          "name": "Confirm persistent change"
-        },
-        "timestamp": {
-          "name": "Timestamp"
-        },
-        "thermal": {
-          "name": "Thermal"
-        }
-      }
-    },
     "motion_bed_module": {
       "name": "Motion Bed: hub modules",
       "description": "Lists, adds or removes the motor, air or heating modules of a Motion Bed hub. Adding and removing need confirmation.",
@@ -11146,7 +11125,6 @@
     },
     "gmmotor_operation": {
       "options": {
-        "clock_sync": "Set bed clock",
         "alarm": "Alarm tone",
         "alarm_at": "Alarm at a time",
         "alarm_cancel": "Cancel alarm",
@@ -11197,7 +11175,6 @@
         "repeat": "Repeating alarm",
         "delete": "Delete",
         "alarms": "Read alarms",
-        "sync": "Set bed clock",
         "light_color": "Light color",
         "light_duration": "Light timer",
         "light_off": "Light off",
@@ -11404,7 +11381,6 @@
         "repeat": "Repeating alarm",
         "delete": "Delete",
         "alarms": "Read alarms",
-        "sync": "Set bed clock",
         "light_color": "Light color",
         "light_duration": "Light timer",
         "light_off": "Light off",
@@ -11431,7 +11407,6 @@
         "enable_alarm": "Turn alarm on or off",
         "delete": "Delete",
         "alarms": "Read alarms",
-        "sync": "Set bed clock",
         "light_color": "Light color",
         "light_duration": "Light timer",
         "light_off": "Light off",
@@ -11586,8 +11561,7 @@
         "edit": "Edit alarm",
         "toggle": "Turn on or off",
         "delete": "Delete",
-        "link_name": "Link name",
-        "sync_clock": "Set bed clock"
+        "link_name": "Link name"
       }
     },
     "sonicsleep_mode": {
@@ -11758,7 +11732,6 @@
       "options": {
         "alarm": "Set alarm",
         "alarm_cancel": "Cancel alarm",
-        "time_sync": "Set bed clock",
         "anti_snore": "Anti-snore intervention"
       }
     },
@@ -11821,7 +11794,6 @@
         "repeat": "Save repeating alarm",
         "delete": "Delete alarm",
         "alarms": "Read alarms",
-        "sync": "Set bed clock",
         "light_color": "Set light color",
         "light_duration": "Set light duration",
         "light_off": "Turn light off"
@@ -11923,8 +11895,7 @@
         "alarms": "Read alarms",
         "repeat": "Set alarm",
         "enable": "Turn alarm on or off",
-        "delete": "Delete alarm",
-        "sync": "Sync clock"
+        "delete": "Delete alarm"
       }
     },
     "okimiki_control": {

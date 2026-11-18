@@ -1073,6 +1073,34 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         await self.async_execute_motion_bed_write(self._alarm_write(alarm))
 
+    def _clock_writes(self) -> tuple[MotionBedWrite, ...]:
+        """Set every clock this bed keeps: the motor clock and the thermal module's."""
+        now = dt_util.now()
+        writes: list[MotionBedWrite] = []
+        for write in (
+            MotionBedWrite("clock", (build_clock(now),), "home"),
+            MotionBedWrite("clock", (build_thermal_clock(now),), "thermal"),
+        ):
+            try:
+                self.validate_motion_bed_write(write)
+            except ValueError:
+                continue
+            writes.append(write)
+        return tuple(writes)
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        # A hub's clocks depend on the modules it reports, checked on the live bed.
+        return self.selection.surface != "air"
+
+    def validate_clock_sync(self) -> None:
+        if not self._clock_writes():
+            raise ValueError("This Motion Bed has no clock module")
+
+    async def sync_clock(self) -> None:
+        for write in self._clock_writes():
+            await self.async_execute_motion_bed_write(write)
+
     def validate_motion_bed_write(self, request: MotionBedWrite) -> None:
         available: set[str] = set()
         surface = self.selection.surface
