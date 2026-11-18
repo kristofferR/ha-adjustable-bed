@@ -3199,14 +3199,12 @@ onlysnore_set_alarm:
           max: 255
           step: 1
           mode: box
-    action_index:
-      default: 0
+    action:
+      default: action_1
       selector:
-        number:
-          min: 0
-          max: 4
-          step: 1
-          mode: box
+        select:
+          options: [action_1, action_9, action_5, action_6, action_8]
+          translation_key: onlysnore_alarm_action
     soft_wake:
       default: false
       selector:

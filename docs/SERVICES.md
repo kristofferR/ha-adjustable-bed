@@ -1,17 +1,5 @@
 # Actions and Automations
 
-## Snore Monitor alarm
-
-`adjustable_bed.onlysnore_set_alarm` configures a local Snore Monitor 2.3.8 BED
-alarm. Select `device_id`, optional paired `side`, `slot` (1 to 3), `enabled`,
-minute-precision `time`, exact `week_mask`, `action_index` (0 to 4), and
-triple-only `soft_wake`. The BED configuration must report three alarms before
-slots 2 or 3 or soft wake can be used. Disabled triple slots still use their
-complete supplied fields and the source preprocessing; single disable sends
-the single-alarm close command. Every selected physical BED is validated before
-the action executes. See [Snore Monitor BED](beds/onlysnore.md) for the exact
-single/triple one-time weekday differences and hardware limits.
-
 Use **Developer Tools → Actions → Adjustable Bed** to inspect the fields for an
 action. In YAML the action name is `adjustable_bed.<name>`. The examples below
 use `device_id` in `data`; replace each placeholder with the ID of your bed's
@@ -110,6 +98,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`sleeptracker_preset`](#sleeptracker_preset) | Sleeptracker: preset | Moves to or saves a preset. The presets depend on the bed. |
 | [`sleeptracker_relaxation`](#sleeptracker_relaxation) | Sleeptracker: relaxation | Starts the wind-down routine or the bed's relaxation movement. |
 | [`sleeptracker_wave`](#sleeptracker_wave) | Sleeptracker: relaxation wave | Starts a wave massage at the chosen speed and for the chosen time. Use Stop massage to end it early. |
+| [`onlysnore_set_alarm`](#onlysnore_set_alarm) | Snore Monitor: set bed alarm | Set or turn off one of the bed's own alarms. Snore Monitor keeps this action instead of Set alarm because its alarm actions and raw repeat mask have no confirmed meaning. |
 | [`solace_audio`](#solace_audio) | Solace: control audio | Select or preview MotionFlex music, query volume, or set volume. |
 | [`sonicsleep`](#sonicsleep) | SonicSleep: settings | Read alarms, create or edit a form alarm, preserve a received alarm while toggling it, delete an alarm, query the bed link name or sync its clock. |
 | [`starcode_move_lifts`](#starcode_move_lifts) | Starcode: move lifts | Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action. |
@@ -1706,6 +1695,27 @@ wind-down. Use `stop_all` to cancel movement and stop the local motor/massage
 animation. Wave duration units and side mapping are not yet confirmed on a real bed. Last commanded climate timers describe acknowledged writes,
 not countdown readback. No service accepts arbitrary JSON, network configuration
 or speaker/audio commands.
+
+## Snore Monitor
+
+<a id="onlysnore_set_alarm"></a>
+**`onlysnore_set_alarm`**: Set or turn off one of the bed's own alarms. Snore Monitor keeps this action instead of Set alarm because its alarm actions and raw repeat mask have no confirmed meaning.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `slot` | Alarm slot | 1, or 1 to 3 when the bed reports three alarms. |
+| `enabled` | Enabled | Turn the alarm on or off. |
+| `time` | Time | Alarm time, to the minute. |
+| `week_mask` | Repeat days (app mask) | The app's repeat mask: add 1 for Sunday, 2 Monday, 4 Tuesday, 8 Wednesday, 16 Thursday, 32 Friday and 64 Saturday. 0 or 128 rings once, on the next day the time comes round. |
+| `action` | Alarm action | One of the app's five alarm actions, named by the code it sends. What each does on the bed is not known. |
+| `soft_wake` | Soft wake | Only when the bed reports three alarms. |
+
+This is a documented exception to [`set_alarm`](#set_alarm). The app's five
+alarm actions have no established meaning, so they cannot be named as wake
+actions, and the raw repeat mask's top bit has no `set_alarm` equivalent. The
+action also prepares both beds of a combined pair before either writes and
+rechecks each bed's connection before the first write. See [Snore Monitor
+BED](beds/onlysnore.md#settings-and-alarms) for the one-time weekday handling.
 
 ## Solace
 

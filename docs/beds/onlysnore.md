@@ -202,9 +202,14 @@ default. The app's local management command (`management_1`) has no known
 user-visible effect and is not exposed.
 These names describe device commands and make no clinical efficacy claim.
 
-`adjustable_bed.onlysnore_set_alarm` takes the one-based slot, enabled state,
-minute-precision time, exact app week mask, action index and triple-only soft wake.
-All selected beds are validated before execution. For one-time masks, single
+`adjustable_bed.onlysnore_set_alarm` (**Snore Monitor: set bed alarm**) takes the
+one-based slot, enabled state, minute-precision time, exact app week mask, one of
+the app's five alarm actions (offered as Action 1, 9, 5, 6 and 8 after the code
+each sends) and triple-only soft wake. This bed is not on the shared `set_alarm`
+action because the app's alarm action codes have no established meaning and the
+raw week mask's top bit has no `set_alarm` equivalent. The action also prepares
+both beds of a combined pair before either writes and rechecks each bed's
+connection before the first write. All selected beds are validated before execution. For one-time masks, single
 alarms retain current seconds, clear subseconds, advance by an elapsed day when
 strictly earlier, and mutate their model mask. Triple alarms zero seconds, use a
 separate weekday clock, and retain the model mask. Their Sunday rollover may

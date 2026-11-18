@@ -15,6 +15,10 @@ from ...const import CONF_PRODUCT_TYPE, DOMAIN, PAIR_CONNECTION_MODE_CONCURRENT
 from ...import_executor import async_import_modules
 from ...profile_id import profile_route_from_data
 
+# The app's five alarm actions in its own order, named by the code each sends
+# (01, 09, 05, 06, 08). Their physical effects are not established.
+ALARM_ACTIONS = ("action_1", "action_9", "action_5", "action_6", "action_8")
+
 if TYPE_CHECKING:
     from bleak import BleakClient
 
@@ -186,7 +190,7 @@ def register_services(hass: HomeAssistant) -> None:
             "hour": time.hour,
             "minute": time.minute,
             "week": call.data["week_mask"],
-            "type_index": call.data["action_index"],
+            "type_index": ALARM_ACTIONS.index(call.data["action"]),
             "soft": call.data["soft_wake"],
         }
         validated: dict[AdjustableBedCoordinator, OnlySnoreController] = {}
@@ -266,9 +270,7 @@ def register_services(hass: HomeAssistant) -> None:
                 vol.Optional("week_mask", default=0): vol.All(
                     vol.Coerce(int), vol.Range(min=0, max=255)
                 ),
-                vol.Optional("action_index", default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=4)
-                ),
+                vol.Optional("action", default=ALARM_ACTIONS[0]): vol.In(ALARM_ACTIONS),
                 vol.Optional("soft_wake", default=False): cv.boolean,
                 **SIDE_FIELD,
             }
