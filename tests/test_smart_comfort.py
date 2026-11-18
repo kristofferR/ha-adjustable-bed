@@ -259,7 +259,8 @@ def test_parser_rejects_unsafe_lengths_and_keeps_unsigned_raw_counters():
     system(ctrl)
     ctrl._notification(MagicMock(), bytearray.fromhex("b0b1b23c1f00805b2e00802c27008035"))
     # Unknown-meaning counters are kept for diagnostics, not exposed as entities.
-    assert ctrl.protocol_diagnostics["feedback_counters"][0] == 2147491644
+    counters = ctrl.protocol_diagnostics["feedback_counters"]
+    assert isinstance(counters, list) and counters[0] == 2147491644
     assert [s.key for s in ctrl.controller_state_sensor_specs] == ["smart_comfort_model"]
 
 

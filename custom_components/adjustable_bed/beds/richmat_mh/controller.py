@@ -162,7 +162,7 @@ DETECTION_KEY: Final = StateKey[str]("richmat_mh_detection")
 DETECTION_RESULTS_KEY: Final = StateKey[dict[str, object]]("richmat_mh_detection_results")
 ALARM_STATUS_KEY: Final = StateKey[str]("richmat_mh_alarm")
 MEMORY_ARRIVAL_KEY: Final = StateKey[str]("richmat_mh_memory_arrival")
-SMART_SET_LOCK_KEY: Final = StateKey[bool]("richmat_mh_smart_set_lock")
+SMART_SET_LOCK_KEY: Final = StateKey[bool | None]("richmat_mh_smart_set_lock")
 SMART_LIGHT_LOCK_KEY: Final = StateKey[bool]("richmat_mh_smart_light_lock")
 WAIST_MODE_KEY: Final = StateKey[str | None]("richmat_mh_waist_mode")
 # Waist page selects per side and field, with their option lists.
