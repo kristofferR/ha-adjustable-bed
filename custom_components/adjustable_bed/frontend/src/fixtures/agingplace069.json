@@ -1,0 +1,150 @@
+{
+  "profile": "agingplace",
+  "entities": [
+    {
+      "domain": "cover",
+      "key": "back",
+      "translation_key": "keeson_back",
+      "attributes": {
+        "card_section": "motors",
+        "card_motor": "keeson_back",
+        "held_control_up": "head_up",
+        "held_control_down": "head_down",
+        "held_stop_scope": "side",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0
+      }
+    },
+    {
+      "domain": "cover",
+      "key": "legs",
+      "translation_key": "keeson_legs",
+      "attributes": {
+        "card_section": "motors",
+        "card_motor": "keeson_legs",
+        "held_control_up": "foot_up",
+        "held_control_down": "foot_down",
+        "held_stop_scope": "side",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0
+      }
+    },
+    {
+      "domain": "cover",
+      "key": "bed_height",
+      "translation_key": "bed_height",
+      "attributes": {
+        "card_section": "motors",
+        "card_motor": "bed_height",
+        "held_control_up": "bed_up",
+        "held_control_down": "bed_down",
+        "held_stop_scope": "side",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0
+      }
+    },
+    {
+      "domain": "button",
+      "key": "agingplace_in",
+      "translation_key": "agingplace_in",
+      "attributes": {
+        "card_section": "utility",
+        "held_control": "in",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0
+      }
+    },
+    {
+      "domain": "button",
+      "key": "agingplace_out",
+      "translation_key": "agingplace_out",
+      "attributes": {
+        "card_section": "utility",
+        "held_control": "out",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0
+      }
+    },
+    {
+      "domain": "button",
+      "key": "agingplace_read",
+      "translation_key": "agingplace_read",
+      "attributes": {
+        "card_section": "presets"
+      }
+    },
+    {
+      "domain": "button",
+      "key": "agingplace_circulation",
+      "translation_key": "agingplace_circulation",
+      "attributes": {
+        "card_section": "utility"
+      }
+    },
+    {
+      "domain": "button",
+      "key": "agingplace_sleep",
+      "translation_key": "agingplace_sleep",
+      "attributes": {
+        "card_section": "utility"
+      }
+    },
+    {
+      "domain": "button",
+      "key": "agingplace_relax_cycle",
+      "translation_key": "agingplace_relax_cycle",
+      "attributes": {
+        "card_section": "utility"
+      }
+    },
+    {
+      "domain": "button",
+      "key": "agingplace_diagnostic",
+      "translation_key": "agingplace_diagnostic",
+      "attributes": {
+        "card_section": "utility"
+      }
+    },
+    {
+      "domain": "button",
+      "key": "agingplace_cancel",
+      "translation_key": "agingplace_cancel",
+      "attributes": {
+        "card_section": "utility"
+      }
+    },
+    {
+      "domain": "button",
+      "key": "agingplace_device_info",
+      "translation_key": "agingplace_device_info",
+      "attributes": {
+        "card_section": "utility"
+      }
+    },
+    {
+      "domain": "number",
+      "key": "agingplace_brightness",
+      "translation_key": "agingplace_brightness",
+      "attributes": {
+        "card_section": "lighting"
+      }
+    },
+    {
+      "domain": "number",
+      "key": "agingplace_massage_minutes",
+      "translation_key": "agingplace_massage_minutes",
+      "attributes": {
+        "card_section": "massage",
+        "card_role": "timer"
+      }
+    },
+    {
+      "domain": "number",
+      "key": "agingplace_motion_minutes",
+      "translation_key": "agingplace_motion_minutes",
+      "attributes": {
+        "card_section": "lighting"
+      }
+    }
+  ]
+}

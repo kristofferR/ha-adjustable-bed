@@ -386,6 +386,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 |---|---|---|---|
 | 1500 Tilt Base (Rondure) | `rondure` | 25 | 50 ms |
 | AdjustaMattress app (seven product layouts) | `adjustamattress` | 5 | 200 ms |
+| Aging in Place / Dawn House (com.keeson.agingplace) | `agingplace` | 5 | 200 ms |
 | Comfort Enhancements app (choose MC2/MC3/MC4/MC5) | `comfort_enhancements` | 5 | 200 ms |
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |

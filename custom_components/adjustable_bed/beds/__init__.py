@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from .kaidi.comfy import ComfyController as ComfyController
     from .kaidi.controller import KaidiController as KaidiController
     from .kaidi.rize import RizeController as RizeController
+    from .keeson.agingplace import AgingPlaceController as AgingPlaceController
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.jalon import JalonController as JalonController
     from .keeson.symphony_sleep import SymphonySleepController as SymphonySleepController
@@ -209,6 +210,7 @@ _EXPORT_MODULES = {
     "KaidiController": "kaidi.controller",
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
     "KeesonController": "keeson.controller",
+    "AgingPlaceController": "keeson.agingplace",
     "LeggettGen2Controller": "leggett.gen2",
     "LeggettLpLegacyController": "leggett.lp_legacy",
     "LeggettOkinController": "leggett.okin",

@@ -1,0 +1,128 @@
+[
+  {
+    "action": "iv_light",
+    "key": "00020000",
+    "ctrm": 1,
+    "km": 1,
+    "keykt": 0,
+    "line": 341,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "iv_relax",
+    "key": "00000100",
+    "ctrm": 1,
+    "km": 1,
+    "keykt": 0,
+    "line": 360,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "iv_zg",
+    "key": "00001000",
+    "ctrm": 1,
+    "km": 1,
+    "keykt": 0,
+    "line": 380,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "iv_snore",
+    "key": "00008000",
+    "ctrm": 1,
+    "km": 1,
+    "keykt": 0,
+    "line": 400,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "iv_read",
+    "key": "00008000",
+    "ctrm": 1,
+    "km": 1,
+    "keykt": 0,
+    "line": 419,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "iv_flat",
+    "key": "08000000",
+    "ctrm": 1,
+    "km": 1,
+    "keykt": 0,
+    "line": 438,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "v_head_up",
+    "key": "00000001",
+    "ctrm": 0,
+    "km": 5,
+    "keykt": 1,
+    "line": 495,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "v_head_down",
+    "key": "00000002",
+    "ctrm": 0,
+    "km": 5,
+    "keykt": 1,
+    "line": 531,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "v_foot_up",
+    "key": "00000004",
+    "ctrm": 0,
+    "km": 5,
+    "keykt": 1,
+    "line": 567,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "v_foot_down",
+    "key": "00000008",
+    "ctrm": 0,
+    "km": 5,
+    "keykt": 1,
+    "line": 603,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "v_bed_up",
+    "key": "00000050",
+    "ctrm": 0,
+    "km": 5,
+    "keykt": 1,
+    "line": 640,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "v_bed_down",
+    "key": "000000a0",
+    "ctrm": 0,
+    "km": 5,
+    "keykt": 1,
+    "line": 677,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "iv_in",
+    "key": "40000000",
+    "ctrm": 1,
+    "km": 6,
+    "keykt": 0,
+    "line": 713,
+    "source": "work/targeted/RemoteLayout2.java"
+  },
+  {
+    "action": "iv_out",
+    "key": "80000000",
+    "ctrm": 1,
+    "km": 6,
+    "keykt": 0,
+    "line": 749,
+    "source": "work/targeted/RemoteLayout2.java"
+  }
+]

@@ -351,6 +351,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # Bed types whose controller needs the variant, entry data, the advertisement
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
+    "agingplace": _BuilderSpec("keeson.agingplace"),
     BED_TYPE_RIZE_HOME: _BuilderSpec("rize_home.controller"),
     "smart_sleep": _BuilderSpec("smart_sleep.controller"),
     BED_TYPE_COMFORT_ENHANCEMENT3: _BuilderSpec("comfort_enhancement3.controller"),

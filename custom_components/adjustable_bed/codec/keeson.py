@@ -27,7 +27,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
@@ -151,6 +151,34 @@ def json_command(word: int, device_id: str, *, ctrm: int, km: int, keykt: int) -
         "cmd": {"key": f"{_word(word):08x}", "ctrm": ctrm, "km": km, "keykt": keykt},
     }
     return json.dumps(payload, separators=(",", ":")).encode()
+
+
+def json_packet(code: int, command: Mapping[str, int | str], device_id: str | None) -> bytes:
+    """Encode Dawn House's typed JSON envelope, retaining declared zero fields.
+
+    Member order follows its frozen canonical vectors. Those vectors reconstruct
+    Gson/JSONObject values, rather than recording Android reflection order.
+    Existing Juna/Linx serialization above remains byte-for-byte unchanged.
+    """
+    payload: dict[str, object] = {"cmd": dict(command), "code": code}
+    if device_id is not None:
+        payload["dvid"] = device_id
+    return json.dumps(payload, separators=(",", ":"), sort_keys=True, ensure_ascii=False).encode("utf-8")
+
+
+def parse_json_indication(data: bytes) -> Mapping[str, object] | None:
+    """Dawn House treats each indication as a complete UTF-8 JSON document.
+
+    A truncated document is refused independently; it cannot poison the next
+    indication. There is no source-proven reassembly or identity/ACK filter.
+    """
+    try:
+        decoded: object = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return None
+    if not isinstance(decoded, dict):
+        return None
+    return cast("Mapping[str, object]", decoded)
 
 
 # Two-byte status request of the direct P2 remotes; not a STOP.

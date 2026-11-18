@@ -101,6 +101,7 @@ Each linked guide has a Status line with the details.
 
 | Family | Apps, remotes and receivers | Brands sold with it |
 |--------|-----------------------------|---------------------|
+| [Keeson JSON / Dawn House](docs/beds/keeson.md#aging-in-place--dawn-house) | [Aging in Place / Dawn House 1.1.0](docs/beds/keeson.md#aging-in-place--dawn-house) 🧪 | Dawn House |
 | [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | [BedJet PowerLayer adjustable frame](docs/beds/bedjet-powerlayer.md) ✅ | BedJet (the frame, not the BedJet climate unit) |
 | [BedTech](docs/beds/richmat.md#bedtech) | [BedTech app (nine models)](docs/beds/richmat.md#bedtech) 🧪, [Legacy BedTech controls](docs/beds/richmat.md#bedtech) ✅ | BedTech |
 | [Casper Base](docs/beds/casper-base.md) | [Casper Base app](docs/beds/casper-base.md) 🧪, [Casper Base sleep sensor, MM or SXB](docs/beds/casper-base.md#separate-sleep-sensors-and-remote-finder) 🧪, [Casper Base remote finder (RCRM handset)](docs/beds/casper-base.md#remote-finder) 🧪 | Casper |

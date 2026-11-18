@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.beds.keeson import okin_apps as okin_apps_
 from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BED_APPS
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
+from scripts.codec_docs._agingplace import BLOCKS as _AGINGPLACE_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._yamada import BLOCKS as _YAMADA_BLOCKS
 
@@ -1153,5 +1154,6 @@ def render_symphony_sleep() -> str:
 
 
 BLOCKS.append((GUIDE, "keeson-symphony-sleep", render_symphony_sleep))
+BLOCKS.extend(_AGINGPLACE_BLOCKS)
 
 BLOCKS.extend(_YAMADA_BLOCKS)

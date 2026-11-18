@@ -544,6 +544,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "agingplace": "Aging in Place / Dawn House (com.keeson.agingplace)",
     "smart_sleep": "OKIN Smart Sleep (com.bedding.monitor.sleep_monitor.release)",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY (com.synargy.okin)",
     "smart_comfort_synergy": "Smart Comfort (com.synergy.okin)",
@@ -1323,6 +1324,13 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     # The first pass matches the declared discovery hints, as the manifest does.
     first = first_pass(service_info)
     result = _detect_bed_type_with_app_candidates(service_info, first)
+    # Dawn House scans case-sensitive substrings, without a service filter.
+    if any(name in (service_info.name or "") for name in ("KSWF07S", "KSWF19S")):
+        if result.bed_type is None:
+            result = DetectionResult("agingplace", 0.3, ["name:agingplace", *result.signals])
+        elif result.bed_type != "agingplace":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "agingplace"]))
+            result.signals.append("name:agingplace")
     # The app's scan filter is wider than the manifest gate, so it refines
     # advertisements another matcher admitted; it declares no hint of its own.
     if galaxy_scan_matches(service_info.name) and result.bed_type != BED_TYPE_GALAXY and not any(

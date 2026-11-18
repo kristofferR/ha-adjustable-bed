@@ -29,7 +29,9 @@ _SYMPHONY_FRAMES = {
 
 FAMILY = CodecFamily(
     # The Keeson layout apps: one AppProfile per layout, vectors per app.
-    profiles={KeesonProfile: {**FROZEN_FRAMES, **_SYMPHONY_FRAMES}, AppProfile: FROZEN_FRAMES},
+    profiles={KeesonProfile: {**FROZEN_FRAMES, **_SYMPHONY_FRAMES,
+        "agingplace": frozenset(row["expected_bytes"] for row in json.loads(
+            (Path(__file__).parents[1] / "fixtures/agingplace/vectors.json").read_text()))}, AppProfile: FROZEN_FRAMES},
     bed_types=frozenset(
         {
             "symphony_sleep",
@@ -60,6 +62,7 @@ FAMILY = CodecFamily(
             "cherish",
             "comfort_enhancements",
             "comfortbase",
+            "agingplace",
             "ergomotion_4",
         }
     ),

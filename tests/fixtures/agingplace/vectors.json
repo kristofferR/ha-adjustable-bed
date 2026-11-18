@@ -1,0 +1,416 @@
+[
+  {
+    "id": "V-iv_light",
+    "protocol": "P1",
+    "action": "iv_light",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a312c226b6579223a223030303230303030222c226b65796b74223a302c226b6d223a317d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":1,\"key\":\"00020000\",\"keykt\":0,\"km\":1},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-iv_relax",
+    "protocol": "P1",
+    "action": "iv_relax",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a312c226b6579223a223030303030313030222c226b65796b74223a302c226b6d223a317d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":1,\"key\":\"00000100\",\"keykt\":0,\"km\":1},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-iv_zg",
+    "protocol": "P1",
+    "action": "iv_zg",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a312c226b6579223a223030303031303030222c226b65796b74223a302c226b6d223a317d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":1,\"key\":\"00001000\",\"keykt\":0,\"km\":1},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-iv_snore",
+    "protocol": "P1",
+    "action": "iv_snore",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a312c226b6579223a223030303038303030222c226b65796b74223a302c226b6d223a317d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":1,\"key\":\"00008000\",\"keykt\":0,\"km\":1},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-iv_read",
+    "protocol": "P1",
+    "action": "iv_read",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a312c226b6579223a223030303038303030222c226b65796b74223a302c226b6d223a317d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":1,\"key\":\"00008000\",\"keykt\":0,\"km\":1},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-iv_flat",
+    "protocol": "P1",
+    "action": "iv_flat",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a312c226b6579223a223038303030303030222c226b65796b74223a302c226b6d223a317d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":1,\"key\":\"08000000\",\"keykt\":0,\"km\":1},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-v_head_up",
+    "protocol": "P1",
+    "action": "v_head_up",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030303031222c226b65796b74223a312c226b6d223a357d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":0,\"key\":\"00000001\",\"keykt\":1,\"km\":5},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-v_head_down",
+    "protocol": "P1",
+    "action": "v_head_down",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030303032222c226b65796b74223a312c226b6d223a357d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":0,\"key\":\"00000002\",\"keykt\":1,\"km\":5},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-v_foot_up",
+    "protocol": "P1",
+    "action": "v_foot_up",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030303034222c226b65796b74223a312c226b6d223a357d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":0,\"key\":\"00000004\",\"keykt\":1,\"km\":5},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-v_foot_down",
+    "protocol": "P1",
+    "action": "v_foot_down",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030303038222c226b65796b74223a312c226b6d223a357d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":0,\"key\":\"00000008\",\"keykt\":1,\"km\":5},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-v_bed_up",
+    "protocol": "P1",
+    "action": "v_bed_up",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030303530222c226b65796b74223a312c226b6d223a357d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":0,\"key\":\"00000050\",\"keykt\":1,\"km\":5},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-v_bed_down",
+    "protocol": "P1",
+    "action": "v_bed_down",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030306130222c226b65796b74223a312c226b6d223a357d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":0,\"key\":\"000000a0\",\"keykt\":1,\"km\":5},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-iv_in",
+    "protocol": "P1",
+    "action": "iv_in",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a312c226b6579223a223430303030303030222c226b65796b74223a302c226b6d223a367d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":1,\"key\":\"40000000\",\"keykt\":0,\"km\":6},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-iv_out",
+    "protocol": "P1",
+    "action": "iv_out",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a312c226b6579223a223830303030303030222c226b65796b74223a302c226b6d223a367d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":1,\"key\":\"80000000\",\"keykt\":0,\"km\":6},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E2"
+    ]
+  },
+  {
+    "id": "V-release",
+    "protocol": "P1",
+    "action": "release",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030303030222c226b65796b74223a302c226b6d223a317d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":0,\"key\":\"00000000\",\"keykt\":0,\"km\":1},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E3"
+    ]
+  },
+  {
+    "id": "V-circulation",
+    "protocol": "P1",
+    "action": "circulation",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226b6579223a223230303030303030222c226b6d223a327d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"key\":\"20000000\",\"km\":2},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E4"
+    ]
+  },
+  {
+    "id": "V-sleep",
+    "protocol": "P1",
+    "action": "sleep",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226b6579223a223130303030303030222c226b6d223a327d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"key\":\"10000000\",\"km\":2},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E4"
+    ]
+  },
+  {
+    "id": "V-relax_cycle",
+    "protocol": "P1",
+    "action": "relax_cycle",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226b6579223a223038303230303030222c226b6d223a327d2c22636f6465223a322c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"key\":\"08020000\",\"km\":2},\"code\":2,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E4"
+    ]
+  },
+  {
+    "id": "V-bright-0",
+    "protocol": "P1",
+    "action": "brightness",
+    "inputs": {
+      "dvid": "KSWF07S123456789",
+      "value": 0
+    },
+    "expected_bytes": "7b22636d64223a7b2242223a302c2247223a302c2252223a302c22627269676874223a3235352c22636d64223a3138372c2264756d6d79223a302c226b6579223a223030303030303030227d2c22636f6465223a31302c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"B\":0,\"G\":0,\"R\":0,\"bright\":255,\"cmd\":187,\"dummy\":0,\"key\":\"00000000\"},\"code\":10,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E5"
+    ]
+  },
+  {
+    "id": "V-bright-1",
+    "protocol": "P1",
+    "action": "brightness",
+    "inputs": {
+      "dvid": "KSWF07S123456789",
+      "value": 1
+    },
+    "expected_bytes": "7b22636d64223a7b2242223a302c2247223a302c2252223a302c22627269676874223a3235332c22636d64223a3138372c2264756d6d79223a302c226b6579223a223030303030303030227d2c22636f6465223a31302c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"B\":0,\"G\":0,\"R\":0,\"bright\":253,\"cmd\":187,\"dummy\":0,\"key\":\"00000000\"},\"code\":10,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E5"
+    ]
+  },
+  {
+    "id": "V-bright-50",
+    "protocol": "P1",
+    "action": "brightness",
+    "inputs": {
+      "dvid": "KSWF07S123456789",
+      "value": 50
+    },
+    "expected_bytes": "7b22636d64223a7b2242223a302c2247223a302c2252223a302c22627269676874223a3133302c22636d64223a3138372c2264756d6d79223a302c226b6579223a223030303030303030227d2c22636f6465223a31302c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"B\":0,\"G\":0,\"R\":0,\"bright\":130,\"cmd\":187,\"dummy\":0,\"key\":\"00000000\"},\"code\":10,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E5"
+    ]
+  },
+  {
+    "id": "V-bright-100",
+    "protocol": "P1",
+    "action": "brightness",
+    "inputs": {
+      "dvid": "KSWF07S123456789",
+      "value": 100
+    },
+    "expected_bytes": "7b22636d64223a7b2242223a302c2247223a302c2252223a302c22627269676874223a352c22636d64223a3138372c2264756d6d79223a302c226b6579223a223030303030303030227d2c22636f6465223a31302c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"B\":0,\"G\":0,\"R\":0,\"bright\":5,\"cmd\":187,\"dummy\":0,\"key\":\"00000000\"},\"code\":10,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E5"
+    ]
+  },
+  {
+    "id": "V-massage_minutes-1",
+    "protocol": "P1",
+    "action": "massage_minutes",
+    "inputs": {
+      "dvid": "KSWF07S123456789",
+      "value": 1
+    },
+    "expected_bytes": "7b22636d64223a7b22627269676874223a302c22636d64223a31362c2264756d6d79223a302c226b6579223a223030303030303030222c226d617373616754223a36307d2c22636f6465223a382c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"bright\":0,\"cmd\":16,\"dummy\":0,\"key\":\"00000000\",\"massagT\":60},\"code\":8,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E5"
+    ]
+  },
+  {
+    "id": "V-massage_minutes-60",
+    "protocol": "P1",
+    "action": "massage_minutes",
+    "inputs": {
+      "dvid": "KSWF07S123456789",
+      "value": 60
+    },
+    "expected_bytes": "7b22636d64223a7b22627269676874223a302c22636d64223a31362c2264756d6d79223a302c226b6579223a223030303030303030222c226d617373616754223a333630307d2c22636f6465223a382c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"bright\":0,\"cmd\":16,\"dummy\":0,\"key\":\"00000000\",\"massagT\":3600},\"code\":8,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E5"
+    ]
+  },
+  {
+    "id": "V-motion_minutes-1",
+    "protocol": "P1",
+    "action": "motion_minutes",
+    "inputs": {
+      "dvid": "KSWF07S123456789",
+      "value": 1
+    },
+    "expected_bytes": "7b22636d64223a7b22627269676874223a302c22636d64223a31372c2264756d6d79223a302c226b6579223a223030303030303030222c226d617373616754223a36307d2c22636f6465223a392c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"bright\":0,\"cmd\":17,\"dummy\":0,\"key\":\"00000000\",\"massagT\":60},\"code\":9,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E5"
+    ]
+  },
+  {
+    "id": "V-motion_minutes-30",
+    "protocol": "P1",
+    "action": "motion_minutes",
+    "inputs": {
+      "dvid": "KSWF07S123456789",
+      "value": 30
+    },
+    "expected_bytes": "7b22636d64223a7b22627269676874223a302c22636d64223a31372c2264756d6d79223a302c226b6579223a223030303030303030222c226d617373616754223a313830307d2c22636f6465223a392c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"bright\":0,\"cmd\":17,\"dummy\":0,\"key\":\"00000000\",\"massagT\":1800},\"code\":9,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E5"
+    ]
+  },
+  {
+    "id": "V-diagnostic",
+    "protocol": "P1",
+    "action": "diagnostic",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b226b6579223a223030343030303030222c226b6d223a327d2c22636f6465223a342c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"key\":\"00400000\",\"km\":2},\"code\":4,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E6"
+    ]
+  },
+  {
+    "id": "V-deviceinfo",
+    "protocol": "P1",
+    "action": "device_info",
+    "inputs": {
+      "dvid": "KSWF07S123456789"
+    },
+    "expected_bytes": "7b22636d64223a7b227377223a317d2c22636f6465223a342c2264766964223a224b535746303753313233343536373839227d",
+    "expected_utf8": "{\"cmd\":{\"sw\":1},\"code\":4,\"dvid\":\"KSWF07S123456789\"}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E7"
+    ]
+  },
+  {
+    "id": "V-null-dvid",
+    "protocol": "P1",
+    "action": "release",
+    "inputs": {
+      "dvid": null
+    },
+    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030303030222c226b65796b74223a302c226b6d223a317d2c22636f6465223a327d",
+    "expected_utf8": "{\"cmd\":{\"ctrm\":0,\"key\":\"00000000\",\"keykt\":0,\"km\":1},\"code\":2}",
+    "normalization": "Canonical JSON order; input values and UTF-8 transformation frozen from artifact, not a captured Android Gson reflection order. Use protocol bytes formula for runtime ordering.",
+    "evidence": [
+      "E3"
+    ]
+  }
+]
