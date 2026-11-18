@@ -8780,8 +8780,9 @@ States without a listed timer arm have no periodic write. **Bed release
 gesture** retains the direct bed effects of phone-torch handlers: `m`/`n`,
 release only, or cancellation only as listed. Phone torch is excluded and is
 never exposed as a bed light or phone control. Local-only selectors and
-cancellation-only actions send no wire packet of their own. These, the release
-gesture and U3's tilt selector (the Lounge recall without its release) remain
+cancellation-only actions send no wire packet of their own. These, controls
+that send only the `m`/`n` wake and release (such as the release gesture) and
+U3's tilt selector (the Lounge recall without its release) remain
 `richmat_legacy` action controls but are not buttons. Network, SSID,
 password, cloud, account, OTA and unrelated phone, audio, accessory and seating
 functions are excluded from these direct BLE bed profiles.

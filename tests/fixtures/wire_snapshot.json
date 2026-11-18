@@ -32675,8 +32675,7 @@
 "button:richmat_legacy_btn_posup_1": {"status":"ok","writes":[[0,"6e400002",true,"6d",1,0],[193,"6e400002",true,"26",4,300],[1193,"6e400002",true,"6e",1,0]]},
 "button:richmat_legacy_btn_posdown_0": {"status":"ok","writes":[[0,"6e400002",true,"6d",1,0],[193,"6e400002",true,"25",4,300],[1193,"6e400002",true,"6e",1,0]]},
 "button:richmat_legacy_btn_posdown_1": {"status":"ok","writes":[[0,"6e400002",true,"6d",1,0],[193,"6e400002",true,"27",4,300],[1193,"6e400002",true,"6e",1,0]]},
-"button:richmat_legacy_btn_light": {"status":"ok","writes":[[0,"6e400002",true,"6d",1,0],[193,"6e400002",true,"3c",3,300],[1000,"6e400002",true,"6e",1,0]]},
-"button:richmat_legacy_btn_poweroff": {"status":"ok","writes":[[0,"6e400002",true,"6d",1,0],[1000,"6e400002",true,"6e",1,0]]}
+"button:richmat_legacy_btn_light": {"status":"ok","writes":[[0,"6e400002",true,"6d",1,0],[193,"6e400002",true,"3c",3,300],[1000,"6e400002",true,"6e",1,0]]}
 }},
 "wsilver_products": {
 "info": {"bed_type": "wsilver_products", "connect_error": "ValueError", "controller": "RufRichmatController", "module": "ruf_richmat.controller", "pulse": [10, 100]},

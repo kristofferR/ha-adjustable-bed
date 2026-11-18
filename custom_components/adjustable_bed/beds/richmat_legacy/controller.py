@@ -63,8 +63,8 @@ _NAMES: Final = {
     "under-bed light pictogram": "Toggle Light", "ubl": "Toggle Light", "bed light": "Toggle Light",
     "led": "Toggle Light",
     "factory reset": "Factory Reset", "stop": "Stop", "prohibited / off pictogram": "All Off",
-    "head massage on/off": "Massage: Head On/Off", "foot massage on/off": "Massage: Foot On/Off",
-    "bed/massage on/off pictogram": "Massage: On/Off", "on/off": "Massage: On/Off",
+    "head massage on/off": "Massage: Head Toggle", "foot massage on/off": "Massage: Foot Toggle",
+    "bed/massage on/off pictogram": "Massage: Toggle", "on/off": "Massage: Toggle",
     "massage off": "Massage: Off", "all off": "Massage: Off",
     "timer / all off": "Massage: Timer / Off", "mode / all on": "Massage: Mode / On",
     "mode massage": "Massage: Mode", "mode": "Massage: Mode",
@@ -77,30 +77,30 @@ _NAMES: Final = {
     "speed up": "Massage: Speed Up", "speed down": "Massage: Speed Down",
     "speed +": "Massage: Speed Up", "speed −": "Massage: Speed Down",
     "gentle touch +": "Massage: Gentle Touch Up", "gentle touch −": "Massage: Gentle Touch Down",
-    "head massage +": "Massage: Head Intensity Up", "head massage −": "Massage: Head Intensity Down",
-    "foot massage +": "Massage: Foot Intensity Up", "foot massage −": "Massage: Foot Intensity Down",
-    "head massage increase pictogram": "Massage: Head Intensity Up",
-    "head massage decrease pictogram": "Massage: Head Intensity Down",
-    "foot massage increase pictogram": "Massage: Foot Intensity Up",
-    "foot massage decrease pictogram": "Massage: Foot Intensity Down",
+    "head massage +": "Massage: Head Up", "head massage −": "Massage: Head Down",
+    "foot massage +": "Massage: Foot Up", "foot massage −": "Massage: Foot Down",
+    "head massage increase pictogram": "Massage: Head Up",
+    "head massage decrease pictogram": "Massage: Head Down",
+    "foot massage increase pictogram": "Massage: Foot Up",
+    "foot massage decrease pictogram": "Massage: Foot Down",
     "three intensity arcs": "Massage: Intensity Level 3",
     "one intensity arc": "Massage: Intensity Level 1",
 }
 # Labels whose meaning depends on the screen: name them by the command they send.
 _BY_COMMAND: Final = {
-    "2": "Massage: Head On/Off", "3": "Massage: Foot On/Off",
+    "2": "Massage: Head Toggle", "3": "Massage: Foot Toggle",
     "4": "Massage: Intensity Up", "5": "Massage: Intensity Down",
-    "L": "Massage: Head Intensity Up", "M": "Massage: Head Intensity Down",
-    "N": "Massage: Foot Intensity Up", "O": "Massage: Foot Intensity Down",
+    "L": "Massage: Head Up", "M": "Massage: Head Down",
+    "N": "Massage: Foot Up", "O": "Massage: Foot Down",
 }
 # Buttons that pick what a shared control acts on get one button per choice.
-_VARIANTS: Final = {
+_CHOICE_NAMES: Final = {
     "axis": {0: "Head", 1: "Foot"},
     "mode": {1: "Lumbar", 2: "Tilt", 3: "Lounge"},
 }
 _VARIANT_NAMES: Final = {
-    "+": "Massage: {} Intensity Up", "−": "Massage: {} Intensity Down",
-    "massage power pictogram": "Massage: {} On/Off",
+    "+": "Massage: {} Up", "−": "Massage: {} Down",
+    "massage power pictogram": "Massage: {} Toggle",
     "pos up": "{} Up", "pos down": "{} Down",
     "selected axis up": "{} Up", "selected axis down": "{} Down",
 }
@@ -109,9 +109,9 @@ _VARIANT_NAMES: Final = {
 def _button_name(action: Action, variant: int | None = None) -> str:
     label = action.label.lower()
     if variant is not None and action.select:
-        return _VARIANT_NAMES[label].format(_VARIANTS[action.select][variant])
-    if label == "set" and action.programmable:
-        return "Set Position"
+        return _VARIANT_NAMES[label].format(_CHOICE_NAMES[action.select][variant])
+    if label == "set" and action.programmable and "E" in action.short:
+        return "Zero Gravity"  # T3's SET recalls and saves the zero-gravity preset.
     if label in _NAMES:
         return _NAMES[label]
     sent = (*action.down, *(w for _, b in action.branches for w in b.writes))
@@ -122,23 +122,18 @@ def _button_name(action: Action, variant: int | None = None) -> str:
 
 
 def _variants(action: Action) -> tuple[int | None, ...]:
-    """One button per choice for a control that acts on the selected axis or mode."""
-    if action.select not in _VARIANTS:
-        return (None,)
-    choices = _VARIANTS[action.select]
-    if action.select == "mode":
-        # Mode 0 has no movement.
-        return tuple(m for m in choices if m < len(action.states) and action.states[m] != "0")
-    return tuple(choices)
+    return action.choices or (None,)
 
 
 def _control_id(key: str, variant: int | None) -> str:
     return key if variant is None else f"{key}@{variant}"
 
 
-def _parse_control(control: str) -> tuple[str, int | None]:
-    key, _, variant = control.partition("@")
-    return key, int(variant) if variant.isdigit() else None
+def _choice(control: str) -> int | None:
+    _, sep, choice = control.partition("@")
+    return int(choice) if sep else None
+
+
 WRITE_TIMEOUT_S: Final = 5.0
 
 
@@ -278,10 +273,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
     @property
     def held_control_options(self) -> tuple[str, ...]:
         return tuple(
-            _control_id(a.key, variant)
-            for a in self.profile.actions
-            if a.motion or a.programmable
-            for variant in dict.fromkeys((None, *_variants(a)))
+            c for a in self.profile.actions if a.motion or a.programmable for c in a.control_ids()
         )
 
     @property
@@ -295,11 +287,16 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
         specs = []
         for action in self.profile.actions:
             # Covers own their directions. Local-only pickers (axis/mode choice,
-            # cancelling the app's refresh) and the phone-torch release gesture
-            # send no bed control of their own, so they are not buttons.
-            if action.key in covered or not (
-                action.down or action.branches or action.short
-            ) or action.label in ("Bed release gesture", "Tilt ZG selector (mode 2)"):
+            # cancelling the app's refresh) and controls that only send the
+            # wake/release gesture (e.g. the phone-torch handler) are not buttons.
+            sent = {
+                *action.down, *action.short, *(w for _, b in action.branches for w in b.writes)
+            }
+            if (
+                action.key in covered
+                or not sent - {"m", "n"}
+                or action.label == "Tilt ZG selector (mode 2)"
+            ):
                 continue
             for variant in _variants(action):
                 control = _control_id(action.key, variant)
@@ -364,10 +361,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
         )
 
     def validate_request(self, control: str, duration_ms: int, program: bool = False) -> Action:
-        key, variant = _parse_control(control)
-        action = self.profile.action(key)
-        if variant is not None and variant not in _variants(action):
-            raise ValueError("Choose a control offered by this app and prefix")
+        action = self.profile.action(control)
         if type(duration_ms) is not int or not 1 <= duration_ms <= 60000:
             raise ValueError("Choose a duration of 1 to 60000 ms")
         if program and not action.programmable:
@@ -453,7 +447,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
         cancel = self._coordinator.cancel_command
         if cancel.is_set():
             return
-        _, variant = _parse_control(control)
+        variant = _choice(control)
         if variant is not None and action.select is not None:
             # A per-axis/per-mode button makes the app's choice, then presses.
             setattr(link.state, action.select, variant)

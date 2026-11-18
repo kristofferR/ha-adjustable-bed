@@ -76,6 +76,20 @@ class Action:
     def programmable(self) -> bool:
         return any(b.threshold is not None for _, b in self.branches)
 
+    @property
+    def choices(self) -> tuple[int, ...]:
+        """Values of the app's axis/mode choice this control acts on, if any."""
+        if self.select == "axis":
+            return (0, 1)
+        if self.select == "mode":
+            # Mode 0 arms no movement.
+            return tuple(m for m in (1, 2, 3) if m < len(self.states) and self.states[m] != "0")
+        return ()
+
+    def control_ids(self) -> tuple[str, ...]:
+        """The bare key plus one "<key>@<choice>" id per choice."""
+        return (self.key, *(f"{self.key}@{choice}" for choice in self.choices))
+
 
 @dataclass(frozen=True, slots=True)
 class LegacyProfile:
@@ -89,7 +103,7 @@ class LegacyProfile:
     execution: ExecutionCapabilities = field(init=False)
 
     def __post_init__(self) -> None:
-        controls = frozenset(a.key for a in self.actions if a.motion)
+        controls = frozenset(c for a in self.actions if a.motion for c in a.control_ids())
         object.__setattr__(
             self,
             "execution",
@@ -99,8 +113,10 @@ class LegacyProfile:
         )
 
     def action(self, key: str) -> Action:
+        """The action for a control id, accepting "<key>@<choice>" for its offered choices."""
+        base, _, choice = key.partition("@")
         for action in self.actions:
-            if action.key == key:
+            if action.key == base and key in action.control_ids():
                 return action
         raise ValueError("Choose a control offered by this app and prefix")
 

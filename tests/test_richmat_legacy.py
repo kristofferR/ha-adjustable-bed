@@ -193,11 +193,12 @@ async def test_all_profile_controls_run_on_captured_gatt_and_expose_specs(clock,
             spec for key, spec in specs.items()
             if key == "richmat_legacy_" + action.key or key.startswith(f"richmat_legacy_{action.key}_")
         ]
-        # Covers own their directions; pickers and the release gesture are not buttons.
+        # Covers own their directions; pickers and wake/release-only gestures are not buttons.
+        sent = {*action.down, *action.short, *(w for _, b in action.branches for w in b.writes)}
         assert bool(buttons) != (
             action.key in covered
-            or action.label in ("Bed release gesture", "Tilt ZG selector (mode 2)")
-            or not (action.down or action.branches or action.short)
+            or action.label == "Tilt ZG selector (mode 2)"
+            or sent <= {"m", "n"}
         ), action
         assert all(bool(b.hold) == action.motion for b in buttons if not b.key.endswith("_save"))
         assert ctrl.execution.hold_for(action.key) == ("stream" if action.motion else None)
@@ -376,7 +377,12 @@ async def test_axis_and_mode_buttons_choose_then_press(clock):
     ctrl, c = make(code="GV")
     await ctrl.start_notify()
     names = {spec.name: spec for spec in ctrl.controller_button_specs}
-    assert {"Head Up", "Foot Up", "Massage: Head On/Off", "Massage: Foot On/Off"} <= set(names)
+    assert {"Head Up", "Foot Up", "Massage: Head Toggle", "Massage: Foot Toggle"} <= set(names)
+    # Leased holds accept the per-axis ids; a malformed or unoffered suffix is refused.
+    assert ctrl.execution.hold_for("btn_posup@1") == "stream"
+    for bad in ("btn_posup@-1", "btn_posup@2", "btn_posup@01", "btn_tv@0"):
+        with pytest.raises(ValueError):
+            ctrl.validate_request(bad, 1)
     assert not any("axis" in name for name in names)
     await names["Head Up"].press_fn(ctrl)
     assert ctrl._link.state.axis == 0
@@ -386,6 +392,16 @@ async def test_axis_and_mode_buttons_choose_then_press(clock):
     await ctrl.start_notify()
     names = {spec.name: spec for spec in ctrl.controller_button_specs}
     assert {"Lumbar Up", "Tilt Up", "Lounge Up"} <= set(names)
+    assert ctrl.execution.hold_for("h26_tiltup@2") == "stream"
     c.client.write_gatt_char.reset_mock()
     await ctrl.hold_control("h26_tiltup@2", 1)
     assert ctrl._link.state.mode == 2 and "41" in frames(c)
+
+
+def test_gesture_only_controls_and_zero_gravity_set():
+    ctrl, _ = make("wsilver_legacy", "GV")
+    assert "All Off" not in {s.name for s in ctrl.controller_button_specs}  # sends only m/n
+    ctrl, _ = make("sleep_evolution", "GV")
+    assert "All Off" in {s.name for s in ctrl.controller_button_specs}  # sends G
+    ctrl, _ = make("sleep_evolution", "T3")
+    assert {"Zero Gravity", "Save Zero Gravity"} <= {s.name for s in ctrl.controller_button_specs}
