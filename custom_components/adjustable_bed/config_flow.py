@@ -2320,11 +2320,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 )
                 if problem == "not_in_app":
                     errors[CONF_BED_TYPE] = "remacro_model_not_in_app"
-        if user_input is not None and not errors:
-            self._select_family_route(bed_type, variant)
-            if variant is None and len(_setup_routes(bed_type)) >= 2:
-                return await self.async_step_reconfigure_route()
-            return await self._async_reconfigure_continue(exact=variant is not None)
+            if not errors:
+                self._select_family_route(bed_type, variant)
+                if variant is None and len(_setup_routes(bed_type)) >= 2:
+                    return await self.async_step_reconfigure_route()
+                return await self._async_reconfigure_continue(exact=variant is not None)
         return self.async_show_form(
             step_id="reconfigure_bed_type",
             data_schema=vol.Schema(
