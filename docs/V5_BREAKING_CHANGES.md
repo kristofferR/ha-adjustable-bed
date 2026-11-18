@@ -199,7 +199,8 @@ and `zseries_set_alarm`. Field changes:
   Comfort Enhancement 3 program or an RMControl repeating alarm, and clears both
   Keeson app alarm tables.
 - No longer offered: Linak snooze repeats (`recurrence_count`, `recurrence_minutes`),
-  N32 delete and query, RMControl query, Smart Sleep `week_mask` and `flexible_wake`,
+  N32 delete and query, RMControl query, Smart Sleep `week_mask`, `flexible_wake` and the
+  `app_*` action labels (use `zero_g`, `lounge`, `tv` or `anti_snore`, which send the same values),
   Motion Bed split zero-gravity modes and the raw `switch` value, Keeson app tables
   with more than one weekly or one-time alarm, and Comfort Enhancement 3 program
   numbers above 10. RMControl clock setting moved to `sync_clock`.
