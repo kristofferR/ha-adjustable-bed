@@ -748,3 +748,11 @@ async def test_real_memory_and_preset_entities_publish_card_routes(hass, fmt, no
             codec.preset("p2", "read"),
         ]
         assert {"smart_sleep_save_read", "program_memory_1", "program_memory_2"} <= by_key.keys()
+
+
+def test_preset_saves_are_confirmed_save_buttons():
+    from custom_components.adjustable_bed.card import CARD_PRESET_SAVE
+
+    saves = [s for s in controller("p2").controller_button_specs if "_save_" in s.key]
+    assert saves
+    assert all(s.requires_confirmation and s.card == CARD_PRESET_SAVE for s in saves)

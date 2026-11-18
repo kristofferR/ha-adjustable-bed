@@ -14,6 +14,7 @@ from ...card import (
     CARD_LIGHT_TOGGLE,
     CARD_LIGHTING,
     CARD_MASSAGE,
+    CARD_PRESET_SAVE,
     CARD_UTILITY,
     CardPlacement,
 )
@@ -71,7 +72,11 @@ def _request_button(
     async def press(controller: BedController) -> None:
         await _controller(controller).async_execute_sleeptracker_request(request)
 
-    return ControllerButtonSpec(key, name, press, translation_key=key, card=card)
+    save = card is CARD_PRESET_SAVE
+    # Saving overwrites the stored preset, so the card asks first.
+    return ControllerButtonSpec(
+        key, name, press, translation_key=key, requires_confirmation=save, card=card
+    )
 
 
 def _axis_command(axis: p.Axis, action: str) -> MotorCommandCallable:
@@ -970,6 +975,7 @@ class SleeptrackerController(BedController):
                             "sleeptracker_save_" + name,
                             "Save " + name,
                             p.Request("preset", preset=name, save=True),
+                            CARD_PRESET_SAVE,
                         )
                     )
         if self._restricted:

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Final
 from bleak import BleakClient
 from bleak.exc import BleakError
 
-from ...card import CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ...controller_state import StateKey
 from ...profiles import rize_home as p
 from ..base import BedController, ProfileExecution
@@ -270,7 +270,9 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
                     lambda c, a=preset: _rize(c).program_preset(a),
                     translation_key=f"rize_home_save_{preset}",
                     scheduler_resource="*",
-                    card=CARD_PRESETS,
+                    # Saving overwrites the stored preset, so the card asks first.
+                    requires_confirmation=True,
+                    card=CARD_PRESET_SAVE,
                 )
             )
         # The common voice dispatcher reaches controls absent from a product's

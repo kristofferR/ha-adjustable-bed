@@ -224,3 +224,13 @@ async def test_parser_publishes_native_diagnostic_values_and_signed_alarm_attrib
     controller._handle_notification(None, status(128))
     assert raw.get(controller._state_key("status_code")) == -128
     assert sensors["serenity_massage_timer_minutes"].native_value is None
+
+
+def test_preset_saves_are_confirmed_save_buttons():
+    from custom_components.adjustable_bed.card import CARD_PRESET_SAVE
+
+    specs = make_controller().controller_button_specs
+    saves = [s for s in specs if s.key.split("_", 1)[1].startswith("save_")]
+    assert saves
+    assert all(s.requires_confirmation and s.card == CARD_PRESET_SAVE for s in saves)
+    assert not any(s.requires_confirmation for s in specs if s not in saves)

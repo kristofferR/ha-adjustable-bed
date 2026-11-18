@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Final, Literal
 
-from ...card import CARD_MASSAGE, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import ESHINE, Button, RichmatProfile
@@ -218,7 +218,13 @@ class EshineController(ProfileExecution[RichmatProfile], BedController):
                 _action(button),
                 translation_key=f"eshine_{key}",
                 icon="mdi:content-save" if key.startswith("save_") else "mdi:vibrate",
-                card=CARD_MASSAGE if key.startswith("massage_") else CARD_UTILITY,
+                # Saving overwrites the stored preset, so the card asks first.
+                requires_confirmation=key.startswith("save_"),
+                card=CARD_MASSAGE
+                if key.startswith("massage_")
+                else CARD_PRESET_SAVE
+                if key.startswith("save_")
+                else CARD_UTILITY,
             )
             for key, (label, button) in EXTRA_BUTTONS.items()
         )

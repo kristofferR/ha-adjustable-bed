@@ -11,7 +11,14 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
-from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
+from ...card import (
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_MASSAGE_TIMER,
+    CARD_PRESET_SAVE,
+    CARD_PRESETS,
+    CARD_UTILITY,
+)
 from ...codec import keeson, okin_nframe, okin_soundwave
 from ...const import (
     CONF_BLE_DEVICE_NAME,
@@ -723,6 +730,8 @@ class SymphonyController(KeesonController):
                 translation_placeholders={"action": label},
                 # Refreshes and the status request are maintenance actions.
                 diagnostic=key in _MAINTENANCE_BUTTONS,
+                # Saving overwrites the stored preset, so the card asks first.
+                requires_confirmation=card is CARD_PRESET_SAVE,
                 card=card,
             )
 
@@ -741,7 +750,7 @@ class SymphonyController(KeesonController):
                     "save_" + name,
                     "Save " + _PRESET_NAMES.get(name, name.replace("_", " ")),
                     lambda c, name=name: c.recall(name, save=True),
-                    CARD_PRESETS,
+                    CARD_PRESET_SAVE,
                 )
             )
         if "reading" in self.app.presets:

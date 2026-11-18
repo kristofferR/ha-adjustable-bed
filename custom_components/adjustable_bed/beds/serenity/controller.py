@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...card import CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...const import (
     CONF_BLE_BOND_ESTABLISHED,
@@ -132,10 +133,10 @@ class OkinBeddingApp:
 
 
 _ZSERIES_BUTTONS_TAIL = (
-    ("save_zero_g", "Save Zero Gravity"),
+    ("save_zero_g", "Save zero gravity"),
     ("save_tv", "Save TV"),
-    ("light_toggle", "Toggle Light"),
-    ("massage_timer_cycle", "Massage Timer Cycle"),
+    ("light_toggle", "Toggle light"),
+    ("massage_timer_cycle", "Cycle massage timer"),
 )
 
 APPS: Final[dict[str, OkinBeddingApp]] = {
@@ -153,17 +154,17 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
         actions=SERENITY_ACTIONS,
         save_codes=SERENITY_SAVE_CODES,
         buttons=(
-            ("refresh_manufacturer", "Refresh Manufacturer"),
-            ("selector_4_up", "Remote Selector 4 Up"),
-            ("selector_4_down", "Remote Selector 4 Down"),
-            ("selector_5_up", "Remote Selector 5 Up"),
-            ("selector_5_down", "Remote Selector 5 Down"),
-            ("save_zero_g", "Save Zero Gravity"),
+            ("refresh_manufacturer", "Refresh manufacturer"),
+            ("selector_4_up", "Control 4 up"),
+            ("selector_4_down", "Control 4 down"),
+            ("selector_5_up", "Control 5 up"),
+            ("selector_5_down", "Control 5 down"),
+            ("save_zero_g", "Save zero gravity"),
             ("save_tv", "Save TV"),
-            ("light_toggle", "Toggle Light"),
-            ("massage_head_cycle", "Head Massage Cycle"),
-            ("massage_foot_cycle", "Foot Massage Cycle"),
-            ("massage_timer_cycle", "Massage Timer Cycle"),
+            ("light_toggle", "Toggle light"),
+            ("massage_head_cycle", "Cycle head massage"),
+            ("massage_foot_cycle", "Cycle foot massage"),
+            ("massage_timer_cycle", "Cycle massage timer"),
             ("wave_1", "Wave 1"),
             ("wave_2", "Wave 2"),
             ("wave_3", "Wave 3"),
@@ -176,17 +177,17 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
         actions=TRANQUIL_ACTIONS,
         save_codes={"save_zero_g": 5, "save_lounge": 3, "save_memory_1": 4, "save_memory_2": 8},
         buttons=(
-            ("refresh_manufacturer", "Refresh Manufacturer"),
-            ("selector_4_up", "Remote Selector 4 Up"),
-            ("selector_4_down", "Remote Selector 4 Down"),
-            ("selector_5_up", "Remote Selector 5 Up"),
-            ("selector_5_down", "Remote Selector 5 Down"),
-            ("save_zero_g", "Save Zero Gravity"),
-            ("save_lounge", "Save Lounge"),
-            ("light_toggle", "Toggle Light"),
-            ("massage_head_cycle", "Head Massage Cycle"),
-            ("massage_foot_cycle", "Foot Massage Cycle"),
-            ("massage_timer_cycle", "Massage Timer Cycle"),
+            ("refresh_manufacturer", "Refresh manufacturer"),
+            ("selector_4_up", "Control 4 up"),
+            ("selector_4_down", "Control 4 down"),
+            ("selector_5_up", "Control 5 up"),
+            ("selector_5_down", "Control 5 down"),
+            ("save_zero_g", "Save zero gravity"),
+            ("save_lounge", "Save lounge"),
+            ("light_toggle", "Toggle light"),
+            ("massage_head_cycle", "Cycle head massage"),
+            ("massage_foot_cycle", "Cycle foot massage"),
+            ("massage_timer_cycle", "Cycle massage timer"),
             ("wave_1", "Wave 1"),
             ("wave_2", "Wave 2"),
             ("wave_3", "Wave 3"),
@@ -199,11 +200,11 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
         actions=ZSERIES_Z230_ACTIONS,
         save_codes={"save_zero_g": 5, "save_memory_1": 4, "save_tv": 6},
         buttons=(
-            ("refresh_manufacturer", "Refresh Manufacturer"),
-            ("head_foot_up", "Head and Foot Up"),
-            ("head_foot_down", "Head and Foot Down"),
+            ("refresh_manufacturer", "Refresh manufacturer"),
+            ("head_foot_up", "Head and foot up"),
+            ("head_foot_down", "Head and foot down"),
             *_ZSERIES_BUTTONS_TAIL,
-            ("massage_intensity_cycle", "Massage Intensity"),
+            ("massage_intensity_cycle", "Cycle massage intensity"),
         ),
         profile=BEDDING_PROFILES["zseries_z230"],
     ),
@@ -213,12 +214,12 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
         actions=ZSERIES_Z280_ACTIONS,
         save_codes={"save_zero_g": 5, "save_memory_1": 4, "save_tv": 6, "save_memory_2": 8},
         buttons=(
-            ("refresh_manufacturer", "Refresh Manufacturer"),
-            ("selector_5_up", "Remote Selector 5 Up"),
-            ("selector_5_down", "Remote Selector 5 Down"),
+            ("refresh_manufacturer", "Refresh manufacturer"),
+            ("selector_5_up", "Control 5 up"),
+            ("selector_5_down", "Control 5 down"),
             *_ZSERIES_BUTTONS_TAIL,
-            ("massage_head_cycle", "Head Massage Cycle"),
-            ("massage_foot_cycle", "Foot Massage Cycle"),
+            ("massage_head_cycle", "Cycle head massage"),
+            ("massage_foot_cycle", "Cycle foot massage"),
         ),
         profile=BEDDING_PROFILES["zseries_z280"],
     ),
@@ -584,7 +585,15 @@ class OkinBeddingAppController(OkinCstController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
-            ControllerButtonSpec(self._key(action), name, _callback(action))
+            ControllerButtonSpec(
+                self._key(action),
+                name,
+                _callback(action),
+                # Saving overwrites a stored preset, so the card asks first.
+                requires_confirmation=action.startswith("save_"),
+                diagnostic=action == "refresh_manufacturer",
+                card=CARD_PRESET_SAVE if action.startswith("save_") else CARD_UTILITY,
+            )
             for action, name in self._app.buttons
         )
 

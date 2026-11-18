@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_MASSAGE_TIMER, CARD_PRESETS
+from ...card import CARD_MASSAGE_TIMER, CARD_PRESET_SAVE
 from ...codec import keeson as codec
 from ...const import KEESON_BASE_NOTIFY_CHAR_UUID, KEESON_BASE_WRITE_CHAR_UUID
 from ...profiles import comfortbase as app
@@ -277,7 +277,9 @@ class ComfortBaseController(KeesonController):
             ControllerButtonSpec(
                 key=f"comfortbase_save_{preset}", name=f"Save {preset.replace('_', ' ')}",
                 press_fn=_save_button(preset), translation_key=f"comfortbase_save_{preset}",
-                icon="mdi:content-save", card=CARD_PRESETS,
+                icon="mdi:content-save", card=CARD_PRESET_SAVE,
+                # Saving overwrites the stored preset, so the card asks first.
+                requires_confirmation=True,
             ) for preset in app.PRESETS
         )
 

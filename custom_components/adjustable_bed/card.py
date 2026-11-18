@@ -106,6 +106,8 @@ CARD_HIDDEN: Final = CardPlacement(CardSection.HIDDEN)
 CARD_STOP: Final = CardPlacement(CardSection.MOTORS, CardRole.STOP)
 CARD_UTILITY: Final = CardPlacement(CardSection.UTILITY)
 CARD_PRESETS: Final = CardPlacement(CardSection.PRESETS)
+# Saves the current position over a named preset: a confirmed save, not a recall.
+CARD_PRESET_SAVE: Final = CardPlacement(CardSection.PRESETS, CardRole.SAVE)
 CARD_MASSAGE: Final = CardPlacement(CardSection.MASSAGE)
 CARD_MASSAGE_TIMER: Final = CardPlacement(CardSection.MASSAGE, CardRole.TIMER)
 CARD_LIGHTING: Final = CardPlacement(CardSection.LIGHTING)

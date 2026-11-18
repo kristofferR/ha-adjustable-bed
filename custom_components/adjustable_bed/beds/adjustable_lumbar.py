@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Final, Literal
 
 from bleak.exc import BleakError
 
-from ..card import CARD_MASSAGE, CARD_UTILITY
+from ..card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ..codec import okin_5a, okin_nframe
 from ..const import (
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
@@ -137,10 +137,10 @@ HELD_CONTROLS: Final = (
     "massage_down",
 )
 _SAVE_LABELS: Final = {
-    "save_zero_g": "Save Zero Gravity",
-    "save_lounge": "Save Lounge",
-    "save_incline": "Save Incline",
-    "save_anti_snore": "Save Anti-Snore",
+    "save_zero_g": "Save zero gravity",
+    "save_lounge": "Save lounge",
+    "save_incline": "Save incline",
+    "save_anti_snore": "Save anti-snore",
 }
 _WAVE_LABELS: Final = {"wave_1": "Wave 1", "wave_2": "Wave 2", "wave_3": "Wave 3"}
 
@@ -327,7 +327,13 @@ class AdjustableLumbarController(
                 translation_key=f"adjustable_lumbar_{key}",
                 icon="mdi:content-save" if key.startswith("save_") else "mdi:gesture-tap",
                 diagnostic=key == "check_massage",
-                card=CARD_MASSAGE if key in _WAVE_LABELS or key == "massage_on" else CARD_UTILITY,
+                # Saving overwrites the stored preset, so the card asks first.
+                requires_confirmation=key in _SAVE_LABELS,
+                card=CARD_MASSAGE
+                if key in _WAVE_LABELS or key == "massage_on"
+                else CARD_PRESET_SAVE
+                if key in _SAVE_LABELS
+                else CARD_UTILITY,
             )
             for key, label in labels.items()
         )

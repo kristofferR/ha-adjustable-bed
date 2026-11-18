@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
@@ -74,7 +74,6 @@ _REFRESH_S = (DOUBLESLEEP.hold.repeat_ms or 0) / 1000
 
 
 CHILD_LOCK: Final = StateKey[str | None]("doublesleep_child_lock")
-PRIVACY: Final = StateKey[str | None]("doublesleep_privacy")
 # Refreshes, clock and sensor upkeep: diagnostic buttons, disabled by default.
 _MAINTENANCE_ACTIONS: Final = frozenset({47, 50, 51, 52, 53, 54, 55, 66, 69, 71, 73, 77})
 # Sensor fields a user reads on a dashboard; the rest are diagnostic.
@@ -1130,7 +1129,8 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 "doublesleep_privacy",
                 "doublesleep_privacy",
                 privacy,
-                PRIVACY,
+                # Published with the other parsed fields as "on" or "off".
+                cast(StateKey[str | None], _field_key("privacy")),
                 "on",
                 "mdi:shield-lock-outline",
             ),

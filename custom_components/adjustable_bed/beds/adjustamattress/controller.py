@@ -79,11 +79,6 @@ def _number_key(field: str) -> StateKey[int | None]:
     return StateKey[int | None](NS + field)
 
 
-def _flag_key(field: str) -> StateKey[bool | None]:
-    """A parsed boolean status field that a switch reads."""
-    return StateKey[bool | None](NS + field)
-
-
 BUTTON_KEYS = {
     "headStrengthAdd": "head_strength_add",
     "footStrengthAdd": "foot_strength_add",
@@ -690,7 +685,14 @@ class AdjustaMattressController(
                 "alarm_commit", "on" if on else "off"
             )
 
-        specs = [ControllerSwitchSpec(NS + "alarm", NS + "alarm", alarm, _flag_key("alarm_on"))]
+        specs = [
+            ControllerSwitchSpec(
+                NS + "alarm",
+                NS + "alarm",
+                alarm,
+                cast(StateKey[bool | None], _field_key("alarm_on")),
+            )
+        ]
         if self._snore:
 
             async def snore(ctrl: BedController, on: bool) -> None:
@@ -706,11 +708,15 @@ class AdjustaMattressController(
                     NS + "snore_control",
                     NS + "snore_control",
                     snore,
-                    _flag_key("snore_enabled"),
+                    cast(StateKey[bool | None], _field_key("snore_enabled")),
                     icon="mdi:sleep-off",
                 ),
                 ControllerSwitchSpec(
-                    NS + "sleep", NS + "sleep", sleep, _flag_key("sleeping"), icon="mdi:sleep"
+                    NS + "sleep",
+                    NS + "sleep",
+                    sleep,
+                    cast(StateKey[bool | None], _field_key("sleeping")),
+                    icon="mdi:sleep",
                 ),
             ]
         return tuple(specs)
