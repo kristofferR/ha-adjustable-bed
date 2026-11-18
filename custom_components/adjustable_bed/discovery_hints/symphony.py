@@ -1,11 +1,10 @@
 """Shared scan-name candidates; none identifies a Symphony product."""
 
 from ..const import BED_TYPE_SYMPHONY
-from ._hints import Case, names
+from ._hints import SMARTBED, Case, names
 
 HINTS = (
-    names(
-        "SMARTBED", case=Case.ANY, anywhere=True, connectable=True, bed_types={BED_TYPE_SYMPHONY}
-    ),
-    names("OKIN", "SLEEP", case=Case.ANY, anywhere=True, bed_types={BED_TYPE_SYMPHONY}),
+    names(*SMARTBED, anywhere=True, connectable=True, bed_types={BED_TYPE_SYMPHONY}),
+    names("OKIN", case=Case.FOLD, anywhere=True, bed_types={BED_TYPE_SYMPHONY}),
+    names("SLEEP", anywhere=True, bed_types={BED_TYPE_SYMPHONY}),
 )

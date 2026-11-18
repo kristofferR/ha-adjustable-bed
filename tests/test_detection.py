@@ -892,6 +892,16 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="Sleep Function 2.0")
         assert detect_bed_type(service_info) == BED_TYPE_RICHMAT
 
+    @pytest.mark.parametrize(
+        "name",
+        ["Firmware Update", "WarmTouch 12", "Wormhole", "Warmup4ie", "Terminal", "Norman's iPhone"],
+    )
+    @pytest.mark.parametrize("manufacturer_data", [{}, {89: b"\x00"}], ids=["alone", "nordic"])
+    def test_words_shaped_like_richmat_codes_are_not_beds(self, name, manufacturer_data):
+        """Richmat codes are read as beds advertise them, in upper case."""
+        info = _make_service_info(name=name, manufacturer_data=manufacturer_data)
+        assert detect_bed_type_detailed(info).bed_type is None
+
     def test_detect_limoss_by_name_pattern(self):
         """Test Limoss detection by name pattern without UUID."""
         service_info = _make_service_info(name="Stawett Remote")
