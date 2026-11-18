@@ -291,9 +291,9 @@ AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
 ComfortBaseForBluetooth, ComfortFurniture, Cool Base, Dynasty Bases, Glideaway
 Motion, Heal Every Night, INNOVA, OkinComfortBed II P1, OkinComfortBed II P2,
 OkinComfortBed II P3, OkinComfortBed Ⅱ (Jalon), Malouf legacy OKIN, MaxCoil Una,
-OKIN Comfort Bed, OKIN-Seating, ORE Ultramatic, Rondure, SBI, Scott Living, Simon Li, Sleepy's
-BOX15, アシステック P1, アシステック P2 keep their key tables with their app controllers; see
-their sections.
+OKIN Comfort Bed, OKIN-Seating, ORE Ultramatic, Rondure, SBI, Scott Living, Simon
+Li, Sleepy's BOX15, アシステック P1, アシステック P2 keep their key tables with their app
+controllers; see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
