@@ -1,6 +1,6 @@
 // Native Lovelace card for the Adjustable Bed integration. Generic across all
-// supported bed types: it discovers a device's entities (by translation_key) and
-// renders only the sections that exist. Styling comes entirely from Home
+// supported bed types: it discovers a device's entities (by each entity's card
+// placement) and renders only the sections that exist. Styling comes entirely from Home
 // Assistant theme variables so it inherits the user's theme.
 import { defineElement } from "./registration";
 import {
@@ -584,7 +584,8 @@ export class AdjustableBedCard extends LitElement {
                 <span class="compact-tab-label">${pane.key === "both" ? localize(this.hass, "card.both") : pane.label}</span>
               </button>`)}
           </div>` : html`<div class="compact-target">
-            ${localize(this.hass, "compact.target")}: ${active?.label ?? localize(this.hass, "compact.target_missing")}
+            ${active ? localize(this.hass, "compact.target_fixed", { side: active.label })
+              : localize(this.hass, "compact.target_missing")}
           </div>` : nothing}
         ${c.show_graphic !== false ? this._compactGraphic(sides) : nothing}
         ${this._compactReadouts(sides)}
@@ -1112,6 +1113,7 @@ export class AdjustableBedCard extends LitElement {
                   class="conn ${CONN_META[conn].cls}"
                   @click=${() => this._moreInfo(bed.connectivity!)}
                   title=${localize(this.hass, CONN_META[conn].key)}
+                  aria-label=${localize(this.hass, CONN_META[conn].key)}
                 >
                   <ha-icon icon=${CONN_META[conn].icon}></ha-icon>
                 </button>
@@ -1281,7 +1283,7 @@ export class AdjustableBedCard extends LitElement {
           ${this._motorDirection(m, "up", stopId, stopScope, remainingStopIds)}
           ${compact ? nothing : html`<button
             class="cg-btn"
-            aria-label=${localize(this.hass, "action.stop")}
+            aria-label=${localize(this.hass, "action.motor_stop", { motor: this._motorName(m) })}
             @click=${() => this._motorStop(m, stopId, stopScope)}
             ?disabled=${!canStop}
           >
@@ -1310,7 +1312,7 @@ export class AdjustableBedCard extends LitElement {
       const moving = this._hold.tapDirection(m) === direction;
       return html`
         <button class="cg-btn tap ${moving ? "moving" : ""}"
-          aria-label=${localize(this.hass, `action.${direction}`)}
+          aria-label=${localize(this.hass, `action.motor_${direction}`, { motor: this._motorName(m) })}
           aria-pressed=${moving ? "true" : "false"}
           @keydown=${(e: KeyboardEvent) => {
             // A held Enter repeats native clicks; one keypress is one tap.
@@ -1322,7 +1324,7 @@ export class AdjustableBedCard extends LitElement {
     }
     return html`
       <button class="cg-btn"
-        aria-label=${localize(this.hass, `action.${direction}`)}
+        aria-label=${localize(this.hass, `action.motor_${direction}`, { motor: this._motorName(m) })}
         @pointerdown=${(e: PointerEvent) => this._startHold(
           e, m, direction, stopId, stopScope, remainingStopIds,
         )}
@@ -1894,7 +1896,7 @@ export class AdjustableBedCard extends LitElement {
     const motors = this._dialogMotors(dialog.ctx);
     const names = motors.map((m) => this._motorName({ key: m })).join(", ");
     const choices = [
-      { value: "flat", title: this._t("estimate.ref_flat"), detail: this._t("estimate.ref_flat_detail", { motors: names }) },
+      { value: "flat", title: this._t("estimate.ref_flat"), detail: this._t(motors.length === 1 ? "estimate.ref_flat_detail_one" : "estimate.ref_flat_detail", { motors: names }) },
       { value: "lower", title: this._t("estimate.ref_lower"), detail: this._t("estimate.ref_lower_detail") },
       ...(motors.length > 1 ? motors.map((m) => ({
         value: `only:${m}`,

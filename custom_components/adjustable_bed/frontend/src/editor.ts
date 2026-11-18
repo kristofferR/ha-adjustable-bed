@@ -98,7 +98,7 @@ export class AdjustableBedCardEditor
   // A renamed slot shows its name, e.g. "Flat", not "Memory 1".
   private _slotLabel(slot: MemorySlot): string {
     const id = slot.goto ?? slot.save;
-    const fallback = `Memory ${slot.slot}`;
+    const fallback = localize(this.hass, "card.memory_slot", { slot: String(slot.slot) });
     return id ? entityLabel(this.hass, id, fallback) : fallback;
   }
 
