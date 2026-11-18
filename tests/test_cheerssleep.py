@@ -1165,7 +1165,6 @@ async def test_native_paired_lights_keep_independent_feedback_and_action_sides(h
         report(0xBB, True)
         assert lights["left"].is_on is False and lights["right"].is_on is True
         assert inner.controller_state[UNDER_BED_LIGHTS_ON] is False
-        assert lights["left"].is_on is False and lights["right"].is_on is True
         report(0, False)  # An unowned/wrong-side report cannot overwrite either child.
         assert lights["left"].is_on is False and lights["right"].is_on is True
         transport.client.write_gatt_char.reset_mock()
@@ -1286,3 +1285,18 @@ async def test_native_paired_rgb_off_waits_for_shared_receiver_feedback(hass, cl
             await light.async_will_remove_from_hass()
         entry.mock_state(hass, ConfigEntryState.NOT_LOADED)
         await pair.async_shutdown()
+
+
+async def test_p1_sleep_entities_follow_their_side(clock):
+    ctrl, _ = make(51)
+
+    def names() -> set[str]:
+        return {spec.key for spec in ctrl.controller_state_sensor_specs}
+
+    assert {"cheerssleep_left_heart", "cheerssleep_right_heart"} <= names()
+    with ctrl.side_scope("right"):
+        assert "cheerssleep_left_heart" not in names()
+        assert {spec.key for spec in ctrl.controller_state_binary_sensor_specs} == {
+            "cheerssleep_right_on_bed",
+            "cheerssleep_right_asleep",
+        }

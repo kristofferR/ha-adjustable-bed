@@ -16,7 +16,7 @@ from ...app_session import app_session
 from ...card import CARD_MASSAGE
 from ...codec import cheerssleep as codec
 from ...const import CONF_PRODUCT_TYPE
-from ...controller_state import AnyStateKey, sided
+from ...controller_state import StateKey, sided
 from ...profiles import cheerssleep as app
 from ...state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import BedController, ProfileExecution, require_controller
@@ -668,7 +668,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                     "Refresh bed state",
                     lambda ctrl: require_controller(ctrl, CheersSleepController).refresh_state(),
                     translation_key="cheerssleep_refresh",
-                    diagnostic=True,
+                    # Connect queries one side, so a split bed's other side
+                    # only gets light feedback from this button.
+                    diagnostic=not (self.model.split and not self.model.rgb),
                 )
             )
         if self.model.combined and "all" not in self.model.axes:
@@ -1061,8 +1063,8 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             )
             for key in (sided(key, self.command_side),)
         ]
-        # Sleep notifications name their side, so each side keeps its own sensors.
-        for fields in keys.SLEEP_KEYS.values() if self.model.format == "p1" else ():
+        # Sleep notifications name their side; a native side device shows only its own.
+        for fields in self._sleep_fields():
             result.extend(
                 ControllerStateSensorSpec(
                     str(key), str(key), key, "mdi:bed", entity_registry_enabled_default=False
@@ -1072,13 +1074,20 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             )
         return tuple(result)
 
+    def _sleep_fields(self) -> list[dict[str, StateKey[int | bool | None]]]:
+        if self.model.format != "p1":
+            return []
+        if self.command_side in keys.SLEEP_KEYS:
+            return [keys.SLEEP_KEYS[self.command_side]]
+        return list(keys.SLEEP_KEYS.values())
+
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return tuple(
             ControllerStateBinarySensorSpec(
                 str(key), str(key), key, "mdi:bed", entity_registry_enabled_default=False
             )
-            for fields in (keys.SLEEP_KEYS.values() if self.model.format == "p1" else ())
+            for fields in self._sleep_fields()
             for name, key in fields.items()
             if name in keys.SLEEP_FLAGS
         )

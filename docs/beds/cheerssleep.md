@@ -322,7 +322,7 @@ Native covers expose only the model's axes, with timed/held controls and the int
 | `lift` (both lifts) | Bed lift | Bed lift up / down |
 | `lift_head`, `lift_foot` | Head lift, Foot lift | Head lift up / down, Foot lift up / down |
 
-P1 sleep reports name their side, so each side has its own sensors: Left/Right in bed and asleep (binary sensors), heart rate, breath rate, snore count and snore power. They are disabled by default because only beds with the sleep module report them. The snore flags, the gatem/gateo fields, the sleep module MAC and the shared control-mode bit are parsed but not exposed. P2 **Refresh bed state** is a diagnostic button, disabled by default; the integration already queries on connect.
+P1 sleep reports name their side, so each side has its own sensors, and a native side device shows only its own: Left/Right in bed and asleep (binary sensors), heart rate, breath rate, snore count and snore power. They are disabled by default. The snore flags, the gatem/gateo fields, the sleep module MAC and the shared control-mode bit are parsed but not exposed. P2 **Refresh bed state** is a diagnostic button, disabled by default, because the integration queries on connect. Split non-RGB models keep it enabled: connect queries one side, so the other side gets light feedback only from this button.
 
 Movement, flat, memory recall and STOP clear the affected preset selection so its next press recalls the preset. A shared color-light toggle runs once per receiver per action, including when targeting both native children; position-light toggles retain per-side execution.
 
