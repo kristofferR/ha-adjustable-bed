@@ -4808,5 +4808,70 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:betterliving2_all_sections_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "betterliving2_all_sections"
+  },
+  "button:betterliving2_all_sections_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "betterliving2_all_sections"
+  },
+  "button:betterliving2_massage_feet_down": {
+    "card_section": "massage"
+  },
+  "button:betterliving2_massage_feet_up": {
+    "card_section": "massage"
+  },
+  "button:betterliving2_massage_head_down": {
+    "card_section": "massage"
+  },
+  "button:betterliving2_massage_head_up": {
+    "card_section": "massage"
+  },
+  "button:betterliving2_massage_off": {
+    "card_section": "massage"
+  },
+  "button:betterliving2_massage_timer": {
+    "card_section": "massage"
+  },
+  "button:betterliving2_massage_toggle": {
+    "card_section": "massage"
+  },
+  "button:betterliving2_massage_wave": {
+    "card_section": "massage"
+  },
+  "button:betterliving2_program_zero_g": {
+    "card_section": "utility"
+  },
+  "button:betterliving2_stop_preset": {
+    "card_section": "utility"
+  },
+  "cover:betterliving2_all_sections": {
+    "card_section": "motors",
+    "card_motor": "betterliving2_all_sections"
+  },
+  "number:betterliving2_massage_feet": {
+    "card_section": "massage"
+  },
+  "number:betterliving2_massage_head": {
+    "card_section": "massage"
+  },
+  "number:betterliving2_massage_wave": {
+    "card_section": "massage"
+  },
+  "sensor:betterliving2_massage_feet": {
+    "card_section": "massage"
+  },
+  "sensor:betterliving2_massage_head": {
+    "card_section": "massage"
+  },
+  "sensor:betterliving2_massage_timer": {
+    "card_section": "hidden"
+  },
+  "sensor:betterliving2_massage_wave": {
+    "card_section": "hidden"
   }
 }

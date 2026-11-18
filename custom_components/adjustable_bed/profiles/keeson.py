@@ -25,6 +25,7 @@ from ..alarm_table import AlarmTableScheduleSpec
 from ..codec import keeson as codec
 from ..codec.keeson import ByteOrder, Carrier, Side, TransportKey
 from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
+from . import betterliving2 as betterliving2_app
 from . import comfortbase as comfortbase_app
 
 Preset = Literal["flat", "zero_g", "lounge", "tv", "anti_snore"]
@@ -566,6 +567,30 @@ YAMADA_P1: Final = KeesonProfile(
 )
 YAMADA_P2: Final = replace(YAMADA_P1, key="yamada_p2", carrier="p2_side", execution=STREAM_HOLD)
 
+BETTERLIVING2: Final = {
+    f"{wire.lower()}_{layout}": KeesonProfile(
+        key=f"betterliving2_{wire.lower()}_{layout}",
+        execution=ExecutionCapabilities(hold="stream", hold_controls=frozenset({
+            "back_up", "back_down", "feet_up", "feet_down", "combined_up", "combined_down",
+        })), header=0xE5 if wire == "P1" else 0xE6,
+        order="big" if wire == "P1" else "little", side=0 if wire == "P2" else None,
+        carrier="p2_side" if wire == "P3" else "k1",
+        transport="ksbt" if wire == "P3" else "base",
+        notify="ksbt" if wire == "P3" else "base", fixed_write=True,
+        hold=(10, screen.refresh_ms), refresh_ms=screen.refresh_ms,
+        release=Release(steps=((0, 0), (100, 0))),
+        presets={"flat": betterliving2_app.PRESETS[wire]["flat"],
+                 "zero_g": betterliving2_app.PRESETS[wire]["zero_g"]},
+        memory={1: betterliving2_app.PRESETS[wire]["memory_1"],
+                2: betterliving2_app.PRESETS[wire]["memory_2"]}, memory_slots=2,
+        memory_save=MemorySave(words={1: betterliving2_app.PROGRAM[wire]["memory_1"],
+                                     2: betterliving2_app.PROGRAM[wire]["memory_2"]}),
+        lights="discrete" if wire == "P1" else "toggle",
+        massage="none", tilt=False, lumbar=False,
+    )
+    for wire in ("P1", "P2", "P3") for layout, screen in betterliving2_app.LAYOUTS.items()
+}
+
 PROFILES: Final[dict[str, KeesonProfile]] = {
     profile.key: profile
     for profile in (
@@ -618,6 +643,7 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         JALON_BED,
         YAMADA_P1,
         YAMADA_P2,
+        *BETTERLIVING2.values(),
     )
 }
 

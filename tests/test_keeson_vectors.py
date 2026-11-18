@@ -38,6 +38,7 @@ from tests.test_controller_contract import _FactoryCoordinator, _make_connected_
 # Controllers that keep their own key tables; only the frame is profile data.
 E6_CONTROLLERS = frozenset(
     {
+        *(f"betterliving2_p{wire}_{layout}" for wire in (1, 2, 3) for layout in (2, 3)),
         "jalon_13", "jalon_15", "jalon_24", "yamada_p1", "yamada_p2",
         "glideaway_motion",
         "jalon_bed",
@@ -215,6 +216,13 @@ def _e6_census(key: str) -> set[bytes]:
     """Key frames the controllers that keep their own tables send."""
     profile = profiles.PROFILES[key]
     words = {codec.RELEASE}
+    if key.startswith("betterliving2_"):
+        from custom_components.adjustable_bed.profiles import betterliving2 as app
+
+        wire = key.split("_")[1].upper()
+        rows = json.loads((Path(__file__).parent / "fixtures/betterliving2/vectors.json").read_text())
+        return {app.command(wire, row["inputs"]["opcode"]) for row in rows
+                if row["protocol"] == wire and row["kind"] == "command"}
     if key in ("yamada_p1", "yamada_p2"):
         from custom_components.adjustable_bed.profiles import yamada as app
 

@@ -45,6 +45,7 @@ from .const import (
     # - OKIN 64-bit: By post-connection characteristic check (62741625 read char)
     # Full auto-detection requires connecting to examine GATT characteristics.
     BED_TYPE_BEDTECH,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CASPER_SLEEP_MM,
@@ -604,6 +605,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app (com.okin.simmonskorea)",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app (com.okin.resident.release)",
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app (com.okin.yamada)",
+    BED_TYPE_BETTERLIVING2: "BetterLiving / BetterLiving2 app (com.ore.betterliving2)",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth / ComfortBase BLE (choose product)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
     BED_TYPE_ESHINE_OKIN: "eShine app (E2000 / E3000 / E3100 / E5000)",
@@ -857,7 +859,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE}
-)
+).union({BED_TYPE_BETTERLIVING2})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
 PROTOCOL_ROUTES: Final = frozenset(
@@ -1424,6 +1426,13 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
         elif result.bed_type != BED_TYPE_YAMADA:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_YAMADA]))
             result.signals.append("name:yamada_app_candidate")
+    # A shared phone-app scan prefix never becomes a competing recommended
+    # receiver. It offers the explicit app only when no receiver is identified.
+    if (result.bed_type is None and isinstance(platform_name, str)
+        and platform_name.lower().startswith(("okin", "smartbed"))
+        and not any(signal.startswith("excluded:") for signal in result.signals)):
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_BETTERLIVING2]))
+        result.signals.append("name:betterliving2_app_candidate")
     # Shared names offer the app; they never replace a stronger receiver match.
     if first.name(BED_TYPE_MLINE) and not any(
         signal.startswith("excluded:") for signal in result.signals

@@ -1,0 +1,266 @@
+"""Physical cohort and one-use sequential session transfers for app services."""
+
+from __future__ import annotations
+
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from bleak import BleakClient
+from homeassistant.exceptions import ServiceValidationError
+
+from ...command_scheduler import current_command_context
+from ...const import DOMAIN
+from ...coordinator import AdjustableBedCoordinator
+from ...paired_coordinator import PairedBedCoordinator
+from ...paired_topology import SequentialTwoLinkTopology
+from ...services import BedTarget, _CommandAdmission
+from ..base import BedController
+from .betterliving2_admission import SELECTION
+
+if TYPE_CHECKING:
+    from .betterliving2 import BetterLiving2Controller
+
+
+@dataclass(slots=True)
+class Batch:
+    parent: AdjustableBedCoordinator | PairedBedCoordinator
+    side: str
+    admission: _CommandAdmission
+    data: Mapping[str, object]
+    roster: tuple[tuple[str, AdjustableBedCoordinator], ...]
+    topology: object | None
+    sequential: bool
+    started: bool = False
+
+
+@dataclass(slots=True)
+class Owner:
+    child: AdjustableBedCoordinator
+    batch: Batch
+    data: Mapping[str, object]
+    address: str
+    stop_epoch: int
+    scheduler_token: object
+    controller: BedController | None
+    client: BleakClient | None
+    link: object | None
+    binding_allowed: bool
+    retiring: tuple[BedController, BleakClient] | None = None
+    started: bool = False
+
+
+class Selection:
+    """Capture without awaiting; no session may replace a queued live link."""
+
+    def __init__(
+        self,
+        targets: list[tuple[BedTarget, str]],
+        admissions: Sequence[_CommandAdmission],
+        *,
+        required_wire: str | None = None,
+    ) -> None:
+        self.active = True
+        self.invalid = False
+        self.preparing = True
+        self.batches: list[Batch] = []
+        self.owners: dict[int, Owner] = {}
+        for (parent, side), admission in zip(targets, admissions, strict=True):
+            if not isinstance(parent, (AdjustableBedCoordinator, PairedBedCoordinator)):
+                raise ServiceValidationError("BetterLiving2 requires physical receiver targets")
+            paired = isinstance(parent, PairedBedCoordinator)
+            members = parent._targets_for(side) if paired else [("both", parent)]
+            roster = tuple(parent.children.items()) if paired else (("both", parent),)
+            if any(not isinstance(child, AdjustableBedCoordinator) for _, child in roster):
+                raise ServiceValidationError("BetterLiving2 requires physical receiver targets")
+            physical = tuple(
+                (name, child)
+                for name, child in roster
+                if isinstance(child, AdjustableBedCoordinator)
+            )
+            batch = Batch(
+                parent,
+                side,
+                admission,
+                deepcopy(dict(parent.entry.data)),
+                physical,
+                parent._topology if paired else None,
+                paired and isinstance(parent._topology, SequentialTwoLinkTopology),
+            )
+            self.batches.append(batch)
+            for _, child in members:
+                if not isinstance(child, AdjustableBedCoordinator):
+                    raise ServiceValidationError("BetterLiving2 has no one-address side selector")
+                data = deepcopy(dict(child.entry.data))
+                wire = data.get("protocol_variant")
+                if (
+                    child.bed_type != "betterliving2"
+                    or not isinstance(wire, str)
+                    or wire not in {"p1", "p2", "p3"}
+                    or str(data.get("product_type")) not in {"2", "3"}
+                    or required_wire is not None
+                    and wire != required_wire
+                ):
+                    raise ServiceValidationError("Choose an exact supported BetterLiving2 profile")
+                controller, client = child._controller, child.client
+                self.owners[id(child)] = Owner(
+                    child,
+                    batch,
+                    data,
+                    child.address.upper(),
+                    child.stop_epoch,
+                    child._command_scheduler.token,
+                    controller,
+                    client,
+                    getattr(controller, "_link", None),
+                    not child.is_connected,
+                )
+        self.check()
+
+    @contextmanager
+    def scope(self) -> Iterator[None]:
+        token = SELECTION.set(self)
+        try:
+            yield
+        finally:
+            self.active = False
+            SELECTION.reset(token)
+
+    def _owned(self, batch: Batch) -> bool:
+        context = current_command_context()
+        selected = [owner.child for owner in self.owners.values() if owner.batch is batch]
+        if context is not None and any(
+            context.scheduler_token is child._command_scheduler.token for child in selected
+        ):
+            return True
+        parent = batch.parent
+        topology = parent._topology if isinstance(parent, PairedBedCoordinator) else None
+        return (
+            batch.sequential
+            and isinstance(parent, PairedBedCoordinator)
+            and isinstance(topology, SequentialTwoLinkTopology)
+            and parent._admission.active_children == set(selected)
+            and topology.command_lock.locked()
+        )
+
+    def _check(self, binding: Owner | None = None) -> None:
+        if self.invalid:
+            raise ServiceValidationError("BetterLiving2 selection was retired")
+        for batch in self.batches:
+            parent = batch.parent
+            if (
+                parent.hass.data.get(DOMAIN, {}).get(parent.entry.entry_id) is not parent
+                or dict(parent.entry.data) != batch.data
+            ):
+                raise ServiceValidationError("BetterLiving2 entry/roster changed")
+            if isinstance(parent, PairedBedCoordinator):
+                if (
+                    parent._topology is not batch.topology
+                    or tuple(parent.children) != tuple(side for side, _ in batch.roster)
+                    or any(parent.children.get(side) is not child for side, child in batch.roster)
+                ):
+                    raise ServiceValidationError("BetterLiving2 physical roster changed")
+                generations = {
+                    side: parent._pair_cancel_generation(side, batch.admission.resources)
+                    for side in batch.admission.expected_pair_generations
+                }
+                before = batch.admission.expected_pair_generations
+                # This action uses the shared all-resource admission. Its own
+                # paired preemption adds exactly one; any further bump retires it.
+                admitted = {side: (value[0] + 1,) for side, value in before.items()}
+                if not batch.started and generations == admitted and self._owned(batch):
+                    batch.started = True
+                if generations != (admitted if batch.started else before):
+                    raise ServiceValidationError("BetterLiving2 paired admission changed")
+        for owner in self.owners.values():
+            child = owner.child
+            if (
+                child.address.upper() != owner.address
+                or dict(child.entry.data) != owner.data
+                or child.stop_epoch != owner.stop_epoch
+                or child._command_scheduler.token is not owner.scheduler_token
+            ):
+                raise ServiceValidationError("BetterLiving2 physical owner/profile/STOP changed")
+            if owner is binding:
+                continue
+            # An initially offline peer may still be establishing transport
+            # during the native concurrent prepare barrier. It has no granted
+            # controller session yet; every session must bind in connected().
+            # No user action is dispatched until start() checks the whole set.
+            if (
+                self.preparing
+                and owner.binding_allowed
+                and owner.controller is None
+                and child._controller is None
+            ):
+                continue
+            if owner.retiring is not None:
+                old_controller, old_client = owner.retiring
+                if child._controller is old_controller and child.client is old_client:
+                    continue
+                if (
+                    not old_client.is_connected
+                    and child._controller is None
+                    and child.client is None
+                ):
+                    continue
+                raise ServiceValidationError("Unowned BetterLiving2 reconnect during selection")
+            if (
+                child._controller is not owner.controller
+                or child.client is not owner.client
+                or getattr(child._controller, "_link", None) is not owner.link
+            ):
+                raise ServiceValidationError("BetterLiving2 captured session changed")
+
+    def check(self, controller: BetterLiving2Controller | None = None) -> None:
+        self._check()
+        if controller is not None:
+            owner = self.owners.get(id(controller._coordinator))
+            if (
+                owner is None
+                or owner.controller is not controller
+                or owner.link is not controller._link
+            ):
+                raise ServiceValidationError("BetterLiving2 dispatch session was not admitted")
+
+    def stopped_before_preflight(self) -> bool:
+        """Retain the native service contract for a STOP during its lazy import."""
+        return any(owner.child.stop_epoch != owner.stop_epoch for owner in self.owners.values())
+
+    def connected(self, controller: BetterLiving2Controller) -> None:
+        owner = self.owners.get(id(controller._coordinator))
+        if owner is None or not owner.binding_allowed or not self._owned(owner.batch):
+            raise ServiceValidationError("Unowned BetterLiving2 session replacement")
+        if owner.retiring is not None and owner.retiring[1].is_connected:
+            raise ServiceValidationError("BetterLiving2 old physical link was not released")
+        self._check(binding=owner)
+        owner.controller, owner.client, owner.link = controller, controller.client, controller._link
+        owner.retiring = None
+        owner.binding_allowed = False
+        self.check(controller)
+
+    def releasing(self, controller: BetterLiving2Controller, reason: str) -> None:
+        owner = self.owners.get(id(controller._coordinator))
+        if owner is None or owner.controller is not controller or owner.client is None:
+            return  # The coordinator also releases its offline capability copy.
+        try:
+            self._check()
+        except ServiceValidationError:
+            self.invalid = True
+            return  # Never prevent physical disconnect/cleanup.
+        if (
+            reason != "sequential_switch"
+            or not owner.batch.sequential
+            or not self._owned(owner.batch)
+        ):
+            self.invalid = True
+            return
+        owner.retiring = (controller, owner.client)
+        owner.binding_allowed = not owner.started
+
+    def start(self, controller: BetterLiving2Controller) -> None:
+        self.preparing = False
+        self.check(controller)
+        self.owners[id(controller._coordinator)].started = True

@@ -2068,6 +2068,15 @@ FROZEN_FRAMES["jalon_bed"] = frozenset(
     ]
 )
 
+# com.ore.betterliving2 1.3.0 (16), row082. Route/layout pairs own separate profiles.
+_BETTERLIVING2 = json.loads((Path(__file__).parent / "fixtures/betterliving2/vectors.json").read_text())
+for _wire in ("P1", "P2", "P3"):
+    for _layout in ("2", "3"):
+        FROZEN_FRAMES[f"betterliving2_{_wire.lower()}_{_layout}"] = frozenset(
+            row["expected_bytes"] for row in _BETTERLIVING2
+            if row["protocol"] == _wire and row["kind"] in ("command", "clock", "time", "query")
+        )
+
 # com.okin.yamada 1.0.1 (6), row178. Frozen literals, no report-helper code.
 _YAMADA = json.loads((Path(__file__).parent / "fixtures/yamada_vectors.json").read_text())
 for _version in (1, 2):

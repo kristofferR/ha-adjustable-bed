@@ -1,3 +1,84 @@
+betterliving2_diagnostic_action:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      selector:
+        select:
+          translation_key: betterliving2_diagnostic_action
+          options: [refresh_alarm, refresh_massage, set_massage_timer]
+    timer:
+      selector:
+        number:
+          min: -1
+          max: 2
+          step: 1
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+betterliving2_set_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    enabled:
+      required: true
+      selector:
+        boolean:
+    time:
+      required: true
+      selector:
+        time:
+    weekdays:
+      default: []
+      selector:
+        select:
+          multiple: true
+          options: ["0", "1", "2", "3", "4", "5", "6"]
+    action:
+      default: massage
+      selector:
+        select:
+          options: [memory_1, memory_2, massage]
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+betterliving2_massage:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    head:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+    feet:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+    side:
+      selector:
+        select:
+          options: [left, right, both]
 configure_alarm_schedule:
   fields:
     device_id:

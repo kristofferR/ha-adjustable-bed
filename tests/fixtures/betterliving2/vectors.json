@@ -1,0 +1,1589 @@
+[
+  {
+    "id": "P1-op-00000000",
+    "protocol": "P1",
+    "action": "movement STOP/release",
+    "inputs": {
+      "opcode": 0
+    },
+    "expected_bytes": "e5fe160000000006",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-00000001",
+    "protocol": "P1",
+    "action": "head up",
+    "inputs": {
+      "opcode": 1
+    },
+    "expected_bytes": "e5fe160000000105",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-00000002",
+    "protocol": "P1",
+    "action": "head down",
+    "inputs": {
+      "opcode": 2
+    },
+    "expected_bytes": "e5fe160000000204",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-00000004",
+    "protocol": "P1",
+    "action": "foot up",
+    "inputs": {
+      "opcode": 4
+    },
+    "expected_bytes": "e5fe160000000402",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-00000008",
+    "protocol": "P1",
+    "action": "foot down",
+    "inputs": {
+      "opcode": 8
+    },
+    "expected_bytes": "e5fe1600000008fe",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-00000005",
+    "protocol": "P1",
+    "action": "head+foot up",
+    "inputs": {
+      "opcode": 5
+    },
+    "expected_bytes": "e5fe160000000501",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-0000000a",
+    "protocol": "P1",
+    "action": "head+foot down",
+    "inputs": {
+      "opcode": 10
+    },
+    "expected_bytes": "e5fe160000000afc",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-00000010",
+    "protocol": "P1",
+    "action": "all up",
+    "inputs": {
+      "opcode": 16
+    },
+    "expected_bytes": "e5fe1600000010f6",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-00000020",
+    "protocol": "P1",
+    "action": "all down",
+    "inputs": {
+      "opcode": 32
+    },
+    "expected_bytes": "e5fe1600000020e6",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-01000001",
+    "protocol": "P1",
+    "action": "zero gravity recall",
+    "inputs": {
+      "opcode": 16777217
+    },
+    "expected_bytes": "e5fe160100000104",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-01000002",
+    "protocol": "P1",
+    "action": "flat recall",
+    "inputs": {
+      "opcode": 16777218
+    },
+    "expected_bytes": "e5fe160100000203",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-01000008",
+    "protocol": "P1",
+    "action": "memory A recall",
+    "inputs": {
+      "opcode": 16777224
+    },
+    "expected_bytes": "e5fe1601000008fd",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-01000009",
+    "protocol": "P1",
+    "action": "memory B recall",
+    "inputs": {
+      "opcode": 16777225
+    },
+    "expected_bytes": "e5fe1601000009fc",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-20000001",
+    "protocol": "P1",
+    "action": "program zero gravity",
+    "inputs": {
+      "opcode": 536870913
+    },
+    "expected_bytes": "e5fe1620000001e5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-20000008",
+    "protocol": "P1",
+    "action": "program memory A",
+    "inputs": {
+      "opcode": 536870920
+    },
+    "expected_bytes": "e5fe1620000008de",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-20000009",
+    "protocol": "P1",
+    "action": "program memory B",
+    "inputs": {
+      "opcode": 536870921
+    },
+    "expected_bytes": "e5fe1620000009dd",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-op-01000000",
+    "protocol": "P1",
+    "action": "stop active preset on second same recall tap",
+    "inputs": {
+      "opcode": 16777216
+    },
+    "expected_bytes": "e5fe160100000005",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00000000",
+    "protocol": "P2",
+    "action": "movement STOP/release",
+    "inputs": {
+      "opcode": 0
+    },
+    "expected_bytes": "e6fe16000000000005",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00000001",
+    "protocol": "P2",
+    "action": "head up",
+    "inputs": {
+      "opcode": 1
+    },
+    "expected_bytes": "e6fe16010000000004",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00000008",
+    "protocol": "P2",
+    "action": "foot down",
+    "inputs": {
+      "opcode": 8
+    },
+    "expected_bytes": "e6fe160800000000fd",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00001000",
+    "protocol": "P2",
+    "action": "zero gravity recall / program zero gravity",
+    "inputs": {
+      "opcode": 4096
+    },
+    "expected_bytes": "e6fe160010000000f5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-08000000",
+    "protocol": "P2",
+    "action": "flat recall",
+    "inputs": {
+      "opcode": 134217728
+    },
+    "expected_bytes": "e6fe160000000800fd",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00010000",
+    "protocol": "P2",
+    "action": "memory A recall / program memory A",
+    "inputs": {
+      "opcode": 65536
+    },
+    "expected_bytes": "e6fe16000001000004",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00040000",
+    "protocol": "P2",
+    "action": "memory B recall / program memory B",
+    "inputs": {
+      "opcode": 262144
+    },
+    "expected_bytes": "e6fe16000004000001",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00000100",
+    "protocol": "P2",
+    "action": "massage toggle",
+    "inputs": {
+      "opcode": 256
+    },
+    "expected_bytes": "e6fe16000100000004",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00000200",
+    "protocol": "P2",
+    "action": "massage timer cycle",
+    "inputs": {
+      "opcode": 512
+    },
+    "expected_bytes": "e6fe16000200000003",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00000400",
+    "protocol": "P2",
+    "action": "foot massage increment",
+    "inputs": {
+      "opcode": 1024
+    },
+    "expected_bytes": "e6fe16000400000001",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00000800",
+    "protocol": "P2",
+    "action": "head massage increment",
+    "inputs": {
+      "opcode": 2048
+    },
+    "expected_bytes": "e6fe160008000000fd",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00800000",
+    "protocol": "P2",
+    "action": "head massage decrement",
+    "inputs": {
+      "opcode": 8388608
+    },
+    "expected_bytes": "e6fe16000080000085",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-01000000",
+    "protocol": "P2",
+    "action": "foot massage decrement",
+    "inputs": {
+      "opcode": 16777216
+    },
+    "expected_bytes": "e6fe16000000010004",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-10000000",
+    "protocol": "P2",
+    "action": "massage wave cycle",
+    "inputs": {
+      "opcode": 268435456
+    },
+    "expected_bytes": "e6fe160000001000f5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-00020000",
+    "protocol": "P2",
+    "action": "light toggle",
+    "inputs": {
+      "opcode": 131072
+    },
+    "expected_bytes": "e6fe16000002000003",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P2-op-0000000c",
+    "protocol": "P2",
+    "action": "query massage",
+    "inputs": {
+      "opcode": 12
+    },
+    "expected_bytes": "e6fe160c00000000f9",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00000000",
+    "protocol": "P3",
+    "action": "movement STOP/release",
+    "inputs": {
+      "opcode": 0
+    },
+    "expected_bytes": "05020000000000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00000001",
+    "protocol": "P3",
+    "action": "head up",
+    "inputs": {
+      "opcode": 1
+    },
+    "expected_bytes": "05020000000100",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00000008",
+    "protocol": "P3",
+    "action": "foot down",
+    "inputs": {
+      "opcode": 8
+    },
+    "expected_bytes": "05020000000800",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00001000",
+    "protocol": "P3",
+    "action": "zero gravity recall / program zero gravity",
+    "inputs": {
+      "opcode": 4096
+    },
+    "expected_bytes": "05020000100000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-08000000",
+    "protocol": "P3",
+    "action": "flat recall",
+    "inputs": {
+      "opcode": 134217728
+    },
+    "expected_bytes": "05020800000000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00010000",
+    "protocol": "P3",
+    "action": "memory A recall / program memory A",
+    "inputs": {
+      "opcode": 65536
+    },
+    "expected_bytes": "05020001000000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00040000",
+    "protocol": "P3",
+    "action": "memory B recall / program memory B",
+    "inputs": {
+      "opcode": 262144
+    },
+    "expected_bytes": "05020004000000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00000100",
+    "protocol": "P3",
+    "action": "massage toggle",
+    "inputs": {
+      "opcode": 256
+    },
+    "expected_bytes": "05020000010000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00000200",
+    "protocol": "P3",
+    "action": "massage timer cycle",
+    "inputs": {
+      "opcode": 512
+    },
+    "expected_bytes": "05020000020000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00000400",
+    "protocol": "P3",
+    "action": "foot massage increment",
+    "inputs": {
+      "opcode": 1024
+    },
+    "expected_bytes": "05020000040000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00000800",
+    "protocol": "P3",
+    "action": "head massage increment",
+    "inputs": {
+      "opcode": 2048
+    },
+    "expected_bytes": "05020000080000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00800000",
+    "protocol": "P3",
+    "action": "head massage decrement",
+    "inputs": {
+      "opcode": 8388608
+    },
+    "expected_bytes": "05020080000000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-01000000",
+    "protocol": "P3",
+    "action": "foot massage decrement",
+    "inputs": {
+      "opcode": 16777216
+    },
+    "expected_bytes": "05020100000000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-10000000",
+    "protocol": "P3",
+    "action": "massage wave cycle",
+    "inputs": {
+      "opcode": 268435456
+    },
+    "expected_bytes": "05021000000000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P3-op-00020000",
+    "protocol": "P3",
+    "action": "light toggle",
+    "inputs": {
+      "opcode": 131072
+    },
+    "expected_bytes": "05020002000000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,87-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:35-155"
+    ]
+  },
+  {
+    "id": "P1-time",
+    "protocol": "P1",
+    "action": "synchronize local bed clock",
+    "inputs": {
+      "now": {
+        "year": 2026,
+        "month": 7,
+        "day": 14,
+        "weekday": 2,
+        "hour": 12,
+        "minute": 30,
+        "second": 45
+      }
+    },
+    "expected_bytes": "e2fe162d1e0c02b0",
+    "kind": "time",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:69-84,151-177"
+    ]
+  },
+  {
+    "id": "P2-time",
+    "protocol": "P2",
+    "action": "synchronize local bed clock",
+    "inputs": {
+      "now": {
+        "year": 2026,
+        "month": 7,
+        "day": 14,
+        "weekday": 2,
+        "hour": 12,
+        "minute": 30,
+        "second": 45
+      }
+    },
+    "expected_bytes": "e780017e060e0c1e2dae",
+    "kind": "time",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:69-84,151-177"
+    ]
+  },
+  {
+    "id": "P3-time",
+    "protocol": "P3",
+    "action": "synchronize local bed clock",
+    "inputs": {
+      "now": {
+        "year": 2026,
+        "month": 7,
+        "day": 14,
+        "weekday": 2,
+        "hour": 12,
+        "minute": 30,
+        "second": 45
+      }
+    },
+    "expected_bytes": "07041a070e020c1e2d",
+    "kind": "time",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:69-84,151-177"
+    ]
+  },
+  {
+    "id": "P1-alarm",
+    "protocol": "P1",
+    "action": "set weekdays memory A alarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "week": 190,
+      "massage": 17,
+      "kind": 8,
+      "now": {
+        "year": 2026,
+        "month": 7,
+        "day": 14,
+        "weekday": 2,
+        "hour": 12,
+        "minute": 30,
+        "second": 45
+      }
+    },
+    "expected_bytes": "ebfe162d1e0c1e0702be1111f8aa",
+    "kind": "clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/AlarmFragment.java:140-220",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:21-42,118-149"
+    ]
+  },
+  {
+    "id": "P2-alarm",
+    "protocol": "P2",
+    "action": "set weekdays memory A alarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "week": 190,
+      "massage": 17,
+      "kind": 17,
+      "now": {
+        "year": 2026,
+        "month": 7,
+        "day": 14,
+        "weekday": 2,
+        "hour": 12,
+        "minute": 30,
+        "second": 45
+      }
+    },
+    "expected_bytes": "ed8003071ebe1100000000000000009b",
+    "kind": "clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/AlarmFragment.java:140-220",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:21-42,118-149"
+    ]
+  },
+  {
+    "id": "P3-alarm",
+    "protocol": "P3",
+    "action": "set weekdays memory A alarm",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "week": 190,
+      "massage": 17,
+      "kind": 5,
+      "now": {
+        "year": 2026,
+        "month": 7,
+        "day": 14,
+        "weekday": 2,
+        "hour": 12,
+        "minute": 30,
+        "second": 45
+      }
+    },
+    "expected_bytes": "0705be05071e000100",
+    "kind": "clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/AlarmFragment.java:140-220",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:21-42,118-149"
+    ]
+  },
+  {
+    "id": "P1-cancel",
+    "protocol": "P1",
+    "action": "disable alarm",
+    "inputs": {
+      "hour": 0,
+      "minute": 0,
+      "week": 0,
+      "massage": 0,
+      "kind": 0,
+      "now": {
+        "year": 2026,
+        "month": 7,
+        "day": 14,
+        "weekday": 2,
+        "hour": 12,
+        "minute": 30,
+        "second": 45
+      },
+      "enabled": false
+    },
+    "expected_bytes": "ebfe162d1e0cffffffffffff1897",
+    "kind": "clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:318-325",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:45-66,118-149"
+    ]
+  },
+  {
+    "id": "P2-cancel",
+    "protocol": "P2",
+    "action": "disable alarm",
+    "inputs": {
+      "hour": 0,
+      "minute": 0,
+      "week": 0,
+      "massage": 0,
+      "kind": 0,
+      "now": {
+        "year": 2026,
+        "month": 7,
+        "day": 14,
+        "weekday": 2,
+        "hour": 12,
+        "minute": 30,
+        "second": 45
+      },
+      "enabled": false
+    },
+    "expected_bytes": "ed80030000000000000000000000008f",
+    "kind": "clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:318-325",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:45-66,118-149"
+    ]
+  },
+  {
+    "id": "P3-cancel",
+    "protocol": "P3",
+    "action": "disable alarm",
+    "inputs": {
+      "hour": 0,
+      "minute": 0,
+      "week": 0,
+      "massage": 0,
+      "kind": 0,
+      "now": {
+        "year": 2026,
+        "month": 7,
+        "day": 14,
+        "weekday": 2,
+        "hour": 12,
+        "minute": 30,
+        "second": 45
+      },
+      "enabled": false
+    },
+    "expected_bytes": "070500000000000000",
+    "kind": "clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:318-325",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:45-66,118-149"
+    ]
+  },
+  {
+    "id": "P2-clock-query",
+    "protocol": "P2",
+    "action": "query alarm",
+    "inputs": {
+      "query": "clock"
+    },
+    "expected_bytes": "e180039b",
+    "kind": "query",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:105-111"
+    ]
+  },
+  {
+    "id": "P3-clock-query",
+    "protocol": "P3",
+    "action": "query alarm",
+    "inputs": {
+      "query": "clock"
+    },
+    "expected_bytes": "00c0",
+    "kind": "query",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:114-115"
+    ]
+  },
+  {
+    "id": "P3-massage-query",
+    "protocol": "P3",
+    "action": "query massage",
+    "inputs": {
+      "query": "massage"
+    },
+    "expected_bytes": "00b0",
+    "kind": "query",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueManager.java:292-299"
+    ]
+  },
+  {
+    "id": "P2-massage-state",
+    "protocol": "P2",
+    "action": "parse synthetic massage state",
+    "inputs": {},
+    "expected_bytes": "00000000000000030500000000002400",
+    "kind": "massage",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:336-365"
+    ],
+    "expected_state": {
+      "timer_level": 4,
+      "wave": 2,
+      "head_level": 2,
+      "foot_level": 3,
+      "enabled": true
+    }
+  },
+  {
+    "id": "P3-massage-state",
+    "protocol": "P3",
+    "action": "parse synthetic massage state",
+    "inputs": {},
+    "expected_bytes": "000000000500040305",
+    "kind": "massage",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:305-333"
+    ],
+    "expected_state": {
+      "timer_level": 3,
+      "wave": 4,
+      "head_level": 2,
+      "foot_level": 3,
+      "enabled": true
+    }
+  },
+  {
+    "id": "P1-alarm-state",
+    "protocol": "P1",
+    "action": "parse synthetic alarm state",
+    "inputs": {},
+    "expected_bytes": "0000001e0700be1111f8",
+    "kind": "parse_clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/AlarmFragment.java:390-442"
+    ],
+    "expected_state": {
+      "hour": 7,
+      "minute": 30,
+      "week": 190,
+      "enabled": true,
+      "massage": true,
+      "memory": 1
+    }
+  },
+  {
+    "id": "P2-alarm-state",
+    "protocol": "P2",
+    "action": "parse synthetic alarm state",
+    "inputs": {},
+    "expected_bytes": "ed8003071ebe11",
+    "kind": "parse_clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/AlarmFragment.java:445-487"
+    ],
+    "expected_state": {
+      "hour": 7,
+      "minute": 30,
+      "week": 190,
+      "enabled": true,
+      "kind": 17,
+      "stop_driver_side_effect": true
+    }
+  },
+  {
+    "id": "P3-alarm-state",
+    "protocol": "P3",
+    "action": "parse synthetic alarm state",
+    "inputs": {},
+    "expected_bytes": "a50c0000be05071e0001",
+    "kind": "parse_clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/AlarmFragment.java:490-532"
+    ],
+    "expected_state": {
+      "hour": 7,
+      "minute": 30,
+      "week": 190,
+      "kind": 5,
+      "enabled": true,
+      "stop_driver_side_effect": true
+    }
+  },
+  {
+    "id": "P1-dynamic-10000010",
+    "protocol": "P1",
+    "action": "head massage level",
+    "inputs": {
+      "opcode": 268435472
+    },
+    "expected_bytes": "e5fe1610000010e6",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000011",
+    "protocol": "P1",
+    "action": "head massage level",
+    "inputs": {
+      "opcode": 268435473
+    },
+    "expected_bytes": "e5fe1610000011e5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000012",
+    "protocol": "P1",
+    "action": "head massage level",
+    "inputs": {
+      "opcode": 268435474
+    },
+    "expected_bytes": "e5fe1610000012e4",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000013",
+    "protocol": "P1",
+    "action": "head massage level",
+    "inputs": {
+      "opcode": 268435475
+    },
+    "expected_bytes": "e5fe1610000013e3",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-11000010",
+    "protocol": "P1",
+    "action": "foot massage level",
+    "inputs": {
+      "opcode": 285212688
+    },
+    "expected_bytes": "e5fe1611000010e5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-11000011",
+    "protocol": "P1",
+    "action": "foot massage level",
+    "inputs": {
+      "opcode": 285212689
+    },
+    "expected_bytes": "e5fe1611000011e4",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-11000012",
+    "protocol": "P1",
+    "action": "foot massage level",
+    "inputs": {
+      "opcode": 285212690
+    },
+    "expected_bytes": "e5fe1611000012e3",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-11000013",
+    "protocol": "P1",
+    "action": "foot massage level",
+    "inputs": {
+      "opcode": 285212691
+    },
+    "expected_bytes": "e5fe1611000013e2",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000020",
+    "protocol": "P1",
+    "action": "wave level",
+    "inputs": {
+      "opcode": 268435488
+    },
+    "expected_bytes": "e5fe1610000020d6",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000021",
+    "protocol": "P1",
+    "action": "wave level",
+    "inputs": {
+      "opcode": 268435489
+    },
+    "expected_bytes": "e5fe1610000021d5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000022",
+    "protocol": "P1",
+    "action": "wave level",
+    "inputs": {
+      "opcode": 268435490
+    },
+    "expected_bytes": "e5fe1610000022d4",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000023",
+    "protocol": "P1",
+    "action": "wave level",
+    "inputs": {
+      "opcode": 268435491
+    },
+    "expected_bytes": "e5fe1610000023d3",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-1000002f",
+    "protocol": "P1",
+    "action": "timer including first-click -1",
+    "inputs": {
+      "opcode": 268435503
+    },
+    "expected_bytes": "e5fe161000002fc7",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000030",
+    "protocol": "P1",
+    "action": "timer including first-click -1",
+    "inputs": {
+      "opcode": 268435504
+    },
+    "expected_bytes": "e5fe1610000030c6",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000031",
+    "protocol": "P1",
+    "action": "timer including first-click -1",
+    "inputs": {
+      "opcode": 268435505
+    },
+    "expected_bytes": "e5fe1610000031c5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-10000032",
+    "protocol": "P1",
+    "action": "timer including first-click -1",
+    "inputs": {
+      "opcode": 268435506
+    },
+    "expected_bytes": "e5fe1610000032c4",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-31000000",
+    "protocol": "P1",
+    "action": "light off/on",
+    "inputs": {
+      "opcode": 822083584
+    },
+    "expected_bytes": "e5fe1631000000d5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P1-dynamic-31000001",
+    "protocol": "P1",
+    "action": "light off/on",
+    "inputs": {
+      "opcode": 822083585
+    },
+    "expected_bytes": "e5fe1631000001d4",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:177-295",
+      "work/jadx/sources/com/example/jalon/betterliving/fragment/MassageFragment.java:121-162,230-302",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:8-18,180-185"
+    ]
+  },
+  {
+    "id": "P2-extra-2",
+    "protocol": "P2",
+    "action": "head down",
+    "inputs": {
+      "opcode": 2
+    },
+    "expected_bytes": "e6fe16020000000003",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:87-98",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P2-extra-4",
+    "protocol": "P2",
+    "action": "foot up",
+    "inputs": {
+      "opcode": 4
+    },
+    "expected_bytes": "e6fe16040000000001",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:87-98",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P2-extra-5",
+    "protocol": "P2",
+    "action": "head+foot up",
+    "inputs": {
+      "opcode": 5
+    },
+    "expected_bytes": "e6fe16050000000000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:87-98",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P2-extra-10",
+    "protocol": "P2",
+    "action": "head+foot down",
+    "inputs": {
+      "opcode": 10
+    },
+    "expected_bytes": "e6fe160a00000000fb",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:87-98",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P2-extra-16",
+    "protocol": "P2",
+    "action": "all up",
+    "inputs": {
+      "opcode": 16
+    },
+    "expected_bytes": "e6fe161000000000f5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:87-98",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P2-extra-32",
+    "protocol": "P2",
+    "action": "all down",
+    "inputs": {
+      "opcode": 32
+    },
+    "expected_bytes": "e6fe162000000000e5",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:87-98",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P3-extra-2",
+    "protocol": "P3",
+    "action": "head down",
+    "inputs": {
+      "opcode": 2
+    },
+    "expected_bytes": "05020000000200",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:101-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P3-extra-4",
+    "protocol": "P3",
+    "action": "foot up",
+    "inputs": {
+      "opcode": 4
+    },
+    "expected_bytes": "05020000000400",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:101-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P3-extra-5",
+    "protocol": "P3",
+    "action": "head+foot up",
+    "inputs": {
+      "opcode": 5
+    },
+    "expected_bytes": "05020000000500",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:101-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P3-extra-10",
+    "protocol": "P3",
+    "action": "head+foot down",
+    "inputs": {
+      "opcode": 10
+    },
+    "expected_bytes": "05020000000a00",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:101-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P3-extra-16",
+    "protocol": "P3",
+    "action": "all up",
+    "inputs": {
+      "opcode": 16
+    },
+    "expected_bytes": "05020000001000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:101-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P3-extra-32",
+    "protocol": "P3",
+    "action": "all down",
+    "inputs": {
+      "opcode": 32
+    },
+    "expected_bytes": "05020000002000",
+    "kind": "command",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:101-103",
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHBlueOrder.java:45-74"
+    ]
+  },
+  {
+    "id": "P1-time-midnight",
+    "protocol": "P1",
+    "action": "clock synchronization at midnight, year and month offset boundary",
+    "inputs": {
+      "now": {
+        "year": 2000,
+        "month": 1,
+        "day": 1,
+        "weekday": 6,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      }
+    },
+    "expected_bytes": "e2fe160000000603",
+    "kind": "time",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:69-84,151-177"
+    ]
+  },
+  {
+    "id": "P2-time-midnight",
+    "protocol": "P2",
+    "action": "clock synchronization at midnight, year and month offset boundary",
+    "inputs": {
+      "now": {
+        "year": 2000,
+        "month": 1,
+        "day": 1,
+        "weekday": 6,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      }
+    },
+    "expected_bytes": "e7800164000100000032",
+    "kind": "time",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:69-84,151-177"
+    ]
+  },
+  {
+    "id": "P3-time-midnight",
+    "protocol": "P3",
+    "action": "clock synchronization at midnight, year and month offset boundary",
+    "inputs": {
+      "now": {
+        "year": 2000,
+        "month": 1,
+        "day": 1,
+        "weekday": 6,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      }
+    },
+    "expected_bytes": "070400010106000000",
+    "kind": "time",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:69-84,151-177"
+    ]
+  },
+  {
+    "id": "P3-alarm-signed80",
+    "protocol": "P3",
+    "action": "exact signed week sentinel compared before byte cast",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "week": -128,
+      "massage": 0,
+      "kind": 5,
+      "now": {
+        "year": 2000,
+        "month": 1,
+        "day": 1,
+        "weekday": 0,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      },
+      "enabled": false
+    },
+    "expected_bytes": "07050005071e000000",
+    "kind": "clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:134-148"
+    ]
+  },
+  {
+    "id": "P3-alarm-positive80",
+    "protocol": "P3",
+    "action": "exact signed week sentinel compared before byte cast",
+    "inputs": {
+      "hour": 7,
+      "minute": 30,
+      "week": 128,
+      "massage": 0,
+      "kind": 5,
+      "now": {
+        "year": 2000,
+        "month": 1,
+        "day": 1,
+        "weekday": 0,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      },
+      "enabled": true
+    },
+    "expected_bytes": "07058005071e000100",
+    "kind": "clock",
+    "evidence": [
+      "work/jadx/sources/com/example/jalon/betterliving/bluetooth/bedlibrary/LHDataParse.java:134-148"
+    ]
+  }
+]

@@ -233,6 +233,12 @@ express:
 
 ## Vector harness
 
+BetterLiving2 1.3.0 (16), row082, fits the existing Keeson word carriers and
+checked calendar/alarm builders plus Okin N-frame records. All 95 accepted
+outbound literals matched actual production encoders before runtime selection.
+Its six route/layout profiles extend the shared Keeson controller; their
+operation ownership and P1 stateful alarm consumer remain app-specific.
+
 `tests/jiecang_vectors.py` lists each profile's frozen single-frame literals.
 App profiles take them from the test vectors of their accepted report; the
 legacy route, which has none, takes the frames the pre-v5 controller sent.

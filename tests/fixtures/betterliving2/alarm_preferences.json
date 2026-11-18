@@ -1,0 +1,10 @@
+[
+  {"inputs":[false,false,false],"expected":[false,false,false]},
+  {"inputs":[false,false,true],"expected":[false,false,true]},
+  {"inputs":[false,true,false],"expected":[false,true,false]},
+  {"inputs":[false,true,true],"expected":[false,true,false]},
+  {"inputs":[true,false,false],"expected":[true,false,false]},
+  {"inputs":[true,false,true],"expected":[true,false,false]},
+  {"inputs":[true,true,false],"expected":[true,false,false]},
+  {"inputs":[true,true,true],"expected":[true,false,false]}
+]

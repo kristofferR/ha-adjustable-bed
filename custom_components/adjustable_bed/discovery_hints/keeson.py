@@ -1,6 +1,7 @@
 """Keeson discovery hints."""
 
 from ..const import (
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_COOLBASE,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_JALON,
@@ -14,6 +15,8 @@ from ..const import (
 from ._hints import Case, Hint, names, services
 
 HINTS: tuple[Hint, ...] = (
+    names("okin", bed_types={BED_TYPE_BETTERLIVING2}, case=Case.ANY),
+    names("smartbed", bed_types={BED_TYPE_BETTERLIVING2}, case=Case.ANY, connectable=True),
     names("okin-ble", "smartbed", bed_types={BED_TYPE_JALON}, case=Case.ANY, connectable=True),
     *services(
         KEESON_BASE_SERVICE_UUID,

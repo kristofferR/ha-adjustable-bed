@@ -1118,6 +1118,28 @@ token, which also expires 30 seconds after completion. This explicit consumer bo
 processing, without claiming SQL success. See the [M Line guide](beds/mline.md)
 for field projections, source limitations and the external hardware test status.
 
+### BetterLiving2 bed alarm and massage
+
+`adjustable_bed.betterliving2_set_alarm` accepts `device_id`, optional paired
+`side`, `enabled`, minute-precision `time`, `weekdays` (Sunday 0 to Saturday 6)
+and `action` (`memory_1`, `memory_2` or `massage`). No selected weekdays means
+the strictly next occurrence. Both routes and layouts must be chosen explicitly
+in setup or Configure. Every physical target validates before any setting
+changes; a STOP during admission cancels the original request.
+
+`adjustable_bed.betterliving2_massage` sets explicit P1 `head` and `feet` levels
+0..3. It supports the same native child targets and side handling. P2/P3 use
+their step/toggle entities instead. Alarm selection is diagnostic data rather
+than a sensor claiming physical alarm state.
+
+`adjustable_bed.betterliving2_diagnostic_action` accepts `device_id`, optional
+`side`, and exactly `refresh_alarm`, `refresh_massage` (P2/P3), or
+`set_massage_timer` (P1, with `timer` -1..2). It preserves the existing bounded
+query/setting calls and all-target owner/STOP/session checks. The timer values
+are support settings, not durations in minutes. This action replaces ordinary
+refresh buttons and the opaque timer number. See
+[BetterLiving2](beds/keeson.md#betterliving2).
+
 ### SonicSleep bed settings
 
 `adjustable_bed.sonicsleep` takes `device_id`, optional paired `side`, and

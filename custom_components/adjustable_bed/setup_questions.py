@@ -41,6 +41,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
@@ -2038,6 +2039,17 @@ def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+    BED_TYPE_BETTERLIVING2: SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, {"p1": "P1: E5", "p2": "P2: E6", "p3": "P3: Smartbed UART"}),
+            Question(CONF_PRODUCT_TYPE, {"2": "2 motors: back and feet", "3": "3 motors: back, feet and ALL"}),
+        ),
+        derive=lambda data: {CONF_MOTOR_COUNT: int(data[CONF_PRODUCT_TYPE]),
+                             CONF_MOTOR_PULSE_DELAY_MS: 100 if data[CONF_PRODUCT_TYPE] == "2" else 200},
+        title=lambda _data: "BetterLiving2",
+    ),
     "smart_sleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},

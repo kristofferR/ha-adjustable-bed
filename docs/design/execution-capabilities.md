@@ -817,6 +817,7 @@ its APK Protocol Audit report, named here by its file stem:
 | row121 | audit ledger `row121-hjbed` |
 | symphony078 | Accepted Symphony Sleep 1.1.0 (14), row078, all 15 dispatch outcomes; `com.ore.bedding.symphony-1.1.0-2026-11-12-queue001/report/`. |
 | row161 | accepted ComfortBaseForBluetooth 1.1.2 (6), `com.ore.yorkfeng.comfortbaseble2-1.1.2-2026-11-10-maxqueue001/report/` and independent audit001 |
+| row082 | BetterLiving2 1.3.0 (16), accepted three-route/two-layout held refresh and zero release evidence. Stream leases are scoped to back, feet and combined up/down controls; no generic motor lease, concurrent mask or speed claim. |
 | row178 | アシステック 1.0.1 (6), verified direct BLE scope under the stall disposition, E07/E08. Both P1/P2 held controls and release literals are proven; the separate report/helper R1 dispatch-equivalence claim remains deferred. |
 | row173 | Richmat 4.2.0 accepted catalog gesture and literal STOP evidence |
 | row126 | audit ledger `row126-hush-base` |

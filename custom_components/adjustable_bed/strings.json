@@ -1531,6 +1531,18 @@
   },
   "entity": {
     "button": {
+      "betterliving2_program_zero_g": {"name": "Save Zero Gravity"},
+      "betterliving2_all_sections_up": {"name": "Raise all sections"},
+      "betterliving2_all_sections_down": {"name": "Lower all sections"},
+      "betterliving2_stop_preset": {"name": "Stop preset"},
+      "betterliving2_massage_off": {"name": "Stop massage"},
+      "betterliving2_massage_toggle": {"name": "Toggle massage"},
+      "betterliving2_massage_timer": {"name": "Cycle massage timer"},
+      "betterliving2_massage_feet_up": {"name": "Increase foot massage"},
+      "betterliving2_massage_head_up": {"name": "Increase head massage"},
+      "betterliving2_massage_feet_down": {"name": "Decrease foot massage"},
+      "betterliving2_massage_head_down": {"name": "Decrease head massage"},
+      "betterliving2_massage_wave": {"name": "Cycle massage wave"},
       "comfort_enhancements_quiet_sleep": {
         "name": "Quiet sleep"
       },
@@ -3351,6 +3363,7 @@
       }
     },
     "cover": {
+      "betterliving2_all_sections": {"name": "All sections"},
       "tv_lift": {
         "name": "TV Lift"
       },
@@ -3680,6 +3693,10 @@
       }
     },
     "sensor": {
+      "betterliving2_massage_head": {"name": "Head massage intensity"},
+      "betterliving2_massage_feet": {"name": "Foot massage intensity"},
+      "betterliving2_massage_wave": {"name": "Massage wave setting"},
+      "betterliving2_massage_timer": {"name": "Massage timer setting"},
       "timotion_ahf_status": {
         "name": "AHF status communication"
       },
@@ -5592,6 +5609,9 @@
       }
     },
     "number": {
+      "betterliving2_massage_head": {"name": "Head massage intensity"},
+      "betterliving2_massage_feet": {"name": "Foot massage intensity"},
+      "betterliving2_massage_wave": {"name": "Massage wave"},
       "back_position": {
         "name": "Back Position"
       },
@@ -6678,6 +6698,38 @@
     }
   },
   "services": {
+    "betterliving2_diagnostic_action": {
+      "name": "Bed diagnostic action",
+      "description": "Request alarm or massage status, or send a supported massage timer setting for troubleshooting.",
+      "fields": {
+        "device_id": {"name": "Bed"},
+        "action": {"name": "Action"},
+        "timer": {"name": "Timer setting", "description": "Support setting only. These numbers do not express minutes."},
+        "side": {"name": "Side"}
+      }
+    },
+    "betterliving2_set_alarm": {
+      "name": "Set BetterLiving2 bed alarm",
+      "description": "Configure the bed-local alarm. Alarm selection state describes the app setting, not hardware confirmation.",
+      "fields": {
+        "device_id": {"name": "Bed"},
+        "enabled": {"name": "Enable alarm"},
+        "time": {"name": "Alarm time"},
+        "weekdays": {"name": "Weekdays", "description": "Sunday is 0 through Saturday 6. Leave empty for the next occurrence."},
+        "action": {"name": "Wake action"},
+        "side": {"name": "Side"}
+      }
+    },
+    "betterliving2_massage": {
+      "name": "Set BetterLiving2 P1 massage",
+      "description": "Set both massage zones using the P1 app's paired-write sequence. Zero turns a zone off.",
+      "fields": {
+        "device_id": {"name": "Bed"},
+        "head": {"name": "Head massage level"},
+        "feet": {"name": "Foot massage level"},
+        "side": {"name": "Side"}
+      }
+    },
     "comfort_enhancements_set_alarm": {
       "name": "Comfort Enhancements: set alarm",
       "description": "Program or disable the BLE alarm for the current local day. No alarm feedback is available.",
@@ -10508,6 +10560,13 @@
     }
   },
   "selector": {
+    "betterliving2_diagnostic_action": {
+      "options": {
+        "refresh_alarm": "Refresh alarm",
+        "refresh_massage": "Refresh massage",
+        "set_massage_timer": "Set massage timer setting"
+      }
+    },
     "verify_action": {
       "options": {
         "finish": "Finish setup anyway",

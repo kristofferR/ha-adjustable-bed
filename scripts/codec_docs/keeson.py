@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.beds.keeson import okin_apps as okin_apps_
 from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BED_APPS
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
+from scripts.codec_docs._betterliving2 import BLOCKS as _BETTERLIVING2_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._yamada import BLOCKS as _YAMADA_BLOCKS
 
@@ -25,6 +26,8 @@ GUIDE = "docs/beds/keeson.md"
 _K = keeson_profiles.KeesonCommands
 _S = keeson_profiles.SinoCommands
 _KEESON_NAMES: dict[str, str] = {
+    **{f"betterliving2_{wire}_{layout}": f"BetterLiving2 {wire.upper()}, {layout} motors"
+       for wire in ("p1", "p2", "p3") for layout in ("2", "3")},
     "base": "Base (BaseI4/I5)",
     "ergomotion": "Ergomotion",
     "serta": "Serta",
@@ -77,6 +80,8 @@ _KEESON_NAMES: dict[str, str] = {
 }
 # Controllers that keep their key tables and timing; their profile is only the frame.
 _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
+    **{f"betterliving2_{wire}_{layout}": (f"`betterliving2`, {wire.upper()}, {layout} motors", "[BetterLiving2](#betterliving2)")
+       for wire in ("p1", "p2", "p3") for layout in ("2", "3")},
     "yamada_p1": ("`yamada`, P1", "[アシステック](#アシステック--yamada)"),
     "yamada_p2": ("`yamada`, P2", "[アシステック](#アシステック--yamada)"),
     **dict.fromkeys(("jalon_13", "jalon_15", "jalon_24"), ("`jalon`", "[OkinComfortBed II](#okincomfortbed-ii)")),
@@ -1155,3 +1160,4 @@ def render_symphony_sleep() -> str:
 BLOCKS.append((GUIDE, "keeson-symphony-sleep", render_symphony_sleep))
 
 BLOCKS.extend(_YAMADA_BLOCKS)
+BLOCKS.extend(_BETTERLIVING2_BLOCKS)

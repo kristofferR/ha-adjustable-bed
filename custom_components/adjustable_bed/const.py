@@ -529,6 +529,7 @@ ZSERIES_VARIANTS: Final = {
 }
 # Bed types whose variant is a user choice with no automatic default.
 BED_TYPE_YAMADA: Final = "yamada"
+BED_TYPE_BETTERLIVING2: Final = "betterliving2"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
@@ -539,7 +540,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
     {BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
-)
+).union({BED_TYPE_BETTERLIVING2})
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
     {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}
@@ -728,6 +729,7 @@ KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_YAMADA,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_BEDGEAR,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
@@ -3007,6 +3009,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
     BED_TYPE_SYMPHONY_SLEEP: (4, 300),
     BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.
+    BED_TYPE_BETTERLIVING2: (10, 100),  # The chosen layout owns the actual refresh cadence.
     BED_TYPE_RESIDENT: (4, 300),  # Resident 300 ms refresh; four pulses bound an HA tap.
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for

@@ -150,6 +150,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFYDS,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -818,6 +819,7 @@ def _bed_type_selector(
         # label; setup asks behind the family row. Configure lists the
         # protocol-named routes the same way.
         unguided = {
+            BED_TYPE_BETTERLIVING2,
             *(
                 answer.bed_type
                 for family in (STARCODE_FAMILY, REVERIE_FAMILY, SLEEP_NUMBER_FAMILY)
@@ -1280,6 +1282,8 @@ def _motor_count_options(
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
 ) -> list[int]:
     """Return motor counts supported by the selected protocol."""
+    if bed_type == BED_TYPE_BETTERLIVING2:
+        return [2, 3]
     if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
         return [2]
     if bed_type == BED_TYPE_RIZE_REMEDY_II:
