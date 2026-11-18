@@ -2220,6 +2220,14 @@
       "connectable": true
     },
     {
+      "local_name": "KSWF07S*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSWF19S*",
+      "connectable": true
+    },
+    {
       "local_name": "KTRM*"
     },
     {

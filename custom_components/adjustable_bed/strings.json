@@ -363,7 +363,9 @@
           "starcode_lift_entries": "Independently addressed lifts",
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
-          "mline_child_mode": "Local child mode"
+          "mline_child_mode": "Local child mode",
+          "agingplace_bed_side": "Telemetry side",
+          "agingplace_selected_side": "Selected telemetry side"
         },
         "data_description": {
           "jiecang_app_layout": "The layout set in the app.",
@@ -416,7 +418,9 @@
           "starcode_m1x12_profile": "The profile that matches the bed's Bluetooth name.",
           "starcode_lift_entries": "Choose other configured lift entries: up to three AdjustableM5X5 or DewertOkin ELEVATE entries for an AdjustableM5X5 main, or up to two ELEVATE entries set to Adjustable Comfort M1X12 ELEVATE for an M1X12 main. Each keeps its own Bluetooth address and controls.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
-          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown with two sensors. It does not choose which side the controls move.",
+          "agingplace_selected_side": "The telemetry side used when Selectable side is chosen. This setting belongs to this physical bed."
         },
         "sections": {
           "advanced": {
@@ -441,7 +445,8 @@
               "serta_mp_memory_3_head": "Memory 3 head angle",
               "serta_mp_memory_3_foot": "Memory 3 foot angle",
               "serta_mp_memory_4_head": "Memory 4 head angle",
-              "serta_mp_memory_4_foot": "Memory 4 foot angle"
+              "serta_mp_memory_4_foot": "Memory 4 foot angle",
+              "agingplace_bed_mode": "Sensor display mode"
             },
             "data_description": {
               "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
@@ -463,7 +468,8 @@
               "serta_mp_memory_3_head": "Only if you changed memory 3 in the app: its head angle, in degrees.",
               "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
               "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
-              "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees."
+              "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
+              "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them."
             }
           }
         }
@@ -950,7 +956,10 @@
           "mline_child_mode": "Local child mode",
           "read_positions": "Read bed position",
           "connection_mode": "Bluetooth connection",
-          "disable_angle_sensing": "Disable angle sensing"
+          "disable_angle_sensing": "Disable angle sensing",
+          "agingplace_bed_mode": "Sensor display mode",
+          "agingplace_bed_side": "Telemetry side",
+          "agingplace_selected_side": "Selected telemetry side"
         },
         "data_description": {
           "motor_count": "Number of physical actuators. Available counts follow the selected protocol variant. Malouf/Lucid beds use the separate actuator-layout setting below.",
@@ -1015,7 +1024,10 @@
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
           "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
           "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
+          "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them.",
+          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown with two sensors. It does not choose which side the controls move.",
+          "agingplace_selected_side": "The telemetry side used when Selectable side is chosen. This setting belongs to this physical bed."
         }
       },
       "remove_bond": {
@@ -1158,7 +1170,10 @@
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
           "mline_child_mode": "Local child mode",
-          "connection_mode": "Bluetooth connection"
+          "connection_mode": "Bluetooth connection",
+          "agingplace_bed_mode": "Sensor display mode",
+          "agingplace_bed_side": "Telemetry side",
+          "agingplace_selected_side": "Selected telemetry side"
         },
         "data_description": {
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
@@ -1207,7 +1222,10 @@
           "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
           "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
-          "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap."
+          "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap.",
+          "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them.",
+          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown with two sensors. It does not choose which side the controls move.",
+          "agingplace_selected_side": "The telemetry side used when Selectable side is chosen. This setting belongs to this physical bed."
         }
       },
       "right_settings": {
@@ -1296,7 +1314,10 @@
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
           "mline_child_mode": "Local child mode",
-          "connection_mode": "Bluetooth connection"
+          "connection_mode": "Bluetooth connection",
+          "agingplace_bed_mode": "Sensor display mode",
+          "agingplace_bed_side": "Telemetry side",
+          "agingplace_selected_side": "Selected telemetry side"
         },
         "data_description": {
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
@@ -1345,7 +1366,10 @@
           "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
           "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
-          "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap."
+          "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap.",
+          "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them.",
+          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown with two sensors. It does not choose which side the controls move.",
+          "agingplace_selected_side": "The telemetry side used when Selectable side is chosen. This setting belongs to this physical bed."
         }
       },
       "estimated_positions": {
@@ -3258,6 +3282,27 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "agingplace_in": {
+        "name": "In"
+      },
+      "agingplace_out": {
+        "name": "Out"
+      },
+      "agingplace_circulation": {
+        "name": "Circulation cycle"
+      },
+      "agingplace_sleep": {
+        "name": "Sleep cycle"
+      },
+      "agingplace_relax_cycle": {
+        "name": "Relax cycle"
+      },
+      "agingplace_diagnostic": {
+        "name": "Self check"
+      },
+      "agingplace_device_info": {
+        "name": "Refresh device information"
+      },
       "ultramatic_head_up": {
         "name": "Head up"
       },
@@ -4978,6 +5023,27 @@
       "sonicsleep": {
         "name": "Model"
       },
+      "agingplace_heart_rate": {
+        "name": "Heart rate"
+      },
+      "agingplace_breathing_rate": {
+        "name": "Breathing rate"
+      },
+      "agingplace_circulation_remaining": {
+        "name": "Circulation cycle remaining"
+      },
+      "agingplace_sleep_remaining": {
+        "name": "Sleep cycle remaining"
+      },
+      "agingplace_relax_cycle_remaining": {
+        "name": "Relax cycle remaining"
+      },
+      "agingplace_diagnostic_status": {
+        "name": "Self check status"
+      },
+      "agingplace_version": {
+        "name": "Firmware version"
+      },
       "ultramatic_a_timer": {
         "name": "Left massage timer"
       },
@@ -5441,6 +5507,9 @@
       "richmat_mh_smart_set_lock": {
         "name": "Smart set lock"
       },
+      "agingplace_occupancy": {
+        "name": "Occupancy"
+      },
       "cheerssleep_left_on_bed": {
         "name": "Left in bed"
       },
@@ -5763,6 +5832,15 @@
       },
       "richmat_resource_massage_timer": {
         "name": "Massage timer"
+      },
+      "agingplace_brightness": {
+        "name": "Light brightness"
+      },
+      "agingplace_massage_minutes": {
+        "name": "Massage duration"
+      },
+      "agingplace_motion_minutes": {
+        "name": "Motion light duration"
       },
       "cheerssleep_sonic_level": {
         "name": "Sonic massage level"
@@ -8933,6 +9011,46 @@
         }
       }
     },
+    "agingplace_action": {
+      "name": "Aging in Place: run action",
+      "description": "Run one of the bed's actions. Flat ends a cycle or self check; Release held control stops a held key. In and Out are held with Hold control.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "One or more beds, or one side of a combined bed."
+        },
+        "action": {
+          "name": "Action",
+          "description": "The action to run. Read and Anti snore send the same command."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined bed with two Bluetooth addresses."
+        }
+      }
+    },
+    "agingplace_set_setting": {
+      "name": "Aging in Place: change setting",
+      "description": "Set light brightness, massage duration or motion light duration.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "One or more beds, or one side of a combined bed."
+        },
+        "setting": {
+          "name": "Setting",
+          "description": "The setting to change."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Brightness: 0-100. Massage: 1-60 minutes. Motion light: 1-30 minutes."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined bed with two Bluetooth addresses."
+        }
+      }
+    },
     "cheerssleep": {
       "name": "CheersSleep: run bed action",
       "description": "Run direct BLE CheersSleep bed controls. All selected targets are validated before any control writes.",
@@ -9411,6 +9529,9 @@
     },
     "whole_number_required": {
       "message": "Use a whole number instead of \"{value}\"."
+    },
+    "agingplace_setting_out_of_range": {
+      "message": "That value is out of range for {setting}. Brightness takes 0-100, massage duration 1-60 minutes and motion light duration 1-30 minutes."
     },
     "alarm_turn_off_only": {
       "message": "This bed's alarms can only be turned off from Home Assistant. Set them in the bed's app."
@@ -11178,6 +11299,30 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "agingplace_action": {
+      "options": {
+        "light": "Underbed light",
+        "massage": "Massage cycle",
+        "zero_g": "Zero gravity",
+        "anti_snore": "Anti snore",
+        "read": "Read",
+        "flat": "Flat",
+        "release": "Release held control",
+        "circulation": "Circulation cycle",
+        "sleep": "Sleep cycle",
+        "relax_cycle": "Relax cycle",
+        "diagnostic": "Self check",
+        "device_info": "Refresh device information",
+        "cancel": "Cancel cycle or self check"
+      }
+    },
+    "agingplace_setting": {
+      "options": {
+        "brightness": "Light brightness",
+        "massage_minutes": "Massage duration",
+        "motion_minutes": "Motion light duration"
       }
     },
     "cheerssleep_operation": {

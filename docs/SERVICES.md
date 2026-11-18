@@ -39,6 +39,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`estimate_confirm_unchanged`](#estimated-positions) | Confirm estimated position | Trust the estimate restored after a restart because the bed has not moved since. |
 | [`estimate_mark_unknown`](#estimated-positions) | Forget estimated position | Report a movement the integration could not see, such as the remote or the bed's app. |
 | [`generate_support_bundle`](#support-bundle) | Create support bundle | Records what the bed sends over Bluetooth while you use its remote, and saves a file to attach to a bug report or bed support request. The file lists up to 30 nearby Bluetooth devices with their names and addresses. |
+| [`agingplace_action`](#agingplace_action) | Aging in Place: run action | Run one of the bed's actions. Flat ends a cycle or self check; Release held control stops a held key. In and Out are held with Hold control. |
+| [`agingplace_set_setting`](#agingplace_set_setting) | Aging in Place: change setting | Set light brightness, massage duration or motion light duration. |
 | [`bedtech_app_command`](#bedtech_app_command) | BedTech: press button | Run an action using the selected BedTech 7.1.3 model and its app sleeper routing. Movement uses the configured finite pulse count. |
 | [`bedgear`](#bedgear) | Bedgear: settings | Configure supported Bedgear BED controls. Received values remain unknown until reported by the bed. |
 | [`casper_base`](#casper_base) | Casper Base: settings | Configure the selected Casper Base product or its separate sleep sensor. See the Casper Base guide for operation-specific fields. |
@@ -483,6 +485,25 @@ and how to download the report.
 
 These actions also accept the optional `side` of a combined bed. Each checks every
 selected bed before changing any.
+
+## Aging in Place
+
+<a id="agingplace_action"></a>
+**`agingplace_action`**: Run one of the bed's actions. Flat ends a cycle or self check; Release held control stops a held key. In and Out are held with Hold control.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `action` | Action | The action to run. Read and Anti snore send the same command. |
+
+<a id="agingplace_set_setting"></a>
+**`agingplace_set_setting`**: Set light brightness, massage duration or motion light duration.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `setting` | Setting | The setting to change. |
+| `value` | Value | Brightness: 0-100. Massage: 1-60 minutes. Motion light: 1-30 minutes. |
+
+See [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) for the bed's controls.
 
 ## BedTech
 

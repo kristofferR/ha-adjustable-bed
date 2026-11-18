@@ -547,6 +547,11 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
     {BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 )
+# Aging in Place / Dawn House has one fixed profile; these filter observations.
+BED_TYPE_AGINGPLACE: Final = "agingplace"
+CONF_AGINGPLACE_BED_MODE: Final = "agingplace_bed_mode"
+CONF_AGINGPLACE_BED_SIDE: Final = "agingplace_bed_side"
+CONF_AGINGPLACE_SELECTED_SIDE: Final = "agingplace_selected_side"
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
     {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}
@@ -739,6 +744,7 @@ KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_NERUM,
     BED_TYPE_CHEERSSLEEP,
+    BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_YAMADA,
     BED_TYPE_BEDGEAR,
@@ -3012,6 +3018,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_SOMOS: (10, 300),
     BED_TYPE_COMFORTBASE: (10, 100),
+    BED_TYPE_AGINGPLACE: (5, 200),
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
     BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement

@@ -555,6 +555,7 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "nerum": "Nerum app",
     "cheerssleep": "CheersSleep app",
+    "agingplace": "Aging in Place / Dawn House app",
     "smart_sleep": "OKIN Smart Sleep app",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY app",
     "smart_comfort_synergy": "Smart Comfort app (SYNERGY)",
@@ -1373,6 +1374,13 @@ def detect_bed_type_detailed(service_info: BluetoothServiceInfoBleak) -> Detecti
     } and cheerssleep_advertisement(service_info.manufacturer_data or {}):
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "cheerssleep"]))
         result.signals.append("manufacturer:cheerssleep_model_candidate")
+    # Dawn House scans case-sensitive substrings, without a service filter.
+    if any(name in (service_info.name or "") for name in ("KSWF07S", "KSWF19S")):
+        if result.bed_type is None:
+            result = DetectionResult("agingplace", 0.3, ["name:agingplace", *result.signals])
+        elif result.bed_type != "agingplace":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "agingplace"]))
+            result.signals.append("name:agingplace")
     # The app's scan filter is wider than the manifest gate, so it refines
     # advertisements another matcher admitted; it declares no hint of its own.
     if galaxy_scan_matches(service_info.name) and result.bed_type != BED_TYPE_GALAXY and not any(

@@ -1271,6 +1271,8 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == const.BED_TYPE_ULTRAMATIC_SMART_BED:
         data[const.CONF_CB24_BED_SELECTION] = 0
         replies = {"write:00b0": ULTRAMATIC_MASSAGE, "write:00c0": "ed8003" + ULTRAMATIC_ALARM_BODY}
+    if bed_type == "agingplace":
+        data.update({const.CONF_BLE_DEVICE_NAME: "KSWF07S123456789", "agingplace_bed_mode": "auto", "agingplace_bed_side": 0})
     if bed_type == const.BED_TYPE_SONICSLEEP:
         data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
@@ -2058,7 +2060,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"rize_home", "okin_64bit", "ultramatic_smart_bed"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
-        if controller._coordinator.bed_type in {"symphony", "linx"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

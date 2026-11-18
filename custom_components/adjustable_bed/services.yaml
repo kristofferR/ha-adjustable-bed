@@ -3476,3 +3476,51 @@ cheerssleep:
         select:
           options: [both, left, right]
           translation_key: side
+
+agingplace_action:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      selector:
+        select:
+          options: [light, massage, zero_g, anti_snore, read, flat, release, circulation, sleep, relax_cycle, diagnostic, device_info, cancel]
+          translation_key: agingplace_action
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+
+agingplace_set_setting:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    setting:
+      required: true
+      selector:
+        select:
+          options: [brightness, massage_minutes, motion_minutes]
+          translation_key: agingplace_setting
+    value:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: box
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
