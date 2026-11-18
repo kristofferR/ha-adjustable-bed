@@ -2303,8 +2303,12 @@ async def handle_set_alarm(call: ServiceCall) -> None:
     try:
         for command in (check_step, write_step):
             for (coordinator, side), captured in zip(targets, admissions, strict=True):
-                capability = scheduling[_command_targets(coordinator, side)[0].operation_identity]
-                if command is check_step and not capability.live_check:
+                physical = [
+                    scheduling[target.operation_identity]
+                    for target in _command_targets(coordinator, side)
+                ]
+                capability = physical[0]
+                if command is check_step and not any(item.live_check for item in physical):
                     continue
                 await _execute_sided(
                     coordinator,

@@ -160,11 +160,11 @@ def _field_key(name: str) -> StateKey[ScalarState]:
     return StateKey[ScalarState]("motion_bed_" + name)
 
 
-# Shared wake actions and the app's alarm modes, default first.
+# Without a chosen wake action the alarm only rings; the bed does not move.
 _ALARM_MODES: Final = {
+    "none": AlarmMode.NO_ACTION,
     "zero_g": AlarmMode.ZERO_GRAVITY,
     "memory_1": AlarmMode.MEMORY_1,
-    "none": AlarmMode.NO_ACTION,
 }
 # Music tracks, offered only on targets that report an audio module.
 _AUDIO_SOUNDS: Final = {

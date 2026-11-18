@@ -98,8 +98,9 @@ The migration record appears in two places:
 ## Removed or Renamed Options, Bed Types and Entities
 
 **One removal: the massage buttons of three layouts without massage** (see
-below). No bed type, option, action or action field is removed or renamed in
-v5, no other entity is removed, and no saved config key a setting reads is
+below). No bed type or option is removed or renamed in v5. Actions and action
+fields changed: see [Removed or Renamed Actions](#removed-or-renamed-actions). No
+other entity is removed, and no saved config key a setting reads is
 removed. The classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks,
 Milemont and Superior) shipped in 4.4 with an internal audit name in their
 unique IDs, translation keys, status sensor attributes and the
@@ -203,7 +204,8 @@ and `zseries_set_alarm`. Field changes:
   `app_*` action labels (`app_zero_g` is now `zero_g`; `app_memory_1`, `app_memory_2` and
   `app_vibration` send the same values as `lounge`, `tv` and `anti_snore`; `app_flat` has no
   replacement),
-  Motion Bed split zero-gravity modes and the raw `switch` value, Keeson app tables
+  Motion Bed split zero-gravity modes, the raw `switch` value and the `confirmed`
+  flag (a Motion Bed alarm without a `wake_action` now rings without moving the bed), Keeson app tables
   with more than one weekly or one-time alarm, and Comfort Enhancement 3 program
   `next_day` (a Comfort Enhancement 3 wake-up now runs at the next occurrence of the time,
   so it cannot be set for tomorrow while that time is still ahead today), program
