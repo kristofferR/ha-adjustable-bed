@@ -27,8 +27,8 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..richmat.transport import select_app_link
 from ..richmat.labels import function_label, screen_label
+from ..richmat.transport import select_app_link
 from . import protocol as p
 from .catalog import (
     ACTIONS,

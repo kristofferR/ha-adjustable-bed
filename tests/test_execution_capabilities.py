@@ -111,7 +111,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "SymphonyWordProfile:symphony": {"hold": ("row133",)},
     "BedgearProfile:bedgear": {"hold": ("bedgear",)},
     **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
-    "LunioSmartProfile:luniosmart": {"hold": ("luniosmart141",)},
+    "LunioSmartProfile:luniosmart": {"hold": ("luniosmart",)},
     "SonicSleepProfile:one": {"hold": ("sonicsleep",)},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}

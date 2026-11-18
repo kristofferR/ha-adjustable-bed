@@ -107,7 +107,7 @@ async def test_factory_actual_entities_and_registered_actions(hass, runtime):
         await hass.services.async_call(const.DOMAIN, service, {"device_id": "bed", "preset": 1}, blocking=True)
         assert written(client) == [expected, "6e01006edd"]
     notify(target, "6e90000700")
-    assert target.controller_state[bed.OBSERVATIONS]["deviceControlBoxProtocolVersionEvent"] == 7
+    assert target.controller.protocol_diagnostics["observations"]["deviceControlBoxProtocolVersionEvent"] == 7
 
 
 async def test_real_stop_drains_inflight_and_releases_without_retention(hass, runtime):

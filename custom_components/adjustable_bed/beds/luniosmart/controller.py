@@ -12,12 +12,10 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
-from ...controller_state import StateKey
 from ...profiles.luniosmart import DIRECTIONS, PRESETS, PROFILE, RELEASE, LunioSmartProfile
 from ..base import BedController, ProfileExecution, require_controller
 from ..entity_specs import (
     ControllerMotorHoldSpec,
-    ControllerStateSensorSpec,
     MotorControlSpec,
 )
 from ..lifecycle import ControllerSession
@@ -29,8 +27,6 @@ if TYPE_CHECKING:
 
     from ...coordinator import AdjustableBedCoordinator
 
-STATUS: Final = StateKey[str]("luniosmart_status")
-OBSERVATIONS: Final = StateKey[dict[str, Value]]("luniosmart_observations")
 WRITE_TIMEOUT_S: Final = 5.0  # HA write bound, not a proven firmware timeout.
 
 
@@ -123,19 +119,9 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
         )
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            # The state mirrors the connection; the decoded events are the
-            # attributes, so the sensor is off by default.
-            ControllerStateSensorSpec(
-                "luniosmart",
-                "luniosmart",
-                STATUS,
-                "mdi:bed",
-                attribute_keys=(OBSERVATIONS,),
-                entity_registry_enabled_default=False,
-            ),
-        )
+    def protocol_diagnostics(self) -> dict[str, object]:
+        # Decoded events stay out of entities; diagnostics and the support bundle keep them.
+        return {"connected": self._session is not None, "observations": dict(self.observations)}
 
     def _live(self, session: Session | None = None) -> Session:
         current = self._session
@@ -179,7 +165,6 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
                     self._expiry = asyncio.get_running_loop().call_later(
                         self.profile.receive_expiry_s, self._receiver.pending.clear
                     )
-                self._publish()
 
             # Subscription errors propagate before either startup write.
             await client.start_notify(session.link.rx, receive)
@@ -190,7 +175,6 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
             ),
         )
         await self._send(session, codec.calendar(dt_util.now(), build=codec.record_20_len))
-        self._publish()
 
     async def stop_notify(self) -> None:
         session = self._session
@@ -206,13 +190,6 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
             self._expiry = None
         self._receiver.pending.clear()
         self.observations.clear()
-        self._publish()
-
-    def _publish(self) -> None:
-        self.forward_controller_state_updates(
-            STATUS("connected" if self._session else "disconnected"),
-            OBSERVATIONS(dict(self.observations)),
-        )
 
     async def _send(
         self,

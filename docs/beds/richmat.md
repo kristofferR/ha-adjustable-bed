@@ -3147,8 +3147,8 @@ keeps no app-style motion FIFO and does not replay stale movement after reconnec
 
 #### Notifications
 
-The Status sensor (disabled by default) retains the latest BED event payloads as
-attributes under the artifact's names. Common protocol version, mode, unsigned angle fields, packed massage fields,
+Diagnostics and support bundles retain the latest BED event payloads under the
+artifact's names. Common protocol version, mode, unsigned angle fields, packed massage fields,
 diagnostic status and the empty diagnostic-detail object remain read-only. Extended
 BED records retain motor height/type/angle/monitorHeight, head and foot strengths,
 massage mode/frequency/power, white LED, normalized RGB, raw base-60 light timer,

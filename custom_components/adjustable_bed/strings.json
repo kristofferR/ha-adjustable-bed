@@ -4648,9 +4648,6 @@
       },
       "sonicsleep": {
         "name": "Model"
-      },
-      "luniosmart": {
-        "name": "Status"
       }
     },
     "light": {
