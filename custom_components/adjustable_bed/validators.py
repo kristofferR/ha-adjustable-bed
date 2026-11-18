@@ -62,6 +62,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
+    BED_TYPE_SOMOS,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_SVANE,
     BED_TYPE_YAMADA,
@@ -106,6 +107,7 @@ from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
 from .profiles.richmat import BEDTECH_VARIANTS
+from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
 _LOGGER = logging.getLogger(__name__)
@@ -179,6 +181,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ADJUSTABLE_BED: ADJUSTABLE_BED_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
+    BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
     BED_TYPE_YAMADA: {"p1": "P1 control box", "p2": "P2 control box"},
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},

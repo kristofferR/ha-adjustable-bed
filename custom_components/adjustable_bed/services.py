@@ -2700,6 +2700,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.kaidi.comfy_services import async_register_comfy_services
     from .beds.kaidi.floyd_services import async_register_floyd_services
     from .beds.kaidi.rize_services import async_register_rize_services
+    from .beds.keeson.somos_services import register_services as register_somos_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
     from .beds.limoss.remote_services import async_register_limoss_remote_services
     from .beds.linak.services import async_register_linak_services
@@ -2734,6 +2735,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_personal_comfort_services,
         register_bedtech_services,
         register_linx_services,
+        register_somos_services,
         register_symphony_sense_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,

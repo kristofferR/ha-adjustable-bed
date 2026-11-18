@@ -103,6 +103,7 @@ from .const import (
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_SOMOS,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
@@ -248,6 +249,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: _NO_ANGLES,
     # Preset repeat-tap and massage cycles depend on connection-local state.
     BED_TYPE_COMFORT_ENHANCEMENTS: _NO_ANGLES_SCOPED,
+    BED_TYPE_SOMOS: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_COMFORTBASE: _NO_ANGLES_SCOPED,
     BED_TYPE_COMFORT_MOTION: _SCOPED,
     BED_TYPE_CUSTOMATIC_CLARITY: _NO_ANGLES,

@@ -426,6 +426,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
+| Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
@@ -1068,3 +1069,11 @@ shared names are candidates, not model identifiers. These selections are
 retained per physical side of a two-address pair. Raw Android scan offsets are
 not available from HA; choose P1 explicitly from its exact GATT roles.
 See [Nerum setup](beds/nerum.md#detection--setup).
+
+### Somos / SomosBeds
+
+Choose the product shown in the Somos app: Signature (A), Elite (B), Ultra (C),
+Signature Split Head (D), or Ultra Split Head (E). The choice fixes the axes,
+massage buttons and 300 ms refresh cadence; it stays independent for each
+receiver in a two-address pair. D/E axes are numbered 1–3 because physical
+anatomy and sides are unverified. See [Somos controls](beds/keeson.md#somos--somosbeds).

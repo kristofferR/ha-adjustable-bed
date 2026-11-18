@@ -109,6 +109,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
 
     **{f"LinxProfile:{key}": {"hold": ("linx079",)} for key in ("quest", "orbes")},
     **{f"NerumProfile:{key}": {"hold": ("nerum103",)} for key in ("p1", "p2", "p3")},
+    **{f"KeesonProfile:somos_{key}": {"hold": ("row099",)} for key in "abcde"},
     "SmartSleepProfile:p1": {"hold": ("row094",)},
     "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
@@ -324,6 +325,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/personal_comfort.py:<module>": ("PersonalComfortProfile:reverie_v1", "PersonalComfortProfile:reverie_v2"),
 
     "profiles/linx.py:<module>.LinxProfile": ("LinxProfile:quest", "LinxProfile:orbes"),
+    "profiles/somos.py:<module>.PROFILES": tuple(f"KeesonProfile:somos_{key}" for key in "abcde"),
     "profiles/smart_sleep.py:<module>.PROFILES": ("SmartSleepProfile:p2",),
     "profiles/smart_sleep.py:<module>.SmartSleepProfile": ("SmartSleepProfile:p1", "SmartSleepProfile:p2"),
     "profiles/comfort_enhancement3.py:<module>.profile": tuple(f"OkinNFrameProfile:apex_{i}" for i in range(15)),
@@ -504,6 +506,9 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
     profiles.extend(SYMPHONY_PROFILES.values())
     from custom_components.adjustable_bed.profiles.ormatek import PROFILES as ORMATEK_PROFILES
     profiles.extend(ORMATEK_PROFILES.values())
+    from custom_components.adjustable_bed.profiles.somos import PROFILES as SOMOS_PROFILES
+
+    profiles.extend(SOMOS_PROFILES.values())
     for bed_type in SUPPORTED_BED_TYPES:
         profiles.append(getattr(await _create_controller_for_bed_type(bed_type), "profile", None))
     # Layouts are built at runtime and never stored; reach every one.

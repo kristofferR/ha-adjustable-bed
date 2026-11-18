@@ -1918,6 +1918,78 @@
   "button:solace_music_toggle": {
     "card_section": "utility"
   },
+  "button:somos_axis_1_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "somos_axis_1"
+  },
+  "button:somos_axis_1_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "somos_axis_1"
+  },
+  "button:somos_axis_2_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "somos_axis_2"
+  },
+  "button:somos_axis_2_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "somos_axis_2"
+  },
+  "button:somos_axis_3_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "somos_axis_3"
+  },
+  "button:somos_axis_3_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "somos_axis_3"
+  },
+  "button:somos_feet_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "somos_feet"
+  },
+  "button:somos_feet_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "somos_feet"
+  },
+  "button:somos_foot_massage": {
+    "card_section": "massage"
+  },
+  "button:somos_head_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "somos_head"
+  },
+  "button:somos_head_massage": {
+    "card_section": "massage"
+  },
+  "button:somos_head_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "somos_head"
+  },
+  "button:somos_light": {
+    "card_section": "lighting"
+  },
+  "button:somos_lumbar_tilt_down": {
+    "card_section": "motors",
+    "card_role": "down",
+    "card_motor": "somos_lumbar_tilt"
+  },
+  "button:somos_lumbar_tilt_up": {
+    "card_section": "motors",
+    "card_role": "up",
+    "card_motor": "somos_lumbar_tilt"
+  },
+  "button:somos_massage_timer_cycle": {
+    "card_section": "massage"
+  },
   "button:sonicsleep_action": {
     "card_section": "presets"
   },
@@ -2654,6 +2726,30 @@
   "cover:smart_sleep_lumbar": {
     "card_section": "motors",
     "card_motor": "smart_sleep_lumbar"
+  },
+  "cover:somos_axis_1": {
+    "card_section": "motors",
+    "card_motor": "somos_axis_1"
+  },
+  "cover:somos_axis_2": {
+    "card_section": "motors",
+    "card_motor": "somos_axis_2"
+  },
+  "cover:somos_axis_3": {
+    "card_section": "motors",
+    "card_motor": "somos_axis_3"
+  },
+  "cover:somos_feet": {
+    "card_section": "motors",
+    "card_motor": "somos_feet"
+  },
+  "cover:somos_head": {
+    "card_section": "motors",
+    "card_motor": "somos_head"
+  },
+  "cover:somos_lumbar_tilt": {
+    "card_section": "motors",
+    "card_motor": "somos_lumbar_tilt"
   },
   "cover:stair": {
     "card_section": "motors",
@@ -3998,6 +4094,10 @@
   },
   "sensor:solace_audio_volume": {
     "card_section": "hidden"
+  },
+  "sensor:somos_timer": {
+    "card_section": "massage",
+    "card_role": "timer"
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"

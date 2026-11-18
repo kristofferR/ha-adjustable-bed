@@ -3254,6 +3254,54 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "somos_head_massage": {
+        "name": "Head massage"
+      },
+      "somos_foot_massage": {
+        "name": "Foot massage"
+      },
+      "somos_massage_timer_cycle": {
+        "name": "Cycle massage timer"
+      },
+      "somos_light": {
+        "name": "Light"
+      },
+      "somos_head_up": {
+        "name": "Head up"
+      },
+      "somos_head_down": {
+        "name": "Head down"
+      },
+      "somos_feet_up": {
+        "name": "Feet up"
+      },
+      "somos_feet_down": {
+        "name": "Feet down"
+      },
+      "somos_lumbar_tilt_up": {
+        "name": "Lumbar / tilt up"
+      },
+      "somos_lumbar_tilt_down": {
+        "name": "Lumbar / tilt down"
+      },
+      "somos_axis_1_up": {
+        "name": "Lift 1 up"
+      },
+      "somos_axis_1_down": {
+        "name": "Lift 1 down"
+      },
+      "somos_axis_2_up": {
+        "name": "Lift 2 up"
+      },
+      "somos_axis_2_down": {
+        "name": "Lift 2 down"
+      },
+      "somos_axis_3_up": {
+        "name": "Lift 3 up"
+      },
+      "somos_axis_3_down": {
+        "name": "Lift 3 down"
+      },
       "nerum_light": {
         "name": "Toggle light"
       },
@@ -3621,6 +3669,24 @@
       },
       "bedgear_combined": {
         "name": "Head and foot"
+      },
+      "somos_head": {
+        "name": "Head"
+      },
+      "somos_feet": {
+        "name": "Feet"
+      },
+      "somos_lumbar_tilt": {
+        "name": "Lumbar / tilt"
+      },
+      "somos_axis_1": {
+        "name": "Lift 1"
+      },
+      "somos_axis_2": {
+        "name": "Lift 2"
+      },
+      "somos_axis_3": {
+        "name": "Lift 3"
       },
       "ormatek_both": {
         "name": "Head and feet"
@@ -4697,6 +4763,9 @@
       },
       "sonicsleep": {
         "name": "Model"
+      },
+      "somos_timer": {
+        "name": "Massage timer"
       },
       "nerum_head_massage": {
         "name": "Head massage level"
@@ -8542,6 +8611,22 @@
         }
       }
     },
+    "somos_action": {
+      "name": "Somos: press app button",
+      "description": "Press one of the selected Somos product's buttons. Every bed is checked before any is changed.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "action": {
+          "name": "Action",
+          "description": "Which button to press, or ask the bed for its status. Availability depends on the product."
+        }
+      }
+    },
     "linx_snore_intervention": {
       "name": "Linx: snore intervention",
       "description": "Run the bed's anti-snore movement once, then ask the bed for its status. It does not listen for snoring.",
@@ -9633,6 +9718,10 @@
     },
     "timed_move_motor": {
       "options": {
+        "axis_1": "Lift 1",
+        "axis_2": "Lift 2",
+        "axis_3": "Lift 3",
+        "lumbar_tilt": "Lumbar / tilt",
         "tv_lift": "TV Lift",
         "back": "Back",
         "right_back": "Right Back",
@@ -10633,6 +10722,21 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "somos_action_action": {
+      "options": {
+        "flat": "Flat",
+        "zero_g": "Zero gravity",
+        "anti_snore": "Anti-snore",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2",
+        "memory_3": "Memory 3",
+        "head_massage": "Head massage",
+        "foot_massage": "Foot massage",
+        "massage_timer_cycle": "Cycle massage timer",
+        "light": "Light",
+        "status_query": "Read status"
       }
     },
     "personal_comfort_sequence": {

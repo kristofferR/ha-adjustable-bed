@@ -357,3 +357,9 @@ and AB intervention literals. The production harness compares all 39 accepted
 literals byte for byte. The independent transport selection and connection-owned
 release, cache and callback behavior belong to `beds/linx/`, without changing
 any legacy JSON wire scenario. See [Linx](../beds/linx.md).
+
+Somos 1.0.0/code1 reuses Keeson's K1 E6, P2 and P2-side carriers
+only after all 60 accepted literal rows match. The final zero in its P1
+carrier and P3 trailer establishes no side selection. Its five explicit
+`profiles/somos.py` products use the shared family controller, extended only
+for source-specific polling, notification parsing and neutral UI axes.

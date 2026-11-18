@@ -102,6 +102,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`sleeptracker_relaxation`](#sleeptracker_relaxation) | Sleeptracker: relaxation | Starts the wind-down routine or the bed's relaxation movement. |
 | [`sleeptracker_wave`](#sleeptracker_wave) | Sleeptracker: relaxation wave | Starts a wave massage at the chosen speed and for the chosen time. Use Stop massage to end it early. |
 | [`solace_audio`](#solace_audio) | Solace: control audio | Select or preview MotionFlex music, query volume, or set volume. |
+| [`somos_action`](#somos_action) | Somos: press app button | Press one of the selected Somos product's buttons. Every bed is checked before any is changed. |
 | [`sonicsleep`](#sonicsleep) | SonicSleep: settings | Read alarms, create or edit a form alarm, preserve a received alarm while toggling it, delete an alarm, query the bed link name or sync its clock. |
 | [`starcode_move_lifts`](#starcode_move_lifts) | Starcode: move lifts | Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action. |
 | [`svane_release_axis`](#svane_release_axis) | Svane: release motor | Signal the active writer to release one axis while the other continues. |
@@ -1753,6 +1754,20 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+## Somos
+
+<a id="somos_action"></a>
+**`somos_action`**: Press one of the selected Somos product's buttons. Every bed is checked before any is changed.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `action` | Action | `flat`, `zero_g`, `anti_snore`, `memory_1`–`memory_3`, `head_massage`, `foot_massage`, `massage_timer_cycle`, `light` or `status_query`, as the product offers. |
+
+Massage and light actions press the app button without guessing its current
+state. Use the standard `hold_control`, `timed_move` and STOP actions for
+movement; Signature Split Head and Ultra Split Head lifts are `axis_1`–`axis_3`.
+See [Somos](beds/keeson.md#somos--somosbeds).
 
 ## Starcode
 

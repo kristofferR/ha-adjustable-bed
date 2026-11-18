@@ -124,7 +124,7 @@ timed_move:
       required: true
       selector:
         select:
-          options: [tv_lift, back, right_back, legs, head, feet, both, neck, tilt, lumbar, bed_height,
+          options: [axis_1, axis_2, axis_3, lumbar_tilt, tv_lift, back, right_back, legs, head, feet, both, neck, tilt, lumbar, bed_height,
             elevate, stair, m1x12_part_1, m1x12_part_2, m1x12_part_4, m1x12_part_8, m1x12_part_16, elevate_actuator_1,
             elevate_actuator_2, elevate_both]
           translation_key: timed_move_motor
@@ -3038,6 +3038,26 @@ sonicsleep:
       default: true
       selector:
         boolean:
+
+somos_action:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+    action:
+      required: true
+      selector:
+        select:
+          options: [flat, zero_g, anti_snore, memory_1, memory_2, memory_3, head_massage, foot_massage, massage_timer_cycle, light, status_query]
+          translation_key: somos_action_action
 
 starcode_move_lifts:
   fields:

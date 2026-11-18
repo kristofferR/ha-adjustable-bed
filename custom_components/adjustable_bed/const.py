@@ -360,6 +360,10 @@ SIDE_BOTH: Final = "both"
 
 # Motors the timed_move action can name, and so the card can hold through it.
 TIMED_MOVE_MOTOR_OPTIONS: Final = (
+    "axis_1",
+    "axis_2",
+    "axis_3",
+    "lumbar_tilt",
     "neck",
     "tv_lift",
     "back",
@@ -528,6 +532,7 @@ ZSERIES_VARIANTS: Final = {
 }
 # Bed types whose variant is a user choice with no automatic default.
 BED_TYPE_YAMADA: Final = "yamada"
+BED_TYPE_SOMOS: Final = "somos"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
 BED_TYPE_LINX: Final = "linx"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
@@ -538,7 +543,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_LINX, BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 )
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
@@ -809,6 +814,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_SOMOS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
@@ -2996,6 +3002,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.
     BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
+    BED_TYPE_SOMOS: (10, 300),
     BED_TYPE_COMFORTBASE: (10, 100),
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
     BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
