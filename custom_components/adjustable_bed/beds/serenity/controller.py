@@ -70,7 +70,9 @@ _RELEASE_OFFSETS_S: Final = tuple(
 )
 
 # saveMemory(n) records these local codes; callMemory(n) clears them.
-_RECALLS: Final = frozenset({"flat", "anti_snore", "leisure", "lounge", "memory_1", "zero_g", "tv", "memory_2"})
+_RECALLS: Final = frozenset(
+    {"flat", "anti_snore", "leisure", "lounge", "memory_1", "zero_g", "tv", "memory_2"}
+)
 
 # Alarm frames, Customatic Z-Series only (exact CST13/CST14 manufacturer).
 _ALARM_MANUFACTURERS: Final = frozenset({"CST13", "CST14"})
@@ -141,12 +143,15 @@ _ZSERIES_BUTTONS_TAIL = (
 
 APPS: Final[dict[str, OkinBeddingApp]] = {
     "rize_remedy_ii": OkinBeddingApp(
-        prefix="rize_remedy_ii", label="Rize Remedy II", actions=RIZE_REMEDY_II_ACTIONS,
+        prefix="rize_remedy_ii",
+        label="Rize Remedy II",
+        actions=RIZE_REMEDY_II_ACTIONS,
         save_codes={"save_zero_g": 5, "save_incline": 6, "save_lounge": 3},
         buttons=(("wave_1", "Wave 1"), ("wave_2", "Wave 2"), ("wave_3", "Wave 3")),
         profile=BEDDING_PROFILES["rize_remedy_ii"],
         information_uuid="00002a24-0000-1000-8000-00805f9b34fb",
-        exact_duration=True, information_log_only=True,
+        exact_duration=True,
+        information_log_only=True,
     ),
     "serenity": OkinBeddingApp(
         prefix="serenity",
@@ -492,9 +497,8 @@ class OkinBeddingAppController(OkinCstController):
                         await self.write_command(
                             codec.frame96(primary, secondary),
                             repeat_count=(duration_ms + CST_REFRESH_MS - 1) // CST_REFRESH_MS
-                            if self._app.exact_duration else self.timed_move_repeat_count(
-                                duration_ms, CST_REFRESH_MS
-                            ),
+                            if self._app.exact_duration
+                            else self.timed_move_repeat_count(duration_ms, CST_REFRESH_MS),
                             repeat_delay_ms=CST_REFRESH_MS,
                         )
                     except TimeoutError:
@@ -591,6 +595,9 @@ class OkinBeddingAppController(OkinCstController):
                 _callback(action),
                 # Saving overwrites a stored preset, so the card asks first.
                 requires_confirmation=action.startswith("save_"),
+                # Saves get their own translation key: the card places them apart.
+                translation_key="okin_bedding_app_save" if action.startswith("save_") else None,
+                translation_placeholders={"action": name} if action.startswith("save_") else None,
                 diagnostic=action == "refresh_manufacturer",
                 card=CARD_PRESET_SAVE if action.startswith("save_") else CARD_UTILITY,
             )
@@ -621,9 +628,7 @@ class TranquilController(OkinBeddingAppController):
 class ZSeriesController(OkinBeddingAppController):
     """Customatic Z-Series 1.0.4, with the user-selected Z-230 or Z-280 page."""
 
-    def __init__(
-        self, coordinator: AdjustableBedCoordinator, *, model: str
-    ) -> None:
+    def __init__(self, coordinator: AdjustableBedCoordinator, *, model: str) -> None:
         super().__init__(coordinator, app=f"zseries_{model}")
         # This connection's observation; None until a manufacturer read succeeds.
         self._alarm_available: bool | None = None

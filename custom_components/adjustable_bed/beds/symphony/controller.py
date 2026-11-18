@@ -726,7 +726,9 @@ class SymphonyController(KeesonController):
                 "symphony_" + key,
                 label,
                 press,
-                translation_key=f"symphony_{card.section.value}_action",
+                translation_key="symphony_save_action"
+                if card is CARD_PRESET_SAVE
+                else f"symphony_{card.section.value}_action",
                 translation_placeholders={"action": label},
                 # Refreshes and the status request are maintenance actions.
                 diagnostic=key in _MAINTENANCE_BUTTONS,
