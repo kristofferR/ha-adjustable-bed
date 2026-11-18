@@ -165,7 +165,6 @@ from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
-    BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
     BED_TYPE_GMMOTOR,
@@ -181,7 +180,6 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_AIR_PUMP,
-    BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
@@ -2101,16 +2099,6 @@ def _with_family(option: SelectOptionDict) -> SelectOptionDict:
         return option
     app = option["label"].removesuffix(f" ({family})")
     return SelectOptionDict(value=option["value"], label=f"{app}{FAMILY_ROW_SEPARATOR}{family}")
-
-
-# Routes whose choice opens the app's own settings.
-APP_SETTINGS_BED_TYPES: Final = (
-    _DECLARED_QUESTION_ROUTES
-    | {bed_type for family in APP_FAMILIES if not family.picks_route for bed_type in family.asks}
-    # FSM Relax asks its own settings after the Limoss question, and the Malouf
-    # family step stages the app, whose model is asked after it.
-    | {BED_TYPE_FSM_RELAX, BED_TYPE_MALOUF_APP}
-)
 
 
 def _skips_setup_connection_probe(bed_type: str | None, variant: str | None) -> bool:

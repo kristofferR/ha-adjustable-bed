@@ -10291,10 +10291,6 @@
               "choice": "App profile"
             }
           },
-          "configure": {
-            "title": "Finish in Configure",
-            "description": "{app} needs settings that only the settings form provides. Submit to open **Configure** on **{name}** with **{app}** selected. This repair stays open until you save that form or choose **Keep current configuration**."
-          },
           "unpair": {
             "title": "Split the pair to change the app",
             "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Split into two beds** (or **Restore standalone controls**). Each bed then gets its own review. This repair stays open until then, unless you keep the current configuration.",
@@ -10314,7 +10310,6 @@
           "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
           "migration_setup_started": "Continue in the guided change.",
           "migration_setup_unavailable": "The guided change could not open. Your current setup and this review were kept. Open Reconfigure from the entry's three-dot menu.",
-          "profile_review_handoff": "Continue in Configure. This repair stays open until you save a change or keep the current configuration.",
           "profile_review_open": "This repair stays open until you save a change or keep the current configuration."
         }
       }
@@ -10330,10 +10325,6 @@
               "choice": "Configuration"
             }
           },
-          "configure": {
-            "title": "Finish in Configure",
-            "description": "{app} needs settings that only the settings form provides. Submit to open **Configure** on **{name}** with **{app}** selected. This repair stays open until you save that form or choose **Keep current configuration**."
-          },
           "unpair": {
             "title": "Split the pair to change the app",
             "description": "**{name}** is a paired bed. An app profile belongs to each physical bed, and none supports the paired controls, so the pair's shared settings cannot switch to one. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Split into two beds** (or **Restore standalone controls**). Each bed then gets its own review. This repair stays open until then, unless you keep the current configuration.",
@@ -10353,7 +10344,6 @@
           "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
           "migration_setup_started": "Continue in the guided change.",
           "migration_setup_unavailable": "The guided change could not open. Your current setup and this review were kept. Open Reconfigure from the entry's three-dot menu.",
-          "profile_review_handoff": "Continue in Configure. This repair stays open until you save a change or keep the current configuration.",
           "profile_review_open": "This repair stays open until you save a change or keep the current configuration."
         }
       }
