@@ -26,10 +26,11 @@ from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PRODUCT_TYPE,
     CONF_PROFILE_ID,
     CONF_PROTOCOL_VARIANT,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -50,7 +51,7 @@ def runtime(hass, product="ultra_sh", address="AA:BB:CC:DD:EE:96"):
     data = {
         CONF_ADDRESS: address, CONF_NAME: "Power Bob Base", CONF_BED_TYPE: "bobpowerbase",
         CONF_PROTOCOL_VARIANT: product, CONF_PRODUCT_TYPE: "split_head",
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE,
     }
     data[CONF_PROFILE_ID] = resolve_profile_id(data)
     entry = MockConfigEntry(domain=DOMAIN, data=data)

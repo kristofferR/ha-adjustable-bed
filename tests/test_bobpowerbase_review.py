@@ -24,10 +24,11 @@ from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PRODUCT_TYPE,
     CONF_PROFILE_ID,
     CONF_PROTOCOL_VARIANT,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_state import ControllerState
@@ -83,7 +84,7 @@ async def disconnected_service(hass, mock_coordinator_connected, mock_bleak_clie
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Bob", CONF_BED_TYPE: "bobpowerbase",
         CONF_PROTOCOL_VARIANT: "ultra_sh", CONF_PROFILE_ID: "bobpowerbase:ultra_sh",
-        CONF_PRODUCT_TYPE: "standard", CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_PRODUCT_TYPE: "standard", CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE,
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
@@ -230,7 +231,7 @@ def pair_for(hass, topology):
         entry.add_to_hass(hass)
         return SingleAddressPairedCoordinator(hass, entry, left), [left]
     right = runtime(hass, address="AA:BB:CC:DD:EE:97")
-    entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left.entry.data, right.entry.data, name="Bob pair", connection_mode=topology))
+    entry = MockConfigEntry(domain=DOMAIN, data={**build_pair_entry_data(left.entry.data, right.entry.data, name="Bob pair"), "pair_connection_mode": topology})
     entry.add_to_hass(hass)
     return PairedBedCoordinator(hass, entry, {"left": left, "right": right}, connection_mode=topology), [left, right]
 
