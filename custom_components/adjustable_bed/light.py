@@ -520,19 +520,17 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         requested_rgbw = _normalize_rgbw_color(kwargs.get(ATTR_RGBW_COLOR))
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         supported_modes = self._attr_supported_color_modes or set()
-        previous_mode = self._attr_color_mode
         sent = False
         self._light_turn_on_in_progress = True
         try:
+            # A requested color mode takes effect only once the command was sent.
             if requested_rgbw is not None:
                 if ColorMode.RGBW not in supported_modes:
                     raise ValueError("RGBW color is not supported by this light")
-                self._attr_color_mode = ColorMode.RGBW
                 sent = await self._turn_on_rgbw(**kwargs)
             elif requested_rgb is not None:
                 if ColorMode.RGB not in supported_modes:
                     raise ValueError("RGB color is not supported by this light")
-                self._attr_color_mode = ColorMode.RGB
                 sent = await self._turn_on_rgb(**kwargs)
             elif self._attr_color_mode == ColorMode.RGBW:
                 sent = await self._turn_on_rgbw(**kwargs)
@@ -551,9 +549,6 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 raise ValueError("This light has no active color mode")
         finally:
             self._light_turn_on_in_progress = False
-            if not sent:
-                # An unsent color request must not choose the next turn-on's mode.
-                self._attr_color_mode = previous_mode
         if sent:
             self._schedule_light_auto_off_timer()
 
@@ -595,6 +590,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
         if not await self._async_send(_turn_on, cancel_running=False):
             return False
+        self._attr_color_mode = ColorMode.RGB
         self._attr_is_on = True
         self._attr_rgb_color = target_rgb
         if level is not None and self._light_level_max is not None:
@@ -618,6 +614,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
         if not await self._async_send(_turn_on, cancel_running=False):
             return False
+        self._attr_color_mode = ColorMode.RGBW
         self._attr_is_on = True
         self._attr_rgbw_color = target_rgbw
         if intensity is not None:
