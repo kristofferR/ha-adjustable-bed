@@ -32,6 +32,7 @@ from custom_components.adjustable_bed import (
     SERVICE_TIMED_MOVE,
     async_migrate_entry,
 )
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
@@ -969,7 +970,7 @@ class TestMigration:
         await async_migrate_entry(hass, entry)
 
         assert entry.version == 5
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert reads_positions(entry.data)
 
     async def test_migrate_v1_non_vibradorm_keeps_existing_setting(
         self,
@@ -1018,7 +1019,7 @@ class TestMigration:
         await async_migrate_entry(hass, entry)
 
         assert entry.version == 5
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert reads_positions(entry.data)
 
     async def test_migrate_v1_vibradorm_keeps_existing_enabled_angle_setting(
         self,
@@ -1043,7 +1044,7 @@ class TestMigration:
         await async_migrate_entry(hass, entry)
 
         assert entry.version == 5
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert reads_positions(entry.data)
 
     async def test_migrate_v2_non_vibradorm_keeps_existing_setting(
         self,
@@ -1116,6 +1117,8 @@ class TestMigration:
         migrated.pop(CONF_PROFILE_REVIEW_PENDING, None)
         assert migrated.pop(CONF_PROFILE_ID) == bed_type
         assert migrated.pop(CONF_PROFILE_MIGRATION)["from_version"] == 3
+        # Schema 5.6 drops an angle-sensing value equal to the bed type's default.
+        before.pop(CONF_DISABLE_ANGLE_SENSING)
         assert migrated == before
         assert is_paired(entry.data) is False
 

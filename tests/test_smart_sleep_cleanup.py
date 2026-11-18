@@ -37,7 +37,7 @@ async def live_bed(hass, fmt="p1", model=0):
             "protocol_variant": fmt,
             "product_type": str(model),
             "motor_pulse_count": 3,
-            "connection_mode": "idle",
+            "connection_mode": "always",
             "idle_disconnect_seconds": 0,
             "disable_angle_sensing": True,
             "has_massage": True,

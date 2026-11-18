@@ -931,7 +931,8 @@
           "symphony_side": "Side for a standalone split-head bed",
           "mline_child_mode": "Local child mode",
           "read_positions": "Read bed position",
-          "connection_mode": "Bluetooth connection"
+          "connection_mode": "Bluetooth connection",
+          "disable_angle_sensing": "Disable angle sensing"
         },
         "data_description": {
           "motor_count": "Number of physical actuators. Available counts follow the selected protocol variant. Malouf/Lucid beds use the separate actuator-layout setting below.",
@@ -996,7 +997,8 @@
           "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
           "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
-          "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again."
+          "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
         }
       },
       "remove_bond": {

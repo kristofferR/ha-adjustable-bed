@@ -509,7 +509,7 @@ async def test_coordinator_owns_startup_reconnect_and_retained_entities(
             CONF_PRODUCT_TYPE: "67" if fmt == "p1" else "80",
             "disable_angle_sensing": True,
             "motor_pulse_count": 1,
-            "idle_disconnect_seconds": 0,
+            "connection_mode": "always",
         },
     )
     # Give the mocked transport the real stable test address.

@@ -674,9 +674,9 @@ async def test_legacy_split_suppresses_unscoped_positions(hass, bed_type, varian
         await inner.async_start_notify()
         notify.assert_not_awaited()
 
-    # Restoring standalone controls keeps the user's feedback preference.
+    # Restored standalone, the bed reads its position: saved, or as its route does.
     standalone = AdjustableBedCoordinator(hass, MockConfigEntry(domain=DOMAIN, data=original))
-    assert standalone.disable_angle_sensing is (stored_preference is None)
+    assert standalone.disable_angle_sensing is False
 
 
 def _reported_light(ctrl, enabled):
