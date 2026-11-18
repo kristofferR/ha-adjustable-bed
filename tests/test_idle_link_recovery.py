@@ -213,16 +213,20 @@ async def test_recovered_link_skips_position_hydration(
     assert coordinator._position_hydration_task is None
 
 
+@pytest.mark.parametrize("command_waiting", [False, True])
 async def test_recovery_connect_cannot_outlast_the_window(
-    hass: HomeAssistant,
+    hass: HomeAssistant, command_waiting: bool
 ) -> None:
-    """A slow recovery connect is abandoned when the window ends."""
+    """A slow recovery connect is abandoned and its unready link released."""
     coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
     # The window ends before the connect can finish.
     coordinator._idle_deadline = hass.loop.time()
     hang = asyncio.Event()
 
     async def _slow_connect() -> bool:
+        if command_waiting:
+            # A command queued behind the startup that never became ready.
+            coordinator._command_link_generation += 1
         await hang.wait()
         return True
 

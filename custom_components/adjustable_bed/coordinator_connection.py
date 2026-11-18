@@ -2014,8 +2014,9 @@ class CoordinatorConnectionMixin:
                     "Auto-reconnect for %s outlasted the idle window", self._address
                 )
                 self._recovered_link_window = False
-                if generation == self._command_link_generation:
-                    # A cancelled startup error handler can leave a half-open link.
+                # A cancelled startup error handler can leave a half-open link,
+                # which a waiting command must not reuse.
+                if generation == self._command_link_generation or not self._link_ready:
                     await self.async_disconnect(reason="idle_timeout")
                 return
             if connected:
