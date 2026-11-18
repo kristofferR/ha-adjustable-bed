@@ -437,10 +437,21 @@ class CoordinatorConnectionMixin:
     def _command_needs_link(self: AdjustableBedCoordinator) -> bool:
         """Return True while a command runs, waits, or holds the link."""
         return bool(
-            self._command_lock.locked()
+            (self._command_lock.locked() and not self._link_read_active)
             or self._command_connection_holds
             or self._command_scheduler.has_pending
         )
+
+    @contextlib.asynccontextmanager
+    async def _link_read_scope(
+        self: AdjustableBedCoordinator, link_read: bool
+    ) -> AsyncIterator[None]:
+        """Mark the command lock's holder as a read for the duration."""
+        self._link_read_active = link_read
+        try:
+            yield
+        finally:
+            self._link_read_active = False
 
     def _idle_window_allows_recovery(
         self: AdjustableBedCoordinator, delay: float = 0.0
@@ -466,6 +477,7 @@ class CoordinatorConnectionMixin:
         The command's end opens a new idle window, even on a recovered link.
         """
         self._recovered_link_window = False
+        self._command_link_generation += 1
         self._cancel_disconnect_timer()
 
     def _record_dropped_connection(
@@ -1984,11 +1996,20 @@ class CoordinatorConnectionMixin:
         _LOGGER.debug("Attempting automatic reconnection to %s", self._address)
         # A bounded recovery re-arms the idle timer for what is left of the
         # window the last command opened, never a new one.
+        deadline = self._idle_deadline
+        generation = self._command_link_generation
         self._recovered_link_window = bounded
         try:
             connected = await self.async_connect()
             if connected:
                 _LOGGER.debug("Auto-reconnection successful for %s", self._address)
+                if bounded and generation == self._command_link_generation:
+                    # Retries or a drop during startup may have re-armed the
+                    # timer. Unless a command took the link meanwhile, the
+                    # window still ends when it would have, possibly now.
+                    self._recovered_link_window = True
+                    self._idle_deadline = deadline
+                    self._reset_disconnect_timer()
                 # Note: async_start_notify is called automatically in _async_connect_locked
             else:
                 self._recovered_link_window = False

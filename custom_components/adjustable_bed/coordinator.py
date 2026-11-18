@@ -210,6 +210,11 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
 _CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS = (ConnectionError, RuntimeError)
+# Controller operations that only read state. They neither start a new idle
+# window on a recovered link nor count as a command needing the link.
+_LINK_READ_OPERATIONS = frozenset(
+    {"query", "initial position read", "background position read"}
+)
 _READABLE_LIGHT_STATE_TIMEOUT = 2.0
 _READABLE_LIGHT_STATE_RETRY_DELAY = 1.0
 _READABLE_LIGHT_STATE_MAX_RETRIES = 3
@@ -455,6 +460,10 @@ class AdjustableBedCoordinator(
         self._idle_deadline: float | None = None
         # The link was recovered without a command: re-arming keeps _idle_deadline.
         self._recovered_link_window = False
+        # Bumped whenever a command takes the link; a recovery checks it.
+        self._command_link_generation = 0
+        # A read, not a command, holds _command_lock.
+        self._link_read_active = False
         self._reconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_task: asyncio.Task[None] | None = None
         self._lock = asyncio.Lock()
@@ -2226,8 +2235,10 @@ class AdjustableBedCoordinator(
             self._cancel_counter += 1
             self._cancel_command.set()
 
+        # Reads keep the idle window and do not count as a command needing the link.
+        link_read = preserve_idle_deadline or operation_name in _LINK_READ_OPERATIONS
         entry_cancel_count = self._cancel_counter
-        async with self._command_lock:
+        async with self._command_lock, self._link_read_scope(link_read):
             # Background reads can inherit a command context while it is active,
             # then acquire this lock after that command has finished. Resolve
             # ownership here so their controller sees the same cancellation event.
@@ -2248,7 +2259,10 @@ class AdjustableBedCoordinator(
                 and controller_before_prepare.requires_disconnected_transport is True
             )
             if not preserve_idle_deadline:
-                self._hold_link_for_command()
+                if link_read:
+                    self._cancel_disconnect_timer()
+                else:
+                    self._hold_link_for_command()
 
             cancelled_while_waiting = (
                 cancel_event.is_set()
@@ -2906,13 +2920,17 @@ class AdjustableBedCoordinator(
         Never connects and never renews the idle window, so the occupancy
         sensors cannot override the Bluetooth connection setting.
         """
-        if not self.is_connected:
+        def ready() -> bool:
+            # Startup owns the link until it is ready.
+            return self.is_connected and self._link_ready
+
+        if not ready():
             return
         await self.async_execute_controller_query(
             lambda controller: controller.read_bed_presence_cached(),
             cancel_running=False,
             skip_disconnect=True,
-            run_if=lambda: self.is_connected,
+            run_if=ready,
             preserve_idle_deadline=True,
         )
 

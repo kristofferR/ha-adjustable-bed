@@ -237,6 +237,10 @@ class CoordinatorPositionsMixin:
         """
         if self._disable_angle_sensing or self._position_hydration_pause_count:
             return
+        # Its retry window would hold a recovered link past the idle window;
+        # the next command reads positions instead.
+        if self._recovered_link_window:
+            return
 
         expected_axes = self._expected_initial_position_axes()
         if not expected_axes or all(self._position_is_current(axis) for axis in expected_axes):

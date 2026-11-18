@@ -7,7 +7,7 @@ bed that drops idle links cannot be held connected forever.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -166,3 +166,61 @@ async def test_other_modes_reconnect_on_the_next_command(
     _drop(coordinator, mock_bleak_client)
 
     assert not _take_reconnect_timer(coordinator)
+
+
+async def test_recovery_keeps_the_deadline_when_startup_re_arms(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A connect retry that re-arms the timer cannot extend a recovered window."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    deadline = hass.loop.time() + 20
+    coordinator._idle_deadline = deadline
+    _drop(coordinator, mock_bleak_client)
+    assert _take_reconnect_timer(coordinator)
+    mock_bleak_client.is_connected = True
+    connect = coordinator.async_connect
+
+    async def _connect_with_late_drop() -> bool:
+        connected = await connect()
+        # As if a late drop callback cleared the window and a retry re-armed it.
+        coordinator._recovered_link_window = False
+        coordinator._reset_disconnect_timer()
+        return connected
+
+    coordinator.async_connect = _connect_with_late_drop
+    await coordinator._async_auto_reconnect()
+
+    assert coordinator._idle_deadline == deadline
+    timer = coordinator._disconnect_timer
+    assert timer is not None
+    assert timer.when() == pytest.approx(deadline, abs=1.0)
+
+
+async def test_a_read_holding_the_lock_is_not_command_demand(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A drop under a read after the window does not schedule recovery."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    coordinator._idle_deadline = hass.loop.time() - 1
+
+    async with coordinator._command_lock, coordinator._link_read_scope(True):
+        _drop(coordinator, mock_bleak_client)
+
+    assert not _take_reconnect_timer(coordinator)
+
+
+async def test_recovered_link_skips_position_hydration(
+    hass: HomeAssistant,
+) -> None:
+    """Hydration's retry window must not hold a recovered link past its window."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    coordinator._disable_angle_sensing = False
+    coordinator._recovered_link_window = True
+    with patch.object(
+        coordinator, "_expected_initial_position_axes", return_value={"back"}
+    ):
+        coordinator._schedule_position_hydration()
+
+    assert coordinator._position_hydration_task is None

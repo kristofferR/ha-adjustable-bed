@@ -744,6 +744,23 @@ class TestSleepNumberController:
         assert coordinator._disconnect_timer is timer
         assert coordinator._idle_deadline == deadline
 
+    async def test_presence_poll_waits_for_startup(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """The poll does not interleave with a startup that still owns the link."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2C",
+            name="Smart bed 0074F2",
+            entry_id="sleep_number_presence_startup",
+        )
+        coordinator._link_ready = False
+        coordinator.controller.read_bed_presence_cached = AsyncMock(return_value=True)
+
+        await coordinator.async_refresh_bed_presence()
+
+        coordinator.controller.read_bed_presence_cached.assert_not_awaited()
+
     async def test_presence_poll_does_not_connect(
         self,
         sleep_number_coordinator,
