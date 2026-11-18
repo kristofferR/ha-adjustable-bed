@@ -164,7 +164,6 @@ SERVICE_SYNC_CLOCK = "sync_clock"
 SERVICE_SET_ALARM = "set_alarm"
 ATTR_SLOT = "slot"
 ATTR_MODE = "mode"
-ATTR_CONFIRM_CUSTOM_MODE = "confirm_custom_mode"
 
 # Service call attributes
 ATTR_PRESET = "preset"
@@ -185,13 +184,8 @@ ATTR_FIRST_DIRECTION = "first_direction"
 ATTR_SECOND_MOTOR = "second_motor"
 ATTR_SECOND_DIRECTION = "second_direction"
 ATTR_NAME = "name"
-ATTR_SECONDS = "seconds"
 ATTR_ACTIONS = "actions"
 ATTR_ACTION = "action"
-ATTR_LIFETIME = "lifetime"
-ATTR_PAUSE = "pause"
-ATTR_RECURRENCE_COUNT = "recurrence_count"
-ATTR_RECURRENCE_MINUTES = "recurrence_minutes"
 ATTR_ENABLED = "enabled"
 ATTR_TIME = "time"
 ATTR_WEEKDAYS = "weekdays"
@@ -204,18 +198,7 @@ ATTR_MINUTES = "minutes"
 ATTR_CONTROL = "control"
 ATTR_HEAD_LEVEL = "head_level"
 ATTR_FOOT_LEVEL = "foot_level"
-ATTR_WAKE_MODE = "wake_mode"
 
-
-SOLACE_WEEKDAY_OPTIONS = (
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-)
 
 
 POSITION_MOTOR_OPTIONS = (
