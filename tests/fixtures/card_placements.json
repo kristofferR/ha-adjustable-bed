@@ -4809,37 +4809,7 @@
   "sensor:sonicsleep": {
     "card_section": "hidden"
   },
-  "binary_sensor:agingplace_foot_connected": {
-    "card_section": "hidden"
-  },
-  "binary_sensor:agingplace_foot_massage_connected": {
-    "card_section": "hidden"
-  },
-  "binary_sensor:agingplace_head_connected": {
-    "card_section": "hidden"
-  },
-  "binary_sensor:agingplace_head_massage_connected": {
-    "card_section": "hidden"
-  },
-  "binary_sensor:agingplace_health_occupancy": {
-    "card_section": "hidden"
-  },
-  "binary_sensor:agingplace_lift1_connected": {
-    "card_section": "hidden"
-  },
-  "binary_sensor:agingplace_lift2_connected": {
-    "card_section": "hidden"
-  },
-  "binary_sensor:agingplace_realtime_occupancy": {
-    "card_section": "hidden"
-  },
-  "button:agingplace_cancel": {
-    "card_section": "utility"
-  },
   "button:agingplace_circulation": {
-    "card_section": "utility"
-  },
-  "button:agingplace_device_info": {
     "card_section": "utility"
   },
   "button:agingplace_diagnostic": {
@@ -4850,9 +4820,6 @@
   },
   "button:agingplace_out": {
     "card_section": "utility"
-  },
-  "button:agingplace_read": {
-    "card_section": "presets"
   },
   "button:agingplace_relax_cycle": {
     "card_section": "utility"
@@ -4870,103 +4837,31 @@
   "number:agingplace_motion_minutes": {
     "card_section": "lighting"
   },
-  "sensor:agingplace_mac": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_bed_mode": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_bedmd": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_bm": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_br": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_chkstatu": {
-    "card_section": "hidden"
-  },
   "sensor:agingplace_circulation_remaining": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_di": {
     "card_section": "hidden"
   },
   "sensor:agingplace_diagnostic_status": {
     "card_section": "hidden"
   },
-  "sensor:agingplace_dspsen": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_dspver": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_dt": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_footplus": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_hardver": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_headplus": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_health_breathing_rate": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_health_heart_rate": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_health_movements": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_hr": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_lb": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_lumbplus": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_pcbver": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_realtime_breathing_rate": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_realtime_heart_rate": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_realtime_movements": {
-    "card_section": "hidden"
-  },
   "sensor:agingplace_relax_cycle_remaining": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_si": {
     "card_section": "hidden"
   },
   "sensor:agingplace_sleep_remaining": {
     "card_section": "hidden"
   },
-  "sensor:agingplace_sn": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_tiltplus": {
-    "card_section": "hidden"
-  },
-  "sensor:agingplace_ts": {
-    "card_section": "hidden"
-  },
   "sensor:agingplace_version": {
     "card_section": "hidden"
   },
-  "sensor:agingplace_wifiver": {
+  "binary_sensor:agingplace_occupancy": {
+    "card_section": "hidden"
+  },
+  "button:agingplace_device_info": {
+    "card_section": "hidden"
+  },
+  "sensor:agingplace_heart_rate": {
+    "card_section": "hidden"
+  },
+  "sensor:agingplace_breathing_rate": {
     "card_section": "hidden"
   }
 }

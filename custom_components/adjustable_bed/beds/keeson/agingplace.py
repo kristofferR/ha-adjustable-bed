@@ -14,7 +14,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ...app_session import app_session
-from ...card import CARD_LIGHTING, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ...codec import keeson as codec
 from ...command_scheduler import CommandContext, current_command_context
 from ...const import (
@@ -37,7 +37,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..lifecycle import ControllerSession
-from .agingplace_state import CONNECTED, NUMBERS, PRESENT, TEXT, Observations, integer
+from .agingplace_state import CONNECTED, NUMBERS, OCCUPIED, TEXT, Observations, integer
 from .controller import KeesonController
 
 if TYPE_CHECKING:
@@ -273,7 +273,7 @@ class AgingPlaceController(KeesonController):
         self.forward_controller_state_updates(
             *(key(None) for key in NUMBERS.values()),
             *(key(None) for key in TEXT.values()),
-            *(key(None) for key in PRESENT.values()),
+            OCCUPIED(None),
             *(key(None) for key in CONNECTED.values()),
         )
 
@@ -547,7 +547,8 @@ class AgingPlaceController(KeesonController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        names = ("in", "out", "read", "circulation", "sleep", "relax_cycle", "diagnostic")
+        # Read sends the Anti-snore preset's key, so the native preset covers it.
+        names = ("in", "out", "circulation", "sleep", "relax_cycle", "diagnostic")
         specs = tuple(
             ControllerButtonSpec(
                 f"agingplace_{name}",
@@ -555,7 +556,7 @@ class AgingPlaceController(KeesonController):
                 _action(name),
                 translation_key=f"agingplace_{name}",
                 hold=ControllerHoldSpec(name) if app.ACTIONS[name].held else None,
-                card=CARD_PRESETS if name == "read" else CARD_UTILITY,
+                card=CARD_UTILITY,
             )
             for name in names
         )
@@ -563,21 +564,18 @@ class AgingPlaceController(KeesonController):
         async def query(controller: BedController) -> None:
             await cast(AgingPlaceController, controller).query_device_info()
 
+        # Flat and STOP already cancel a cycle or self check; no separate button.
         return (
             *specs,
             ControllerButtonSpec(
-                "agingplace_cancel",
-                "Cancel cycle or self check",
-                _action("flat"),
-                translation_key="agingplace_cancel",
-            ),
-            ControllerButtonSpec(
                 "agingplace_device_info",
-                "Read device information",
+                "Refresh device information",
                 query,
                 translation_key="agingplace_device_info",
                 cancel_movement=False,
                 scheduler_resource="configuration",
+                diagnostic=True,
+                card=CARD_HIDDEN,
             ),
         )
 
@@ -612,44 +610,65 @@ class AgingPlaceController(KeesonController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        settings = {"brightness", "massage_minutes", "motion_minutes"}
-        return tuple(
+        # Device-info and self-check details are attributes, not separate entities.
+        info = (
+            *(TEXT[name] for name in ("MAC", "dspver", "hardver", "pcbver", "wifiver", "di")),
+            NUMBERS["dspsen"],
+            NUMBERS["bedmd"],
+        )
+        self_check = (
+            TEXT["diagnostic_raw"],
+            *(NUMBERS[name] for name in ("headPlus", "footPlus", "tiltPlus", "lumbPlus")),
+            *CONNECTED.values(),
+        )
+        return (
             ControllerStateSensorSpec(
-                f"agingplace_{name}",
-                f"agingplace_{name.lower()}",
-                key,
-                "mdi:bed",
-                attribute_keys=tuple(TEXT.values()) if name == "version" else (),
-            )
-            for name, key in NUMBERS.items()
-            if name not in settings
-        ) + tuple(
+                "agingplace_heart_rate",
+                "agingplace_heart_rate",
+                NUMBERS["heart_rate"],
+                "mdi:heart-pulse",
+                native_unit_of_measurement="bpm",
+            ),
             ControllerStateSensorSpec(
-                f"agingplace_{name}",
-                f"agingplace_{name.lower()}",
-                key,
+                "agingplace_breathing_rate",
+                "agingplace_breathing_rate",
+                NUMBERS["breathing_rate"],
+                "mdi:lungs",
+                native_unit_of_measurement="breaths/min",
+            ),
+            *(
+                ControllerStateSensorSpec(
+                    f"agingplace_{name}_remaining",
+                    f"agingplace_{name}_remaining",
+                    NUMBERS[f"{name}_remaining"],
+                    "mdi:timer-outline",
+                    native_unit_of_measurement="s",
+                )
+                for name in ("circulation", "sleep", "relax_cycle")
+            ),
+            ControllerStateSensorSpec(
+                "agingplace_diagnostic_status",
+                "agingplace_diagnostic_status",
+                TEXT["diagnostic_status"],
+                "mdi:clipboard-check-outline",
+                attribute_keys=self_check,
+            ),
+            ControllerStateSensorSpec(
+                "agingplace_version",
+                "agingplace_version",
+                NUMBERS["version"],
                 "mdi:information-outline",
-                attribute_keys=(TEXT["diagnostic_raw"],) if name == "diagnostic_status" else (),
-            )
-            for name, key in TEXT.items()
-            if name != "diagnostic_raw"
+                attribute_keys=info,
+                entity_registry_enabled_default=False,
+            ),
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return tuple(
+        return (
             ControllerStateBinarySensorSpec(
-                f"agingplace_{name}_occupancy", f"agingplace_{name}_occupancy", key, "mdi:bed"
-            )
-            for name, key in PRESENT.items()
-        ) + tuple(
-            ControllerStateBinarySensorSpec(
-                f"agingplace_{name}_connected",
-                f"agingplace_{name}_connected",
-                key,
-                "mdi:connection",
-            )
-            for name, key in CONNECTED.items()
+                "agingplace_occupancy", "agingplace_occupancy", OCCUPIED, "mdi:bed"
+            ),
         )
 
 

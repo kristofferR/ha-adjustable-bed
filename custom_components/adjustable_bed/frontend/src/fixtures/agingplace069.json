@@ -67,14 +67,6 @@
     },
     {
       "domain": "button",
-      "key": "agingplace_read",
-      "translation_key": "agingplace_read",
-      "attributes": {
-        "card_section": "presets"
-      }
-    },
-    {
-      "domain": "button",
       "key": "agingplace_circulation",
       "translation_key": "agingplace_circulation",
       "attributes": {
@@ -101,22 +93,6 @@
       "domain": "button",
       "key": "agingplace_diagnostic",
       "translation_key": "agingplace_diagnostic",
-      "attributes": {
-        "card_section": "utility"
-      }
-    },
-    {
-      "domain": "button",
-      "key": "agingplace_cancel",
-      "translation_key": "agingplace_cancel",
-      "attributes": {
-        "card_section": "utility"
-      }
-    },
-    {
-      "domain": "button",
-      "key": "agingplace_device_info",
-      "translation_key": "agingplace_device_info",
       "attributes": {
         "card_section": "utility"
       }

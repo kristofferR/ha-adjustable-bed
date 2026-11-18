@@ -20,7 +20,7 @@ from custom_components.adjustable_bed.app_session import app_session
 from custom_components.adjustable_bed.beds.keeson.agingplace import AgingPlaceController
 from custom_components.adjustable_bed.beds.keeson.agingplace_state import (
     NUMBERS,
-    PRESENT,
+    OCCUPIED,
     TEXT,
     Observations,
 )
@@ -70,17 +70,17 @@ def test_profile_reproduces_every_frozen_literal(row):
 
 
 @pytest.mark.parametrize(
-    "mode,side,selected,incoming,realtime,health",
+    "mode,side,selected,incoming,accepted",
     (
-        (0, 1, 0, 0, True, True),
-        (1, 1, 0, 0, False, False),
-        (1, 1, 0, 1, True, True),
-        (2, 1, 0, 0, True, False),
-        (1, 2, 1, 0, False, False),
-        (1, 2, 1, 1, True, True),
+        (0, 1, 0, 0, True),
+        (1, 1, 0, 0, False),
+        (1, 1, 0, 1, True),
+        (2, 1, 0, 0, True),
+        (1, 2, 1, 0, False),
+        (1, 2, 1, 1, True),
     ),
 )
-def test_distinct_live_display_side_consumers(mode, side, selected, incoming, realtime, health):
+def test_live_readings_follow_the_telemetry_side(mode, side, selected, incoming, accepted):
     observations = Observations(mode=mode, bed_side=side, selected_side=selected)
     payload = {
         "dt": 2,
@@ -89,20 +89,19 @@ def test_distinct_live_display_side_consumers(mode, side, selected, incoming, re
         "data": {"lb": 0, "si": incoming, "hr": 63, "br": 14, "bm": 4, "sn": 7},
     }
     state = {update.key: update.value for update in observations.consume(payload)}
-    for view, accepted in (("realtime", realtime), ("health", health)):
-        assert (PRESENT[view] in state) is accepted
-        if accepted:
-            assert state[PRESENT[view]] is True
-            assert state[NUMBERS[f"{view}_heart_rate"]] == 63
-            assert state[NUMBERS[f"{view}_movements"]] == 1
+    assert (OCCUPIED in state) is accepted
+    if accepted:
+        assert state[OCCUPIED] is True
+        assert state[NUMBERS["heart_rate"]] == 63
+        assert state[NUMBERS["breathing_rate"]] == 14
     # di is observed metadata, never an invented dvid/ACK admission check.
     assert state[TEXT["di"]] == "another identity"
     payload["data"].update(lb=1)
     state = {update.key: update.value for update in observations.consume(payload)}
-    if realtime:
-        assert state[PRESENT["realtime"]] is False
-        assert state[NUMBERS["realtime_heart_rate"]] is None
-        assert state[NUMBERS["realtime_movements"]] == 1
+    if accepted:
+        assert state[OCCUPIED] is False
+        assert state[NUMBERS["heart_rate"]] is None
+        assert state[NUMBERS["breathing_rate"]] is None
 
 
 def test_complete_indications_not_stream_reassembly_and_local_info_fields():
@@ -110,11 +109,9 @@ def test_complete_indications_not_stream_reassembly_and_local_info_fields():
     assert codec.parse_json_indication(packet[:30]) is None
     assert codec.parse_json_indication(packet[30:]) is None
     decoded = codec.parse_json_indication(packet)
-    state = {
-        update.key: update.value
-        for update in Observations(mode=None, bed_side=0, selected_side=0).consume(decoded)
-    }
-    assert state[NUMBERS["bed_mode"]] == 1
+    observations = Observations(mode=None, bed_side=0, selected_side=0)
+    state = {update.key: update.value for update in observations.consume(decoded)}
+    assert observations.mode == 1
     assert state[NUMBERS["version"]] == 113
     assert state[TEXT["wifiver"]] == "w"
     assert codec.parse_json_indication(b"\xff") is None
@@ -337,7 +334,7 @@ async def test_no_release_or_callback_migrates_to_replacement_session(hass, monk
         await task
     receivers[0](None, bytearray(b'{"data":{"hr":70,"lb":0}}'))
     assert not replacement.write_gatt_char.await_count
-    assert coordinator.controller_state.get(NUMBERS["hr"]) is None
+    assert coordinator.controller_state.get(NUMBERS["heart_rate"]) is None
 
 
 async def test_literal_chunk_boundaries_advance_without_retry_and_surface_failure(
@@ -528,24 +525,36 @@ async def test_real_entry_installs_native_entities_and_public_controls(
     ]
     keys = {entity.translation_key for entity in entities}
     assert {
-        "agingplace_read",
+        "agingplace_circulation",
         "agingplace_in",
         "agingplace_out",
         "agingplace_brightness",
         "agingplace_massage_minutes",
         "agingplace_motion_minutes",
-        "agingplace_realtime_occupancy",
-        "agingplace_hr",
+        "agingplace_occupancy",
+        "agingplace_heart_rate",
         "agingplace_diagnostic_status",
     } <= keys
-    assert not {"massage_intensity_up", "preset_memory_1", "back_angle", "legs_angle"} & keys
+    assert (
+        not {
+            "massage_intensity_up",
+            "preset_memory_1",
+            "back_angle",
+            "legs_angle",
+            "agingplace_read",
+            "agingplace_cancel",
+        }
+        & keys
+    )
     assert len(coordinator.controller.motor_control_specs) == 3
     mock_bleak_client.write_gatt_char.reset_mock()
-    button = next(entity for entity in entities if entity.translation_key == "agingplace_read")
+    button = next(
+        entity for entity in entities if entity.translation_key == "agingplace_circulation"
+    )
     await hass.services.async_call(
         "button", "press", {"entity_id": button.entity_id}, blocking=True
     )
-    assert packets(mock_bleak_client) == [app.ACTIONS["read"].frame(IDENTITY)]
+    assert packets(mock_bleak_client) == [app.ACTIONS["circulation"].frame(IDENTITY)]
     assert await hass.config_entries.async_unload(entry.entry_id)
 
 
@@ -591,7 +600,7 @@ async def test_startup_failure_fixed_gatt_and_retired_notification_owner(hass, m
     with pytest.raises(ConnectionError, match="not ready"):
         await controller.run_action("flat")
     callbacks[0](None, bytearray(b'{"data":{"hr":99}}'))
-    assert coordinator.controller_state.get(NUMBERS["hr"]) is None
+    assert coordinator.controller_state.get(NUMBERS["heart_rate"]) is None
     client.services[0].uuid = "0000ffe5-0000-1000-8000-00805f9b34fb"
     with pytest.raises(ConnectionError, match="requires"):
         await controller.start_notify()

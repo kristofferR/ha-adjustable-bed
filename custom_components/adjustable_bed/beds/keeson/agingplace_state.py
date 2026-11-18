@@ -12,19 +12,9 @@ NUMBER_FIELDS: Final = (
     "brightness",
     "massage_minutes",
     "motion_minutes",
-    "bed_mode",
     "dspsen",
     "bedmd",
     "version",
-    "dt",
-    "ts",
-    "si",
-    "lb",
-    "hr",
-    "br",
-    "bm",
-    "sn",
-    "chkStatu",
     "headPlus",
     "footPlus",
     "tiltPlus",
@@ -32,12 +22,8 @@ NUMBER_FIELDS: Final = (
     "circulation_remaining",
     "sleep_remaining",
     "relax_cycle_remaining",
-    "realtime_heart_rate",
-    "realtime_breathing_rate",
-    "realtime_movements",
-    "health_heart_rate",
-    "health_breathing_rate",
-    "health_movements",
+    "heart_rate",
+    "breathing_rate",
 )
 NUMBERS: Final = {name: StateKey[int | None](f"agingplace_{name}") for name in NUMBER_FIELDS}
 TEXT_FIELDS: Final = (
@@ -51,9 +37,7 @@ TEXT_FIELDS: Final = (
     "diagnostic_raw",
 )
 TEXT: Final = {name: StateKey[str | None](f"agingplace_{name}") for name in TEXT_FIELDS}
-PRESENT: Final = {
-    view: StateKey[bool | None](f"agingplace_{view}_occupancy") for view in ("realtime", "health")
-}
+OCCUPIED: Final = StateKey[bool | None]("agingplace_occupancy")
 CONNECTION_MASKS: Final = {
     "head": 0x30,
     "foot": 0xC0,
@@ -74,13 +58,12 @@ def integer(data: Mapping[str, object], key: str, default: int = 0) -> int:
 
 
 class Observations:
-    """Two source display consumers over one session's raw observations."""
+    """One session's observations, filtered to the configured telemetry side."""
 
     def __init__(self, *, mode: int | None, bed_side: int, selected_side: int) -> None:
         self.mode = mode
         self.bed_side = bed_side
         self.selected_side = selected_side
-        self.counts = dict.fromkeys(PRESENT, 0)
         self.maxima = dict.fromkeys(("headPlus", "footPlus", "tiltPlus", "lumbPlus"), 0)
 
     def consume(self, payload: Mapping[str, object]) -> list[StateUpdate]:
@@ -104,39 +87,26 @@ class Observations:
                 updates.append(NUMBERS[name](integer(fields, name)))
             if self.mode is None:
                 self.mode = 0 if integer(fields, "dspsen") <= 2 else 1
-            updates.append(NUMBERS["bed_mode"](self.mode))
         if type(fields.get("ver")) is int:
             # Java integer division truncates toward zero.
             version = integer(fields, "ver")
             updates.append(NUMBERS["version"]((abs(version) // 100) * (-1 if version < 0 else 1)))
         if any(name in fields for name in ("bm", "br", "hr", "lb", "si", "sn")):
-            for name in ("dt", "ts"):
-                updates.append(NUMBERS[name](integer(payload, name)))
-            for name in ("bm", "br", "hr", "lb", "si", "sn"):
-                updates.append(NUMBERS[name](integer(fields, name)))
+            # Two-sensor beds (mode 1) report each side; keep only the configured
+            # side. Single-sensor and single-display modes show every reading.
             mode = self.mode if self.mode is not None else 0
             side = self.selected_side if self.bed_side == 2 else self.bed_side
-            incoming_side = integer(fields, "si")
-            for view in PRESENT:
-                bypass = mode in (0, 2) if view == "realtime" else mode == 0
-                if not bypass and incoming_side != side:
-                    continue
+            if mode != 1 or integer(fields, "si") == side:
                 occupied = integer(fields, "lb") == 0
-                if occupied and integer(fields, "bm") == 4:
-                    self.counts[view] += 1
                 updates.extend(
                     (
-                        PRESENT[view](occupied),
-                        NUMBERS[f"{view}_heart_rate"](integer(fields, "hr") if occupied else None),
-                        NUMBERS[f"{view}_breathing_rate"](
-                            integer(fields, "br") if occupied else None
-                        ),
-                        NUMBERS[f"{view}_movements"](self.counts[view]),
+                        OCCUPIED(occupied),
+                        NUMBERS["heart_rate"](integer(fields, "hr") if occupied else None),
+                        NUMBERS["breathing_rate"](integer(fields, "br") if occupied else None),
                     )
                 )
         if "chkStatu" in payload:
             flag = integer(payload, "chkStatu")
-            updates.append(NUMBERS["chkStatu"](flag))
             for name, mask in CONNECTION_MASKS.items():
                 updates.append(CONNECTED[name]((flag & mask) == 0))
             for name in self.maxima:

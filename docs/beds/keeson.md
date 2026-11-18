@@ -5330,9 +5330,11 @@ it is phone navigation, not an additional BED capability or firmware gate.
 
 #### Controls
 
-Head, foot and aggregate bed-height covers, In/Out held buttons, Flat, Zero-G,
-Anti snore and Read presets, massage cycling and underbed light toggling are
-available. Read and Anti snore deliberately send the same key. No individual
+Head, foot and aggregate bed-height covers, In/Out held buttons, Flat, Zero-G and
+Anti snore presets, the three cycles, self check, massage cycling and underbed light
+toggling are available. The app's Read button sends the Anti snore key, so it has no
+separate entity; `agingplace_action` keeps `read`. Flat and STOP end a running cycle
+or self check. No individual
 lift, angle feedback, memory programming, RGB selection or command side is inferred.
 
 <!-- generated:agingplace-controls -->
@@ -5429,24 +5431,28 @@ Every indication is an independent UTF-8 JSON document. A fragment is refused;
 no reassembly, ACK correlation, identity validation or deduplication is invented.
 Cycle displays subtract the received timer from totals of 5400, 930 and 600 seconds.
 
-Realtime data retains `dt`, `di`, `ts`, `bm`, `br`, `hr`, `lb`, `si` and raw `sn`.
-The realtime display bypasses side filtering for mode 0 or 2; the health display
-bypasses only mode 0. Other modes select incoming side 0 or 1 using the retained
-telemetry side. `lb == 0` means occupied. Heart and breathing values are displayed
-directly while occupied; `bm == 4` increments each accepting display's local
-movement counter only while occupied. Counts and observations clear on disconnect.
-Raw SN has no inferred snoring meaning. Measurements remain unverified.
+Realtime data carries `dt`, `di`, `ts`, `bm`, `br`, `hr`, `lb`, `si` and `sn`.
+HA exposes **Occupancy**, **Heart rate** and **Breathing rate** from it. Modes 0
+and 2 show every reading; mode 1 (two sensors) keeps only readings whose `si`
+matches the telemetry side. `lb == 0` means occupied. Heart and breathing values
+are shown directly while occupied and clear when the bed is empty or disconnects.
+The other fields, including `bm` and `sn`, stay in the support bundle's raw
+notifications; they have no confirmed meaning. Measurements remain unverified.
 
-Device info retains string `MAC`, `dspver`, `hardver`, `pcbver`, `wifiver`, envelope
-`di`, integer `dspsen`/`bedmd`, and integer version divided by 100. MAC presence gates
+Device info carries string `MAC`, `dspver`, `hardver`, `pcbver`, `wifiver`, envelope
+`di`, integer `dspsen`/`bedmd`, and integer version divided by 100. HA shows the
+version as the diagnostic **Firmware version** sensor (disabled by default) with the
+other fields as attributes. The diagnostic **Refresh device information** button
+(disabled by default) sends the query; nothing is queried at startup. MAC presence gates
 the setup fields; it never substitutes for selected `dvid`. The observed Wi-Fi
 module version does not expose Wi-Fi administration. A provisioning response
 invalidates shared BED admission and the link, after which HA must subscribe again.
 Provisioning payloads and credentials are neither generated nor published.
 
-Self check retains raw flags, maximum head/foot/lift ripple values and mask-derived
-connectivity. Diagnostic ripple is not position feedback. The status sensor holds
-the complete observed response as an attribute. The app's Random-generated current
+The **Self check status** sensor shows waiting, running, observed, complete or
+timeout. Its attributes hold the complete observed response, the maximum
+head/foot/lift ripple values and the mask-derived head, foot, lift and massage
+connectivity. Diagnostic ripple is not position feedback. The app's Random-generated current
 displays are excluded from telemetry. Self check times out after 20 seconds and
 aggregates observed results after 2 seconds without another diagnostic indication.
 
