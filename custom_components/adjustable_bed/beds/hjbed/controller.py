@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN
+from ...card import CARD_HIDDEN, CARD_PRESET_SAVE
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import HJBED, RichmatProfile
@@ -27,6 +27,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from ..richmat.labels import function_label
 from .catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS, Action
 from .protocol import (
     Alarm,
@@ -96,11 +97,7 @@ def action_key(action: Action) -> str:
 
 
 def action_label(action: Action) -> str:
-    return (
-        re.sub(r"(?<!^)(?=[A-Z])", " ", action.key)
-        .replace("Lumber", "Lumbar")
-        .replace("Tile", "Tilt")
-    )
+    return function_label(action.enum)
 
 
 async def _action(controller: BedController, *, detail: str, save: bool = False) -> None:
@@ -287,6 +284,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
                 STATUS,
                 "mdi:bed",
                 attribute_keys=(EVENTS, ALARMS, SAVED_ALARM, AVAILABLE_ALARM_SLOTS, REJECTION),
+                entity_registry_enabled_default=False,
             ),
         )
 
@@ -593,8 +591,10 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
                         "hjbed_save_" + key,
                         "Save " + action_label(action),
                         partial(_action, detail=detail, save=True),
-                        translation_key="hjbed_action",
+                        translation_key="hjbed_save",
                         translation_placeholders={"action": "Save " + action_label(action)},
+                        requires_confirmation=True,
+                        card=CARD_PRESET_SAVE,
                     )
                 )
 

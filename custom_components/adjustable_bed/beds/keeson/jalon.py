@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ...codec import keeson as codec
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE
@@ -253,6 +254,25 @@ class JalonController(KeesonController):
             repeat_delay_ms=app.ALARM_FOLLOWUP_MS if after_set else app.REFRESH_MS,
         )
 
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        modes = app.WAKE_TYPES.get(self.profile.key)
+        if modes is None:
+            return None
+        return AlarmCapability(
+            wake_actions=tuple(modes), weekdays=True, cancel_running=True, resource=None
+        )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        # This app numbers Monday 1 through Sunday 7.
+        await self.configure_clock_alarm(
+            enabled=alarm.enabled,
+            weekdays=tuple(day + 1 for day in alarm.weekdays),
+            hour=alarm.hour,
+            minute=alarm.minute,
+            preset=alarm.wake_action,
+        )
+
     async def configure_clock_alarm(
         self,
         *,
@@ -304,6 +324,8 @@ class JalonController(KeesonController):
                 lambda ctrl: action(cast(JalonController, ctrl)),
                 "mdi:vibrate" if massage else "mdi:refresh",
                 translation_key=key,
+                # Refreshes are maintenance actions.
+                diagnostic=not massage,
                 card=CARD_MASSAGE if massage else CARD_UTILITY,
             )
 
@@ -314,10 +336,10 @@ class JalonController(KeesonController):
             button("jalon_query_massage", "Refresh massage", lambda c: c.query_massage()),
         ]
         for key, action, label in (
-            ("massage_timer", "massageTimeSwitch", "Massage timer"),
-            ("massage_wave", "massageWaveSwitch", "Massage wave"),
-            ("head_intensity", "strengthHeadUp", "Head massage intensity"),
-            ("foot_intensity", "strengthFootUp", "Foot massage intensity"),
+            ("massage_timer", "massageTimeSwitch", "Cycle massage timer"),
+            ("massage_wave", "massageWaveSwitch", "Cycle massage wave"),
+            ("head_intensity", "strengthHeadUp", "Cycle head massage intensity"),
+            ("foot_intensity", "strengthFootUp", "Cycle foot massage intensity"),
         ):
             buttons.append(
                 button(
@@ -341,6 +363,7 @@ class JalonController(KeesonController):
                 "mdi:vibrate",
                 attribute_keys=(WAVE, HEAD, FOOT),
                 card=CARD_MASSAGE_TIMER,
+                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
                 "jalon_alarm",
@@ -348,6 +371,7 @@ class JalonController(KeesonController):
                 ALARM,
                 "mdi:alarm",
                 attribute_keys=(WEEK, WAKE, HOUR, MINUTE, FIRST),
+                entity_registry_enabled_default=True,
             ),
         )
 

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 from bleak.exc import BleakError
 
-from .app_families import FAMILY_STEP_ROUTES, family_row_label
+from .app_families import FAMILY_STEP_ROUTES, family_member_rows, family_row_label
 from .beds.doublesleep.protocol import discover as discover_doublesleep
 from .beds.fsm_relax.discovery import matches_fsm_relax_candidate
 from .beds.galaxy.catalog import PROFILE_CHOICES as GALAXY_PROFILES
@@ -250,7 +250,7 @@ from .const import (
     OKIMAT_SERVICE_UUID,
     OKIMAT_VARIANTS,
     OKIMAT_WRITE_CHAR_UUID,
-    OKIN_CST_VARIANT_NECTAR_MOVE,
+    OKIN_CST_VARIANTS,
     OKIN_FFE_NAME_PATTERNS,
     OKIN_GENERIC_NAME_PATTERNS,
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
@@ -545,12 +545,12 @@ def _has_only_generic_uuids(service_uuids: list[str]) -> bool:
 # are NOT included here - they're only kept for backward compatibility with
 # existing config entries. New users should select the protocol-based equivalents.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
-    "smart_sleep": "OKIN Smart Sleep (com.bedding.monitor.sleep_monitor.release)",
-    "smart_comfort_synargy": "Smart Comfort by SYNARGY (com.synargy.okin)",
-    "smart_comfort_synergy": "Smart Comfort (com.synergy.okin)",
+    "smart_sleep": "OKIN Smart Sleep app",
+    "smart_comfort_synargy": "Smart Comfort by SYNARGY app",
+    "smart_comfort_synergy": "Smart Comfort app (SYNERGY)",
     # v5 names the RUF and Richmat apps like the other Richmat MH apps.
     **{
-        bed_type: f"{name} app (Richmat)"
+        bed_type: f"{name} app" + (" (Richmat)" if name == "AMERICANSTAR" else "")
         for bed_type, name in (
             ("ruf_betten", "RUF | Betten (Motor 2)"),
             ("wsilver_products", "W.Silver Products"),
@@ -559,139 +559,136 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
             ("richmat_tx", "TX"),
         )
     },
-    "richmat_sleep_receiver": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver (HJ_Bed)",
-    "gmmotor": "GM Control (exact app product)",
+    "richmat_sleep_receiver": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver",
+    "gmmotor": "GM Control app",
     "gmmotor_sleep_mm": "GM Control sleep module (MM)",
     "gmmotor_sleep_sxb": "GM Control sleep module (SXB)",
     'tempur_curve': 'Tempur Curve',
     'qplus_app': 'Q-Plus Adjustable Remote',
     'serta_mp_remote': 'Serta MP Remote',
     'omazz_adjusto_iii': 'Omazz Adjusto III',
-    'ergomotion_app': 'Ergomotion (app)',
+    'ergomotion_app': 'Ergomotion app',
     'row_control': 'ROW Control',
     'ergo_slim': 'Ergo Slim',
     'tempur_au': 'TEMPUR AU',
-    BED_TYPE_BEDSENSE: "BedSense app (com.fenmenbielei.bedsense)",
-    BED_TYPE_BF: "BF (com.BF app, three motors)",
-    BED_TYPE_CHERISH: "Cherish (com.okin.ore.cherish app)",
-    "casper_remote": "Casper Base remote finder (RCRM handset)",
-    "casper_base": "Casper Base app (select product)",
-    "hush_base": "Hush Base app (select product)",
+    BED_TYPE_BEDSENSE: "BedSense app",
+    BED_TYPE_BF: "BF app",
+    BED_TYPE_CHERISH: "Cherish app",
+    "casper_remote": "Casper Base remote finder",
+    "casper_base": "Casper Base app",
+    "hush_base": "Hush Base app",
     "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
-    "mline": "M Line app (com.okin.mline)",
-    "sonicsleep": "SonicSleep / 소닉슬립 app (IQRM)",
-    "hush_remote": "Hush Base remote finder (RCRM handset)",
-    "hush_sleep_mm": "Hush Base sleep sensor (RM / MM)",
-    "hush_sleep_sxb": "Hush Base sleep sensor (HJ / SXB)",
-    "casper_sleep_mm": "Casper Base sleep sensor (RM- / MM)",
-    "casper_sleep_sxb": "Casper Base sleep sensor (HJ- / SXB)",
+    "mline": "M Line app",
+    "sonicsleep": "SonicSleep / 소닉슬립 app",
+    "hush_remote": "Hush Base remote finder",
+    "hush_sleep_mm": "Hush Base sleep sensor (MM)",
+    "hush_sleep_sxb": "Hush Base sleep sensor (SXB)",
+    "casper_sleep_mm": "Casper Base sleep sensor (MM)",
+    "casper_sleep_sxb": "Casper Base sleep sensor (SXB)",
 
-    BED_TYPE_FSM_RELAX: "FSM Relax app (explicit chair/bed profile)",
+    BED_TYPE_FSM_RELAX: "FSM Relax app",
 
-    BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app (CB25 / F23 / kneading)",
-    BED_TYPE_STARCODE_M1X12: "Adjustable Comfort M1X12 app (CB25 / F23 / kneading)",
-    BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote (choose handset ID)",
+    BED_TYPE_STARCODE_M5X5: "AdjustableM5X5 app",
+    BED_TYPE_STARCODE_M1X12: "Adjustable Comfort M1X12 app",
+    BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote app",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
     BED_TYPE_RIZE_REMEDY_II: "Rize Remedy II app",
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
     BED_TYPE_SIMMONS: "SIMMONS app",
-    BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app (seven product layouts)",
+    BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app",
     BED_TYPE_ADJUSTABLE_BED: "Adjustable bed app",
     BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
-    BED_TYPE_RIZE_HOME: "Rize Home app (Remedy III / Contempo IV)",
-    BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app (com.okin.motionbed)",
-    BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 (com.okin.apex)",
-    BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app (com.okin.simmonskorea)",
-    BED_TYPE_RESIDENT: "Resident Adjustable Base app (com.okin.resident.release)",
-    BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app (com.okin.yamada)",
-    BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth / ComfortBase BLE (choose product)",
-    BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app (choose MC2/MC3/MC4/MC5)",
-    BED_TYPE_ESHINE_OKIN: "eShine app (E2000 / E3000 / E3100 / E5000)",
-    BED_TYPE_ESHINE: "Eshine app (E6000)",
-    BED_TYPE_RICHMAT_REVIVE: "Revive Control app (Richmat)",
-    BED_TYPE_RICHMAT_BEST_MATTRESS: "Best Mattress app (Richmat)",
-    BED_TYPE_RICHMAT_BLVD_HOME: "Blvd Home app (Richmat)",
-    BED_TYPE_RICHMAT_HARMONY: "HARMONY app (Richmat)",
-    BED_TYPE_RICHMAT_IDEALBED: "Idealbed app (Richmat)",
+    BED_TYPE_RIZE_HOME: "Rize Home app",
+    BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app",
+    BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 app",
+    BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app",
+    BED_TYPE_RESIDENT: "Resident Adjustable Base app",
+    BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app",
+    BED_TYPE_COMFORTBASE: "ComfortBase app (ComfortBaseForBluetooth)",
+    BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app",
+    BED_TYPE_ESHINE_OKIN: "eShine app (E2000 to E5000)",
+    BED_TYPE_ESHINE: "eShine app (E6000)",
+    BED_TYPE_RICHMAT_REVIVE: "Revive Control app",
+    BED_TYPE_RICHMAT_BEST_MATTRESS: "Best Mattress app",
+    BED_TYPE_RICHMAT_BLVD_HOME: "Blvd Home app",
+    BED_TYPE_RICHMAT_HARMONY: "HARMONY app",
+    BED_TYPE_RICHMAT_IDEALBED: "Idealbed app",
     BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app (Rize Clarity)",
     BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
     BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app (Rize Remedy)",
     # Protocol-based types (Okin family)
     BED_TYPE_OKIN_HANDLE: "Okin Handle (DewertOkin, A H Beard)",
-    BED_TYPE_OKIN_UUID: "Okin UUID (Okimat, Lucid, requires pairing)",
+    BED_TYPE_OKIN_UUID: "Okin UUID (Okimat, Lucid)",
     BED_TYPE_OKIN_7BYTE: "Okin 7-Byte (Nectar)",
     BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex)",
     BED_TYPE_OKIN_CB24: "Okin CB24 (SmartBed by Okin, Amada)",
-    BED_TYPE_OKIN_DOT: "Okin DOT (FurniMove RF1058/RF34/RF6707 remotes)",
+    BED_TYPE_OKIN_DOT: "Okin DOT (RF1058, RF34 and RF6707 remotes)",
     BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
-    BED_TYPE_OKIN_ORE: "Okin ORE (legacy A5 5A)",
-    BED_TYPE_GALAXY: "Galaxy Bed Control app (choose product and remote)",
-    BED_TYPE_GOODVIBE: "Good Vibe Sleep app (choose product or sleep sensor)",
-    BED_TYPE_MLILY: "MLILY Control app (choose product or sleep sensor)",
+    BED_TYPE_OKIN_ORE: "Okin ORE (older remotes)",
+    BED_TYPE_GALAXY: "Galaxy Bed Control app",
+    BED_TYPE_GOODVIBE: "Good Vibe Sleep app",
+    BED_TYPE_MLILY: "MLILY Control app",
     BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
-    BED_TYPE_MOTOMOTION: "MotoMotion app (exact Bluetooth name)",
-    BED_TYPE_HJBED: "HJBed app (choose the exact product)",
-    BED_TYPE_JALON: "OkinComfortBed II / Okin Comfortbed II N (Jalon app)",
-    BED_TYPE_SYMPHONY_SLEEP: "Symphony Sleep app (com.ore.bedding.symphony, choose model and transport)",
-    BED_TYPE_JALON_BED: "OkinComfortBed Ⅱ (Jalon Android app)",
-    BED_TYPE_SYMPHONY: "Symphony Sleep Sense (Symphony / com.okin.ist)",
-    BED_TYPE_RICHMAT_APP: "Richmat 4.2.0 app (choose product)",
-    BED_TYPE_RICHMAT_APP_SLEEP: "Richmat 4.2.0 sleep device (separate RM- or HJ- link)",
-    BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion / Montion app (400 / 450 / 500 / 600)",
-    BED_TYPE_OKIN_64BIT: "Okin 64-Bit (10-byte commands)",
+    BED_TYPE_MOTOMOTION: "MotoMotion app",
+    BED_TYPE_HJBED: "HJBed app",
+    BED_TYPE_JALON: "OkinComfortBed II N app (Jalon)",
+    BED_TYPE_SYMPHONY_SLEEP: "Symphony Sleep app",
+    BED_TYPE_JALON_BED: "OkinComfortBed II app (Jalon)",
+    BED_TYPE_SYMPHONY: "Symphony Sleep Sense app",
+    BED_TYPE_RICHMAT_APP: "Richmat app",
+    BED_TYPE_RICHMAT_APP_SLEEP: "Richmat app sleep sensor",
+    BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion app",
+    BED_TYPE_OKIN_64BIT: "Okin 64-Bit (older remotes)",
     BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
-    BED_TYPE_OKIN_CST: (
-        "Okin CST: MFirm 900 - O, Jordan's Sanctuary - O, Resident Adjustable Bed, "
-        "Rize Aviada - O, POWER BOB ULTRA-O, Rize Contemporary III - O, Carefree, "
-        "Rize Clarity II - O and Support 挺你 科技調整床 apps"
-    ),
-    BED_TYPE_OKIN_RF_ECO_BT: "OKIN Smart Remote / RF ECO BT single actuator",
+    # Each app is its own row; this row asks which one.
+    BED_TYPE_OKIN_CST: "Okin CST (Rize, Jordan's and other apps)",
+    BED_TYPE_OKIN_RF_ECO_BT: "OKIN RF ECO BT stair lift",
     # Protocol-based types (Leggett & Platt family)
-    BED_TYPE_LEGGETT_GEN2: "Leggett & Platt Gen2 (LP Control app, LP Comfort Connect)",
-    BED_TYPE_LEGGETT_LP_LEGACY: "L&P Adjustable Base (legacy app)",
+    BED_TYPE_LEGGETT_GEN2: "LP Control and LP Comfort Connect (Leggett & Platt Gen2)",
+    BED_TYPE_LEGGETT_LP_LEGACY: "L&P Adjustable Base app",
     BED_TYPE_LEGGETT_OKIN: (
         "Leggett & Platt Okin (Prodigy CE, Prodigy 2, Prodigy 2L, U Series and LP Control apps, "
         "requires pairing)"
     ),
-    BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt WiLinke (MlRM)",
+    BED_TYPE_LEGGETT_WILINKE: "Leggett & Platt MlRM remote",
     # Brand-specific types
-    BED_TYPE_BEDTECH: "BedTech app (select model, or legacy controls)",
-    BED_TYPE_COOLBASE: "Cool Base (BaseI5 with fan)",
-    BED_TYPE_ERGOMOTION: "Ergomotion",
-    BED_TYPE_ERGOMOTION_4: "Ergomotion 4.0 app (explicit product)",
-    BED_TYPE_JIECANG: "Jiecang (legacy Glide / Comfort Motion)",
+    BED_TYPE_BEDTECH: "BedTech app",
+    BED_TYPE_COOLBASE: "Cool Base",
+    BED_TYPE_ERGOMOTION: "Ergomotion remote",
+    BED_TYPE_ERGOMOTION_4: "Ergomotion 4.0 app",
+    BED_TYPE_JIECANG: "Glide and Comfort Motion remotes (Jiecang)",
     BED_TYPE_JIECANG_APP: (
         "Jiecang: ERGOBALANCE, Dream Motion, Dream Motion HD and Comfort Motion apps, "
         "Glide and Lierda remotes"
     ),
-    BED_TYPE_JENSEN: "Jensen Adjustable Sleep app, JMC400 bed (PIN)",
+    BED_TYPE_JENSEN: "Jensen Adjustable Sleep app, JMC400 bed",
     BED_TYPE_KEESON: (
         "Keeson (Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, "
         "some Ergomotion Sync beds)"
     ),
-    BED_TYPE_RIZE: "Rize Beds app (Kaidi, 1.4.2)",
-    BED_TYPE_ISLEEP: "ISleep app (Kaidi, com.kaidi_test4)",
-    BED_TYPE_KOMFYD: "KomfyD app (Kaidi, com.pairlink.kaidi.komfyD)",
-    BED_TYPE_COMFYDS: "ComfyDS app (Kaidi, com.pairlink.kaidi.ComfyDS)",
-    BED_TYPE_KAIDI: "Kaidi (Rize Beds and Floyd Home apps; legacy ISleep)",
+    BED_TYPE_RIZE: "Rize Beds app",
+    BED_TYPE_ISLEEP: "ISleep app",
+    BED_TYPE_KOMFYD: "KomfyD app",
+    BED_TYPE_COMFYDS: "ComfyDS app",
+    BED_TYPE_KAIDI: "Rize app (older version, Kaidi)",
     BED_TYPE_LINAK: "Linak (Bed Control, Bed Connect and Performance Series apps)",
-    BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf (FFE5 protocol)",
-    BED_TYPE_MALOUF_NEW_OKIN: "Malouf (Nordic UART protocol)",
+    BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf remote, older receiver",
+    BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
-    BED_TYPE_REVERIE: "Reverie (Protocol 108)",
-    BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand (Protocol 110)",
+    BED_TYPE_REVERIE: "Reverie app",
+    BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand app",
     BED_TYPE_REVERIE_PAIRLINK: "Reverie Pairlink (R510L / Harmoniq)",
     BED_TYPE_RICHMAT: "Richmat / RMControl app",
     BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
     BED_TYPE_REMACRO: "Slumberland app (Remacro)",
-    BED_TYPE_COMFORT_MOTION: "Comfort Motion / Lierda (legacy controls)",
-    BED_TYPE_LIMOSS: "Limoss / Stawett (TEA encrypted)",
-    BED_TYPE_LIMOSS_REMOTE: "Limoss Remote app (bed / chair)",
+    BED_TYPE_COMFORT_MOTION: "Comfort Motion and Lierda remotes",
+    BED_TYPE_LIMOSS: "Limoss and Stawett remotes",
+    BED_TYPE_LIMOSS_REMOTE: "Limoss Remote app",
     BED_TYPE_LOGICDATA: "Logicdata SimplicityFrame (SILVERmotion)",
-    BED_TYPE_LOGICDATA_APP: "Logicdata MotionRelax / Sleep Smart (bed apps)",
+    BED_TYPE_LOGICDATA_APP: "MOTIONrelax and Sleep Smart apps (LOGICDATA)",
     BED_TYPE_LOGICDATA_AIR_PUMP: "Logicdata Sleep Smart air mattress pump",
     BED_TYPE_MALOUF_APP: "Malouf Base / Lucid Base apps",
     BED_TYPE_SBI: "SBI/Q-Plus (Costco)",
@@ -700,13 +697,13 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEP_NUMBER: "Sleep Number Fuzion (Climate 360, FlexFit)",
     BED_TYPE_SLEEP_NUMBER_MCR: "Sleep Number BAM/MCR (older i8, 360 FlexFit 2)",
     BED_TYPE_SLEEPSTAR: "SleepSpa S9000AI (SLEEPSTAR)",
-    BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite BOX15 receiver (FFE5 service)",
-    BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite BOX24 receiver (OKIN 64-bit service)",
-    BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite BOX25 receiver (Nordic UART)",
-    BED_TYPE_SLEEPYS_ELITE_APP: "MFRM Sleepy's Elite app (control box selector)",
+    BED_TYPE_SLEEPYS_BOX15: "Sleepy's Elite BOX15 receiver",
+    BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite BOX24 receiver",
+    BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite BOX25 receiver",
+    BED_TYPE_SLEEPYS_ELITE_APP: "MFRM Sleepy's Elite app",
     BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
     BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
-    BED_TYPE_SUTA: "SUTA Smart Home (AT protocol)",
+    BED_TYPE_SUTA: "SUTA Smart Home app",
     "paramount": "Paramount Bed Operation (ベッド操作)",
     BED_TYPE_BEDJET_POWERLAYER: "BedJet PowerLayer adjustable frame",
     BED_TYPE_SVANE: "Svane Remote app",
@@ -714,12 +711,14 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_VIBRADORM: "Vibradorm: VMAT, Caresse Diamant, Werkmeister, V-MAT Basic",
     BED_TYPE_VIBRADORM_APP: "Vibradorm apps: VMAT, Caresse Diamant or Werkmeister",
     BED_TYPE_VMATBASIC: "V-MAT Basic app",
-    BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app (explicit profile)",
+    BED_TYPE_STARCODE_ABM5_4: "AdjustableM5X4 app",
     BED_TYPE_MOTION_BED: "Motion Bed app",
     BED_TYPE_DOUBLESLEEP: "OKIN SleepEase (DoubleSleep / XiaoBao)",
-    BED_TYPE_SLEEPTRACKER: "Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)",
+    BED_TYPE_SLEEPTRACKER: "Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)",
     # Diagnostic
-    BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
+    # Kept in the list: a discovered bed nothing supports can still be added to
+    # capture a support bundle (#385).
+    BED_TYPE_DIAGNOSTIC: "Unsupported bed (diagnostics only)",
 }
 
 
@@ -740,29 +739,34 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{(BED_TYPE_GALAXY, profile): f"Galaxy Bed Control ({label})" for profile, label in GALAXY_PROFILES.items()},
     **{(BED_TYPE_GOODVIBE, profile): f"Good Vibe Sleep ({label})" for profile, label in GOODVIBE_PROFILES.items()},
     **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
-    **{(BED_TYPE_RICHMAT_CLASSIC_APPS, app): label for app, label in RICHMAT_CLASSIC_APPS.items()},
-    **{(BED_TYPE_RICHMAT_APP_SLEEP, profile): f"Richmat sleep ({label})" for profile, label in RICHMAT_SLEEP_CHOICES.items()},
-    **{(BED_TYPE_RICHMAT_APP, profile): f"Richmat 4.2.0 ({label})" for profile, label in RICHMAT_APP_PRODUCTS.items()},
+    **{(BED_TYPE_RICHMAT_CLASSIC_APPS, app): f"{label} app" for app, label in RICHMAT_CLASSIC_APPS.items()},
+    **{(BED_TYPE_RICHMAT_APP_SLEEP, profile): f"Richmat app sleep sensor ({label})" for profile, label in RICHMAT_SLEEP_CHOICES.items()},
+    **{(BED_TYPE_RICHMAT_APP, profile): f"Richmat app ({label})" for profile, label in RICHMAT_APP_PRODUCTS.items()},
     **{(BED_TYPE_HJBED, profile): f"HJBed app ({label})" for profile, label in HJBED_PROFILES.items()},
-    **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion / Montion app ({label})"
+    **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion app ({label})"
        for model, label in GLIDEAWAY_MOTION_MODELS.items()},
-    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app (Kaidi product 139)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI): "Simon Li app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT): "Heal Every Night app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): "OKIN-Seating app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): "Avanti Bases app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_COMFORT_BED): "OKIN Comfort Bed app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_ORE_ULTRAMATIC): "ORE Ultramatic app (Keeson)",
+    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_SIMON_LI): "Simon Li app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_HEAL_EVERY_NIGHT): "Heal Every Night app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): "OKIN-Seating app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): "Avanti Bases app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_COMFORT_BED): "OKIN Comfort Bed app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_ORE_ULTRAMATIC): "Ultramatic app (ORE)",
     (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): "AMERICANSTAR app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): "Bedsense Bases app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): "INNOVA app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): "MaxCoil Una app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_DYNASTY_BASES): "Dynasty Bases app (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app, remote A (Keeson)",
-    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B): "Restonic BT app, remote B (Keeson)",
-    (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): "Woosa Sleep app (Solace)",
-    (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): "Nectar Move",
+    (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): "Bedsense Bases app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): "INNOVA app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): "MaxCoil Una app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_DYNASTY_BASES): "Dynasty Bases app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app, remote A",
+    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B): "Restonic BT app, remote B",
+    (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): "Woosa Sleep app",
+    # Each Okin CST app is its own row.
+    **{
+        (BED_TYPE_OKIN_CST, variant): label
+        for variant, label in OKIN_CST_VARIANTS.items()
+        if variant != VARIANT_AUTO
+    },
     (BED_TYPE_SVANE, SVANE_VARIANT_JMC): "Svane Remote app (JMC400)",
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): "Jensen Adjustable Sleep app (LinOn)",
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): "Adjustable Comfort M1X12 ELEVATE",
@@ -827,7 +831,7 @@ _COMPATIBILITY_LABELS: Final[dict[str, str]] = {
 
 # One Restonic BT row: its follow-up asks the remote style the app's settings chose.
 _APP_ROW_LABELS: Final[dict[tuple[str, str], str]] = {
-    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app (Keeson)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_A): "Restonic BT app",
 }
 # The Z-Series models are answers of the Customatic question.
 _HIDDEN_APP_ROWS: Final = frozenset(
@@ -898,6 +902,15 @@ def get_bed_type_options() -> list[SelectOptionDict]:
             if key not in _HIDDEN_APP_ROWS
         }
     )
+    # A family with many apps also lists each app by its own name, so a search
+    # finds it; the row still opens the family question with that app chosen.
+    for bed_type, variant in family_member_rows():
+        choice = bed_type_choice(bed_type, variant)
+        if choice not in choices:
+            label = (
+                APP_VARIANT_CHOICES.get((bed_type, variant)) if variant is not None else None
+            ) or BED_TYPE_DISPLAY_NAMES[bed_type]
+            choices[choice] = label
     return [
         SelectOptionDict(value=value, label=label)
         for value, label in sorted(choices.items(), key=lambda item: item[1].lower())
@@ -1158,7 +1171,7 @@ def refine_okin_shared_uuid_protocol_from_gatt(
             return bed_type
         if gatt_detection.bed_type == BED_TYPE_OKIN_CST:
             # CSS plus Nordic DFU is only a hint. No CST app identifies its
-            # product from GATT, names or Device Information (cluster 011), and
+            # product from GATT, names or Device Information in the Rize apps, and
             # OKIMAT beds expose the same services (#555). CST stays opt-in.
             return bed_type
         if gatt_detection.bed_type != bed_type and _log_correction:

@@ -162,6 +162,7 @@ class LuunaController(CasperBaseController):
                 LUUNA_MODEL,
                 "mdi:bed",
                 attribute_keys=(LUUNA_EVENTS, LUUNA_ERROR),
+                entity_registry_enabled_default=False,
             ),
         )
 

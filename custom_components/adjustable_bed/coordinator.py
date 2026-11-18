@@ -31,8 +31,10 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from .app_state_store import app_state_slot, app_state_store
 from .bed_traits import (
     bed_traits,
-    disconnect_after_command_default_enabled,
+    default_connection_mode,
     passive_position_reconciliation_default_enabled,
+    reads_positions,
+    store_read_positions,
 )
 from .beds.vibradorm.app_state import (
     ControlType,
@@ -111,9 +113,8 @@ from .const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CONNECTION_PROFILE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
@@ -127,7 +128,6 @@ from .const import (
     CONF_MOTOR_PULSE_USER_SET,
     CONF_PAIR_MODE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
-    CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROFILE_ID,
     CONF_REMACRO_LED_LEVEL,
@@ -143,17 +143,18 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
-    CONNECTION_PROFILES,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
+    CONNECTION_SETTINGS,
     DEFAULT_BACK_MAX_ANGLE,
-    DEFAULT_CONNECTION_PROFILE,
-    DEFAULT_DISABLE_ANGLE_SENSING,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_MOTOR_COUNT,
-    DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     KEESON_VARIANT_ORE_ULTRAMATIC,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LEGGETT_VARIANT_OKIN,
@@ -163,7 +164,6 @@ from .const import (
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIRLINK_ROLE_PERIPHERAL,
-    POSITION_MODE_ACCURACY,
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
     SOLACE_VARIANT_WOOSA,
@@ -375,9 +375,7 @@ class AdjustableBedCoordinator(
         else:
             self._motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
-        self._disable_angle_sensing: bool = entry.data.get(
-            CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
-        )
+        self._disable_angle_sensing: bool = not reads_positions(entry.data)
         # Legacy P1 positions have no side ownership. Keep the stored preference
         # for restoring standalone controls, but never seek using shared feedback.
         if (
@@ -392,22 +390,9 @@ class AdjustableBedCoordinator(
                 passive_position_reconciliation_default_enabled(self._bed_type),
             )
         )
-        self._position_mode: str = entry.data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE)
         self._preferred_adapter: str = entry.data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
 
-        # Connection profile settings
-        self._connection_profile: str = entry.data.get(
-            CONF_CONNECTION_PROFILE, DEFAULT_CONNECTION_PROFILE
-        )
-        profile_settings = CONNECTION_PROFILES.get(self._connection_profile)
-        if profile_settings is None:
-            _LOGGER.warning(
-                "Unknown connection profile '%s'; defaulting to '%s'",
-                self._connection_profile,
-                DEFAULT_CONNECTION_PROFILE,
-            )
-            self._connection_profile = DEFAULT_CONNECTION_PROFILE
-            profile_settings = CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE]
+        profile_settings = CONNECTION_SETTINGS
         self._max_retries: int = profile_settings.max_retries
         self._retry_base_delay: float = profile_settings.retry_base_delay
         self._retry_jitter: float = profile_settings.retry_jitter
@@ -429,13 +414,19 @@ class AdjustableBedCoordinator(
             CONF_MOTOR_PULSE_DELAY_MS, bed_pulse_defaults[1]
         )
 
-        # Disconnect behavior configuration
-        self._disconnect_after_command: bool = entry.data.get(
-            CONF_DISCONNECT_AFTER_COMMAND,
-            disconnect_after_command_default_enabled(self._bed_type, self._protocol_variant),
-        )
-        self._idle_disconnect_seconds: int = entry.data.get(
-            CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
+        # How long the link stays open after a command.
+        connection_mode = entry.data.get(CONF_CONNECTION_MODE)
+        if connection_mode not in (
+            CONNECTION_MODE_RELEASE,
+            CONNECTION_MODE_IDLE,
+            CONNECTION_MODE_ALWAYS,
+        ):
+            connection_mode = default_connection_mode(self._bed_type, self._protocol_variant)
+        self._disconnect_after_command: bool = connection_mode == CONNECTION_MODE_RELEASE
+        self._idle_disconnect_seconds: int = (
+            IDLE_DISCONNECT_KEEP_CONNECTED
+            if connection_mode == CONNECTION_MODE_ALWAYS
+            else entry.data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS)
         )
 
         self._client: BleakClient | None = None
@@ -587,6 +578,10 @@ class AdjustableBedCoordinator(
         self._connection_success_count: int = 0
         self._last_connection_attempt: datetime | None = None
         self._last_connection_error: str | None = None
+        # Set once a failed connect has been reported, so an outage warns once.
+        self._connect_failure_logged = False
+        # Set once a connect finished startup; a drop before then is part of an outage.
+        self._link_ready = False
         self._last_connection_error_type: str | None = None
         self._last_disconnect_reason: str | None = (
             None  # "idle_timeout", "intentional", "unexpected"
@@ -613,7 +608,7 @@ class AdjustableBedCoordinator(
         )
 
         _LOGGER.debug(
-            "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s, connection_profile: %s)",
+            "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s)",
             self._name,
             self._address,
             self._bed_type,
@@ -621,7 +616,6 @@ class AdjustableBedCoordinator(
             self._has_massage,
             self._disable_angle_sensing,
             self._preferred_adapter,
-            self._connection_profile,
         )
 
     def _async_persist_config(
@@ -883,45 +877,20 @@ class AdjustableBedCoordinator(
             entry_data[CONF_MOTOR_PULSE_DELAY_MS] = corrected_defaults[1]
         if corrected_bed_type == BED_TYPE_BEDTECH:
             entry_data.pop(CONF_RICHMAT_REMOTE, None)
-        angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data or (
-            self.entry.data.get(CONF_DISABLE_ANGLE_SENSING) is True
-            and not bed_traits(previous_bed_type).position_feedback
-        )
-        # Config flow defaults disable_angle_sensing from the position_feedback trait,
-        # so the correction must use the same trait: a repaired entry (e.g. CB35 ->
-        # BOX25, #419) should get position feedback re-enabled even when the
-        # corrected type reports percentages rather than angles.
-        if (
-            bed_traits(corrected_bed_type).position_feedback
-            and angle_sensing_defaulted
-            and self._disable_angle_sensing
-            and not (
+        if bed_type_changed:
+            # Reading turned off on a protocol that reported a position stays
+            # off; anything else was that protocol's default, so the corrected
+            # protocol reads its position exactly when it reports one (#419).
+            turned_off = entry_data.pop(CONF_DISABLE_ANGLE_SENSING, None) is True and bed_traits(
+                previous_bed_type
+            ).position_feedback
+            store_read_positions(entry_data, False if turned_off else None)
+            if not (
                 is_paired(entry_data)
                 and entry_data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
                 and corrected_bed_type in {BED_TYPE_KEESON, BED_TYPE_ERGOMOTION}
-            )
-        ):
-            self._disable_angle_sensing = False
-            entry_data[CONF_DISABLE_ANGLE_SENSING] = False
-            _LOGGER.info(
-                "Enabled position feedback for corrected %s protocol on %s: "
-                "the previous entry used the legacy default",
-                corrected_bed_type,
-                self._address,
-            )
-        elif (
-            bed_type_changed
-            and not bed_traits(corrected_bed_type).position_feedback
-            and not self._disable_angle_sensing
-        ):
-            self._disable_angle_sensing = True
-            entry_data[CONF_DISABLE_ANGLE_SENSING] = True
-            _LOGGER.info(
-                "Disabled angle sensing for corrected %s protocol on %s: "
-                "the corrected profile does not support position feedback",
-                corrected_bed_type,
-                self._address,
-            )
+            ):
+                self._disable_angle_sensing = not reads_positions(entry_data)
 
         entry_data_changed = entry_data != self.entry.data
         if entry_data_changed:
@@ -1928,12 +1897,8 @@ class AdjustableBedCoordinator(
 
                 # Final position read after command
                 if not self._disable_angle_sensing and not self._cancel_command.is_set():
-                    if self._position_mode == POSITION_MODE_ACCURACY:
-                        # Accuracy mode: wait for read to complete
-                        await self._async_read_positions()
-                    else:
-                        # Speed mode: fire-and-forget with lock to prevent concurrent GATT ops
-                        self._start_background_position_read()
+                    # Fire-and-forget with lock to prevent concurrent GATT ops
+                    self._start_background_position_read()
             finally:
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()
@@ -2393,9 +2358,7 @@ class AdjustableBedCoordinator(
                     and not cancel_event.is_set()
                     and not self._command_scheduler.has_pending
                 ):
-                    if self._position_mode == POSITION_MODE_ACCURACY or (
-                        self._disconnect_after_operation_enabled() and not skip_disconnect
-                    ):
+                    if self._disconnect_after_operation_enabled() and not skip_disconnect:
                         await self._async_wait_for_controller_operation(
                             asyncio.create_task(self._async_read_positions()),
                             cancel_event=cancel_event,

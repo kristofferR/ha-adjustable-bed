@@ -18,7 +18,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -106,7 +106,7 @@ async def test_explicit_discovered_app_choice_reaches_its_real_factory(enable_cu
     flow._finish_with_verify = AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
     # The Solace question asks which app shares the QMS name.
     assert (await flow.async_step_bluetooth_confirm())["step_id"] == "solace_family"
-    settings = {CONF_NAME: "QMS-IQ", CONF_DISCONNECT_AFTER_COMMAND: False}
+    settings = {CONF_NAME: "QMS-IQ", CONF_CONNECTION_MODE: "idle"}
     if app == BED_TYPE_MOTION_BED:
         result = await flow.async_step_solace_family({"choice": "motion_bed"})
         assert result["step_id"] == "profile_questions"

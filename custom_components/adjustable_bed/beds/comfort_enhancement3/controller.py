@@ -1,4 +1,4 @@
-"""Row083 app-specific gestures and wake-up sessions over the shared Okin controller."""
+"""Comfort Enhancement 3 1.4.0 app-specific gestures and wake-up sessions over the shared Okin controller."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...command_scheduler import current_command_context
@@ -44,6 +45,17 @@ MASSAGE_END: Final = StateKey[str | None]("apex_local_massage_end")
 FIRMWARE: Final = StateKey[str | None]("apex_firmware")
 
 
+# Entity names for the remote's grouped motor keys; the remote prints the M channels.
+_GROUP_NAMES: Final = {
+    "lumbar": "Lumbar",
+    "m3_m4": "M3 and M4",
+    "head_foot": "Head and foot",
+    "head_tilt": "Head tilt",
+    "midbody": "Mid-body",
+    "tflat": "T-flat",
+}
+
+
 @dataclass(frozen=True, slots=True)
 class _Link:
     client: BleakClient
@@ -59,6 +71,19 @@ def delay_ticks(target: datetime, now: datetime) -> int:
     micros = (delta.days * 86400 + delta.seconds) * 1000000 + delta.microseconds
     seconds = abs(micros) // 1000000
     return (-seconds if micros < 0 else seconds) * 10
+
+
+# Shared wake actions and the remote's preset labels, default first.
+_WAKE_PRESETS: Final = {
+    "none": "None",
+    "memory_1": "M1",
+    "memory_2": "M2",
+    "zero_g": "Zero Gravity",
+    "tv": "TV",
+    "anti_snore": "QS",
+}
+# Wake-up programs are identified by a two-digit number; the app has no fixed count.
+WAKE_SLOTS: Final = 99
 
 
 def selected_time(now: datetime, hour: int, minute: int, next_day: bool) -> datetime:
@@ -259,17 +284,18 @@ class ComfortEnhancement3Controller(OkinHandleController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         buttons = []
-        for key, label, _, _ in self.remote.groups:
+        for key, _, _, _ in self.remote.groups:
             for direction in ("up", "down"):
                 control = f"{key}_{direction}"
+                name = f"{_GROUP_NAMES[key]} {direction}"
                 buttons.append(
                     ControllerButtonSpec(
                         f"apex_{control}",
-                        f"{label} {direction}",
+                        name,
                         lambda c, k=control: _apex(c).move(k),
                         scheduler_resource="*",
                         translation_key="apex_group",
-                        translation_placeholders={"action": f"{label} {direction}"},
+                        translation_placeholders={"action": name},
                         hold=ControllerHoldSpec(control),
                         invalidates_position=True,
                         card=CARD_UTILITY,
@@ -279,11 +305,13 @@ class ComfortEnhancement3Controller(OkinHandleController):
             buttons.append(
                 ControllerButtonSpec(
                     "apex_qs",
-                    "QS" if self.remote.qs else "Zzz",
+                    "Quiet sleep" if self.remote.qs else "Sleep",
                     lambda c: _apex(c)._preset("qs"),
                     scheduler_resource="*",
                     translation_key="apex_qs",
-                    translation_placeholders={"action": "QS" if self.remote.qs else "Zzz"},
+                    translation_placeholders={
+                        "action": "Quiet sleep" if self.remote.qs else "Sleep"
+                    },
                     invalidates_position=True,
                     card=CARD_PRESETS,
                 )
@@ -329,7 +357,13 @@ class ComfortEnhancement3Controller(OkinHandleController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        firmware = ControllerStateSensorSpec("apex_firmware", "apex_firmware", FIRMWARE, "mdi:chip")
+        firmware = ControllerStateSensorSpec(
+            "apex_firmware",
+            "apex_firmware",
+            FIRMWARE,
+            "mdi:chip",
+            entity_registry_enabled_default=False,
+        )
         massage = (
             (
                 ControllerStateSensorSpec(
@@ -338,6 +372,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
                     MASSAGE_END,
                     "mdi:timer",
                     card=CARD_MASSAGE,
+                    entity_registry_enabled_default=True,
                 ),
             )
             if self.remote.massage
@@ -739,6 +774,50 @@ class ComfortEnhancement3Controller(OkinHandleController):
         finally:
             if not completed or self._coordinator.cancel_command.is_set():
                 await self._massage_stop(link)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        remote = self.remote
+        return AlarmCapability(
+            wake_actions=tuple(
+                action for action, preset in _WAKE_PRESETS.items() if preset in remote.wake_presets
+            ),
+            slots=WAKE_SLOTS,
+            first_slot=0,
+            massage=remote.wake_massage,
+            massage_intensities=3 if remote.wake_massage else 0,
+            massage_durations=(10, 20, 30) if remote.wake_massage else (),
+            massage_zones=("head", "feet", "both", "wave") if remote.wake_massage else (),
+            light=remote.light,
+            cancel_running=True,
+            resource="*",
+        )
+
+    def _wake_target(self, alarm: AlarmRequest) -> datetime:
+        # The next occurrence of the time: today, or tomorrow once it has passed.
+        return alarm.occurrence()
+
+    def _wake_effects(self, alarm: AlarmRequest) -> dict[str, Any]:
+        return {
+            "massage": alarm.massage,
+            "duration": alarm.massage_duration or 10,
+            "intensity": alarm.massage_intensity,
+            "kind": alarm.massage_zone or "head",
+            "light": alarm.light,
+            "preset": _WAKE_PRESETS[alarm.wake_action],
+        }
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled:
+            self.validate_wakeup(alarm.slot, self._wake_target(alarm), **self._wake_effects(alarm))
+        else:
+            codec.schedule_step(alarm.slot, 0, 0, 0, 0)
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled:
+            await self.set_wakeup(alarm.slot, self._wake_target(alarm), **self._wake_effects(alarm))
+        else:
+            await self.delete_wakeup(alarm.slot)
 
     def validate_wakeup(self, slot: int, target: datetime, **effects: Any) -> tuple[bytes, ...]:
         from homeassistant.util import dt as dt_util

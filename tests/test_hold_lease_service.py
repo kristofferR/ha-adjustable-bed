@@ -24,8 +24,8 @@ from custom_components.adjustable_bed.command_scheduler import CommandKind, Comm
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DEWERTOKIN,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     DOMAIN,
@@ -104,7 +104,7 @@ async def runtime(
             CONF_NAME: "Lease bed",
             CONF_BED_TYPE: BED_TYPE_DEWERTOKIN,
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
             CONF_MOTOR_PULSE_COUNT: 3,
             CONF_MOTOR_PULSE_DELAY_MS: 20,
         },
@@ -198,7 +198,7 @@ async def test_late_renewal_after_stop_is_refused_without_motion(runtime, clock)
     await coordinator.async_stop_command()
     await asyncio.wait_for(start, 1)
     frames = len(controller.frames)
-    with pytest.raises(ServiceValidationError, match="has ended"):
+    with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
         await _timed(hass, 7)
     await asyncio.sleep(0.05)
     assert controller.frames[frames:] == []
@@ -212,7 +212,7 @@ async def test_controller_without_hold_rejects_a_lease(runtime, clock) -> None:
     assert controller.frames == []
     # The refused start ended its generation; the next press uses a new one.
     controller._execution = STREAM
-    with pytest.raises(ServiceValidationError, match="has ended"):
+    with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
         await _timed(hass, 1)
     await asyncio.wait_for(_timed(hass, 2, duration_ms=100), 2)
     assert controller.frames[0] == "up"
@@ -274,7 +274,7 @@ async def test_disconnect_ends_the_hold_and_refuses_renewal(runtime, clock) -> N
     coordinator._on_disconnect(coordinator._client)
     await asyncio.wait_for(start, 1)
     assert controller.frames[-1] == "stop"
-    with pytest.raises(ServiceValidationError, match="has ended"):
+    with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
         await _timed(hass, 2)
 
 

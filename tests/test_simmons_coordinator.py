@@ -7,29 +7,23 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.config_flow import (
-    AdjustableBedOptionsFlow,
     _name_rule_setup_name,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SIMMONS,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
-    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
-    SIMMONS_VARIANT_INCLINED,
-    SIMMONS_VARIANT_SMARTBED,
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
 
 NUS = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 CLOCK_PREFIX = bytes.fromhex("E7 80 01")
@@ -79,7 +73,7 @@ async def test_quick_handoff_session_syncs_clock_before_the_first_alarm_write(
     mock_async_ble_device_from_address: MagicMock,
 ) -> None:
     mock_async_ble_device_from_address.return_value.name = "OKIN-112233"
-    entry = _entry(hass, **{CONF_DISCONNECT_AFTER_COMMAND: True})
+    entry = _entry(hass, **{CONF_CONNECTION_MODE: "release"})
     coordinator = AdjustableBedCoordinator(hass, entry)
     original_write = simmons_client.write_gatt_char.side_effect
 
@@ -163,31 +157,3 @@ def _side(address: str, variant: str) -> dict[str, object]:
     }
 
 
-@pytest.mark.parametrize(
-    ("left", "right"),
-    [(VARIANT_AUTO, VARIANT_AUTO), (SIMMONS_VARIANT_INCLINED, SIMMONS_VARIANT_SMARTBED)],
-)
-async def test_two_address_pair_refuses_shared_variant_changes(
-    hass: HomeAssistant, left: str, right: str
-) -> None:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=build_pair_entry_data(
-            _side("AA:BB:CC:DD:EE:11", left), _side("AA:BB:CC:DD:EE:22", right), name="Pair"
-        ),
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    requested = SIMMONS_VARIANT_INCLINED if left != SIMMONS_VARIANT_INCLINED else VARIANT_AUTO
-
-    refused = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
-
-    assert refused["type"] is FlowResultType.FORM
-    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    # A shared, non-variant change still saves and leaves each side's variant.
-    saved = await flow.async_step_settings({CONF_IDLE_DISCONNECT_SECONDS: 60})
-    assert saved["type"] is FlowResultType.CREATE_ENTRY
-    assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == left
-    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == right

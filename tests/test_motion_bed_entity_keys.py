@@ -65,6 +65,12 @@ def movement_pairs(ctrl: MotionBedController) -> dict[str, list[tuple[MotionBedA
     return pairs
 
 
+COVER_NAMES = {
+    "BACK": "Back", "HEAD": "Head", "LEG": "Legs", "LUMBAR": "Lumbar", "HIP": "Hip",
+    "LIFT": "Lift", "TILT": "Tilt", "BACK LEG": "Back and legs",
+}
+
+
 @pytest.mark.parametrize("movement", HOME_MOVEMENTS)
 def test_movement_covers_share_one_key_per_label_and_side(movement: str) -> None:
     ctrl = controller(movement_override=movement)
@@ -77,7 +83,8 @@ def test_movement_covers_share_one_key_per_label_and_side(movement: str) -> None
         assert key in ENTITY_STRINGS["cover"]
         label = members[0][0].name.removesuffix(" up")
         if not key.startswith(("motion_bed_left_", "motion_bed_right_")):
-            assert ENTITY_STRINGS["cover"][key]["name"] == label
+            # The app shouts its labels; entity names use sentence case.
+            assert ENTITY_STRINGS["cover"][key]["name"] == COVER_NAMES[label]
 
 
 def test_split_pads_carry_their_side_and_w18_head_is_its_lift() -> None:
@@ -133,6 +140,6 @@ def test_button_identity_survives_layout_changes_and_keeps_module_meaning() -> N
     air = {spec.key for spec in controller("TL-A").controller_button_specs}
     assert {"motion_bed_air_yujia", "motion_bed_air_lumbar"} <= air
     assert not {"motion_bed_yujia", "motion_bed_lumbar"} & air
-    # The motor module's preview routes the hub to that module before sending.
+    # The motor module's brightness routes the hub to that module before sending.
     motor = button_actions_for(controller("TL-B")._active_owners())
-    assert motor["motion_bed_audio_preview_1"].owner == "DianDongSetActivity"
+    assert motor["motion_bed_brightness_1"].owner == "DianDongSetActivity"

@@ -1,4 +1,4 @@
-"""Explicit eShine E2000/E3000/E3100/E5000 app controls (row122)."""
+"""Explicit eShine E2000/E3000/E3100/E5000 app controls (eShine 1.1.8)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -214,19 +215,19 @@ class EshineOkinController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # The alarm is read on connect and after every alarm change.
         labels = {
-            "flat_zero_g": "Flat + Zero Gravity",
+            "flat_zero_g": "Flat and zero gravity",
             "query_state": "Refresh bed state",
-            "query_alarm": "Refresh alarm",
-            "sync_clock": "Synchronize bed clock",
+            "sync_clock": "Sync clock",
         }
         if self.supports_massage:
             labels.update(
                 {
                     "massage_on": "Massage on",
-                    "massage_head_strength": "Head massage strength",
-                    "massage_foot_strength": "Foot massage strength",
-                    "massage_timer": "Massage timer",
+                    "massage_head_strength": "Cycle head massage strength",
+                    "massage_foot_strength": "Cycle foot massage strength",
+                    "massage_timer": "Cycle massage timer",
                 }
             )
         return tuple(
@@ -236,6 +237,7 @@ class EshineOkinController(BedController):
                 _action(key),
                 translation_key=f"eshine_okin_{key}",
                 hold=ControllerHoldSpec(key) if key in HELD else None,
+                diagnostic=key in ("query_state", "sync_clock"),
                 card=CARD_MASSAGE if key.startswith("massage_") else CARD_UTILITY,
             )
             for key, name in labels.items()
@@ -250,6 +252,7 @@ class EshineOkinController(BedController):
                 _group_key(group),
                 "mdi:alarm" if group == "alarm" else "mdi:vibrate",
                 attribute_keys=(_group_data_key(group),),
+                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE if group == "massage" else CARD_UTILITY,
             )
             for group in (("massage", "alarm") if self.supports_massage else ("alarm",))
@@ -484,6 +487,18 @@ class EshineOkinController(BedController):
         if control == "light" and not await self._pause(0.1, self._coordinator.cancel_command):
             self._live(session)
             await self.write_command(COMMANDS["query_state"])
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(
+            wake_actions=self.clock_alarm_preset_options, cancel_running=True, resource=None
+        )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        # The app sets the bed clock before an alarm it turns on.
+        if alarm.enabled:
+            await self.sync_clock()
+        await super().configure_alarm(alarm)
 
     async def configure_clock_alarm(
         self,
