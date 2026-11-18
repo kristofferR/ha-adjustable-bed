@@ -2541,7 +2541,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.limoss.remote_services import async_register_limoss_remote_services
     from .beds.linak.services import async_register_linak_services
     from .beds.logicdata.app_services import async_register_logicdata_app_services
-    from .beds.malouf.app_services import async_register_malouf_app_services
     from .beds.mline.services import register_services as register_mline_services
     from .beds.motion_bed.services import async_register_motion_bed_services
     from .beds.motomotion.services import async_register_motomotion_services
@@ -2605,7 +2604,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_serenity_services,
         register_apex_services,
         async_register_simmons_services,
-        async_register_malouf_app_services,
         async_register_logicdata_app_services,
         async_register_jiecang_app_services,
         async_register_svane_services,
