@@ -11,7 +11,7 @@ from bleak import BleakClient
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...alarm import AlarmCapability, AlarmRequest
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import CARD_UTILITY
 from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
@@ -525,7 +525,9 @@ class YamadaController(KeesonController):
                 preset=alarm.wake_action,
             )
         except ConnectionError as err:
-            raise ValueError("Refresh the bed alarms, then try again") from err
+            raise AlarmError(
+                "alarm_refresh_needed", "Refresh the bed alarms, then try again"
+            ) from err
 
     def validate_alarm(self, alarm: AlarmRequest) -> None:
         self._alarm_plan(alarm)

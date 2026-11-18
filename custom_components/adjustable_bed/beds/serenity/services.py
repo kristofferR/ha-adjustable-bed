@@ -30,6 +30,7 @@ async def _execute_zseries_alarm(
     call: ServiceCall,
     label: str,
     command: Callable[[ZSeriesController], Awaitable[None]],
+    validate: Callable[[ZSeriesController], None] | None = None,
 ) -> None:
     """Preflight every physical Z-Series target before any alarm or clock write."""
     await async_import_modules(call.hass, "beds.serenity.controller")
@@ -39,7 +40,11 @@ async def _execute_zseries_alarm(
     # The alarm page exists only after an exact CST13/CST14 manufacturer read.
     # A cached controller can only rule a bed out on a confirmed other string.
     preflighted = await _preflight_capability(
-        targets, ZSeriesController, label, supported=lambda zseries: zseries.alarm_not_ruled_out
+        targets,
+        ZSeriesController,
+        label,
+        supported=lambda zseries: zseries.alarm_not_ruled_out,
+        validate=validate,
     )
     try:
         # All-or-nothing: resolve every unknown state on a live connection before

@@ -205,6 +205,8 @@ and `zseries_set_alarm`. Field changes:
   replacement),
   Motion Bed split zero-gravity modes and the raw `switch` value, Keeson app tables
   with more than one weekly or one-time alarm, and Comfort Enhancement 3 program
+  `next_day` (a Comfort Enhancement 3 wake-up now runs at the next occurrence of the time,
+  so it cannot be set for tomorrow while that time is still ahead today), program
   numbers 0 and above 10 (cancel those programs with
   `comfort_enhancement3_delete_wakeup` before upgrading), Richmat
   app calendar alarm deletion (`enabled: false` disables the slot instead) and calendar

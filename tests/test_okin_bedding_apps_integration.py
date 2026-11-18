@@ -210,7 +210,7 @@ async def test_hold_services_preflight_profile_and_literal_action(
     ("bed_type", "available", "error"),
     [
         (BED_TYPE_ZSERIES, True, None),
-        (BED_TYPE_ZSERIES, False, "has no alarm"),
+        (BED_TYPE_ZSERIES, False, "does not support"),
         (BED_TYPE_TRANQUIL, True, "has no alarm"),
     ],
 )
@@ -487,7 +487,7 @@ async def test_persisted_capability_survives_disconnect_and_a_later_failed_read(
 async def test_confirmed_other_manufacturer_is_rejected_without_reconnecting(hass):
     controller = zseries("z280")
     _persisting(controller, {"zseries_alarm_available": False})
-    with pytest.raises(ServiceValidationError, match="has no alarm"):
+    with pytest.raises(ServiceValidationError, match="does not support"):
         await _set_alarm(hass, controller)
     controller.client.read_gatt_char.assert_not_awaited()
     assert written(controller) == []

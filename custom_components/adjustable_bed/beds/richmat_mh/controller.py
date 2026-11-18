@@ -1107,6 +1107,13 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 )
             self._waist_repeat(alarm)
             return
+        if alarm.massage_intensity != 1:
+            raise AlarmError(
+                "alarm_option_not_supported",
+                "The bed alarm has no massage intensity; it applies to the mattress alarm",
+                device_name="This bed",
+                option="massage_intensity",
+            )
         self.validate_richmat_mh_alarm(**self._alarm_fields(alarm))
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:

@@ -159,25 +159,33 @@ class AlarmRequest:
     reference_time: datetime
 
     def occurrence(self) -> datetime:
-        """Return the next local occurrence of the time, selected when the call arrived."""
+        """Return the next local occurrence of the time, selected when the call arrived.
+
+        Both readings of a repeated hour count, so the earliest future instant wins.
+        """
         start = self.reference_time
-        target = start.replace(hour=self.hour, minute=self.minute, second=0, microsecond=0)
-        if target.timestamp() <= start.timestamp():
-            target += timedelta(days=1)
-        return target
+        candidates = [
+            (start + timedelta(days=days)).replace(
+                hour=self.hour, minute=self.minute, second=0, microsecond=0, fold=fold
+            )
+            for days in (0, 1)
+            for fold in (0, 1)
+        ]
+        future = [c for c in candidates if c.timestamp() > start.timestamp()]
+        return min(future, key=lambda candidate: candidate.timestamp())
 
     def seconds_until(self, now: datetime) -> int:
         """Return whole seconds from ``now`` to the selected occurrence, at least 1."""
         return max(1, int(self.occurrence().timestamp() - now.timestamp()))
 
     def minutes_until(self, now: datetime | None = None) -> int:
-        """Return whole minutes from ``now``'s minute to the selected occurrence, 1 to 1440.
+        """Return whole minutes from ``now``'s minute to the selected occurrence, at least 1.
 
         Absolute timestamps keep a slow connection or a clock change from
         moving the alarm.
         """
         start = (now or self.reference_time).replace(second=0, microsecond=0).timestamp()
-        return min(1440, max(1, round((self.occurrence().timestamp() - start) / 60)))
+        return max(1, round((self.occurrence().timestamp() - start) / 60))
 
 
 class AlarmError(ValueError):

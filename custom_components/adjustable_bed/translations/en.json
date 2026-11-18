@@ -9326,6 +9326,12 @@
     },
     "alarm_mattress_vibrates_only": {
       "message": "The mattress alarm only vibrates. Remove the wake action and massage."
+    },
+    "alarm_lost": {
+      "message": "This bed no longer reports an alarm. Reload it, then try again."
+    },
+    "alarm_refresh_needed": {
+      "message": "Refresh the bed's alarms, then try again."
     }
   },
   "issues": {

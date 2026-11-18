@@ -659,3 +659,20 @@ def test_countdown_uses_real_time_across_a_clock_change() -> None:
         enabled=True, hour=3, minute=30, reference_time=datetime(2026, 3, 29, 1, 30, tzinfo=oslo)
     )
     assert alarm.minutes_until() == 60
+
+
+def test_countdown_picks_the_repeated_hour_after_a_clock_change() -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    oslo = ZoneInfo("Europe/Oslo")
+    # Clocks fall back from 03:00 to 02:00 on 2026-10-25; 02:30 happens twice.
+    alarm = AlarmRequest(
+        enabled=True,
+        hour=2,
+        minute=30,
+        reference_time=datetime(2026, 10, 25, 2, 45, tzinfo=oslo),
+    )
+    assert alarm.minutes_until() == 45

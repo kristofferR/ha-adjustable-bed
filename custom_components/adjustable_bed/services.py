@@ -43,6 +43,7 @@ from .alarm import (
     MATTRESS_SIDES,
     WAKE_ACTIONS,
     AlarmCapability,
+    AlarmError,
     AlarmRequest,
 )
 from .alarm import OPTIONAL_FIELDS as ALARM_OPTIONAL_FIELDS
@@ -2245,17 +2246,20 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         await set_symphony_alarm(call, alarm, given)
         return
     if route == "zseries":
-        # Check the options on every target before anything can be scheduled.
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                if (controller := target.capability_controller) is not None:
-                    _check_alarm(target.name, controller, alarm, given)
-        # Z-Series alarms exist only after a live manufacturer read; every
-        # target is the same profile, so the first check fails before any write.
+        # Z-Series alarms exist only after a live manufacturer read. The options
+        # are checked on every target, connecting where needed, before anything
+        # is scheduled.
         async def write_zseries(controller: BedController) -> None:
             await controller.configure_alarm(_check_alarm("", controller, alarm, given))
 
-        await _execute_zseries_alarm(call, "alarms", write_zseries)
+        await _execute_zseries_alarm(
+            call,
+            "alarms",
+            write_zseries,
+            validate=lambda controller: _check_alarm(
+                controller._coordinator.name, controller, alarm, given
+            ),
+        )
         return
 
     # How each physical target schedules its write, from its own capability.
@@ -2285,7 +2289,9 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         async def execute(controller: BedController) -> None:
             capability = controller.alarm_capability
             if capability is None:
-                raise ValueError("This bed no longer reports an alarm; reload it and try again")
+                raise AlarmError(
+                    "alarm_lost", "This bed no longer reports an alarm; reload it and try again"
+                )
             await run(controller, _with_bed_defaults(alarm, capability, given))
 
         return _family_command(BedController, "alarms", execute)
