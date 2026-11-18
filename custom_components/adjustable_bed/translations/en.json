@@ -3349,23 +3349,23 @@
       "sonicsleep_action": {
         "name": "{action}"
       },
-      "ultramatic_alarm_refresh": {
+      "ore_ultramatic_alarm_refresh": {
         "name": "Refresh alarm"
       },
-      "ultramatic_massage_head": {
-        "name": "Hold head massage"
+      "ore_ultramatic_massage_head": {
+        "name": "Head massage"
       },
-      "ultramatic_massage_foot": {
-        "name": "Hold foot massage"
+      "ore_ultramatic_massage_foot": {
+        "name": "Foot massage"
       },
-      "ultramatic_massage_timer": {
-        "name": "Hold massage timer"
+      "ore_ultramatic_massage_timer": {
+        "name": "Massage timer"
       },
-      "ultramatic_massage_wave": {
-        "name": "Hold massage wave"
+      "ore_ultramatic_massage_toggle": {
+        "name": "Toggle massage"
       },
-      "ultramatic_massage_toggle": {
-        "name": "Hold massage toggle"
+      "ore_ultramatic_massage_wave": {
+        "name": "Massage wave"
       }
     },
     "cover": {
@@ -5257,23 +5257,11 @@
       "sonicsleep": {
         "name": "SonicSleep state"
       },
-      "ultramatic_alarm_hour": {
-        "name": "Reported alarm hour"
+      "ore_ultramatic_alarm_time": {
+        "name": "Alarm time"
       },
-      "ultramatic_alarm_minute": {
-        "name": "Reported alarm minute"
-      },
-      "ultramatic_alarm_repeat": {
-        "name": "Reported alarm repeat (signed)"
-      },
-      "ultramatic_alarm_action": {
-        "name": "Reported alarm action (raw)"
-      },
-      "ultramatic_massage_timer_code": {
-        "name": "Reported massage timer code"
-      },
-      "ultramatic_massage_intensity": {
-        "name": "Reported massage intensity"
+      "ore_ultramatic_massage_intensity": {
+        "name": "Massage intensity"
       }
     },
     "light": {

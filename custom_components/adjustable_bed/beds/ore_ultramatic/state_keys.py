@@ -1,13 +1,15 @@
-"""Connection-owned Ultramatic raw reported state, never inferred positions."""
+"""Connection-owned ORE Ultramatic reported state, never inferred positions."""
 
 from typing import Final
 
 from ...controller_state import StateKey
 
-HOUR: Final = StateKey[int | None]("ultramatic_alarm_hour")
-MINUTE: Final = StateKey[int | None]("ultramatic_alarm_minute")
-REPEAT: Final = StateKey[int | None]("ultramatic_alarm_repeat")
-ACTION: Final = StateKey[int | None]("ultramatic_alarm_action")
-TIMER: Final = StateKey[int | None]("ultramatic_massage_timer_code")
-INTENSITY: Final = StateKey[int | None]("ultramatic_massage_intensity")
-ALL: Final = (HOUR, MINUTE, REPEAT, ACTION, TIMER, INTENSITY)
+# "HH:MM" when the reported hour and minute are a valid time of day.
+TIME: Final = StateKey[str | None]("ore_ultramatic_alarm_time")
+# Signed repeat byte and the app's raw action value; exposed as alarm attributes.
+REPEAT: Final = StateKey[int | None]("ore_ultramatic_alarm_repeat")
+ACTION: Final = StateKey[int | None]("ore_ultramatic_alarm_action")
+# Raw massage timer value; its units are unproven, so it is an attribute.
+TIMER: Final = StateKey[int | None]("ore_ultramatic_massage_timer")
+INTENSITY: Final = StateKey[int | None]("ore_ultramatic_massage_intensity")
+ALL: Final = (TIME, REPEAT, ACTION, TIMER, INTENSITY)

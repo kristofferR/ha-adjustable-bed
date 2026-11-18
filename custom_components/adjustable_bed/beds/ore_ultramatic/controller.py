@@ -28,7 +28,7 @@ from ..entity_specs import (
 )
 from ..lifecycle import CapabilitySnapshotPolicy, ControllerSession
 from ..ore_comfort_bed import OreComfortBedController
-from .state_keys import ACTION, ALL, HOUR, INTENSITY, MINUTE, REPEAT, TIMER
+from .state_keys import ACTION, ALL, INTENSITY, REPEAT, TIME, TIMER
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -399,20 +399,22 @@ class OreUltramaticController(OreComfortBedController):
         )
         return (
             *buttons,
+            # The bed reports its alarm only when asked.
             ControllerButtonSpec(
-                "ultramatic_alarm_refresh",
+                "ore_ultramatic_alarm_refresh",
                 "Refresh alarm",
                 lambda c: cast(OreUltramaticController, c).query_alarm(),
                 "mdi:alarm",
-                translation_key="ultramatic_alarm_refresh",
+                translation_key="ore_ultramatic_alarm_refresh",
+                diagnostic=True,
                 card=CARD_UTILITY,
             ),
             *(
                 ControllerButtonSpec(
-                    f"ultramatic_massage_{key}",
+                    f"ore_ultramatic_massage_{key}",
                     f"Massage {key}",
                     _massage_press(key),
-                    translation_key=f"ultramatic_massage_{key}",
+                    translation_key=f"ore_ultramatic_massage_{key}",
                     hold=ControllerHoldSpec(key, release_delay_ms=app.SINGLE_MS),
                     card=CARD_MASSAGE,
                 )
@@ -423,9 +425,17 @@ class OreUltramaticController(OreComfortBedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return tuple(
-            ControllerStateSensorSpec(str(key), str(key), key, "mdi:information-outline")
-            for key in ALL
+        return (
+            ControllerStateSensorSpec(
+                str(TIME), str(TIME), TIME, "mdi:alarm", attribute_keys=(REPEAT, ACTION)
+            ),
+            ControllerStateSensorSpec(
+                str(INTENSITY),
+                str(INTENSITY),
+                INTENSITY,
+                "mdi:vibrate",
+                attribute_keys=(TIMER,),
+            ),
         )
 
     @property
@@ -465,8 +475,11 @@ class OreUltramaticController(OreComfortBedController):
             s = self._parser.state
             if "alarm" in callbacks:
                 self.forward_controller_state_updates(
-                    HOUR(s.hour),
-                    MINUTE(s.minute),
+                    TIME(
+                        f"{s.hour:02d}:{s.minute:02d}"
+                        if 0 <= s.hour < 24 and 0 <= s.minute < 60
+                        else None
+                    ),
                     REPEAT(s.repeat),
                     ACTION(s.type),
                 )
