@@ -1,4 +1,4 @@
-"""Static Linx actions; catalog-dependent alarm choices are intentionally absent."""
+"""The Linx manual snore intervention action. Alarm clears use the shared ``set_alarm``."""
 
 from __future__ import annotations
 
@@ -29,42 +29,23 @@ def register_services(hass: HomeAssistant) -> None:
         from .controller import LinxController
 
         async def execute(controller: LinxController) -> None:
-            if call.service == "linx_clear_alarm":
-                await controller.clear_alarm(call.data.get("slot"))
-            else:
-                await controller.snore_intervention(
-                    keep=call.data["hold_minutes"],
-                    speed=call.data["up_speed"],
-                    lift=call.data["lift_time"],
-                )
-
-        def validate(controller: LinxController) -> None:
-            if call.service == "linx_snore_intervention":
-                controller.validate_snore_intervention()
+            await controller.snore_intervention(
+                keep=call.data["hold_minutes"],
+                speed=call.data["up_speed"],
+                lift=call.data["lift_time"],
+            )
 
         await _preflight_and_execute(
             targets,
             LinxController,
-            "Linx bed controls",
+            "Linx snore intervention",
             execute,
-            validate=validate,
+            validate=lambda controller: controller.validate_snore_intervention(),
             resource=None,
             cancel_running=True,
             admissions=admissions,
         )
 
-    hass.services.async_register(
-        DOMAIN,
-        "linx_clear_alarm",
-        handle,
-        schema=vol.Schema(
-            {
-                vol.Required("device_id"): DEVICE_IDS,
-                vol.Optional("slot"): vol.All(vol.Coerce(int), vol.Range(min=1, max=6)),
-                **SIDE_FIELD,
-            }
-        ),
-    )
     # These are the app's stored integer parameters, not a general motor-speed
     # capability. The UART builder retains Java byte narrowing, independently.
     parameter = vol.All(vol.Coerce(int), vol.Range(min=0, max=2**31 - 1))

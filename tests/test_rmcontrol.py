@@ -345,10 +345,8 @@ def test_reported_state_precedes_entity_discovery_callback_and_retains_alarm_rec
             )
         )
     assert set(ctrl.protocol_diagnostics["last_received_alarm_records"]) == {1, 2}
-    alarm_spec = next(
-        spec for spec in ctrl.controller_state_sensor_specs if spec.key == "rmcontrol_alarm_record"
-    )
-    assert "rmcontrol_repeat_alarm_command" in alarm_spec.attribute_keys
+    # The last received records are no authoritative alarm list: diagnostics only.
+    assert "rmcontrol_alarm_record" not in {spec.key for spec in ctrl.controller_state_sensor_specs}
 
 
 async def test_reconnect_clears_previously_forwarded_telemetry() -> None:

@@ -1,6 +1,6 @@
 """Linx 1.0.7 (27): JSON, AA instructions, ASCII setup and AB intervention.
 
-The accepted unit079 literals do not match the existing Keeson JSON field
+The Linx 1.0.7 literals do not match the existing Keeson JSON field
 order, nor its binary carriers. Transport selection is independent of the
 payload family. No catalog semantics are inferred from the AA key builder.
 """
@@ -116,7 +116,7 @@ ALARM_KEY_CONVERSION: Final = {
 
 
 def alarm_recall(device: str, position_key: str, *, uart: bool) -> bytes:
-    """Known serialization only. R01 prevents exposing catalog choices to users."""
+    """Known serialization only. Alarm choices come from an account catalog, so none are exposed."""
     value = int(position_key, 10)
     if uart:
         return instruction(ALARM_KEY_CONVERSION.get(value, value))
@@ -186,7 +186,7 @@ def alarm_slot(
     seconds: int = 0,
     populated: bool = False,
 ) -> bytes:
-    """Six resident slots. Populated row meanings await R01; clears are independent."""
+    """Six resident slots. Only clears are exposed; populated rows need the account catalog."""
     if type(slot) is not int or not 1 <= slot <= 6:
         raise ValueError("Linx alarm slot must be 1–6")
     if any(type(day) is not int or not 0 <= day <= 6 for day in weekdays):

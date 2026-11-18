@@ -12,6 +12,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...app_session import app_session
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER
 from ...codec import linx as codec
@@ -562,14 +563,24 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
     async def massage_mode_step(self) -> None:
         await self.massage_action("mode")
 
-    async def clear_alarm(self, slot: int | None) -> None:
-        slots = range(1, 7) if slot is None else (slot,)
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        # Only clearing a resident slot is proven; creating an alarm needs the
+        # app's account-fed alarm catalog, which is not available.
+        return AlarmCapability(slots=6, cancel_running=True, resource=None)
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled:
+            raise AlarmError(
+                "alarm_turn_off_only",
+                "This bed's alarms can only be turned off from Home Assistant",
+            )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
         link = self._live()
-        frames = tuple(codec.alarm_slot(link.device, number) for number in slots)
-        for frame in frames:
-            if self._coordinator.cancel_command.is_set():
-                return
-            await self._send(link, frame, self._coordinator.cancel_command)
+        await self._send(
+            link, codec.alarm_slot(link.device, alarm.slot), self._coordinator.cancel_command
+        )
 
     def validate_snore_intervention(self) -> None:
         link = self._live()

@@ -9,7 +9,7 @@ import pytest
 from bleak.exc import BleakError
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
+from custom_components.adjustable_bed.bed_traits import default_connection_mode
 from custom_components.adjustable_bed.beds.gmmotor.controller import GmmotorController
 from custom_components.adjustable_bed.beds.gmmotor.notifications import Event
 from custom_components.adjustable_bed.beds.gmmotor.requests import Request
@@ -69,7 +69,7 @@ def coordinator(
             "product_type": product,
             "gmmotor_side": side,
             "disable_angle_sensing": True,
-            "disconnect_after_command": quick,
+            "connection_mode": "release" if quick else "idle",
         },
     )
     entry.add_to_hass(hass)
@@ -85,7 +85,7 @@ def button(c, material):
 
 @pytest.mark.parametrize("bed_type", ["gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"])
 def test_new_entries_do_not_offer_quick_handoff_by_default(bed_type):
-    assert disconnect_after_command_default_enabled(bed_type) is False
+    assert (default_connection_mode(bed_type) == "release") is False
 
 
 @pytest.mark.parametrize("quick", [False, True])

@@ -24,14 +24,14 @@ from .position_estimate import (
 )
 from .services import SIDE_FIELD, _missing_device_error, _resolve_sided_targets
 
-SERVICE_SAVE_POSITION = "save_position"
-SERVICE_RENAME_POSITION = "rename_position"
-SERVICE_UPDATE_POSITION = "update_position"
-SERVICE_DELETE_POSITION = "delete_position"
-SERVICE_RECALL_POSITION = "recall_position"
-SERVICE_SET_POSITION_REFERENCE = "set_position_reference"
-SERVICE_CONFIRM_POSITION_UNCHANGED = "confirm_position_unchanged"
-SERVICE_MARK_POSITION_UNKNOWN = "mark_position_unknown"
+SERVICE_SAVE_POSITION = "estimate_save_position"
+SERVICE_RENAME_POSITION = "estimate_rename_position"
+SERVICE_UPDATE_POSITION = "estimate_update_position"
+SERVICE_DELETE_POSITION = "estimate_delete_position"
+SERVICE_RECALL_POSITION = "estimate_recall_position"
+SERVICE_SET_POSITION_REFERENCE = "estimate_set_reference"
+SERVICE_CONFIRM_POSITION_UNCHANGED = "estimate_confirm_unchanged"
+SERVICE_MARK_POSITION_UNKNOWN = "estimate_mark_unknown"
 SERVICE_LOWER_TO_FLAT = "lower_to_flat"
 
 ATTR_NAME = "name"

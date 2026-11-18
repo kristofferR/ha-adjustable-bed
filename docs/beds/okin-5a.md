@@ -107,7 +107,7 @@ STOP. Massage and light commands are single writes unless listed here.
 Bed types that build the same controller over the same profile with the same
 default timing, so they send identical bytes. They stay separate bed types so
 existing entries keep their identities; the
-[protocol inventory](../design/protocol-inventory.md) proves the equality by capture.
+wire snapshot (`tests/test_wire_snapshot.py`) proves the equality by capture.
 
 | Bed type | Same as | Profile |
 |----------|---------|---------|
@@ -306,8 +306,8 @@ sends is in its own guide.
 profile's frames against its vectors. `tests/test_codec_docs.py` checks every
 frame spelled in this guide against the vectors and each bed type against the
 factory. Each profile's vectors are
-the frames its pre-v5 controller sent. No accepted APK report covers the Nectar,
-Mattress Firm and CB35 key frames; ELEVATE's frames match its APK reports (see
+the frames its pre-v5 controller sent. No app evidence covers the Nectar,
+Mattress Firm and CB35 key frames; ELEVATE's frames match its apps (see
 its [Evidence](#dewertokin-elevate)). The same file freezes every StarCode frame
 in the standalone StarCode controllers' artifact vectors, by encoder, and the
 same test rebuilds each one from its fields.
@@ -363,7 +363,7 @@ See the [timing table](#choosing-a-profile).
 
 #### Evidence
 
-No discovery ledger: no accepted APK report covers this profile. Nectar sends
+No app evidence covers this profile. Nectar sends
 only its frozen frames, the ones the pre-v5 controller sent, from MaximumWorf's
 [homeassistant-nectar](https://github.com/MaximumWorf/homeassistant-nectar).
 
@@ -403,7 +403,7 @@ analysis, the app repeats a held button every 100 ms and sends stop twice (at
 
 #### Evidence
 
-No discovery ledger: the accepted MFirm 900 1.1.2 report
+The MFirm 900 1.1.2 app
 (`com.okin.bedding.rizemf900`) reaches only the Okin CST frame. That app uses a
 14-byte CST format (`[0x0C, 0x02, motor_bytes(4), control_bytes(4), reserved(4)]`)
 and detects devices by the name prefix `okin` (case-insensitive); see
@@ -514,7 +514,7 @@ See [Responses](#responses).
 
 #### Evidence
 
-No discovery ledger. The profile sends only its frozen frames, the ones the pre-v5
+The profile sends only its frozen frames, the ones the pre-v5
 controller sent, from the `com.okin.sealy` v1.1.1 analysis in
 [#310](https://github.com/kristofferR/ha-adjustable-bed/issues/310). Complete
 protocol definition at
@@ -592,7 +592,7 @@ Its app-proven group behavior is carried over:
 
 #### Evidence
 
-The AdjustableM5X5 (row005) and M1X12 audits cover the frozen COMPLETE reports for `com.starcode.adjustablem1x12` 1.1.3 and
+Based on `com.starcode.adjustablem1x12` 1.1.3 and
 `com.starcode.abm5_5` 1.2.3. ELEVATE sends only its frozen frames. Command
 direction and multi-device fan-out await real-hardware checks.
 
@@ -612,5 +612,5 @@ direction and multi-device fan-out await real-hardware checks.
   Delahoz's BLEAdjustableBase.
 - **CB35:** [#310](https://github.com/kristofferR/ha-adjustable-bed/issues/310),
   extracted from `com.okin.sealy` v1.1.1.
-- **ELEVATE:** the frozen COMPLETE APK Protocol Audit reports for
+- **ELEVATE:** based on
   `com.starcode.adjustablem1x12` 1.1.3 and `com.starcode.abm5_5` 1.2.3.

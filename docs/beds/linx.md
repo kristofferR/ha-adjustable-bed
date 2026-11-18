@@ -27,15 +27,13 @@
 | Memory programming | None | None |
 | Light | One-shot action | One-shot action |
 | Massage | Head massage, foot massage, cycle massage timer, mode | None |
-| Device-resident alarms | Clear any of six slots, or all | Clear any of six slots, or all |
+| Device-resident alarms | Turn off any of six slots with `set_alarm` | Same |
 | Manual snore intervention | Parameterized BLE action and status follow-up | Same |
 | Diagnostics | Self-check; result sensor on A00A, firmware version on UART | Same |
 
-Alarm creation, editing, enable/disable of existing populated rows and scheduled
-recall need the app's unavailable account-fed alarm catalog and matching alarm
-rows. These are not offered as raw keys or guessed choices. A separately supplied
-lawful offline catalog snapshot is needed before those choices can be added.
-This integration provides no cloud, account or bed network functionality.
+Turning an alarm on, or editing one, needs the alarm choices the app downloads
+from its account service, so Home Assistant can only turn alarms off. This
+integration provides no cloud, account or bed network functionality.
 
 ## Choosing a profile
 
@@ -212,7 +210,7 @@ writes. A failed alarm clear has no latent continuation.
 
 ### Vectors
 
-`tests/fixtures/linx/vectors.json` retains the 39 accepted literals unchanged.
+`tests/fixtures/linx/vectors.json` keeps the app's 39 frame literals unchanged.
 `tests/test_linx_vectors.py` compares them against the production codec. Runtime
 coverage in `tests/test_linx.py` exercises setup, entities, services, elapsed
 holds, STOP admission and physical paired-child targeting.
@@ -268,8 +266,9 @@ belong to the physical receiver, including in a two-address pair.
 #### Services
 
 - `adjustable_bed.hold_control`: the six head/feet/both directions.
-- `adjustable_bed.linx_clear_alarm`: clear one slot, or all six when omitted.
-  The bed acknowledges no alarm inventory, so no clear state is shown.
+- `adjustable_bed.set_alarm` with `enabled: false` and `slot` 1–6 clears that
+  resident alarm slot. The bed acknowledges no alarm inventory, so no clear
+  state is shown.
 - `adjustable_bed.linx_snore_intervention`: stored hold minutes, lift time and
   up-speed parameters, defaulting to the app's values. This is a manual BLE
   effect, not phone recording or snore detection. Its single later status query
@@ -283,15 +282,6 @@ belong to the physical receiver, including in a two-address pair.
   no self-check reply, so that route has no result sensor. Status is queried
   on every connection and then arrives by notification, so there is no refresh
   button.
-
-#### Evidence
-
-Unit079's repaired direct BLE scope, including the conditional destinations and
-UART reply, is statically verified. The accepted report remains PARTIAL because
-the account-fed alarm catalog and corresponding rows are absent. Hardware
-qualification is separate external beta/release work, including mixed-format
-UART acceptance, Orbes release behavior, startup checksum and diagnostic fields.
-No maintainer acquisition or immediate hardware testing is required.
 
 ### Orbes
 
@@ -322,23 +312,13 @@ are hidden.
 
 #### Services
 
-The static alarm-clear and manual snore services also target this model. In a
+Alarm clears and the snore intervention also target this model. In a
 two-address pair, a child device target keeps that physical side's model,
 transport, name, callbacks and cleanup. The generic parent does not propagate
 one side's app choices to its partner.
-
-#### Evidence
-
-Same accepted unit079 scope and external hardware qualifications as Quest.
 
 ## Notes
 
 ### Analysis provenance
 
-- `com.keeson.connectedbed` 1.0.7 (27), artifact-set SHA-256
-  `379c74ac3229e9641c163972985526ca66ada7768f77fe0d704e4db1312e9511`.
-- Repaired report manifest SHA-256
-  `d84b915a71f8ed502fb4b92a527514c5104c31e56c8d38828bb722bdabffdcda`.
-- Frozen acquisition dated 2026-07-14; no new latest-version attestation.
-- Accepted verified scope under PARTIAL after the sole scoped recheck of
-  A01–A03. Hardware remains UNVERIFIED.
+Based on Linx 1.0.7 (`com.keeson.connectedbed`).

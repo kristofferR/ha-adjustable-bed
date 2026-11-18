@@ -43,7 +43,7 @@ class AppCatalog:
     actions: Mapping[str, Action]
     products: Mapping[str, Product]
     expansions: Mapping[str, tuple[str, ...]]
-    # MLILY's accepted row159 corrects these app-specific runtime rules.
+    # MLILY Control 5.0.2 corrects these app-specific runtime rules.
     reply_gated_menus: bool = False
     mask_when_release: bool = False
     release_initially: bool = True

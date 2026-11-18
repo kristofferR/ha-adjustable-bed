@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -23,6 +25,11 @@ from ...services import (
 )
 from ..base import BedController, require_controller
 from .routing import APP_ACTION_CHOICES, app_side
+
+_PUBLIC_ACTIONS = {
+    re.sub(r"(?<=[a-z0-9])([A-Z])", r"_\1", action).lower(): action
+    for action in APP_ACTION_CHOICES
+}
 
 
 async def handle_app_command(call: ServiceCall) -> None:
@@ -96,7 +103,11 @@ def register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                vol.Required("action"): vol.In(APP_ACTION_CHOICES),
+                # Public choices are snake_case; the app's camelCase names still work.
+                vol.Required("action"): vol.All(
+                    vol.In((*_PUBLIC_ACTIONS, *APP_ACTION_CHOICES)),
+                    lambda action: _PUBLIC_ACTIONS.get(action, action),
+                ),
                 vol.Optional("sleeper", default=3): vol.All(
                     vol.Coerce(int), vol.Range(min=1, max=5)
                 ),

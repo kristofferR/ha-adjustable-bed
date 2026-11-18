@@ -302,7 +302,7 @@ async def test_manual_app_profile_is_findable_and_persists_selector_capabilities
         assert marker.default() == "none"
         assert set(selector.container) == set(SLEEPYS_ELITE_SELECTORS)
         assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEPYS_ELITE_APP] == (
-            "MFRM Sleepy's Elite app (control box selector)"
+            "MFRM Sleepy's Elite app"
         )
 
         result = await flow.async_step_profile_questions({CONF_SLEEPYS_ELITE_SELECTOR: "BOX25"})
@@ -334,21 +334,14 @@ def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
         else:
             assert not any(key.startswith("sleepys_app_target_axis_") for key in number_keys)
 
-        if selector in _VOICE_SELECTORS:
-            assert {
-                f"sleepys_app_voice_axis_{axis}_{target}"
-                for axis in range(3)
-                for target in (0, 100)
-            } <= button_keys
-            assert {
-                "sleepys_app_voice_brightness_down",
-                "sleepys_app_voice_brightness_up",
-            } <= button_keys
-            assert {"sleepys_app_field_0x43", "sleepys_app_field_0x5f"} <= state_keys
-        else:
-            assert not any(key.startswith("sleepys_app_voice_axis_") for key in button_keys)
-
-        assert any(key.startswith("sleepys_app_field_") for key in state_keys)
+        # Voice shortcuts repeat the target numbers and light controls.
+        assert not any(key.startswith("sleepys_app_voice_") for key in button_keys)
+        # Unlabelled app fields stay in diagnostics; BOX25 reports head, foot and lumbar.
+        assert state_keys == (
+            {f"sleepys_app_position_axis_{axis}" for axis in range(3)}
+            if selector in _VOICE_SELECTORS
+            else set()
+        )
 
 
 async def test_dynamic_vectors_retain_frozen_provenance_and_current_route_counts() -> None:
@@ -519,22 +512,6 @@ async def test_brightness_ui_zero_is_off_but_controller_zero_is_brightness() -> 
     brightness = controller._write_route.await_args.args[0]
     assert brightness.builder == "changeLightBrightness"
     assert brightness.logical_values == (4, 224, 0, 0, 0, 0)
-    controller._write_route.assert_awaited_once()
-
-
-async def test_voice_brightness_step_retains_endpoint_and_needs_known_level() -> None:
-    controller = _controller("BOX25", connected=True)
-    controller._write_route = AsyncMock()
-
-    await controller.adjust_light_level(-1)
-    controller._write_route.assert_not_awaited()
-
-    controller._light_level = 0
-    controller._light_level_known = True
-    await controller.adjust_light_level(-1)
-    route = controller._write_route.await_args.args[0]
-    assert route.builder == "changeLightBrightness"
-    assert route.logical_values == (4, 224, 0, 0, 0, 0)
     controller._write_route.assert_awaited_once()
 
 
@@ -845,3 +822,10 @@ async def test_hold_repeats_at_100ms_then_stops_with_a_fresh_event() -> None:
     assert release.builder == "stop"
     assert isinstance(release_kwargs["cancel_event"], asyncio.Event)
     assert release_kwargs["cancel_event"] is not controller._coordinator.cancel_command
+
+
+async def test_motion_sensor_reports_a_setting_it_never_wrote() -> None:
+    controller = _controller("BOX25", connected=True)
+    controller._run_refresh_window = AsyncMock(return_value=False)
+    with pytest.raises(ConnectionError, match="not sent"):
+        await controller.set_motion_sensor(enabled=True)

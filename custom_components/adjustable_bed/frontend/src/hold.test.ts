@@ -19,7 +19,6 @@ import {
   type HoldTimers,
   type HoldLifecycleTarget,
   movementHold,
-  stopFromCard,
 } from "./hold";
 import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant, MotorEntity } from "./types";
@@ -756,6 +755,15 @@ test("card focus and hidden-document handlers release once and unregister", asyn
   await tick();
 });
 
+// Stop the way the card does: a side Stop is scoped to its own stop, the parent
+// Both Stop to every stop of the pair.
+function cardStop(hold: MotorHold, hass: HomeAssistant, stopEntityId: string): void {
+  const scope = stopEntityId === "button.parent_stop"
+    ? ["button.parent_stop", "button.left_stop", "button.right_stop"]
+    : [stopEntityId];
+  stopCardMotorHold(hold, stopEntityId, scope, undefined, hass);
+}
+
 function pairedStopHass(): HomeAssistant {
   return {
     entities: {
@@ -799,7 +807,7 @@ test("card Left or Right Stop invalidates an in-flight combined hold", async () 
     // The card's actual Stop callback resolves the child side from its device
     // and bed_side metadata while issuing that exact child Stop target.
     const stopEntityId = `button.${side}_stop`;
-    stopFromCard(hold, hass, stopEntityId);
+    cardStop(hold, hass, stopEntityId);
     rec.release();
     await tick();
     await tick();
@@ -824,7 +832,7 @@ test("side Stop leaves an opposite-side or unrelated-bed hold active", async () 
     holdTargetForEntity(hass, "button.right_stop"),
   );
   await tick();
-  stopFromCard(hold, hass, "button.left_stop");
+  cardStop(hold, hass, "button.left_stop");
   expect(hold.heldKey).toBe("right-head");
   expect(rec.pulses).toHaveLength(1);
   rec.release();
@@ -837,7 +845,7 @@ test("side Stop leaves an opposite-side or unrelated-bed hold active", async () 
   const other = { key: "other-head", up: "button.other_head_up" };
   hold.start(other, "up", 2, "button.other_stop", holdTargetForEntity(hass, "button.other_stop"));
   await tick();
-  stopFromCard(hold, hass, "button.parent_stop");
+  cardStop(hold, hass, "button.parent_stop");
   expect(hold.heldKey).toBe("other-head");
   rec.release();
   await tick();
@@ -861,7 +869,7 @@ test("parent Both Stop invalidates a side hold and owns its release", async () =
     holdTargetForEntity(hass, "button.left_stop"),
   );
   await tick();
-  stopFromCard(hold, hass, "button.parent_stop");
+  cardStop(hold, hass, "button.parent_stop");
   rec.release();
   await tick();
 
@@ -1043,7 +1051,7 @@ test("a side Stop cancels overlapping delayed Both release but retains the other
       `button.${otherSide}_stop`,
       holdTargetForEntity(hass, `button.${otherSide}_stop`),
     );
-    stopFromCard(hold, hass, `button.${side}_stop`);
+    cardStop(hold, hass, `button.${side}_stop`);
     timers.advance(100);
 
     expect(hold.heldKey).toBe(`${otherSide}-head`);
@@ -1187,10 +1195,10 @@ for (const relation of ["parent_device_id", "via_device_id"] as const) {
 
     hold.start(right, "up", 1, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
     await tick();
-    stopFromCard(hold, hass, "button.left_stop");
+    cardStop(hold, hass, "button.left_stop");
     expect(hold.heldKey).toBe("right-back");
 
-    stopFromCard(hold, hass, "button.parent_stop");
+    cardStop(hold, hass, "button.parent_stop");
     expect(hold.heldKey).toBeNull();
     expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.parent_stop"]);
     rec.release();
@@ -1214,7 +1222,7 @@ for (const topology of ["missing-parent", "missing-graph"] as const) {
     expect(holdTargetForEntity(hass, "button.left_stop")?.deviceId).toBe("left");
     hold.start(right, "up", 1, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
     await tick();
-    stopFromCard(hold, hass, "button.left_stop");
+    cardStop(hold, hass, "button.left_stop");
     expect(hold.heldKey).toBe("right-back");
     hold.end(right);
     expect(rec.stoppedBeds).toEqual(["button.left_stop", "button.right_stop"]);
@@ -1257,7 +1265,7 @@ for (const phase of ["active", "pending-release"] as const) {
 
     hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
     if (phase === "pending-release") hold.end(bothHeld);
-    stopFromCard(hold, hass, "button.left_stop");
+    cardStop(hold, hass, "button.left_stop");
     timers.advance(100);
 
     expect(hold.heldKey).toBeNull();
@@ -1437,7 +1445,7 @@ test("a child Stop leaves the peer alone before a held Both operation starts", (
   const delayed = { ...bothHeld, heldControl: { ...bothHeld.heldControl!, startDelayMs: 100 } };
 
   hold.start(delayed, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
-  stopFromCard(hold, hass, "button.left_stop");
+  cardStop(hold, hass, "button.left_stop");
   timers.advance(200);
 
   expect(events).toEqual(["stop:button.left_stop"]);
@@ -1457,7 +1465,7 @@ test("a peer owned by a newer hold keeps moving after the stale Both release is 
   hold.start(bothHeld, "up", 1, "button.parent_stop", holdTargetForEntity(hass, "button.parent_stop"));
   hold.end(bothHeld);
   hold.start(right, "up", 2, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
-  stopFromCard(hold, hass, "button.left_stop");
+  cardStop(hold, hass, "button.left_stop");
   timers.advance(100);
 
   expect(hold.heldKey).toBe("right-back");
@@ -1484,7 +1492,7 @@ test("a newer side-less peer release fences the old Both cleanup after graph los
   hass.devices = {};
   hold.start(right, "up", 2, "button.right_stop", holdTargetForEntity(hass, "button.right_stop"));
   hold.end(right);
-  stopFromCard(hold, hass, "button.left_stop");
+  cardStop(hold, hass, "button.left_stop");
   expect(events).toEqual(["start:both-back:up", "start:right-back:up", "stop:button.left_stop"]);
   timers.advance(100);
   expect(events).toEqual([

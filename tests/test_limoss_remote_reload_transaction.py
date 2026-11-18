@@ -25,7 +25,7 @@ async def loaded_runtime(hass, paired):
     data = [app_data(**{
         "address": address,
         const.CONF_SIDE: side,
-        const.CONF_DISCONNECT_AFTER_COMMAND: True,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_RELEASE,
         const.CONF_DISABLE_ANGLE_SENSING: True,
         const.CONF_HAS_LIGHT: True,
         const.CONF_HAS_MASSAGE: True,

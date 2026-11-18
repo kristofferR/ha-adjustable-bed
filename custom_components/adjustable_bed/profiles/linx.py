@@ -1,4 +1,4 @@
-"""Linx com.keeson.connectedbed 1.0.7 (27), accepted unit079 verified scope.
+"""Linx 1.0.7 (com.keeson.connectedbed): Quest and Orbes models over independent BLE routes.
 
 Model and BLE route are independent. No offline alarm catalog was supplied.
 These static controls and defaults come from this app alone.

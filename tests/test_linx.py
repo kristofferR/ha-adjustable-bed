@@ -1,4 +1,4 @@
-"""Unit079 through HA setup, entities, coordinator, services and paired targets."""
+"""Linx through HA setup, entities, coordinator, services and paired targets."""
 
 from __future__ import annotations
 
@@ -14,10 +14,12 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import ServiceCall
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_profiles import per_side_profile
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.linx import controller as ctrl
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.codec import linx as codec
@@ -173,7 +175,7 @@ async def test_real_setup_questions_defaults_factory_and_side_ownership(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     data = result["data"]
     assert data["motor_count"] == 2 and data["has_massage"] == (model == "quest")
-    assert data["disable_angle_sensing"] and data["motor_pulse_delay_ms"] == 3
+    assert not reads_positions(data) and data["motor_pulse_delay_ms"] == 3
     assert data["motor_pulse_count"] == 334 and resolve_profile_id(data) == f"linx:{route}"
     coordinator = _FactoryCoordinator()
     coordinator.entry.data.update(data)
@@ -368,18 +370,29 @@ async def test_session_cache_parser_setup_and_late_callback_ownership(hass):
     assert coord2.controller_state[ctrl.VERSION] is None
 
 
-async def test_registered_alarm_clears_are_isolated_from_unrelated_callbacks(hass):
+async def test_set_alarm_clears_one_resident_slot_and_refuses_to_set(hass):
     coord, bed, client, device = await target(hass, route="uart")
     await async_register_services(hass)
-    await hass.services.async_call(
-        DOMAIN, "linx_clear_alarm", {"device_id": [device.id]}, blocking=True
-    )
+    for slot in range(1, 7):
+        await hass.services.async_call(
+            DOMAIN,
+            "set_alarm",
+            {"device_id": [device.id], "enabled": False, "slot": slot},
+            blocking=True,
+        )
     assert frames(client) == [codec.alarm_slot(NAME, slot) for slot in range(1, 7)]
     client.write_gatt_char.reset_mock()
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            DOMAIN,
+            "set_alarm",
+            {"device_id": [device.id], "enabled": True, "time": "07:00:00", "slot": 1},
+            blocking=True,
+        )
     client.write_gatt_char.side_effect = BleakError("failed slot")
     with pytest.raises(BleakError):
         await hass.services.async_call(
-            DOMAIN, "linx_clear_alarm", {"device_id": [device.id]}, blocking=True
+            DOMAIN, "set_alarm", {"device_id": [device.id], "enabled": False}, blocking=True
         )
     client.write_gatt_char.side_effect = None
     await coord.async_execute_controller_command(lambda c: c.lights_toggle())
@@ -492,7 +505,10 @@ async def test_paired_child_routes_only_to_its_physical_receiver(hass):
     )
     await async_register_services(hass)
     await hass.services.async_call(
-        DOMAIN, "linx_clear_alarm", {"device_id": [right.id], "slot": 2}, blocking=True
+        DOMAIN,
+        "set_alarm",
+        {"device_id": [right.id], "enabled": False, "slot": 2},
+        blocking=True,
     )
     assert frames(triples["left"][2]) == []
     assert frames(triples["right"][2]) == [codec.alarm_slot(NAME, 2)]

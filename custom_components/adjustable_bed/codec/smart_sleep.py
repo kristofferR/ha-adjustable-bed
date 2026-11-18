@@ -1,4 +1,4 @@
-"""OKIN Smart Sleep's two bed channels, from the accepted row094 literals.
+"""OKIN Smart Sleep's two bed channels, from the app's literals.
 
 P1 motor keys reuse Keeson's proven 05 02 carrier. P1 settings and P2's
 AA/2A commands are distinct formats, without a checksum or authentication.

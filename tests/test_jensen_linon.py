@@ -13,7 +13,6 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.jensen.linon import (
@@ -24,13 +23,12 @@ from custom_components.adjustable_bed.beds.jensen.linon import (
 from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
@@ -49,7 +47,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import is_jensen_linon_name
-from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
 from tests.form_helpers import finish_new_bed
 from tests.state_helpers import published
 
@@ -320,7 +317,7 @@ async def test_bluetooth_setup_stores_the_app_profile(
         # LinOn asks its motor count, the setting its old row showed.
         assert result["step_id"] == "profile_questions"
         result = await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"})
-    await finish_new_bed(flow, result, {CONF_DISCONNECT_AFTER_COMMAND: False})
+    await finish_new_bed(flow, result, {CONF_CONNECTION_MODE: "idle"})
 
     assert finish.await_args is not None
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected
@@ -353,48 +350,6 @@ async def test_factory_uses_the_stored_profile(
     )
 
     assert type(controller) is controller_type
-
-
-@pytest.mark.parametrize(
-    ("initial", "requested"),
-    [(VARIANT_AUTO, SVANE_VARIANT_JENSEN_LINON), (SVANE_VARIANT_JENSEN_LINON, VARIANT_AUTO)],
-)
-async def test_paired_options_reject_a_shared_profile_change(
-    hass: HomeAssistant, initial: str, requested: str
-) -> None:
-    """One pair side's LinOn profile is never copied onto a Svane side."""
-
-    def side(address: str, variant: str) -> dict:
-        return {
-            CONF_ADDRESS: address,
-            CONF_NAME: "Bed",
-            CONF_BED_TYPE: BED_TYPE_SVANE,
-            CONF_PROTOCOL_VARIANT: variant,
-            CONF_MOTOR_COUNT: 2,
-            CONF_HAS_MASSAGE: False,
-            CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_PREFERRED_ADAPTER: "auto",
-            CONF_DISCONNECT_AFTER_COMMAND: False,
-        }
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=build_pair_entry_data(
-            side("AA:BB:CC:DD:EE:11", initial),
-            side("AA:BB:CC:DD:EE:22", VARIANT_AUTO),
-            name="Paired bed",
-        ),
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
 
 
 async def test_svane_light_slider_removed_for_linon(

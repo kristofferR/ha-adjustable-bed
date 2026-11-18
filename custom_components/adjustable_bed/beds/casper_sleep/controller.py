@@ -118,6 +118,7 @@ class CasperSleepController(BedController, CasperBaseActions):
                     PART,
                     ERROR,
                 ),
+                entity_registry_enabled_default=False,
             )
         ]
         for side in ("L", "R"):
@@ -129,6 +130,7 @@ class CasperSleepController(BedController, CasperBaseActions):
                         live_key(side, field),
                         "mdi:sleep",
                         attribute_keys=(live_key(side, "valid"),),
+                        entity_registry_enabled_default=True,
                     )
                 )
         return tuple(specs)
@@ -421,7 +423,8 @@ class CasperRemoteController(CasperSleepController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
             ControllerStateSensorSpec(
-                "casper_remote", "casper_remote", REMOTE_STATUS, "mdi:remote"
+                "casper_remote", "casper_remote", REMOTE_STATUS, "mdi:remote",
+                entity_registry_enabled_default=False,
             ),
         )
 

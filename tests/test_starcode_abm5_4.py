@@ -289,7 +289,13 @@ def test_default_raw_state_and_no_unknown_position_semantics():
     assert fields["47"] is True and fields["5f"] is True
     c = make_controller()
     assert c.position_number_specs == ()
-    assert len(c.controller_state_sensor_specs) == 29
+    # Raw fields and selectors stay in diagnostics, not entities.
+    assert {spec.key for spec in c.controller_state_sensor_specs} == {
+        "starcode_abm5_4_manufacturer",
+        "starcode_abm5_4_firmware",
+        "starcode_abm5_4_wave",
+        "starcode_abm5_4_head_intensity",
+    }
     assert c.controller_select_specs[0].options == ("10", "20", "30")
     assert not c.supports_massage_off_control
     assert not c.supports_light_color_control

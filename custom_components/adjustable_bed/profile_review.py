@@ -43,7 +43,7 @@ from homeassistant.components.repairs.const import FlowType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResultType, UnknownFlow
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import selector
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
@@ -151,11 +151,11 @@ def _keeson(*variants: str) -> tuple[str, ...]:
     return tuple(bed_type_choice(BED_TYPE_KEESON, variant) for variant in variants)
 
 
-# Same Keeson frame, different keys and release timing (row060).
+# Same Keeson frame, different keys and release timing.
 _OKIN_SEATING_APPS: Final = _keeson(
     KEESON_VARIANT_SIMON_LI, KEESON_VARIANT_HEAL_EVERY_NIGHT, KEESON_VARIANT_OKIN_SEATING
 )
-# ORE-named bases; v4.0.2's sino label named Dynasty and INNOVA (row056, row059).
+# ORE-named bases; v4.0.2's sino label named Dynasty and INNOVA.
 _ORE_APPS: Final = _keeson(
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_INNOVA,
@@ -164,9 +164,9 @@ _ORE_APPS: Final = _keeson(
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
 )
-# The app accepts base-i4 (Keeson Base) and base-i5 (Cool Base) names (row058).
+# The app accepts base-i4 (Keeson Base) and base-i5 (Cool Base) names.
 _RESTONIC_APPS: Final = _keeson(KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B)
-# Same 14-byte CST frame as the OKIN routes (okin-nframe.md#jordans-serenity, row052).
+# Same 14-byte CST frame as the OKIN routes (okin-nframe.md#jordans-serenity).
 _OKIN_BEDDING_APPS: Final = (
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
@@ -199,7 +199,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
         frozenset({KEESON_VARIANT_BASE}),
         (*_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS),
     ),
-    # Adjustable Lite's frames all exist in the KSBT profile (row051).
+    # Adjustable Lite's frames all exist in the KSBT profile.
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         frozenset({KEESON_VARIANT_KSBT}),
@@ -229,7 +229,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
         None,
         (BED_TYPE_SIMMONS, *_OKIN_BEDDING_APPS[1:]),
     ),
-    # okin names on 62741523, and Star names on Nordic UART (row054).
+    # okin names on 62741523, and Star names on Nordic UART.
     _RouteApps(
         frozenset(
             {
@@ -249,7 +249,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
         None,
         (BED_TYPE_RESIDENT,),
     ),
-    # Shared OKIN FFE, CB24, Keeson and Richmat routes (row049).
+    # Shared OKIN FFE, CB24, Keeson and Richmat routes.
     _RouteApps(
         frozenset({BED_TYPE_OKIN_FFE, BED_TYPE_OKIN_CB24, BED_TYPE_RICHMAT}),
         None,
@@ -263,7 +263,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(frozenset({BED_TYPE_RICHMAT}), None, tuple(sorted(RICHMAT_MH_BED_TYPES))),
     _RouteApps(frozenset({BED_TYPE_LIMOSS}), None, (BED_TYPE_LIMOSS_REMOTE, BED_TYPE_FSM_RELAX)),
     _RouteApps(frozenset({BED_TYPE_VIBRADORM}), None, (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)),
-    # The Sleep Smart bed profile of the LOGICDATA app (row053).
+    # The Sleep Smart bed profile of the LOGICDATA app.
     _RouteApps(frozenset({BED_TYPE_COMFORT_MOTION}), None, (BED_TYPE_LOGICDATA_APP,)),
     # v4.0.2 always used the Slumberland screens (remacro.md).
     _RouteApps(
@@ -279,7 +279,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
 
 # Detection rules that now pick another primary route than v4.0.2 did for the
 # same advertisement: detected bed type -> the stored types v4.0.2 chose.
-# Cool Base matches "base-i5" anywhere in the name (row047 D40); v4.0.2 only
+# Cool Base matches "base-i5" anywhere in the name; v4.0.2 only
 # matched the prefix, so the rest landed on the shared Keeson route.
 _DETECTION_DRIFT: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_COOLBASE: frozenset({BED_TYPE_KEESON}),
@@ -626,85 +626,11 @@ def async_keep_current_profile(hass: HomeAssistant, entry: ConfigEntry) -> None:
     async_clear_profile_review_issue(hass, entry.entry_id)
 
 
-# A bed type change re-renders the form once, and a variant can re-render it
-# for its own fields; a form still open after this needs real input.
-_MAX_OPTIONS_SUBMISSIONS: Final = 4
-
-
-async def _async_switch_via_options(hass: HomeAssistant, entry: ConfigEntry, choice: str) -> bool:
-    """Submit an app choice through the options flow; True once it is saved.
-
-    Every other field keeps the value Configure shows, so the options flow
-    applies its own validation, cleanup and pair guards. A form that reports
-    an error, or still waits for input, is abandoned without saving anything.
-    """
-    manager = hass.config_entries.options
-    result = await manager.async_init(entry.entry_id)
-    flow_id = result["flow_id"]
-    try:
-        result = await manager.async_configure(flow_id, {"next_step_id": "settings"})
-        submission: dict[str, Any] = {CONF_BED_TYPE: choice}
-        for _ in range(_MAX_OPTIONS_SUBMISSIONS):
-            if result.get("type") is not FlowResultType.FORM or result.get("errors"):
-                break
-            result = await manager.async_configure(flow_id, submission)
-            submission = {}
-    finally:
-        if result.get("type") is not FlowResultType.CREATE_ENTRY:
-            try:
-                manager.async_abort(flow_id)
-            except UnknownFlow:
-                pass
-    return result.get("type") is FlowResultType.CREATE_ENTRY
-
-
-async def _async_open_options_with(
-    hass: HomeAssistant, entry: ConfigEntry, choice: str
-) -> tuple[FlowResultType | None, str]:
-    """Open Configure's settings form with the chosen app selected.
-
-    Returns the result type and options flow id. A form is left open for the
-    handoff; an app without settings of its own may already have saved.
-    """
-    manager = hass.config_entries.options
-    result = await manager.async_init(entry.entry_id)
-    flow_id = result["flow_id"]
-    try:
-        result = await manager.async_configure(flow_id, {"next_step_id": "settings"})
-        if result.get("type") is FlowResultType.FORM:
-            # A bed-type change only re-renders the form with the app's fields.
-            result = await manager.async_configure(flow_id, {CONF_BED_TYPE: choice})
-    except BaseException:
-        try:
-            manager.async_abort(flow_id)
-        except UnknownFlow:
-            pass
-        raise
-    kind = result.get("type")
-    if kind is FlowResultType.FORM and not result.get("errors"):
-        return kind, flow_id
-    if kind is not FlowResultType.CREATE_ENTRY:
-        try:
-            manager.async_abort(flow_id)
-        except UnknownFlow:
-            pass
-        kind = None
-    return kind, flow_id
-
-
-def _needs_app_settings(choice: str) -> bool:
-    """Return True for apps whose own settings this shared repair cannot collect."""
-    from .config_flow import APP_SETTINGS_BED_TYPES
-
-    return resolve_bed_type_choice(choice)[0] in APP_SETTINGS_BED_TYPES
-
-
 class ProfileReviewRepairFlow(RepairsFlow):
     """Switch an older entry to one listed app profile, or keep it."""
 
     def __init__(self, entry_id: str) -> None:
         self._entry_id = entry_id
-        self._choice: str | None = None
 
     def _entry(self) -> ConfigEntry | None:
         entry = self.hass.config_entries.async_get_entry(self._entry_id)
@@ -723,15 +649,7 @@ class ProfileReviewRepairFlow(RepairsFlow):
             if (user_input or {}).get("choice") == _KEEP:
                 return self._finish(entry)
             if (user_input or {}).get("choice") == "configure":
-                result = await self.hass.config_entries.flow.async_init(
-                    DOMAIN, context=reconfigure_context(entry)
-                )
-                if result.get("type") is not FlowResultType.FORM:
-                    return self.async_abort(reason="migration_setup_unavailable")
-                return self.async_abort(
-                    reason="migration_setup_started",
-                    next_flow=(FlowType.CONFIG_FLOW, result["flow_id"]),
-                )
+                return await self._async_reconfigure(entry, None)
             return self.async_show_form(
                 step_id="managed",
                 description_placeholders=_placeholders(entry, choices, choices[0]),
@@ -756,15 +674,9 @@ class ProfileReviewRepairFlow(RepairsFlow):
         if choice == _KEEP:
             return self._finish(entry)
         if choice in choices:
-            self._choice = choice
-            if _needs_app_settings(choice) or not await _async_switch_via_options(
-                self.hass, entry, choice
-            ):
-                return await self.async_step_configure()
-            # The saved options reload the entry; its setup retires the mark
-            # because the entry no longer uses the reviewed route.
-            async_delete_issue(self.hass, DOMAIN, _issue_id(entry.entry_id))
-            return self.async_create_entry(title="", data={})
+            # Reconfigure asks the app's own questions, checks and reviews the
+            # change, and settles this review when it saves or keeps.
+            return await self._async_reconfigure(entry, choice)
         return self.async_show_form(
             step_id="init",
             description_placeholders=_placeholders(entry, choices, choices[0]),
@@ -793,26 +705,16 @@ class ProfileReviewRepairFlow(RepairsFlow):
         """Take the guided-change answer the init step's managed form submits."""
         return await self.async_step_init(user_input)
 
-    async def async_step_configure(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
-        """Hand an app with its own settings to Configure, leaving the review open."""
-        entry = self._entry()
-        if entry is None or self._choice is None:
-            return self.async_abort(reason="entry_missing")
-        if user_input is not None:
-            kind, flow_id = await _async_open_options_with(self.hass, entry, self._choice)
-            if kind is FlowResultType.FORM:
-                return self.async_abort(
-                    reason="profile_review_handoff",
-                    next_flow=(FlowType.OPTIONS_FLOW, flow_id),
-                )
-            if kind is FlowResultType.CREATE_ENTRY:
-                # Saved: the reload retires the review for the changed route.
-                async_delete_issue(self.hass, DOMAIN, _issue_id(entry.entry_id))
-                return self.async_create_entry(title="", data={})
-            return self.async_abort(reason="profile_review_open")
-        return self.async_show_form(
-            step_id="configure",
-            description_placeholders=_placeholders(entry, (self._choice,), self._choice),
+    async def _async_reconfigure(self, entry: ConfigEntry, choice: str | None) -> RepairsFlowResult:
+        """Hand the change to Reconfigure, with the chosen app preselected."""
+        result = await self.hass.config_entries.flow.async_init(
+            DOMAIN, context=reconfigure_context(entry, choice)
+        )
+        if result.get("type") is not FlowResultType.FORM:
+            return self.async_abort(reason="migration_setup_unavailable")
+        return self.async_abort(
+            reason="migration_setup_started",
+            next_flow=(FlowType.CONFIG_FLOW, result["flow_id"]),
         )
 
     async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:

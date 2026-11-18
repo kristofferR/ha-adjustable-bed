@@ -1,4 +1,4 @@
-"""Unchanged 39 accepted unit079 literals, used against production encoders only."""
+"""The 39 Linx 1.0.7 frame literals, used against production encoders only."""
 
 import json
 from pathlib import Path

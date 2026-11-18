@@ -225,14 +225,15 @@ These steps serve every bed type or route, so no profile owns them.
 | `keep_detected`, `keep_back`, `keep_continue` | Keep on a new bed: what the detected controls are, their pairing, and the way to an app later |
 | `pair_beds` | Combine two beds |
 | `diagnostic`, `diagnostic_manual` | Browse an unsupported device |
+| `discovery_settings` | Turn suggesting newly found beds on or off for the whole integration |
 | `reconfigure`, `migration_split`, `migration_keep`, `migration_check`, `migration_pairing`, `migration_check_failed`, `migration_confirm` | The [guided change](guided-setup-changes.md) |
+| `reconfigure_bed_type`, `reconfigure_route` | Reconfigure for every bed type: the full bed-type list (also reached from a family question's "Another app or remote"), then the bed model or remote where a bed type has several; a family's own row asks its question |
 
 ### Configure
 
 | Step | Purpose |
 |---|---|
 | `init`, `settings`, `left_settings`, `right_settings` | Settings; each receiver step also asks that receiver's declared questions |
-| `change_app` | Points to Reconfigure |
 | `pair_sides`, `pair_sides_probe`, `revert_sides`, `unpair` | Side controls (the probe connects to read the transport) and splitting a pair |
 | `remove_bond_side`, `remove_bond`, `remove_bond_progress`, `remove_bond_result` | Bond removal |
 | `estimated_positions`, `left_estimated_positions`, `right_estimated_positions`, `estimate_top`, `estimate_bottom`, `estimate_raise`, `estimate_lower`, `estimate_lowering`, `estimate_lowered`, `estimate_flat`, `estimate_flat_lower`, `estimate_flat_confirm`, `estimate_review`, `estimate_retry`, `estimate_retry_again`, `estimate_cancel` | Measuring estimated positions |
