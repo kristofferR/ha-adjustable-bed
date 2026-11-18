@@ -523,6 +523,7 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
 # read them for by default (``bed_type_has_position_feedback`` is False), so
 # angle sensing starts disabled.
 _QUIET_BED_TYPES = (
+    const.BED_TYPE_NERUM,
     const.BED_TYPE_SYMPHONY_SLEEP,
     const.BED_TYPE_YAMADA,
     const.BED_TYPE_COMFORTBASE,
@@ -564,6 +565,8 @@ def _quiet_routes() -> list[tuple[str, str]]:
         if not bed_type_has_position_feedback(bed_type, variant)
         and variant not in _SETUP_ROUTE_EXCLUSIONS.get(bed_type, ())
         and is_valid_variant_for_bed_type(bed_type, variant)
+        # Nerum's question always saves an explicit P1/P2/P3 choice.
+        and (bed_type, variant) != (const.BED_TYPE_NERUM, const.VARIANT_AUTO)
     ]
 
 

@@ -138,6 +138,7 @@ def is_valid_octo_pin(pin: str) -> bool:
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "ormatek": {"okin15": "Okin", "okin24": "SmartBed"},
     "linx": LINX_TRANSPORTS,
+    "nerum": {"p1": "P1: ORE / 1000", "p2": "P2: Okin / FFE5", "p3": "P3: Smartbed / Nordic"},
     "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
     "comfort_enhancement3": APEX_CHOICES,
     "symphony_sleep": {"box1": "Box 1 (P1)", "box2": "Box 2 (P2)", "fallback": "Box 1, without position readings"},

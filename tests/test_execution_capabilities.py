@@ -108,6 +108,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
        for key in ("malouf", "reverie_v1", "reverie_v2")},
 
     **{f"LinxProfile:{key}": {"hold": ("linx079",)} for key in ("quest", "orbes")},
+    **{f"NerumProfile:{key}": {"hold": ("nerum103",)} for key in ("p1", "p2", "p3")},
     "SmartSleepProfile:p1": {"hold": ("row094",)},
     "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
@@ -346,6 +347,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_nframe.py:<module>.OKIN_MOTIONBED": ("OkinNFrameProfile:okin_motionbed",),
     "profiles/n32_motion_bed.py:<module>.N32": ("OkinNFrameProfile:n32_motion_bed",),
     "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
+    "profiles/nerum.py:<module>.NerumProfile": tuple(f"NerumProfile:{key}" for key in ("p1", "p2", "p3")),
     "profiles/mline.py:<module>.MLineProfile": tuple(f"MLineProfile:{key}" for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),

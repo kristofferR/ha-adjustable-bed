@@ -1059,3 +1059,12 @@ transport and exact Bluetooth name. These belong to each physical receiver,
 including each side of a two-address pair. New app sessions default to Linx
 2.5 Q and A00A. The app profile fixes the motor count, massage gate and held
 refresh interval. No bed Wi-Fi or account setting is needed.
+
+### Nerum
+
+Choose the Nerum app and its explicit P1 (ORE), P2 (Okin) or P3 (Smartbed)
+transport, then the Nerum or 2/3/4 motor page matching the remote. The app's
+shared names are candidates, not model identifiers. These selections are
+retained per physical side of a two-address pair. Raw Android scan offsets are
+not available from HA; choose P1 explicitly from its exact GATT roles.
+See [Nerum setup](beds/nerum.md#detection--setup).

@@ -1180,7 +1180,7 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
-    data: dict[str, Any] = {}
+    data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {}
     variant: str | None = {
         const.BED_TYPE_LEGGETT_PLATT: const.LEGGETT_VARIANT_OKIN,
         const.BED_TYPE_SBI: const.SBI_VARIANT_BOTH,
@@ -1500,6 +1500,11 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=f"{MODEL_VARIANT_PREFIX}{model}",
                 )
             )
+    # Nerum selectors and layouts are independent, accepted row103 axes.
+    for protocol in ("p1", "p2", "p3"):
+        for layout in ("nerum", "2", "3", "4"):
+            scenarios.append(Scenario(id=f"nerum:{protocol}:{layout}", bed_type="nerum",
+                protocol_variant=protocol, entry_data={"product_type": layout}, layout_id=f"nerum:{protocol}"))
     # M Line selectors and physical layouts are independent source axes.
     for protocol in ("sleep", "smart", "smartsainuo", "okin", "unknown"):
         for layout in ("two", "triple", "four"):
@@ -1954,7 +1959,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_after_connect(session)
             return
-        if controller._coordinator.bed_type == "mline":
+        if controller._coordinator.bed_type in {"mline", "nerum"}:
             await controller.async_on_connect(None)
             await controller.async_after_connect(None)
             return

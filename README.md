@@ -145,6 +145,7 @@ Each linked guide has a Status line with the details.
 | [SUTA Smart Home](docs/beds/suta.md) | [SUTA Smart Home](docs/beds/suta.md) ✅ | SUTA |
 | [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | [Tempur Sleeptracker-AI processor](docs/beds/sleeptracker.md) ⚠️ | Tempur ProSmart / ProSmart Air, ActiveBreeze |
 | [TiMOTION AHF](docs/beds/timotion-ahf.md) | [TiMOTION AHF](docs/beds/timotion-ahf.md) 🧪 | TiMOTION |
+| [Nerum](docs/beds/nerum.md) | Nerum 1.0.8, ORE / Okin / Smartbed routes 🧪 | Two to four motors, three P2/P3 alarms; hardware unverified |
 | [M Line](docs/beds/mline.md) | M Line app 🧪 | Three app-selected motor layouts; hardware unverified |
 | [Personal Comfort](docs/beds/personal-comfort.md) | Personal Comfort 🧪 | Air firmness and separate Malouf / Reverie bases |
 | [Paramount](docs/beds/paramount.md) | [Bed Operation (ベッド操作)](docs/beds/paramount.md#bed-operation) 🧪 | Paramount |
