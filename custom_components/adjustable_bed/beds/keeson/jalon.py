@@ -304,6 +304,8 @@ class JalonController(KeesonController):
                 lambda ctrl: action(cast(JalonController, ctrl)),
                 "mdi:vibrate" if massage else "mdi:refresh",
                 translation_key=key,
+                # Refreshes are maintenance actions.
+                diagnostic=not massage,
                 card=CARD_MASSAGE if massage else CARD_UTILITY,
             )
 
@@ -314,10 +316,10 @@ class JalonController(KeesonController):
             button("jalon_query_massage", "Refresh massage", lambda c: c.query_massage()),
         ]
         for key, action, label in (
-            ("massage_timer", "massageTimeSwitch", "Massage timer"),
-            ("massage_wave", "massageWaveSwitch", "Massage wave"),
-            ("head_intensity", "strengthHeadUp", "Head massage intensity"),
-            ("foot_intensity", "strengthFootUp", "Foot massage intensity"),
+            ("massage_timer", "massageTimeSwitch", "Cycle massage timer"),
+            ("massage_wave", "massageWaveSwitch", "Cycle massage wave"),
+            ("head_intensity", "strengthHeadUp", "Cycle head massage intensity"),
+            ("foot_intensity", "strengthFootUp", "Cycle foot massage intensity"),
         ):
             buttons.append(
                 button(
@@ -341,6 +343,7 @@ class JalonController(KeesonController):
                 "mdi:vibrate",
                 attribute_keys=(WAVE, HEAD, FOOT),
                 card=CARD_MASSAGE_TIMER,
+                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
                 "jalon_alarm",
@@ -348,6 +351,7 @@ class JalonController(KeesonController):
                 ALARM,
                 "mdi:alarm",
                 attribute_keys=(WEEK, WAKE, HOUR, MINUTE, FIRST),
+                entity_registry_enabled_default=True,
             ),
         )
 

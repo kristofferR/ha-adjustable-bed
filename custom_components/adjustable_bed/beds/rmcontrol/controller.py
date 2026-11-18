@@ -118,9 +118,9 @@ def _state_key(name: str) -> StateKey[StateValue | None]:
 
 
 # (entity key, reported state field, unit) of telemetry sensors.
+# The protocol version, an unexplained bed mode and the last received alarm
+# record (not an authoritative alarm list) stay in diagnostics.
 _TELEMETRY_SENSORS: Final = (
-    ("protocol_version", "protocol_version", None),
-    ("bed_mode", "bed_mode_mode", None),
     ("light_timer", "light_timer_seconds", "s"),
     ("massage_head_strength", "massage_head_strength", None),
     ("massage_foot_strength", "massage_foot_strength", None),
@@ -132,7 +132,6 @@ _TELEMETRY_SENSORS: Final = (
     ("heating_temperature", "heating_temperature", None),
     ("anti_snore_count", "anti_snore_intervention_count", None),
     ("anti_snore_time", "anti_snore_intervention_time", None),
-    ("alarm_record", "repeat_alarm_alarm_id", None),
 )
 # (entity key, reported state field) of telemetry binary sensors.
 _TELEMETRY_FLAGS: Final = (
@@ -140,6 +139,10 @@ _TELEMETRY_FLAGS: Final = (
     ("music_playing", "music_playing"),
     ("lock", "lock_locked"),
     ("rgb_motion", "rgb_motion_enabled"),
+)
+# Reported values a typical user wants on a dashboard.
+_ENABLED_TELEMETRY: Final = frozenset(
+    {"massage_head_strength", "massage_foot_strength", "massage_mode", "heating_temperature", "lock"}
 )
 
 
@@ -832,18 +835,7 @@ class RmcontrolController(RichmatController):
                 state_key=_state_key("rmcontrol_" + field),
                 icon="mdi:information-outline",
                 native_unit_of_measurement=unit,
-                attribute_keys=tuple(
-                    _state_key("rmcontrol_repeat_alarm_" + name)
-                    for name in (
-                        "record_flag",
-                        "hour",
-                        "minute",
-                        "command",
-                        "repeat_mask",
-                    )
-                )
-                if key == "alarm_record"
-                else (),
+                entity_registry_enabled_default=key in _ENABLED_TELEMETRY,
             )
             for key, field, unit in _TELEMETRY_SENSORS
             if "rmcontrol_" + field in self._reported_state
@@ -857,6 +849,7 @@ class RmcontrolController(RichmatController):
                 translation_key="rmcontrol_" + key,
                 state_key=_state_key("rmcontrol_" + field),
                 icon="mdi:information-outline",
+                entity_registry_enabled_default=key in _ENABLED_TELEMETRY,
             )
             for key, field in _TELEMETRY_FLAGS
             if "rmcontrol_" + field in self._reported_state

@@ -245,13 +245,16 @@ class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedCon
             return ()
         return (
             ControllerStateSensorSpec(
-                "coolbase_left_fan_level", "coolbase_left_fan_level", STATE_LEFT_FAN, "mdi:fan"
+                "coolbase_left_fan_level", "coolbase_left_fan_level", STATE_LEFT_FAN, "mdi:fan",
+                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
-                "coolbase_right_fan_level", "coolbase_right_fan_level", STATE_RIGHT_FAN, "mdi:fan"
+                "coolbase_right_fan_level", "coolbase_right_fan_level", STATE_RIGHT_FAN, "mdi:fan",
+                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
-                "coolbase_massage_mode", "coolbase_massage_mode", STATE_MASSAGE_MODE, "mdi:sine-wave"
+                "coolbase_massage_mode", "coolbase_massage_mode", STATE_MASSAGE_MODE, "mdi:sine-wave",
+                entity_registry_enabled_default=True,
             ),
         )
 

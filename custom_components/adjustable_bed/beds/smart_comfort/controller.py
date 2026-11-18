@@ -22,15 +22,12 @@ from ..entity_specs import (
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
 )
 from ..lifecycle import ControllerSession
 from .state_keys import (
-    COUNTER_1,
-    COUNTER_2,
-    COUNTER_3,
     CUP_ON,
     MODEL,
     READ_BRIGHTNESS,
@@ -59,6 +56,7 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
         self.profile = profile
         self._model: int | None = None
         self._flags = (0, 0, 0)
+        self._counters: tuple[int, ...] | None = None
         self.session = app_session(
             coordinator.hass,
             coordinator.address,
@@ -105,6 +103,7 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
             "logical_seat": self.session.seat,
             "seat_flags": self._flags,
             "selectable_seats": self.selectable_seats,
+            "feedback_counters": self._counters,
             "device_state_scope": "group; reply has no verified seat discriminator",
         }
 
@@ -196,11 +195,8 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
                 UNDER_BED_LIGHTS_RGB(state.rgb),
             )
         elif isinstance(state, codec.RippleState):
-            self.forward_controller_state_updates(
-                COUNTER_1(state.counters[0]),
-                COUNTER_2(state.counters[1]),
-                COUNTER_3(state.counters[2]),
-            )
+            # Unknown-meaning feedback counters stay in diagnostics only.
+            self._counters = state.counters
 
     async def select_seat(self, option: str) -> None:
         address = int(option)
@@ -431,21 +427,33 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
                 card=CARD_PRESETS,
             )
         ]
-        for action in codec.ACCESSORIES:
-            feature = 1 if action.startswith("cup_") else 4 if action.startswith("read_") else 2
-            if not any(self._flags[a] & feature for a in self.selectable_seats):
-                continue
-            specs.append(
-                ControllerButtonSpec(
-                    f"smart_comfort_{action}",
-                    action.replace("_", " ").title(),
-                    lambda c, action=action: require_controller(
-                        c, SmartComfortController
-                    ).accessory(action),
-                    translation_key=f"smart_comfort_{action}",
-                    card=CARD_LIGHTING,
+        return tuple(specs)
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        # The base light is the light entity; cup holder and reading lights are switches.
+        specs = []
+        for name, feature, state_key, icon in (
+            ("cup", 1, CUP_ON, "mdi:cup"),
+            ("read", 4, READ_ON, "mdi:book-open-variant"),
+        ):
+            # Without a base light the light entity drives the cup holder light.
+            if any(
+                self._flags[a] & feature and (name == "read" or self._flags[a] & 2)
+                for a in self.selectable_seats
+            ):
+                specs.append(
+                    ControllerSwitchSpec(
+                        f"smart_comfort_{name}",
+                        f"smart_comfort_{name}",
+                        lambda c, on, name=name: require_controller(
+                            c, SmartComfortController
+                        ).accessory(f"{name}_{'on' if on else 'off'}"),
+                        state_key,
+                        icon=icon,
+                        card=CARD_LIGHTING,
+                    )
                 )
-            )
         return tuple(specs)
 
     @property
@@ -468,26 +476,15 @@ class SmartComfortController(ProfileExecution[SmartComfortProfile], BedControlle
         )
 
     @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return (
-            ControllerStateBinarySensorSpec(
-                "smart_comfort_read", "smart_comfort_read", READ_ON, "mdi:lightbulb"
-            ),
-            ControllerStateBinarySensorSpec(
-                "smart_comfort_cup", "smart_comfort_cup", CUP_ON, "mdi:cup"
-            ),
-        )
-
-    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return tuple(
-            ControllerStateSensorSpec(name, name, key, "mdi:counter")
-            for name, key in (
-                ("smart_comfort_model", MODEL),
-                ("smart_comfort_counter_1", COUNTER_1),
-                ("smart_comfort_counter_2", COUNTER_2),
-                ("smart_comfort_counter_3", COUNTER_3),
-            )
+        return (
+            ControllerStateSensorSpec(
+                "smart_comfort_model",
+                "smart_comfort_model",
+                MODEL,
+                "mdi:information-outline",
+                entity_registry_enabled_default=False,
+            ),
         )
 
     def validate_device_rename(self, name: str) -> None:

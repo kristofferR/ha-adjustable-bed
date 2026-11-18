@@ -228,7 +228,7 @@ the coordinator's next connection attempt.
 
 ## Position Feedback / Notifications
 
-- The GM Control state sensor exposes parsed event values, raw indexed motor and
+- The disabled-by-default **Status** sensor exposes parsed event values, raw indexed motor and
   desk reports, alarm records and the selected catalog's local UI state.
 - The sleep-module state sensor exposes raw stream DTOs, clock state, separate
   live-side values and decoded day/month reports. These have no validated
