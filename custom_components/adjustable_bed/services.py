@@ -522,7 +522,7 @@ def _command_targets(coordinator: BedTarget, side: str) -> list[BedChild]:
 
     if side != SIDE_BOTH:
         raise ServiceValidationError(
-            "This is a single bed; the Left/Right/Both option only applies to paired beds.",
+            "This bed has no separate sides; leave the side empty",
             translation_domain=DOMAIN,
             translation_key="side_not_supported",
         )
