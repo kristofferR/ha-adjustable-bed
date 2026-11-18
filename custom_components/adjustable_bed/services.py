@@ -2141,7 +2141,12 @@ def _check_alarm(
                 "wake_actions": ", ".join(capability.wake_actions),
             },
         )
-    if alarm.enabled and capability.requires_wake_action and wake_action is None:
+    if (
+        alarm.enabled
+        and capability.requires_wake_action
+        and wake_action is None
+        and "mattress_side" not in given
+    ):
         raise ServiceValidationError(
             f"Choose a wake action for '{device_name}'",
             translation_domain=DOMAIN,

@@ -653,3 +653,21 @@ async def test_set_alarm_off_keeps_the_reported_calendar_slot(hass):
         with pytest.raises(ServiceValidationError, match="Refresh"):
             await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
         assert writes == [query]
+
+
+async def test_set_alarm_calendar_needs_an_explicit_wake_action(hass):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from tests.alarm_helpers import call_set_alarm
+
+    model = next(
+        m
+        for m, p in profiles("wsilver2").items()
+        if p["fields"].get("hasNewAlarm") and p["fields"].get("alarmList")
+    )
+    c = make("wsilver2", model)
+    c._dev = {}
+    c.ruf_richmat_alarm = AsyncMock()
+    with pytest.raises(ServiceValidationError, match="Choose a wake action"):
+        await call_set_alarm(hass, c, {"enabled": True, "time": "07:00:00", "slot": 1})
+    c.ruf_richmat_alarm.assert_not_awaited()

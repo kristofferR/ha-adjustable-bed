@@ -838,6 +838,8 @@ class RufRichmatController(RichmatMhController):
             **bed,  # type: ignore[arg-type]
             # Turning a calendar slot off first reads it from every bed.
             live_check=calendar,
+            # The app asks for a position before saving a calendar alarm.
+            requires_wake_action=calendar,
             weekdays=True,
             mattress_sides=sides,
             massage_intensities=3 if sides else 0,
