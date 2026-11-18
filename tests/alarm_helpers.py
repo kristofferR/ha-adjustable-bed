@@ -8,10 +8,11 @@ exact bytes the new action writes.
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.core import HomeAssistant
 
+from custom_components.adjustable_bed.alarm import AlarmCapability
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
@@ -64,3 +65,14 @@ async def call_set_alarm(
             DOMAIN, "set_alarm", {"device_id": "bed", **data}, blocking=True
         )
     return scheduled
+
+
+def use_shared_alarm_writer(controller: MagicMock, capability: AlarmCapability) -> None:
+    """Give a spec mock a real capability and the base class's alarm writer."""
+
+    async def configure_alarm(alarm):
+        await BedController.configure_alarm(controller, alarm)
+
+    controller.alarm_capability = capability
+    controller.validate_alarm = MagicMock()
+    controller.configure_alarm = AsyncMock(side_effect=configure_alarm)
