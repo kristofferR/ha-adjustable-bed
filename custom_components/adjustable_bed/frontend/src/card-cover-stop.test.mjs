@@ -427,3 +427,27 @@ for (const key of Object.keys(smartSleepRoutes.p1)) {
     await flushMicrotasks();
   });
 }
+
+test("combined light of unconfirmed switches offers On and Off instead of a toggle", () => {
+  const calls = [];
+  const card = new AdjustableBedCard();
+  card.hass = {
+    states: {
+      "switch.left_light": { entity_id: "switch.left_light", state: "unknown", attributes: { assumed_state: true } },
+      "switch.right_light": { entity_id: "switch.right_light", state: "on", attributes: {} },
+    },
+    entities: {}, devices: {}, locale: { language: "en" }, language: "en",
+    callService(domain, service, data) { calls.push({ domain, service, data }); return Promise.resolve(); },
+  };
+  const pane = (id) => ({ bed: { lights: { switch: id } } });
+  const parent = { lights: {} };
+  const template = card._combinedLighting(parent, [pane("switch.left_light"), pane("switch.right_light")]);
+  assert.ok(template.strings.join("").includes('role="group"'), "expected an On/Off group");
+  assert.ok(!template.strings.join("").includes('role="switch"'), "no toggle for unsure lights");
+  const handlers = template.values.filter((value) => typeof value === "function");
+  handlers.at(-1)();
+  assert.deepEqual(calls, [{
+    domain: "homeassistant", service: "turn_on",
+    data: { entity_id: ["switch.left_light", "switch.right_light"] },
+  }]);
+});
