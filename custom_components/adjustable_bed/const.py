@@ -240,6 +240,9 @@ PRODUCT_TYPES: Final = {"bed": "Bed", "chair": "Chair"}
 # Per-channel motor direction flags an app sends with every movement command.
 CONF_REVERSE_MOTORS: Final = tuple(f"reverse_motor_{i}" for i in range(1, 5))
 CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
+# Form-only: the positive "Read bed position" toggle. It is stored as
+# CONF_DISABLE_ANGLE_SENSING, and only where it differs from the route.
+CONF_READ_POSITIONS: Final = "read_positions"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
 CONF_MOTOR_PULSE_COUNT: Final = "motor_pulse_count"
 CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"

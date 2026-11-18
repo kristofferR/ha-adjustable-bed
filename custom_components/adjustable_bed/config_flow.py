@@ -37,6 +37,9 @@ from homeassistant.helpers.field_visibility import (
     FieldCondition,
 )
 from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
@@ -101,8 +104,11 @@ from .app_profiles import (
 from .bed_traits import (
     bed_traits,
     bed_type_has_position_feedback,
-    disconnect_after_command_default_enabled,
+    connection_mode_is_fixed,
+    default_connection_mode,
     passive_position_reconciliation_default_enabled,
+    reads_positions,
+    store_read_positions,
     supports_passive_position_reconciliation,
 )
 from .beds.kaidi.metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
@@ -212,10 +218,9 @@ from .const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
@@ -239,7 +244,7 @@ from .const import (
     CONF_PAIRLINK_PASSWORD_TEXT,
     CONF_PAIRLINK_ROLE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
-    CONF_POSITION_MODE,
+    CONF_READ_POSITIONS,
     CONF_PREFERRED_ADAPTER,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
@@ -261,20 +266,18 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
-    CONNECTION_PROFILE_BALANCED,
-    CONNECTION_PROFILE_RELIABLE,
-    CONNECTION_PROFILES,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
+    CONNECTION_SETTINGS,
     DEFAULT_BACK_MAX_ANGLE,
-    DEFAULT_CONNECTION_PROFILE,
-    DEFAULT_DISABLE_ANGLE_SENSING,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_MOTOR_COUNT,
-    DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
-    IDLE_DISCONNECT_KEEP_CONNECTED,
+    MAX_IDLE_DISCONNECT_SECONDS,
     KEESON_LAYOUT_APP_BED_TYPES,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
@@ -290,8 +293,6 @@ from .const import (
     PAIR_SIDES,
     PAIRLINK_ROLE_CENTRAL,
     PAIRLINK_ROLE_PERIPHERAL,
-    POSITION_MODE_ACCURACY,
-    POSITION_MODE_SPEED,
     PRODUCT_TYPES,
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
@@ -1387,11 +1388,6 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
     return None
 
 
-CONNECTION_PROFILE_OPTIONS: dict[str, str] = {
-    CONNECTION_PROFILE_BALANCED: "Balanced (recommended)",
-    CONNECTION_PROFILE_RELIABLE: "Reliable (slower connect)",
-}
-
 MALOUF_BED_TYPES = frozenset({BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN})
 
 
@@ -1855,16 +1851,70 @@ def _profile_answers(
     return answers
 
 
-_PULSE_FIELDS: Final = (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
+# The one movement timing a user may tune: how many times a tap repeats its
+# command (#510). The repeat delay stays each bed's own.
+_PULSE_FIELDS: Final = (CONF_MOTOR_PULSE_COUNT,)
+_PULSE_COUNT_RANGE: Final = (1, 100)
 _ANGLE_LIMITS: Final[dict[str, float]] = {
     CONF_BACK_MAX_ANGLE: DEFAULT_BACK_MAX_ANGLE,
     CONF_LEGS_MAX_ANGLE: DEFAULT_LEGS_MAX_ANGLE,
 }
-_POSITION_MODES: Final = {
-    POSITION_MODE_SPEED: "Speed (recommended)",
-    POSITION_MODE_ACCURACY: "Accuracy",
-}
 _TEXT: Final = TextSelector(TextSelectorConfig())
+_CONNECTION_MODE_SELECTOR: Final = SelectSelector(
+    SelectSelectorConfig(
+        options=[CONNECTION_MODE_RELEASE, CONNECTION_MODE_IDLE, CONNECTION_MODE_ALWAYS],
+        translation_key="connection_mode",
+        mode=SelectSelectorMode.LIST,
+    )
+)
+_IDLE_SECONDS_SELECTOR: Final = NumberSelector(
+    NumberSelectorConfig(
+        min=1,
+        max=MAX_IDLE_DISCONNECT_SECONDS,
+        step=1,
+        mode=NumberSelectorMode.BOX,
+        unit_of_measurement="s",
+    )
+)
+_PULSE_COUNT_SELECTOR: Final = NumberSelector(
+    NumberSelectorConfig(
+        min=_PULSE_COUNT_RANGE[0],
+        max=_PULSE_COUNT_RANGE[1],
+        step=1,
+        mode=NumberSelectorMode.BOX,
+    )
+)
+
+
+def _connection_fields(
+    data: Mapping[str, Any], bed_type: str, variant: str
+) -> dict[vol.Marker, Any]:
+    """Return the connection mode and its idle seconds, shown only for that mode.
+
+    A bed that holds its link whatever the mode says gets neither.
+    """
+    if connection_mode_is_fixed(bed_type, variant):
+        return {}
+    from homeassistant import data_entry_flow
+
+    mode = data.get(CONF_CONNECTION_MODE)
+    if mode not in (CONNECTION_MODE_RELEASE, CONNECTION_MODE_IDLE, CONNECTION_MODE_ALWAYS):
+        mode = default_connection_mode(bed_type, variant)
+    seconds = data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS)
+    if not isinstance(seconds, int) or not 1 <= seconds <= MAX_IDLE_DISCONNECT_SECONDS:
+        seconds = DEFAULT_IDLE_DISCONNECT_SECONDS
+    return {
+        vol.Optional(CONF_CONNECTION_MODE, default=mode): _CONNECTION_MODE_SELECTOR,
+        data_entry_flow.Optional(
+            CONF_IDLE_DISCONNECT_SECONDS,
+            default=seconds,
+            visible=FieldCondition(
+                field=CONF_CONNECTION_MODE,
+                operator=ConditionOperator("in"),
+                value=[CONNECTION_MODE_IDLE],
+            ),
+        ): _IDLE_SECONDS_SELECTOR,
+    }
 
 
 def _settings_fields(
@@ -1878,44 +1928,45 @@ def _settings_fields(
     """Return the generic settings fields ``keys`` for a route, in that order.
 
     Each shows its saved value, else the caller's default, else the route's own:
-    its pulse timing, its disconnect-after-command default and so on.
+    its movement per tap, its connection mode and so on. ``CONF_CONNECTION_MODE``
+    adds its idle seconds too.
     """
     adapters = get_available_adapters(hass)
     route_defaults: dict[str, Any] = {
         CONF_NAME: "Adjustable Bed",
         CONF_MOTOR_COUNT: DEFAULT_MOTOR_COUNT,
         CONF_HAS_MASSAGE: DEFAULT_HAS_MASSAGE,
-        CONF_DISABLE_ANGLE_SENSING: DEFAULT_DISABLE_ANGLE_SENSING,
-        CONF_POSITION_MODE: DEFAULT_POSITION_MODE,
         CONF_PASSIVE_POSITION_RECONCILIATION: passive_position_reconciliation_default_enabled(
             bed_type
         ),
         CONF_PREFERRED_ADAPTER: ADAPTER_AUTO,
-        CONF_CONNECTION_PROFILE: DEFAULT_CONNECTION_PROFILE,
-        **dict(zip(_PULSE_FIELDS, get_motor_pulse_defaults(bed_type, variant), strict=True)),
-        CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command_default_enabled(bed_type, variant),
-        CONF_IDLE_DISCONNECT_SECONDS: DEFAULT_IDLE_DISCONNECT_SECONDS,
+        CONF_MOTOR_PULSE_COUNT: get_motor_pulse_defaults(bed_type, variant)[0],
         **_ANGLE_LIMITS,
         **(defaults or {}),
     }
     validators: dict[str, Any] = {
         CONF_NAME: str,
         CONF_MOTOR_COUNT: vol.All(vol.Coerce(int), vol.In(_motor_count_options(bed_type, variant))),
-        CONF_POSITION_MODE: vol.In(_POSITION_MODES),
         CONF_PREFERRED_ADAPTER: vol.In(adapters),
-        CONF_CONNECTION_PROFILE: vol.In(CONNECTION_PROFILE_OPTIONS),
-        CONF_IDLE_DISCONNECT_SECONDS: vol.All(
-            vol.Coerce(int), vol.Range(min=IDLE_DISCONNECT_KEEP_CONNECTED, max=300)
-        ),
-        **dict.fromkeys((*_PULSE_FIELDS, *_ANGLE_LIMITS), _TEXT),
+        CONF_MOTOR_PULSE_COUNT: _PULSE_COUNT_SELECTOR,
+        **dict.fromkeys(_ANGLE_LIMITS, _TEXT),
     }
     fields: dict[vol.Marker, Any] = {}
     for key in keys:
+        if key == CONF_CONNECTION_MODE:
+            fields.update(_connection_fields(data, bed_type, variant))
+            continue
+        if key == CONF_READ_POSITIONS:
+            default = defaults.get(key) if defaults and key in defaults else reads_positions(
+                {CONF_BED_TYPE: bed_type, CONF_PROTOCOL_VARIANT: variant, **data}
+            )
+            fields[vol.Optional(key, default=bool(default))] = bool
+            continue
         default = data.get(key, route_defaults[key])
         if key == CONF_PREFERRED_ADAPTER and default not in adapters:
             # A stored adapter that has gone falls back to automatic.
             default = ADAPTER_AUTO
-        elif key in _PULSE_FIELDS or key in _ANGLE_LIMITS:
+        elif key in _ANGLE_LIMITS:
             default = str(default)
         fields[vol.Optional(key, default=default)] = validators.get(key, bool)
     return fields
@@ -1924,27 +1975,40 @@ def _settings_fields(
 def _parse_settings(
     submitted: Mapping[str, Any], bed_type: str, pulse_defaults: tuple[int, int]
 ) -> tuple[dict[str, Any], dict[str, str]]:
-    """Return the submitted pulse timing and angle limits as numbers, and errors by field.
+    """Return the submitted generic settings as stored values, and errors by field.
 
-    A blank field takes its default. Only the fields submitted are returned.
+    Movement per tap and the angle limits become numbers (a blank field takes
+    its default), the connection mode keeps its idle seconds, and Read bed
+    position stays a form value for ``store_read_positions``. Only the fields
+    submitted are returned.
     """
     values: dict[str, Any] = {}
     errors: dict[str, str] = {}
-    for key, default in zip(_PULSE_FIELDS, pulse_defaults, strict=True):
-        if key not in submitted:
-            continue
+    if CONF_MOTOR_PULSE_COUNT in submitted:
+        raw = submitted[CONF_MOTOR_PULSE_COUNT]
         try:
-            values[key] = int(submitted[key] or default)
+            count = int(float(raw)) if raw not in (None, "") else pulse_defaults[0]
         except ValueError, TypeError:
-            errors[key] = "invalid_number"
-            continue
-        if key == CONF_MOTOR_PULSE_COUNT and _invalid_pulse_count(bed_type, values[key]):
-            # The profile's own range names the limits.
-            errors[key] = "invalid_pulse_count_range"
-        elif values[key] < 1:
-            errors[key] = "invalid_number"
-    if CONF_MOTOR_PULSE_COUNT not in submitted and _invalid_pulse_count(bed_type, pulse_defaults[0]):
+            errors[CONF_MOTOR_PULSE_COUNT] = "invalid_number"
+        else:
+            values[CONF_MOTOR_PULSE_COUNT] = count
+            if _invalid_pulse_count(bed_type, count):
+                # The profile's own range names the limits.
+                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+            elif not _PULSE_COUNT_RANGE[0] <= count <= _PULSE_COUNT_RANGE[1]:
+                errors[CONF_MOTOR_PULSE_COUNT] = "invalid_movement_per_tap"
+    elif _invalid_pulse_count(bed_type, pulse_defaults[0]):
         errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
+    if CONF_IDLE_DISCONNECT_SECONDS in submitted:
+        try:
+            seconds = int(float(submitted[CONF_IDLE_DISCONNECT_SECONDS]))
+        except ValueError, TypeError:
+            errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_number"
+        else:
+            if 1 <= seconds <= MAX_IDLE_DISCONNECT_SECONDS:
+                values[CONF_IDLE_DISCONNECT_SECONDS] = seconds
+            else:
+                errors[CONF_IDLE_DISCONNECT_SECONDS] = "invalid_number"
     for key, default in _ANGLE_LIMITS.items():
         if key not in submitted:
             continue

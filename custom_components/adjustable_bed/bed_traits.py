@@ -463,6 +463,41 @@ def store_read_positions(data: dict[str, object], read: bool | None = None) -> N
         data[CONF_DISABLE_ANGLE_SENSING] = not read
 
 
+# Bed types that never read "Has massage": their controllers have no massage
+# commands, or turn massage on themselves. tests/test_controller_contract.py
+# keeps this in step with the controllers.
+MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
+    {
+     "adjustable_bed", "adjustable_lumbar", "adjustamattress", "bailey_bed_control",
+     "bedgear", "bedjet_powerlayer", "bedsense", "bf", "casper_base", "casper_remote",
+     "casper_sleep_mm", "casper_sleep_sxb", "cherish", "comfort_enhancement3",
+     "comfortbase", "coolbase", "customatic_clarity", "customatic_jeromes",
+     "customatic_remedy", "customatic_zseries", "diagnostic", "doublesleep", "ergo_slim",
+     "ergomotion_4", "ergomotion_app", "eshine", "fsm_relax", "galaxy",
+     "glideaway_motion", "gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "goodvibe",
+     "hjbed", "hush_base", "hush_remote", "hush_sleep_mm", "hush_sleep_sxb", "jalon",
+     "leggett_lp_legacy", "logicdata_air_pump", "luuna", "malouf_app", "mlily",
+     "motion_bed", "motomotion", "motosleep", "octo", "okin_motionbed", "okin_rf_eco_bt",
+     "omazz_adjusto_iii", "paramount", "qplus_app", "remacro", "resident", "reverie",
+     "reverie_nightstand", "richmat_americanstar", "richmat_app", "richmat_app_sleep",
+     "richmat_best_mattress", "richmat_blvd_home", "richmat_classic_apps",
+     "richmat_harmony", "richmat_idealbed", "richmat_revive", "richmat_sleep_receiver",
+     "richmat_tx", "rize_home", "rize_remedy_ii", "row_control", "ruf_betten",
+     "serenity", "serta_mp_remote", "simmons", "sleep_number", "sleepstar",
+     "sleeptracker", "sleepys_box15", "sleepys_box24", "smart_comfort_synargy",
+     "smart_comfort_synergy", "solace", "sonicsleep", "star_elevate", "starcode_abm5_4",
+     "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
+     "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
+     "wsilver_products", "yamada",
+    }
+)
+
+
+def asks_massage(bed_type: str | None) -> bool:
+    """Return True when the "Has massage" setting changes this bed's controls."""
+    return bed_type not in MASSAGE_SETTING_UNUSED_BED_TYPES
+
+
 def supports_passive_position_reconciliation(bed_type: str | None) -> bool:
     """Return True if the bed type supports passive position reconciliation."""
     return bed_traits(bed_type).passive_position_reconciliation
