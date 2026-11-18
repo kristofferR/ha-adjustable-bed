@@ -108,7 +108,11 @@ from custom_components.adjustable_bed.sensor import (
     AdjustableBedControllerStateSensor,
     AdjustableBedMassageSensor,
 )
-from custom_components.adjustable_bed.switch import SWITCH_DESCRIPTIONS, AdjustableBedSwitch
+from custom_components.adjustable_bed.switch import (
+    SWITCH_DESCRIPTIONS,
+    AdjustableBedControllerSwitch,
+    AdjustableBedSwitch,
+)
 from tests.entity_translation_reachability import (
     INTEGRATION,
     SPEC_PLATFORMS,
@@ -236,6 +240,10 @@ def controller_entities(controllers: Iterable[BedController]) -> list[Entity]:
         entities.extend(
             AdjustableBedControllerNumber(runtime, spec)
             for spec in controller.controller_number_specs
+        )
+        entities.extend(
+            AdjustableBedControllerSwitch(runtime, spec)
+            for spec in controller.controller_switch_specs
         )
         entities.extend(
             AdjustableBedControllerStateSensor(runtime, spec)
