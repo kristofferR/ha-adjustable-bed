@@ -499,10 +499,23 @@ class PairedBedCoordinator:
             for target_side, child in targets
             if not remacro_side_lacks_global_stop(child)
         ]
+        self._cancel_behind_mode_transition(targets)
         async with self._connection_mode_transition_lock:
             errors = await self._stop_children(targets)
         if errors:
             raise PairedSideError("stop", errors)
+
+    def _cancel_behind_mode_transition(
+        self, targets: Collection[PairTarget], resources: Collection[str] | None = None
+    ) -> None:
+        """End running commands a switch to one link at a time is waiting for.
+
+        That switch holds the transition lock until every side's running command
+        finishes, so a STOP queued behind it would wait out a whole move.
+        """
+        if self._connection_mode_transition_lock.locked():
+            for _side, child in targets:
+                child.request_command_cancel(resources=resources)
 
     async def _stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
         """Send STOP through the current topology's fan-out, collecting failures."""
@@ -528,6 +541,7 @@ class PairedBedCoordinator:
             self._admission.note_stop(
                 target_side, self._topology.command_scope(command_resources(resource))
             )
+        self._cancel_behind_mode_transition(targets, command_resources(resource))
         async with self._connection_mode_transition_lock:
             errors = await self._topology.stop_motor(targets, stop_fn, resource)
         if errors:

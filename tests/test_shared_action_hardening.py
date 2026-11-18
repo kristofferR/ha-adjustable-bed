@@ -399,3 +399,43 @@ async def test_preset_checked_offline_is_refused_by_the_live_controller(hass, ac
             )
         assert raised.value.translation_key == "invalid_preset_number"
         assert bed.recalls == []
+
+
+async def test_pair_stop_does_not_wait_behind_the_one_link_fallback(hass) -> None:
+    from custom_components.adjustable_bed import paired_topology
+
+    async with beds(hass, capability=AlarmCapability(), topology="concurrent") as made:
+        pair, (left, right) = made.pair, made.items
+        pair._automatic_connection_mode = True
+        started = asyncio.Event()
+
+        async def long_move(_controller: AlarmController) -> None:
+            started.set()
+            await asyncio.sleep(3600)
+
+        with (
+            virtual_clock() as clock,
+            patch.object(paired_topology, "connection_slot_exhausted", return_value=True),
+            patch.object(paired_topology, "shared_connection_slot_pressure", return_value=True),
+        ):
+            move = asyncio.create_task(right.async_execute_controller_command(long_move))
+            await started.wait()
+            # A failed reconnect on the left starts the fallback, which waits
+            # for the right side's running command while holding its lock.
+            fallback = asyncio.create_task(
+                pair._lanes.fallback_after_connection_slot_exhaustion(
+                    ConnectionError("slots"), {}
+                )
+            )
+            await asyncio.sleep(0)
+            assert pair._connection_mode_transition_lock.locked()
+            began = clock.time()
+            async with asyncio.timeout(7200):
+                await pair.async_stop_command(side="right")
+            # The running move ended at once; the fallback then released the
+            # link, which halts that side, instead of waiting out the move.
+            assert clock.time() - began < 60
+            await asyncio.sleep(0)
+            assert move.done()
+            async with asyncio.timeout(7200):
+                await asyncio.gather(move, fallback, return_exceptions=True)
