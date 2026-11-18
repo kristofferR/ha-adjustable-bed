@@ -2691,9 +2691,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self._async_new_bed_settings("route")
         assert self._manual_data is not None
         data = self._manual_data
-        if self._migration is not None and data[CONF_BED_TYPE] != self._migration.data.get(
-            CONF_BED_TYPE
-        ):
+        if self._migration is not None and data[CONF_BED_TYPE] != {
+            **self._migration.data,
+            **self._migration.options,
+        }.get(CONF_BED_TYPE):
             # The previous bed type's own settings must not steer pairing, the
             # check or the saved entry, such as a VMAT app's bond and timeout.
             AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
@@ -2738,7 +2739,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._migration_verified = False
         self._migration_preview = {}
         if self._migration is not None:
-            saved = self._migration.data
+            # Options win over data, as for the running entry.
+            saved = {**self._migration.data, **self._migration.options}
             if bed_type == saved.get(CONF_BED_TYPE) and variant in (
                 None,
                 saved.get(CONF_PROTOCOL_VARIANT),
@@ -6109,7 +6111,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if self._migration_requires_check and not self._migration_verified:
                 return self.async_abort(reason="migration_verification_required")
             data = dict(data)
-            if data.get(CONF_BED_TYPE) != self._migration.data.get(CONF_BED_TYPE):
+            if data.get(CONF_BED_TYPE) != {**self._migration.data, **self._migration.options}.get(
+                CONF_BED_TYPE
+            ):
                 # The previous bed type's own settings must not steer the final
                 # one, such as a VMAT app's connection timeout.
                 AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001

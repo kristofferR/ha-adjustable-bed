@@ -311,3 +311,31 @@ def test_returning_to_the_saved_bed_type_keeps_the_new_apps_settings(hass: HomeA
 
     assert flow._manual_data[const.CONF_MALOUF_APP_PROFILE] == "lucid"
     assert const.CONF_MALOUF_APP_MODEL not in flow._manual_data
+
+
+def test_a_route_saved_in_options_counts_as_the_saved_route(hass: HomeAssistant) -> None:
+    """Options win over data, so a route saved there is the one a return restores."""
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.profile_migration import MigrationSnapshot
+
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        title="Bed",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:50",
+            const.CONF_BED_TYPE: const.BED_TYPE_LINAK,
+            const.CONF_MOTOR_PULSE_COUNT: 37,
+        },
+        options={const.CONF_PROTOCOL_VARIANT: "performance_legacy"},
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, reconfigure_context(entry)
+    flow._migration = MigrationSnapshot.of(entry)
+    flow._manual_data = flow._migration.staged(entry.title)
+
+    flow._select_family_route(const.BED_TYPE_LINAK, "auto")
+    flow._select_family_route(const.BED_TYPE_LINAK, "performance_legacy")
+
+    assert flow._manual_data[const.CONF_MOTOR_PULSE_COUNT] == 37
+    assert flow._manual_data[const.CONF_PROTOCOL_VARIANT] == "performance_legacy"
