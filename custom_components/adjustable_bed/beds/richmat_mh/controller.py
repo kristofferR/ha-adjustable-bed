@@ -45,7 +45,6 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
-    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
@@ -858,6 +857,18 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     else _TAP_CARDS.get(tap.translation_key, CARD_UTILITY),
                 )
             )
+        if self._smart_set_lock():
+            # One toggle command: a switch could unlock when the state is unknown.
+            specs.append(
+                ControllerButtonSpec(
+                    "richmat_mh_toggle_smart_set_lock",
+                    "Toggle smart set lock",
+                    lambda ctrl: _invoke(ctrl, "toggle_smart_set_lock"),
+                    icon="mdi:lock-outline",
+                    translation_key="richmat_mh_toggle_smart_set_lock",
+                    cancel_movement=False,
+                )
+            )
         if self._detection_page():
             for key, method, icon in (
                 ("richmat_mh_start_detection", "start_detection", "mdi:stethoscope"),
@@ -1013,6 +1024,13 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         specs: list[ControllerStateBinarySensorSpec] = []
+        if self._smart_set_lock():
+            specs.append(
+                ControllerStateBinarySensorSpec(
+                    SMART_SET_LOCK_KEY, SMART_SET_LOCK_KEY, SMART_SET_LOCK_KEY, "mdi:lock",
+                    entity_registry_enabled_default=True,
+                )
+            )
         if self._smart_light_lock():
             specs.append(
                 ControllerStateBinarySensorSpec(
@@ -1021,20 +1039,6 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 )
             )
         return tuple(specs)
-
-    @property
-    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
-        if not self._smart_set_lock():
-            return ()
-        return (
-            ControllerSwitchSpec(
-                SMART_SET_LOCK_KEY,
-                SMART_SET_LOCK_KEY,
-                lambda ctrl, on: _invoke(ctrl, "set_smart_set_lock", on),
-                SMART_SET_LOCK_KEY,
-                icon="mdi:lock-outline",
-            ),
-        )
 
     @property
     def motor_mode_options(self) -> tuple[str, ...]:
@@ -1675,12 +1679,6 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if not self._smart_set_lock():
             raise NotImplementedError("The selected model has no smart set lock")
         await self.write_command(control_frame(SMART_SET_LOCK_CODE), cancel_event=asyncio.Event())
-
-    async def set_smart_set_lock(self, on: bool) -> None:
-        """The app only toggles; the bed's lock callback says which way it is."""
-        if self._coordinator.controller_state.get(SMART_SET_LOCK_KEY) is on:
-            return
-        await self.toggle_smart_set_lock()
 
     async def start_detection(self) -> None:
         await self._detection_command(TX_START_DETECTION)

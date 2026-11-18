@@ -1223,7 +1223,8 @@ test("Richmat MH app-labelled buttons, sliders and selectors land in their secti
     entry("button.wave", "richmat_mh_massage"),
     entry("button.save_read", "richmat_mh_save"),
     entry("button.reset", "richmat_mh_action"),
-    entry("switch.lock", "richmat_mh_smart_set_lock"),
+    entry("button.lock", "richmat_mh_toggle_smart_set_lock"),
+    entry("binary_sensor.lock", "richmat_mh_smart_set_lock"),
     entry("number.head", "richmat_mh_head_massage_intensity"),
     entry("number.back_angle", "richmat_mh_back_angle"),
     entry("number.timer", "richmat_mh_light_timer_minutes"),
@@ -1247,10 +1248,10 @@ test("Richmat MH app-labelled buttons, sliders and selectors land in their secti
   expect(bed.utilitySelects).toEqual(["select.mode", "select.snore"]);
   expect(bed.lights.timerMinutes).toBe("number.timer");
   expect(bed.lights.light).toBe("light.led");
-  // Utility tiles press buttons or toggle switches; sliders, selectors and
-  // state stay as HA entities. A preset save sits with the presets.
+  // Utility tiles press buttons; sliders, selectors and state stay as HA
+  // entities. A preset save sits with the presets.
   expect(bed.presetSaves).toEqual(["button.save_read"]);
-  expect(bed.utility).toEqual(["button.reset", "switch.lock"]);
+  expect(bed.utility).toEqual(["button.reset", "button.lock"]);
   expect(bed.motors.find((m) => m.key === "back")?.position).toBe("number.back_angle");
 });
 

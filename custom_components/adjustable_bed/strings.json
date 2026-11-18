@@ -3207,6 +3207,9 @@
       },
       "okin_bedding_app_save": {
         "name": "{action}"
+      },
+      "richmat_mh_toggle_smart_set_lock": {
+        "name": "Toggle smart set lock"
       }
     },
     "cover": {
@@ -4632,9 +4635,6 @@
       "reverie_pairlink_massage_rhythm": {
         "name": "Massage rhythm"
       },
-      "richmat_mh_smart_set_lock": {
-        "name": "Smart set lock"
-      },
       "smart_comfort_cup": {
         "name": "Cup holder light"
       },
@@ -4915,6 +4915,9 @@
       },
       "starcode_abm5_4_massage_active": {
         "name": "Massage"
+      },
+      "richmat_mh_smart_set_lock": {
+        "name": "Smart set lock"
       }
     },
     "number": {

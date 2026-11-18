@@ -220,7 +220,6 @@ Removed and replaced entities by bed:
 | OKIN bedding apps | Status, timer and save-event code sensors | |
 | eShine OKIN | Alarm refresh button | |
 | Smart Comfort | Base light on/off buttons (the light entity drives it), raw feedback counters | Cup holder and reading light on/off buttons became the **Cup holder light** and **Reading light** switches |
-| Richmat MH | | Smart set lock toggle and binary sensor became the **Smart set lock** switch |
 | Richmat sleep receiver | | Left and right intervention selects became **snore intervention** switches |
 | Richmat resource apps | 13 disabled "App ..." request buttons (the `richmat_resource_bed` action still sends every command) | |
 | BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons | |
