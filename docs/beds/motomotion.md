@@ -1,6 +1,6 @@
 # HHC `$#` frames (MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion)
 
-**Status:** ⚠️ Partially tested (existing MotoSleep HHC support user tested in [#51](https://github.com/kristofferR/ha-adjustable-bed/issues/51) and [#445](https://github.com/kristofferR/ha-adjustable-bed/issues/445); MotoMotion 3.1.9, Power Bob and the expanded MotoSleep model matrix static verified, hardware unverified)
+**Status:** Partly tested (existing MotoSleep HHC support user tested in [#51](https://github.com/kristofferR/ha-adjustable-bed/issues/51) and [#445](https://github.com/kristofferR/ha-adjustable-bed/issues/445); MotoMotion, Power Bob and the other MotoSleep models need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), waynebowie99 and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -169,7 +169,7 @@ notifications and report no positions.
 
 **App:** [MotoMotion](https://play.google.com/store/apps/details?id=com.HHC.MotoMotion) 3.1.9 (code 2026051101), `com.HHC.MotoMotion`
 
-**Status:** ❓ Needs testing (MotoMotion 3.1.9, static artifact evidence; hardware unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -302,7 +302,7 @@ MotoMotion 3.1.9: its test vectors round-trip through the codec.
 
 ### MotoSleep and Power Bob family
 
-**Status:** ⚠️ Existing HHC support user tested; expanded model matrix static verified, hardware unverified
+**Status:** Partly tested (the original HHC models are tested; the other models need testing)
 
 This integration follows the controller routing in the two shipped Android
 apps. It does not treat every device using the shared HHC UUID as one universal
@@ -310,10 +310,8 @@ bed. The advertised local name selects the transport, motor layout, presets,
 features, and STOP behavior.
 
 - **Existing HHC support:** ✅ User tested
-- **Expanded model matrix:** STATIC VERIFIED / HARDWARE UNVERIFIED. Hardware
-  confirmation is deferred until a beta or release reaches real users with the
-  corresponding beds. Maintainers cannot own or directly test this many
-  physical models. Static verification proves what the OEM apps send, but not
+- **Expanded model matrix:** needs testing on hardware. Owners of these beds can help confirm
+  them. App evidence shows what the OEM apps send, but not
   how every firmware and actuator behaves.
 
 #### Setup
@@ -405,7 +403,7 @@ the root cause of [issue #445](https://github.com/kristofferR/ha-adjustable-bed/
 
 Where an app exposes a command pair but does not establish one unique physical
 label across models, Home Assistant uses `Auxiliary`, `Auxiliary 1`, or
-`Auxiliary 2`. This preserves statically proven controls without guessing that
+`Auxiliary 2`. This preserves app-defined controls without guessing that
 they are lumbar, neck, or tilt. Real users can provide model-specific hardware
 confirmation after release. Panel E's exact `$W` callsite is likewise
 preserved as an `Auxiliary action` button. The APK does not provide a
@@ -455,7 +453,7 @@ MotoSleep, Power Bob and the legacy route send only their frozen frames.
 
 **App:** [MotoSleep](https://play.google.com/store/apps/details?id=com.HHC.MotoSleep) 5.1.5 (`2026071001`), `com.HHC.MotoSleep`
 
-**Status:** ⚠️ Existing core HHC support user tested; expanded profiles and MOTO binary pages static verified, hardware unverified
+**Status:** Partly tested (the original HHC models are tested; the other profiles and MOTO binary pages need testing)
 
 Behaves as the [MotoSleep and Power Bob family](#motosleep-and-power-bob-family), except as below.
 
@@ -491,7 +489,7 @@ action such as `$K` as `$#$KR\r`.
 
 ##### MOTO binary pages (28-character names)
 
-**MOTO binary status:** STATIC VERIFIED / HARDWARE UNVERIFIED
+**MOTO binary status:** needs testing on hardware
 
 Every page except WR219 has Flat `0x800E`, Anti-snore `0x8009`, TV `0x800A`,
 Zero-G `0x800B`, memory recall `0x800C`/`0x800D` and save `0x811D`/`0x811E`.
@@ -541,7 +539,7 @@ Normal MOTO movement release sends command/data `0x0000/0x0000` five times at
 
 **App:** [Power Bob for Adjustable Bed](https://play.google.com/store/apps/details?id=com.HHC.PowerBob) 2.0.3 (`2025061101`), `com.HHC.PowerBob`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 Behaves as the [MotoSleep and Power Bob family](#motosleep-and-power-bob-family), except as below.
 
@@ -588,7 +586,7 @@ only its root `$A` light toggle.
 
 ### Legacy route
 
-**Status:** ⚠️ Conservative fallback for manual entries without a usable advertised name
+**Status:** Not yet tested (the fallback for manual entries without a usable advertised name)
 
 Behaves as the [MotoSleep and Power Bob family](#motosleep-and-power-bob-family), except as below.
 
@@ -608,7 +606,7 @@ schedule.
 
 **App:** [Bedgear](https://play.google.com/store/apps/details?id=com.Bedgear.AdjustableBed) 2.0.1 (`2024031901`), `com.Bedgear.AdjustableBed`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -657,12 +655,12 @@ Motor covers expose the selected head, foot, neck, lumbar, tilt, combined or
 single-actuator controls. The card supports renewable holds; `timed_move` gives
 a finite movement. Presets, memory recall and memory save appear only on layouts
 that provide them. Buttons expose light toggle and the layout's massage controls.
-SixZG has a Zero-G preset without an inferred Flat action. There are no measured
+SixZG has a Zero-G preset without an guessed Flat action. There are no measured
 motor positions or absolute seeks.
 
 The layout selector gives pair rules priority: 15, then 35/45/85, then index 8
 `4` or 25/55, then 95–98, then 65/75, then single-character layout rules.
-One/Two admit head or head+foot or neck+head+foot. Three/Four additionally use
+One/Two accept head or head+foot or neck+head+foot. Three/Four additionally use
 source-selected lumbar/tilt arrays. No hidden axis is exposed merely because
 its command appears in a switch branch.
 
@@ -770,8 +768,8 @@ address; independent paired beds retain HA's normal physical-side routing.
 
 Row A12's accepted Bedgear 2.0.1 frames match the shared HHC codec byte for byte,
 including six-plus-four-digit alarm fields. All selected layouts have their own
-Bedgear profile rules. Static verification does not establish physical movement,
-STOP completion or firmware compatibility. External beta/release users can
+Bedgear profile rules. App evidence does not establish physical movement,
+STOP completion or firmware compatibility. External owners can
 qualify those behaviors with timestamps, GATT details and physical observations.
 
 
@@ -779,9 +777,13 @@ qualify those behaviors with timestamps, GATT details and physical observations.
 
 **App:** [Leon's L2Motion](https://play.google.com/store/apps/details?id=com.leon.l2motion)
 
-**Status:** ❓ Needs testing on hardware.
+**Status:** Not yet tested
 
 #### Setup
+
+Choose **L2 Motion** for beds controlled by Leon's L2Motion app. Setup and
+Reconfigure ask for the bed's exact Bluetooth name, which decides the controls;
+there are no motor or massage questions. A combined bed keeps each side's name.
 
 Choose **L2 Motion** and enter the original Bluetooth name exactly, including case.
 Names contain `HHC` and have exactly fourteen UTF-16 units. Display renames do not
@@ -909,7 +911,7 @@ never add filler. A finite hold includes its final due periodic tick when the
 timer wakes less than one interval late; a write queued past the deadline is
 discarded. Missed periods are not replayed after slow writes.
 PanelZero tilt-down deliberately lacks tilt-up's STOP callback. Preset callbacks
-can end refresh without a release packet; no extra hardware frame is invented.
+can end refresh without a release packet; no extra hardware frame is added.
 
 Color writes query before each channel, delay before each non-M channel, then
 wait between channels. Busy updates use the latest requested color with a replaced
@@ -960,8 +962,7 @@ Based on MotoMotion 3.1.9 (`com.HHC.MotoMotion`), MotoSleep 5.1.5
 ### Deferred user validation
 
 The MotoSleep and Power Bob app-selected bytes, frames, callsites, timing, and
-routing are statically verified. The following cannot be finished by
-maintainers without real user hardware or app-delivered runtime tables:
+routing are checked against the app. The following need owners' beds or the app's runtime tables:
 
 - Assign product-facing lumbar/neck/tilt labels to every neutral HHC auxiliary
   entity.
@@ -970,7 +971,6 @@ maintainers without real user hardware or app-delivered runtime tables:
   generic callsite obtains their per-product mapping at runtime.
 - Confirm friendly units for RGB, alarm, bind, and sync notification fields.
 
-These are post-beta/release validation requests, not a requirement that a
-maintainer acquire the beds and not a reason to guess protocol semantics.
+Until then, the integration does not guess these meanings.
 
 Based on Bedgear 2.0.1 (`2024031901`).

@@ -1,6 +1,6 @@
 # LOGICDATA Sleep Smart Air Mattress app
 
-**Status:** ❓ Needs testing. **Static verified, hardware unverified.**
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

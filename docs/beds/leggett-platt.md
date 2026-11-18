@@ -1,8 +1,8 @@
 # Leggett & Platt
 
-**Status:** ⚠️ Partially tested (Gen2 LP Comfort Connect pairing and movement in [discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) and [#385](https://github.com/kristofferR/ha-adjustable-bed/issues/385); the QRRM Richmat route's presets in [#504](https://github.com/kristofferR/ha-adjustable-bed/issues/504); other variants and features need more testing)
+**Status:** Partly tested (Gen2 LP Comfort Connect pairing and movement in [discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) and [#385](https://github.com/kristofferR/ha-adjustable-bed/issues/385); the QRRM Richmat route's presets in [#504](https://github.com/kristofferR/ha-adjustable-bed/issues/504); other variants and features need more testing)
 
-[Discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) confirms that a Prodigy LBR with an LP Comfort Connect 209-M001 controller was auto-detected, bonded through an ESPHome Bluetooth proxy, and moved with tested commands. The reporter has not yet checked every motor, preset, massage and lighting control, or long-term connection stability.
+[Discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) confirms that a Prodigy LBR with an LP Comfort Connect 209-M001 controller was detected, bonded through an ESPHome Bluetooth proxy, and moved with tested commands. The reporter has not yet checked every motor, preset, massage and lighting control, or long-term connection stability.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), MarcusW, [Josh Pearce](https://github.com/joshpearce), and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -88,7 +88,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 ### Gen2 Variant
 - **Service UUID:** `45e25100-...` (unique to Gen2), when advertised
 - **LP Comfort Connect (control box 209-M001, ESP32):** advertises **no service
-  UUID** — only manufacturer data under company ID `0x092D` (2349) whose payload
+  UUID**, only manufacturer data under company ID `0x092D` (2349) whose payload
   begins with ASCII `XP` or `CP` (e.g. `58 50 05 00 00 00` = `"XP"…`). Detected
   from that prefix, matching the LP Control app's `isGen2Box()` check.
 - Detection: automatic by service UUID **or** the `XP`/`CP` manufacturer prefix.
@@ -102,7 +102,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 > **The bond is advisory, not required.** That `createBond()` is the only one in
 > the whole app, there is no `ACTION_BOND_STATE_CHANGED` receiver and no bond
 > retry anywhere, and the call site deliberately falls through rather than
-> returning — so the app never learns whether the bond succeeded and simply
+> returning, so the app never learns whether the bond succeeded and simply
 > keeps using the same link either way. It also connects with
 > `connectGatt(ctx, autoConnect=true, cb, TRANSPORT_LE)`
 > (`BLEService.java:195`), i.e. an untimed background connection, and never
@@ -116,9 +116,9 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 > stops advertising connectably is hardware behaviour the APK cannot prove.
 >
 > Both facts drive the same rule: **never spend or discard a live link.** The
-> integration therefore mirrors the app on the first connection — connect
+> integration therefore mirrors the app on the first connection: connect
 > without a bond, discover the live GATT services, then create the BLE bond
-> while that link is active — and if the bond fails it logs the failure, raises
+> while that link is active. If the bond fails it logs the failure, raises
 > the pairing repair, and *keeps the connection* rather than reconnecting.
 > For the same reason the setup capability probe, the config flow's "Pair Now"
 > step and the pairing repair flow do not open their own throwaway connection
@@ -126,7 +126,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 > paths also share a per-address lock so two attempts cannot collide into
 > `org.bluez.Error.InProgress` and abort each other.
 >
-> **An unpaired reconnect is unencrypted, not unbonded.** Through an ESP32
+> **A reconnect without pairing is unencrypted, not unbonded.** Through an ESP32
 > Bluetooth proxy, a reconnect that skips the bond request leaves the link
 > unencrypted even though the bed still holds the bond, so commands fail with
 > "Insufficient encryption" (issue #709). BlueZ raises link security on that
@@ -142,7 +142,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 > Pairing should still happen during the pairing window:
 >
 > - **Entering pairing mode** (per the LP Control app): unplug the bed, remove
->   any batteries from the power supply, plug it back in — a small chime plays
+>   any batteries from the power supply, plug it back in. A small chime plays
 >   and a pulsing blue light shows under the bed. Pair promptly while it pulses;
 >   the APK does not state the duration of this initial power-cycle window.
 >   A connected client can also re-open the window with the `PAIR ENABLE`
@@ -200,9 +200,9 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 - **Device Name:** Starts with "MlRM"
 - Detection: Automatic by device name prefix + WiLinke service UUID
 
-**If your Okin bed is misidentified as Okimat:** in Configure, change the bed type to the Leggett & Platt row and submit, then choose the app layout it shows. LP Control with an LP BED receiver uses the default Prodigy 4 (Prodigy CE) layout.
+**If your Okin bed is misidentified as Okimat:** open **Reconfigure**, choose the Leggett & Platt row, then the app layout it shows. LP Control with an LP BED receiver uses the default Prodigy 4 (Prodigy CE) layout.
 
-See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
+See also: the [brand lookup](../SUPPORTED_ACTUATORS.md)
 
 ### Aliases
 
@@ -242,7 +242,7 @@ wire snapshot (`tests/test_wire_snapshot.py`) proves both by capture.
 
 ### Motor Commands
 
-Format: `M {down}:{up}:{stop}` — three colon-separated fields, each a list of
+Format: `M {down}:{up}:{stop}`: three colon-separated fields, each a list of
 motor numbers. For a single press the motor number goes in **exactly one**
 field and the others are empty; there is no trailing stop list. The app
 re-sends the move command every 200 ms while a button is held and sends a
@@ -298,7 +298,7 @@ mode byte (`OperatingMode` `CONSTANT_COLOR`/`OFF`) with RGBA bytes.
 Gen2 beds **do not report their feature set over BLE**. The app ships a bundled
 profile per model (`assets/ID_<productId>.json`) and selects it by a `productId`
 it derives from the advertisement manufacturer data (hex each payload byte after
-the `XP`/`CP` prefix, reverse, take the first four, parse base-16 — e.g.
+the `XP`/`CP` prefix, reverse, take the first four, parse base-16, for example
 `58 50 05 …` → `5`). The profile declares the under-bed light style
 (**none / toggle / single-colour / RGB**), which actuators are present (**pillow
 and lumbar vary by model**), massage, and memory slot count (**typically 3**).

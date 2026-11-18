@@ -55,9 +55,9 @@ Vibradorm's role checks and native bond rules stay Vibradorm's.
   L&P), so an entry on one can reach the family's other routes. Configure
   keeps changing their own settings, and Repairs keeps its usual path for
   them, since the question may not offer what a review suggests.
-- **Configure** shows one generic **Change app or layout** item for those
-  families. Home Assistant cannot hand an options flow to a config flow, so
-  the item points to Reconfigure.
+- **Configure** no longer changes the bed type, app or route for any bed;
+  its description points to Reconfigure. Home Assistant cannot hand an
+  options flow to a config flow.
 - **Repairs** opens the wizard as its next flow, or Configure's settings form
   with the app selected for an app that needs its own settings. A suggested
   app from another guided family, such as the LOGICDATA app for a Comfort
@@ -78,8 +78,8 @@ untouched.
 
 An app belongs to one physical bed, so the wizard splits a pair first.
 `standalone_config_after_split` restores each side's original configuration
-except the connection preferences in `SPLIT_RETAINED_KEYS` (adapter, idle
-disconnect, disconnect after each command), which keep the value the side used
+except the connection preferences in `SPLIT_RETAINED_KEYS` (adapter and
+Bluetooth connection), which keep the value the side used
 while combined. Bed type, app profile and side settings revert to the
 originals. An open review, or an earlier Keep, carries over to each standalone
 bed.
