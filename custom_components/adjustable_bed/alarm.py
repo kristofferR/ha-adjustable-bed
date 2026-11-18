@@ -53,6 +53,7 @@ ALARM_SOUNDS: Final = (
 )
 
 MASSAGE_ZONES: Final = ("head", "feet", "both", "wave")
+MATTRESS_SIDES: Final = ("left", "right", "both")
 
 # Request fields a capability must enable before a caller may set them.
 OPTIONAL_FIELDS: Final = (
@@ -65,6 +66,7 @@ OPTIONAL_FIELDS: Final = (
     "massage_intensity",
     "massage_duration",
     "massage_zone",
+    "mattress_side",
     "sound",
     "light",
     "confirm_custom_position",
@@ -89,6 +91,8 @@ class AlarmCapability:
     massage_intensities: int = 0
     massage_durations: tuple[int, ...] = ()
     massage_zones: tuple[str, ...] = ()
+    # A vibrating mattress topper with its own alarm, per half.
+    mattress_sides: tuple[str, ...] = ()
     sounds: tuple[str, ...] = ()
     light: bool = False
     # The bed refuses to turn an alarm on without an explicit wake action.
@@ -119,6 +123,7 @@ class AlarmCapability:
             "massage_intensity": self.massage_intensities > 0,
             "massage_duration": bool(self.massage_durations),
             "massage_zone": bool(self.massage_zones),
+            "mattress_side": bool(self.mattress_sides),
             "sound": bool(self.sounds),
             "light": self.light,
             "confirm_custom_position": bool(self.confirm_actions),
@@ -142,6 +147,8 @@ class AlarmRequest:
     massage_intensity: int = 1
     massage_duration: int | None = None
     massage_zone: str | None = None
+    # Set to target the mattress topper's alarm instead of the bed's.
+    mattress_side: str | None = None
     sound: str = "none"
     light: bool = False
     confirm_custom_position: bool = False

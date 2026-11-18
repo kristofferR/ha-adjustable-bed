@@ -37,7 +37,14 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_device_and_config_entry
 from homeassistant.util import dt as dt_util
 
-from .alarm import ALARM_SOUNDS, MASSAGE_ZONES, WAKE_ACTIONS, AlarmCapability, AlarmRequest
+from .alarm import (
+    ALARM_SOUNDS,
+    MASSAGE_ZONES,
+    MATTRESS_SIDES,
+    WAKE_ACTIONS,
+    AlarmCapability,
+    AlarmRequest,
+)
 from .alarm import OPTIONAL_FIELDS as ALARM_OPTIONAL_FIELDS
 from .alarm import WEEKDAYS as ALARM_WEEKDAYS
 from .bed_traits import bed_type_has_position_feedback
@@ -2130,6 +2137,16 @@ def _check_alarm(
             translation_key="alarm_massage_zone_not_supported",
             translation_placeholders={"device_name": device_name, "zone": str(alarm.massage_zone)},
         )
+    if "mattress_side" in given and alarm.mattress_side not in capability.mattress_sides:
+        raise ServiceValidationError(
+            f"Device '{device_name}' has no mattress alarm on side '{alarm.mattress_side}'",
+            translation_domain=DOMAIN,
+            translation_key="alarm_mattress_side_not_supported",
+            translation_placeholders={
+                "device_name": device_name,
+                "mattress_side": str(alarm.mattress_side),
+            },
+        )
     if "sound" in given and alarm.sound not in capability.sounds:
         raise ServiceValidationError(
             f"Device '{device_name}' cannot play sound '{alarm.sound}'",
@@ -2772,6 +2789,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Optional("massage_intensity"): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
                 vol.Optional("massage_duration"): vol.All(vol.Coerce(int), vol.Range(min=1, max=120)),
                 vol.Optional("massage_zone"): vol.In(MASSAGE_ZONES),
+                vol.Optional("mattress_side"): vol.In(MATTRESS_SIDES),
                 vol.Optional(ATTR_SOUND): vol.In(ALARM_SOUNDS),
                 vol.Optional("light"): cv.boolean,
                 vol.Optional("confirm_custom_position"): cv.boolean,
