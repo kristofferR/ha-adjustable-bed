@@ -163,8 +163,7 @@ Duty cycle cycles: `00` -> `20` -> `33` -> `50` -> `00`. Level cycles: `00` -> `
 2. The SUTA accessory family uses a different binary protocol and is intentionally excluded from SUTA bed-frame detection.
 3. The app discovers the FFF0 write/notify characteristics by their GATT properties;
    WLT8016_S106 exposes the canonical FFF2/FFF1 pair.
-4. Fresh protocol verification used SUTA 3.15.0 (`com.shuta.smart_home`, version code 75),
-   XAPK SHA-256 `deba1167bbd61b1440f039a29384f44033ac65afadb59cb5c1566ea0be8caa52`.
+4. Based on SUTA 3.15.0 (`com.shuta.smart_home`, version code 75).
 
 ## References
 

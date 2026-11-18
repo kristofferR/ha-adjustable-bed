@@ -459,3 +459,30 @@ def test_light_replay_and_independent_slow_observer_survive_mfp_local_failure():
     assert parser.ui.slow and parser.ui.pwm == 30 and parser.ui.timer == 10
     assert "parser_error" in parser.state
     assert cache.light[0] == 2
+
+
+_APP_SLOTS = {
+    "p1": {1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 26, 27, 28, 29, 31, 32}
+    | {35, 36, 37, 38, 40, 41, 47, 48, 49, 50, 52, 53, 58, 59, 60, 62, 63, 64, 66},
+    "p2": set(range(1, 6))
+    | set(range(8, 30))
+    | {31, 32, 35, 36, 37, 38, 40, 41}
+    | {47, 48, 49, 50, 51, 52, 53, 54, 57, 58, 59, 60, 62, 63, 64, 66, 67, 72, 73}
+    | set(range(79, 91)),
+    "p3": {47, 53, 55, 59, 60, 68, 69, 71, 72, 73, 77, 78},
+}
+
+
+@pytest.mark.parametrize("driver", ("p1", "p2", "p3"))
+def test_unsupported_command_slots_refuse_to_write(driver):
+    """The app's reachable slots per driver, frozen so a dropped slot fails here."""
+    supported = _APP_SLOTS[driver]
+    assert supported == {"p1": p.P1_SUPPORTED, "p2": p.P2_SUPPORTED, "p3": p.P3_SUPPORTED}[driver]
+    for index in set(range(91)) - supported:
+        with pytest.raises(ValueError):
+            if driver == "p3":
+                p.JsonWriter().command(index, (), NOW, 247)
+            else:
+                p.binary_command(driver, index, (), p.Cache(), NOW)
+    if driver == "p1":
+        assert p.binary_command("p1", 32, (), p.Cache(), NOW) == b""

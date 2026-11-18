@@ -1,6 +1,6 @@
 """ComfortBaseForBluetooth app behavior over Keeson's proven E6/clock/alarm codec.
 
-Accepted row161, com.ore.yorkfeng.comfortbaseble2 1.1.2 (6).
+Based on com.ore.yorkfeng.comfortbaseble2 1.1.2 (6).
 Hardware movement mapping and memory persistence remain unverified.
 """
 

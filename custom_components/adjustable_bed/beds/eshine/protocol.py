@@ -1,4 +1,4 @@
-"""Eshine 1.0.1 receive grammar, from accepted row106 artifact evidence.
+"""Eshine 1.0.1 receive grammar.
 
 Common frames retain the app's notification-boundary delimiter behavior.
 Malformed lengths/ranges are discarded instead of reproducing Dart exceptions

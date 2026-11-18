@@ -285,10 +285,6 @@ BedTech is a separate follow-up and is not covered by these app profiles.
 
 ### Analysis provenance
 
-| Package/version | Frozen artifact-set SHA-256 |
-|-----------------|----------------------------|
-| `com.desarketing.ruf_betten_motor2` 1.1.8 | `3883e4f4197e9bd91d9a52ffad4b45923b2c3b437fb4ab0b45856b311ad148ab` |
-| `com.richmat.wsilver2` 1.1.19 | `876cf079b8d7ecf344010714b5178e7c376b444d591687e53d1e41081d421035` |
-| `com.richmat.americanstar` 1.0.0 | `998d8c568339b504ffec7f7b062ef6f3f487db3fcd54ad8c7adf08152a8547c4` |
-| `com.richmat.bailey2` 2.1.21 | `15bc635d9c98eefaa65355b5ef1942cfd9b61273e065bb87fe9a1f787fb7aed3` |
-| `com.richmat.tx` 1.0.0 | `7454dd539701130569e55a5595ab285558286253cd050bde4f4fa00396d987ff` |
+Based on `com.desarketing.ruf_betten_motor2` 1.1.8, `com.richmat.wsilver2`
+1.1.19, `com.richmat.americanstar` 1.0.0, `com.richmat.bailey2` 2.1.21 and
+`com.richmat.tx` 1.0.0.

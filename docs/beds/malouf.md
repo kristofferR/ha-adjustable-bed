@@ -253,7 +253,7 @@ STOP arrives, up to 30 s, then sends the same STOP. The Keeson-framed
 ### Vectors
 
 `tests/malouf_vectors.py` freezes each profile's single frames: the app profiles
-take every reachable literal of their accepted reports, and `malouf_new_okin`
+take every reachable literal of their apps, and `malouf_new_okin`
 every frame its pre-v5 controller sent. `tests/test_malouf_vectors.py` proves
 each literal round-trips through the codec and that each profile sends exactly
 its frozen frames.
@@ -307,12 +307,12 @@ A STOP that fails during cleanup is logged, not raised.
 #### Evidence
 
 Reverse engineered from Malouf Base 2.4.3 and checked against Lucid Base 1.3.3.
-The route has no accepted report of its own; it sends only its frozen pre-v5
+The route sends only its frozen pre-v5
 frames.
 
 ### Malouf Base / Lucid Base family
 
-**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 The `malouf_app` bed type. Retail model, GATT transport and physical role are
 independent choices. Controls follow the selected model and its reachable app
@@ -469,9 +469,7 @@ See [action examples](../SERVICES.md#set_alarm).
 
 #### Evidence
 
-The accepted cluster007 reports for both apps and the row023 audit, which
-account for every reachable behavior and exclusion. Both app profiles send
-only their frozen frames.
+Both app profiles send only their frozen frames.
 
 ### Malouf Base
 
@@ -548,7 +546,4 @@ app profiles still need reports from real users after a beta or release.
 
 ### Analysis provenance
 
-- The evidence is the accepted APK Protocol Audit cluster007 reports for Malouf
-  Base 2.4.3 (`com.malouf.bedbase`) and Lucid Base 1.3.3 (`com.lucid.bedbase`),
-  with the accepted write-mode and routing amendments.
-- The row023 audit accounts for the complete reachable behavior and exclusions.
+Based on Malouf Base 2.4.3 (`com.malouf.bedbase`) and Lucid Base 1.3.3 (`com.lucid.bedbase`).

@@ -1,4 +1,4 @@
-"""Typed public settings requests for cluster-018, never arbitrary bytes."""
+"""Typed public settings requests for the classic Richmat apps, never arbitrary bytes."""
 
 from dataclasses import dataclass
 from datetime import time

@@ -1,4 +1,4 @@
-"""ComfortBaseForBluetooth 1.1.2 (6), accepted row161 product and action data.
+"""ComfortBaseForBluetooth 1.1.2 (6) product and action data.
 
 Product numbers select the phone layout only. Every live control uses selector zero.
 """

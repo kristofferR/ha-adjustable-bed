@@ -449,7 +449,7 @@ class RichmatClassicController(BedController):
         return selection
 
     def _keeps(self, button: Control, selection: Selection) -> bool:
-        """Whether a press runs the keep mode under ``selection`` (row066).
+        """Whether a press runs the keep mode under ``selection``.
 
         The keep mode (mode 1) sends its payload every worker tick until UP; UP
         sets mode 0, which sends the release 50 ms later. The Hold/Release
@@ -473,7 +473,7 @@ class RichmatClassicController(BedController):
     def execution(self) -> ExecutionCapabilities:
         """Renewable holds on the held controls that run the keep mode (#483).
 
-        All five accepted reports (row066): a keep button repeats its payload
+        All five classic apps: a keep button repeats its payload
         every 150 ms tick (110 ms for TWRM and MLRM names) with no fixed count
         until UP, then releases 50 ms later. Short, long and armed presses keep
         their own gestures, and the Hold/Release selector moves presets and Flat

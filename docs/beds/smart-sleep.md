@@ -352,11 +352,7 @@ is established by this artifact.
 
 ### Analysis provenance
 
-- OKIN Smart Sleep 2.4.9 (263), package `com.bedding.monitor.sleep_monitor.release`.
-- XAPK SHA-256: `92e4bc4925494f66ef820cf5cdd334b2faba4443c800e664658d7165af0eb4c6`.
-- Accepted APK Protocol Audit row094, including scoped A1-A4 repairs.
-- Hardware remains UNVERIFIED. External beta/release users may validate physical
-  actuator labels, STOP/SAVE effects, alarm label behavior and both formats.
+Based on OKIN Smart Sleep 2.4.9 (`com.bedding.monitor.sleep_monitor.release`).
 
 Legacy P1 weekly schedules use `week_mask` directly; the P2 weekday conversion
 is not inferred for legacy masks. Supplying P1 `weekdays` without an exact

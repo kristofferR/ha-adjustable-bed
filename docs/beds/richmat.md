@@ -268,8 +268,7 @@ sends STOP.
 
 ### Aliases
 
-No two Richmat bed types send identical bytes. The
-[protocol inventory](../design/protocol-inventory.md) found one model identical in two apps:
+No two Richmat bed types send identical bytes. One model is identical in two apps:
 `model_bfrm` in Best Mattress and in Blvd Home. Each app keeps its own catalog,
 so the model stays a choice in both [Richmat MH apps](#richmat-mh-apps).
 
@@ -499,8 +498,8 @@ CRC-16. See each profile's Notifications.
 
 ### Vectors
 
-`tests/richmat_vectors.py` freezes each profile's frames: the accepted reports'
-literals for the catalog apps (Good Vibe Sleep's from its accepted vectors in
+`tests/richmat_vectors.py` freezes each profile's frames: the apps'
+literals for the catalog apps (Good Vibe Sleep's from its vectors in
 `tests/fixtures/goodvibe`, the L&P legacy app's in both modes from its catalog),
 and the pre-v5 controllers' frames for the fixed-table routes.
 `tests/test_richmat_vectors.py` checks that every literal round-trips through the
@@ -562,7 +561,7 @@ The WiLinke GGRM profile also exposes Save Zero G and Save Anti-snore, plus
 10, 20 and 30 minute massage buttons when massage is enabled. These are
 one-shot catalog actions followed by the standard release after 120 ms.
 Timer buttons do not claim to report the bed's current timer setting.
-The commands are proven by the accepted row055 Revive Control, Blvd Home and
+The commands come from the Revive Control, Blvd Home and
 HARMONY GGRM tables; physical behavior on the issue #695 bed remains unverified.
 
 The app tries BLE services in this order:
@@ -684,7 +683,7 @@ release.
 #### Evidence
 
 The Richmat remotes send only their frozen frames. The GGRM catalog actions are
-proven by the accepted row055 reports (Revive Control, Blvd Home and HARMONY GGRM tables, with the `main_6e` release and
+from the Revive Control, Blvd Home and HARMONY GGRM tables ( with the `main_6e` release and
 its 120 ms delay); the other frames are the pre-v5 controller's.
 
 ### BedTech
@@ -826,15 +825,13 @@ See [the action reference](../SERVICES.md#bedtech-app).
 
 #### Evidence
 
-Accepted unit095 APK Protocol Audit and independent audit001: `com.bedtech`
-7.1.3 (14), nine model routes and 148 frozen literal vectors. The Richmat codec
+Based on `com.bedtech`
+7.1.3 (14): nine model routes and 148 frozen literal vectors. The Richmat codec
 reproduces every literal byte for byte, including bank 1. All 585 app
 model/action/side routes are retained as focused test vectors. Hardware remains
 unverified for the explicit profiles, including cessation of movement after
 refresh ends, bank mapping, memory saves and the timer20 button.
 
-Artifact SHA-256: `0d529e90a1d134c9f2e1ff5d3966616ec8f4c01ec63d7e9e79974d8f7e2137a2`.
-Report manifest SHA-256: `d196849c2c9463ac6bbd929eea3070d0e8f234aa511362284508a9c9cdc945fd`.
 The earlier BedTech 7.1.3 Hermes checks (2026-07-10, issue #410) established
 write-with-response; the contrary light/Lounge experiment in issue #243 did
 not describe the official app's write mode. The legacy field-report behavior
@@ -1068,14 +1065,13 @@ to activate automatic intervention.
 RMControl sends the frames of the selected product's catalog, source-verified
 against RMControl 21.3.7 and hardware unverified. The service list is not a
 promise that every product supports those features; a rejected operation must not
-be worked around by choosing an unrelated product. Evidence: APK Protocol Audit
-row018.
+be worked around by choosing an unrelated product.
 
 ### Richmat MH apps
 
 **App:** Revive Control 1.0.26, Best Mattress 1.1.1, Blvd Home 1.0.1, HARMONY 1.0.0 and Idealbed 2.4.2 (see [Apps](#apps))
 
-**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 #### Setup
 
@@ -1330,8 +1326,7 @@ See [Actions](../SERVICES.md).
 
 #### Evidence
 
-The Richmat MH apps send only frames frozen from their accepted row055 reports,
-which record the evidence and every exclusion. Real users should confirm model selection by
+The Richmat MH apps send only frames frozen from their apps. Real users should confirm model selection by
 name, KEEP/STOP behavior, alarm countdown semantics, LED timeout units and the
 waist mattress controls after a beta or release.
 
@@ -1717,16 +1712,15 @@ selected product's alarm list.
 
 #### Evidence
 
-HJBed sends only frames frozen from its accepted row121 evidence (artifact set
-`bd3a5e96393fb32be9059fbb9a0eae5639deb7f0d761b4a27b3b382433c4d291`). Physical
+HJBed sends only frames frozen from its app. Physical
 effects, ATT behavior and firmware acceptance are for real users to validate after
-a beta or release. Evidence: APK Protocol Audit row121.
+a beta or release.
 
 ### Eshine
 
 **App:** [Eshine](https://play.google.com/store/apps/details?id=com.richmat.eshinesleep) 1.0.1 (code 10100), `com.richmat.eshinesleep`
 
-**Status:** ❓ Needs testing (static verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 The `eshine` bed type drives the E6000 (metadata H3RN), the only product the
 app offers, from one fixed table: head, feet, lumbar and pillow motors, presets,
@@ -1861,19 +1855,19 @@ lock, music, mode and component checks.
 
 #### Evidence
 
-Eshine sends only frames frozen from its accepted row106 evidence, framed and
+Eshine sends only frames frozen from its app, framed and
 bare. Desk data, firmware maintenance and OTA, empty pruned blanket and
 diagnostic models, unused enums and unrelated phone infrastructure are excluded;
 no bed Wi-Fi, provisioning, cloud or account path was found. Firmware
 acceptance, physical axis semantics, massage and light cycles and STOP behavior
 are for real users to validate after a beta or release, with full GATT and
-notification captures. Evidence: APK Protocol Audit row106.
+notification captures.
 
 ### Classic Richmat apps
 
 **App:** Avocado Eco Base 1.0.4 (5), CoasterSleep 1.0.10 (10), Forty Winks 1.0.1, Milemont 1.0.4 and Superior 1.0.9 (see [Apps](#apps))
 
-**Status:** ❓ Needs testing (accepted static APK evidence; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 These older resource-driven apps have an independent profile per app. Existing
 Richmat and RMControl entries retain their own behavior, and no capability is
@@ -1946,8 +1940,7 @@ A keep button, including a recall preset or Flat under Hold, accepts a
 worker tick until the lease ends, then releases 50 ms later. Short, long and
 armed presses, and a head/foot selection that leaves a control with nothing to
 send, keep their own gestures and refuse a lease, including when the selector
-changed after the hold was admitted. See the
-[per-control scope](../design/execution-capabilities.md#per-control-hold-scope).
+changed after the hold was admitted.
 
 | Path | Frame |
 |---|---|
@@ -2229,13 +2222,8 @@ motor-mapping configuration stay outside the supported surface. See
 
 #### Evidence
 
-The classic apps send only frames frozen from their five accepted row066
-reports. APK Protocol Audit row066 records the accepted versions, all five
-artifact and report hashes, the accepted authority, exact member differences,
-exclusions, safety divergences, implementation status and deferred hardware
-validation.
-Coaster's indivisible accepted aggregate and its historical six-cache-file FAIL
-remain explicit there. Static acceptance is not hardware confirmation.
+The classic apps send only frames frozen from their five apps. Hardware
+behavior is unverified.
 
 ### Good Vibe Sleep
 
@@ -2255,8 +2243,7 @@ lists every product, alias and action.
   ([`beds/goodvibe/discovery.py`](../../custom_components/adjustable_bed/beds/goodvibe/discovery.py))
   offers Good Vibe Sleep and suggests a product (step 1); it never chooses one.
 - The catalog supplies 848 admitted normal-product/configuration choices and 27
-  remote/image aliases. The row116 audit retains every accepted selector,
-  including excluded selectors.
+  remote/image aliases.
 - Independent sleep sensors use case-sensitive `RM-` (type 1) or `HJ-` (type 2)
   name prefixes. Add the sensor's own Bluetooth address with the corresponding
   sleep profile.
@@ -2310,9 +2297,7 @@ except the startup [function selectors](#function-selectors). The legacy service
 emits only the operand. Short, long and legacy-short operands are distinct per
 descriptor; each is listed in the catalog.
 
-The row116 audit's command table contains every accepted command ID, exact
-framed/legacy alternatives, source owner and implementation disposition. The
-catalog contains 1,393 current layout/alarm action definitions and five
+The catalog contains 1,393 current layout/alarm action definitions and five
 controls constructed inside the Y6RM menu. Controls retain their app labels
 without assigning a physical motor to a name alone.
 
@@ -2530,18 +2515,16 @@ monitoring to protect the shared response selector.
 
 #### Evidence
 
-Good Vibe Sleep sends only frames frozen from its accepted row116 vectors
+Good Vibe Sleep sends only frames frozen from its app's vectors
 (`tests/fixtures/goodvibe`). Hardware, ATT delivery, firmware acceptance and
 physiological interpretation remain unverified. Real users may validate them
 after beta/release; maintainer hardware acquisition is not required.
-APK Protocol Audit row116 records the source bindings, hashes, exclusions and
-audit limits.
 
 ### L&P legacy app
 
 **App:** [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp) 2.2.1 (13), `com.richmat.lp`
 
-**Status:** ❓ Needs testing (static verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 The `leggett_lp_legacy` bed type follows the legacy app's 122 remote layouts,
 each selected by the four-character code used in that app's manual or QR setup
@@ -2559,7 +2542,7 @@ or L&P QRRM configurations.
   routes through the same question in **Reconfigure**; **Configure** still
   changes its own settings.
 - **Transport:** none of the codec's [transports](#transports). The app selects
-  its characteristics at runtime, and its accepted report contains no fixed
+  its characteristics at runtime, and the app contains no fixed
   service or characteristic UUID that can safely be applied to every layout.
   Configure the bed's write characteristic UUID and, when known, its response
   characteristic UUID. These must come from the device's GATT information or a
@@ -2670,16 +2653,14 @@ positions, battery readings, a capability query or proof that an alarm is set.
 
 #### Evidence
 
-The L&P legacy app sends only the packets of its accepted row019 catalog, in
-both modes. APK Protocol Audit row019 records the catalog coverage, excluded
-application-only behavior and the frozen evidence identity. Raw APKs and
-analysis remain machine-local. Physical confirmation is deferred to users with
+The L&P legacy app sends only the packets of its catalog, in
+both modes. Physical confirmation is deferred to users with
 the corresponding bed after a beta or release; it is separate from static
 protocol verification.
 
 ### Casper and Hush family
 
-**Status:** ❓ Needs testing (accepted APK audits, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 The Casper Base and Hush Base apps ship one Richmat library: its transports,
 connect queries, fixed codes, receive parser and settings records are the same
@@ -2830,7 +2811,7 @@ byte. Operation `01` writes and `00` queries; replies use `02` and `03`.
 
 #### Evidence
 
-Both apps send only frames frozen from their accepted reports
+Both apps send only frames frozen from their apps
 (`tests/casper_base_vectors.py`, `tests/hush_vectors.py`);
 `tests/test_casper_base_vectors.py` and `tests/test_hush_vectors.py` rebuild
 each one through this codec. Physical motor effects, firmware compatibility,
@@ -2841,7 +2822,7 @@ captures after a beta or release; maintainer hardware is not required.
 
 **App:** [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (version code 10800), `com.richmat.casperbase`
 
-**Status:** ❓ Needs testing (accepted APK audit, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 Behaves as the [Casper and Hush family](#casper-and-hush-family), except as below.
 
@@ -2932,16 +2913,15 @@ Only stored products use these further actions:
 
 #### Evidence
 
-Casper Base sends only the frames frozen from its accepted row101 report:
-its builder vectors (`tests/fixtures/casper_base/builders.json`) and command
-ledger. APK Protocol Audit row101 records the accepted seals, every discovery,
-implementation and test references and all exclusions.
+Casper Base sends only the frames frozen from its app: its builder vectors
+(`tests/fixtures/casper_base/builders.json`) and command bytes
+(`tests/fixtures/casper_base/command_bytes.json`).
 
 ### Hush Base
 
 **App:** [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501), `com.richmat.hushbase`
 
-**Status:** ❓ Needs testing (artifact verified; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 Behaves as the [Casper and Hush family](#casper-and-hush-family), except as below.
 
@@ -3064,10 +3044,9 @@ Hush adds to the family's parser:
 
 #### Evidence
 
-Hush Base sends only the frames frozen from its accepted row126 report, whose
+Hush Base sends only the frames frozen from its app, whose
 products, shared builders and auxiliary shards are listed in
-`tests/hush_vectors.py`. APK Protocol Audit row126 records the accepted source
-references, dispositions and exclusions.
+`tests/hush_vectors.py`.
 
 ### SonicSleep
 
@@ -3228,11 +3207,10 @@ Clock synchronization preserves whole-hour timezone truncation and year minus
 
 #### Evidence
 
-APK Protocol Audit row179, SonicSleep 1.0.4 (10400), artifact SHA-256
-`173f81b5e902650733fdd44968f31cf9ceee2b5c376d361acf043b985612b5e4`.
-All accepted command literals use the existing Richmat codec; receive and stream
+Based on SonicSleep 1.0.4 (10400).
+All command literals use the existing Richmat codec; receive and stream
 contracts are covered by the committed SonicSleep fixtures. Opaque alarm fields
-and caller-specific domains include the accepted R179-A001 repair. Hardware
+and caller-specific domains are covered too. Hardware
 validation belongs to external beta/release users with existing beds.
 
 ### Luuna +
@@ -3343,7 +3321,7 @@ Alarm add/cancel acknowledgements update status. The bed-provided sleep name is
 retained as diagnostic state; it does not open an accessory connection.
 Other decoded shared-library messages remain structured diagnostic observations.
 Their presence does not enable extra products, position sliders, music, blanket,
-desk, repeating-alarm or side-control commands. Motor height/type use the audited
+desk, repeating-alarm or side-control commands. Motor height/type use the app's
 unsigned offsets, with optional angle and monitor height; they have no calibrated
 axis mapping. Empty payload classes remain empty.
 
@@ -3369,8 +3347,7 @@ run before any target writes.
 
 #### Evidence
 
-Accepted APK Protocol Audit unit146, including scoped repair001 and independent
-audit002. All normal/program, dynamic-builder and parser literal cases are kept
+All normal/program, dynamic-builder and parser literal cases are kept
 in `tests/fixtures/luuna/` and exercised by `tests/test_luuna.py`. The existing
 Richmat codec reproduces the app's literal command frames without a new codec.
 Physical movement, stop latency, supported firmware, calibration and negotiated
@@ -4653,10 +4630,7 @@ requested. Native session identity prevents cross-device report and command race
 
 #### Evidence
 
-APK Protocol Audit row159, MLILY Control 5.0.2, artifact set
-`3f69a06f281b6c1e79c3db4aca9639cbf504b668ccb2765dfa0a39850b4f4c51`.
-The accepted reconciliation002 and independent audit001 establish the exact
-catalog, corrected framing and alarm closure. Literal vectors are in
+Based on MLILY Control 5.0.2. Literal vectors are in
 `tests/fixtures/mlily/`; all normal bed frames use the Richmat codec and sleep
 JSON uses the shared sleep-envelope codec. Static evidence does not establish
 physical effects, over-air delivery, alarm accuracy or persistence.
@@ -6191,31 +6165,20 @@ no action accepts arbitrary packet bytes.
 
 #### Evidence
 
-Row173's accepted Richmat 4.2.0 artifact provides every catalog, frame and lifecycle
+Richmat 4.2.0 provides every catalog, frame and lifecycle
 value. `tests/test_richmat_app_vectors.py` preserves all 2,094 literal fixtures and
 24 semantic cases. `tests/test_richmat_app.py` checks integration behavior.
 Physical validation is for real beta/release users and is not implied here.
-Artifact set SHA-256: `ca4b6ab4750585672889a6dd2e53b16a0e693804408eaa343ed6c6af4df2f0b7`.
 
 
 ## Notes
 
 ### Analysis provenance
 
-- RMControl: APK Protocol Audit row018.
-- Richmat MH: row055.
-- HJBed: row121.
-- Eshine: row106.
-- Classic apps: row066.
-- Good Vibe Sleep: row116.
-- MLILY Control: row159.
-- L&P legacy app: row019.
-- Casper Base: row101, artifact set
-  `2d21d42c17a7b5ae60c2403ff3654d80993e6d09f879cfe666c6d58270123f8b`.
-- Hush Base: row126, artifact set
-  `d24ad2c95ea839969a5406fa8219f62048386598152608554641586041293cd7`.
-- The Richmat remotes, BedTech and L&P MlRM routes have no accepted report of
-  their own; their frames are the pre-v5 controllers'.
+Based on RMControl, the Richmat MH apps, HJBed, Eshine, the classic apps,
+Good Vibe Sleep, MLILY Control, the L&P legacy app, Casper Base 1.0.8 and Hush
+Base 1.0.5, each named with its version in its section. The Richmat remotes,
+Legacy BedTech and L&P MlRM routes send the pre-v5 controllers' frames.
 
 ### Galaxy Bed Control
 
@@ -7573,11 +7536,7 @@ parsers, countdown commits and reconciled runtime transitions. This is static
 app evidence, not a claim of hardware validation. Real beta/release users can
 validate firmware, physical sides and release behavior with timestamped captures.
 
-Analysis provenance: `nl.starinternational.galaxy` 3.3.0 (330002), primary arm64
-artifact SHA-256 `9a0b0cca3d62c85a749a17cfacd772740f5b07be85687c491cf269ac85646bdb`;
-accepted reconciliation manifest
-`bb26a0b2a2d97af9e91b40dc83aaf2b7cd46c4753710aa1a2e797ffc64199b59`.
-Supplemental v7a delivery is not interchangeable evidence.
+Based on Galaxy 3.3.0 (`nl.starinternational.galaxy`).
 
 ## Luuna Rise / Power Cool
 
@@ -8209,10 +8168,7 @@ direct bed diagnostics are available only through their explicit layouts.
 
 ### Analysis provenance
 
-- Luuna Rise `com.richmat.luunarise2` 1.0.13 (21), artifact SHA-256
-  04c89b0e7bb18bf8c11522c27af89cbbcf665d753452b168756f013a8153d549.
-- Power Cool Sleep System `com.richmat.powercool` 1.0.8 (9), artifact set SHA-256
-  `71123fc12a3d063a3acc278f3bc2b2bf5ad507fe1a5322694f509cbb272143db`.
+Based on Luuna Rise 1.0.13 (`com.richmat.luunarise2`) and Power Cool Sleep System 1.0.8 (`com.richmat.powercool`).
 
 ### Lady Americana / ACAA / STA Homecare / Zero Gravity family
 
@@ -8614,7 +8570,7 @@ standard `hold_control` action; held buttons publish current card metadata.
 
 #### Evidence
 
-All four independently accepted row071 app reports establish the shared binding
+All four apps share the binding
 domain, both movement formats and direct settings builders. The Richmat codec
 reproduces their frozen literal vectors; the controllers use each member's
 explicit product scope and preserve its source-qualified limits. Hardware
@@ -8638,7 +8594,7 @@ Uses the common catalog. The UYRM/VYRM aroma-labelled button is outside its bed 
 
 #### Evidence
 
-Accepted row071 Lady Americana 1.0.2 (3), artifact SHA-256 `5feff848f129c77f06faaae3031add398588bc372965f7b9ae51219826eae228`.
+Based on Lady Americana 1.0.2 (3).
 
 ### ACAA
 
@@ -8658,7 +8614,7 @@ Retains its accepted UYRM/VYRM shared BED action. This does not expose accessory
 
 #### Evidence
 
-Accepted row071 ACAA 1.0.4 (5), artifact SHA-256 `3d2760f83ea1f97d4552641b2a3ff2ee4051888888250d01c306be2827af04fe`.
+Based on ACAA 1.0.4 (5).
 
 ### STA Homecare
 
@@ -8678,7 +8634,7 @@ The UYRM/VYRM aroma-labelled button is outside its bed scope. The D1RM slider re
 
 #### Evidence
 
-Accepted row071 STA Homecare 1.0.5 (6), artifact SHA-256 `3385bd3b50f777d41ef632c74c4ed5cac00decba4a7ae8d357182c5c0fe65d6c`.
+Based on STA Homecare 1.0.5 (6).
 
 ### Zero Gravity
 
@@ -8700,4 +8656,4 @@ Retains its accepted UYRM/VYRM shared BED action without accessory settings.
 
 #### Evidence
 
-Accepted row071 Zero Gravity 1.0.3 (4), artifact SHA-256 `82ad82b84bfe881af3e74f72accd136b783e5fb0bf62077fc85fcc37ef901678`.
+Based on Zero Gravity 1.0.3 (4).

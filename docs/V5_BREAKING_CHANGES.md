@@ -85,8 +85,8 @@ pairing changes keep them current.
 A v5 beta entry already at 5.1 or later runs only the steps after it, and gains
 a `profile_migration` record only if one of them drops a key, turns Massage
 off or writes an Octo motor layout. Like the rest of schema 5, these steps are one way. The
-[config key audit](design/config-keys.md) records every saved key, why the two
-dropped keys are obsolete and why the 5.3 step turns Massage off.
+[profile id migration notes](design/profile-id.md#migration-51-to-52) explain why
+the two dropped keys are obsolete and why the 5.3 step turns Massage off.
 
 The migration record appears in two places:
 
@@ -322,16 +322,14 @@ hold after 10 s, however often it is renewed. The ceiling runs on the clock
 from the hold's start, so latency no longer adds up across refreshes; a write
 already in flight at the ceiling completes before the release
 ([#865](https://github.com/kristofferR/ha-adjustable-bed/pull/865)). See
-[Renewable holds](SERVICES.md#renewable-holds), the
-[command lifecycle](COMMAND_LIFECYCLE.md#renewable-hold-leases) and the
-[evidence matrix](design/execution-capabilities.md#evidence-matrix) for each
-row's evidence.
+[Renewable holds](SERVICES.md#renewable-holds) and the
+[command lifecycle](COMMAND_LIFECYCLE.md#renewable-hold-leases).
 
 | Hold | Beds |
 |------|------|
 | `stream` | Okin N-frame: Leggett Okin (Prodigy 2L, Prodigy 2, Prodigy CE, U Series), Customatic (Clarity, Jerome's, Remedy, Z-230, Z-280), the Okin CST apps including Nectar Move, Jordan's Serenity and Tranquil, SIMMONS, AdjustableM5X4, Adjustable bed (Lumbar) and Sleepy's BOX25 ([#800](https://github.com/kristofferR/ha-adjustable-bed/pull/800), [#820](https://github.com/kristofferR/ha-adjustable-bed/pull/820)) |
 | `stream` | Jiecang: ERGOBALANCE (Dreamask), Dream Motion, Dream Motion HD and the three LOGICDATA apps ([#799](https://github.com/kristofferR/ha-adjustable-bed/pull/799)) |
-| `stream` | Keeson: the K1 profiles with stream evidence, such as Ergomotion, Serta, Restonic, INNOVA, the ORE apps, SBI, Cool Base, Glideaway Motion and AdjustaMattress P1/P2, plus every cluster033 app layout and every Ergomotion 4.0 style ([#819](https://github.com/kristofferR/ha-adjustable-bed/pull/819)) |
+| `stream` | Keeson: the K1 profiles with stream evidence, such as Ergomotion, Serta, Restonic, INNOVA, the ORE apps, SBI, Cool Base, Glideaway Motion and AdjustaMattress P1/P2, plus every Keeson layout app layout and every Ergomotion 4.0 style ([#819](https://github.com/kristofferR/ha-adjustable-bed/pull/819)) |
 | `stream` | Richmat: every `richmat` remote-code route, the Richmat MH apps, L&P MlRM, HJBed, and RMControl products whose motor controls all sustain ([#822](https://github.com/kristofferR/ha-adjustable-bed/pull/822)) |
 | `stream` | Malouf and Lucid apps and the Malouf new and legacy Okin routes ([#823](https://github.com/kristofferR/ha-adjustable-bed/pull/823)); Limoss Remote and FSM Relax ([#802](https://github.com/kristofferR/ha-adjustable-bed/pull/802)); Okin 5A ELEVATE ([#813](https://github.com/kristofferR/ha-adjustable-bed/pull/813)) |
 | `stream` | Linak, OCTO Standard, eShine, the eShine E2000/E3000/E3100/E5000 app, TiMOTION AHF, the Vibradorm app profiles, V-MAT Basic, StarCode M1X12 and M5X5, L&P Gen2, Jensen JMC400, FurniMove, the Sleepy's Elite app ([#815](https://github.com/kristofferR/ha-adjustable-bed/pull/815), [#831](https://github.com/kristofferR/ha-adjustable-bed/pull/831)); Good Vibe Sleep's sustained-press controls ([#860](https://github.com/kristofferR/ha-adjustable-bed/pull/860)) and the classic Richmat apps' keep buttons ([#870](https://github.com/kristofferR/ha-adjustable-bed/pull/870)), declared per control because the same buttons also send short and long presses; Svane Remote on both its routes ([#827](https://github.com/kristofferR/ha-adjustable-bed/pull/827)); Jensen LinOn, the Svane `jensen_linon` route ([#843](https://github.com/kristofferR/ha-adjustable-bed/pull/843)) |
