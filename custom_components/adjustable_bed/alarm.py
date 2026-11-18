@@ -171,7 +171,7 @@ class AlarmRequest:
             (start + timedelta(days=days)).replace(
                 hour=self.hour, minute=self.minute, second=0, microsecond=0, fold=fold
             )
-            for days in (0, 1)
+            for days in (0, 1, 2)
             for fold in (0, 1)
         ]
         # A time skipped by a clock change does not exist on that day.

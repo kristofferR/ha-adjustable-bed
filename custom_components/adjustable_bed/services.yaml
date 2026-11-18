@@ -10,7 +10,7 @@ goto_preset:
       selector:
         number:
           min: 1
-          max: 8
+          max: 255
           mode: box
     duration:
       required: false
@@ -40,7 +40,7 @@ save_preset:
       selector:
         number:
           min: 1
-          max: 8
+          max: 255
           mode: box
     side:
       required: false
