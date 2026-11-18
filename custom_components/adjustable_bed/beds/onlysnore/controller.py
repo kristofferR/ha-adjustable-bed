@@ -544,7 +544,12 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
 
         return (
             ControllerSwitchSpec(
-                "onlysnore_massage", "onlysnore_massage", massage, keys.MASSAGE, icon="mdi:vibrate"
+                "onlysnore_massage",
+                "onlysnore_massage",
+                massage,
+                keys.MASSAGE,
+                icon="mdi:vibrate",
+                card=CARD_MASSAGE,
             ),
             ControllerSwitchSpec(
                 "onlysnore_privacy", "onlysnore_privacy", setting("privacy"), keys.PRIVACY, "on"

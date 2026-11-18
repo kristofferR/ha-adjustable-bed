@@ -188,8 +188,10 @@ inferred.
 Use the **Privacy** and **Snore detection** switches and the **Anti-snore
 intervention** select. The **Test anti-snore level** buttons run a bounded
 demonstration and send the distinct intervention stop at completion or
-cancellation. **Refresh status** (diagnostic, disabled by default) re-queries
-status and alarms; HA also queries them on every connection.
+cancellation. HA queries status and the alarm configuration on every connection,
+but not the alarm slots. To read alarms set in the app, enable and press
+**Refresh status** (diagnostic, disabled by default); setting an alarm with the
+action reads that slot back.
 
 Each alarm slot shows an **Alarm N time** sensor, with the repeat mask, action
 code and soft wake as attributes, and an **Alarm N enabled** binary sensor.

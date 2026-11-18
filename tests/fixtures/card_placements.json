@@ -4874,7 +4874,7 @@
     "card_section": "hidden"
   },
   "switch:onlysnore_massage": {
-    "card_section": "utility"
+    "card_section": "massage"
   },
   "switch:onlysnore_privacy": {
     "card_section": "utility"
