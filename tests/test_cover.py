@@ -222,3 +222,27 @@ def test_cover_requires_both_directions_to_support_a_control_scoped_lease() -> N
         ),
     )
     assert "hold_lease_mode" not in cover.extra_state_attributes
+
+
+def test_cover_without_hold_publishes_a_side_wide_stop() -> None:
+    """A motor whose STOP is the side-wide STOP says so, so the card stops the side."""
+    description = _build_cover_description(
+        MotorControlSpec(
+            key="elevate_both",
+            translation_key="elevate_both",
+            open_fn=_noop,
+            close_fn=_noop,
+            stop_fn=_noop,
+            stop_scope="side",
+        )
+    )
+    coordinator = SimpleNamespace(
+        capability_controller=None,
+        entity_side=None,
+        device_info={},
+        entity_unique_id=lambda key: key,
+    )
+
+    assert AdjustableBedCover(coordinator, description).extra_state_attributes == {
+        "held_stop_scope": "side",
+    }

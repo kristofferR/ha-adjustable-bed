@@ -63,14 +63,6 @@ export const PRESET_ORDER = [
   "preset_yoga",
 ];
 
-// These covers use a side-wide controller STOP rather than an actuator STOP.
-const SIDE_WIDE_STOP_KEYS = new Set([
-  "elevate_both",
-  "starcode_m1x12_part_1",
-  "starcode_m1x12_part_2",
-  "starcode_m1x12_part_4",
-]);
-
 const domainOf = (entityId: string): string => entityId.split(".", 1)[0];
 
 const keyOf = (entry: EntityRegistryDisplayEntry): string =>
@@ -134,7 +126,7 @@ export function bedEntitiesForDevice(
   const motor = (key: string): MotorEntity => {
     let m = motorMap.get(key);
     if (!m) {
-      m = SIDE_WIDE_STOP_KEYS.has(key) ? { key, coverStopScope: "side" } : { key };
+      m = { key };
       motorMap.set(key, m);
     }
     return m;
