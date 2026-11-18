@@ -188,6 +188,7 @@ ACTUATOR_GROUPS: Final[dict[str, tuple[Route, ...]]] = {
         (BED_TYPE_STARCODE_M5X5, None),
         (BED_TYPE_STAR_ELEVATE, None),
     ),
+    "personal_comfort": (("personal_comfort", None),),
     "reverie": ((BED_TYPE_REVERIE_NIGHTSTAND, None),),
     "richmat": ((BED_TYPE_RICHMAT, None),),
     "richmat_apps": (

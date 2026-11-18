@@ -303,9 +303,11 @@ def update_octo_pin_required_issue(
         DOMAIN,
         issue_id,
         config_entry_id=entry_id,
-        is_fixable=False,
+        # Controls stay unavailable until the PIN is saved; the fix asks for it.
+        is_fixable=entry_id is not None,
         is_persistent=True,
-        severity=IssueSeverity.WARNING,
+        severity=IssueSeverity.ERROR,
+        data={"entry_id": entry_id, "address": address} if entry_id is not None else None,
         translation_key="octo_pin_required",
         translation_placeholders={
             "name": name,
