@@ -12,7 +12,8 @@ export const positionOnlyMotors = (bed: BedEntities): MotorEntity[] =>
 
 export const motorsPresent = (bed: BedEntities): boolean =>
   bed.motors.some(motorHasControls) || positionOnlyMotors(bed).length > 0 ||
-  !!bed.synchro || !!bed.controlSide || !!bed.stop;
+  !!bed.synchro || !!bed.controlSide || !!bed.stop ||
+  !!bed.extraStops?.length || !!bed.motorExtras?.length;
 
 export const lightingPresent = (bed: BedEntities): boolean =>
   hasLightingControls(bed.lights) || !!bed.lights.state;

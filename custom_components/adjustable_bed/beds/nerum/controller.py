@@ -587,8 +587,10 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                 str(key),
                 key,
                 "mdi:information-outline",
-                # The light state sits beside its toggle in the card.
+                # The light state sits beside its toggle in the card, which only
+                # sees enabled entities.
                 card=CARD_LIGHT_STATE if key is state.LIGHT else CARD_HIDDEN,
+                entity_registry_enabled_default=key is state.LIGHT,
             )
             for key in (state.MASSAGE, state.LIGHT)
             if self.profile.key == "p1" or self.profile.key == "p2" and key is state.MASSAGE

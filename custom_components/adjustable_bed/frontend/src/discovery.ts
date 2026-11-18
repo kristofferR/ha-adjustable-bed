@@ -267,11 +267,15 @@ export function bedEntitiesForDevice(
 
     switch (place.section) {
       case "motors":
-        if (role === "stop" && !bed.stop) bed.stop = id;
-        else if (domain === "switch" && !bed.synchro) bed.synchro = id;
-        // A split bed's local left/right selector routes the motor controls.
-        else if (domain === "select" && !bed.controlSide) bed.controlSide = id;
-        else if (role === "stop" || domain === "switch" || domain === "select") utilityExtra(id, domain);
+        if (role === "stop") {
+          if (!bed.stop) bed.stop = id;
+          else (bed.extraStops ??= []).push(id);
+        } else if (domain === "switch" || domain === "select") {
+          // A split bed's local left/right selector routes the motor controls.
+          const slot = domain === "switch" ? "synchro" : "controlSide";
+          if (!bed[slot]) bed[slot] = id;
+          else (bed.motorExtras ??= []).push(id);
+        }
         else if (place.motor === undefined) break;
         else if (domain === "cover") motorCover(id, place.motor, entry.device_id);
         else if (role === "up" || role === "down") motorButton(id, place.motor, role, entry.device_id);
@@ -335,7 +339,9 @@ export function bedEntitiesForDevice(
         break;
 
       case "massage":
-        if (role === "timer" && !bed.massage.timer) bed.massage.timer = id;
+        // A timer button is a tile, so a held one keeps its hold; the timer
+        // slot is the timer's state or setting.
+        if (role === "timer" && domain !== "button" && !bed.massage.timer) bed.massage.timer = id;
         else massageExtra(id, domain);
         break;
 
@@ -460,6 +466,8 @@ export function bedIsEmpty(bed: BedEntities): boolean {
     bed.presetSaves.length === 0 &&
     bed.memory.length === 0 &&
     !bed.stop &&
+    !bed.extraStops?.length &&
+    !bed.motorExtras?.length &&
     !bed.connect &&
     !bed.disconnect &&
     !bed.connectivity &&

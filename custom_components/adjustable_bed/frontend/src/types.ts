@@ -193,6 +193,9 @@ export interface LightEntities {
 export interface BedEntities {
   motors: MotorEntity[];
   synchro?: string; // switch.* synchro_mode (link split-bed sides)
+  // Further controls a bed places in a single-slot motors role.
+  extraStops?: string[];
+  motorExtras?: string[];
   controlSide?: string; // select.* choosing which side shared controls drive
   firmness: string[]; // number.* sleep_number_setting[_left|_right]
   presets: string[]; // button.* in preferred display order

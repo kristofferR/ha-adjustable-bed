@@ -1820,3 +1820,26 @@ test("a combined pane names a bed-specific motor after a side's cover", () => {
   nameCombinedMotors(both, [left]);
   expect(both.motors[0].nameFrom).toBe("cover.left_lumbar");
 });
+
+test.each([false, true])("a timer button stays a tile in either registry order (reversed: %p)", (reversed) => {
+  const entries = [
+    entry("select.p2_timer", "smart_sleep_timer"),
+    entry("button.p2_timer", "smart_sleep_massage_timer"),
+  ];
+  const bed = bedEntitiesForDevice(hassWith(reversed ? entries.reverse() : entries), "dev1");
+  expect(bed.massage.timer).toBe("select.p2_timer");
+  expect(bed.massage.buttons).toEqual(["button.p2_timer"]);
+});
+
+test("further motors-section controls stay with the motors", () => {
+  const hass = hassWith([
+    entry("button.stop", "stop"),
+    entry("button.stop_both", "stop_both"),
+    entry("select.side", "goodvibe_side"),
+    entry("select.side_2", "remacro_control_side"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect([bed.stop, ...(bed.extraStops ?? [])].sort()).toEqual(["button.stop", "button.stop_both"]);
+  expect([bed.controlSide, ...(bed.motorExtras ?? [])].sort()).toEqual(["select.side", "select.side_2"]);
+  expect(bed.utilitySelects).toBeUndefined();
+});

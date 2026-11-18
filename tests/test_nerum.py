@@ -248,3 +248,5 @@ def test_light_toggle_and_state_sit_together_in_the_card():
     assert light.card == CARD_LIGHTING
     cards = {s.key: s.card for s in ctrl.controller_state_binary_sensor_specs}
     assert cards == {str(state.MASSAGE): CARD_HIDDEN, str(state.LIGHT): CARD_LIGHT_STATE}
+    enabled = {s.key for s in ctrl.controller_state_binary_sensor_specs if s.entity_registry_enabled_default}
+    assert enabled == {str(state.LIGHT)}

@@ -224,7 +224,7 @@ def test_cover_requires_both_directions_to_support_a_control_scoped_lease() -> N
     assert "hold_lease_mode" not in cover.extra_state_attributes
 
 
-def test_cover_without_hold_publishes_a_side_wide_stop() -> None:
+async def test_cover_without_hold_publishes_a_side_wide_stop() -> None:
     """A motor whose STOP is the side-wide STOP says so, so the card stops the side."""
     description = _build_cover_description(
         MotorControlSpec(
@@ -241,8 +241,14 @@ def test_cover_without_hold_publishes_a_side_wide_stop() -> None:
         entity_side=None,
         device_info={},
         entity_unique_id=lambda key: key,
+        name="Test bed",
+        async_stop_motor=AsyncMock(),
     )
 
-    assert AdjustableBedCover(coordinator, description).extra_state_attributes == {
-        "held_stop_scope": "side",
-    }
+    cover = AdjustableBedCover(coordinator, description)
+    cover.async_write_ha_state = MagicMock()
+    assert cover.extra_state_attributes == {"held_stop_scope": "side"}
+    # Its STOP is admitted like any side-wide STOP, ending every motor's work.
+    await cover.async_stop_cover()
+    assert coordinator.async_stop_motor.await_args.args[1] == "motor:*"
+    assert coordinator.async_stop_motor.await_args.kwargs["stream_member"] is False

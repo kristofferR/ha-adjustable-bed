@@ -349,6 +349,14 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         return attributes
 
     @property
+    def _stop_scope(self) -> Literal["motor", "side"]:
+        """What this cover's STOP halts: its own motor, or every motor on the side."""
+        hold = self.entity_description.hold
+        if hold is not None:
+            return hold.stop_scope
+        return self.entity_description.stop_scope or "motor"
+
+    @property
     def _position_key(self) -> str:
         """Return the key to look up in position_data."""
         return self.entity_description.position_key or self.entity_description.key
@@ -515,8 +523,7 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         # otherwise the STOP pre-empts the motion holding the writer, on a
         # standalone bed or one side of a pair. A side-wide declared Stop ends
         # every motor's work, the stream too.
-        hold = self.entity_description.hold
-        motor_scoped = hold is None or hold.stop_scope == "motor"
+        motor_scoped = self._stop_scope == "motor"
         try:
             await self._coordinator.async_stop_motor(
                 self.entity_description.stop_fn,
