@@ -132,7 +132,7 @@ async def test_observations_do_not_enable_unproven_setters_or_positions(clock):
     # Saves sit beside the presets as saves, so the card never offers them as quick actions.
     saves = [s for s in ctrl.controller_button_specs if s.key.endswith("_save")]
     assert {s.card for s in saves} == {CARD_PRESET_SAVE}
-    assert {s.translation_key for s in saves} == {"sonicsleep_save"}
+    assert {s.translation_key for s in saves} == {"catalog_save"}
 
 
 async def test_alarm_list_escalation_ack_and_opaque_caller_domains(clock):

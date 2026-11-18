@@ -46,7 +46,7 @@ class Kind(StrEnum):
     LIGHT = "light"
     # Fans and cooling a catalog lists with the bed's controls.
     CLIMATE = "climate"
-    # Anything else (music, fans, resets, Bluetooth): available, off by default.
+    # Anything else (music, resets, Bluetooth): available, off by default.
     EXTRA = "extra"
 
 
@@ -93,7 +93,6 @@ _MOTORS: Final[dict[str, str]] = {
     "all motor": "all_motors",
     "all motors": "all_motors",
     "whole bed": "all_motors",
-    "bed": "all_motors",
     "bed height": "bed_height",
     "head tilt": "head_tilt",
     "headrest": "headrest",

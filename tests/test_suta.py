@@ -366,7 +366,7 @@ def test_entity_labels_follow_the_app_buttons():
     assert labels["suta_release"] == "Release held control"
     assert {s.key for s in b702.controller_switch_specs} == {"suta_lock"}
     b402, _ = make("SUTA-B402")
-    assert _labels(b402)["suta_ctrl_two_up"] == "Up"
+    assert _labels(b402)["suta_ctrl_two_up"] == "Whole bed up"
     assert "suta_snore_cycle" not in _labels(b402)
     b905, _ = make("SUTA-B905")
     labels = _labels(b905)

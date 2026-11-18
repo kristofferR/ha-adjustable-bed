@@ -579,14 +579,15 @@ async def test_forced_long_buttons_distinguish_their_names_and_operands(coordina
         if spec.key.removeprefix("goodvibe_") in obj.actions
         and obj.actions[spec.key.removeprefix("goodvibe_")].label == "deviceFunctionItemZeroGravity"
     ]
-    assert {spec.name for spec in specs} == {"Zero gravity", "Zero gravity (long press)"}
+    # The forced long press sends Zero gravity's save operand, so it is the save.
+    assert {spec.name for spec in specs} == {"Zero gravity", "Save Zero gravity"}
+    assert next(s for s in specs if s.name.startswith("Save")).requires_confirmation
     operands = {}
     for spec in specs:
-        assert spec.translation_placeholders["action"] == spec.name
         coordinator.client.write_gatt_char.reset_mock()
         await obj.press(spec.key.removeprefix("goodvibe_"), 0)
         operands[spec.name] = writes(coordinator)[0].hex()
-    assert operands == {"Zero gravity": "6e010045b4", "Zero gravity (long press)": "6e010066d5"}
+    assert operands == {"Zero gravity": "6e010045b4", "Save Zero gravity": "6e010066d5"}
 
 
 def test_galaxy_hints_preserve_exclusions_and_confident_receiver_detection():

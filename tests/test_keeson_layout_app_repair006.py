@@ -475,6 +475,8 @@ async def test_row_reset_supplemental_production_paths(hass, monkeypatch, layout
     ]
     assert len(buttons) == 1
     button = buttons[0]
+    # Reset starts disabled with the other app extras; this test enables it.
+    button._attr_entity_registry_enabled_default = True
     button.entity_id = "button.row_reset"
     await async_add_entry_entities(hass, coord.entry, "button", [button])
     assert hass.states.get(button.entity_id).attributes["held_control"] == "reset"

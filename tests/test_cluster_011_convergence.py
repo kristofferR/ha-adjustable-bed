@@ -190,8 +190,11 @@ _COMMON_BUTTONS = {
 def _expected_button_keys(expected: CstProfileExpectation) -> set[str]:
     """Return the exact button surface described by a profile expectation."""
     keys = set(_COMMON_BUTTONS)
-    for slot in range(1, len(expected.memory_names) + 1):
-        keys.update({f"preset_memory_{slot}", f"program_memory_{slot}"})
+    for slot, name in enumerate(expected.memory_names, 1):
+        keys.add(f"program_memory_{slot}")
+        # A slot a named preset recalls keeps only its save; the preset recalls it.
+        if name == "M":
+            keys.add(f"preset_memory_{slot}")
     if expected.lounge:
         keys.add("preset_lounge")
     if expected.incline:

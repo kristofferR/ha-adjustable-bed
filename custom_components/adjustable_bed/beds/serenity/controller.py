@@ -588,12 +588,21 @@ class OkinBeddingAppController(OkinCstController):
         await self.hold_control("massage_mode_cycle", self._hold_ms("massage_mode_cycle"))
 
     @property
+    def _shared_light_toggle(self) -> bool:
+        """Whether the shared Toggle Light button exists (no light or switch replaces it)."""
+        return self.supports_light_toggle_control and not (
+            self.supports_discrete_light_control
+            or self.supports_light_color_control
+            or self.supports_light_state_feedback
+        )
+
+    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
             spec
             for action, name in self._app.buttons
-            # The shared light toggle sends the same light frame.
-            if not (action == "light_toggle" and self.supports_light_toggle_control)
+            # The shared light toggle, where the bed has one, sends the same light frame.
+            if not (action == "light_toggle" and self._shared_light_toggle)
             if (
                 spec := catalog_button(
                     self._key(action),

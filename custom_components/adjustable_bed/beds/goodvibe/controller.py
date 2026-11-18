@@ -24,7 +24,14 @@ from ...profiles.richmat import GOODVIBE, RichmatProfile
 from ...profiles.richmat_catalog import Catalog
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
-from ..catalog_buttons import EXTRA_KEY, Kind, catalog_button, is_placeholder, unique_buttons
+from ..catalog_buttons import (
+    EXTRA_KEY,
+    Kind,
+    catalog_button,
+    classify,
+    is_placeholder,
+    unique_buttons,
+)
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -975,7 +982,10 @@ class GoodVibeController(BedController):
         for detail in details:
             action = self.actions[detail]
             # Some products list one control twice under different descriptors.
-            same = (action.label, action.gesture, action.short, action.long, action.legacy_short)
+            same = (
+                action.label, action.gesture, action.force_long,
+                action.short, action.long, action.legacy_short,
+            )
             if not is_placeholder(label(action)):
                 unique.setdefault(same, detail)
         return tuple(unique.values())
@@ -1028,25 +1038,30 @@ class GoodVibeController(BedController):
             action = self.actions[detail]
             if action.local or action.hidden or not action.interactive:
                 continue
-            # A forced long press has no known effect outside Power Bob Base.
-            if action.force_long and self.catalog.bed is None:
+            saves = self._long_press_saves(action)
+            # A long press is a control only where it saves a preset.
+            if action.force_long and self.catalog.bed is None and not saves:
                 continue
             key = "goodvibe_" + detail
+            forced_save = action.force_long and self.catalog.bed is None
             buttons.append(
                 catalog_button(
                     key,
-                    labels.get(detail, label(action)),
+                    "Save " + function_label(action.label) if forced_save
+                    else labels.get(detail, label(action)),
                     partial(_press, detail=detail),
+                    kind=Kind.SAVE if forced_save else None,
                     hold=(ControllerHoldSpec(key, 0, 0, "goodvibe_release")
                           if self.catalog.bed is None or action.gesture != "shortPress" else None),
                 )
             )
-            # Only Power Bob Base's long press has a known effect: it saves the preset.
-            if action.gesture in ("longPress", "shortAndLongPress") and self.catalog.bed is not None:
+            if action.gesture in ("longPress", "shortAndLongPress") and (
+                self.catalog.bed is not None or saves and not action.force_long
+            ):
                 buttons.append(
                     catalog_button(
                         key + "_long",
-                        labels.get(detail + "_long", "Save " + label(action)),
+                        labels.get(detail + "_long", "Save " + function_label(action.label)),
                         partial(_press, detail=detail, duration=3100),
                         kind=Kind.SAVE,
                     )
@@ -1062,6 +1077,20 @@ class GoodVibeController(BedController):
             )
         )
         return unique_buttons(buttons)
+
+    @staticmethod
+    def _long_press_saves(action: Action) -> bool:
+        """Whether the action's long press sends its own operand for a preset or memory.
+
+        In this app vocabulary a preset's long operand saves it (``0x66`` saves
+        Zero gravity); a zero long operand sends nothing.
+        """
+        control = classify(function_label(action.label))
+        return (
+            action.long not in (0, action.short)
+            and control is not None
+            and control.kind in (Kind.PRESET, Kind.MEMORY)
+        )
 
     @property
     def held_control_options(self) -> tuple[str, ...]:

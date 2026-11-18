@@ -636,7 +636,7 @@ class RichmatClassicController(BedController):
                 ))
             if button.status == 3 and button.long and not button.excluded_long and not button.mem_special and not button.select_special:
                 long = partial(_press, node=button.node, long=True)
-                if button.short is None and button.short_old is None:
+                if button.excluded_short or button.short is None and button.short_old is None:
                     # The long press is this button's only action.
                     result.append(catalog_button(key + "_long", label, long))
                 elif (control := classify(label)) is not None and control.kind in (Kind.PRESET, Kind.MEMORY):

@@ -194,7 +194,7 @@ class TiMOTIONAhfController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        """Expose the app's literal controls that no cover or light entity already sends."""
+        """Expose the app's literal controls; those a cover or the light already sends start off."""
         covered = {
             f"control_{_COVER_CONTROLS[spec.key]}_{direction}"
             for spec in self.motor_control_specs
@@ -204,16 +204,17 @@ class TiMOTIONAhfController(BedController):
         return tuple(
             spec
             for action in _CONTROL_ACTIONS
-            # The light toggle and assumed light send the Light action.
-            if action.key not in covered and action.key != "light"
             if (
                 spec := catalog_button(
                     f"{_BUTTON_PREFIX}{action.key}",
                     action.label,
                     _press_action(action.key),
                     # Night and Chair recall positions the app names.
-                    kind=Kind.PRESET if action.key in ("night", "chair") else Kind.MOTOR,
+                    kind=Kind.PRESET if action.key in ("night", "chair") else
+                    Kind.LIGHT if action.key == "light" else Kind.MOTOR,
                     icon=action.icon,
+                    # The light toggle and assumed light send the Light action.
+                    enabled=action.key not in covered and action.key != "light",
                 )
             )
             is not None

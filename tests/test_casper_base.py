@@ -402,8 +402,8 @@ async def test_side_bound_button_and_cover_callbacks_keep_their_side():
     await ctrl.start_notify()
     c.client.write_gatt_char.reset_mock()
     with ctrl.side_scope("right"):
-        spec = next(s for s in ctrl.controller_button_specs if s.key == "casper_motorreset")
-        await spec.press_fn(ctrl)
+        # Flat is the app's Motor reset action.
+        await ctrl.preset_flat()
         assert frames(c) == ["6e010131a1"]
         c.client.write_gatt_char.reset_mock()
         back = next(s for s in ctrl.motor_control_specs if s.key == "back")

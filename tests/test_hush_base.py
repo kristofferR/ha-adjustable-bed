@@ -51,7 +51,11 @@ async def test_all_exact_ordered_memberships_and_capabilities(product):
     assert list(actual[6:]) == product["flags"]
     for group, descriptors in zip(actual[1:6], product["groups"], strict=True):
         assert [list(ACTIONS[i]) for i in group] == [FIXTURE["descriptors"][d] for d in descriptors]
-    assert {s.translation_key for s in controller.controller_button_specs} == {"hush_base_action"}
+    # Actions take the shared catalog shapes, not a per-bed key.
+    assert not any(
+        (s.translation_key or "").startswith(("hush", "casper"))
+        for s in controller.controller_button_specs
+    )
     assert supports_single_address_pairing("hush_base", key) == product["flags"][-1]
     assert not controller.supports_single_address_pairing
     assert all("None" not in s.key for s in controller.controller_button_specs)

@@ -105,7 +105,7 @@ class ProductButtonSpec(ControllerButtonSpec):
     """An optional product action with its own entity namespace."""
 
     icon: str = "mdi:gesture-tap-button"
-    entity_registry_enabled_default: bool = field(default=False, kw_only=True)
+    entity_registry_enabled_default: bool = False
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
 
 
