@@ -512,3 +512,17 @@ async def test_diagnostic_controller_button_is_hidden_maintenance(hass):
     assert plain.entity_category is None and plain.entity_registry_enabled_default
     assert hidden.entity_category is EntityCategory.DIAGNOSTIC
     assert not hidden.entity_registry_enabled_default
+
+
+async def test_local_controller_switch_applies_without_the_bed_link(hass):
+    controller = SwitchController()
+    applied = []
+    spec = ControllerSwitchSpec(
+        "child", "child_mode", AsyncMock(), "child_state", local_set_fn=applied.append
+    )
+    runtime = runtime_for(hass, controller)
+    with patch.object(SwitchController, "controller_switch_specs", (spec,)):
+        switch = AdjustableBedControllerSwitch(runtime, spec)
+        await switch.async_turn_on()
+    assert applied == [True]
+    runtime.async_execute_controller_command.assert_not_called()
