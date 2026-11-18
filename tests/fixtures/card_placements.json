@@ -3242,6 +3242,9 @@
  "sensor:bf_cherish_alarm": {
   "card_section": "hidden"
  },
+ "sensor:bobpowerbase_status": {
+  "card_section": "hidden"
+ },
  "sensor:casper_base": {
   "card_section": "hidden"
  },
