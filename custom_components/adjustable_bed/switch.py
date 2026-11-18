@@ -30,7 +30,7 @@ from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
-from .paired_coordinator import entity_runtimes
+from .paired_coordinator import PairedSideError, entity_runtimes
 from .state_keys import (
     AUTOMATIC_LIGHT,
     LIGHT_LEVEL,
@@ -627,7 +627,14 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             await command(controller)
 
         try:
-            sent = await self._async_send(run, cancel_running=False)
+            try:
+                sent = await self._async_send(run, cancel_running=False)
+            except PairedSideError as err:
+                # A sequential pair wraps the side's own error.
+                errors = list(err.side_errors.values())
+                if errors and all(isinstance(error, NotImplementedError) for error in errors):
+                    raise errors[0] from err
+                raise
         except NotImplementedError as err:
             feature = self.entity_description.key.replace("_", " ")
             raise ServiceValidationError(

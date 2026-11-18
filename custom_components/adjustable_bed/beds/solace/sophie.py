@@ -15,7 +15,7 @@ from homeassistant.util import dt as dt_util
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_PRESET_SAVE
 from ...codec import ff_frame as codec
-from ...command_scheduler import current_command_context
+from ...command_scheduler import command_was_sent, current_command_context
 from ...controller_state import StateUpdate
 from ...profiles import sophie as app
 from ...profiles.ff_frame import SOLACE_PROFILES, SolaceProfile
@@ -323,7 +323,9 @@ class SophieController(SolaceController):
         if not self._coordinator.controller_state.get(SYNC_SUPPORTED, False):
             raise ValueError("Sophie synchronization support has not been reported")
         await self.write_command(app.SYNC_ON if enabled else app.SYNC_OFF)
-        self.forward_controller_state_updates(SYNCHRO_MODE(enabled))
+        # A cancelled write returns without sending, so nothing changed.
+        if command_was_sent():
+            self.forward_controller_state_updates(SYNCHRO_MODE(enabled))
 
     @property
     def alarm_capability(self) -> AlarmCapability | None:

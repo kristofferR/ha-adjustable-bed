@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
@@ -114,16 +114,18 @@ async def test_cancelled_command_keeps_the_previous_state(hass, make, action) ->
         assert entity.is_on is True
 
 
-async def test_switch_command_without_a_frame_is_an_error(hass) -> None:
-    async with beds(hass, 1) as made:
-        bed = made.items[0]
-        _settings(bed)
+@pytest.mark.parametrize("topology", [None, "sequential"])
+async def test_switch_command_without_a_frame_is_an_error(hass, topology) -> None:
+    async with beds(hass, topology=topology) as made:
+        for bed in made.items:
+            _settings(bed)
+        runtime = made.items[0] if made.pair is None else entity_runtimes(made.pair)[0]
 
         async def unsupported(_controller: Any) -> None:
             raise NotImplementedError
 
         switch = _entity(
-            AdjustableBedSwitch(bed, dataclasses.replace(SYNCHRO, turn_on_fn=unsupported))
+            AdjustableBedSwitch(runtime, dataclasses.replace(SYNCHRO, turn_on_fn=unsupported))
         )
         with virtual_clock(), pytest.raises(ServiceValidationError) as raised:
             await switch.async_turn_on()
@@ -146,3 +148,35 @@ async def test_sequential_side_switch_is_unknown_after_its_release(hass) -> None
         assert not made.items[0].is_connected
         # The bed may change while nobody watches, so the sent value is unknown.
         assert switch.is_on is None
+
+
+async def test_cancelled_color_request_keeps_the_color_mode() -> None:
+    from homeassistant.components.light import ColorMode
+
+    from tests.test_ergomotion4 import _rgb_entity, ready
+
+    ctrl, coord = await ready("M19")
+    light = _rgb_entity(ctrl, coord)
+    light._attr_supported_color_modes = {ColorMode.RGB, ColorMode.RGBW}
+    light._attr_color_mode = ColorMode.RGBW
+    # STOP drops the queued request before it runs.
+    coord.async_execute_controller_command = AsyncMock()
+    await light.async_turn_on(rgb_color=(10, 20, 30))
+    assert light._attr_color_mode == ColorMode.RGBW
+
+
+async def test_controller_publishes_no_setting_it_did_not_send() -> None:
+    from custom_components.adjustable_bed.profiles import sophie as app
+    from custom_components.adjustable_bed.state_keys import SYNCHRO_MODE
+    from tests.test_sophie import controller as sophie
+
+    ctrl = next(sophie.__wrapped__())
+    ctrl._parse_notification(app.SYNC_ON)
+    cancelled = MagicMock()
+    cancelled.cancel_event.is_set.return_value = True
+    with patch(
+        "custom_components.adjustable_bed.command_scheduler.current_command_context",
+        return_value=cancelled,
+    ):
+        await ctrl.set_synchro(False)
+    assert ctrl._coordinator.controller_state[SYNCHRO_MODE] is True

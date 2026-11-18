@@ -520,6 +520,8 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         requested_rgbw = _normalize_rgbw_color(kwargs.get(ATTR_RGBW_COLOR))
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         supported_modes = self._attr_supported_color_modes or set()
+        previous_mode = self._attr_color_mode
+        sent = False
         self._light_turn_on_in_progress = True
         try:
             if requested_rgbw is not None:
@@ -549,6 +551,9 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 raise ValueError("This light has no active color mode")
         finally:
             self._light_turn_on_in_progress = False
+            if not sent:
+                # An unsent color request must not choose the next turn-on's mode.
+                self._attr_color_mode = previous_mode
         if sent:
             self._schedule_light_auto_off_timer()
 
