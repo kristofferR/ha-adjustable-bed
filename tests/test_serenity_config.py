@@ -144,9 +144,9 @@ async def test_the_final_settings_show_each_routes_own_fields(hass, route):
     octo = {marker.schema for marker in form_fields(form["data_schema"])}
     assert CONF_MOTOR_COUNT not in octo
     assert CONF_OCTO_MOTOR_COUNT_OVERRIDE in octo
-    assert CONF_MOTOR_PULSE_DELAY_MS in octo
+    assert CONF_MOTOR_PULSE_DELAY_MS not in octo
     _flow, form = await _final_settings(hass, route, BED_TYPE_LINAK)
     linak = {marker.schema for marker in form_fields(form["data_schema"])}
-    assert {CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS} <= linak
+    assert CONF_MOTOR_COUNT in linak and CONF_MOTOR_PULSE_DELAY_MS not in linak
     assert CONF_OCTO_MOTOR_COUNT_OVERRIDE not in linak
 

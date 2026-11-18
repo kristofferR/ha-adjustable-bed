@@ -68,7 +68,7 @@ async def test_bluetooth_confirm_uses_the_selected_app_fields(hass, chosen):
     else:
         # The receiver has one route, so setup asks for none.
         assert CONF_PROTOCOL_VARIANT not in fields
-        assert CONF_MOTOR_PULSE_DELAY_MS in fields
+        assert CONF_MOTOR_PULSE_DELAY_MS not in fields
 
 
 @pytest.mark.parametrize("scanner_available", [False, True])

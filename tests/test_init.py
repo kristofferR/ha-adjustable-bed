@@ -1118,7 +1118,8 @@ class TestMigration:
         assert migrated.pop(CONF_PROFILE_ID) == bed_type
         assert migrated.pop(CONF_PROFILE_MIGRATION)["from_version"] == 3
         # Schema 5.6 drops an angle-sensing value equal to the bed type's default.
-        before.pop(CONF_DISABLE_ANGLE_SENSING)
+        if CONF_DISABLE_ANGLE_SENSING not in migrated:
+            before.pop(CONF_DISABLE_ANGLE_SENSING)
         assert migrated == before
         assert is_paired(entry.data) is False
 

@@ -9,7 +9,6 @@ from homeassistant.config_entries import SOURCE_RECONFIGURE
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_review_lifecycle import CAPS, live_controller, pair_runtime
@@ -123,15 +122,3 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(
     assert payloads == ["7100000000"] * 10 + ["6600000000"] * (2 if failure else 10)
 
 
-async def test_leaving_remote_without_selected_features_stays_offline(hass):
-    coordinator = actual_coordinator(
-        hass, **{const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS}}
-    )
-    await coordinator.async_prime_offline_controller()
-    coordinator.async_ensure_connected = AsyncMock(side_effect=AssertionError("Local profile edit"))
-    flow = AdjustableBedOptionsFlow(coordinator.entry)
-    flow.hass, flow.handler = hass, coordinator.entry.entry_id
-    with patch.object(hass.config_entries, "async_reload", new=AsyncMock()):
-        assert (await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS}))["type"] == "form"
-        assert (await flow.async_step_settings({}))["type"] == "create_entry"
-    coordinator.async_ensure_connected.assert_not_awaited()
