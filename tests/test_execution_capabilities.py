@@ -107,6 +107,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "SmartSleepProfile:p1": {"hold": ("row094",)},
     "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
+    **{f"KeesonProfile:ormatek_{wire}": {"hold": ("OrmatekTechnoSmart 1.2.0: immediate held refresh every 200ms until release",)} for wire in ("okin15", "okin24")},
     **{f"KeesonProfile:symphony_sleep_{route}": {"hold": ("symphony078",)} for route in ("box1", "box2", "fallback")},
     "SymphonyWordProfile:symphony": {"hold": ("row133",)},
     "BedgearProfile:bedgear": {"hold": ("bedgear",)},
@@ -311,6 +312,7 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/ormatek.py:<module>.PROFILES": ("KeesonProfile:ormatek_okin15", "KeesonProfile:ormatek_okin24"),
     "profiles/smart_sleep.py:<module>.PROFILES": ("SmartSleepProfile:p2",),
     "profiles/smart_sleep.py:<module>.SmartSleepProfile": ("SmartSleepProfile:p1", "SmartSleepProfile:p2"),
     "profiles/comfort_enhancement3.py:<module>.profile": tuple(f"OkinNFrameProfile:apex_{i}" for i in range(15)),
@@ -486,6 +488,8 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         PROFILES as SYMPHONY_PROFILES,
     )
     profiles.extend(SYMPHONY_PROFILES.values())
+    from custom_components.adjustable_bed.profiles.ormatek import PROFILES as ORMATEK_PROFILES
+    profiles.extend(ORMATEK_PROFILES.values())
     for bed_type in SUPPORTED_BED_TYPES:
         profiles.append(getattr(await _create_controller_for_bed_type(bed_type), "profile", None))
     # Layouts are built at runtime and never stored; reach every one.

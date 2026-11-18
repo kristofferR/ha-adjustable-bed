@@ -441,6 +441,7 @@ BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
 BED_TYPE_SYMPHONY_SLEEP: Final = "symphony_sleep"
 BED_TYPE_SYMPHONY: Final = "symphony"
+BED_TYPE_ORMATEK: Final = "ormatek"
 CONF_SYMPHONY_SIDE: Final = "symphony_side"
 BED_TYPE_BF: Final = "bf"
 BED_TYPE_CHERISH: Final = "cherish"
@@ -745,6 +746,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_JALON_BED,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_SYMPHONY,
+    BED_TYPE_ORMATEK,
     BED_TYPE_CHERISH,
     "casper_remote",
     "hush_remote",

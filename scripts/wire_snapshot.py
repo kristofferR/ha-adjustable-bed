@@ -1208,6 +1208,10 @@ def default_scenario(bed_type: str) -> Scenario:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
         data[const.CONF_PRODUCT_TYPE] = DEFAULT_LAYOUTS[bed_type]
+    if bed_type == const.BED_TYPE_ORMATEK:
+        variant = "okin15"
+        data[const.CONF_PRODUCT_TYPE] = "new"
+        replies = {"*": "edfe0000000000000000000000000000"}
     if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
         variant = "box1"
         data.update({const.CONF_PRODUCT_TYPE: "400E", const.CONF_PROTOCOL_VARIANT: variant})
@@ -1362,6 +1366,14 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed import const
 
     scenarios: list[Scenario] = []
+    for wire in ("okin15", "okin24"):
+        for product in ("new", "lite"):
+            for transport in ("ffe", "nordic"):
+                scenarios.append(Scenario(id=f"ormatek:{wire}:{product}:{transport}", bed_type="ormatek",
+                    protocol_variant=wire, entry_data={"product_type": product},
+                    layout_id="ormatek" if transport == "ffe" else "ormatek:nordic",
+                    replies={"*": "edfe0000000000000000000000000000" if wire == "okin15"
+                             else "a50b00000000000000"}))
     # Distinct Symphony carriers, fixed builders, split routes and fifth axis.
     # Model/selector dispatch itself is exhaustively checked in test_symphony.
     for product, selector in (("0", "3"), ("12", "9"), ("13", "4"), ("15", "4"), ("10", "6"), ("20", "7")):
@@ -1915,6 +1927,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
 # Bed-specific startup the coordinator runs after notifications, in its order.
 STARTUP_HOOKS: dict[str, tuple[str, ...]] = {
     "yamada": ("sync_clock",),
+    "ormatek": ("sync_clock", "query_alarm"),
     "octo": ("discover_features", "send_pin", "start_keepalive"),
     "jensen": ("query_config",),
     "sleep_number": ("query_config",),
