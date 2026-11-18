@@ -304,6 +304,7 @@ from .const import (
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANTS,
+    AUTOMATIC_LABEL,
     VARIANT_AUTO,
     VARIANT_REQUIRED_BED_TYPES,
     VIBRADORM_APP_CONFIG_KEYS,
@@ -770,7 +771,7 @@ def _labelled_routes(bed_type: str) -> dict[str, str]:
     }
     if routes and VARIANT_AUTO not in routes and is_valid_variant_for_bed_type(bed_type, VARIANT_AUTO):
         # The bed type accepts its automatic route without labelling it.
-        routes = {VARIANT_AUTO: "Auto-detect (recommended)", **routes}
+        routes = {VARIANT_AUTO: AUTOMATIC_LABEL, **routes}
     return routes
 
 
