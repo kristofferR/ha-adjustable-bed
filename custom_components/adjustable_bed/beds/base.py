@@ -2336,7 +2336,7 @@ class BedController(GattWriter):
         return []
 
     @property
-    def supports_massage_timer_off(self) -> bool:
+    def massage_timer_can_turn_off(self) -> bool:
         """Return True when ``set_massage_timer(0)`` sends a real stop or off frame.
 
         Beds whose timer has only durations override this to False, so the

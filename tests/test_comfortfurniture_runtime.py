@@ -297,7 +297,7 @@ async def test_disconnect_clears_timer_selection(runtime):
 
     hass, coord, client = runtime
     controller = coord.controller
-    assert not controller.supports_massage_timer_off
+    assert not controller.massage_timer_can_turn_off
     timer = AdjustableBedMassageTimerSelect(
         coord, MASSAGE_TIMER_DESCRIPTION, controller.massage_timer_options, has_off=False
     )

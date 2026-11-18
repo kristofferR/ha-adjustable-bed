@@ -195,7 +195,7 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                     coordinator,
                     MASSAGE_TIMER_DESCRIPTION,
                     timer_options,
-                    has_off=controller.supports_massage_timer_off,
+                    has_off=controller.massage_timer_can_turn_off,
                 )
             )
 

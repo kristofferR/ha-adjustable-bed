@@ -289,8 +289,8 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 for field, value in self.parser.state.items()
             ),
             *(
-                key(bool(running[domain]) if type(running[domain]) is int else None)
-                for domain, key in RUNNING.items()
+                RUNNING[domain](bool(running[domain]) if type(running[domain]) is int else None)
+                for domain in RUNNING
             ),
         )
 

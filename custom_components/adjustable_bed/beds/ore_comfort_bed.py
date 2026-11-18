@@ -440,7 +440,7 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
         return [int(option) for option in MASSAGE_TIMER]
 
     @property
-    def supports_massage_timer_off(self) -> bool:
+    def massage_timer_can_turn_off(self) -> bool:
         return False  # The timer words are durations; Stop is its own button.
 
     async def set_massage_timer(self, minutes: int) -> None:

@@ -9,7 +9,7 @@ from dataclasses import dataclass, fields, replace
 from functools import lru_cache, partial
 from hashlib import sha256
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
@@ -145,7 +145,6 @@ _LIGHT_TIMERS: Final[Mapping[str, str]] = {
 _BRIGHTNESS: Final[Mapping[int, str]] = {
     level: f"motion_bed_brightness_{level}" for level in range(11)
 }
-BRIGHTNESS: Final = StateKey[int | None]("motion_bed_brightness")
 
 
 @dataclass(frozen=True, slots=True)
@@ -679,7 +678,8 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             ControllerNumberSpec(
                 "motion_bed_brightness",
                 "motion_bed_brightness",
-                BRIGHTNESS,
+                # The status parser publishes the level with the other fields.
+                cast(StateKey[int | None], _field_key("brightness")),
                 0,
                 10,
                 1,

@@ -697,7 +697,7 @@ async def test_value_buttons_become_one_control_sending_the_same_frames() -> Non
     buttons = {spec.key for spec in ctrl.controller_button_specs}
     for replaced in ("motion_bed_10time", "motion_bed_brightness_5", "motion_bed_tv_8xiaoshi"):
         assert replaced not in buttons
-    assert ctrl.auto_enable_massage and ctrl.supports_massage_timer_off
+    assert ctrl.auto_enable_massage and ctrl.massage_timer_can_turn_off
     assert ctrl.massage_timer_options == [10, 20, 30]
     assert ctrl.light_timer_options == ["10 min", "8 hours", "10 hours"]
     (brightness,) = ctrl.controller_number_specs

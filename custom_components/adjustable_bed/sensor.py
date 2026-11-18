@@ -351,7 +351,7 @@ class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
     def native_value(self) -> str | int | float | None:
         """Return the latest controller-published value."""
         value = self._coordinator.controller_state.get(self._spec.state_key)
-        return value if isinstance(value, (str, int, float)) and type(value) is not bool else None
+        return value if isinstance(value, (str, int, float)) else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

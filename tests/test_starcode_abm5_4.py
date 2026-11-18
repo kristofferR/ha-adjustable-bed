@@ -298,7 +298,7 @@ def test_default_raw_state_and_no_unknown_position_semantics():
     }
     assert c.controller_select_specs == ()
     assert c.massage_timer_options == [10, 20, 30]
-    assert not c.supports_massage_timer_off
+    assert not c.massage_timer_can_turn_off
     assert not c.supports_massage_off_control
     assert not c.supports_light_color_control
 

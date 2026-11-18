@@ -345,7 +345,13 @@ class CasperSleepController(BedController, CasperBaseActions):
     def _publish_live(self) -> None:
         updates: list[StateUpdate] = []
         for side, state in self._live.state.items():
-            updates += [live_key(side, key)(_typed_live(key, value)) for key, value in state.items()]
+            for key, value in state.items():
+                typed = _typed_live(key, value)
+                updates.append(
+                    _rate_key(side, key)(typed if type(typed) is int else None)
+                    if key in ("heart", "breath")
+                    else _flag_key(side, key)(typed if type(typed) is bool else None)
+                )
             updates.append(live_key(side, "valid")(self._live.valid[side]))
         self.forward_controller_state_updates(*updates)
 

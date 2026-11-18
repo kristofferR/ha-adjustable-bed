@@ -804,7 +804,7 @@ class SleepysEliteAppController(BedController):
         return [10, 20, 30] if self.supports_massage else []
 
     @property
-    def supports_massage_timer_off(self) -> bool:
+    def massage_timer_can_turn_off(self) -> bool:
         return False  # The app's timer codes are durations only.
 
     async def set_massage_timer(self, minutes: int) -> None:

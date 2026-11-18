@@ -50,7 +50,10 @@ from custom_components.adjustable_bed.number import (
     AdjustableBedLevelNumber,
     AdjustableBedMassageNumber,
 )
-from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+from custom_components.adjustable_bed.select import (
+    MASSAGE_TIMER_DESCRIPTION,
+    AdjustableBedMassageTimerSelect,
+)
 from custom_components.adjustable_bed.services import async_register_services
 from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
 
@@ -598,9 +601,11 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         controller._app_fields["field_0x53"] = 1
         await clock.run_until(asyncio.create_task(number.async_set_native_value(5)))
 
-        select = AdjustableBedControllerSelect(coordinator, controller.controller_select_specs[0])
+        select = AdjustableBedMassageTimerSelect(
+            coordinator, MASSAGE_TIMER_DESCRIPTION, [10, 20, 30], has_off=False
+        )
         controller._app_fields["field_0x4b"] = 1
-        await clock.run_until(asyncio.create_task(select.async_select_option("2")))
+        await clock.run_until(asyncio.create_task(select.async_select_option("20 min")))
 
         level = AdjustableBedLevelNumber(
             coordinator,
@@ -1124,8 +1129,8 @@ async def test_remote_timer_notifications_update_the_declared_select(
     _hass, coordinator, controller, client = sleepys_runtime
     characteristic = _FakeGattCharacteristic("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
     controller._notify_characteristic = characteristic
-    select = AdjustableBedControllerSelect(
-        coordinator, controller.controller_select_specs[0]
+    select = AdjustableBedMassageTimerSelect(
+        coordinator, MASSAGE_TIMER_DESCRIPTION, [10, 20, 30], has_off=False
     )
 
     def status(seconds: int) -> bytearray:
@@ -1137,13 +1142,11 @@ async def test_remote_timer_notifications_update_the_declared_select(
 
     controller._handle_notification(characteristic, status(600))
     assert coordinator.controller_state["sleepys_app_field_0x0b"] == 1
-    assert coordinator.controller_state["sleepys_app_massage_timer_code"] == "1"
-    assert select.current_option == "1"
+    assert select.current_option == "10 min"
 
     controller._handle_notification(characteristic, status(1200))
     assert coordinator.controller_state["sleepys_app_field_0x0b"] == 2
-    assert coordinator.controller_state["sleepys_app_massage_timer_code"] == "2"
-    assert select.current_option == "2"
+    assert select.current_option == "20 min"
 
     stale_characteristic = _FakeGattCharacteristic(
         "6E400003-B5A3-F393-E0A9-E50E24DCCA9F"
@@ -1152,9 +1155,9 @@ async def test_remote_timer_notifications_update_the_declared_select(
     controller._handle_notification(stale_characteristic, status(1800))
     controller._handle_notification(characteristic, bytearray.fromhex("A5 0B 00"))
     assert coordinator.controller_state == before_stale
-    assert select.current_option == "2"
+    assert select.current_option == "20 min"
 
     with _ready_command_lane(coordinator):
-        await select.async_select_option("2")
+        await select.async_select_option("20 min")
     client.write_gatt_char.assert_not_awaited()
     await coordinator.async_shutdown()

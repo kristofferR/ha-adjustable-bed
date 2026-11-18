@@ -677,7 +677,7 @@ class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
         return [10, 20, 30] if self.supports_massage_timer else []
 
     @property
-    def supports_massage_timer_off(self) -> bool:
+    def massage_timer_can_turn_off(self) -> bool:
         return False  # The app's timer actions are durations only.
 
     async def massage_off(self) -> None:

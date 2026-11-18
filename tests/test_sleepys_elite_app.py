@@ -329,7 +329,7 @@ def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
         assert ("sleepys_app_color_code" in number_keys) is (selector in _VOICE_SELECTORS)
         # Timer codes 1/2/3 are the shared massage timer select's 10/20/30 minutes.
         assert controller.supports_massage_timer is (selector in _VOICE_SELECTORS)
-        assert not controller.supports_massage_timer_off
+        assert not controller.massage_timer_can_turn_off
         assert "sleepys_app_massage_timer" not in button_keys
 
         if selector in (*_POSITION_SLIDER_SELECTORS, *_VOICE_SELECTORS):

@@ -182,7 +182,7 @@ class BedTechController(RichmatProfileController):
         return [20] if self.supports_massage_timer else []
 
     @property
-    def supports_massage_timer_off(self) -> bool:
+    def massage_timer_can_turn_off(self) -> bool:
         return self.supports_massage_off_control
 
     async def set_massage_timer(self, minutes: int) -> None:

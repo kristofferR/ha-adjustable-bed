@@ -154,7 +154,7 @@ async def test_all_28_profile_gates_roles_and_native_entities(model, layout):
     # Dedicated timer keys are the massage timer select; cyclic beds keep their cycle.
     assert c.supports_massage_timer == dedicated_massage(model, layout)
     assert c.massage_timer_options == ([10, 20, 30] if c.supports_massage_timer else [])
-    assert not c.supports_massage_timer_off
+    assert not c.massage_timer_can_turn_off
     buttons = {s.key for s in c.controller_button_specs}
     assert not any(key.startswith("adjustamattress_timer") for key in buttons)
     assert ("adjustamattress_massage_timer" in buttons) == (not dedicated_massage(model, layout))

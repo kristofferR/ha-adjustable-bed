@@ -297,7 +297,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
         return [m for m, key in _MASSAGE_TIMERS.items() if self._layout_has(key)]
 
     @property
-    def supports_massage_timer_off(self) -> bool:
+    def massage_timer_can_turn_off(self) -> bool:
         return self._layout_has("massage_timer_cancel")
 
     async def set_massage_timer(self, minutes: int) -> None:

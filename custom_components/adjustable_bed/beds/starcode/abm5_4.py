@@ -352,7 +352,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         return [10, 20, 30] if self.supports_massage_timer else []
 
     @property
-    def supports_massage_timer_off(self) -> bool:
+    def massage_timer_can_turn_off(self) -> bool:
         return False  # The app's timer frame has no Off.
 
     async def set_massage_timer(self, minutes: int) -> None:

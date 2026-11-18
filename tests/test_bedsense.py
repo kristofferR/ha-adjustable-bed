@@ -136,7 +136,7 @@ def test_nine_fresh_layouts_expose_only_proven_controls(layout, axes, cycle):
     # Timer buttons are the massage and light timer selects.
     assert not any(k.startswith(("light_", "massage_timer_")) for k in buttons)
     assert c.light_timer_options == ["10 min", "8 hours", "10 hours"]
-    assert c.massage_timer_options == [10, 20, 30] and c.supports_massage_timer_off
+    assert c.massage_timer_options == [10, 20, 30] and c.massage_timer_can_turn_off
     assert "refresh_memory" not in buttons and "background_tap" not in buttons
     assert ("lumbar" in buttons) is (layout in (6, 8))
     assert ("music" in buttons) is (layout in (4, 5))

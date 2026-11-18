@@ -808,7 +808,7 @@ class AdjustaMattressController(
         return [10 * (index + 1) for index in range(len(TIMERS))] if self._dedicated else []
 
     @property
-    def supports_massage_timer_off(self) -> bool:
+    def massage_timer_can_turn_off(self) -> bool:
         return False  # The dedicated keys are durations only.
 
     async def set_massage_timer(self, minutes: int) -> None:

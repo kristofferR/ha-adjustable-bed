@@ -213,7 +213,7 @@ async def test_profile_exposes_exact_controls_and_no_invented_queries():
     assert bed_traits(BED_TYPE_ESHINE).no_angle_feedback
     assert len(ctrl.controller_button_specs) == 4
     # The three timer buttons are the massage timer select's durations.
-    assert ctrl.supports_massage_timer and ctrl.supports_massage_timer_off
+    assert ctrl.supports_massage_timer and ctrl.massage_timer_can_turn_off
     assert ctrl.massage_timer_options == [10, 20, 30]
     assert {row["value"]: row["label"] for row in get_bed_type_options()}[
         BED_TYPE_ESHINE
