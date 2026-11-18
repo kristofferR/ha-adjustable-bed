@@ -1045,7 +1045,7 @@ class GoodVibeController(BedController):
             distinct_long = action.long not in (0, action.short)
             saves = self._long_press_saves(action)
             # A long-press-only control's short press sends nothing.
-            long_only = action.gesture == "longPress" and not action.force_long
+            long_only = action.gesture == "longPress"
             if (power_bob or not long_only) and (
                 power_bob or not action.force_long or distinct_long
             ):
@@ -1064,9 +1064,10 @@ class GoodVibeController(BedController):
                               and not saves else None),
                     )
                 )
-            if action.gesture in ("longPress", "shortAndLongPress") and not action.force_long and (
-                power_bob or distinct_long or long_only and action.long != 0
-            ):
+            # A forced long press already sends its long operand from the button itself.
+            if action.gesture in ("longPress", "shortAndLongPress") and (
+                long_only or not action.force_long
+            ) and (power_bob or distinct_long or long_only and action.long != 0):
                 buttons.append(
                     catalog_button(
                         key + "_long",
