@@ -1216,12 +1216,6 @@ gmmotor:
           min: 0
           max: 255
           mode: box
-    repeat:
-      selector:
-        number:
-          min: 0
-          max: 255
-          mode: box
     hour:
       selector:
         number:
@@ -1234,24 +1228,16 @@ gmmotor:
           min: 0
           max: 59
           mode: box
-    status:
-      selector:
-        number:
-          min: 0
-          max: 255
-          mode: box
     part:
       selector:
-        number:
-          min: 1
-          max: 2
-          mode: box
+        select:
+          options: [left, right]
+          translation_key: gmmotor_report_side
     report_type:
       selector:
-        number:
-          min: 1
-          max: 2
-          mode: box
+        select:
+          options: [day, month]
+          translation_key: gmmotor_report_type
     height:
       selector:
         number:

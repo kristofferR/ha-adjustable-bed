@@ -7789,22 +7789,16 @@
           "name": "Operation value"
         },
         "mode": {
-          "name": "Exact alarm action name"
+          "name": "Alarm action"
         },
         "slot": {
-          "name": "Alarm ID"
-        },
-        "repeat": {
-          "name": "Repeat mask"
+          "name": "Alarm number"
         },
         "hour": {
           "name": "Hour"
         },
         "minute": {
           "name": "Minute"
-        },
-        "status": {
-          "name": "Alarm status"
         },
         "enabled": {
           "name": "Enabled",
@@ -7814,10 +7808,10 @@
           "name": "RGB color"
         },
         "part": {
-          "name": "Report side (1 left, 2 right)"
+          "name": "Report side"
         },
         "report_type": {
-          "name": "Report type (1 day, 2 month)"
+          "name": "Report period"
         },
         "report_date": {
           "name": "Report date"
@@ -11153,6 +11147,18 @@
       "options": {
         "cm": "Centimeters",
         "inch": "Inches"
+      }
+    },
+    "gmmotor_report_side": {
+      "options": {
+        "left": "Left",
+        "right": "Right"
+      }
+    },
+    "gmmotor_report_type": {
+      "options": {
+        "day": "Day",
+        "month": "Month"
       }
     },
     "estimate_set_reference_motors": {
