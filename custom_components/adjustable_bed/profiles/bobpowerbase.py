@@ -71,7 +71,41 @@ PRODUCTS: Final = {
     )
     for key, label in PROFILE_CHOICES.items()
 }
+# Entity names; a preset's long press saves it.
+LABELS: Final = {
+    "head_up": "Head up",
+    "head_down": "Head down",
+    "foot_up": "Foot up",
+    "foot_down": "Foot down",
+    "head_foot_up": "Head and foot up",
+    "head_foot_down": "Head and foot down",
+    "lumbar_up": "Lumbar up",
+    "lumbar_down": "Lumbar down",
+    "pillow_up": "Pillow up",
+    "pillow_down": "Pillow down",
+    "reset": "Reset motors",
+    "light": "Bed light",
+    "light_off": "Bed light off",
+    "massage_head": "Increase head massage",
+    "massage_foot": "Increase foot massage",
+    "massage_mode": "Cycle massage mode",
+    "massage_off": "Massage off",
+    "massage_10": "Massage for 10 minutes",
+    "massage_20": "Massage for 20 minutes",
+    "massage_30": "Massage for 30 minutes",
+    "anti_snore": "Anti-snore",
+    "anti_snore_long": "Save anti-snore",
+    "zero_gravity": "Zero gravity",
+    "zero_gravity_long": "Save zero gravity",
+    "tv": "TV",
+    "tv_long": "Save TV",
+    "memory_1": "Memory 1",
+    "memory_1_long": "Save memory 1",
+    "memory_2": "Memory 2",
+    "memory_2_long": "Save memory 2",
+}
 CATALOG: Final = Catalog(
     "bobpowerbase", "Power Bob Base", WIRE, ACTIONS, PRODUCTS, {},
     bed=BedRuntime(100, 3000, 200, 0.5, tuple(range(16))),
+    labels=LABELS,
 )

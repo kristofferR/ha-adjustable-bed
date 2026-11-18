@@ -43,6 +43,9 @@ class Catalog:
     products: Mapping[str, Product]
     expansions: Mapping[str, tuple[str, ...]]
     bed: BedRuntime | None = None
+    # Entity names by action key (``<key>_long`` for a long press). Without one
+    # the app identifier is spelled out.
+    labels: Mapping[str, str] = field(default_factory=dict)
     record: Record = record_20_len
     # Galaxy's reconciled runtime state differs from Good Vibe's accepted route.
     substitute_when_release: bool = False

@@ -6308,8 +6308,9 @@ No mandatory bond or PIN is implied by this app.
 <!-- /generated -->
 
 Every product offers head/foot movement, reset, two custom memories, TV,
-zero gravity and anti-snore recall/programming. Ultra adds combined head/foot,
-lumbar, pillow and massage. Elite retains its direct bed-light button.
+zero gravity and anti-snore recall/programming; each preset's long press is its
+**Save** button. Ultra adds combined head/foot, lumbar, pillow and massage. Elite
+retains its direct bed-light button.
 The normal light menu appears only after the connected bed reports it.
 
 #### Timing

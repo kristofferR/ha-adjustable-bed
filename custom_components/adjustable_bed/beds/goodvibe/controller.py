@@ -990,6 +990,7 @@ class GoodVibeController(BedController):
                 ),
             )
         buttons = []
+        labels = self.catalog.labels
         if self.product.light and (self.catalog.bed is None or self.menu_available("light")):
 
             async def light_off(controller: BedController) -> None:
@@ -997,13 +998,14 @@ class GoodVibeController(BedController):
 
                 await selected(controller).async_execute_goodvibe_request(Request("light_off"))
 
+            off = labels.get("light_off", "Close bed light")
             buttons.append(
                 ControllerButtonSpec(
                     "goodvibe_light_off",
-                    "Close bed light",
+                    off,
                     light_off,
                     translation_key="goodvibe_action",
-                    translation_placeholders={"action": "Close bed light"},
+                    translation_placeholders={"action": off},
                 )
             )
         for detail in self.control_actions:
@@ -1011,25 +1013,27 @@ class GoodVibeController(BedController):
             if action.local or action.hidden or not action.interactive:
                 continue
             key = "goodvibe_" + detail
+            name = labels.get(detail, label(action))
             buttons.append(
                 ControllerButtonSpec(
                     key,
-                    label(action),
+                    name,
                     partial(_press, detail=detail),
                     translation_key="goodvibe_action",
-                    translation_placeholders={"action": label(action)},
+                    translation_placeholders={"action": name},
                     hold=(ControllerHoldSpec(key, 0, 0, "goodvibe_release")
                           if self.catalog.bed is None or action.gesture != "shortPress" else None),
                 )
             )
             if action.gesture in ("longPress", "shortAndLongPress"):
+                long_name = labels.get(detail + "_long", label(action) + " (long press)")
                 buttons.append(
                     ControllerButtonSpec(
                         key + "_long",
-                        label(action) + " (long press)",
+                        long_name,
                         partial(_press, detail=detail, duration=3100),
                         translation_key="goodvibe_action",
-                        translation_placeholders={"action": label(action) + " (long press)"},
+                        translation_placeholders={"action": long_name},
                     )
                 )
         buttons.append(
