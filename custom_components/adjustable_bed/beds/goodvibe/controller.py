@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
-from ...card import CARD_HIDDEN, CARD_UTILITY, CardPlacement, CardSection
+from ...card import CARD_HIDDEN, CARD_PRESET_SAVE, CARD_UTILITY, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
@@ -1038,13 +1038,17 @@ class GoodVibeController(BedController):
             )
             if action.gesture in ("longPress", "shortAndLongPress"):
                 long_name = labels.get(detail + "_long", label(action) + " (long press)")
+                # A Power Bob Base long press saves the preset: confirm it first.
+                saves = self.catalog.bed is not None
                 buttons.append(
                     ControllerButtonSpec(
                         key + "_long",
                         long_name,
                         partial(_press, detail=detail, duration=3100),
-                        translation_key="goodvibe_action",
+                        translation_key="goodvibe_save_action" if saves else "goodvibe_action",
                         translation_placeholders={"action": long_name},
+                        requires_confirmation=saves,
+                        card=CARD_PRESET_SAVE if saves else CARD_UTILITY,
                     )
                 )
         buttons.append(

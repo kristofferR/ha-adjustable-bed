@@ -708,6 +708,10 @@
  "button:goodvibe_release": {
   "card_section": "hidden"
  },
+ "button:goodvibe_save_action": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:head_down": {
   "card_section": "motors",
   "card_role": "down",

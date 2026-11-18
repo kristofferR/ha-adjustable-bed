@@ -3252,6 +3252,9 @@
       },
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
+      },
+      "goodvibe_save_action": {
+        "name": "{action}"
       }
     },
     "cover": {
