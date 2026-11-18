@@ -69,6 +69,12 @@ class TestStarElevateController:
             "elevate_actuator_2",
             "elevate_both",
         ]
+        # Both actuators stop through the side-wide STOP.
+        assert [spec.stop_scope for spec in coordinator.controller.motor_control_specs] == [
+            None,
+            None,
+            "side",
+        ]
 
     async def test_lazy_session_wake_and_commands_use_write_without_response(
         self,
