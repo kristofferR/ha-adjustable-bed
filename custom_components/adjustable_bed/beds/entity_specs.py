@@ -86,6 +86,8 @@ class ControllerSwitchSpec:
     icon: str | None = None
     # The published state echoes the last command rather than a bed readback.
     assumed_state: bool = field(default=False, kw_only=True)
+    # A setting the integration keeps itself sends no frame: applied without connecting.
+    local_set_fn: Callable[[bool], None] | None = field(default=None, kw_only=True)
     entity_registry_enabled_default: bool = field(default=True, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
 
