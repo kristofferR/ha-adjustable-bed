@@ -214,7 +214,9 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
             state = hass.states.get(entity_id)
             assert state is not None and state.state in ("unknown", "unavailable")
         save_id = next(
-            entity_id for key, entity_id in first.items() if key.endswith("_starcode_abm5_4_save_tv")
+            entity_id
+            for key, entity_id in first.items()
+            if key.endswith("_starcode_abm5_4_save_tv")
         )
         with pytest.raises(ConnectionError, match="Not connected"):
             await hass.services.async_call("button", "press", {"entity_id": save_id}, blocking=True)

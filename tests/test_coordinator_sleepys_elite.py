@@ -48,8 +48,8 @@ from custom_components.adjustable_bed.number import (
     AdjustableBedMassageNumber,
 )
 from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
-from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
 
 from .conftest import TEST_ADDRESS, TEST_NAME
 
