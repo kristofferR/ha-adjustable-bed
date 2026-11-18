@@ -595,7 +595,8 @@ async def test_schema_5_5_writes_each_octo_side_and_its_original(hass: HomeAssis
          {CONF_CONNECTION_MODE: CONNECTION_MODE_RELEASE}),
         ({"disconnect_after_command": False, "idle_disconnect_seconds": 60},
          {CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE, "idle_disconnect_seconds": 60}),
-        ({"idle_disconnect_seconds": 0}, {CONF_CONNECTION_MODE: CONNECTION_MODE_ALWAYS}),
+        # A Linak hands its link back by default, which a 0 timeout never overrode.
+        ({"idle_disconnect_seconds": 0}, {}),
         # Nothing chosen: the bed type's default still applies.
         ({"idle_disconnect_seconds": 40}, {"idle_disconnect_seconds": 40}),
         ({"position_mode": "accuracy", "connection_profile": "reliable"}, {}),
@@ -642,6 +643,27 @@ def test_schema_5_6_keeps_only_a_position_choice_against_the_route(
     assert (CONF_DISABLE_ANGLE_SENSING in migrated) is kept
     if kept:
         assert migrated[CONF_DISABLE_ANGLE_SENSING] is disabled
+
+
+def test_schema_5_6_keeps_a_zero_timeout_where_the_bed_kept_its_link() -> None:
+    """A bed whose default kept the link between commands now stays connected."""
+    data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:36", CONF_BED_TYPE: BED_TYPE_KEESON, "idle_disconnect_seconds": 0}
+
+    migrated, _options = migrate_v5_6_entry(data, {}, from_version=5, from_minor_version=5)
+
+    assert migrated[CONF_CONNECTION_MODE] == CONNECTION_MODE_ALWAYS
+
+
+def test_schema_5_6_options_follow_the_data_they_inherit_from() -> None:
+    """A 0 timeout in options never overrode a handoff saved in data."""
+    data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:37", CONF_BED_TYPE: BED_TYPE_KEESON, "disconnect_after_command": True}
+
+    migrated, options = migrate_v5_6_entry(
+        data, {"idle_disconnect_seconds": 0}, from_version=5, from_minor_version=5
+    )
+
+    assert migrated[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
+    assert options == {}
 
 
 def test_schema_5_6_rewrites_each_paired_side_against_its_own_route() -> None:

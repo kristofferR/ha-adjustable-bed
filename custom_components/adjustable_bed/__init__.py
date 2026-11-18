@@ -20,7 +20,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
-from .bed_traits import bed_type_has_position_feedback
+from .bed_traits import bed_type_has_position_feedback, default_connection_mode
 from .beds.furnimove.repair import async_refresh_furnimove_layout_issues
 from .beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS, SERVICE_LINAK_SET_ALARM
 from .beds.remacro.discovery import (
@@ -573,6 +573,7 @@ def _v5_6_settings(
     changed: dict[str, list[str]],
     *,
     paired: bool = False,
+    inherited_after: bool | None = None,
 ) -> dict[str, Any]:
     """Return one stored settings mapping in the 5.6 shape.
 
@@ -581,7 +582,8 @@ def _v5_6_settings(
     sides first take the shared values they inherited, then each side and each
     original entry is rewritten against its own route. A pair's parent and
     sides (``paired``) keep their angle-sensing values as they are, since a
-    side without one would inherit the parent's.
+    side without one would inherit the parent's. ``inherited_after`` is the
+    "Disconnect after each command" options inherit from the entry's data.
     """
     new = {key: value for key, value in settings.items() if key not in V5_6_REMOVED_KEYS}
     notes = sorted(V5_6_REMOVED_KEYS.intersection(settings))
@@ -601,22 +603,32 @@ def _v5_6_settings(
         ]
     after = new.pop(_LEGACY_DISCONNECT_AFTER_COMMAND, None)
     seconds = new.get(CONF_IDLE_DISCONNECT_SECONDS)
+    view = {**route, **_route_of(new)}
     mode: str | None = None
-    if after is True:
-        mode = CONNECTION_MODE_RELEASE
-    elif seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
-        # Issue #700's "0 keeps the bed connected" becomes its own choice.
-        mode = CONNECTION_MODE_ALWAYS
-    elif after is False:
-        mode = CONNECTION_MODE_IDLE
     if seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
         new.pop(CONF_IDLE_DISCONNECT_SECONDS)
+        # Issue #700's "0 keeps the bed connected" applied only while the
+        # handoff was off, saved here, inherited, or the bed type's default.
+        effective = after if after is not None else inherited_after
+        if effective is None:
+            effective = default_connection_mode(
+                view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
+            ) == CONNECTION_MODE_RELEASE
+        if after is True:
+            mode = CONNECTION_MODE_RELEASE
+        elif not effective:
+            mode = CONNECTION_MODE_ALWAYS
+        else:
+            notes.append(f"{CONF_IDLE_DISCONNECT_SECONDS}=0 (handoff on)")
+    elif after is True:
+        mode = CONNECTION_MODE_RELEASE
+    elif after is False:
+        mode = CONNECTION_MODE_IDLE
     if mode is not None:
         new[CONF_CONNECTION_MODE] = mode
         notes.append(f"{CONF_CONNECTION_MODE}={mode}")
     elif after is not None:
         notes.append(_LEGACY_DISCONNECT_AFTER_COMMAND)
-    view = {**route, **_route_of(new)}
     feedback = bed_type_has_position_feedback(
         view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
     )
@@ -665,7 +677,16 @@ def migrate_v5_6_entry(
     changed: dict[str, list[str]] = {}
     route = _route_of(data)
     new_data = _v5_6_settings(data, route, "data", changed)
-    new_options = _v5_6_settings(options, {**route, **_route_of(options)}, "options", changed)
+    legacy_after = data.get(_LEGACY_DISCONNECT_AFTER_COMMAND)
+    new_options = _v5_6_settings(
+        options,
+        {**route, **_route_of(options)},
+        "options",
+        changed,
+        # A pair's options reach its sides, which keep their angle choices.
+        paired=isinstance(data.get(CONF_PAIR_CHILDREN), list),
+        inherited_after=legacy_after if isinstance(legacy_after, bool) else None,
+    )
     if changed:
         _with_migration_record(
             new_data,
