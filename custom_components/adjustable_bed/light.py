@@ -816,8 +816,10 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
     def _schedule_auto_off(self) -> None:
         """Follow a bed whose light switches itself off after a set time."""
-        self._cancel_auto_off()
         controller = self._coordinator.controller
+        if controller is None and self._attr_is_on:
+            return  # Offline: the bed's own timer keeps running, so keep ours.
+        self._cancel_auto_off()
         seconds = controller.light_auto_off_seconds if controller is not None else None
         if seconds is None or not self._attr_is_on:
             return

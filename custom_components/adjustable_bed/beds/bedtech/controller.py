@@ -193,12 +193,17 @@ class BedTechController(RichmatProfileController):
         if minutes != 20 or not self._supports_button("massage_timer_20"):
             raise ValueError("This BedTech model only exposes the 20-minute timer")
         await self._send("massage_timer_20")
-        # The bed reports no timer, so the select shows the last one set.
-        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, 20)
+        # The bed reports no timer, so the select shows the last one sent.
+        self._publish_timer(20)
 
     async def massage_off(self) -> None:
         await self._send("massage_off")
-        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, 0)
+        self._publish_timer(0)
+
+    def _publish_timer(self, minutes: int) -> None:
+        # A STOP or replacing command ends the write without sending it.
+        if not self._coordinator.cancel_command.is_set():
+            self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, minutes)
 
     async def lights_on(self) -> None:
         """The OEM app offers a toggle, without a discrete ON."""

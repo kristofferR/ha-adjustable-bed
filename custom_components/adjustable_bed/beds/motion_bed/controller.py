@@ -657,11 +657,16 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         elif minutes not in _MASSAGE_TIMERS:
             raise ValueError("Choose 10, 20 or 30 minutes")
         elif reported == minutes:
-            return
+            if self._shown_massage_timer == minutes:
+                return
+            # Pressing the reported timer's key would turn it off.
+            raise ValueError("The bed has not reported the last timer change yet; try again shortly")
         else:
             await self.async_execute_motion_bed_action(self._function_action(_MASSAGE_TIMERS[minutes]))
-        self._shown_massage_timer = minutes or None
-        self._publish()
+        # A STOP or replacing command ends the write without sending it.
+        if not self._coordinator.cancel_command.is_set():
+            self._shown_massage_timer = minutes or None
+            self._publish()
 
     @property
     def supports_light_timer(self) -> bool:

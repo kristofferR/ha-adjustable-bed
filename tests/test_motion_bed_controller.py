@@ -713,10 +713,16 @@ async def test_value_buttons_become_one_control_sending_the_same_frames() -> Non
     off = await _same_frames(rig, lambda: ctrl.set_massage_timer(0), "motion_bed_20time")
     assert ctrl._shown_massage_timer is None
     assert off != await _same_frames(rig, lambda: ctrl.set_massage_timer(10), "motion_bed_10time")
-    # Choosing the reported timer keeps it instead of toggling it off.
+    # Choosing the reported, shown timer keeps it instead of toggling it off.
+    ctrl._state = replace(ctrl._state, massage_timer=10)
+    ctrl._publish()
     rig.client.write_gatt_char.reset_mock()
-    await ctrl.set_massage_timer(20)
+    await ctrl.set_massage_timer(10)
     assert rig.writes == []
+    # A reported timer cleared here cannot be chosen again until the bed reports.
+    await ctrl.set_massage_timer(0)
+    with pytest.raises(ValueError, match="not reported"):
+        await ctrl.set_massage_timer(10)
 
 
 @pytest.mark.asyncio
