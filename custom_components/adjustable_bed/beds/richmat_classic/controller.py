@@ -37,6 +37,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from ..richmat.labels import resource_label
 from . import rise
 from .caller import RETAIN, Selection, effective_status, transition
 from .profiles import RISE_APPS, Control, controls, load_catalog
@@ -280,6 +281,7 @@ class RichmatClassicController(BedController):
             "richmat_classic_status", "richmat_classic_status", STATUS, "mdi:bed",
             attribute_keys=(APP, LAYOUT, STATE, PREFERENCES, REJECTION),
             card=CARD_UTILITY,
+                    entity_registry_enabled_default=False,
         ),)
 
     def _notification(self, session: Transport, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
@@ -617,22 +619,23 @@ class RichmatClassicController(BedController):
             if button.short is None and button.short_old is None and button.long is None and button.tag is None:
                 continue
             key = f"richmat_classic_{button.node}"
+            label = resource_label(button.label)
             if not button.excluded_short:
                 result.append(ControllerButtonSpec(
-                key, button.label, partial(_press, node=button.node),
-                translation_key="richmat_classic_action", translation_placeholders={"action": button.label},
+                key, label, partial(_press, node=button.node),
+                translation_key="richmat_classic_action", translation_placeholders={"action": label},
                 hold=ControllerHoldSpec(key, release_button_key="richmat_classic_release") if button.status == 1 or button.mem_special and not self._selection.armed else None,
                 ))
             if button.hold_affected and not button.view_id.endswith("Long"):
                 held_key = key + "_hold"
-                name = "Hold " + button.label
+                name = f"{label} (hold)"
                 result.append(ControllerButtonSpec(
                     held_key, name, partial(_press, node=button.node),
                     translation_key="richmat_classic_action", translation_placeholders={"action": name},
                     hold=ControllerHoldSpec(held_key, release_button_key="richmat_classic_release"),
                 ))
             if button.status == 3 and button.long and not button.excluded_long and not button.mem_special and not button.select_special:
-                name = "Long press " + button.label
+                name = f"{label} (long press)"
                 result.append(ControllerButtonSpec(
                     key + "_long", name, partial(_press, node=button.node, long=True),
                     translation_key="richmat_classic_action", translation_placeholders={"action": name},

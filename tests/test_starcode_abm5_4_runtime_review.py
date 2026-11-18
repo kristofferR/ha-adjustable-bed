@@ -366,8 +366,15 @@ async def test_actual_HA_adoption_rebuilds_catalog_once_preserves_side_identity_
             }
             removed_light = coordinator.entity_unique_id("under_bed_lights")
             assert removed_light not in current
+            # The select and number now show the timer and light level.
+            replaced = {
+                coordinator.entity_unique_id(f"starcode_abm5_4_{key}")
+                for key in ("massage_timer", "light_level")
+            }
             assert all(
-                current.get(key) == value for key, value in original.items() if key != removed_light
+                current.get(key) == value
+                for key, value in original.items()
+                if key != removed_light and key not in replaced
             )
             assert any(
                 left in row.unique_id and row.translation_key == "toggle_light"

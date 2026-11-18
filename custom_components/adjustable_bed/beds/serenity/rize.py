@@ -50,6 +50,7 @@ class RizeRemedyIIController(OkinBeddingAppController):
                 translation_key="rize_remedy_ii_save_acknowledged",
                 state_key=SAVE_ACK,
                 icon="mdi:content-save-check-outline",
+                entity_registry_enabled_default=False,
                 card=CARD_UTILITY,
             ),
         )

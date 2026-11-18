@@ -29,7 +29,7 @@
 | Motor Control | ✅ (head/back, foot/legs) | ✅ (head, foot; lumbar/body tilt by model) | ✅ (back, legs; lumbar on R510L) |
 | Position Feedback | ✅ (nine-byte notifications, 0–100%) | ✅ (characteristic / selected-side feedback, 0–100%) | ✅ (current authenticated peer) |
 | Memory Presets | ✅ (recall/save 1–4, model-gated) | ✅ (recall/save 1–4, model-gated) | ✅ (recall 1–4; save unavailable) |
-| Massage | ✅ (head/foot 0–10, wave compatibility control) | ✅ (model-gated head/foot 0–10, wave controls) | ✅ (head/foot 0–10, mode/rhythm, raw timer code) |
+| Massage | ✅ (head/foot 0–10, wave compatibility control) | ✅ (model-gated head/foot 0–10, wave controls) | ✅ (head/foot 0–10, mode/rhythm, raw timer byte) |
 | Wave Massage | ✅ (decimal-text builder; no inferred protocol range/cycle) | ✅ (raw characteristic / STK side-specific controls) | See mode/rhythm controls |
 | Under-bed Lights | ✅ (toggle, model-gated) | ✅ (brightness/RGB, model-gated) | ✅ (on/off, level, RGB feedback) |
 | Zero-G / Anti-Snore / Flat | ✅ (model-gated) | ✅ (model-specific preset route) | ✅ |
@@ -482,7 +482,7 @@ alone does not run physical-disconnect cleanup.
 ## Home Assistant actions and automation
 
 `reverie_set_comfort` accepts typed position, massage, mode, and raw timer-byte
-fields. Pairlink exposes that value as a timer code and does not claim a
+fields. Pairlink's massage timer number sends that byte and does not claim a
 minute conversion. Every selected physical target validates the request before any target
 writes. Protocol 110 Composer requests require its five accepted values.
 Protocol 108 applies changed values after notification feedback. Pairlink
@@ -508,8 +508,8 @@ its matching stop writes. Pairlink diagnostics use the current central or local
 session and the same authentication, sign, target, and readiness checks as
 ordinary actions. The diagnostic retains the command connection until its timed
 cleanup completes, including with Disconnect After Command enabled. Pairlink's
-massage mode and rhythm selects display receiver feedback; the mode sensor
-retains its numeric value for automations. Pairlink RGB light color follows
+massage mode select and rhythm switch display receiver feedback; the
+controller state keeps the numeric mode for diagnostics. Pairlink RGB light color follows
 receiver feedback once all three channels are known for the current peer.
 A successful GATT write only shows transport acceptance, not physical bed behavior.
 

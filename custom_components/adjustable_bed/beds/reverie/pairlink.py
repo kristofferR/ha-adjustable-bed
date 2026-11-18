@@ -39,7 +39,7 @@ from ..entity_specs import (
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
-    ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
@@ -507,27 +507,6 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         return 10
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        if not self._has_supported_model:
-            return ()
-        return (
-            ControllerStateSensorSpec(
-                key="reverie_pairlink_massage_timer",
-                translation_key="reverie_pairlink_massage_timer",
-                state_key=MASSAGE_TIMER,
-                icon="mdi:timer-outline",
-                card=CARD_MASSAGE,
-            ),
-            ControllerStateSensorSpec(
-                key="reverie_pairlink_massage_mode",
-                translation_key="reverie_pairlink_massage_mode",
-                state_key=MASSAGE_MODE,
-                icon="mdi:waveform",
-                card=CARD_MASSAGE,
-            ),
-        )
-
-    @property
     def controller_state_binary_sensor_specs(
         self,
     ) -> tuple[ControllerStateBinarySensorSpec, ...]:
@@ -539,6 +518,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                 translation_key="reverie_pairlink_low_battery",
                 state_key=LOW_BATTERY,
                 icon="mdi:battery-low",
+                entity_registry_enabled_default=True,
                 card=CARD_UTILITY,
             ),
         )
@@ -553,11 +533,6 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                 raise ValueError("Pairlink massage mode must be between 0 and 4")
             await self.set_massage_mode(int(option))
 
-        async def select_rhythm(_controller: BedController, option: str) -> None:
-            if option not in ("off", "on"):
-                raise ValueError("Pairlink massage rhythm must be on or off")
-            await self.set_massage_rhythm(option == "on")
-
         return (
             ControllerSelectSpec(
                 key="reverie_pairlink_massage_mode",
@@ -567,12 +542,24 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                 select_fn=select_mode,
                 card=CARD_MASSAGE,
             ),
-            ControllerSelectSpec(
+        )
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if not self._has_supported_model:
+            return ()
+
+        async def set_rhythm(_controller: BedController, enabled: bool) -> None:
+            await self.set_massage_rhythm(enabled)
+
+        return (
+            ControllerSwitchSpec(
                 key="reverie_pairlink_massage_rhythm",
                 translation_key="reverie_pairlink_massage_rhythm",
+                set_fn=set_rhythm,
                 state_key=MASSAGE_RHYTHM_OPTION,
-                options=("off", "on"),
-                select_fn=select_rhythm,
+                on_value="on",
+                icon="mdi:sine-wave",
                 card=CARD_MASSAGE,
             ),
         )

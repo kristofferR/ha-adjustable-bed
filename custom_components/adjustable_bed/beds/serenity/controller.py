@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...card import CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...const import (
     CONF_BLE_BOND_ESTABLISHED,
@@ -69,7 +70,9 @@ _RELEASE_OFFSETS_S: Final = tuple(
 )
 
 # saveMemory(n) records these local codes; callMemory(n) clears them.
-_RECALLS: Final = frozenset({"flat", "anti_snore", "leisure", "lounge", "memory_1", "zero_g", "tv", "memory_2"})
+_RECALLS: Final = frozenset(
+    {"flat", "anti_snore", "leisure", "lounge", "memory_1", "zero_g", "tv", "memory_2"}
+)
 
 # Alarm frames, Customatic Z-Series only (exact CST13/CST14 manufacturer).
 _ALARM_MANUFACTURERS: Final = frozenset({"CST13", "CST14"})
@@ -132,20 +135,23 @@ class OkinBeddingApp:
 
 
 _ZSERIES_BUTTONS_TAIL = (
-    ("save_zero_g", "Save Zero Gravity"),
+    ("save_zero_g", "Save zero gravity"),
     ("save_tv", "Save TV"),
-    ("light_toggle", "Toggle Light"),
-    ("massage_timer_cycle", "Massage Timer Cycle"),
+    ("light_toggle", "Toggle light"),
+    ("massage_timer_cycle", "Cycle massage timer"),
 )
 
 APPS: Final[dict[str, OkinBeddingApp]] = {
     "rize_remedy_ii": OkinBeddingApp(
-        prefix="rize_remedy_ii", label="Rize Remedy II", actions=RIZE_REMEDY_II_ACTIONS,
+        prefix="rize_remedy_ii",
+        label="Rize Remedy II",
+        actions=RIZE_REMEDY_II_ACTIONS,
         save_codes={"save_zero_g": 5, "save_incline": 6, "save_lounge": 3},
         buttons=(("wave_1", "Wave 1"), ("wave_2", "Wave 2"), ("wave_3", "Wave 3")),
         profile=BEDDING_PROFILES["rize_remedy_ii"],
         information_uuid="00002a24-0000-1000-8000-00805f9b34fb",
-        exact_duration=True, information_log_only=True,
+        exact_duration=True,
+        information_log_only=True,
     ),
     "serenity": OkinBeddingApp(
         prefix="serenity",
@@ -153,17 +159,17 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
         actions=SERENITY_ACTIONS,
         save_codes=SERENITY_SAVE_CODES,
         buttons=(
-            ("refresh_manufacturer", "Refresh Manufacturer"),
-            ("selector_4_up", "Remote Selector 4 Up"),
-            ("selector_4_down", "Remote Selector 4 Down"),
-            ("selector_5_up", "Remote Selector 5 Up"),
-            ("selector_5_down", "Remote Selector 5 Down"),
-            ("save_zero_g", "Save Zero Gravity"),
+            ("refresh_manufacturer", "Refresh manufacturer"),
+            ("selector_4_up", "Control 4 up"),
+            ("selector_4_down", "Control 4 down"),
+            ("selector_5_up", "Control 5 up"),
+            ("selector_5_down", "Control 5 down"),
+            ("save_zero_g", "Save zero gravity"),
             ("save_tv", "Save TV"),
-            ("light_toggle", "Toggle Light"),
-            ("massage_head_cycle", "Head Massage Cycle"),
-            ("massage_foot_cycle", "Foot Massage Cycle"),
-            ("massage_timer_cycle", "Massage Timer Cycle"),
+            ("light_toggle", "Toggle light"),
+            ("massage_head_cycle", "Cycle head massage"),
+            ("massage_foot_cycle", "Cycle foot massage"),
+            ("massage_timer_cycle", "Cycle massage timer"),
             ("wave_1", "Wave 1"),
             ("wave_2", "Wave 2"),
             ("wave_3", "Wave 3"),
@@ -176,17 +182,17 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
         actions=TRANQUIL_ACTIONS,
         save_codes={"save_zero_g": 5, "save_lounge": 3, "save_memory_1": 4, "save_memory_2": 8},
         buttons=(
-            ("refresh_manufacturer", "Refresh Manufacturer"),
-            ("selector_4_up", "Remote Selector 4 Up"),
-            ("selector_4_down", "Remote Selector 4 Down"),
-            ("selector_5_up", "Remote Selector 5 Up"),
-            ("selector_5_down", "Remote Selector 5 Down"),
-            ("save_zero_g", "Save Zero Gravity"),
-            ("save_lounge", "Save Lounge"),
-            ("light_toggle", "Toggle Light"),
-            ("massage_head_cycle", "Head Massage Cycle"),
-            ("massage_foot_cycle", "Foot Massage Cycle"),
-            ("massage_timer_cycle", "Massage Timer Cycle"),
+            ("refresh_manufacturer", "Refresh manufacturer"),
+            ("selector_4_up", "Control 4 up"),
+            ("selector_4_down", "Control 4 down"),
+            ("selector_5_up", "Control 5 up"),
+            ("selector_5_down", "Control 5 down"),
+            ("save_zero_g", "Save zero gravity"),
+            ("save_lounge", "Save lounge"),
+            ("light_toggle", "Toggle light"),
+            ("massage_head_cycle", "Cycle head massage"),
+            ("massage_foot_cycle", "Cycle foot massage"),
+            ("massage_timer_cycle", "Cycle massage timer"),
             ("wave_1", "Wave 1"),
             ("wave_2", "Wave 2"),
             ("wave_3", "Wave 3"),
@@ -199,11 +205,11 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
         actions=ZSERIES_Z230_ACTIONS,
         save_codes={"save_zero_g": 5, "save_memory_1": 4, "save_tv": 6},
         buttons=(
-            ("refresh_manufacturer", "Refresh Manufacturer"),
-            ("head_foot_up", "Head and Foot Up"),
-            ("head_foot_down", "Head and Foot Down"),
+            ("refresh_manufacturer", "Refresh manufacturer"),
+            ("head_foot_up", "Head and foot up"),
+            ("head_foot_down", "Head and foot down"),
             *_ZSERIES_BUTTONS_TAIL,
-            ("massage_intensity_cycle", "Massage Intensity"),
+            ("massage_intensity_cycle", "Cycle massage intensity"),
         ),
         profile=BEDDING_PROFILES["zseries_z230"],
     ),
@@ -213,12 +219,12 @@ APPS: Final[dict[str, OkinBeddingApp]] = {
         actions=ZSERIES_Z280_ACTIONS,
         save_codes={"save_zero_g": 5, "save_memory_1": 4, "save_tv": 6, "save_memory_2": 8},
         buttons=(
-            ("refresh_manufacturer", "Refresh Manufacturer"),
-            ("selector_5_up", "Remote Selector 5 Up"),
-            ("selector_5_down", "Remote Selector 5 Down"),
+            ("refresh_manufacturer", "Refresh manufacturer"),
+            ("selector_5_up", "Control 5 up"),
+            ("selector_5_down", "Control 5 down"),
             *_ZSERIES_BUTTONS_TAIL,
-            ("massage_head_cycle", "Head Massage Cycle"),
-            ("massage_foot_cycle", "Foot Massage Cycle"),
+            ("massage_head_cycle", "Cycle head massage"),
+            ("massage_foot_cycle", "Cycle foot massage"),
         ),
         profile=BEDDING_PROFILES["zseries_z280"],
     ),
@@ -442,14 +448,8 @@ class OkinBeddingAppController(OkinCstController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        keys = (
-            "manufacturer",
-            "status_code",
-            "massage_timer_code",
-            "massage_timer_minutes",
-            "save_event_code",
-            "alarm_type",
-        )
+        # Raw status, timer and save codes stay in published state for diagnostics.
+        keys = ("manufacturer", "massage_timer_minutes", "alarm_type")
         return tuple(
             ControllerStateSensorSpec(
                 key=self._key(key),
@@ -458,6 +458,7 @@ class OkinBeddingAppController(OkinCstController):
                 state_key=self._state_key(key),
                 icon="mdi:information-outline",
                 native_unit_of_measurement="min" if key == "massage_timer_minutes" else None,
+                entity_registry_enabled_default=key == "massage_timer_minutes",
                 attribute_keys=tuple(
                     self._state_key(name)
                     for name in ("alarm_repeat", "alarm_hour", "alarm_minute", "alarm_on")
@@ -496,9 +497,8 @@ class OkinBeddingAppController(OkinCstController):
                         await self.write_command(
                             codec.frame96(primary, secondary),
                             repeat_count=(duration_ms + CST_REFRESH_MS - 1) // CST_REFRESH_MS
-                            if self._app.exact_duration else self.timed_move_repeat_count(
-                                duration_ms, CST_REFRESH_MS
-                            ),
+                            if self._app.exact_duration
+                            else self.timed_move_repeat_count(duration_ms, CST_REFRESH_MS),
                             repeat_delay_ms=CST_REFRESH_MS,
                         )
                     except TimeoutError:
@@ -589,7 +589,18 @@ class OkinBeddingAppController(OkinCstController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
-            ControllerButtonSpec(self._key(action), name, _callback(action))
+            ControllerButtonSpec(
+                self._key(action),
+                name,
+                _callback(action),
+                # Saving overwrites a stored preset, so the card asks first.
+                requires_confirmation=action.startswith("save_"),
+                # Saves get their own translation key: the card places them apart.
+                translation_key="okin_bedding_app_save" if action.startswith("save_") else None,
+                translation_placeholders={"action": name} if action.startswith("save_") else None,
+                diagnostic=action == "refresh_manufacturer",
+                card=CARD_PRESET_SAVE if action.startswith("save_") else CARD_UTILITY,
+            )
             for action, name in self._app.buttons
         )
 
@@ -617,9 +628,7 @@ class TranquilController(OkinBeddingAppController):
 class ZSeriesController(OkinBeddingAppController):
     """Customatic Z-Series 1.0.4, with the user-selected Z-230 or Z-280 page."""
 
-    def __init__(
-        self, coordinator: AdjustableBedCoordinator, *, model: str
-    ) -> None:
+    def __init__(self, coordinator: AdjustableBedCoordinator, *, model: str) -> None:
         super().__init__(coordinator, app=f"zseries_{model}")
         # This connection's observation; None until a manufacturer read succeeds.
         self._alarm_available: bool | None = None

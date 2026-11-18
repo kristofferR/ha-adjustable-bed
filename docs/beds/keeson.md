@@ -2679,7 +2679,7 @@ The Cool Base profile follows this app. Hardware behavior is unverified.
 |---------|-----------|
 | Motor Control | ✅ (2 motors: head, foot) |
 | Position Feedback | ❌ |
-| Memory Presets | Cool Base: ❌ (the app's star button has no proven memory meaning; exposed as **Star button**). DewertOKIN OKIN-BLE: 2 slots |
+| Memory Presets | Cool Base: ❌ (the app's star button has no proven memory meaning; exposed as **Star**). DewertOKIN OKIN-BLE: 2 slots |
 | Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore; Lounge only on DewertOKIN OKIN-BLE) |
 | Massage | ✅ (Head massage, Foot massage, Massage mode buttons; mode sensor) |
 | Light Control | ✅ (on/off from reported state; toggle) |
@@ -4214,7 +4214,7 @@ the raw Bluetooth name and GATT:
 | Massage | ✅ (P2 L0/L1/L2/L3/L5: dedicated selectors and timers; others: four held steps) |
 | Massage power/off, absolute intensity | ❌ (not in this artifact, not synthesized) |
 | Lights | ✅ (underbed lighting on L0/L1/L3/L5/L6; ❌ on P2) |
-| Alarm | ✅ (draft hour/minute/action, explicit On/Off commit) |
+| Alarm | ✅ (hour, minute and action settings, applied by the Alarm switch) |
 | Clock sync | ✅ (P1/P3/P4) |
 | Intelligent anti-snore and sleep | ✅ (P4 L0/L3 only) |
 | Position Feedback | ❌ (no motor angle, percentage, height or current telemetry) |
@@ -4394,19 +4394,19 @@ State sensors:
 
 ##### AdjustaMattress alarms
 
-- Alarm hour/minute numbers and action select are **drafts**. Set the Alarm
-  select to On or Off to commit. Editing an enabled alarm is rejected.
+- The Alarm hour/minute numbers and Alarm action select hold the alarm the
+  **Alarm** switch sends; turning the switch on or off commits it. They start
+  from the bed's reported alarm. Editing an enabled alarm is rejected.
 - On commits repeat 255; Off commits repeat 0 on P1/P3/P4, while P2 uses its
   all-255 disable sentinel (hour, minute, action and repeat all 255).
 - Action codes are 0 (app default), 9 (massage), 17 (neutral action code) and 19
   (position). No weekday-bit interpretation or physical posture for action 17 is
   invented.
 - The commit writes at +200 ms and refreshes the alarm at +600 ms.
-- Reported alarm fields remain separate from the draft values and wait for
-  replies.
-- Local drafts and pending strength choices survive BLE reconnects through the
+- The Alarm switch shows the reported alarm state and waits for replies.
+- Uncommitted alarm and strength edits survive BLE reconnects through the
   per-address/profile app session. Hydration cannot erase uncommitted edits.
-  Only the privacy agreement persists across Home Assistant restarts.
+  Nothing persists across Home Assistant restarts.
 
 | Model | Set alarm frame | Action byte |
 | --- | --- | --- |
@@ -4425,8 +4425,8 @@ above:
 
 ##### AdjustaMattress anti-snore and sleep (P4 L0/L3)
 
-P4 L0/L3 additionally expose intelligent anti-snore On/Off, demonstration,
-sleep, status refresh, local strength choice and the persisted privacy agreement.
+P4 L0/L3 additionally expose the **Intelligent anti-snore** and **Sleep mode**
+switches, demonstration, a status refresh and the anti-snore strength.
 
 | Command | Bytes |
 | --- | --- |
@@ -4437,21 +4437,23 @@ sleep, status refresh, local strength choice and the persisted privacy agreement
 - Anti-snore mode byte: `02` when demonstration is set, otherwise `01` enabled
   or `00` disabled (wire mode 2 is demonstration).
 - Strength index 0/1/2 sends `01`/`03`/`06`; `23` is threshold 35.
-- Review the manufacturer's anti-snore privacy notice in its app before marking
-  that local agreement Accepted.
+- The app shows a privacy notice before enabling anti-snore; turning the switch
+  on in Home Assistant is that consent, so there is no separate entity.
 - Enabling clears demonstration; disabling preserves it, so a retained
   demonstration can still select wire mode 2.
 - Demonstration requires intelligent anti-snore to be disabled.
-- Strength selection changes the next command, without an immediate write.
+- The Anti-snore strength select applies with the next anti-snore command
+  (switching it on, demonstration or sleep), without an immediate write.
 
 ###### AdjustaMattress sleep action
 
-- Before each Sleep action, HA queries and awaits a fresh P4 status report.
+- Before each Sleep mode change, HA queries and awaits a fresh P4 status report.
+  The switch sends the app's toggle only when that report differs from the
+  requested state.
 - A five-second HA readiness guard rejects a missing reply without sending a
   sleep command. This is an integration guard, not a discovered device timer;
   old replies or reconnect defaults cannot determine the direction.
 - The following app sequence starts only after that fresh report.
-- Sleep follows the app's separate path without the privacy gate.
 - Starting while anti-snore is disabled enables it, forces strength index
   1/threshold 35, preserves demonstration, sends the anti-snore helper
   immediately and sleep at +200 ms. Otherwise sleep is immediate.

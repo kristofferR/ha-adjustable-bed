@@ -1044,7 +1044,10 @@ these as Back, Legs and Lumbar controls. These names do not validate motor
 wiring, count, travel, angles or feedback. A nonzero high capability nibble
 enables the four Save buttons. Product130 offers native Left/Both/Right and
 single-address pairing. It restores the local side record, with first selected
-for a new record. The source's missing-record fallbacks are feature-specific:
+for a new record; Home Assistant has no entity for that app screen choice, so
+use single-address pairing or the `comfy_control` action's `side` field. Lock
+and the local timer are switches (Control lock, Timer); the lock query runs on
+connect. The source's missing-record fallbacks are feature-specific:
 movement/presets right, light both, timer first, lock both. The shared lock
 handler also reads that record on129/131 while normal controls stay first.
 

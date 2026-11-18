@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ...card import CARD_UTILITY
 from ...codec import kaidi as codec
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -23,7 +22,11 @@ from ...profiles.kaidi import (
     rize_advertisement,
     validate_rize_profile,
 )
-from ..entity_specs import ControllerButtonSpec, ControllerStateBinarySensorSpec
+from ..entity_specs import (
+    ControllerButtonSpec,
+    ControllerStateBinarySensorSpec,
+    ControllerSwitchSpec,
+)
 from .app import KaidiAppController
 
 if TYPE_CHECKING:
@@ -84,14 +87,20 @@ class RizeController(KaidiAppController):
             specs = tuple(s for s in specs if s.key not in ("rize_all_up", "rize_all_down"))
         if not self.profile.extended:
             return specs
-        return (*specs, *(
-            ControllerButtonSpec(
-                f"rize_motion_{state}", f"Motion sensor {state}",
-                lambda c, state=state: cast(RizeController, c)._action(f"motion_{state}"),
-                translation_key=f"rize_motion_{state}", card=CARD_UTILITY,
-            )
-            for state in ("on", "off")
-        ))
+        return specs
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if not self.profile.extended:
+            return ()
+        # The bed reports no motion-sensor state, so the switch shows the last command.
+        return (
+            ControllerSwitchSpec(
+                "rize_motion", "rize_motion",
+                lambda c, on: cast(RizeController, c)._action("motion_on" if on else "motion_off"),
+                icon="mdi:motion-sensor",
+            ),
+        )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
@@ -99,6 +108,7 @@ class RizeController(KaidiAppController):
             return ()
         return (ControllerStateBinarySensorSpec(
             "rize_battery_mode", "rize_battery_mode", BATTERY_MODE, "mdi:battery",
+            entity_registry_enabled_default=False,
         ),)
 
     @property

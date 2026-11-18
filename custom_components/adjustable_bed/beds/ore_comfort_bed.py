@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.exceptions import HomeAssistantError
 
-from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESET_SAVE, CARD_UTILITY
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
@@ -71,8 +71,12 @@ ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
     KEESON_VARIANT_OKIN_COMFORT_BED: OreComfortBedApp(
         "OKIN Comfort Bed", "com.ore.okincomfortbed", "1.1.6 (8)"
     ),
-    KEESON_VARIANT_AVANTI_BASES: OreComfortBedApp("Avanti Bases", "com.ore.AvantiBases", "1.0.5 (7)"),
-    KEESON_VARIANT_AMERICANSTAR: OreComfortBedApp("AMERICANSTAR", "com.ore.americanstar", "1.0 (1)"),
+    KEESON_VARIANT_AVANTI_BASES: OreComfortBedApp(
+        "Avanti Bases", "com.ore.AvantiBases", "1.0.5 (7)"
+    ),
+    KEESON_VARIANT_AMERICANSTAR: OreComfortBedApp(
+        "AMERICANSTAR", "com.ore.americanstar", "1.0 (1)"
+    ),
     KEESON_VARIANT_MAXCOIL_UNA: OreComfortBedApp("MaxCoil Una", "com.ore.maxcoil", "1.1.0 (5)"),
     KEESON_VARIANT_DYNASTY_BASES: OreComfortBedApp("Dynasty Bases", "com.ore.Dynasty", "1.0.2 (3)"),
     KEESON_VARIANT_BEDSENSE_BASES: OreComfortBedApp(
@@ -476,19 +480,25 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
                 lambda ctrl: press(cast(OreComfortBedController, ctrl)),
                 icon,
                 translation_key=key,
-                card=CARD_MASSAGE if key == "ore_comfort_massage_start" else CARD_UTILITY,
+                # Saving overwrites the stored preset, so the card asks first.
+                requires_confirmation=key.startswith("ore_comfort_program_"),
+                card=CARD_MASSAGE
+                if key == "ore_comfort_massage_start"
+                else CARD_PRESET_SAVE
+                if key.startswith("ore_comfort_program_")
+                else CARD_UTILITY,
             )
 
         return (
             spec(
                 "ore_comfort_program_flat",
-                "Save Flat",
+                "Save flat",
                 "mdi:content-save",
                 lambda c: c.program_flat(),
             ),
             spec(
                 "ore_comfort_program_zero_g",
-                "Save Zero G",
+                "Save zero gravity",
                 "mdi:content-save",
                 lambda c: c.program_zero_g(),
             ),

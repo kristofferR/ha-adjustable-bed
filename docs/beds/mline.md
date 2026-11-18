@@ -25,7 +25,7 @@ Names containing SLEEP, SMARTBED or OKIN are candidates shared with other apps.
 | Light | One-shot light action; no observed on/off state |
 | Massage | Optional registered-route controls: start, cycle wave, intensity and timer |
 | Clock / alarm | Clock sync, recurring or one-shot alarm, disable and query |
-| Sleep sensor | Observed heart, breath, motion and source Boolean projection |
+| Sleep sensor | Heart, breath and motion; the source's unnamed boolean is in diagnostics |
 | Privacy / anti-snore settings | Sleep protocol only |
 | Raw history | Explicit bounded transfer and separate acknowledgement on the same connection |
 

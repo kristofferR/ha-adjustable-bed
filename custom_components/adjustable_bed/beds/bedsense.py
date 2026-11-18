@@ -76,9 +76,48 @@ _SENSOR_CARDS = {
     "massage_timer": CARD_MASSAGE_TIMER,
     "light_duration": CARD_LIGHT_STATE,
     **dict.fromkeys(
-        ("head_bar", "wave_bar", "head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE
+        ("head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE
     ),
 }
+
+
+# Entity names for the app's controls; the profile labels describe the wire actions.
+_BUTTON_NAMES = {
+    "circulation_back_and_leg": "Back and leg circulation",
+    "circulation_default": "Default circulation",
+    "circulation_head": "Head circulation",
+    "circulation_hip": "Hip circulation",
+    "circulation_legs": "Leg circulation",
+    "circulation_waist": "Waist circulation",
+    "circulation_whole_body": "Whole body circulation",
+    "clear_anti_snore": "Clear Anti-snore position",
+    "clear_m1": "Clear M1 position",
+    "clear_m2": "Clear M2 position",
+    "clear_tv": "Clear TV position",
+    "clear_zero_g": "Clear Zero Gravity position",
+    "decline": "Decline",
+    "rise": "Rise",
+    "leg_relax": "Leg relax",
+    "lumbar": "Lumbar",
+    "music": "Music",
+    "light_10_min": "Light for 10 minutes",
+    "light_8_h": "Light for 8 hours",
+    "light_10_h": "Light for 10 hours",
+    "massage_head_up": "Head massage up",
+    "massage_head_down": "Head massage down",
+    "massage_foot_up": "Foot massage up",
+    "massage_foot_down": "Foot massage down",
+    "massage_wave_up": "Massage frequency up",
+    "massage_wave_down": "Massage frequency down",
+    "massage_timer_10": "Massage timer 10 minutes",
+    "massage_timer_20": "Massage timer 20 minutes",
+    "massage_timer_30": "Massage timer 30 minutes",
+    "massage_timer_cancel": "Cancel massage timer",
+}
+
+
+def _button_name(key: str) -> str:
+    return _BUTTON_NAMES.get(key) or ACTIONS[key].label
 
 
 class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
@@ -184,7 +223,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
             if self.layout in a.variants
             and (
                 k.startswith(("circulation_", "clear_", "massage_", "light_"))
-                or k in ("background_tap", "lumbar", "music", "leg_relax", "rise", "decline")
+                or k in ("lumbar", "music", "leg_relax", "rise", "decline")
             )
         ]
         specs = []
@@ -196,29 +235,20 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
                 if key.startswith("light_")
                 else "action"
             )
+            name = _button_name(key)
             specs.append(
                 ControllerButtonSpec(
                     f"bedsense_{key}",
-                    ACTIONS[key].label,
+                    name,
                     _action(key),
                     scheduler_resource="*",
                     translation_key=f"bedsense_{category}",
-                    translation_placeholders={"action": ACTIONS[key].label},
+                    translation_placeholders={"action": name},
                     card={"massage": CARD_MASSAGE, "light": CARD_LIGHTING}.get(
                         category, CARD_UTILITY
                     ),
                 )
             )
-        specs.append(
-            ControllerButtonSpec(
-                "bedsense_refresh_memory",
-                "Refresh memory indicators",
-                _action("refresh_memory"),
-                scheduler_resource="*",
-                translation_key="bedsense_action",
-                translation_placeholders={"action": "Refresh memory indicators"},
-            )
-        )
         return tuple(specs)
 
     @property
@@ -230,6 +260,7 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
                 _state_key(f"bedsense_m{i}_saved"),
                 "mdi:content-save",
                 attribute_keys=(_state_key("bedsense_state_source"),),
+                entity_registry_enabled_default=False,
             )
             for i in range(1, 6)
         )
@@ -243,11 +274,10 @@ class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
                 _state_key(f"bedsense_{key}"),
                 "mdi:information-outline",
                 attribute_keys=(_state_key("bedsense_state_source"),),
+                entity_registry_enabled_default=True,
                 card=_SENSOR_CARDS.get(key, CARD_HIDDEN),
             )
             for key in (
-                "head_bar",
-                "wave_bar",
                 "circulation",
                 "massage_timer",
                 "light_duration",

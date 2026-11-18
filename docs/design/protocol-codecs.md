@@ -69,7 +69,7 @@ route writes LinonPI frames, so its controller is not a profile over the codec.
 
 ## Smart Comfort seat codec
 
-The accepted cluster-024 SYNARGY and SYNERGY literals are reproduced by
+The Smart Comfort SYNARGY and SYNERGY literals are reproduced by
 `codec/smart_comfort.py`, with independent profiles in `profiles/smart_comfort.py`.
 Keeson's checked E5 carrier can reproduce the outer motor envelope, but its key
 word semantics do not cover seat-scoped accessory groups, BGR/mask color fields,
@@ -157,7 +157,7 @@ Two payload shapes address the controller: `STANDARD` (`01`) and `BILATERAL`
 | Profile | Evidence |
 | --- | --- |
 | `LEGACY` | Pre-v5 controller tests (bed types `jiecang` and `comfort_motion`) |
-| `COMFORT_MOTION` | Comfort Motion 2.2.1 (row115) |
+| `COMFORT_MOTION` | Comfort Motion 2.2.1 |
 | `DREAMASK` | Dreamask (ERGOBALANCE) 1.0.8 |
 | `DREAMOTION` | Dreamotion 1.0.5 |
 | `DREAMHD` | Dream Motion HD 1.0.4 |
@@ -209,7 +209,6 @@ one section per profile. Tables the profile data already knows sit between
 `<!-- generated:<name> -->` markers and are rewritten by
 `scripts/generate_codec_docs.py` from each family's `scripts/codec_docs/` module;
 `tests/test_codec_docs.py` fails when one is stale. The layout is described in [Bed guide format](../BED_GUIDE_FORMAT.md#codec-guides).
-Discovery ledgers stay separate documents linked from each profile section.
 
 Byte-identical bed types kept for existing entries are listed under each codec
 guide's **Aliases**; `tests/test_codec_docs.py` fails when two codec-backed bed
@@ -313,7 +312,7 @@ adds the bounded save gesture, product gates, fixed GATT roles and timer parser.
 
 ## OKIN Smart Sleep
 
-Row094 P1 motor/preset literals reproduce through Keeson's `p2_side` carrier,
+OKIN Smart Sleep 2.4.9's P1 motor/preset literals reproduce through Keeson's `p2_side` carrier,
 which `codec/smart_sleep.py` reuses. No existing codec reproduces P1's complete
 settings and reply shapes plus P2's AA/2A commands and notifications, including
 its distinct motor-neutral and global STOP. `profiles/smart_sleep.py` declares
@@ -321,14 +320,14 @@ both formats and their catalogs; one family controller owns their session.
 The vector harness compares every accepted in-scope literal before reuse.
 See [Smart Sleep](../beds/smart-sleep.md).
 
-N32 Motion Bed 1.1.14 (38), row080, reproduces its four-mask held frames,
+N32 Motion Bed 1.1.14 (38) reproduces its four-mask held frames,
 clock and slot queries through Okin N-frame. Its alarm uses the same seven
 counted fields plus an uncounted reserved byte and a third proven slot.
 `alarm(..., reserved=0)` expresses that trailer without changing existing
 profiles' records. Its typed fixed profile uses the shared Okin family
 controller; its own session and alarm callback live in `beds/n32_motion_bed/`.
 
-アシステック / Yamada 1.0.1 (6), row178, adds explicit P1/P2 profiles only after
+アシステック / Yamada 1.0.1 (6) adds explicit P1/P2 profiles only after
 all 35 packet literals match existing Keeson and Okin N-frame encoders. Its
 shared-family controller extension owns alarm parsing, session fences, raw clock
 fields and captured release scheduling. No new codec or product alias is needed.

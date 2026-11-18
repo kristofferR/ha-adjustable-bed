@@ -476,7 +476,7 @@ class InnovaController(KeesonController):
         return (
             ControllerButtonSpec(
                 key=BUTTON_MASSAGE_LEVEL,
-                name="Massage level",
+                name="Cycle massage level",
                 press_fn=_action("massage_level_step"),
                 icon="mdi:sine-wave",
                 translation_key=BUTTON_MASSAGE_LEVEL,
@@ -484,7 +484,7 @@ class InnovaController(KeesonController):
             ),
             ControllerButtonSpec(
                 key=BUTTON_MASSAGE_TIMER_HOLD,
-                name="Massage timer (memory page)",
+                name="Cycle massage timer",
                 press_fn=_action("massage_timer_hold"),
                 icon="mdi:timer-outline",
                 translation_key=BUTTON_MASSAGE_TIMER_HOLD,
@@ -552,6 +552,7 @@ class InnovaController(KeesonController):
                 state_key=STATE_LIGHT,
                 icon="mdi:lightbulb",
                 card=CARD_LIGHTING,
+                entity_registry_enabled_default=True,
             ),
         )
 
@@ -565,6 +566,7 @@ class InnovaController(KeesonController):
                 icon="mdi:timer-outline",
                 native_unit_of_measurement="min",
                 card=CARD_MASSAGE_TIMER,
+                entity_registry_enabled_default=True,
             ),
         )
 

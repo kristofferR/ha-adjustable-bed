@@ -330,6 +330,17 @@ A new app is normally a profile plus its vectors, not a new controller.
     keys (`has_massage`, `has_light`, `product_type`, `reverse_motor_1`–`4`,
     `ble_device_name`) instead of adding per-app copies.
 
+13. **Name and expose entities for the person looking at their bed.** Every
+    entity must be a control or value a user understands and wants. Names describe
+    the physical thing in sentence case, never a brand, app, provenance note
+    ("(app)", "Raw …"), protocol word (hex, "field", "axis N", "Part N",
+    "code") or ALL-CAPS app label; give unknown-meaning values no entity. An on/off
+    pair is one `ControllerSwitchSpec`, a refresh button is `diagnostic=True`, and
+    raw or protocol state stays in `protocol_diagnostics`. Controller state
+    sensors are disabled by default: set `entity_registry_enabled_default=True`
+    only for dashboard values (motion, presets, massage and light state, timers).
+    `tests/test_entity_names.py` checks every translated name and state label.
+
 ## Configuration Options
 
 | Option | Description | Default |
