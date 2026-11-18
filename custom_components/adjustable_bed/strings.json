@@ -5372,6 +5372,9 @@
       },
       "l2motion_sync": {
         "name": "Synchronization"
+      },
+      "live_sleep_data": {
+        "name": "Live sleep data"
       }
     },
     "binary_sensor": {

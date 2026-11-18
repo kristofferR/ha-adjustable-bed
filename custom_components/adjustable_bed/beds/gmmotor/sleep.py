@@ -10,14 +10,21 @@ import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import asdict
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 
 from homeassistant.util import dt as dt_util
 
 from ...card import CARD_UTILITY
 from ...controller_state import StateKey, StateUpdate
 from ..base import BedController, require_controller
-from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorControlSpec
+from ..entity_specs import (
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    ControllerSwitchSpec,
+    MotorControlSpec,
+    sleep_flag_binary_sensor_spec,
+    sleep_rate_sensor_spec,
+)
 from .notifications import Value
 from .protocol import MalformedNotification
 from .requests import GmmotorActions, Operation, Request
@@ -72,8 +79,39 @@ REPORTS: Final = StateKey[dict[str, Value]]("gmmotor_sleep_reports")
 INVALID: Final = StateKey[int]("gmmotor_sleep_invalid")
 
 
+LIVE_ENABLED: Final = StateKey[bool]("gmmotor_sleep_live_enabled")
+_SIDES: Final[tuple[Literal["left", "right"], ...]] = ("left", "right")
+
+
 def _live_key(side: str) -> StateKey[dict[str, object]]:
     return StateKey[dict[str, object]]("gmmotor_sleep_" + side)
+
+
+def _rate_key(side: str, field: str) -> StateKey[int | None]:
+    return StateKey[int | None](f"gmmotor_sleep_{side}_{field}")
+
+
+def _flag_key(side: str, field: str) -> StateKey[bool | None]:
+    return StateKey[bool | None](f"gmmotor_sleep_{side}_{field}")
+
+
+def _rate(text: str | None) -> int | None:
+    try:
+        return None if text is None else round(float(text))
+    except ValueError, OverflowError:
+        return None
+
+
+def _live_updates(side: str, state: LiveState) -> list[StateUpdate]:
+    """One side's display record, plus the typed readings the entities show."""
+    return [
+        _live_key(side)(asdict(state)),
+        _rate_key(side, "heart_rate")(_rate(state.first_value)),
+        _rate_key(side, "breathing_rate")(_rate(state.second_value)),
+        _flag_key(side, "on_bed")(state.on_bed),
+        _flag_key(side, "moving")(state.moving),
+        _flag_key(side, "snoring")(state.snoring),
+    ]
 
 
 class GmmotorSleepController(BedController, GmmotorActions):
@@ -111,6 +149,7 @@ class GmmotorSleepController(BedController, GmmotorActions):
     @_live_enabled.setter
     def _live_enabled(self, enabled: bool) -> None:
         self._intent.live_enabled = enabled
+        self.forward_controller_state_update(LIVE_ENABLED, enabled)
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -145,28 +184,30 @@ class GmmotorSleepController(BedController, GmmotorActions):
         return True
 
     @property
-    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        operations: tuple[tuple[str, Operation], ...] = (
-            ("Time", "sensor_time"),
-            ("Query part", "sensor_query_part"),
-            ("Start live data", "sensor_live"),
-            ("Stop live data", "sensor_stop"),
-        )
-        return tuple(
-            ControllerButtonSpec(
-                key="gmmotor_" + operation,
-                name=name,
-                press_fn=lambda ctrl, op=operation: require_controller(
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        # The clock is set and the part read on every connection, so neither is a button.
+        return (
+            ControllerSwitchSpec(
+                "gmmotor_sleep_live",
+                "live_sleep_data",
+                lambda ctrl, on: require_controller(
                     ctrl, GmmotorSleepController
-                ).async_execute_gmmotor_request(Request(op)),
-                cancel_movement=False,
-            )
-            for name, operation in operations
+                ).async_execute_gmmotor_request(Request("sensor_live" if on else "sensor_stop")),
+                LIVE_ENABLED,
+                icon="mdi:heart-pulse",
+            ),
         )
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
+            *(
+                sleep_rate_sensor_spec(
+                    kind, f"gmmotor_sleep_{side}_{kind}", _rate_key(side, kind), side
+                )
+                for side in _SIDES
+                for kind in ("heart_rate", "breathing_rate")
+            ),
             ControllerStateSensorSpec(
                 key="gmmotor_sleep_state",
                 translation_key="gmmotor_sleep_state",
@@ -183,6 +224,20 @@ class GmmotorSleepController(BedController, GmmotorActions):
                 card=CARD_UTILITY,
                 entity_registry_enabled_default=False,
             ),
+        )
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        return tuple(
+            sleep_flag_binary_sensor_spec(
+                kind, f"gmmotor_sleep_{side}_{field}", _flag_key(side, field), side
+            )
+            for side in _SIDES
+            for field, kind in (
+                ("on_bed", "bed_presence"),
+                ("moving", "body_movement"),
+                ("snoring", "snoring"),
+            )
         )
 
     async def write_command(
@@ -289,8 +344,8 @@ class GmmotorSleepController(BedController, GmmotorActions):
                 if seen:
                     self._live_seen[side] = 0
                 else:
-                    updates.append(
-                        _live_key(side)(asdict(LiveState(None, None, None, None, None, False)))
+                    updates.extend(
+                        _live_updates(side, LiveState(None, None, None, None, None, False))
                     )
             if updates:
                 self.forward_controller_state_updates(*updates)
@@ -336,7 +391,7 @@ class GmmotorSleepController(BedController, GmmotorActions):
                 if state is not None:
                     if self._sxb:
                         self._live_seen[side] += 1
-                    updates.append(_live_key(side)(asdict(state)))
+                    updates.extend(_live_updates(side, state))
         self.forward_controller_state_updates(*updates)
 
     def _receive(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
@@ -458,6 +513,7 @@ class GmmotorSleepController(BedController, GmmotorActions):
             raise ConnectionError("Not connected to GM Control sleep module")
         self._transport = select_sleep(client.services, sxb=self._sxb)
         self._receive_buffer.clear()
+        self.forward_controller_state_update(LIVE_ENABLED, self._live_enabled)
         try:
             for characteristic in self._transport.notifications:
                 async with self.ble_lock:
