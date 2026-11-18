@@ -52,6 +52,8 @@ ALARM_SOUNDS: Final = (
     "music_5",
 )
 
+MASSAGE_ZONES: Final = ("head", "feet", "both", "wave")
+
 # Request fields a capability must enable before a caller may set them.
 OPTIONAL_FIELDS: Final = (
     "weekdays",
@@ -62,6 +64,7 @@ OPTIONAL_FIELDS: Final = (
     "foot_massage_level",
     "massage_intensity",
     "massage_duration",
+    "massage_zone",
     "sound",
     "light",
     "confirm_custom_position",
@@ -72,8 +75,8 @@ OPTIONAL_FIELDS: Final = (
 class AlarmCapability:
     """What one bed's alarm accepts.
 
-    ``wake_actions`` and ``sounds`` list the selectable choices, the first
-    being the default. ``slots`` above one adds a slot choice. The remaining flags admit
+    ``wake_actions``, ``sounds``, ``massage_durations`` and ``massage_zones``
+    list the selectable choices, the first being the default. ``slots`` above one adds a slot choice. The remaining flags admit
     their request fields. ``cancel_running`` and ``resource`` say how the
     command is scheduled against other commands on the same bed.
     """
@@ -85,6 +88,7 @@ class AlarmCapability:
     massage_levels: int = 0
     massage_intensities: int = 0
     massage_durations: tuple[int, ...] = ()
+    massage_zones: tuple[str, ...] = ()
     sounds: tuple[str, ...] = ()
     light: bool = False
     # The bed refuses to turn an alarm on without an explicit wake action.
@@ -99,6 +103,7 @@ class AlarmCapability:
     def __post_init__(self) -> None:
         unknown = set(self.wake_actions).difference(WAKE_ACTIONS)
         unknown |= set(self.sounds).difference(ALARM_SOUNDS)
+        unknown |= set(self.massage_zones).difference(MASSAGE_ZONES)
         if unknown:
             raise ValueError(f"Unknown alarm choices: {sorted(unknown)}")
 
@@ -113,6 +118,7 @@ class AlarmCapability:
             "foot_massage_level": self.massage_levels > 0,
             "massage_intensity": self.massage_intensities > 0,
             "massage_duration": bool(self.massage_durations),
+            "massage_zone": bool(self.massage_zones),
             "sound": bool(self.sounds),
             "light": self.light,
             "confirm_custom_position": bool(self.confirm_actions),
@@ -135,6 +141,7 @@ class AlarmRequest:
     foot_massage_level: int = 0
     massage_intensity: int = 1
     massage_duration: int | None = None
+    massage_zone: str | None = None
     sound: str = "none"
     light: bool = False
     confirm_custom_position: bool = False

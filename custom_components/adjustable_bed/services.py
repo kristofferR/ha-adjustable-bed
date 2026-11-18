@@ -37,7 +37,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_device_and_config_entry
 from homeassistant.util import dt as dt_util
 
-from .alarm import ALARM_SOUNDS, WAKE_ACTIONS, AlarmCapability, AlarmRequest
+from .alarm import ALARM_SOUNDS, MASSAGE_ZONES, WAKE_ACTIONS, AlarmCapability, AlarmRequest
 from .alarm import OPTIONAL_FIELDS as ALARM_OPTIONAL_FIELDS
 from .alarm import WEEKDAYS as ALARM_WEEKDAYS
 from .bed_traits import bed_type_has_position_feedback
@@ -2137,6 +2137,13 @@ def _check_alarm(
                 "durations": ", ".join(map(str, capability.massage_durations)),
             },
         )
+    if "massage_zone" in given and alarm.massage_zone not in capability.massage_zones:
+        raise ServiceValidationError(
+            f"Device '{device_name}' cannot massage '{alarm.massage_zone}' at wake-up",
+            translation_domain=DOMAIN,
+            translation_key="alarm_massage_zone_not_supported",
+            translation_placeholders={"device_name": device_name, "zone": str(alarm.massage_zone)},
+        )
     if "sound" in given and alarm.sound not in capability.sounds:
         raise ServiceValidationError(
             f"Device '{device_name}' cannot play sound '{alarm.sound}'",
@@ -2164,12 +2171,16 @@ def _check_alarm(
 def _with_bed_defaults(
     alarm: AlarmRequest, capability: AlarmCapability, given: Collection[str]
 ) -> AlarmRequest:
-    """Fill in the bed's own default wake action and sound when the caller chose none."""
-    defaults: dict[str, str] = {}
-    if "wake_action" not in given and capability.wake_actions:
-        defaults["wake_action"] = capability.wake_actions[0]
-    if "sound" not in given and capability.sounds:
-        defaults["sound"] = capability.sounds[0]
+    """Fill in the bed's own default for each choice the caller left out."""
+    defaults: dict[str, object] = {}
+    for name, choices in (
+        ("wake_action", capability.wake_actions),
+        ("sound", capability.sounds),
+        ("massage_duration", capability.massage_durations),
+        ("massage_zone", capability.massage_zones),
+    ):
+        if name not in given and choices:
+            defaults[name] = choices[0]
     return dataclasses.replace(alarm, **defaults) if defaults else alarm
 
 
@@ -2774,6 +2785,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Optional("foot_massage_level"): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
                 vol.Optional("massage_intensity"): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
                 vol.Optional("massage_duration"): vol.All(vol.Coerce(int), vol.Range(min=1, max=120)),
+                vol.Optional("massage_zone"): vol.In(MASSAGE_ZONES),
                 vol.Optional(ATTR_SOUND): vol.In(ALARM_SOUNDS),
                 vol.Optional("light"): cv.boolean,
                 vol.Optional("confirm_custom_position"): cv.boolean,

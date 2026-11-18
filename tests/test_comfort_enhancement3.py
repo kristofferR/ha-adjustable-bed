@@ -489,26 +489,44 @@ async def test_real_coordinator_cover_timed_move_and_card_lease(hass, mock_bleak
     await coordinator.async_disconnect()
 
 
-async def test_service_all_target_preflight_and_profile12_wakeup(hass, bed):
-    from custom_components.adjustable_bed.services import async_register_services
-    from tests.test_generic_services import select, target
+async def test_set_alarm_maps_to_a_wake_up_program(hass, bed):
+    from tests.alarm_helpers import call_set_alarm
 
     c, _, _ = bed
-    await async_register_services(hass)
-    first = target(const.BED_TYPE_COMFORT_ENHANCEMENT3, family=apex.ComfortEnhancement3Controller)
-    second = target(const.BED_TYPE_COMFORT_ENHANCEMENT3, family=apex.ComfortEnhancement3Controller)
-    first[1].validate_wakeup = MagicMock()
-    second[1].validate_wakeup = MagicMock(side_effect=ValueError("unsupported effect"))
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets") as resolved:
-        select(resolved, first, second)
-        with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(
-                const.DOMAIN,
-                "comfort_enhancement3_set_wakeup",
-                {"device_id": ["a", "b"], "slot": 10, "time": "23:59", "massage": True},
-                blocking=True,
-            )
-    first[0].async_execute_controller_command.assert_not_awaited()
+    await c.async_discover_capabilities()
+    c.set_wakeup = AsyncMock()
+    c.delete_wakeup = AsyncMock()
+    now = datetime(2026, 11, 12, 23, 0, tzinfo=UTC)
+    with patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now):
+        scheduled = await call_set_alarm(
+            hass,
+            c,
+            {"enabled": True, "time": "06:30", "slot": 3, "wake_action": "none"},
+        )
+        await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+    # The time has passed today, so the program runs tomorrow.
+    c.set_wakeup.assert_awaited_once_with(
+        3,
+        datetime(2026, 11, 13, 6, 30, tzinfo=UTC),
+        massage=False,
+        duration=10,
+        intensity=1,
+        kind="head",
+        light=False,
+        preset="None",
+    )
+    c.delete_wakeup.assert_awaited_once_with(3)
+    assert scheduled[0]["cancel_running"] is True and scheduled[0]["resource"] == "*"
+
+
+async def test_set_alarm_rejects_effects_before_any_write(hass, bed):
+    from tests.alarm_helpers import call_set_alarm
+
+    c, _, client = bed
+    await c.async_discover_capabilities()
+    with pytest.raises(ServiceValidationError):
+        await call_set_alarm(hass, c, {"enabled": True, "time": "06:30", "massage_duration": 15})
+    assert not client.write_gatt_char.called
 
 
 @pytest.mark.parametrize("index", range(15))

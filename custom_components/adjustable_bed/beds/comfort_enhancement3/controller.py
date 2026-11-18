@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...command_scheduler import current_command_context
@@ -59,6 +60,19 @@ def delay_ticks(target: datetime, now: datetime) -> int:
     micros = (delta.days * 86400 + delta.seconds) * 1000000 + delta.microseconds
     seconds = abs(micros) // 1000000
     return (-seconds if micros < 0 else seconds) * 10
+
+
+# Shared wake actions and the remote's preset labels, default first.
+_WAKE_PRESETS: Final = {
+    "none": "None",
+    "memory_1": "M1",
+    "memory_2": "M2",
+    "zero_g": "Zero Gravity",
+    "tv": "TV",
+    "anti_snore": "QS",
+}
+# Wake-up programs are identified by number; the app has no fixed count.
+WAKE_SLOTS: Final = 10
 
 
 def selected_time(now: datetime, hour: int, minute: int, next_day: bool) -> datetime:
@@ -739,6 +753,51 @@ class ComfortEnhancement3Controller(OkinHandleController):
         finally:
             if not completed or self._coordinator.cancel_command.is_set():
                 await self._massage_stop(link)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        remote = self.remote
+        return AlarmCapability(
+            wake_actions=tuple(
+                action for action, preset in _WAKE_PRESETS.items() if preset in remote.wake_presets
+            ),
+            slots=WAKE_SLOTS,
+            massage=remote.wake_massage,
+            massage_intensities=3 if remote.wake_massage else 0,
+            massage_durations=(10, 20, 30) if remote.wake_massage else (),
+            massage_zones=("head", "feet", "both", "wave") if remote.wake_massage else (),
+            light=remote.light,
+            cancel_running=True,
+            resource="*",
+        )
+
+    def _wake_target(self, alarm: AlarmRequest) -> datetime:
+        # The next occurrence of the time: today, or tomorrow once it has passed.
+        now = alarm.reference_time
+        passed = (alarm.hour, alarm.minute) <= (now.hour, now.minute)
+        return selected_time(now, alarm.hour, alarm.minute, passed)
+
+    def _wake_effects(self, alarm: AlarmRequest) -> dict[str, Any]:
+        return {
+            "massage": alarm.massage,
+            "duration": alarm.massage_duration or 10,
+            "intensity": alarm.massage_intensity,
+            "kind": alarm.massage_zone or "head",
+            "light": alarm.light,
+            "preset": _WAKE_PRESETS[alarm.wake_action],
+        }
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled:
+            self.validate_wakeup(alarm.slot, self._wake_target(alarm), **self._wake_effects(alarm))
+        else:
+            codec.schedule_step(alarm.slot, 0, 0, 0, 0)
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled:
+            await self.set_wakeup(alarm.slot, self._wake_target(alarm), **self._wake_effects(alarm))
+        else:
+            await self.delete_wakeup(alarm.slot)
 
     def validate_wakeup(self, slot: int, target: datetime, **effects: Any) -> tuple[bytes, ...]:
         from homeassistant.util import dt as dt_util
