@@ -178,7 +178,10 @@ async def test_alarm_counts_down_to_the_next_occurrence(
     hass: HomeAssistant, service_target, now, time, minutes
 ):
     _, controller, _ = service_target
-    with patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now):
+    with (
+        patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now),
+        patch("custom_components.adjustable_bed.beds.leggett.okin.dt_util.now", return_value=now),
+    ):
         await hass.services.async_call(
             DOMAIN,
             SERVICE_SET_ALARM,

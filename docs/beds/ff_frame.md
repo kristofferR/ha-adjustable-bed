@@ -1006,7 +1006,7 @@ before any write; persistent changes need `confirmed: true`.
 | Action | Main fields |
 |---|---|
 | `motion_bed_action` | `action` from diagnostics; `branch` app/save/clear; movement `duration` in seconds |
-| `set_alarm` | `enabled`, `hour`, `minute`, weekdays 1-7, `repeat`, modes 1-6, `massage`, `sound`, the target's `audio`; modular initial `switch` 00/01/A1 |
+| [`set_alarm`](../SERVICES.md#set_alarm) | `enabled`, `time`, `weekdays`, `wake_action` (`zero_g`, `memory_1`, `none`), `massage`, `sound` (music only on targets with audio). No `confirmed` needed |
 | `motion_bed_clock` | ISO `timestamp`, `thermal` for the thermal clock |
 | `motion_bed_sleep_angles` | page 2/3/4, four `flat` and four `side_positions` raw values |
 | `motion_bed_calibration` | integer `flat`, `side_position`; odd-width encodings are rejected before I/O |

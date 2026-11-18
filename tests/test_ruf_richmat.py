@@ -595,3 +595,19 @@ async def test_factory_preloads_only_the_selected_catalog_in_executor(monkeypatc
     result = await create_controller(c, "richmat_americanstar", "model_2i_mattress", None)
     assert isinstance(result, RufRichmatController)
     assert order[0:2] == [("executor", "americanstar"), ("read", "americanstar")]
+
+
+async def test_set_alarm_mattress_rejects_a_wake_action(hass):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from tests.alarm_helpers import call_set_alarm
+
+    c = make("wsilver2", "bfrm_mattress")
+    c._normal_ready = True
+    with pytest.raises(ServiceValidationError, match="only vibrates|wake_action"):
+        await call_set_alarm(
+            hass,
+            c,
+            {"enabled": True, "time": "07:30:00", "mattress_side": "right", "wake_action": "tv"},
+        )
+    assert not frames(c)

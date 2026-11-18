@@ -175,9 +175,13 @@ async def test_single_alarm_counts_down_to_the_time(hass: HomeAssistant) -> None
 
     controller = _alarm_product("A4RN")
     assert controller.supports_rmcontrol_single_alarm
-    with patch(
-        "custom_components.adjustable_bed.services.dt_util.now",
-        return_value=datetime(2026, 11, 18, 7, 0),
+    now = datetime(2026, 11, 18, 7, 0)
+    with (
+        patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now),
+        patch(
+            "custom_components.adjustable_bed.beds.rmcontrol.controller.dt_util.now",
+            return_value=now,
+        ),
     ):
         await call_set_alarm(
             hass, controller, {"enabled": True, "time": "07:05:00", "wake_action": "tv"}
@@ -628,3 +632,16 @@ async def test_product_options_are_not_shared_between_physical_controllers(
     assert [child[CONF_RMCONTROL_PRODUCT] for child in children] == ["A0RM", "A3RM"]
     assert [child[CONF_RMCONTROL_SIDE] for child in children] == ["left", "right"]
     assert all(child[CONF_PROTOCOL_VARIANT] == "auto" for child in children)
+
+
+def test_countdown_counts_from_the_write_time() -> None:
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    alarm = AlarmRequest(
+        enabled=True, hour=7, minute=5, reference_time=datetime(2026, 11, 18, 7, 0, 30)
+    )
+    assert alarm.minutes_until() == 5
+    # Admission took a minute: the bed still fires at 07:05.
+    assert alarm.minutes_until(datetime(2026, 11, 18, 7, 1, 10)) == 4

@@ -845,6 +845,10 @@ class RufRichmatController(RichmatMhController):
         if alarm.mattress_side is not None:
             if not self._normal_ready:
                 return None
+            if alarm.wake_action != "none" or alarm.massage:
+                raise ValueError(
+                    "The mattress alarm only vibrates; remove the wake action and massage"
+                )
             return AlarmRequest(
                 family="mattress",
                 enabled=alarm.enabled,

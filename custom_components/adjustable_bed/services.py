@@ -2201,8 +2201,10 @@ def _with_bed_defaults(
 ) -> AlarmRequest:
     """Fill in the bed's own default for each choice the caller left out."""
     defaults: dict[str, object] = {}
+    # A mattress topper alarm has no wake action, so none is filled in for it.
+    bed_alarm = "mattress_side" not in given
     for name, choices in (
-        ("wake_action", capability.wake_actions),
+        ("wake_action", capability.wake_actions if bed_alarm else ()),
         ("sound", capability.sounds),
         ("massage_duration", capability.massage_durations),
         ("massage_zone", capability.massage_zones),
@@ -2245,19 +2247,18 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         _check_alarm(target.name, controller, alarm, given)
         scheduling[target.operation_identity] = cast("AlarmCapability", controller.alarm_capability)
 
-    def admission(coordinator: BedTarget, side: str) -> _CommandAdmission:
-        # Capture STOP ownership for the lane the alarm writes on, before any await.
-        capabilities = [
-            controller.alarm_capability
-            for target in _command_targets(coordinator, side)
-            if (controller := target.capability_controller) is not None
-        ]
-        resource = capabilities[0].resource if capabilities and capabilities[0] else None
-        return _capture_command_admission(
-            coordinator, side, ALL_COMMAND_RESOURCES if resource is None else (resource,)
-        )
-
-    admissions = [admission(coordinator, side) for coordinator, side in targets]
+    # Capture STOP ownership for every lane an alarm may write on, before any
+    # await; the lane is known only once preflight has each target's capability.
+    lanes: tuple[str | None, ...] = (None, "configuration", "*")
+    admissions = [
+        {
+            lane: _capture_command_admission(
+                coordinator, side, ALL_COMMAND_RESOURCES if lane is None else (lane,)
+            )
+            for lane in lanes
+        }
+        for coordinator, side in targets
+    ]
     preflighted = await _preflight_each(targets, check)
 
     def step(
@@ -2286,7 +2287,7 @@ async def handle_set_alarm(call: ServiceCall) -> None:
                     command,
                     cancel_running=capability.cancel_running,
                     resource=capability.resource,
-                    admission=captured,
+                    admission=captured[capability.resource],
                 )
     except BaseException:
         await _release_preflighted(preflighted)

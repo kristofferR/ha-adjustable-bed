@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...codec.okin_nframe import (
@@ -282,7 +283,7 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         if alarm.enabled:
-            await self.set_alarm_timer(alarm.minutes_until())
+            await self.set_alarm_timer(alarm.minutes_until(dt_util.now()))
         else:
             await self.cancel_alarm_timer()
 

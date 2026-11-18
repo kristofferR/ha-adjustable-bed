@@ -200,10 +200,14 @@ and `zseries_set_alarm`. Field changes:
   Keeson app alarm tables.
 - No longer offered: Linak snooze repeats (`recurrence_count`, `recurrence_minutes`),
   N32 delete and query, RMControl query, Smart Sleep `week_mask`, `flexible_wake` and the
-  `app_*` action labels (use `zero_g`, `lounge`, `tv` or `anti_snore`, which send the same values),
+  `app_*` action labels (`app_zero_g` is now `zero_g`; `app_memory_1`, `app_memory_2` and
+  `app_vibration` send the same values as `lounge`, `tv` and `anti_snore`; `app_flat` has no
+  replacement),
   Motion Bed split zero-gravity modes and the raw `switch` value, Keeson app tables
   with more than one weekly or one-time alarm, and Comfort Enhancement 3 program
-  numbers above 10. RMControl clock setting moved to `sync_clock`.
+  numbers 0 and above 10 (cancel those programs in the app before upgrading), Richmat
+  app calendar alarm deletion (`enabled: false` disables the slot instead) and calendar
+  positions without a shared wake action name. RMControl clock setting moved to `sync_clock`.
 
 **Removed aliases.** `linak_rename`, `logicdata_rename` and `jiecang_rename` →
 `rename`; `leggett_hold_control` → `hold_control`; `malouf_sync_clock` → `sync_clock`.

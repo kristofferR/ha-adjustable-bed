@@ -5461,9 +5461,11 @@ Only actual callback reports update sensor values.
 
 #### Services
 
-`adjustable_bed.set_alarm` supports `set`, `disable`, `delete` and
-`query` on slots 1 through 3. Set requires a minute-precision time, weekdays
-(empty for once), and mode `none`, `m1`, `m2`, `m3` or `flat`. All targets pass
+[`adjustable_bed.set_alarm`](../SERVICES.md#set_alarm) sets or disables slots 1
+through 3 (`slot`). Turning an alarm on needs a time, `weekdays` (empty for once)
+and a `wake_action`: `none`, `memory_1`, `memory_2`, `memory_3` or `flat`;
+`enabled: false` disables the slot and keeps its time. Delete and query are not
+offered as actions. All targets pass
 profile/session admission before a requested mutation. Each write rechecks its
 live session; disable also rejects a changed report while waiting for the wire.
 

@@ -529,6 +529,9 @@ class YamadaController(KeesonController):
         except ConnectionError as err:
             raise ValueError("Refresh the bed alarms, then try again") from err
         self._prepared_alarms[alarm] = plan
+        # A call that fails after validation never collects its plan; keep few.
+        while len(self._prepared_alarms) > 8:
+            del self._prepared_alarms[next(iter(self._prepared_alarms))]
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         plan = self._prepared_alarms.pop(alarm, None)

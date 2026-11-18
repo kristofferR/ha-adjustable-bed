@@ -200,7 +200,7 @@ values, not live UI controls. They are not offered as an Off command.
 | Normal mattress | `5e side 0b repeat intensity H M nowH nowM SUM8` | `set_alarm` with `mattress_side`; repeat `01` once / `02` daily (all seven weekdays) |
 | Waist mattress | `5e03 0b repeat side intensity H M nowH nowM SUM8` | Existing `set_alarm` action |
 | Weekly save/toggle | `6e200d050101 slot bed H M mode week SUM8` | `set_alarm` with `slot` |
-| Weekly delete | `6e2008050201 slot SUM8` | Set `delete: true` |
+| Weekly delete | `6e2008050201 slot SUM8` | Not offered; `enabled: false` disables the slot |
 | Weekly query | `6e2008050100009c` | Sent before clock synchronization and after a change |
 
 Weekly slots are 1–7. Mode is an exact position opcode in the selected model's

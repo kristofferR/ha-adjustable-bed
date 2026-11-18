@@ -121,6 +121,8 @@ _ALARM_ACTIONS: Final = {
     "memory_3": "MemoryPosition3",
     "memory_5": "MemoryPosition5",
     "massage": "MassageModeAllOn",
+    "head_massage": "MassageHeadInstensityStrengthen",
+    "foot_massage": "MassageFootInstensityStrengthen",
     "deep_sleep": "DeepSleepPosition",
     "get_up": "HelpGetUpPosition",
     "wake_up": "WakeUp",
@@ -1029,7 +1031,7 @@ class RmcontrolController(RichmatController):
         action = self._alarm_action(alarm) if alarm.enabled else None
         if not self.supports_rmcontrol_repeat_alarm:
             if action is not None:
-                await self.rmcontrol_single_alarm(alarm.minutes_until(), action)
+                await self.rmcontrol_single_alarm(alarm.minutes_until(dt_util.now()), action)
             else:
                 await self.rmcontrol_single_alarm(0, None)
         elif action is not None:

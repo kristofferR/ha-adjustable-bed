@@ -158,7 +158,15 @@ class AlarmRequest:
     # Home Assistant local time, captured once for the whole call.
     reference_time: datetime
 
-    def minutes_until(self) -> int:
-        """Return whole minutes from the call's minute to the next occurrence, 1 to 1440."""
-        now = self.reference_time.hour * 60 + self.reference_time.minute
-        return (self.hour * 60 + self.minute - now - 1) % 1440 + 1
+    def minutes_until(self, now: datetime | None = None) -> int:
+        """Return whole minutes left to the call's selected occurrence, 1 to 1440.
+
+        The occurrence is chosen from the call's reference time; ``now`` is the
+        moment the bed is written, so a slow connection does not delay the alarm.
+        """
+        start = self.reference_time.hour * 60 + self.reference_time.minute
+        selected = (self.hour * 60 + self.minute - start - 1) % 1440 + 1
+        if now is None:
+            return selected
+        elapsed = int((now - self.reference_time.replace(second=0, microsecond=0)).total_seconds() // 60)
+        return max(1, selected - elapsed)
