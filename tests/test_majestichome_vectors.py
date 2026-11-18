@@ -1,4 +1,4 @@
-"""Accepted row151 literals, frozen before choosing the production wire codec.
+"""Accepted Majestic Home literals, frozen before choosing the production wire codec.
 
 Majestic Home 1.0.4/code10400, frozen 2026-07-14. Static fixtures, not captures.
 The two CRC utility cases are excluded OTA evidence, never BED commands.

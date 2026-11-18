@@ -4,12 +4,6 @@
     "kind": "sustain",
     "release_ms": 75,
     "expected_queue_actions": [],
-    "evidence": [
-      "device_control_widget.dart::_createSustainTimer@0x63c200",
-      "_gestureOnTapUp@0x63bb6c",
-      "device_motor_page.dart release@0x6bff6c",
-      "device_preset_page.dart save@0x6bf7e0"
-    ],
     "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
   },
   {
@@ -20,12 +14,6 @@
       "move",
       "move",
       "stop"
-    ],
-    "evidence": [
-      "device_control_widget.dart::_createSustainTimer@0x63c200",
-      "_gestureOnTapUp@0x63bb6c",
-      "device_motor_page.dart release@0x6bff6c",
-      "device_preset_page.dart save@0x6bf7e0"
     ],
     "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
   },
@@ -39,12 +27,6 @@
       "move",
       "stop"
     ],
-    "evidence": [
-      "device_control_widget.dart::_createSustainTimer@0x63c200",
-      "_gestureOnTapUp@0x63bb6c",
-      "device_motor_page.dart release@0x6bff6c",
-      "device_preset_page.dart save@0x6bf7e0"
-    ],
     "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
   },
   {
@@ -54,12 +36,6 @@
     "expected_queue_actions": [
       "save"
     ],
-    "evidence": [
-      "device_control_widget.dart::_createSustainTimer@0x63c200",
-      "_gestureOnTapUp@0x63bb6c",
-      "device_motor_page.dart release@0x6bff6c",
-      "device_preset_page.dart save@0x6bf7e0"
-    ],
     "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
   },
   {
@@ -68,12 +44,6 @@
     "release_ms": 50,
     "expected_queue_actions": [
       "recall"
-    ],
-    "evidence": [
-      "device_control_widget.dart::_createSustainTimer@0x63c200",
-      "_gestureOnTapUp@0x63bb6c",
-      "device_motor_page.dart release@0x6bff6c",
-      "device_preset_page.dart save@0x6bf7e0"
     ],
     "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
   }

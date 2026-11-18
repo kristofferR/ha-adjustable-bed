@@ -1,4 +1,4 @@
-"""Sleep Smart Air Mattress 1.0.0 bed profile: frozen row053 vectors and lifecycle."""
+"""Sleep Smart Air Mattress 1.0.0 bed profile: frozen vectors and lifecycle."""
 
 from __future__ import annotations
 

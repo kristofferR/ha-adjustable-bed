@@ -1,6 +1,6 @@
 # SleepSpa S9000AI (SLEEPSTAR)
 
-**Status:** ❓ Needs testing (statically verified from the OEM app; physical hardware testing is pending)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -252,7 +252,7 @@ Based on SleepSpa 1.3.7 (`com.dot.bedding.sleepspa.sleep_spa`).
 
 ### Deferred physical validation
 
-After beta or release, useful validation includes:
+Owners can help by testing:
 
 1. Confirm Company ID `0x00B2`, subtype byte, and single/dual selection from an
    actual `SLEEPSTAR` advertisement.

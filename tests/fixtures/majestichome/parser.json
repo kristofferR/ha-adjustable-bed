@@ -5,9 +5,6 @@
     "expected": {
       "version": 2
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6a8658-0x6a87d8"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -16,9 +13,6 @@
     "expected": {
       "bed_mode": 3
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6a8868-0x6a8974"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -29,9 +23,6 @@
       "status": 1,
       "angle": 45
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6a8a00-0x6a8bf8"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -43,9 +34,6 @@
       "massage2": 2,
       "massage3": 3
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6a8c88-0x6a8eec"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -60,9 +48,6 @@
       "repeat": 249,
       "event": "list"
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6aee98-0x6af19c"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -77,9 +62,6 @@
       "repeat": 1,
       "event": "report"
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6aee98-0x6af19c"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -91,9 +73,6 @@
       "angle": 45,
       "monitorHeight": 60.0
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6b00fc-0x6b0570"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -102,9 +81,6 @@
     "expected": {
       "white_light": true
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6af7c8-0x6af964"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -117,9 +93,6 @@
         51
       ]
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6af1c8-0x6af448"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -128,9 +101,6 @@
     "expected": {
       "rgb_timer_seconds": 135
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6af448-0x6af5a8"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -140,9 +110,6 @@
       "head_intensity": 2,
       "foot_intensity": 3
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6af964-0x6afd64"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -151,9 +118,6 @@
     "expected": {
       "massage_mode": 2
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6afd64-0x6afe3c"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -162,9 +126,6 @@
     "expected": {
       "box_locked": true
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6ae5fc-0x6ae7c0"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -173,9 +134,6 @@
     "expected": {
       "snore_detection": true
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6ae7c0-0x6ae95c"
-    ],
     "note": "Synthetic field inputs to artifact-derived parser, no captured hardware reply implied"
   },
   {
@@ -184,9 +142,6 @@
     "expected": {
       "press_mode": 3
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6ab9f0-0x6abad8"
-    ],
     "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
   },
   {
@@ -195,9 +150,6 @@
     "expected": {
       "coupled": true
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6abad8-0x6abbac"
-    ],
     "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
   },
   {
@@ -206,9 +158,6 @@
     "expected": {
       "sync_movement": 1
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6abbac-0x6abc70"
-    ],
     "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
   },
   {
@@ -228,9 +177,6 @@
         169
       ]
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6acee4-0x6ad010"
-    ],
     "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
   },
   {
@@ -250,9 +196,6 @@
         168
       ]
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6ad120-0x6ad228"
-    ],
     "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
   },
   {
@@ -261,9 +204,6 @@
     "expected": {
       "snore_count": 7
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6aecb0-0x6aede4"
-    ],
     "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
   },
   {
@@ -272,9 +212,6 @@
     "expected": {
       "snore_time": 10
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6aede4-0x6aee98"
-    ],
     "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
   },
   {
@@ -283,9 +220,6 @@
     "expected": {
       "stop_music_bed_effect": true
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6aeb78-0x6aecb0"
-    ],
     "note": "Synthetic input to artifact-derived event decoder; does not expose an unproven writer or hardware capability."
   },
   {
@@ -294,10 +228,6 @@
     "expected": {
       "detection_check_status": "pause"
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6a9398-0x6a955c",
-      "blutter/objs.txt::RMDeviceDetectionStatusType"
-    ],
     "note": "App diagnostics/logging and emitted empty detail object; not an exposed actuator/health entity."
   },
   {
@@ -309,10 +239,6 @@
       "status": "normal",
       "app_event_payload": "empty RMDeviceDetectionDataDetails"
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6a955c-0x6a9760",
-      "blutter/objs.txt::RMDeviceDetectionStatusType"
-    ],
     "note": "App diagnostics/logging and emitted empty detail object; not an exposed actuator/health entity."
   },
   {
@@ -324,10 +250,6 @@
       "status": "notPluggedIn",
       "app_event_payload": "empty RMDeviceDetectionDataDetails"
     },
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart@0x6a9974-0x6a9b78",
-      "blutter/objs.txt::RMDeviceDetectionStatusType"
-    ],
     "note": "App diagnostics/logging and emitted empty detail object; not an exposed actuator/health entity."
   }
 ]

@@ -12,11 +12,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "46",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6a81"
-    ]
+    "expected_bytes": "46"
   },
   {
     "id": "save-00-P1",
@@ -32,12 +28,7 @@
       ],
       "long_press": true
     },
-    "expected_bytes": "69",
-    "evidence": [
-      "device_preset_page.dart@0x6bf7e0",
-      "device_instruct_util.dart@0x6a5610",
-      "objs.txt:8e6a81"
-    ]
+    "expected_bytes": "69"
   },
   {
     "id": "control-00-P2",
@@ -52,11 +43,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e010046b5",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6a81"
-    ]
+    "expected_bytes": "6e010046b5"
   },
   {
     "id": "save-00-P2",
@@ -72,12 +59,7 @@
       ],
       "long_press": true
     },
-    "expected_bytes": "6e010069d8",
-    "evidence": [
-      "device_preset_page.dart@0x6bf7e0",
-      "device_instruct_util.dart@0x6a5610",
-      "objs.txt:8e6a81"
-    ]
+    "expected_bytes": "6e010069d8"
   },
   {
     "id": "control-01-P1",
@@ -92,11 +74,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "3c",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7201"
-    ]
+    "expected_bytes": "3c"
   },
   {
     "id": "control-01-P2",
@@ -111,11 +89,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01003cab",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7201"
-    ]
+    "expected_bytes": "6e01003cab"
   },
   {
     "id": "control-02-P1",
@@ -130,11 +104,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "01",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8fd9e1"
-    ]
+    "expected_bytes": "01"
   },
   {
     "id": "control-02-P2",
@@ -149,11 +119,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e08010178",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8fd9e1"
-    ]
+    "expected_bytes": "6e08010178"
   },
   {
     "id": "control-03-P1",
@@ -168,11 +134,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "00",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8fda01"
-    ]
+    "expected_bytes": "00"
   },
   {
     "id": "control-03-P2",
@@ -187,11 +149,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e02010071",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8fda01"
-    ]
+    "expected_bytes": "6e02010071"
   },
   {
     "id": "control-04-P1",
@@ -206,11 +164,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "27",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6801"
-    ]
+    "expected_bytes": "27"
   },
   {
     "id": "control-04-P2",
@@ -225,11 +179,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002796",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6801"
-    ]
+    "expected_bytes": "6e01002796"
   },
   {
     "id": "control-05-P1",
@@ -244,11 +194,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "2a",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6581"
-    ]
+    "expected_bytes": "2a"
   },
   {
     "id": "control-05-P2",
@@ -263,11 +209,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002a99",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6581"
-    ]
+    "expected_bytes": "6e01002a99"
   },
   {
     "id": "control-06-P1",
@@ -282,11 +224,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "26",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6881"
-    ]
+    "expected_bytes": "26"
   },
   {
     "id": "control-06-P2",
@@ -301,11 +239,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002695",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6881"
-    ]
+    "expected_bytes": "6e01002695"
   },
   {
     "id": "control-07-P1",
@@ -320,11 +254,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "29",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6601"
-    ]
+    "expected_bytes": "29"
   },
   {
     "id": "control-07-P2",
@@ -339,11 +269,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002998",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6601"
-    ]
+    "expected_bytes": "6e01002998"
   },
   {
     "id": "control-08-P1",
@@ -358,11 +284,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "2a",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6701"
-    ]
+    "expected_bytes": "2a"
   },
   {
     "id": "control-08-P2",
@@ -377,11 +299,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002a99",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6701"
-    ]
+    "expected_bytes": "6e01002a99"
   },
   {
     "id": "control-09-P1",
@@ -396,11 +314,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "29",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6781"
-    ]
+    "expected_bytes": "29"
   },
   {
     "id": "control-09-P2",
@@ -415,11 +329,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002998",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6781"
-    ]
+    "expected_bytes": "6e01002998"
   },
   {
     "id": "control-10-P1",
@@ -434,11 +344,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "25",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6901"
-    ]
+    "expected_bytes": "25"
   },
   {
     "id": "control-10-P2",
@@ -453,11 +359,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002594",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6901"
-    ]
+    "expected_bytes": "6e01002594"
   },
   {
     "id": "control-11-P1",
@@ -472,11 +374,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "24",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6981"
-    ]
+    "expected_bytes": "24"
   },
   {
     "id": "control-11-P2",
@@ -491,11 +389,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002493",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6981"
-    ]
+    "expected_bytes": "6e01002493"
   },
   {
     "id": "control-12-P1",
@@ -510,11 +404,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "40",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7281"
-    ]
+    "expected_bytes": "40"
   },
   {
     "id": "control-12-P2",
@@ -529,11 +419,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e010040af",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7281"
-    ]
+    "expected_bytes": "6e010040af"
   },
   {
     "id": "control-13-P1",
@@ -548,11 +434,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "3f",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7301"
-    ]
+    "expected_bytes": "3f"
   },
   {
     "id": "control-13-P2",
@@ -567,11 +449,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01003fae",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7301"
-    ]
+    "expected_bytes": "6e01003fae"
   },
   {
     "id": "control-14-P1",
@@ -586,11 +464,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "5f",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6c81"
-    ]
+    "expected_bytes": "5f"
   },
   {
     "id": "control-14-P2",
@@ -605,11 +479,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01005fce",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6c81"
-    ]
+    "expected_bytes": "6e01005fce"
   },
   {
     "id": "control-15-P1",
@@ -624,11 +494,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "63",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6c01"
-    ]
+    "expected_bytes": "63"
   },
   {
     "id": "control-15-P2",
@@ -643,11 +509,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e010063d2",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6c01"
-    ]
+    "expected_bytes": "6e010063d2"
   },
   {
     "id": "control-16-P1",
@@ -662,11 +524,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "61",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6b81"
-    ]
+    "expected_bytes": "61"
   },
   {
     "id": "control-16-P2",
@@ -681,11 +539,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e010061d0",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6b81"
-    ]
+    "expected_bytes": "6e010061d0"
   },
   {
     "id": "control-17-P1",
@@ -700,11 +554,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "9d",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7001"
-    ]
+    "expected_bytes": "9d"
   },
   {
     "id": "control-17-P2",
@@ -719,11 +569,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01009d0c",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7001"
-    ]
+    "expected_bytes": "6e01009d0c"
   },
   {
     "id": "control-18-P1",
@@ -738,11 +584,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "9e",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6f81"
-    ]
+    "expected_bytes": "9e"
   },
   {
     "id": "control-18-P2",
@@ -757,11 +599,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01009e0d",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6f81"
-    ]
+    "expected_bytes": "6e01009e0d"
   },
   {
     "id": "control-19-P1",
@@ -776,11 +614,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "9f",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6f01"
-    ]
+    "expected_bytes": "9f"
   },
   {
     "id": "control-19-P2",
@@ -795,11 +629,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01009f0e",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6f01"
-    ]
+    "expected_bytes": "6e01009f0e"
   },
   {
     "id": "control-20-P1",
@@ -814,11 +644,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "9c",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7381"
-    ]
+    "expected_bytes": "9c"
   },
   {
     "id": "control-20-P2",
@@ -833,11 +659,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01009c0b",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7381"
-    ]
+    "expected_bytes": "6e01009c0b"
   },
   {
     "id": "control-21-P1",
@@ -852,11 +674,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "99",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7181"
-    ]
+    "expected_bytes": "99"
   },
   {
     "id": "control-21-P2",
@@ -871,11 +689,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01009908",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7181"
-    ]
+    "expected_bytes": "6e01009908"
   },
   {
     "id": "control-22-P1",
@@ -890,11 +704,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "9a",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7101"
-    ]
+    "expected_bytes": "9a"
   },
   {
     "id": "control-22-P2",
@@ -909,11 +719,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01009a09",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7101"
-    ]
+    "expected_bytes": "6e01009a09"
   },
   {
     "id": "control-23-P1",
@@ -928,11 +734,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "9b",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7081"
-    ]
+    "expected_bytes": "9b"
   },
   {
     "id": "control-23-P2",
@@ -947,11 +749,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01009b0a",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7081"
-    ]
+    "expected_bytes": "6e01009b0a"
   },
   {
     "id": "control-24-P1",
@@ -966,11 +764,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "98",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7401"
-    ]
+    "expected_bytes": "98"
   },
   {
     "id": "control-24-P2",
@@ -985,11 +779,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01009807",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e7401"
-    ]
+    "expected_bytes": "6e01009807"
   },
   {
     "id": "control-25-P1",
@@ -1004,11 +794,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "5e",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6d01"
-    ]
+    "expected_bytes": "5e"
   },
   {
     "id": "control-25-P2",
@@ -1023,11 +809,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01005ecd",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6d01"
-    ]
+    "expected_bytes": "6e01005ecd"
   },
   {
     "id": "control-26-P1",
@@ -1042,11 +824,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "3a",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6e81"
-    ]
+    "expected_bytes": "3a"
   },
   {
     "id": "control-26-P2",
@@ -1061,11 +839,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01003aa9",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6e81"
-    ]
+    "expected_bytes": "6e01003aa9"
   },
   {
     "id": "control-27-P1",
@@ -1080,11 +854,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "38",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6e01"
-    ]
+    "expected_bytes": "38"
   },
   {
     "id": "control-27-P2",
@@ -1099,11 +869,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e010038a7",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6e01"
-    ]
+    "expected_bytes": "6e010038a7"
   },
   {
     "id": "control-28-P1",
@@ -1118,11 +884,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "39",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6d81"
-    ]
+    "expected_bytes": "39"
   },
   {
     "id": "control-28-P2",
@@ -1137,11 +899,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e010039a8",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6d81"
-    ]
+    "expected_bytes": "6e010039a8"
   },
   {
     "id": "control-29-P1",
@@ -1156,11 +914,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "2e",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6681"
-    ]
+    "expected_bytes": "2e"
   },
   {
     "id": "save-29-P1",
@@ -1176,12 +930,7 @@
       ],
       "long_press": true
     },
-    "expected_bytes": "2b",
-    "evidence": [
-      "device_preset_page.dart@0x6bf7e0",
-      "device_instruct_util.dart@0x6a5610",
-      "objs.txt:8e6681"
-    ]
+    "expected_bytes": "2b"
   },
   {
     "id": "control-29-P2",
@@ -1196,11 +945,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002e9d",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6681"
-    ]
+    "expected_bytes": "6e01002e9d"
   },
   {
     "id": "save-29-P2",
@@ -1216,12 +961,7 @@
       ],
       "long_press": true
     },
-    "expected_bytes": "6e01002b9a",
-    "evidence": [
-      "device_preset_page.dart@0x6bf7e0",
-      "device_instruct_util.dart@0x6a5610",
-      "objs.txt:8e6681"
-    ]
+    "expected_bytes": "6e01002b9a"
   },
   {
     "id": "control-30-P1",
@@ -1236,11 +976,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "2f",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6a01"
-    ]
+    "expected_bytes": "2f"
   },
   {
     "id": "save-30-P1",
@@ -1256,12 +992,7 @@
       ],
       "long_press": true
     },
-    "expected_bytes": "2c",
-    "evidence": [
-      "device_preset_page.dart@0x6bf7e0",
-      "device_instruct_util.dart@0x6a5610",
-      "objs.txt:8e6a01"
-    ]
+    "expected_bytes": "2c"
   },
   {
     "id": "control-30-P2",
@@ -1276,11 +1007,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01002f9e",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6a01"
-    ]
+    "expected_bytes": "6e01002f9e"
   },
   {
     "id": "save-30-P2",
@@ -1296,12 +1023,7 @@
       ],
       "long_press": true
     },
-    "expected_bytes": "6e01002c9b",
-    "evidence": [
-      "device_preset_page.dart@0x6bf7e0",
-      "device_instruct_util.dart@0x6a5610",
-      "objs.txt:8e6a01"
-    ]
+    "expected_bytes": "6e01002c9b"
   },
   {
     "id": "control-31-P1",
@@ -1316,11 +1038,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "31",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6501"
-    ]
+    "expected_bytes": "31"
   },
   {
     "id": "control-31-P2",
@@ -1335,11 +1053,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e010031a0",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6501"
-    ]
+    "expected_bytes": "6e010031a0"
   },
   {
     "id": "control-32-P1",
@@ -1354,11 +1068,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8fdda1"
-    ]
+    "expected_bytes": "6e"
   },
   {
     "id": "control-32-P2",
@@ -1373,11 +1083,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e01006edd",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8fdda1"
-    ]
+    "expected_bytes": "6e01006edd"
   },
   {
     "id": "control-33-P1",
@@ -1392,11 +1098,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "45",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6b01"
-    ]
+    "expected_bytes": "45"
   },
   {
     "id": "save-33-P1",
@@ -1412,12 +1114,7 @@
       ],
       "long_press": true
     },
-    "expected_bytes": "66",
-    "evidence": [
-      "device_preset_page.dart@0x6bf7e0",
-      "device_instruct_util.dart@0x6a5610",
-      "objs.txt:8e6b01"
-    ]
+    "expected_bytes": "66"
   },
   {
     "id": "control-33-P2",
@@ -1432,11 +1129,7 @@
       ],
       "long_press": false
     },
-    "expected_bytes": "6e010045b4",
-    "evidence": [
-      "libapp.so:DeviceFunctionInstructUtil.getFunctionHexadecimalInstruct@0x6a5610",
-      "objs.txt:8e6b01"
-    ]
+    "expected_bytes": "6e010045b4"
   },
   {
     "id": "save-33-P2",
@@ -1452,12 +1145,7 @@
       ],
       "long_press": true
     },
-    "expected_bytes": "6e010066d5",
-    "evidence": [
-      "device_preset_page.dart@0x6bf7e0",
-      "device_instruct_util.dart@0x6a5610",
-      "objs.txt:8e6b01"
-    ]
+    "expected_bytes": "6e010066d5"
   },
   {
     "id": "repeat-alarm-list",
@@ -1466,10 +1154,7 @@
     "inputs": {
       "builder": "alarm_list"
     },
-    "expected_bytes": "6e0820050100009c",
-    "evidence": [
-      "device_instruct_util.dart@0x62b53c"
-    ]
+    "expected_bytes": "6e0820050100009c"
   },
   {
     "id": "delete-alarm-1",
@@ -1479,10 +1164,7 @@
       "builder": "alarm_delete",
       "number": 1
     },
-    "expected_bytes": "6e0820050201019f",
-    "evidence": [
-      "device_instruct_util.dart@0x6c2974"
-    ]
+    "expected_bytes": "6e0820050201019f"
   },
   {
     "id": "delete-alarm-7",
@@ -1492,10 +1174,7 @@
       "builder": "alarm_delete",
       "number": 7
     },
-    "expected_bytes": "6e082005020107a5",
-    "evidence": [
-      "device_instruct_util.dart@0x6c2974"
-    ]
+    "expected_bytes": "6e082005020107a5"
   },
   {
     "id": "add-alarm-weekdays",
@@ -1510,10 +1189,7 @@
       "preset": 46,
       "repeat": 249
     },
-    "expected_bytes": "6e0d200501010100071e2ef9ef",
-    "evidence": [
-      "device_instruct_util.dart@0x6c2f90; repeat_alarm_details_page.dart@0x6c2dfc"
-    ]
+    "expected_bytes": "6e0d200501010100071e2ef9ef"
   },
   {
     "id": "add-alarm-once-off",
@@ -1528,10 +1204,7 @@
       "preset": 69,
       "repeat": 0
     },
-    "expected_bytes": "6e0d200501010700162d450031",
-    "evidence": [
-      "device_instruct_util.dart@0x6c2f90"
-    ]
+    "expected_bytes": "6e0d200501010700162d450031"
   },
   {
     "id": "sync-epoch-positive-zone",
@@ -1542,10 +1215,7 @@
       "epoch_seconds": 1700000000,
       "offset_hours": 1
     },
-    "expected_bytes": "6e0c200802016553f100014f",
-    "evidence": [
-      "device_instruct_util.dart@0x6b2784"
-    ]
+    "expected_bytes": "6e0c200802016553f100014f"
   },
   {
     "id": "sync-epoch-negative-zone",
@@ -1556,10 +1226,7 @@
       "epoch_seconds": 1700000000,
       "offset_hours": -5
     },
-    "expected_bytes": "6e0c200802016553f100fb49",
-    "evidence": [
-      "device_instruct_util.dart@0x6b2784"
-    ]
+    "expected_bytes": "6e0c200802016553f100fb49"
   },
   {
     "id": "sync-calendar",
@@ -1574,163 +1241,127 @@
       "minute": 4,
       "second": 5
     },
-    "expected_bytes": "6e0d20080301360102030405ec",
-    "evidence": [
-      "device_instruct_util.dart@0x6b2784"
-    ]
+    "expected_bytes": "6e0d20080301360102030405ec"
   },
   {
     "id": "literal-notify-00",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6709\u95f9\u949f\u529f\u80fd",
+    "action": "RMBlueToothUtil 有闹钟功能",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e09010078"
     },
     "expected_bytes": "6e09010078",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a7fec"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-01",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6709\u706f\u5149\u529f\u80fd",
+    "action": "RMBlueToothUtil 有灯光功能",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e0e00037f"
     },
     "expected_bytes": "6e0e00037f",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a8058"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-02",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6709\u9999\u85b0\u529f\u80fd",
+    "action": "RMBlueToothUtil 有香薰功能",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e1a000189"
     },
     "expected_bytes": "6e1a000189",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a80c4"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-03",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6dfb\u52a0\u95f9\u949f\u6210\u529f",
+    "action": "RMBlueToothUtil 添加闹钟成功",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e07010177"
     },
     "expected_bytes": "6e07010177",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a8130"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-04",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u53d6\u6d88\u95f9\u949f\u6210\u529f",
+    "action": "RMBlueToothUtil 取消闹钟成功",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e07010278"
     },
     "expected_bytes": "6e07010278",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a819c"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-05",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6709\u97f3\u4e50\u632f\u5b50\u529f\u80fd",
+    "action": "RMBlueToothUtil 有音乐振子功能",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e16010186"
     },
     "expected_bytes": "6e16010186",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a8208"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-06",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6709\u5f02\u5e38\u68c0\u6d4b\u529f\u80fd",
+    "action": "RMBlueToothUtil 有异常检测功能",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e90c101c0"
     },
     "expected_bytes": "6e90c101c0",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a8274"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-07",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6709\u6253\u9f3e\u5e72\u9884\u529f\u80fd",
+    "action": "RMBlueToothUtil 有打鼾干预功能",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e2100008f"
     },
     "expected_bytes": "6e2100008f",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a82e0"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-08",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6709\u63a7\u5236\u76d2\u9501\u5b9a\u529f\u80fd",
+    "action": "RMBlueToothUtil 有控制盒锁定功能",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e23018416"
     },
     "expected_bytes": "6e23018416",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a834c"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-09",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6709\u63a7\u5236\u76d2\u9501\u5b9a\u89e3\u9664\u529f\u80fd",
+    "action": "RMBlueToothUtil 有控制盒锁定解除功能",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e23008415"
     },
     "expected_bytes": "6e23008415",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a83b8"
-    ],
     "stream_reachable": true
   },
   {
     "id": "literal-notify-10",
     "protocol": "P_RX",
-    "action": "RMBlueToothUtil \u6709\u6253\u9f3e\u5e72\u9884\u9875\u9762\uff0c\u6536\u5230\u56de\u4f20\u505c\u6b62\u64ad\u653e\u97f3\u4e50\u529f\u80fd",
+    "action": "RMBlueToothUtil 有打鼾干预页面，收到回传停止播放音乐功能",
     "inputs": {
       "parser": "exact_literal",
       "frame": "6e23a06e9f"
     },
     "expected_bytes": "6e23a06e9f",
-    "evidence": [
-      "blutter/asm/richmat_library_utils/utils/bluetooth_util.dart::RMBlueToothUtil._handleCommonProtocolNotify@0x6a8424"
-    ],
     "stream_reachable": false
   },
   {
@@ -1740,11 +1371,7 @@
     "inputs": {
       "crc_input_hex": "6e09010078"
     },
-    "expected_bytes": "edac",
-    "evidence": [
-      "device_instruct_util.dart@0x6ab3b8",
-      "_handleCommonProtocolNotify shipped literal"
-    ]
+    "expected_bytes": "edac"
   },
   {
     "id": "crc-function-6e0e00037f",
@@ -1753,10 +1380,6 @@
     "inputs": {
       "crc_input_hex": "6e0e00037f"
     },
-    "expected_bytes": "ae05",
-    "evidence": [
-      "device_instruct_util.dart@0x6ab3b8",
-      "_handleCommonProtocolNotify shipped literal"
-    ]
+    "expected_bytes": "ae05"
   }
 ]

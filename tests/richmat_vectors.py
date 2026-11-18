@@ -1071,7 +1071,7 @@ _RICHMAT_MH: frozenset[str] = frozenset(
     }
 )
 
-# Classic Richmat apps row066 (cluster-018): the five apps share one builder, so
+# Classic Richmat apps: the five apps share one builder, so
 # every app freezes the union of the five accepted reports' sent single-frame
 # literals: avocadoecobase 1.0.4, coastersleep 1.0.10, fortywinks 1.0.1,
 # milemont 1.0.4 and superior 1.0.9, with the slider vectors exported from the
@@ -1528,7 +1528,7 @@ _RICHMAT_CLASSIC: frozenset[str] = frozenset(
     }
 )
 
-# L&P Adjustable Base 2.2.1 legacy app (row019): every Legacy and Framed packet
+# L&P Adjustable Base 2.2.1 legacy app: every Legacy and Framed packet
 # the accepted catalog stored for its 122 layouts, frozen from
 # the catalog (then ``lp_legacy_profiles.json``) before it kept only the app's tokens.
 _LP_LEGACY: frozenset[str] = frozenset(
@@ -1923,7 +1923,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "6e01006edd",
         }
     ),
-    # HJBed 2.1.2 row121: wire fields of the accepted ledger, frames pinned in tests/test_hjbed.py,
+    # HJBed 2.1.2: wire fields of the accepted ledger, frames pinned in tests/test_hjbed.py,
     # and the builder examples in the guide (light 600 s, RGB 11/22/33, clock sync 2026-11-03 12:00 +01:00)
     "hjbed": frozenset(
         {
@@ -2077,7 +2077,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "6e90c101c0",
         }
     ),
-    # Eshine 1.0.1 row106: the artifact vectors pinned in tests/test_eshine.py, framed and
+    # Eshine 1.0.1: the artifact vectors pinned in tests/test_eshine.py, framed and
     # bare (N1), including setup's ExitLimit.
     "eshine": frozenset(
         {
@@ -2199,8 +2199,8 @@ FROZEN_FRAMES["richmat_app"] = _richmat_app() | frozenset(
 )
 
 
-def _cluster017_frames() -> dict[str, frozenset[str]]:
-    root = Path(__file__).parent / "fixtures/richmat_cluster017"
+def _resource_app_frames() -> dict[str, frozenset[str]]:
+    root = Path(__file__).parent / "fixtures/richmat_resource_apps"
     rows = json.loads(gzip.decompress((root / "wire.json.gz").read_bytes()))
     frames: dict[str, set[str]] = {}
     for app, _source, _wire, _operand, literal in rows:
@@ -2224,7 +2224,7 @@ def _cluster017_frames() -> dict[str, frozenset[str]]:
     return {"richmat_classic_" + app: frozenset(values) for app, values in frames.items()}
 
 
-FROZEN_FRAMES.update(_cluster017_frames())
+FROZEN_FRAMES.update(_resource_app_frames())
 
 # Majestic Home 1.0.4 literals, frozen before the production codec was selected.
 _MAJESTICHOME = json.loads(

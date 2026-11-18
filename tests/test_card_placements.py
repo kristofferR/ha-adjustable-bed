@@ -14,7 +14,13 @@ import custom_components.adjustable_bed as integration
 from custom_components.adjustable_bed.card import CardSection
 from custom_components.adjustable_bed.entity import PlacedInCard
 from custom_components.adjustable_bed.number import NUMBER_DESCRIPTIONS, AdjustableBedPositionNumber
-from tests.card_placements import FIXTURE, all_placements, built_entities
+from tests.card_placements import (
+    FIXTURE,
+    all_placements,
+    declared_entities,
+    description_entities,
+    sample_entities,
+)
 
 
 def _entity_classes() -> set[type[Entity]]:
@@ -39,7 +45,8 @@ async def test_every_entity_has_a_card_placement_the_fixture_records() -> None:
     Regenerate the fixture with ``python -m tests.card_placements`` after
     adding or moving an entity.
     """
-    built = await built_entities()
+    declared = await declared_entities()
+    built = [*sample_entities(declared), *description_entities()]
     built_classes = {type(entity) for entity in built}
     for cls in _entity_classes() - {PlacedInCard}:
         if cls.__name__ in {"AdjustableBedEntity", "RenamesInPlace"}:
@@ -49,7 +56,7 @@ async def test_every_entity_has_a_card_placement_the_fixture_records() -> None:
     for entity in built:
         assert isinstance(entity, PlacedInCard)
         assert entity._card.section in CardSection
-    assert json.loads(FIXTURE.read_text()) == all_placements(built)
+    assert json.loads(FIXTURE.read_text()) == all_placements(declared)
 
 
 def test_placement_joins_the_platform_capabilities() -> None:

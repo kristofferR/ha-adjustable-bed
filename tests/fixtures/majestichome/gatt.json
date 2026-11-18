@@ -1,7 +1,6 @@
 [
   {
     "id": "bleServiceUUIDNordic",
-    "object": "8fd5a1",
     "index": 0,
     "short": "0001",
     "service": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
@@ -12,7 +11,6 @@
   },
   {
     "id": "bleServiceUUIDW1",
-    "object": "8fd571",
     "index": 1,
     "short": "FEE9",
     "service": "0000FEE9-0000-1000-8000-00805F9B34FB",
@@ -23,7 +21,6 @@
   },
   {
     "id": "bleServiceUUIDW2",
-    "object": "8fd661",
     "index": 2,
     "short": "FEE9",
     "service": "0000FEE9-0000-1000-8000-00805F9B34BB",
@@ -34,7 +31,6 @@
   },
   {
     "id": "bleServiceUUIDW3",
-    "object": "8fd631",
     "index": 3,
     "short": "FFE0",
     "service": "0000FFE0-0000-1000-8000-00805F9B34FB",
@@ -45,7 +41,6 @@
   },
   {
     "id": "bleServiceUUIDW4",
-    "object": "8fd601",
     "index": 4,
     "short": "FFF0",
     "service": "0000FFF0-0000-1000-8000-00805F9B34FB",
@@ -56,7 +51,6 @@
   },
   {
     "id": "bleServiceUUIDW5",
-    "object": "8fd5d1",
     "index": 5,
     "short": "e0ff",
     "service": "0000e0ff-3c17-d293-8e48-14fe2e4da212",

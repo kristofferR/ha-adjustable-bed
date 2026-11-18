@@ -1,4 +1,4 @@
-"""Accepted unit163 vectors on production callers, virtual time and real HA setup."""
+"""Accepted Rize Home vectors on production callers, virtual time and real HA setup."""
 
 from __future__ import annotations
 

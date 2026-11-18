@@ -18,6 +18,6 @@ records, including dynamic fields. Vector fixtures preserve the original 417 /
   `b1e0206b3dd86768e098ec6766c123a12852a68dabb0872b4e253fc9e739ffa2`.
   Sources: `VARIANT_CATALOG.json`, `BUTTON_COMMANDS.json`, `TEST_VECTORS.json`.
 
-The accepted member repair verdicts and the 52-row cluster-021 reconciliation
+The accepted member repair verdicts and the 52-row Luuna Rise 2 / PowerCool reconciliation
 govern event, scope and routing interpretation. Raw reports, reconciliation,
 discovery ledger and review results remain machine-local. Hardware is unverified.

@@ -1,6 +1,6 @@
 """Typed SUTA app catalog and independent UI/full-name transport selectors.
 
-Source: accepted com.shuta.smart_home 3.20.0 (80), unit128. Hardware unverified.
+Source: accepted com.shuta.smart_home 3.20.0 (80). Hardware unverified.
 The frozen July delivery does not attest to a later app version.
 """
 

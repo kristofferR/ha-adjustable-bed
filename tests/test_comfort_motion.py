@@ -1,4 +1,4 @@
-"""Comfort Motion 2.2.1 artifact vectors and its actual HA routes (row115)."""
+"""Comfort Motion 2.2.1 artifact vectors and its actual HA routes."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Row150 frozen literals, production callers and session boundaries."""
+"""OKIN Motion Bed frozen literals, production callers and session boundaries."""
 
 from __future__ import annotations
 
@@ -66,7 +66,7 @@ def char(uuid, props, handle=1):
         properties=props,
         handle=handle,
         descriptors=[],
-        description="Synthetic row150 role",
+        description="Synthetic role",
     )
 
 

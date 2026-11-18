@@ -1,4 +1,4 @@
-"""Accepted row121 artifact vectors and HA behavior; hardware is unverified."""
+"""Accepted HJBed artifact vectors and HA behavior; hardware is unverified."""
 
 from __future__ import annotations
 

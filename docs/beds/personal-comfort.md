@@ -1,6 +1,6 @@
 # Personal Comfort
 
-**Status:** ❓ Needs testing (all routes remain unverified on hardware)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -192,8 +192,8 @@ or extra checksum is assumed.
 
 ### STOP and release behavior
 
-V3 and RA have no proven hardware STOP. Cancelling a pending operation prevents
-future integration writes; it does not promise to stop the pump. V5 STOP is
+V3 and RA have no STOP command. Cancelling a pending operation stops further
+writes from Home Assistant; it does not stop the pump. V5 STOP is
 pump-wide. Malouf release ends its 200 ms refresh without an extra packet.
 V1 releases with its global frame. V2 releases the captured motor characteristic.
 Cleanup retains the physical connection and runs with a fresh cancellation event.
@@ -252,7 +252,7 @@ These are software wait limits, not firmware timing or automatic pump STOPs.
 No alarm, app-local firmness memories, local side/sync selectors, raw developer
 probes, unused lumbar/combined commands or network/account features are exposed.
 All physical effects, GATT properties, firmware variants and release behavior
-still need external beta qualification on actual hardware.
+still need testing on actual hardware.
 
 ## Notes
 
