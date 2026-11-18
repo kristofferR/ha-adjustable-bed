@@ -38,6 +38,9 @@ WAKE_ACTIONS: Final = (
     "light",
     "heat",
     "sleep_aid",
+    "deep_sleep",
+    "get_up",
+    "wake_up",
     "wake_mode_1",
     "wake_mode_2",
 )

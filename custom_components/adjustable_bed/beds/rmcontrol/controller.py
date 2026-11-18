@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Final, Literal, cast
 from bleak import BleakClient
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...codec import richmat as codec
 from ...const import RICHMAT_PROTOCOL_SINGLE, RICHMAT_PROTOCOL_WILINKE, RichmatFeatures
 from ...controller_state import StateKey
@@ -104,6 +105,26 @@ async def detect_rmcontrol_transport(client: BleakClient) -> tuple[bool, str, bo
     if len(matches) != 1:
         raise ValueError("RMControl requires exactly one known writable transport")
     return matches[0]
+
+
+# Shared wake actions and the product alarm catalog's action names.
+_ALARM_ACTIONS: Final = {
+    "zero_g": "ZeroGravity",
+    "flat": "AllMotorDown",
+    "anti_snore": "AntiSnoring",
+    "lounge": "LoungePosition",
+    "reading": "ReadingPosition",
+    "tv": "TVPosition",
+    "yoga": "YogaPosition",
+    "memory_1": "MemoryPosition1",
+    "memory_2": "MemoryPosition2",
+    "memory_3": "MemoryPosition3",
+    "memory_5": "MemoryPosition5",
+    "massage": "MassageModeAllOn",
+    "deep_sleep": "DeepSleepPosition",
+    "get_up": "HelpGetUpPosition",
+    "wake_up": "WakeUp",
+}
 
 
 def _is_transport_action(action: RichmatAction) -> bool:
@@ -965,6 +986,63 @@ class RmcontrolController(RichmatController):
         )
         if not supported:
             raise NotImplementedError("This product has not advertised this RMControl alarm type")
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if not self.supports_rmcontrol_alarm:
+            return None
+        repeat = self.supports_rmcontrol_repeat_alarm
+        return AlarmCapability(
+            wake_actions=tuple(
+                action
+                for action, name in _ALARM_ACTIONS.items()
+                if self._alarm_action_available(name)
+            ),
+            # Repeating products keep seven numbered alarms; others count down once.
+            weekdays=repeat,
+            slots=7 if repeat else 1,
+        )
+
+    def _alarm_action_available(self, name: str) -> bool:
+        try:
+            self._alarm_command(name)
+        except ValueError:
+            return False
+        return True
+
+    @staticmethod
+    def _alarm_action(alarm: AlarmRequest) -> str:
+        action = _ALARM_ACTIONS.get(alarm.wake_action)
+        if action is None:
+            raise ValueError("Choose a wake action this bed offers")
+        return action
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled:
+            self.validate_rmcontrol_alarm_action(self._alarm_action(alarm))
+            if self.supports_rmcontrol_repeat_alarm and not alarm.weekdays:
+                raise ValueError("Choose at least one day for this bed's repeating alarms")
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        action = self._alarm_action(alarm) if alarm.enabled else None
+        if not self.supports_rmcontrol_repeat_alarm:
+            if action is not None:
+                await self.rmcontrol_single_alarm(alarm.minutes_until(), action)
+            else:
+                await self.rmcontrol_single_alarm(0, None)
+        elif action is not None:
+            await self.rmcontrol_repeat_alarm(
+                alarm.slot, alarm.hour, alarm.minute, alarm.weekdays, action
+            )
+        else:
+            await self.rmcontrol_delete_alarm(alarm.slot)
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        return self.supports_rmcontrol_alarm_time_sync
+
+    async def sync_clock(self) -> None:
+        await self.rmcontrol_sync_alarm_time(dt_util.now())
 
     def validate_rmcontrol_alarm_action(self, action: str) -> None:
         """Reject actions absent or ambiguous in this product before any target writes."""

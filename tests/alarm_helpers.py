@@ -11,6 +11,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.alarm import AlarmCapability
 from custom_components.adjustable_bed.beds.base import BedController
@@ -38,7 +39,10 @@ async def call_set_alarm(
     scheduled: list[dict[str, Any]] = []
 
     async def preflight_each(targets, check):
-        check(target, controller)
+        try:
+            check(target, controller)
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
         return []
 
     async def execute(coordinator, target_side, command, **kwargs):
