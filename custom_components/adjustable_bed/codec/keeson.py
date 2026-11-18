@@ -418,7 +418,7 @@ class SymphonyParser:
 
 
 def comfortfurniture_cancels_hold(data: bytes) -> bool:
-    """Unit085 BED branch: length nine only, accessory dispatch takes precedence.
+    """ComfortFurniture 2.3 BED branch: length nine only, accessory dispatch takes precedence.
 
     No header/checksum/terminator validation or position meaning is established.
     Accessory replies are ignored rather than reproducing the app's wrong-view

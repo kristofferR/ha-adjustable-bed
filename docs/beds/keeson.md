@@ -1406,11 +1406,11 @@ durations, and the actual write type.
 
 **App:** [ComfortFurniture](https://apkpure.com/comfortfurniture/com.ore.comfortfurniture) 2.3 (10), `com.ore.comfortfurniture`
 
-**Status:** ❓ Hardware unverified. Static app behavior is established; the frozen July delivery carries no fresh store-version claim.
+**Status:** ❓ Hardware unverified.
 
 #### Setup
 
-Choose **ComfortFurniture app, bedding (Keeson)** explicitly. Detection: none.
+Choose **ComfortFurniture app** explicitly. Detection: none.
 The app lists every scanned LE device and selects an address without a name,
 manufacturer or service rule. HA uses its ordinary Bluetooth setup and proxy
 selection. This route fixes four axes, massage, binary light and no angle feedback.

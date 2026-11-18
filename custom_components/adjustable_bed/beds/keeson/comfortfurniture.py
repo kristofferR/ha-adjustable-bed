@@ -257,8 +257,13 @@ class ComfortFurnitureController(OreComfortBedController):
         if self._selected_preset == name:
             await self.stop_preset()
         else:
-            self._selected_preset = name
-            await self._send_single(word)
+            previous, self._selected_preset = self._selected_preset, name
+            try:
+                await self._send_single(word)
+            except Exception:
+                # A rejected write leaves the earlier selection; a cancelled one keeps this preset.
+                self._selected_preset = previous
+                raise
 
     async def stop_preset(self) -> None:
         # Preset STOP is a different proven word from movement release.
@@ -427,6 +432,8 @@ class ComfortFurnitureController(OreComfortBedController):
                 icon="mdi:alert-outline",
                 translation_key="comfortfurniture_reset",
                 requires_confirmation=True,
+                # Its physical effect is unknown, so it is not a dashboard control.
+                diagnostic=True,
                 card=CARD_UTILITY,
             ),
             ControllerButtonSpec(

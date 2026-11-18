@@ -288,3 +288,16 @@ async def test_entities_use_readable_names_without_duplicate_controls(
     with virtual_clock():
         await wave.set_fn(c, 2)
     assert _written(mock_bleak_client)[-1] == "e5fe1610000022d4"
+
+
+async def test_rejected_recall_keeps_the_previous_selection(
+    hass, mock_coordinator_connected, mock_bleak_client
+):
+    from bleak.exc import BleakError
+
+    c = await make_bed(hass, mock_bleak_client)
+    mock_bleak_client.write_gatt_char.side_effect = BleakError("rejected")
+    with virtual_clock(), pytest.raises(Exception):
+        await c.recall_named("flat")
+    # A retry recalls again instead of sending preset stop.
+    assert c._selected_preset is None
