@@ -1337,6 +1337,10 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         if spec.diagnostic:
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
             self._attr_entity_registry_enabled_default = False
+        if spec.release_only or spec.key == "hjbed_release":
+            # The card presses it to end a held gesture, so it stays enabled
+            # but is not a control a person picks from a dashboard.
+            self._attr_entity_registry_visible_default = False
         # Home Assistant prefers any _attr_name, even None, over the translation,
         # so only set it when the name is not translated.
         if spec.translation_key is None or spec.key.startswith(

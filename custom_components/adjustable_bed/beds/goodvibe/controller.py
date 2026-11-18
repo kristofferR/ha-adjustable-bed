@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 import zlib
 from collections.abc import Callable, Mapping
 from copy import deepcopy
@@ -15,7 +14,7 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
-from ...card import CARD_HIDDEN, CARD_UTILITY, CardPlacement, CardSection
+from ...card import CARD_HIDDEN, CARD_UTILITY
 from ...codec import richmat as codec
 from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
@@ -31,6 +30,7 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateSensorSpec,
 )
+from ..richmat.labels import function_label
 from . import protocol as p
 from .catalog import ACTION_EXPANSIONS, ACTIONS, PRODUCTS, Action
 from .receive import Notifications
@@ -150,9 +150,8 @@ def _stop(side: int, link: Link) -> bytes:
 
 
 def label(action: Action) -> str:
-    key = action.label.removeprefix("deviceFunctionItem").removeprefix("deviceFunctionSofa")
-    suffix = " (long action)" if action.force_long else ""
-    return re.sub(r"(?<!^)(?=[A-Z])", " ", key) + suffix
+    suffix = " (long press)" if action.force_long else ""
+    return function_label(action.label) + suffix
 
 
 def select_link(
@@ -911,10 +910,10 @@ class GoodVibeController(BedController):
             buttons.append(
                 ControllerButtonSpec(
                     "goodvibe_light_off",
-                    "Close bed light",
+                    "Bed light off",
                     light_off,
                     translation_key="goodvibe_action",
-                    translation_placeholders={"action": "Close bed light"},
+                    translation_placeholders={"action": "Bed light off"},
                 )
             )
         for detail in self.control_actions:
@@ -1155,22 +1154,6 @@ class GoodVibeController(BedController):
                     massage_timer,
                 )
             )
-        if len(self.product.sides) > 1:
-
-            async def set_side(_controller: BedController, value: str) -> None:
-                self._select_side(value)
-
-            specs.append(
-                ControllerSelectSpec(
-                    "goodvibe_side",
-                    "goodvibe_side",
-                    SIDE,
-                    tuple(map(str, self.product.sides)),
-                    set_side,
-                    local_select_fn=self._select_side,
-                    card=CardPlacement(CardSection.MOTORS),
-                )
-            )
         if self.product.light:
 
             async def duration(controller: BedController, value: str) -> None:
@@ -1231,13 +1214,6 @@ class GoodVibeController(BedController):
             ),
         )
 
-    def _select_side(self, value: str) -> None:
-        side = int(value)
-        if self.product is None or side not in self.product.sides:
-            raise ValueError("Unsupported side")
-        self.choices.side = side
-        self._publish()
-
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         specs = [
@@ -1252,7 +1228,7 @@ class GoodVibeController(BedController):
                     MONITORING,
                     MEMORY,
                 ),
-                card=CARD_UTILITY,
+                entity_registry_enabled_default=False,
             )
         ]
         if self.product is None:
@@ -1261,7 +1237,12 @@ class GoodVibeController(BedController):
                     key = f"goodvibe_{side}_{name}"
                     specs.append(
                         ControllerStateSensorSpec(
-                            key, key.lower(), _live_key(side, name), "mdi:bed", card=CARD_UTILITY
+                            key,
+                            key.lower(),
+                            _live_key(side, name),
+                            "mdi:bed",
+                            entity_registry_enabled_default=True,
+                            card=CARD_UTILITY,
                         )
                     )
         return tuple(specs)

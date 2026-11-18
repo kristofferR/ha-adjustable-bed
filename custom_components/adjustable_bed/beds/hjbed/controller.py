@@ -27,6 +27,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
+from ..richmat.labels import function_label
 from .catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS, Action
 from .protocol import (
     Alarm,
@@ -96,11 +97,7 @@ def action_key(action: Action) -> str:
 
 
 def action_label(action: Action) -> str:
-    return (
-        re.sub(r"(?<!^)(?=[A-Z])", " ", action.key)
-        .replace("Lumber", "Lumbar")
-        .replace("Tile", "Tilt")
-    )
+    return function_label(action.enum)
 
 
 async def _action(controller: BedController, *, detail: str, save: bool = False) -> None:
@@ -287,6 +284,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
                 STATUS,
                 "mdi:bed",
                 attribute_keys=(EVENTS, ALARMS, SAVED_ALARM, AVAILABLE_ALARM_SLOTS, REJECTION),
+                entity_registry_enabled_default=False,
             ),
         )
 

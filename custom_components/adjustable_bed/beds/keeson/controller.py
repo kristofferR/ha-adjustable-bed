@@ -585,6 +585,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
                 state_key=STATE_ADJUSTABLE_LITE_LIGHT,
                 icon="mdi:lightbulb",
                 card=CARD_LIGHTING,
+                entity_registry_enabled_default=True,
             ),
         )
 
@@ -601,6 +602,7 @@ class KeesonController(ProfileExecution[KeesonProfile], BedController):
                 icon="mdi:timer-outline",
                 native_unit_of_measurement="min",
                 attribute_keys=(STATE_ADJUSTABLE_LITE_MASSAGE_TIMER_RAW,),
+                entity_registry_enabled_default=True,
             ),
         )
 

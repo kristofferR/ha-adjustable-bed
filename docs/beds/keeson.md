@@ -2687,7 +2687,7 @@ Hardware behavior is unverified.
 |---------|-----------|
 | Motor Control | ✅ (2 motors: head, foot) |
 | Position Feedback | ❌ |
-| Memory Presets | Cool Base: ❌ (the app's star button has no proven memory meaning; exposed as **Star button**). DewertOKIN OKIN-BLE: 2 slots |
+| Memory Presets | Cool Base: ❌ (the app's star button has no proven memory meaning; exposed as **Star**). DewertOKIN OKIN-BLE: 2 slots |
 | Factory Presets | ✅ (Flat, Zero-G, TV, Anti-Snore; Lounge only on DewertOKIN OKIN-BLE) |
 | Massage | ✅ (Head massage, Foot massage, Massage mode buttons; mode sensor) |
 | Light Control | ✅ (on/off from reported state; toggle) |
