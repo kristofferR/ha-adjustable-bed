@@ -457,8 +457,22 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
 
     async def check_alarm(self, alarm: AlarmRequest) -> None:
         # Read a fresh, complete bank for every change.
-        link = self._live()
         self._reported = [None, None, None]
+        await self._read_bank()
+        self.validate_alarm_bank(self._planned_bank(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        # A reconnect or an earlier write since the check cleared the bank:
+        # read it again, so the other two alarms are the bed's current ones.
+        if None in self._reported:
+            await self._read_bank()
+        bank = self._planned_bank(alarm)
+        # The next change reads the bed again instead of trusting this write.
+        self._reported = [None, None, None]
+        await self.set_alarms(bank)
+
+    async def _read_bank(self) -> None:
+        link = self._live()
         self._alarm_reply.clear()
         await self._query_alarms(link)
         try:
@@ -468,13 +482,6 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                     self._alarm_reply.clear()
         except TimeoutError:
             pass
-        self.validate_alarm_bank(self._planned_bank(alarm))
-
-    async def configure_alarm(self, alarm: AlarmRequest) -> None:
-        bank = self._planned_bank(alarm)
-        # The next change reads the bed again instead of trusting this write.
-        self._reported = [None, None, None]
-        await self.set_alarms(bank)
 
     def _planned_bank(self, alarm: AlarmRequest) -> tuple[app.Alarm, app.Alarm, app.Alarm]:
         """Return the bed's reported bank with the requested slot replaced."""

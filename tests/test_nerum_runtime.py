@@ -433,3 +433,25 @@ async def test_stop_of_later_batch_target_during_first_target_prevents_alarm_wri
     finally:
         await left.async_shutdown()
         await right.async_shutdown()
+
+
+async def test_alarm_write_reads_the_bank_again_after_it_was_cleared(hass):
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    co, client = await receiver(hass)
+    answer_alarm_queries(co, client)
+    ctrl = co.controller
+    request = AlarmRequest(enabled=False, slot=3, reference_time=datetime.now())
+    try:
+        with virtual_clock():
+            await ctrl.check_alarm(request)
+            # A reconnect between the check and the write forgets the bank.
+            ctrl._reported = [None, None, None]
+            await ctrl.configure_alarm(request)
+        sent = frames(client)
+        assert sent.count(app.query("p2", 1)) == 2
+        assert sent[-1] == app.alarms("p2", (BANK[0], BANK[1], replace(BANK[2], on=False)))[0]
+    finally:
+        await co.async_shutdown()
