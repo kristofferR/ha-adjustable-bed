@@ -124,7 +124,8 @@ async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_ga
     flow._manual_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE}
     result = await flow.async_step_profile_questions()
     marker = next(iter(result["data_schema"].schema))
-    offered = set(result["data_schema"].schema[marker].container)
+    # The long handset list is a searchable picker: each row's label selects its ID.
+    offered = set(result["data_schema"].schema[marker].rows().values())
     saved = await flow.async_step_profile_questions({CONF_FURNIMOVE_REMOTE: "82417"})
     assert saved["type"] == "create_entry"
     assert saved["data"][CONF_FURNIMOVE_REMOTE] == "82417"

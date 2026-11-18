@@ -144,9 +144,9 @@ def is_valid_octo_pin(pin: str) -> bool:
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
-    "ormatek": {"okin15": "Okin", "okin24": "SmartBed"},
+    "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "linx": LINX_TRANSPORTS,
-    "nerum": {"p1": "P1: ORE / 1000", "p2": "P2: Okin / FFE5", "p3": "P3: Smartbed / Nordic"},
+    "nerum": {"p1": "Receiver type P1 (one memory)", "p2": "Receiver type P2 (two memories, alarms)", "p3": "Receiver type P3 (two memories, alarms)"},
     **{app: legacy_choices(app) for app in LEGACY_APPS},
     "smart_sleep": {"p1": "Legacy bed controls (P1)", "p2": "New bed controls (P2)"},
     "comfort_enhancement3": APEX_CHOICES,
