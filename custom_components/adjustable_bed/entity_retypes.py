@@ -10,6 +10,7 @@ ones that still name an old entity.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
@@ -179,8 +180,16 @@ def async_retyped_entities_built(
 def _reported_moves(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, str]]:
     """The repair's lines, with the replacement each one names; stored with the issue."""
     issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id)
-    moves = (issue.data or {}).get("moves") if issue is not None else None
-    return [dict(move) for move in moves] if isinstance(moves, list) else []
+    stored = (issue.data or {}).get("moves") if issue is not None else None
+    try:
+        moves = json.loads(stored) if isinstance(stored, str) else []
+    except ValueError:
+        return []
+    return [
+        {key: str(move[key]) for key in ("line", "domain", "unique_id")}
+        for move in moves
+        if isinstance(move, dict) and {"line", "domain", "unique_id"} <= move.keys()
+    ]
 
 
 @callback
@@ -204,7 +213,8 @@ def _async_update_issue(
             "bed": entry.title,
             "entities": "\n".join(move["line"] for move in moves),
         },
-        data={"moves": moves},
+        # Issue data holds plain values, so the lines are stored as JSON.
+        data={"moves": json.dumps(moves)},
     )
 
 
