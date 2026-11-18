@@ -604,7 +604,19 @@ class GoodVibeController(BedController):
                 raise ConnectionError("Catalog link was replaced during pacing")
             if cancel.is_set():
                 return False
-            if deadline is not None and monotonic() > deadline:
+            if deadline is not None and monotonic() >= deadline:
+                return False
+            context = current_command_context()
+            if (
+                self.catalog.bed is not None
+                and not cleanup
+                and context is not None
+                and context.lease is not None
+                and (
+                    context.hold_deadline is not None
+                    and asyncio.get_running_loop().time() >= context.hold_deadline
+                )
+            ):
                 return False
             if release_gesture is not None and (
                 self._gesture is not release_gesture or not release_gesture.release_is_current
@@ -1108,7 +1120,7 @@ class GoodVibeController(BedController):
             return False
         return super().controller_button_available(key)
 
-    async def _delay(self, milliseconds: int) -> bool:
+    async def _delay(self, milliseconds: float) -> bool:
         try:
             await asyncio.wait_for(self._coordinator.cancel_command.wait(), milliseconds / 1000)
             return False
@@ -1142,7 +1154,17 @@ class GoodVibeController(BedController):
             raise ValueError("This control does not support renewable holds")
         side, link = self._side(), self._current_link()
         bed = self.catalog.bed
+        finite_bed_hold = (
+            bed is not None
+            and gesture == "sustainPress"
+            and (context is None or context.lease is None)
+        )
         deadline = monotonic() + duration / 1000 if bed is not None else None
+        if finite_bed_hold:
+            assert bed is not None and deadline is not None
+            # HA's finite movement budget excludes the source's first tick.
+            # Anchor it here, never after a delayed timer or submitted write.
+            deadline += bed.tick_ms / 1000
         cancel = self._coordinator.cancel_command
         long = action.force_long or memory
         # The artifact replaces flagged items with the None descriptor while its local release mode is off.
@@ -1166,8 +1188,8 @@ class GoodVibeController(BedController):
             nonlocal attempted
             attempted = True
 
-        async def send(*, released: bool = False) -> None:
-            await self._send(
+        async def send(*, released: bool = False) -> bool:
+            return await self._send(
                 frame,
                 link=link,
                 cleanup=released,
@@ -1190,10 +1212,18 @@ class GoodVibeController(BedController):
                 if gesture == "sustainPress":
                     if bed is not None:
                         assert deadline is not None
-                        while monotonic() + bed.tick_ms / 1000 <= deadline:
+                        next_tick_ms = bed.tick_ms
+                        while (
+                            not finite_bed_hold or next_tick_ms < bed.tick_ms + duration
+                        ) and monotonic() + bed.tick_ms / 1000 < deadline:
                             if not await self._delay(bed.tick_ms):
                                 break
-                            await send()
+                            if not await send():
+                                break
+                            next_tick_ms += bed.tick_ms
+                        remaining_ms = (deadline - monotonic()) * 1000
+                        if finite_bed_hold and remaining_ms > 0 and not cancel.is_set():
+                            await self._delay(remaining_ms)
                     else:
                         remaining = duration
                         while remaining >= TICK_MS and await self._delay(TICK_MS):
