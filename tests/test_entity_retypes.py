@@ -17,9 +17,24 @@ from custom_components.adjustable_bed.const import BED_TYPE_OCTO, DOMAIN
 from custom_components.adjustable_bed.entity_retypes import (
     ISSUE_PREFIX,
     async_carry_over_retyped_entities,
+    async_retyped_entities_built,
 )
 
 ADDRESS = "AA:BB:CC:DD:EE:01"
+# What the platforms build: the light and the shared massage timer.
+BUILT = frozenset(
+    {("light", f"{ADDRESS}_under_bed_lights"), ("select", f"{ADDRESS}_massage_timer")}
+)
+NIGHT_LIGHT = {
+    "automation": {
+        "alias": "Night light",
+        "trigger": {"platform": "event", "event_type": "test"},
+        "action": {
+            "action": "switch.turn_on",
+            "target": {"entity_id": "switch.bed_under_bed_lights"},
+        },
+    }
+}
 
 
 def _runtime(bed_type: str = "keeson", suffix: str = "") -> SimpleNamespace:
@@ -155,6 +170,7 @@ async def test_repair_names_only_automations_that_use_the_old_entity(hass: HomeA
         },
     )
     async_carry_over_retyped_entities(hass, entry, _runtime())
+    async_retyped_entities_built(hass, entry, BUILT)
     await hass.async_block_till_done()
     issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id)
     assert issue is not None
@@ -173,6 +189,7 @@ async def test_no_repair_without_references(hass: HomeAssistant) -> None:
     _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
     assert await async_setup_component(hass, "automation", {"automation": []})
     async_carry_over_retyped_entities(hass, entry, _runtime())
+    async_retyped_entities_built(hass, entry, BUILT)
     await hass.async_block_till_done()
     assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
 
@@ -247,6 +264,7 @@ async def test_repair_finds_automations_by_registry_id_and_changed_options(
         },
     )
     async_carry_over_retyped_entities(hass, entry, _runtime())
+    async_retyped_entities_built(hass, entry, BUILT)
     await hass.async_block_till_done()
     issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id)
     assert issue is not None
@@ -255,27 +273,30 @@ async def test_repair_finds_automations_by_registry_id_and_changed_options(
     assert "select.bed_timer (its options changed): automation.timer" in entities
 
 
+async def test_repair_waits_until_the_sweep_confirms_the_replacement(
+    hass: HomeAssistant,
+) -> None:
+    """A reload or a bed still discovering capabilities reports nothing yet."""
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
+    assert await async_setup_component(hass, "automation", NIGHT_LIGHT)
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    await hass.async_block_till_done()
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
+    # Discovery finishes: the bed builds the light.
+    async_retyped_entities_built(hass, entry, BUILT)
+    await hass.async_block_till_done()
+    assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is not None
+
+
 async def test_no_repair_for_a_replacement_the_bed_does_not_provide(hass: HomeAssistant) -> None:
     registry = er.async_get(hass)
     entry = _entry(hass)
     _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
-    assert await async_setup_component(
-        hass,
-        "automation",
-        {
-            "automation": {
-                "alias": "Night light",
-                "trigger": {"platform": "event", "event_type": "test"},
-                "action": {
-                    "action": "switch.turn_on",
-                    "target": {"entity_id": "switch.bed_under_bed_lights"},
-                },
-            }
-        },
-    )
-    with patch("custom_components.adjustable_bed.entity_retypes.async_at_started") as at_started:
-        async_carry_over_retyped_entities(hass, entry, _runtime())
-    # The sweep removes a light the bed does not build before startup ends.
-    registry.async_remove("light.bed_under_bed_lights")
-    at_started.call_args.args[1](hass)
+    assert await async_setup_component(hass, "automation", NIGHT_LIGHT)
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    async_retyped_entities_built(hass, entry, frozenset())
+    await hass.async_block_till_done()
     assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None

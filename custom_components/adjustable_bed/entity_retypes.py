@@ -10,7 +10,7 @@ ones that still name an old entity.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant, callback, split_entity_id
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.start import async_at_started
+from homeassistant.util.hass_dict import HassKey
 
 from .const import BED_TYPE_OCTO, DOMAIN
 from .paired_coordinator import entity_runtimes
@@ -118,6 +119,7 @@ NOW_ENABLED: Final[tuple[tuple[str, str], ...]] = (
 )
 
 ISSUE_PREFIX: Final = "retyped_entities_"
+_PENDING: HassKey[dict[str, list[Moved]]] = HassKey(f"{DOMAIN}_retyped_entities")
 
 
 @callback
@@ -148,13 +150,31 @@ def async_carry_over_retyped_entities(
             if row is not None and row.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
                 registry.async_update_entity(row.entity_id, disabled_by=None)
     if moved:
+        # Reported once the entity sweep confirms which replacements the bed builds.
+        hass.data.setdefault(_PENDING, {}).setdefault(entry.entry_id, []).extend(moved)
 
-        @callback
-        def report(_hass: HomeAssistant) -> None:
-            _async_report_references(hass, entry, moved)
 
-        # Automations and scripts load after integrations at startup.
-        async_at_started(hass, report)
+@callback
+def async_retyped_entities_built(
+    hass: HomeAssistant, entry: ConfigEntry, created: Collection[tuple[str, str]]
+) -> None:
+    """Report the automations that still name an old entity the bed has replaced.
+
+    Called by the sweep with every (domain, unique ID) the entry's platforms
+    built, once that record is authoritative. A replacement the bed does not
+    build is dropped: the sweep removes it.
+    """
+    moved = hass.data.get(_PENDING, {}).pop(entry.entry_id, [])
+    built = [item for item in moved if (item.new_domain, item.new_unique_id) in created]
+    if not built:
+        return
+
+    @callback
+    def report(_hass: HomeAssistant) -> None:
+        _async_report_references(hass, entry, built)
+
+    # Automations and scripts load after integrations at startup.
+    async_at_started(hass, report)
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,6 +184,8 @@ class Moved:
     old_entity_id: str
     old_registry_id: str
     new_entity_id: str
+    new_domain: str
+    new_unique_id: str
     # The same platform with a new unique ID: only the options changed.
     options_changed: bool
 
@@ -184,7 +206,9 @@ def _carry_over(
     if retype.old_domain == retype.new_domain:
         # The row itself carries over, with its entity ID and every setting.
         registry.async_update_entity(old_id, new_unique_id=new_unique_id)
-        return Moved(old_id, old.id, old_id, options_changed=True)
+        return Moved(
+            old_id, old.id, old_id, retype.new_domain, new_unique_id, options_changed=True
+        )
     object_id = split_entity_id(old_id)[1]
     taken = registry.async_is_registered(f"{retype.new_domain}.{object_id}")
     user = er.RegistryEntryDisabler.USER
@@ -220,7 +244,9 @@ def _carry_over(
             registry.async_update_entity_options(new.entity_id, namespace, dict(options))
     # Nothing builds the old entity any more.
     registry.async_remove(old_id)
-    return Moved(old_id, old.id, new.entity_id, options_changed=False)
+    return Moved(
+        old_id, old.id, new.entity_id, retype.new_domain, new_unique_id, options_changed=False
+    )
 
 
 @callback
@@ -229,12 +255,8 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry, moved: lis
     from homeassistant.components.automation import automations_with_entity  # noqa: PLC0415
     from homeassistant.components.script import scripts_with_entity  # noqa: PLC0415
 
-    registry = er.async_get(hass)
     lines: list[str] = []
     for item in moved:
-        # A replacement the bed turned out not to provide was swept again.
-        if registry.async_get(item.new_entity_id) is None:
-            continue
         users = {
             user
             for reference in (item.old_entity_id, item.old_registry_id)
