@@ -74,8 +74,10 @@ class ControllerNumberSpec:
 class ControllerSwitchSpec:
     """An immutable controller-declared on/off setting.
 
-    ``state_key`` holds a bool, or a string equal to ``on_value`` when on.
-    Without one the switch shows the last command it sent as assumed state.
+    ``state_key`` holds a bool, or a string equal to ``on_value`` when on;
+    ``None`` (or a value of the wrong type) is unknown, so a controller clears
+    connection-scoped settings by publishing ``None``. Without a state key the
+    switch shows the last command it sent as assumed state until the link drops.
     """
 
     key: str
@@ -89,6 +91,8 @@ class ControllerSwitchSpec:
     # A setting the integration keeps itself sends no frame: applied without connecting.
     local_set_fn: Callable[[bool], None] | None = field(default=None, kw_only=True)
     entity_registry_enabled_default: bool = field(default=True, kw_only=True)
+    # Fills a translated name template, e.g. ``{side}``.
+    translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
 
 
