@@ -6,7 +6,6 @@ import pytest
 from homeassistant.config_entries import SOURCE_BLUETOOTH, SOURCE_USER
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
@@ -17,7 +16,6 @@ from custom_components.adjustable_bed.beds.kaidi.protocol import (
 from custom_components.adjustable_bed.beds.richmat_mh.models import RICHMAT_MH_VARIANTS_BY_APP
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
     _default_setup_route,
     _labelled_routes,
     _route_section,
@@ -224,22 +222,16 @@ async def test_aliases_show_friendly_labels_and_keep_their_saved_id(hass, alias,
     label = bed_type_label(alias)
     # Friendly, and distinct from the route it runs so it maps back exactly.
     assert alias not in label and label != bed_type_label(target)
-    entry = MockConfigEntry(
-        domain=const.DOMAIN,
-        data={CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: alias},
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler, flow.hass = entry.entry_id, hass
-    result = await flow.async_step_settings()
-    selector = result["data_schema"].schema[const.CONF_BED_TYPE]
+    from custom_components.adjustable_bed.config_flow import _bed_type_selector
+
+    # Reconfigure's bed-type list, drawn for an entry saved under the alias.
+    selector = _bed_type_selector(alias, show_saved_id=True)
     # An alias inside a family's journey names that family too.
     family = " · Okin" if alias == const.BED_TYPE_OKIMAT else ""
     shown = f"{bed_type_label(alias)}{family} (saved as {alias})"
     assert shown in {option["label"] for option in selector.config["options"]}
     # The shown label maps back to the saved ID, never to the route it runs.
     assert selector(shown) == alias
-    assert entry.data[const.CONF_BED_TYPE] == alias
 
 
 def test_leggett_umbrella_route_has_a_friendly_label():

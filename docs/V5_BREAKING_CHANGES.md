@@ -71,7 +71,8 @@ format.
 | Paired side descriptors (`pair_children`) | Unchanged, except that each side gains its own `profile_id`, loses the dropped keys above and has Massage turned off on the layouts above |
 | `profile_id` | **Added.** Derived from the saved fields above, for example `keeson:sino` or `jiecang_app@dreamask`. A paired side's id comes from that side's own settings and never from the parent |
 | `profile_migration` | **Added.** A record of the migration: `from_version`, `from_minor_version`, `resolver_version`, the new `profile_id`, the saved `fields` it was derived from and, for a paired entry, the same for each side under `sides`. When the 5.2 step drops a key, `dropped_keys` lists it by where it was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so on). When the 5.3 step turns Massage off, `massage_off` lists where the same way (`data`, `data.left`, `data.left.origin_data`), and so does `octo_motor_count_override` for the 5.5 step |
-| Schema version | Becomes 5.5 |
+| `position_mode`, `connection_profile`, `pair_connection_mode`, `disconnect_after_command`, `idle_disconnect_seconds`, `disable_angle_sensing` | Rewritten by the 5.6 step; see [Simplified Settings](#simplified-settings-schema-56) |
+| Schema version | Becomes 5.6 |
 
 The migration changes no entry, device or entity identity, so dashboards,
 automations and actions keep their targets. The only entities it removes are
@@ -167,6 +168,30 @@ moved the bed. Configure no longer offers Massage on these layouts. Every
 other layout, including a FurniMove handset with massage rows, BOX25 and the
 other Comfort Enhancements layouts, keeps its massage controls.
 
+### Simplified Settings (Schema 5.6)
+
+The bed settings were cut down to the ones that change something. The 5.6
+step rewrites saved entries (data, options, each paired side and the original
+settings a side restores on unpair), and `profile_migration.settings_5_6`
+lists what it changed where.
+
+| Before | Now |
+|--------|-----|
+| **Position update mode** (`position_mode`) | Removed. Every bed reads its position in the background after a command, as the default "Speed" did |
+| **Connection profile** (`connection_profile`) | Removed. Every bed uses the former "Reliable" timing: a 25 s connect timeout, 3 and 6 s backoff and a 1 s settle after connecting |
+| **Disconnect after each command** (`disconnect_after_command`), **Idle disconnect timeout** (`idle_disconnect_seconds`) and its hidden `0` | One **Bluetooth connection** select (`connection_mode`): release right after each command (was Disconnect after each command on), stay connected for a while with **Seconds to stay connected** (was off, with its timeout), or always stay connected (was a timeout of `0`). It is hidden for beds that always hold their link |
+| LP Comfort Connect (Leggett & Platt Gen2, and Leggett & Platt on Auto) held its link permanently | Follows **Bluetooth connection**, staying connected for a while by default, and holds the link for the session once a reconnect stalls. "Always stay connected" restores the old behavior |
+| **Disable angle sensing** (`disable_angle_sensing`) | **Read bed position**, on by default and shown only for beds that report a position. A saved value equal to the bed's default is dropped. A standalone bed saved with no value at all, which only very old entries are, now reads its position where its bed type reports one |
+| **Motor pulse count** and **Motor pulse delay (ms)** | **Movement per tap** (the pulse count, 1-100, now enforced). The delay is no longer shown; a saved delay still applies. Saving Configure no longer marks the timing as yours unless Movement per tap changed |
+| **Stop discovering new Bluetooth devices**, in every bed's Configure | **Add Integration → Adjustable Bed → Find new beds automatically** |
+| **Bed type** and **Protocol variant** in Configure, and **Change app or layout** | **Reconfigure**, which now works for every bed type |
+| Explicit pair connection modes (`pair_connection_mode`) | Removed; nothing could set them. Pairs start concurrent and fall back to one link at a time when the adapter cannot hold both |
+| **Has massage feature**, maximum angles and a one-choice motor count shown for beds that ignore them | Hidden |
+| A bed added from **Pick any Bluetooth device** saved the scanner that listed it as its adapter | Saves **Automatic**, like a discovered bed |
+| **Combine two beds** suggested in Repairs for any two beds | Suggested, and offered in Add Integration, only for beds of one protocol |
+| App suggestions in Repairs switched the app through Configure | They open **Reconfigure** with the suggested app preselected, which reviews the change before saving. Suggestions without one app to switch to, such as checking a Richmat remote, still open Configure |
+| Connection log lines at warning: "NOT FOUND" on every attempt, each failed attempt, an idle drop, and a final error | Debug, except one warning when the bed stays unreachable (once per outage) and a drop during a command |
+
 ## Entity Cleanup
 
 v5 gives every entity a name a person understands and removes entities that
@@ -240,7 +265,6 @@ These are additions. Existing entities keep their names, states and attributes.
 | Saved-position actions (`save_position`, `recall_position`, `set_position_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
 | **Tap to start and stop movement** card option (`tap_to_move`) | Dashboard card editor, **Motors** | Off by default. With it on, a tap on a motor arrow starts the motor and the next tap stops it ([#609](https://github.com/kristofferR/ha-adjustable-bed/issues/609)). See [Tap to move](DASHBOARD_CARD.md#tap-to-move) |
 | Percentage graphic, lumbar graphic and full-card dialog card options (`show_percentage_graphic`, `show_lumbar_graphic`, `show_graphic_labels`, `open_dialog`, `dialog_config`) | Dashboard card editor | Off by default, so existing cards are unchanged. They draw percentage feedback and every estimate state as a schematic pose, add a lumbar section, and open the full card in a dialog from a compact card ([#713](https://github.com/kristofferR/ha-adjustable-bed/pull/713)). See [Dashboard Card Graphics and Dialog](CONFIGURATION.md#dashboard-card-graphics-and-dialog) |
-| **Change app or layout** menu item | **Configure** | On entries of a family with a guided change: Vibradorm, Jiecang, Okin, Keeson, Solace, Leggett & Platt, Sleepy's Elite, Customatic, Jordan's, Malouf / Lucid, LOGICDATA, Jensen / Svane and Limoss, and on Okin CST, L&P legacy app and L&P QRRM remote entries, whose family question also chooses their route ([#889](https://github.com/kristofferR/ha-adjustable-bed/pull/889)). It replaces Vibradorm's **Choose Vibradorm app and remote** item and points to **Reconfigure** |
 | Beta feedback notification | Home Assistant notifications | 24 hours after Home Assistant first loads a beta of a major version. For v5 it links the feedback issue [#914](https://github.com/kristofferR/ha-adjustable-bed/issues/914). It shows again after each restart until you dismiss it; after that, later betas of the same major do not ask again. Stable versions never ask |
 | Profile id and migration record | Diagnostics and support bundles | Diagnostics: `profile` for a standalone entry, `profile_migration` and each side's `profile_id` for a paired entry. Support bundles of a configured bed: `profile` (empty for a raw-address capture). The support bundle's `report_version` is now 2.6 |
 
@@ -434,7 +458,7 @@ For existing beds ([#792](https://github.com/kristofferR/ha-adjustable-bed/pull/
   **Apply this change** and **Keep current setup** as equal answers, a failed
   check says **Nothing was changed** and offers **Try again** or **Keep**, and
   an applied change names the new setup and the way back.
-  [Changing the app or layout](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
+  [Changing the app or layout](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
   describes the steps.
 - **Reconfigure** also reaches routes that had no way in ([#889](https://github.com/kristofferR/ha-adjustable-bed/pull/889)). An Okin
   CST entry answers the Okin question, so it can move to another Okin route

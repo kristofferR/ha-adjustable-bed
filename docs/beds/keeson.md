@@ -167,7 +167,7 @@ An app row in the bed-type list answers the question itself; the one
 that names an app, a remote route or a Restonic remote style answers both.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
 The same question appears, with **Keep** leaving the entry as it is. A Keeson
 route has no endpoint or bond to check: the controllers fall back across their
 write roles, as Configure's switch did. A review lists the added and removed
@@ -3406,9 +3406,9 @@ was found.
    never pick this profile or its product automatically.
 3. To control one P1 receiver's split sides, open **Configure** and choose
    **Enable Left / Right / Both controls**. Use the native Left and Right child
-   devices, or the parent's Both controls. Revert with **Restore standalone
-   controls** in Configure when needed. P2 products do not offer this option.
-   Restore standalone controls before changing from P1 to P2.
+   devices, or the parent's Both controls. Revert with **Remove Left, Right
+   and Both controls** in Configure when needed. P2 products do not offer this option.
+   Remove the Left, Right and Both controls before changing from P1 to P2.
 
 For an existing Keeson entry, select **BaseI4/BaseI5 (Member's Mark)** or
 **Ergomotion (with position feedback)** before enabling side controls. Do this
@@ -3510,7 +3510,7 @@ For a P1 receiver with one address, **Enable Left / Right / Both controls** in
 **Configure** adds Left/Right child devices and native Both controls. Existing
 Keeson entries can use this after selecting BaseI4/BaseI5 or Ergomotion through
 **Reconfigure**; the Ergomotion bed type also supports it. Auto and
-P2/JSON/OEM profiles are ineligible. Choose **Restore standalone controls**
+P2/JSON/OEM profiles are ineligible. Choose **Remove Left, Right and Both controls**
 before changing to a profile without a side field. Existing
 standalone profiles and entities retain their behavior.
 

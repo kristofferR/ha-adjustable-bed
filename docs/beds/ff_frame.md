@@ -88,7 +88,7 @@ or a bed detected as Solace, asks which app you use:
 The **Woosa Sleep app** row in the bed-type list answers the question itself and
 shows the same note. For an existing bed, open the entry's three-dot menu and
 **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
 **Keep** leaves the entry as it is. A Solace entry from before v5 on the name
 routes is asked once, through a repair, whether it uses Woosa Sleep. A Solace
 route change has nothing to check:

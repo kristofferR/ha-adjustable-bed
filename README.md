@@ -30,7 +30,7 @@
 - **Position control** - Position sliders in degrees or percentages, according to the controller
 - **Estimated positions** - Calibrated travel-time estimates and saved positions for beds without position feedback ([details](docs/ESTIMATED_POSITIONS.md))
 - **Memory presets** - Jump to saved positions with one tap
-- **Guided changes** - Switch an existing bed to another app or layout through **Reconfigure** ([details](docs/CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed))
+- **Guided changes** - Switch an existing bed to another app or layout through **Reconfigure** ([details](docs/CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed))
 - **Under-bed lights** - RGB color control on supported beds, on and off on others
 - **Climate controls** - Cooling, heating and foot warming on supported beds
 - **Massage control** - Adjust massage intensity and patterns
@@ -204,25 +204,23 @@ such as a layout or handset ID. The final settings come last. See
 
 To adjust settings after setup, click **Configure** (the gear icon) for the
 integration entry in Settings → Devices & Services, then **Change settings**.
-Families with a guided change, such as Okin, Keeson or Leggett & Platt, change
-their app or layout through **Reconfigure** in the entry's three-dot menu
-instead; see [Changing the app or layout](docs/CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
-for the list.
+To change the bed type, app or layout, use **Reconfigure** in the entry's
+three-dot menu; see [Changing the bed type, app or layout](docs/CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed).
 
 <details>
 <summary><b>Quick reference</b></summary>
 
 | Setting | Description |
 |---------|-------------|
-| App or remote | Asked first. It decides the commands, layout and features. Change it later with **Reconfigure** where the family has a guided change |
+| App or remote | Asked first. It decides the commands, layout and features. Change it later with **Reconfigure** |
 | App questions | The layout, product, handset ID or remote style the app shows |
 | Name, Bluetooth adapter | The entry's name, and a preferred adapter or proxy. Home Assistant may still reroute |
-| Disconnect after each command | Release the connection one second after operations finish, so the remote or app can connect |
+| Bluetooth connection | Release right after each command, stay connected for a while (with its seconds), or always stay connected |
 | Motor count, massage | Asked only when the app or remote does not set them |
 | Bed-specific fields | Fields one bed type needs, such as a PIN |
 | Advanced: receiver route | For a bed type with several receiver routes. An app sets its own route |
-| Advanced connection and timing | Motor pulse count and delay, and the idle disconnect timeout |
-| Disable angle sensing | Turn off position feedback if monitoring conflicts with the remote |
+| Movement per tap | How many times a tap repeats its command |
+| Read bed position | Turn off position feedback if monitoring conflicts with the remote |
 | Estimated positions | Calibrate travel-time estimates on beds without position feedback |
 
 See the [Configuration Guide](docs/CONFIGURATION.md) for all options.

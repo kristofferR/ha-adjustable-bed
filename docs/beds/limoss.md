@@ -155,7 +155,7 @@ asks which app you use:
 Each route keeps its own controls, feedback and memory format; none is
 translated into another. For an existing bed, open the entry's three-dot menu
 and **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
 **Keep** leaves the entry as it is. A change to Limoss Remote first checks for
 the app's FFE0 service and its notifying FFE1 characteristic. Leaving Limoss
 Remote with its light or massage enabled sends the app's OFF commands before

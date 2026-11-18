@@ -21,8 +21,8 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_N32_MOTION_BED,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
@@ -61,7 +61,7 @@ def entry(hass, address=ADDRESS, **data):
             CONF_NAME: "N32",
             CONF_BED_TYPE: BED_TYPE_N32_MOTION_BED,
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
             CONF_MOTOR_COUNT: 3,
             CONF_MOTOR_PULSE_COUNT: 3,
             CONF_MOTOR_PULSE_DELAY_MS: 200,

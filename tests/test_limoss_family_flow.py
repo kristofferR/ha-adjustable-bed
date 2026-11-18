@@ -10,7 +10,6 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
@@ -150,17 +149,6 @@ async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_c
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "keep"})
     assert result["reason"] == "migration_kept"
     assert {k: v for k, v in entry.data.items() if k in before} == before
-
-
-async def test_configure_sends_an_app_change_to_the_guided_change(hass):
-    entry = entry_for(hass, {const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS, const.CONF_MOTOR_COUNT: 2})
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    result = await flow._async_options_form(
-        {const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS_REMOTE}, step_id="settings"
-    )
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LIMOSS
 
 
 async def test_a_save_during_the_off_commands_is_never_overwritten(

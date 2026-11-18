@@ -27,8 +27,8 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.command_scheduler import CommandOutcome
 from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
 )
@@ -86,7 +86,7 @@ async def bed(hass: HomeAssistant, request: pytest.FixtureRequest) -> AsyncItera
             CONF_BED_TYPE: scenario.bed_type,
             CONF_PROTOCOL_VARIANT: scenario.protocol_variant,
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
             **scenario.entry_data,
         },
     )

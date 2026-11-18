@@ -394,7 +394,7 @@ async def test_real_coordinator_cover_timed_move_and_card_lease(hass, mock_bleak
             const.CONF_PROTOCOL_VARIANT: "apex_3",
             const.CONF_MOTOR_PULSE_COUNT: 3,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_ALWAYS,
             const.CONF_IDLE_DISCONNECT_SECONDS: 0,
         },
     )
@@ -626,7 +626,7 @@ async def test_two_address_card_release_stays_on_original_side(hass):
                     const.CONF_PROTOCOL_VARIANT: f"apex_{index}",
                     const.CONF_MOTOR_PULSE_COUNT: 3,
                     const.CONF_DISABLE_ANGLE_SENSING: True,
-                    const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                    const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_ALWAYS,
                     const.CONF_IDLE_DISCONNECT_SECONDS: 0,
                 },
             )
@@ -703,22 +703,36 @@ async def test_two_address_card_release_stays_on_original_side(hass):
             child._controller.on_disconnect()
 
 
-async def test_configure_manual_code_preserves_profile_identity_and_owned_gates(hass):
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.profile_id import resolve_profile_id, with_profile_ids
+async def test_reconfigure_manual_code_preserves_profile_identity_and_owned_gates(hass):
+    from custom_components.adjustable_bed.profile_id import resolve_profile_id
     entry = MockConfigEntry(domain=const.DOMAIN, version=5, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENT3,
         const.CONF_PROTOCOL_VARIANT: "apex_3", const.CONF_HAS_MASSAGE: True,
-        const.CONF_MOTOR_COUNT: 2, const.CONF_DISABLE_ANGLE_SENSING: True})
+        const.CONF_MOTOR_COUNT: 2, const.CONF_DISABLE_ANGLE_SENSING: True,
+        const.CONF_PROFILE_ID: "comfort_enhancement3:apex_3"})
     entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    result = await flow._async_options_form({const.CONF_PROTOCOL_VARIANT: "15", REMOTE_CODE: "PMT-5020"}, step_id="settings")
-    assert not result.get("errors")
+    from custom_components.adjustable_bed.profile_migration import reconfigure_context
+
+    # The remote code picks the route, so it changes in Reconfigure.
+    manager = hass.config_entries.flow
+    result = await manager.async_init(const.DOMAIN, context=reconfigure_context(entry))
+    result = await manager.async_configure(
+        result["flow_id"], {const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENT3}
+    )
+    assert result["step_id"] == "profile_questions"
+    result = await manager.async_configure(
+        result["flow_id"], {const.CONF_PROTOCOL_VARIANT: "15", REMOTE_CODE: "PMT-5020"}
+    )
+    assert result["step_id"] == "migration_confirm", result
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == "apex_12"
     assert not entry.data[const.CONF_HAS_MASSAGE]
-    saved = with_profile_ids(entry.data)  # Entry setup refreshes ids on the options reload.
-    assert saved[const.CONF_PROFILE_ID] == resolve_profile_id(saved) == "comfort_enhancement3:apex_12"
+    # Reconfigure saves the new route's profile id itself.
+    assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data) == (
+        "comfort_enhancement3:apex_12"
+    )
 
 
 async def test_batch_massage_honors_stop_on_later_target(hass):
@@ -736,7 +750,7 @@ async def test_batch_massage_honors_stop_on_later_target(hass):
                 const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENT3,
                 const.CONF_PROTOCOL_VARIANT: "apex_3", const.CONF_HAS_MASSAGE: True,
                 const.CONF_DISABLE_ANGLE_SENSING: True,
-                const.CONF_DISCONNECT_AFTER_COMMAND: False, const.CONF_IDLE_DISCONNECT_SECONDS: 0,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_ALWAYS, const.CONF_IDLE_DISCONNECT_SECONDS: 0,
             })
             entry.add_to_hass(hass)
             child = AdjustableBedCoordinator(hass, entry)

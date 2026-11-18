@@ -39,12 +39,10 @@
           "name": "Name",
           "motor_count": "Number of motors",
           "has_massage": "Has massage feature",
-          "disable_angle_sensing": "Disable angle sensing",
           "octo_pin": "Octo PIN",
           "octo_motor_count_override": "OCTO motor count",
           "cb24_bed_selection": "Bed side",
           "preferred_adapter": "Bluetooth adapter",
-          "disconnect_after_command": "Disconnect after each command",
           "transport_direct": "Transport: direct Bluetooth",
           "transport_proxy": "Transport: Bluetooth proxy",
           "transport_unknown": "Transport: Bluetooth",
@@ -57,16 +55,17 @@
           "transport_proxy_pairing_warning": "Pairing over a proxy",
           "transport_all_busy": "No free Bluetooth connections",
           "transport_actual": "Connected over",
-          "transport_actual_differs": "Path differed from the prediction"
+          "transport_actual_differs": "Path differed from the prediction",
+          "read_positions": "Read bed position",
+          "connection_mode": "Bluetooth connection",
+          "idle_disconnect_seconds": "Seconds to stay connected"
         },
         "data_description": {
           "motor_count": "Number of physical actuators.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
           "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
-          "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle. Recommended for beds that only allow one connection at a time.",
           "transport_direct": "Direct Bluetooth",
           "transport_proxy": "Bluetooth proxy",
           "transport_unknown": "Bluetooth",
@@ -79,7 +78,10 @@
           "transport_proxy_pairing_warning": "⚠️ This bed needs Bluetooth pairing, and pairing over a proxy stores the bond on the proxy rather than on Home Assistant. If you later move the bed to a different proxy or to a Home Assistant adapter, you will have to pair again. Home Assistant also cannot remove a bond that lives on a proxy.",
           "transport_all_busy": "⚠️ Every adapter that can see this device is currently out of free Bluetooth connections.",
           "transport_actual": "Connected over: {kind} · {scanner}{signal}",
-          "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted})."
+          "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted}).",
+          "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
+          "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
+          "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds."
         },
         "sections": {
           "advanced": {
@@ -92,16 +94,12 @@
             }
           },
           "timing": {
-            "name": "Advanced connection and timing",
+            "name": "Movement",
             "data": {
-              "motor_pulse_count": "Motor pulse count",
-              "motor_pulse_delay_ms": "Motor pulse delay (ms)",
-              "idle_disconnect_seconds": "Idle disconnect timeout (seconds)"
+              "motor_pulse_count": "Movement per tap"
             },
             "data_description": {
-              "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
-              "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
-              "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Lower values free up the connection faster for the physical remote, higher values reduce reconnection overhead. Enter 0 to keep the bed connected while Home Assistant runs; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on."
+              "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap."
             }
           }
         }
@@ -548,18 +546,16 @@
         },
         "data": {
           "pairing": "Pairing",
-          "later_reconfigure": "Later, with Reconfigure",
-          "later_configure": "Later, with Configure"
+          "later": "Later, with Reconfigure"
         },
         "data_description": {
           "pairing": "It requires Bluetooth pairing.",
-          "later_reconfigure": "To choose your app later, open **Reconfigure** from this entry's three-dot menu. **Configure › Change app or layout** points there too.",
-          "later_configure": "To choose your app later, change **Bed type** in **Configure › Change settings**."
+          "later": "To choose your app later, open **Reconfigure** from this entry's three-dot menu."
         }
       },
       "migration_split": {
         "title": "Separate {name} first",
-        "description": "An app belongs to one physical bed. Separate the Dual Bed, or turn off Left and Right controls, then open Reconfigure on the bed you want to change.\n\n**Kept** on each bed: Bluetooth adapter or proxy, idle disconnect, and disconnect after each command.\n\n**Restored** from before the beds were combined: bed type, app and side settings.\n\nThe Left, Right and Both controls are removed. Device and side entity IDs are kept. Nothing changes until you tick the box below.",
+        "description": "An app belongs to one physical bed. Separate the Dual Bed, or turn off Left and Right controls, then open Reconfigure on the bed you want to change.\n\n**Kept** on each bed: Bluetooth adapter or proxy, and Bluetooth connection.\n\n**Restored** from before the beds were combined: bed type, app and side settings.\n\nThe Left, Right and Both controls are removed. Device and side entity IDs are kept. Nothing changes until you tick the box below.",
         "data": {
           "confirm": "I understand that the combined Left, Right and Both controls are removed"
         }
@@ -709,6 +705,27 @@
           "bed_type": "Brand or family",
           "not_sure": "Not sure: run diagnostics or browse unsupported devices"
         }
+      },
+      "reconfigure_bed_type": {
+        "title": "Change the bed type or app",
+        "description": "Currently: **{current}**.\n\nChoose the app or remote that controls this bed. Nothing changes until you review and apply the change.",
+        "data": {
+          "bed_type": "App or remote"
+        }
+      },
+      "reconfigure_route": {
+        "title": "Choose the bed model or remote",
+        "description": "**{bed_type}** has more than one bed model or remote. Automatic, where offered, is right for most beds.",
+        "data": {
+          "protocol_variant": "Bed model or remote"
+        }
+      },
+      "discovery_settings": {
+        "title": "Find new beds automatically",
+        "description": "Home Assistant can suggest nearby beds as it sees them. Adding a bed from this list still works either way.",
+        "data": {
+          "discover_new_beds": "Suggest newly found beds"
+        }
       }
     },
     "progress": {
@@ -730,18 +747,19 @@
       "discovery_disabled": "Automatic discovery is turned off for the Adjustable Bed integration. Re-enable it in any bed's options if you want new devices to be discovered.",
       "diagnostic_browser_ready": "**{name}**\n\nAddress: `{address}`\nSource: `{source}`\nScanner connectable: `{connectable}`\n\nRun `adjustable_bed.generate_support_bundle` with `target_address: {address}` to capture the full support bundle.",
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
-      "reconfigure_not_supported": "This setup has no guided reconfigure flow. Use Configure to change its settings.",
+      "combine_cleanup_failed": "Couldn't remove one of the original beds, so the combined bed wasn't created. Try again or remove the beds manually first.",
       "migration_entry_changed": "The saved configuration changed while this wizard was open. Nothing was overwritten. Open Reconfigure again.",
       "migration_kept": "Your current setup was kept. You won't be asked again for this setup unless a new app becomes available for it.",
       "migration_applied": "**{name} now uses {selection}**\n\nSaved. {name} reloads with these controls. Its previous setup was {current}.\n\nTo switch back, open **Reconfigure** from this entry's three-dot menu and choose the previous setup.",
       "migration_unchanged": "Your answer matches the current setup, so nothing was changed.",
       "migration_pair_split_started": "Restoring standalone beds. When it completes, open Reconfigure on the bed you want to change.",
-      "migration_verification_required": "The selected setup was not verified. Your current configuration was kept."
+      "migration_verification_required": "The selected setup was not verified. Your current configuration was kept.",
+      "discovery_saved": "Saved. This applies to every bed in this integration."
     },
     "error": {
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
       "invalid_mac_address": "Invalid Bluetooth address format. Use XX:XX:XX:XX:XX:XX.",
-      "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
+      "invalid_number": "Enter a valid number.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_variant_for_bed_type": "This bed model or remote does not fit the chosen app. Choose another one, or Automatic.",
       "invalid_motor_count_for_bed_type": "This bed does not support that number of motors. Choose another number, or change the bed model or remote.",
@@ -783,7 +801,7 @@
       "limoss_remote_product_required": "Select bed or chair for this app profile.",
       "limoss_remote_feature_update_failed": "The feature OFF commands could not complete. Settings were not saved.",
       "limoss_remote_invalid": "Select valid Limoss Remote app settings.",
-      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
+      "invalid_pulse_count_range": "For this app, Movement per tap must be between 1 and 600.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
       "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout.",
       "richmat_mh_choose_model": "The app needs the bed model for this bed. Choose it under **Bed model or remote**.",
@@ -809,7 +827,8 @@
       "apex_remote_code": "This remote code is not supported. Check the capital letters and spaces against the label.",
       "symphony_profile": "Choose the Symphony Sleep Sense product the app shows.",
       "symphony_unpair_first": "Separate the combined bed first, then choose this product, which has no separate sides.",
-      "bedgear_profile": "Enter the bed's Bluetooth name exactly as the Bedgear app shows it. It contains HHC."
+      "bedgear_profile": "Enter the bed's Bluetooth name exactly as the Bedgear app shows it. It contains HHC.",
+      "invalid_movement_per_tap": "Enter a number from 1 to 100."
     }
   },
   "options": {
@@ -825,7 +844,6 @@
           "remove_bond": "Remove the Bluetooth bond",
           "left_settings": "Change left receiver settings",
           "right_settings": "Change right receiver settings",
-          "change_app": "Change app or layout",
           "estimated_positions": "Estimated positions",
           "left_estimated_positions": "Estimated positions, left side",
           "right_estimated_positions": "Estimated positions, right side"
@@ -833,28 +851,21 @@
       },
       "settings": {
         "title": "Adjustable Bed Options",
-        "description": "Adjust the configuration for your adjustable bed.",
+        "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
-          "bed_type": "Bed type",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid actuator layout",
           "malouf_memory_slots": "Malouf/Lucid memory positions",
           "has_massage": "Has massage feature",
-          "disable_angle_sensing": "Disable angle sensing",
           "passive_position_reconciliation": "Refresh positions while idle",
-          "position_mode": "Position update mode",
-          "disable_discovery": "Stop discovering new Bluetooth devices",
           "preferred_adapter": "Bluetooth adapter",
-          "connection_profile": "Connection profile",
           "cb24_bed_selection": "CB24 bed side",
           "protocol_variant": "Bed model or remote",
           "richmat_remote": "Richmat remote",
           "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
-          "motor_pulse_count": "Motor pulse count",
-          "motor_pulse_delay_ms": "Motor pulse delay (ms)",
-          "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
+          "motor_pulse_count": "Movement per tap",
+          "idle_disconnect_seconds": "Seconds to stay connected",
           "octo_pin": "Octo PIN",
           "jensen_pin": "Jensen PIN",
           "pairlink_role": "Pairlink connection role",
@@ -908,7 +919,6 @@
           "reverse_motor_3": "Reverse motor channel 3",
           "reverse_motor_4": "Reverse motor channel 4",
           "limoss_remote_theme": "App artwork theme",
-          "sleeptracker_foundation": "Foundation size (app metadata)",
           "sleeptracker_unit_number": "Processor unit number (wire side)",
           "sleeptracker_snapshot_side": "Status snapshot side ordinal",
           "sleeptracker_restricted": "Restricted app session (no authentication)",
@@ -934,28 +944,24 @@
           "serta_mp_memory_4_foot": "Local memory 4, foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
-          "mline_child_mode": "Local child mode"
+          "mline_child_mode": "Local child mode",
+          "read_positions": "Read bed position",
+          "connection_mode": "Bluetooth connection",
+          "disable_angle_sensing": "Disable angle sensing"
         },
         "data_description": {
-          "bed_type": "Controller protocol used for this device. After you select a different type, submit once to load its protocol-specific settings, review them, then submit again to save. Connected GATT evidence may correct an incompatible shared-UUID choice.",
           "motor_count": "Number of physical actuators. Available counts follow the selected protocol variant. Malouf/Lucid beds use the separate actuator-layout setting below.",
           "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
           "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "passive_position_reconciliation": "Periodically reconnect and read positions while idle so Home Assistant catches up with moves made using the physical remote. This is enabled by default for Linak beds and may briefly use the BLE connection in the background.",
-          "position_mode": "Speed: faster button response. Accuracy: extra position read after each command.",
-          "disable_discovery": "When enabled, Home Assistant stops automatically suggesting newly seen Bluetooth devices as adjustable beds. This applies to the whole integration, not just this bed. You can still add a new bed at any time with 'Add Integration'.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
-          "connection_profile": "Balanced is faster to connect. Reliable uses longer timeouts and backoff for flaky beds.",
           "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
-          "protocol_variant": "Change it if the bed doesn't respond correctly. If Configure refuses the change, use Reconfigure from the entry's three-dot menu.",
+          "protocol_variant": "The bed model or remote this bed's app uses.",
           "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
           "rmcontrol_product": "The product code RMControl shows for this bed, or None to use the Richmat remote controls.",
           "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "motor_pulse_count": "Number of command pulses sent for motor movement (1-100). Higher = longer movement.",
-          "motor_pulse_delay_ms": "Delay between command pulses in milliseconds (10-500). Lower = smoother movement.",
-          "disconnect_after_command": "Release the BLE connection one second after commands finish so the physical remote can reconnect. Rapid commands share this short window; periodic position polling stays off while idle.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Enter 0 to keep the bed connected; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
+          "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap.",
+          "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
           "pairlink_role": "Central keeps Home Assistant connected to this bed. Local peripheral makes this Home Assistant host join the Pairlink network itself.",
@@ -996,7 +1002,6 @@
           "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
           "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 or DewertOkin ELEVATE entries. This main and the three lifts keep separate Bluetooth addresses and controls.",
           "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type.",
-          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
@@ -1004,7 +1009,10 @@
           "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
           "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data.",
-          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
+          "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
+          "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
+          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them."
         }
       },
       "remove_bond": {
@@ -1036,7 +1044,7 @@
       },
       "unpair": {
         "title": "Separate the Dual Bed",
-        "description": "Turn the Left and Right sides back into separate beds. Side entities keep their IDs, history, names and areas. The Both controls are removed.\n\n**Kept** on each bed: Bluetooth adapter or proxy, idle disconnect, and disconnect after each command.\n\n**Restored** from before the beds were combined: bed type, app and side settings.",
+        "description": "Turn the Left and Right sides back into separate beds. Side entities keep their IDs, history, names and areas. The Both controls are removed.\n\n**Kept** on each bed: Bluetooth adapter or proxy, and Bluetooth connection.\n\n**Restored** from before the beds were combined: bed type, app and side settings.",
         "data": {
           "confirm": "Separate this Dual Bed",
           "starcode_abm5_4_command_selector": "Saved command/parser selector",
@@ -1054,7 +1062,7 @@
       },
       "revert_sides": {
         "title": "Remove Left, Right and Both controls",
-        "description": "Remove the Left, Right and Both controls and return this bed to how it was before they were added. Its own entity IDs and history are kept.\n\n**Kept**: Bluetooth adapter or proxy, idle disconnect, and disconnect after each command.\n\n**Restored** from before the controls were added: bed type, app and side settings.",
+        "description": "Remove the Left, Right and Both controls and return this bed to how it was before they were added. Its own entity IDs and history are kept.\n\n**Kept**: Bluetooth adapter or proxy, and Bluetooth connection.\n\n**Restored** from before the controls were added: bed type, app and side settings.",
         "data": {
           "confirm": "Remove Left, Right and Both controls",
           "starcode_abm5_4_command_selector": "Saved command/parser selector",
@@ -1066,12 +1074,8 @@
         "description": "Change connection, movement and app settings for **{name}**. Only this receiver is updated.",
         "data": {
           "preferred_adapter": "Bluetooth adapter",
-          "connection_profile": "Connection profile",
-          "motor_pulse_count": "Motor pulse count",
-          "motor_pulse_delay_ms": "Motor pulse delay (ms)",
-          "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
-          "sleeptracker_foundation": "Foundation size (app metadata)",
+          "motor_pulse_count": "Movement per tap",
+          "idle_disconnect_seconds": "Seconds to stay connected",
           "sleeptracker_unit_number": "Processor unit number (wire side)",
           "sleeptracker_snapshot_side": "Status snapshot side ordinal",
           "sleeptracker_restricted": "Restricted app session (no authentication)",
@@ -1150,14 +1154,14 @@
           "serta_mp_memory_4_foot": "Local memory 4, foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
-          "mline_child_mode": "Local child mode"
+          "mline_child_mode": "Local child mode",
+          "connection_mode": "Bluetooth connection"
         },
         "data_description": {
-          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Enter 0 to keep the bed connected; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
+          "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
           "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
           "has_light": "Expose light controls when the bed has lighting.",
           "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
@@ -1167,7 +1171,7 @@
           "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications.",
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
           "motor_count": "Number of physical actuators. Available counts follow the selected protocol variant. Malouf/Lucid beds use the separate actuator-layout setting below.",
-          "protocol_variant": "Change the protocol variant if the bed isn't responding correctly. If Configure refuses the change, change the app or route through Reconfigure in the entry's three-dot menu.",
+          "protocol_variant": "The bed model or remote this bed's app uses.",
           "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
           "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
           "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
@@ -1198,7 +1202,9 @@
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
           "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
-          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
+          "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
+          "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap."
         }
       },
       "right_settings": {
@@ -1206,12 +1212,8 @@
         "description": "Change connection, movement and app settings for **{name}**. Only this receiver is updated.",
         "data": {
           "preferred_adapter": "Bluetooth adapter",
-          "connection_profile": "Connection profile",
-          "motor_pulse_count": "Motor pulse count",
-          "motor_pulse_delay_ms": "Motor pulse delay (ms)",
-          "disconnect_after_command": "Disconnect after each command",
-          "idle_disconnect_seconds": "Idle disconnect timeout (seconds)",
-          "sleeptracker_foundation": "Foundation size (app metadata)",
+          "motor_pulse_count": "Movement per tap",
+          "idle_disconnect_seconds": "Seconds to stay connected",
           "sleeptracker_unit_number": "Processor unit number (wire side)",
           "sleeptracker_snapshot_side": "Status snapshot side ordinal",
           "sleeptracker_restricted": "Restricted app session (no authentication)",
@@ -1290,14 +1292,14 @@
           "serta_mp_memory_4_foot": "Local memory 4, foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
-          "mline_child_mode": "Local child mode"
+          "mline_child_mode": "Local child mode",
+          "connection_mode": "Bluetooth connection"
         },
         "data_description": {
-          "sleeptracker_foundation": "This records the app foundation choice. It does not determine physical BLE sides.",
           "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
           "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
           "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
-          "idle_disconnect_seconds": "How many seconds to wait before automatically disconnecting when idle (0-300). Enter 0 to keep the bed connected; this blocks the vendor app and any Bluetooth remote, and is ignored while Disconnect after each command is on.",
+          "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
           "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
           "has_light": "Expose light controls when the bed has lighting.",
           "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
@@ -1307,7 +1309,7 @@
           "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications.",
           "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
           "motor_count": "Number of physical actuators. Available counts follow the selected protocol variant. Malouf/Lucid beds use the separate actuator-layout setting below.",
-          "protocol_variant": "Change the protocol variant if the bed isn't responding correctly. If Configure refuses the change, change the app or route through Reconfigure in the entry's three-dot menu.",
+          "protocol_variant": "The bed model or remote this bed's app uses.",
           "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
           "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
           "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
@@ -1338,12 +1340,10 @@
           "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
           "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
           "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
-          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed."
+          "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
+          "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
+          "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap."
         }
-      },
-      "change_app": {
-        "title": "Change app or layout",
-        "description": "Currently: **{current}**.\n\nClose this window. Under Settings > Devices & services > Adjustable Bed, open the three-dot menu for this entry and select **Reconfigure**. Choose your app and layout there. Your current setup stays saved and working until you review and confirm the change."
       },
       "estimated_positions": {
         "title": "Estimated positions",
@@ -1459,7 +1459,7 @@
       "pairlink_local_source_unavailable": "Select exactly one active local Bluetooth source from this Home Assistant host.",
       "invalid_pairlink_home_id": "Enter a signed or unsigned four-byte decimal HomeID.",
       "invalid_pairlink_password": "Enter text that encodes to exactly four UTF-8 bytes, or use an eight-digit hex override with the default text 1122.",
-      "invalid_number": "Please enter valid numbers for motor pulse count and delay.",
+      "invalid_number": "Enter a valid number.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
       "invalid_motor_count_for_bed_type": "The selected motor count is not supported by this bed type and protocol variant.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
@@ -1488,7 +1488,7 @@
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 or DewertOkin ELEVATE entries with different Bluetooth addresses.",
       "starcode_elevate_bed_type": "ELEVATE lifts use the DewertOkin ELEVATE bed type. Set them up with it, then select them as lifts here.",
       "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
-      "invalid_pulse_count_range": "For this app profile, the motor pulse count must be between 1 and 600.",
+      "invalid_pulse_count_range": "For this app, Movement per tap must be between 1 and 600.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
       "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout.",
       "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
@@ -1506,7 +1506,6 @@
       "gmmotor_product": "Choose an exact admitted GM Control product.",
       "gmmotor_side": "This product does not expose the selected app side.",
       "estimate_acknowledge_required": "Confirm that you understand positions are estimated.",
-      "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
       "richmat_classic_layout": "Choose a layout shipped in the selected app.",
       "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
       "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
@@ -1515,7 +1514,10 @@
       "apex_remote_required": "Choose the remote printed on the bed controller or enter its exact code.",
       "apex_remote_code": "This exact remote code is not supported. Check capitalization and spaces.",
       "symphony_profile": "Choose a Symphony Sleep Sense product and BLE selector. The advertisement does not identify the product.",
-      "symphony_unpair_first": "Separate the combined bed first, then choose this product, which has no separate sides."
+      "symphony_unpair_first": "Separate the combined bed first, then choose this product, which has no separate sides.",
+      "invalid_movement_per_tap": "Enter a number from 1 to 100.",
+      "rmcontrol_needs_reconfigure": "This product needs another bed model or remote. Change that in Reconfigure first, then choose the product here.",
+      "rmcontrol_needs_reconfigure_paired": "This product needs another bed model or remote. Separate the combined bed, change the affected bed in Reconfigure, then combine them again."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -1530,7 +1532,6 @@
       "remove_bond_ambiguous": "Home Assistant cannot tell which Bluetooth bond you mean for **{name}** ({address}). Either more than one adapter on this host is bonded to it, or the adapter it was paired through no longer holds a bond. Set the bed's preferred adapter to the one you want to clear, then try again.",
       "remove_bond_changed": "The Bluetooth bonds on this host changed while the confirmation was open, so nothing was removed. Open **Remove the Bluetooth bond** again to see the current state and confirm from there.",
       "pair_side_not_found": "This paired receiver is no longer available. Reopen the integration settings.",
-      "migration_reconfigure_required": "To change the app or layout, close Configure and select Reconfigure from this entry's three-dot menu. The guided change checks it before saving.",
       "estimate_cancelled": "Calibration cancelled. The motor was stopped and your previous times were kept. Set the reference again for any motor you started measuring.",
       "estimated_positions_unavailable": "Estimated positions are not available for this bed."
     }
@@ -9551,10 +9552,6 @@
               "choice": "App profile"
             }
           },
-          "configure": {
-            "title": "Finish in Configure",
-            "description": "{app} needs settings that only the settings form provides. Submit to open **Configure** on **{name}** with **{app}** selected. This repair stays open until you save that form or choose **Keep current configuration**."
-          },
           "unpair": {
             "title": "Separate the Dual Bed to change the app",
             "description": "**{name}** is a Dual Bed. An app belongs to one physical bed, so the combined bed cannot switch to it. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Separate into two beds** (or **Remove Left, Right and Both controls**). Each bed then gets its own review. This repair stays open until then, unless you keep the current setup.",
@@ -9574,7 +9571,6 @@
           "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
           "migration_setup_started": "Continue in the guided change.",
           "migration_setup_unavailable": "The guided change could not open. Your current setup and this review were kept. Open Reconfigure from the entry's three-dot menu.",
-          "profile_review_handoff": "Continue in Configure. This repair stays open until you save a change or keep the current configuration.",
           "profile_review_open": "This repair stays open until you save a change or keep the current configuration."
         }
       }
@@ -9590,10 +9586,6 @@
               "choice": "Configuration"
             }
           },
-          "configure": {
-            "title": "Finish in Configure",
-            "description": "{app} needs settings that only the settings form provides. Submit to open **Configure** on **{name}** with **{app}** selected. This repair stays open until you save that form or choose **Keep current configuration**."
-          },
           "unpair": {
             "title": "Separate the Dual Bed to change the app",
             "description": "**{name}** is a Dual Bed. An app belongs to one physical bed, so the combined bed cannot switch to it. If you control the beds with one of these apps:\n{apps}\n\nopen **Configure** on **{name}** and choose **Separate into two beds** (or **Remove Left, Right and Both controls**). Each bed then gets its own review. This repair stays open until then, unless you keep the current setup.",
@@ -9613,7 +9605,6 @@
           "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
           "migration_setup_started": "Continue in the guided change.",
           "migration_setup_unavailable": "The guided change could not open. Your current setup and this review were kept. Open Reconfigure from the entry's three-dot menu.",
-          "profile_review_handoff": "Continue in Configure. This repair stays open until you save a change or keep the current configuration.",
           "profile_review_open": "This repair stays open until you save a change or keep the current configuration."
         }
       }
@@ -9671,7 +9662,7 @@
         "step": {
           "init": {
             "title": "Review the profile for {name}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Reconfigure with **{suggested}** preselected. It shows which controls change before anything is saved. Closing it keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
@@ -10052,7 +10043,15 @@
         "scan": "Scan again for beds",
         "manual": "Pick any Bluetooth device",
         "diagnostic": "Browse unsupported BLE devices",
-        "pair_beds": "Combine two beds into one (Dual Bed)"
+        "pair_beds": "Combine two beds into one (Dual Bed)",
+        "discovery": "Find new beds automatically"
+      }
+    },
+    "connection_mode": {
+      "options": {
+        "release": "Release right after each command",
+        "idle": "Stay connected for a while",
+        "always": "Always stay connected"
       }
     }
   }

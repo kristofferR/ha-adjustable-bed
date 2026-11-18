@@ -160,7 +160,7 @@ both BOX15 and BOX25 have lumbar. The question has nothing to keep when you
 chose the row yourself, because no route was detected.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
 **Keep** leaves the entry as it is. A change first checks the link: the app's
 control box needs its setup and response characteristics, and each receiver
 route needs the one characteristic it writes. A review then lists the added and

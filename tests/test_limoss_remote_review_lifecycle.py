@@ -76,7 +76,7 @@ async def pair_runtime(hass):
                 **{
                     CONF_ADDRESS: f"AA:BB:CC:DD:EE:{index + 1:02X}",
                     const.CONF_SIDE: side,
-                    const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                    const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
                     const.CONF_HAS_LIGHT: True,
                     const.CONF_HAS_MASSAGE: True,
                     const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
@@ -294,7 +294,7 @@ async def test_changed_capability_reply_refreshes_offline_layout_and_defers_relo
     coordinator = actual_coordinator(
         hass,
         **{
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
         },
     )
@@ -382,7 +382,7 @@ async def test_partial_refresh_capability_change_persists_and_reconciles_after_f
     coordinator = actual_coordinator(
         hass,
         **{
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
         },
     )

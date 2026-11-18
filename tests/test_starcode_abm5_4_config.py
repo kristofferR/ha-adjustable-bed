@@ -9,6 +9,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -48,7 +49,7 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
     flow._discovery_info = mock_bluetooth_service_info
     settings = {
         CONF_NAME: "App bed",
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_PREFERRED_ADAPTER: "auto",
     }
     result = await start_new_bed(flow, route, const.BED_TYPE_STARCODE_ABM5_4)
@@ -96,7 +97,7 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
     assert completed["data"][const.CONF_STARCODE_TRANSPORT_SELECTOR] == "BOX3633"
     assert flow._manual_data[const.CONF_MOTOR_COUNT] == 2
     assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
-    assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(flow._manual_data)
 
 
 @pytest.mark.parametrize(
@@ -195,8 +196,9 @@ async def test_two_address_options_cannot_copy_app_selectors_between_children(ha
     assert not const.STARCODE_APP_CONFIG_KEYS.intersection(
         key.schema for key in result["data_schema"].schema
     )
+    # A side's own selector is not on the shared form, so it is ignored.
     result = await flow.async_step_settings({const.CONF_STARCODE_COMMAND_SELECTOR: "BOX1220"})
-    assert result["errors"] == {"base": "app_profile_unpair_first"}
+    assert result["type"] == FlowResultType.CREATE_ENTRY
     assert [
         child[const.CONF_STARCODE_COMMAND_SELECTOR]
         for child in entry.data[const.CONF_PAIR_CHILDREN]

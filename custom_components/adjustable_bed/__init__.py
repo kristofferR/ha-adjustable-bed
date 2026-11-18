@@ -20,6 +20,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
+from .bed_traits import bed_type_has_position_feedback, default_connection_mode
 from .beds.furnimove.repair import async_refresh_furnimove_layout_issues
 from .beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS, SERVICE_LINAK_SET_ALARM
 from .beds.remacro.discovery import (
@@ -49,13 +50,16 @@ from .const import (
     BED_TYPE_VIBRADORM,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
+    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
     CONF_PROFILE_MIGRATION,
@@ -63,8 +67,12 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_SIDE,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     KEESON_VARIANT_SINO,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SINGLE_ADDRESS,
@@ -543,6 +551,212 @@ def migrate_v5_5_data(
     return new_data
 
 
+# Settings 5.6 removed (#v5 settings simplification). Their behaviour is now
+# one value for every bed, or the per-bed default.
+V5_6_REMOVED_KEYS: Final = frozenset(
+    {"position_mode", "connection_profile", CONF_PAIR_CONNECTION_MODE}
+)
+_LEGACY_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
+
+
+_V5_6_INHERITED_KEYS: Final = (
+    _LEGACY_DISCONNECT_AFTER_COMMAND,
+    CONF_IDLE_DISCONNECT_SECONDS,
+    CONF_DISABLE_ANGLE_SENSING,
+)
+
+
+def _v5_6_settings(
+    settings: Mapping[str, Any],
+    route: Mapping[str, Any],
+    location: str,
+    changed: dict[str, list[str]],
+    *,
+    paired: bool = False,
+    underneath: Mapping[str, Any] | None = None,
+    side_overrides: Mapping[str, Any] | None = None,
+    side_route: Mapping[str, Any] | None = None,
+    explicit_mode: bool = False,
+) -> dict[str, Any]:
+    """Return one stored settings mapping in the 5.6 shape.
+
+    ``route`` holds the bed type and variant the mapping runs with, so a saved
+    "Disable angle sensing" equal to that route's default is dropped. Paired
+    sides first take the shared values they inherited, then each side and each
+    original entry is rewritten against its own route. A pair's parent and
+    sides (``paired``) keep their angle-sensing values as they are, since a
+    side without one would inherit the parent's. Options pass the legacy data
+    they layer over as ``underneath``, so their mode reads both as one.
+    """
+    new = {key: value for key, value in settings.items() if key not in V5_6_REMOVED_KEYS}
+    notes = sorted(V5_6_REMOVED_KEYS.intersection(settings))
+    if isinstance(children := new.get(CONF_PAIR_CHILDREN), list):
+        shared = {key: new[key] for key in _V5_6_INHERITED_KEYS if key in new}
+        new[CONF_PAIR_CHILDREN] = [
+            _v5_6_settings(
+                # In the order a side reads them: parent, side, then the options
+                # the side does not own itself.
+                {**shared, **child, **_not_owned(child, side_overrides)},
+                {**route, **_route_of(child), **_not_owned(child, side_route)},
+                f"{location}.{child.get(CONF_SIDE, index)}",
+                changed,
+                paired=True,
+                explicit_mode=True,
+            )
+            if isinstance(child, Mapping)
+            else child
+            for index, child in enumerate(children)
+        ]
+    below = underneath or {}
+    own_after = new.pop(_LEGACY_DISCONNECT_AFTER_COMMAND, None)
+    own_seconds = new.get(CONF_IDLE_DISCONNECT_SECONDS)
+    layered = underneath is not None and (own_after is not None or own_seconds is not None)
+    # Options over data read as one: what this layer leaves out, the one below sets.
+    after = own_after if own_after is not None else below.get(_LEGACY_DISCONNECT_AFTER_COMMAND)
+    seconds = own_seconds if own_seconds is not None else below.get(CONF_IDLE_DISCONNECT_SECONDS)
+    if not layered:
+        after, seconds = own_after, own_seconds
+    explicit_mode = explicit_mode or layered
+    view = {**_route_of(new), **route}
+    default_mode = default_connection_mode(view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT))
+    if own_seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
+        new.pop(CONF_IDLE_DISCONNECT_SECONDS)
+    mode: str | None = None
+    if seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
+        # Issue #700's "0 keeps the bed connected" applied only while the
+        # handoff was off: saved, inherited, or the bed type's default.
+        handoff = after if after is not None else default_mode == CONNECTION_MODE_RELEASE
+        if after is True or (handoff and explicit_mode):
+            # A side or an option saves its handoff, so it never takes Always
+            # from the layer below.
+            mode = CONNECTION_MODE_RELEASE
+        elif not handoff:
+            mode = CONNECTION_MODE_ALWAYS
+        else:
+            notes.append(f"{CONF_IDLE_DISCONNECT_SECONDS}=0 (handoff on)")
+    elif after is True:
+        mode = CONNECTION_MODE_RELEASE
+    elif after is False:
+        mode = CONNECTION_MODE_IDLE
+    elif explicit_mode and seconds is not None:
+        # Without a saved mode this would take the layer below's new mode,
+        # which its own settings never followed: save the mode it ran with.
+        mode = default_mode
+    if mode is not None:
+        new[CONF_CONNECTION_MODE] = mode
+        notes.append(f"{CONF_CONNECTION_MODE}={mode}")
+    elif own_after is not None:
+        notes.append(_LEGACY_DISCONNECT_AFTER_COMMAND)
+    feedback = bed_type_has_position_feedback(
+        view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
+    )
+    paired = paired or isinstance(children, list)
+    disabled = new.get(CONF_DISABLE_ANGLE_SENSING)
+    below_disabled = below.get(CONF_DISABLE_ANGLE_SENSING)
+    if (
+        isinstance(disabled, bool)
+        and not paired
+        and disabled is not feedback
+        # Dropping it must not uncover an opposite value in the layer below.
+        and below_disabled in (None, disabled)
+    ):
+        # Equal to the route's own default: the route decides it now.
+        del new[CONF_DISABLE_ANGLE_SENSING]
+        notes.append(CONF_DISABLE_ANGLE_SENSING)
+    raw_origin = settings.get(KEY_ORIGIN_DATA)
+    for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
+        if isinstance(nested := new.get(key), Mapping):
+            origin = raw_origin if isinstance(raw_origin, Mapping) else nested
+            new[key] = _v5_6_settings(
+                nested,
+                {**_route_of(origin), **_route_of(nested)},
+                f"{location}.{key}",
+                changed,
+                underneath=origin if key == KEY_ORIGIN_OPTIONS else None,
+            )
+    if notes:
+        changed.setdefault(location, []).extend(notes)
+    return new
+
+
+def _not_owned(child: Mapping[str, Any], options: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Return the pair options a side reads: those its own profile does not own."""
+    owned = side_owned_profile_fields(child)
+    return {key: value for key, value in (options or {}).items() if key not in owned}
+
+
+def _route_of(settings: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the bed type and variant a settings mapping stores."""
+    return {
+        key: settings[key] for key in (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT) if key in settings
+    }
+
+
+def migrate_v5_6_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with the 5.6 settings shape.
+
+    Removed settings are dropped; "Disconnect after each command" and the idle
+    timeout's 0 become the connection mode; a saved angle-sensing choice equal
+    to its route's default is dropped, since the route now decides it. The
+    migration record lists each change by where it was stored.
+    """
+    paired = isinstance(data.get(CONF_PAIR_CHILDREN), list)
+    side_overrides: dict[str, Any] = {}
+    if (
+        paired
+        and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+        and (
+            _LEGACY_DISCONNECT_AFTER_COMMAND in options
+            or CONF_IDLE_DISCONNECT_SECONDS in options
+        )
+    ):
+        # A two-address pair's connection options win over each side's own
+        # settings, so each side's mode is derived with them and the options
+        # lose them. A one-address pair's physical bed reads the parent.
+        side_overrides = {
+            key: options[key]
+            for key in (_LEGACY_DISCONNECT_AFTER_COMMAND, CONF_IDLE_DISCONNECT_SECONDS)
+            if key in options
+        }
+        options = {key: value for key, value in options.items() if key not in side_overrides}
+    changed: dict[str, list[str]] = {}
+    if side_overrides:
+        changed["options"] = [f"{key} (moved to each side)" for key in sorted(side_overrides)]
+    route = _route_of(data)
+    new_data = _v5_6_settings(
+        data,
+        route,
+        "data",
+        changed,
+        side_overrides=side_overrides,
+        # A side reads the pair's route options over its own.
+        side_route=_route_of(options) if paired else None,
+    )
+    new_options = _v5_6_settings(
+        options,
+        {**route, **_route_of(options)},
+        "options",
+        changed,
+        # A pair's options reach its sides, which keep their angle choices.
+        paired=paired,
+        underneath=data,
+    )
+    if changed:
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            settings_5_6=changed,
+        )
+    return new_data, new_options
+
+
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
     """Return the unique ids of the massage buttons Massage on gave these runtimes."""
     from .button import BUTTON_DESCRIPTIONS
@@ -753,6 +967,20 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             from_minor_version=original_version[1],
         )
         hass.config_entries.async_update_entry(entry, data=data, minor_version=5)
+
+    if entry.version == 5 and entry.minor_version < 6:
+        # v5.5 -> v5.6: the settings simplification. Position update mode,
+        # connection profile and the stored pair connection mode go; the
+        # disconnect settings become one connection mode.
+        data, options = migrate_v5_6_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=6
+        )
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",

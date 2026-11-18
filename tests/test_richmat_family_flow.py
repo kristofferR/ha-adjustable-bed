@@ -280,25 +280,6 @@ async def test_configure_returns_an_rmcontrol_entry_to_the_remote(hass):
     assert entry.data[const.CONF_RMCONTROL_PRODUCT] == ""
 
 
-async def test_configure_switches_a_remote_entry_to_an_mh_app(hass):
-    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    form = await flow.async_step_settings()
-    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
-    choice = selector("Revive Control app · Richmat")
-    form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
-    assert form["type"] is FlowResultType.FORM
-    assert const.CONF_PROTOCOL_VARIANT in fields(form)
-    # Switching apps first asks its model, without changing the saved entry.
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await flow.async_step_settings({const.CONF_PROTOCOL_VARIANT: "model_vorm"})
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT_REVIVE
-    assert entry.data[const.CONF_PROTOCOL_VARIANT] == "model_vorm"
-
-
 async def test_each_receiver_of_a_pair_answers_for_itself(hass, enable_custom_integrations):
     from tests.test_paired_receiver_questions import child, pair_entry, receiver_form
     from tests.test_paired_receiver_questions import fields as receiver_fields
@@ -323,7 +304,8 @@ async def test_each_receiver_of_a_pair_answers_for_itself(hass, enable_custom_in
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert child(entry, "left")[const.CONF_RMCONTROL_SIDE] == "right"
     right = await receiver_form(hass, entry, "right")
-    assert receiver_fields(right)[const.CONF_PROTOCOL_VARIANT].default() == "model_vorm"
+    # The model picks the route, which changes in Reconfigure.
+    assert const.CONF_PROTOCOL_VARIANT not in receiver_fields(right)
     hass.config_entries.options.async_abort(right["flow_id"])
     assert child(entry, "right")[const.CONF_PROTOCOL_VARIANT] == "model_vorm"
 
@@ -356,33 +338,6 @@ async def test_an_mh_app_from_the_app_question_reaches_its_model_question(
         const.BED_TYPE_RICHMAT_REVIVE,
         "model_vorm",
     )
-
-
-async def test_configure_switches_a_remote_entry_to_a_classic_app(hass):
-    from custom_components.adjustable_bed.beds.richmat_classic.models import MODEL_CHOICES
-
-    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    form = await flow.async_step_settings()
-    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
-    # Each classic app keeps its own label in Configure's list, with its family.
-    choice = selector("Forty Winks app · Richmat")
-    assert choice == "richmat_classic_apps:fortywinks"
-    form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
-    assert const.CONF_PRODUCT_TYPE in fields(form)
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
-    layout = next(
-        code for code in MODEL_CHOICES["fortywinks"] if code not in ("TEST", "RMCS", "ZRS6")
-    )
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await flow.async_step_settings({const.CONF_PRODUCT_TYPE: layout})
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert (entry.data[const.CONF_BED_TYPE], entry.data[const.CONF_PROTOCOL_VARIANT]) == (
-        const.BED_TYPE_RICHMAT_CLASSIC_APPS,
-        "fortywinks",
-    )
-    assert entry.data[const.CONF_PRODUCT_TYPE] == layout
 
 
 async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):

@@ -3018,7 +3018,7 @@ async def test_bundle_shows_the_schema_5_migration_record(
 
     assert report["profile"] == {
         "schema_version": 5,
-        "schema_minor_version": 5,
+        "schema_minor_version": 6,
         "profile_id": "keeson:sino",
         "migration": {
             "from_version": 4,
@@ -3026,6 +3026,8 @@ async def test_bundle_shows_the_schema_5_migration_record(
             "resolver_version": PROFILE_RESOLVER_VERSION,
             "profile_id": "keeson:sino",
             "fields": {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "sino"},
+            # Schema 5.6 dropped an angle-sensing value equal to the route's default.
+            "settings_5_6": {"data": ["disable_angle_sensing"]},
         },
     }
 

@@ -276,48 +276,6 @@ def test_app_sensors_share_translations_and_keep_app_identities():
     assert all(s.key.startswith("zseries_") for s in zseries_specs)
 
 
-@pytest.mark.parametrize("bed_type", [BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES])
-async def test_options_switch_from_generic_okin_profile_applies_fixed_defaults(hass, bed_type):
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant.common import MockConfigEntry
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_CST,
-        CONF_BED_TYPE,
-        CONF_DISABLE_ANGLE_SENSING,
-        CONF_MOTOR_COUNT,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-        CONF_PROTOCOL_VARIANT,
-    )
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-            CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-            CONF_MOTOR_COUNT: 4,
-            CONF_PROTOCOL_VARIANT: "cst_support",
-            CONF_MOTOR_PULSE_COUNT: 7,
-            CONF_MOTOR_PULSE_DELAY_MS: 150,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    rebuilt = await flow._async_options_form({CONF_BED_TYPE: bed_type}, step_id="settings")
-    markers = shown_markers(rebuilt)
-    assert CONF_MOTOR_COUNT not in markers and CONF_MOTOR_PULSE_DELAY_MS not in markers
-    saved = await flow._async_options_form({CONF_BED_TYPE: bed_type}, step_id="settings")
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_BED_TYPE] == bed_type
-    assert entry.data[CONF_MOTOR_COUNT] == 2
-    assert (entry.data[CONF_MOTOR_PULSE_COUNT], entry.data[CONF_MOTOR_PULSE_DELAY_MS]) == (10, 100)
-    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
-
-
 @pytest.mark.parametrize(("count", "error"), [("0", True), ("601", True), ("1", False), ("600", False)])
 async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass, count, error):
     from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -692,56 +650,3 @@ async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, pair
     assert _OneSlotChild.slot == []
 
 
-async def test_pair_profile_changes_to_or_from_these_apps_require_unpair(hass):
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant.common import MockConfigEntry
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_CST,
-        CONF_BED_TYPE,
-        CONF_MOTOR_COUNT,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_PAIR_CHILDREN,
-        CONF_PROTOCOL_VARIANT,
-    )
-    from custom_components.adjustable_bed.pairing import build_pair_entry_data
-
-    z230, z280 = (BED_TYPE_ZSERIES, "z230"), (BED_TYPE_ZSERIES, "z280")
-    cst, tranquil_app = (BED_TYPE_OKIN_CST, "auto"), (BED_TYPE_TRANQUIL, "auto")
-    cases = [
-        # (left profile, right profile, requested profile, refused)
-        (cst, cst, tranquil_app, True),
-        (z230, z230, z280, True),
-        (z280, z280, cst, True),
-        (tranquil_app, z280, tranquil_app, True),  # Mixed pair.
-        (cst, z230, cst, True),  # Mixed pair.
-        (tranquil_app, tranquil_app, tranquil_app, False),  # Same profile kept.
-    ]
-    for index, ((left_type, left_variant), (right_type, right_variant), (requested, variant), refused) in enumerate(cases):
-        left = {
-            CONF_ADDRESS: f"11:22:33:44:55:{index:02d}",
-            CONF_BED_TYPE: left_type,
-            CONF_PROTOCOL_VARIANT: left_variant,
-            CONF_MOTOR_COUNT: 2,
-        }
-        right = {
-            **left,
-            CONF_ADDRESS: f"11:22:33:44:66:{index:02d}",
-            CONF_BED_TYPE: right_type,
-            CONF_PROTOCOL_VARIANT: right_variant,
-        }
-        entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
-        entry.add_to_hass(hass)
-        children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
-        flow = AdjustableBedOptionsFlow(entry)
-        flow.handler = entry.entry_id
-        flow.hass = hass
-        result = await flow.async_step_settings(
-            {CONF_BED_TYPE: requested, CONF_PROTOCOL_VARIANT: variant, CONF_MOTOR_PULSE_COUNT: "10"}
-        )
-        if refused:
-            assert "app_profile_unpair_first" in result["errors"].values(), cases[index]
-            assert [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]] == children
-        else:
-            assert "app_profile_unpair_first" not in (result.get("errors") or {}).values()

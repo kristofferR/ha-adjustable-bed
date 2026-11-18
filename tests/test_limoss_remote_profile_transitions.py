@@ -9,8 +9,6 @@ from homeassistant.config_entries import SOURCE_RECONFIGURE
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-from custom_components.adjustable_bed.pairing import get_child
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_review_lifecycle import CAPS, live_controller, pair_runtime
 
@@ -34,29 +32,6 @@ async def test_offline_paired_cached_capability_sensors_publish_restored_values(
     client.write_gatt_char.assert_not_awaited()
     client.start_notify.assert_awaited_once()  # Original ready session only; offline rebuild performs no I/O.
     assert child.client is None
-
-
-@pytest.mark.parametrize("requested", [const.BED_TYPE_LIMOSS, const.BED_TYPE_KEESON])
-@pytest.mark.parametrize("mixed", [False, True])
-async def test_paired_conversion_away_requires_unpair_before_any_pending_change(
-    hass, requested, mixed
-):
-    pair, children, _ = await pair_runtime(hass)
-    if mixed:
-        data = deepcopy(dict(pair.entry.data))
-        data[const.CONF_PAIR_CHILDREN][0][const.CONF_BED_TYPE] = requested
-        hass.config_entries.async_update_entry(pair.entry, data=data)
-    before = deepcopy(dict(pair.entry.data))
-    flow = AdjustableBedOptionsFlow(pair.entry)
-    flow.hass, flow.handler = hass, pair.entry.entry_id
-    with patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload:
-        result = await flow.async_step_settings({const.CONF_BED_TYPE: requested})
-    assert result.get("errors") == {const.CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert not flow._pending_data and pair.entry.data == before
-    reload.assert_not_awaited()
-    for side, child in children.items():
-        assert get_child(pair.entry.data, side) == get_child(before, side)
-        child.client.write_gatt_char.assert_not_awaited()
 
 
 @pytest.mark.parametrize("failure", [None, "error", "cancel"])
@@ -144,15 +119,3 @@ async def test_leaving_remote_finishes_old_native_off_transaction_before_save(
     assert payloads == ["7100000000"] * 10 + ["6600000000"] * (2 if failure else 10)
 
 
-async def test_leaving_remote_without_selected_features_stays_offline(hass):
-    coordinator = actual_coordinator(
-        hass, **{const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS}}
-    )
-    await coordinator.async_prime_offline_controller()
-    coordinator.async_ensure_connected = AsyncMock(side_effect=AssertionError("Local profile edit"))
-    flow = AdjustableBedOptionsFlow(coordinator.entry)
-    flow.hass, flow.handler = hass, coordinator.entry.entry_id
-    with patch.object(hass.config_entries, "async_reload", new=AsyncMock()):
-        assert (await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS}))["type"] == "form"
-        assert (await flow.async_step_settings({}))["type"] == "create_entry"
-    coordinator.async_ensure_connected.assert_not_awaited()
