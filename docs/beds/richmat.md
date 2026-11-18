@@ -6315,14 +6315,9 @@ from 0 through 15, supplied as seconds, with zero selecting the always-on sentin
 Color is two frames in one characteristic write. All requested targets and
 operands are checked before control writes use the coordinator scheduler.
 
-#### Evidence
+#### Analysis provenance
 
-Power Bob Base 1.0.9 reproduces every accepted literal using the shared Richmat
-codec, including the source-corrected zero light timeout and oversized synthetic
-timer case. The public timer range remains the app's minute picker. Static
-evidence comes from the frozen July 2026 artifact set; no current-version or
-hardware attestation is claimed. External beta users can qualify their actual
-product, GATT route, release, lighting and alarm behavior.
+Based on Power Bob Base 1.0.9 (10900) (`com.richmat.bobpowerbase`).
 
 ## Notes
 
