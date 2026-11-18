@@ -445,7 +445,7 @@ def test_service_error_keys_have_translated_messages() -> None:
     assert used <= set(strings)
 
 
-@pytest.mark.parametrize("slot", [2.9, True, "two"])
+@pytest.mark.parametrize("slot", [2.9, True, "two", float("inf"), float("-inf"), float("nan")])
 async def test_set_alarm_rejects_a_slot_that_is_not_a_whole_number(
     hass: HomeAssistant, resolve, slot
 ) -> None:

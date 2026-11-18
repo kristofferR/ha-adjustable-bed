@@ -14,6 +14,7 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import math
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -366,7 +367,13 @@ def _whole_number(value: object) -> int:
     """Accept a whole number, also as 2.0 or "2"; reject Booleans and fractions."""
     if isinstance(value, str) and value.strip().isdigit():
         return int(value)
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        # YAML accepts .inf and .nan, which have no whole-number value.
+        or not math.isfinite(value)
+        or value != int(value)
+    ):
         raise _invalid("whole_number_required", f"Use a whole number instead of {value!r}", value=value)
     return int(value)
 
