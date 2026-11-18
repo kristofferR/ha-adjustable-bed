@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_PRESETS
+from ...card import CARD_PRESET_SAVE, CARD_PRESETS
 from ...codec import richmat as codec
 from ...const import CONF_PRODUCT_TYPE
 from ...controller_state import StateKey
@@ -176,9 +176,10 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
                 ("Save " if save else "") + names[action],
                 partial(_action, action=action, save=save),
                 icon="mdi:content-save" if save else "mdi:bed",
-                translation_key="sonicsleep_action",
+                # Saves overwrite a preset: the card lists them as saves, never recalls.
+                translation_key="sonicsleep_save" if save else "sonicsleep_action",
                 translation_placeholders={"action": ("Save " if save else "") + names[action]},
-                card=CARD_PRESETS,
+                card=CARD_PRESET_SAVE if save else CARD_PRESETS,
                 requires_confirmation=save,
             )
             for action in PRESETS if not action.startswith("memory_") for save in (False, True)

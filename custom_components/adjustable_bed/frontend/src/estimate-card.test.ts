@@ -252,3 +252,30 @@ test("compact readouts show estimate-only motors as the graphic labels them", ()
   expect(unknown).toContain("? / ?");
   expect(unknown).not.toContain("Position feedback unavailable");
 });
+
+test("a preset that overwrites a saved position asks in the card's own dialog", () => {
+  const { card, calls } = fixture("tracking");
+  card.hass.states["button.save"] = { entity_id: "button.save", state: "unknown",
+    attributes: { requires_confirmation: true }, last_changed: "", last_updated: "" };
+  const press = (card as unknown as { _press(id: string): void })._press.bind(card);
+  press("button.save");
+  expect(card._estimateDialog).toEqual({ kind: "confirm", entityId: "button.save" });
+  (card as unknown as { _closeEstimateDialog(): void })._closeEstimateDialog();
+  expect(calls).toEqual([]);
+  press("button.save");
+  clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
+  expect(calls).toEqual([{ service: "press", data: { entity_id: "button.save" } }]);
+  expect(card._estimateDialog).toBeUndefined();
+});
+
+test("the full card's size follows the sections it shows", () => {
+  const { card } = fixture("tracking");
+  const size = (config: Record<string, unknown>) => {
+    (card as unknown as { _config: unknown })._config = { type: "custom:adjustable-bed-card", device_id: "bed", ...config };
+    return (card as unknown as { getCardSize(): number }).getCardSize();
+  };
+  // Header, two motor rows with their heading, and saved positions.
+  expect(size({ show_graphic: false })).toBe(6);
+  expect(size({ show_graphic: false, show_saved_positions: false })).toBe(4);
+  expect(size({ show_graphic: false, show_motors: false, show_saved_positions: false })).toBe(1);
+});

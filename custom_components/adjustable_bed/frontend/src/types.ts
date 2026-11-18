@@ -75,7 +75,8 @@ export interface AdjustableBedCardConfig {
   show_side_selector?: boolean;
   // "both", a native child device ID, or "left"/"right" for one-address pairs.
   default_target?: string;
-  // Stable preset translation keys; omitted = flat + first recall, [] = none.
+  // Quick action entity ids, in order; omitted = flat + first recall, [] = none.
+  // Older cards stored translation keys, which still resolve.
   compact_actions?: string[];
   navigation_path?: string;
   open_dialog?: boolean;
