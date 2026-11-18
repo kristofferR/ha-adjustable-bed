@@ -668,14 +668,17 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 return
             raise NotImplementedError("Light off control not supported on this bed")
 
-        delivery = Delivery.NONE
-        self._light_turn_off_in_progress = True
-        try:
-            delivery = await self._async_send(_turn_off, cancel_running=False)
+        def show(delivery: Delivery) -> None:
+            # Shown inside the command, before a queued turn-on reads it.
             if delivery is not Delivery.NONE:
                 # Partly sent leaves the light unknown.
                 self._attr_is_on = False if delivery is Delivery.SENT else None
                 self.async_write_ha_state()
+
+        delivery = Delivery.NONE
+        self._light_turn_off_in_progress = True
+        try:
+            delivery = await self._async_send(_turn_off, on_delivery=show, cancel_running=False)
         finally:
             self._light_turn_off_in_progress = False
         if delivery is not Delivery.NONE:

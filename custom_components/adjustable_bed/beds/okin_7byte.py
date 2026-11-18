@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 
-from ..command_scheduler import note_frame_skipped, note_frame_written
+from ..command_scheduler import note_frame_skipped, note_write_not_counted
 from ..profiles.okin_5a import OKIN_7BYTE, Action, Okin5AProfile
 from .base import BedController, ProfileExecution
 
@@ -133,7 +133,8 @@ class Okin7ByteController(ProfileExecution[Okin5AProfile], BedController):
                             frame,
                             response=profile.wake_with_response,
                         )
-                        note_frame_written(effective_cancel)
+                        # Wake frames only prepare the link.
+                        note_write_not_counted()
                     await asyncio.sleep(0.1)
                 self._initialized = True
             except BleakError:

@@ -31,7 +31,7 @@ from bleak.exc import BleakError
 
 from ...codec import okin_5a as star
 from ...codec import okin_nframe as codec
-from ...command_scheduler import command_frames_written, frames_sent_since
+from ...command_scheduler import command_frames_written, frames_sent_since, note_frame_skipped
 from ...const import (
     NORDIC_UART_WRITE_CHAR_UUID,
     SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
@@ -393,9 +393,11 @@ class SleepysBox25Controller(BedController):
     ) -> None:
         """Write a BOX25_STAR command using the OEM app's BLE write mode."""
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         await self._ensure_initialized(cancel_event)
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
@@ -837,12 +839,15 @@ class SleepysBox25LegacyController(SleepysBox25Controller):
     ) -> None:
         """Translate inherited actions and write the legacy frame without response."""
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         translated = _translate_star_to_legacy(command)
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         await self._ensure_initialized(cancel_event)
         if self._is_cancelled(cancel_event):
+            note_frame_skipped()
             return
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,

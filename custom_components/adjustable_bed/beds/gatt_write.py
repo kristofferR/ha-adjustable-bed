@@ -250,4 +250,9 @@ class GattWriter(ABC):
                 if write_started is not None:
                     delay_seconds -= asyncio.get_running_loop().time() - write_started
                 if delay_seconds > 0:
-                    await asyncio.sleep(delay_seconds)
+                    try:
+                        await asyncio.sleep(delay_seconds)
+                    except asyncio.CancelledError:
+                        # A repeat is still pending: part of the command is unsent.
+                        note_frame_skipped()
+                        raise

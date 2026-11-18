@@ -666,6 +666,7 @@ class GoodVibeController(BedController):
                             if write.cancelled():
                                 raise
                     write.result()
+                    note_frame_written(cancel)
                     raise
                 note_frame_written(cancel)
             self._last_write = asyncio.get_running_loop().time()

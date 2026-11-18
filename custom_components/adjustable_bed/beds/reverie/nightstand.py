@@ -21,7 +21,12 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 
 from ...card import CARD_CONTROLLED_SIDE, CARD_MASSAGE, motor_card
-from ...command_scheduler import note_frame_skipped, note_frame_written
+from ...command_scheduler import (
+    command_frames_written,
+    frames_sent_since,
+    note_frame_skipped,
+    note_frame_written,
+)
 from ...const import (
     REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
     REVERIE_NIGHTSTAND_FOOT_WAVE_UUID,
@@ -1400,7 +1405,10 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         if not self.model.nightlight:
             raise ValueError(f"Model {self.model_id} has no under-bed lights")
         value = self._light_brightness or self._last_nonzero_light_brightness or 64
+        before = command_frames_written()
         await self._write_to_char(REVERIE_NIGHTSTAND_LED_UUID, value)
+        if not frames_sent_since(before):
+            return
         self._light_brightness = value
         self._last_nonzero_light_brightness = value
         self.forward_controller_state_updates(LIGHT_LEVEL(value), UNDER_BED_LIGHTS_ON(True))
@@ -1411,7 +1419,10 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
             raise ValueError(f"Model {self.model_id} has no under-bed lights")
         if self._light_brightness:
             self._last_nonzero_light_brightness = self._light_brightness
+        before = command_frames_written()
         await self._write_to_char(REVERIE_NIGHTSTAND_LED_UUID, ReverieNightstandCommands.LED_OFF)
+        if not frames_sent_since(before):
+            return
         self._light_brightness = 0
         self.forward_controller_state_updates(LIGHT_LEVEL(0), UNDER_BED_LIGHTS_ON(False))
 
@@ -1437,10 +1448,13 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
             await self.read_light_state()
         if self._light_rgb is None:
             raise ValueError("Reverie RGB state is unavailable; refusing to guess a color")
+        before = command_frames_written()
         await self._write_bytes_to_char(
             REVERIE_NIGHTSTAND_RGB_UUID,
             bytes((0x01, level, *self._light_rgb)),
         )
+        if not frames_sent_since(before):
+            return
         self._light_brightness = level
         if level > 0:
             self._last_nonzero_light_brightness = level
@@ -1457,10 +1471,13 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         brightness = self._light_brightness
         if brightness is None:
             raise ValueError("Reverie light brightness is unavailable")
+        before = command_frames_written()
         await self._write_bytes_to_char(
             REVERIE_NIGHTSTAND_RGB_UUID,
             bytes((0x01, brightness, *rgb_color)),
         )
+        if not frames_sent_since(before):
+            return
         self._light_rgb = rgb_color
         self.forward_controller_state_updates(
             UNDER_BED_LIGHTS_RGB(rgb_color),
