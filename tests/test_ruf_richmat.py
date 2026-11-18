@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -626,8 +626,13 @@ async def test_set_alarm_off_keeps_the_reported_calendar_slot(hass):
     c = make("wsilver2", model)
     c._dev = {}
     c.ruf_richmat_alarm = AsyncMock()
-    with pytest.raises(ServiceValidationError, match="Refresh"):
+    c.write_command = AsyncMock()
+    with (
+        patch("custom_components.adjustable_bed.beds.ruf_richmat.controller.asyncio.sleep", AsyncMock()),
+        pytest.raises(ServiceValidationError, match="Refresh"),
+    ):
         await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+    # The bed answered the calendar query.
     c._calendar_alarms[3] = {"bed": 0, "hour": 6, "minute": 45, "mode": 0x45, "week": 0b0100_0001}
     await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
     request = c.ruf_richmat_alarm.await_args.args[0]
