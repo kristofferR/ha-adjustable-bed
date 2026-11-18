@@ -1,4 +1,4 @@
-"""Exact app selectors and command lookup from accepted row018 evidence."""
+"""Exact app selectors and command lookup from accepted RMControl 2 evidence."""
 
 from __future__ import annotations
 

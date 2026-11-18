@@ -29,12 +29,12 @@ ZERO = bytes.fromhex("e5fe160000000006")
 @pytest.fixture(autouse=True)
 async def cleanup(hass):
     yield
-    for target in hass.data.get("repair005_targets", []):
+    for target in hass.data.get("layout_app_targets", []):
         await target.async_shutdown()
 
 
 async def target(hass, monkeypatch, app="serta_mp_remote"):
-    index = len(hass.data.setdefault("repair005_targets", [])) + 1
+    index = len(hass.data.setdefault("layout_app_targets", [])) + 1
     entry = MockConfigEntry(
         domain=DOMAIN,
         title=f"Repair {index}",
@@ -50,7 +50,7 @@ async def target(hass, monkeypatch, app="serta_mp_remote"):
     entry.add_to_hass(hass)
     entry.mock_state(hass, ConfigEntryState.LOADED)
     coordinator = AdjustableBedCoordinator(hass, entry)
-    hass.data["repair005_targets"].append(coordinator)
+    hass.data["layout_app_targets"].append(coordinator)
     client = transport().client
 
     async def disconnect():
@@ -72,7 +72,7 @@ async def pair(hass, monkeypatch):
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="Serta pair",
-        data={"pair_id": "repair005-pair", "bed_type": "serta_mp_remote"},
+        data={"pair_id": "layout-app-pair", "bed_type": "serta_mp_remote"},
     )
     entry.add_to_hass(hass)
     entry.mock_state(hass, ConfigEntryState.LOADED)

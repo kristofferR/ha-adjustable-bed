@@ -18,9 +18,9 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     # com.okin.motionbed 1.0 (2), all sixteen reachable literals.
     "okin_motionbed": frozenset(['e5fe160000000006', 'e5fe160000000105', 'e5fe160000000204', 'e5fe160000000402', 'e5fe160000000501', 'e5fe1600000008fe', 'e5fe160000000afc', 'e5fe1620000014d2', 'e5fe1620000016d0', 'e5fe1621000000e5', 'e5fe1621000001e4', 'e5fe1621000002e3', 'e5fe1621000004e1', 'e5fe1621000006df', 'e5fe1631000000d5', 'e5fe1631000001d4']),
     "rize_remedy_ii": frozenset(literal for _, literal in RIZE_REMEDY_II_VECTORS),
-    # Accepted row080 P1, source-backed masks including unreachable individual keys.
+    # Accepted Simmons Korea app P1, source-backed masks including unreachable individual keys.
     "n32_motion_bed": frozenset({'05020000002000', '05020000001000', '05024000000000', '05020001000000', '05020000000a00', '05020000000000', '05020000000100', '05020000100000', '05028000000000', '05020000000500', '05020000000800', '05020000800000', '05020000000400', '05020000200000', '05020000008000', '05020004000000', '05020000004000', '05020800000000', '05020000000200', '05020000400000'}),
-    # Resident Adjustable Base 1.0.0, unit160, frozen 36_33_01a control literals.
+    # Resident Adjustable Base 1.0.0, frozen 36_33_01a control literals.
     "resident": frozenset(
         {
             "08020000000000000000",
@@ -524,7 +524,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "05021000000000",
         }
     ),
-    # com.okin.simmons 1.12.9 report (row049), its 40-bit vectors
+    # com.okin.simmons 1.12.9 report, its 40-bit vectors
     "simmons_smartbed": frozenset(
         {
             "05020000000000",
@@ -542,7 +542,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "05020800000000",
         }
     ),
-    # row049 report: the Keeson E6 vectors, and the inclined keys' 40-bit frames
+    # Same report: the Keeson E6 vectors, and the inclined keys' 40-bit frames
     "simmons_okin": frozenset(
         {
             "05020000001000",
@@ -561,7 +561,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e6fe160800000000fd",
         }
     ),
-    # com.okin.doublesleep 1.2.24 (row107): its pinned P1 static vectors
+    # com.okin.doublesleep 1.2.24: its pinned P1 static vectors
     "doublesleep": frozenset(
         {
             "05020000000000",
@@ -1015,7 +1015,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "0c02080040000000000000000000",
         }
     ),
-    # com.okin.bedding.nectarmotion 1.0.1 (2), row042 report: its 96-bit literals
+    # com.okin.bedding.nectarmotion 1.0.1 (2) report: its 96-bit literals
     "cst_nectar_move": frozenset(
         {
             "0c02000000000000000000000000",
@@ -1070,7 +1070,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "0c02100000000000000000000000",
         }
     ),
-    # com.okin.bedding.tranquil 1.0.2 (3), row052 report: its 96-bit literals
+    # com.okin.bedding.tranquil 1.0.2 (3) report: its 96-bit literals
     "tranquil": frozenset(
         {
             "0c02000000000000000000000000",
@@ -1106,7 +1106,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "0c02100000000000000000000000",
         }
     ),
-    # com.okin.bedding.glory 1.0.4 (5), row052 report: its 96-bit literals
+    # com.okin.bedding.glory 1.0.4 (5) report: its 96-bit literals
     "zseries_z230": frozenset(
         {
             "0c02000000000000000000000000",
@@ -1137,7 +1137,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "0c02100000000000000000000000",
         }
     ),
-    # com.okin.bedding.glory 1.0.4 (5), row052 report: its 96-bit literals
+    # com.okin.bedding.glory 1.0.4 (5) report: its 96-bit literals
     "zseries_z280": frozenset(
         {
             "0c02000000000000000000000000",
@@ -1168,7 +1168,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "0c02100000000000000000000000",
         }
     ),
-    # Legacy Okin64BitController compatibility set, including commands unexposed by unit087
+    # Legacy Okin64BitController compatibility set, including commands unexposed by the Adjustable bed app
     "okin_64bit_nordic": frozenset(
         {
             "08020000000000000000",
@@ -1220,7 +1220,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "08021000000000000000",
         }
     ),
-    # com.okin.bedding.adjustablelumbar 1.2.2 report (row054): its 64-bit literals
+    # com.okin.bedding.adjustablelumbar 1.2.2 report: its 64-bit literals
     "adjustable_lumbar_star": frozenset(
         {
             "08020000000000000000",
@@ -1249,7 +1249,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "08020800800000000000",
         }
     ),
-    # row054 report: the 36_33_04a table shares the 25_42_02 words
+    # Same report: the 36_33_04a table shares the 25_42_02 words
     "adjustable_lumbar_okin": frozenset(
         {
             "08020000000000000000",
@@ -1278,7 +1278,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "08020800800000000000",
         }
     ),
-    # com.okin.eshine 1.1.8 report (row122): one command table, every selector
+    # com.okin.eshine 1.1.8 report: one command table, every selector
     **dict.fromkeys(
         ESHINE,
         frozenset(
@@ -1380,7 +1380,7 @@ SETUP_FRAMES: dict[str, frozenset[str]] = {
 }
 
 # Requests, clock and alarm frames: ``00 <code>``, ``07 04`` and ``07 05``. The
-# row122 vectors set the clock for 2026-11-03 14:47:09 and for 1999.
+# The eShine vectors set the clock for 2026-11-03 14:47:09 and for 1999.
 SETTING_FRAMES: dict[str, frozenset[str]] = dict.fromkeys(
     ESHINE,
     frozenset(
@@ -1397,7 +1397,7 @@ SETTING_FRAMES: dict[str, frozenset[str]] = dict.fromkeys(
     ),
 )
 
-# Row083 frozen P1 literals, independently retained in the app fixture. The
+# Apex frozen P1 literals, independently retained in the app fixture. The
 # per-profile gates are checked against the complete accepted variant census.
 _APEX_FRAMES = frozenset({
     "040200000000", "040200000001", "040200000002", "040200000004", "040200000008",

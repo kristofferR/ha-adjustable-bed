@@ -1,4 +1,4 @@
-"""Frozen cluster-004 vectors and reachable-layout boundaries."""
+"""Frozen Dreamask and Dreamotion app vectors and reachable-layout boundaries."""
 
 from datetime import datetime
 

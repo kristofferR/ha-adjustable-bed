@@ -1,7 +1,7 @@
 """Frozen Sleepy's Elite BOX25_STAR motor literals (#483).
 
 From ``COMMAND_FINAL_VECTORS.v2.tsv`` of the accepted com.okin.bedding.sleepy
-1.1.5 report (``-2026-10-26-39bdcafa-repair-005``), selector ``BOX25_STAR``:
+1.1.5 report, selector ``BOX25_STAR``:
 every held motor frame and the STOP its release sends.
 """
 

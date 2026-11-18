@@ -40,7 +40,7 @@ async def cleanup(hass, monkeypatch):
     # is outside this no-radio lifecycle test, as is the reload boundary below.
     monkeypatch.setattr("homeassistant.config_entries.async_process_deps_reqs", AsyncMock())
     yield
-    for coord in hass.data.get("repair006_coordinators", []):
+    for coord in hass.data.get("layout_app_coordinators", []):
         await coord.async_shutdown()
 
 
@@ -68,7 +68,7 @@ def entry(hass, app, layout=None, **fields):
 
 def coordinator(hass, config):
     result = AdjustableBedCoordinator(hass, config)
-    hass.data.setdefault("repair006_coordinators", []).append(result)
+    hass.data.setdefault("layout_app_coordinators", []).append(result)
     return result
 
 
@@ -204,7 +204,7 @@ def paired_entry(hass, app, left_layout, right_layout, **extra):
         domain=DOMAIN,
         title="App pair",
         data={
-            "pair_id": "repair006",
+            "pair_id": "layout-app-pair",
             "pair_mode": "separate_address",
             "pair_children": children,
             "bed_type": app,
@@ -239,7 +239,7 @@ async def test_native_child_settings_and_shared_save_preserve_each_layout(
     finally:
         remove_listener()
     rebuilt = _build_paired_children(hass, config)
-    hass.data.setdefault("repair006_coordinators", []).extend(rebuilt.values())
+    hass.data.setdefault("layout_app_coordinators", []).extend(rebuilt.values())
     for child in rebuilt.values():
         await child.async_prime_offline_controller()
     assert {s: c.capability_controller.profile.layout for s, c in rebuilt.items()} == {
@@ -294,7 +294,7 @@ async def test_options_preserve_custom_serta_memories_per_physical_child(
     for step in ("left_settings", "right_settings", "settings"):
         await save_options(hass, config, step=step, idle_disconnect_seconds=48)
     children = _build_paired_children(hass, config)
-    hass.data.setdefault("repair006_coordinators", []).extend(children.values())
+    hass.data.setdefault("layout_app_coordinators", []).extend(children.values())
     for side, child in children.items():
         await child.async_prime_offline_controller()
         assert all(child.entry.data[k] == v for k, v in memories[side].items())

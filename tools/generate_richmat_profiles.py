@@ -1,4 +1,4 @@
-"""Generate compact production mappings from the accepted row018 table pair.
+"""Generate compact production mappings from the accepted RMControl 2 table pair.
 
 Usage: uv run python tools/generate_richmat_profiles.py ACTIONS.tsv SELECTORS.tsv SCALARS.json
 
@@ -98,7 +98,7 @@ def generate(actions_path: Path, selectors_path: Path, scalars_path: Path) -> st
     lines = [
         BEGIN,
         "# fmt: off",
-        f"# Accepted row018 report manifest: {REPORT_SHA256}",
+        f"# Accepted RMControl 2 report manifest: {REPORT_SHA256}",
         f"# {len(products)} concrete products; {len(rows)} ordered occurrences; {len(specs)} shared specs.",
         f"_GETTERS: tuple[str, ...] = {tuple(getters)!r}",
         "_ACTION_SPECS: tuple[_ActionSpec, ...] = (",

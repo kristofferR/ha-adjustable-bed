@@ -1,6 +1,6 @@
 """Frozen BedTech 7.1.3 (14) vectors and all 585 model/action/side routes.
 
-Accepted unit095 report manifest d196849c2c9463ac6bbd929eea3070d0e8f234aa511362284508a9c9cdc945fd.
+Accepted BedTech app report manifest d196849c2c9463ac6bbd929eea3070d0e8f234aa511362284508a9c9cdc945fd.
 Static artifact evidence only; no claim of hardware validation.
 """
 

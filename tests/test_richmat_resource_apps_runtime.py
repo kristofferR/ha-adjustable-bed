@@ -22,7 +22,7 @@ from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordin
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS
 from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
 from tests.test_richmat_classic_transport import Services, route
-from tests.test_richmat_cluster017 import clock as clock
+from tests.test_richmat_resource_apps import clock as clock
 from tests.test_richmat_family_flow import answer, fields, setup_flow
 
 
@@ -371,7 +371,7 @@ async def test_real_concurrent_pair_routes_each_app_session_and_single_side(hass
         child.async_ensure_connected = AsyncMock(return_value=True)
         child._async_refresh_controller_auth = AsyncMock()
         children[side], clients[side] = child, child._client
-    entry = MockConfigEntry(domain=const.DOMAIN, data={"pair_id": "cluster017", "name": "Pair"})
+    entry = MockConfigEntry(domain=const.DOMAIN, data={"pair_id": "resource-apps", "name": "Pair"})
     pair = PairedBedCoordinator(hass, entry, children, connection_mode="concurrent")
     await services.async_register_services(hass)
     try:

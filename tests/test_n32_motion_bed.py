@@ -1,4 +1,4 @@
-"""Accepted row080 literals, alarm semantics and real session/hold boundaries."""
+"""Accepted Simmons Korea app literals, alarm semantics and real session/hold boundaries."""
 
 from __future__ import annotations
 
