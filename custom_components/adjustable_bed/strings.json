@@ -1532,19 +1532,10 @@
   "entity": {
     "button": {
       "comfortfurniture_save": {
-        "name": "Save {preset}"
-      },
-      "comfortfurniture_preset_stop": {
-        "name": "Stop preset"
-      },
-      "comfortfurniture_reset_label": {
-        "name": "Reset (physical effect unknown)"
+        "name": "{action}"
       },
       "comfortfurniture_massage_start": {
         "name": "Start massage"
-      },
-      "comfortfurniture_timer_cycle": {
-        "name": "Cycle massage timer"
       },
       "comfort_enhancements_quiet_sleep": {
         "name": "Quiet sleep"
@@ -3363,6 +3354,12 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
+      },
+      "comfortfurniture_reset": {
+        "name": "Reset"
+      },
+      "comfortfurniture_preset_stop": {
+        "name": "Stop preset"
       }
     },
     "cover": {
@@ -5607,12 +5604,6 @@
       }
     },
     "number": {
-      "comfortfurniture_wave_progress": {
-        "name": "Massage wave (app progress)"
-      },
-      "comfortfurniture_intensity_progress": {
-        "name": "Massage intensity (app progress)"
-      },
       "back_position": {
         "name": "Back Position"
       },
@@ -5897,6 +5888,12 @@
       },
       "richmat_resource_massage_timer": {
         "name": "Massage timer request"
+      },
+      "comfortfurniture_wave_level": {
+        "name": "Massage wave"
+      },
+      "comfortfurniture_intensity_level": {
+        "name": "Massage intensity"
       }
     },
     "select": {

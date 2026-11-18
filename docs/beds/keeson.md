@@ -1435,16 +1435,19 @@ Back, foot, head and waist retain the app's labels. Back+foot is the explicit
 combined control. These controls share one stream and global release; there is
 no arbitrary multi-axis composition. All five named presets support save and
 recall. The indexed Memory action maps only to the named Memory target.
-A second recall of the same selected preset sends preset stop. Saves send once,
-without an automatic recall. Reset is exposed with its physical effect explicitly
-unknown and a confirmation in the native card; no factory-reset or calibration
+A second recall of the same selected preset sends preset stop, and so does Stop
+while a preset started in the same BLE session runs; Stop preset sends it at any
+time. Saves send once, without
+an automatic recall. Reset keeps the app's label and asks for confirmation in the
+native card; its physical effect is unknown and no factory-reset or calibration
 meaning is claimed.
 
-Massage has one intensity slider and one wave slider. The raw app progress is
-retained and quantized into three bins, whose physical strengths and patterns
-are unknown. Bin zero is not massage off. Start sends the initial command, then
-current wave, then current intensity; stop sends its own word and clears the
-local timer selection. The timer selects each of the app's three durations.
+Massage wave and intensity are levels 1 to 3, one per bin of the app's 0-29
+slider; the app's raw progress is still kept. Their physical strengths and
+patterns are unknown. Level 1 is not massage off. Start sends the initial
+command, then current wave, then current intensity; stop sends its own word and
+clears the timer selection. The timer select offers the app's three durations
+directly, so the app's timer-cycle key is not a separate button.
 Light on/off is assumed from local commands, without peripheral feedback.
 
 <!-- generated:keeson-comfortfurniture -->

@@ -19,7 +19,7 @@ from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
 from ...codec.keeson import comfortfurniture_cancels_hold
 from ...const import KEESON_BASE_NOTIFY_CHAR_UUID, KEESON_VARIANT_COMFORTFURNITURE
 from ...controller_state import StateKey
-from ...profiles.comfortfurniture import PRESET_NAMES, PROFILE
+from ...profiles.comfortfurniture import PROFILE
 from ..base import BedController
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -34,10 +34,15 @@ from ..ore_comfort_bed import OreComfortBedController, _axis_command
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
-PROGRESS: Final = {
-    s: StateKey[int | None](f"comfortfurniture_{s}_progress") for s in PROFILE.slider_bases
-}
+# The app's sliders send three bins (progress 0-9, 10-19, 20-29); entities show bins 1-3.
+LEVEL: Final = {s: StateKey[int | None](f"comfortfurniture_{s}_level") for s in PROFILE.slider_bases}
 TIMER: Final = StateKey[str | None]("comfortfurniture_massage_timer")
+SAVE_LABELS: Final = {
+    "zero_g": "Save zero-gravity position",
+    "flat": "Save flat position",
+    "anti_snore": "Save anti-snore position",
+    "reading": "Save reading position",
+}
 
 
 @dataclass(frozen=True)
@@ -57,7 +62,6 @@ class ComfortFurnitureController(OreComfortBedController):
         self._axes = dict(PROFILE.axes)
         self._progress = dict.fromkeys(PROFILE.slider_bases, PROFILE.slider_default)
         self._selected_preset: str | None = None
-        self._timer_next = 0
         self._generation = 0
         self._notify_char: BleakGATTCharacteristic | None = None
         self._notify_client: BleakClient | None = None
@@ -209,7 +213,7 @@ class ComfortFurnitureController(OreComfortBedController):
         await target.client.start_notify(notify, received)
         self._check_target(target)
         self._notify_client, self._notify_char = target.client, notify
-        self.forward_controller_state_updates(*(PROGRESS[s](p) for s, p in self._progress.items()))
+        self._publish_progress()
 
     async def stop_notify(self) -> None:
         client, char = self._notify_client, self._notify_char
@@ -224,7 +228,6 @@ class ComfortFurnitureController(OreComfortBedController):
         self._held_cancel = None
         self._notify_char = self._notify_client = self._write_char = None
         self._selected_preset = None
-        self._timer_next = 0
         self.forward_controller_state_updates(TIMER(None))
 
     @property
@@ -318,7 +321,7 @@ class ComfortFurnitureController(OreComfortBedController):
     async def set_massage_progress(self, slider: str, progress: int) -> None:
         word = PROFILE.slider_word(slider, progress)
         self._progress[slider] = progress
-        self.forward_controller_state_updates(PROGRESS[slider](progress))
+        self._publish_progress()
         await self._send_single(word)
 
     async def set_massage_level(self, zone: str, level: int) -> None:
@@ -334,16 +337,11 @@ class ComfortFurnitureController(OreComfortBedController):
 
     async def massage_off(self) -> None:
         await self._send_single(PROFILE.massage_stop)
-        self._timer_next = 0
         self.forward_controller_state_updates(TIMER(None))
 
     async def set_massage_timer_option(self, option: str) -> None:
         await self._send_single(PROFILE.timers[option])
-        self._timer_next = (tuple(PROFILE.timers).index(option) + 1) % len(PROFILE.timers)
         self.forward_controller_state_updates(TIMER(option))
-
-    async def massage_timer_cycle(self) -> None:
-        await self.set_massage_timer_option(tuple(PROFILE.timers)[self._timer_next])
 
     @property
     def persisted_app_state(self) -> Mapping[str, Any] | None:
@@ -356,19 +354,24 @@ class ComfortFurnitureController(OreComfortBedController):
         for slider, value in progress.items():
             PROFILE.slider_word(slider, value)
         self._progress = progress
-        self.forward_controller_state_updates(*(PROGRESS[s](v) for s, v in progress.items()))
+        self._publish_progress()
+
+    def _publish_progress(self) -> None:
+        self.forward_controller_state_updates(
+            *(LEVEL[s](p // 10 + 1) for s, p in self._progress.items())
+        )
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         return tuple(
             ControllerNumberSpec(
-                key=f"comfortfurniture_{s}_progress",
-                translation_key=f"comfortfurniture_{s}_progress",
-                state_key=PROGRESS[s],
-                native_min_value=0,
-                native_max_value=PROFILE.slider_max,
+                key=f"comfortfurniture_{s}_level",
+                translation_key=f"comfortfurniture_{s}_level",
+                state_key=LEVEL[s],
+                native_min_value=1,
+                native_max_value=3,
                 native_step=1,
-                set_fn=_progress_setter(s),
+                set_fn=_level_setter(s),
                 card=CARD_MASSAGE,
             )
             for s in PROFILE.slider_bases
@@ -391,19 +394,20 @@ class ComfortFurnitureController(OreComfortBedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # The timer select replaces the app's timer-cycle key. Stop preset stays:
+        # Stop only sends preset stop for a preset this BLE session started.
         return (
             *(
                 ControllerButtonSpec(
                     key=f"comfortfurniture_save_{name}",
-                    name=f"Save {label}",
+                    name=label,
                     press_fn=_save_named(name),
                     icon="mdi:content-save",
                     requires_confirmation=True,
                     translation_key="comfortfurniture_save",
-                    translation_placeholders={"preset": label},
+                    translation_placeholders={"action": label},
                 )
-                for name, label in PRESET_NAMES.items()
-                if name != "memory"
+                for name, label in SAVE_LABELS.items()
             ),
             ControllerButtonSpec(
                 "comfortfurniture_preset_stop",
@@ -414,23 +418,15 @@ class ComfortFurnitureController(OreComfortBedController):
                 card=CARD_PRESETS,
             ),
             ControllerButtonSpec(
-                "comfortfurniture_reset_label",
-                "Reset (physical effect unknown)",
+                "comfortfurniture_reset",
+                "Reset",
                 lambda ctrl: cast(ComfortFurnitureController, ctrl)._send_single(
                     PROFILE.reset_label
                 ),
                 icon="mdi:alert-outline",
-                translation_key="comfortfurniture_reset_label",
+                translation_key="comfortfurniture_reset",
                 requires_confirmation=True,
                 card=CARD_UTILITY,
-            ),
-            ControllerButtonSpec(
-                "comfortfurniture_timer_cycle",
-                "Cycle massage timer",
-                lambda ctrl: cast(ComfortFurnitureController, ctrl).massage_timer_cycle(),
-                icon="mdi:timer",
-                translation_key="comfortfurniture_timer_cycle",
-                card=CARD_MASSAGE,
             ),
             ControllerButtonSpec(
                 "comfortfurniture_massage_start",
@@ -453,13 +449,13 @@ class ComfortFurnitureController(OreComfortBedController):
         }
 
 
-def _progress_setter(slider: str) -> Callable[[BedController, float], Awaitable[None]]:
-    async def set_progress(ctrl: BedController, value: float) -> None:
+def _level_setter(slider: str) -> Callable[[BedController, float], Awaitable[None]]:
+    async def set_level(ctrl: BedController, value: float) -> None:
         if int(value) != value:
-            raise ValueError("ComfortFurniture progress must be an integer")
-        await cast(ComfortFurnitureController, ctrl).set_massage_progress(slider, int(value))
+            raise ValueError("ComfortFurniture massage level must be an integer")
+        await cast(ComfortFurnitureController, ctrl).set_massage_level(slider, int(value) - 1)
 
-    return set_progress
+    return set_level
 
 
 def _save_named(name: str) -> MotorCommandCallable:

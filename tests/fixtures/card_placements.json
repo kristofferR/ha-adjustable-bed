@@ -562,14 +562,11 @@
   "button:comfortfurniture_preset_stop": {
     "card_section": "presets"
   },
-  "button:comfortfurniture_reset_label": {
+  "button:comfortfurniture_reset": {
     "card_section": "utility"
   },
   "button:comfortfurniture_save": {
     "card_section": "utility"
-  },
-  "button:comfortfurniture_timer_cycle": {
-    "card_section": "massage"
   },
   "button:connect": {
     "card_section": "connection",
@@ -2363,10 +2360,10 @@
   "number:bf_cherish_wave": {
     "card_section": "massage"
   },
-  "number:comfortfurniture_intensity_progress": {
+  "number:comfortfurniture_intensity_level": {
     "card_section": "massage"
   },
-  "number:comfortfurniture_wave_progress": {
+  "number:comfortfurniture_wave_level": {
     "card_section": "massage"
   },
   "number:fan_level": {

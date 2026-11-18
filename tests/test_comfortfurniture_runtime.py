@@ -277,20 +277,19 @@ async def test_real_ha_install_imports_profile_and_exposes_entities(
     wave = next(
         e.entity_id
         for e in entities
-        if e.domain == "number" and "comfortfurniture_wave_progress" in e.unique_id
+        if e.domain == "number" and "comfortfurniture_wave_level" in e.unique_id
     )
     mock_bleak_client.write_gatt_char.reset_mock()
     with virtual_clock():
         await hass.services.async_call(
-            "number", "set_value", {"entity_id": wave, "value": 29}, blocking=True
+            "number", "set_value", {"entity_id": wave, "value": 3}, blocking=True
         )
     assert _written(mock_bleak_client) == ["e5fe1610000023d3"]
-    assert coord.controller.persisted_app_state["wave"] == 29
+    assert coord.controller.persisted_app_state["wave"] == 20
     await hass.config_entries.async_unload(entry.entry_id)
 
 
-async def test_disconnect_clears_timer_selection_before_next_session_cycle(runtime):
-    from custom_components.adjustable_bed.button import ControllerActionButton
+async def test_disconnect_clears_timer_selection(runtime):
     from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
 
     hass, coord, client = runtime
@@ -305,14 +304,3 @@ async def test_disconnect_clears_timer_selection_before_next_session_cycle(runti
     assert timer.current_option is None
     assert await coord.async_connect()
     assert timer.current_option is None
-    cycle = ControllerActionButton(
-        coord,
-        next(s for s in coord.controller.controller_button_specs if s.key == "comfortfurniture_timer_cycle"),
-    )
-    cycle.hass = hass
-    cycle.async_write_ha_state = MagicMock()
-    client.write_gatt_char.reset_mock()
-    with virtual_clock():
-        await cycle.async_press()
-    assert _written(client) == ["e5fe1610000030c6"]
-    assert timer.current_option == "10"

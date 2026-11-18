@@ -9,7 +9,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.beds.keeson.comfortfurniture import (
-    PROGRESS,
+    LEVEL,
     TIMER,
     ComfortFurnitureController,
 )
@@ -37,7 +37,7 @@ async def test_every_command_uses_production_callers(
             await (c.stop_all if action == "movement_release_stop" else c.stop_preset)()
         elif action == "bed_reset_label":
             await next(
-                s for s in c.controller_button_specs if s.key == "comfortfurniture_reset_label"
+                s for s in c.controller_button_specs if s.key == "comfortfurniture_reset"
             ).press_fn(c)
         elif action.startswith("preset_"):
             name, verb = action.removeprefix("preset_").rsplit("_", 1)
@@ -99,12 +99,10 @@ async def test_slider_persistence_start_sequence_and_timer_reset(
         await c.set_massage_progress("wave", 29)
         await c.set_massage_progress("intensity", 0)
         await c.massage_start()
-        await c.massage_timer_cycle()
-        await c.massage_timer_cycle()
-        await c.massage_timer_cycle()
+        for option in ("10", "20", "30"):
+            await c.set_massage_timer_option(option)
         await c.massage_off()
         assert c._coordinator.controller_state[TIMER] is None
-        await c.massage_timer_cycle()
     assert _written(mock_bleak_client)[2:5] == [
         "e5fe1610000011e5",
         "e5fe1610000023d3",
@@ -115,9 +113,9 @@ async def test_slider_persistence_start_sequence_and_timer_reset(
         "e5fe1610000031c5",
         "e5fe1610000032c4",
         "e5fe1610000010e6",
-        "e5fe1610000030c6",
     ]
-    assert c._coordinator.controller_state[PROGRESS["wave"]] == 29
+    assert c._coordinator.controller_state[LEVEL["wave"]] == 3
+    assert c._coordinator.controller_state[LEVEL["intensity"]] == 1
     coord = c._coordinator
     await coord.async_shutdown()
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -269,3 +267,24 @@ async def test_stop_or_ownership_change_during_first_wait_cannot_transmit(
         await c.stop_all()
         assert _written(mock_bleak_client) == ["e5fe1621000000e5"]
         c._coordinator.cancel_command.clear()
+
+
+async def test_entities_use_readable_names_without_duplicate_controls(
+    hass, mock_coordinator_connected, mock_bleak_client
+):
+    c = await make_bed(hass, mock_bleak_client)
+    names = {s.key: (s.translation_placeholders or {}).get("action", s.name) for s in c.controller_button_specs}
+    assert names == {
+        "comfortfurniture_save_zero_g": "Save zero-gravity position",
+        "comfortfurniture_save_flat": "Save flat position",
+        "comfortfurniture_save_anti_snore": "Save anti-snore position",
+        "comfortfurniture_save_reading": "Save reading position",
+        "comfortfurniture_preset_stop": "Stop preset",
+        "comfortfurniture_reset": "Reset",
+        "comfortfurniture_massage_start": "Start massage",
+    }
+    wave = next(s for s in c.controller_number_specs if s.key == "comfortfurniture_wave_level")
+    assert (wave.native_min_value, wave.native_max_value) == (1, 3)
+    with virtual_clock():
+        await wave.set_fn(c, 2)
+    assert _written(mock_bleak_client)[-1] == "e5fe1610000022d4"
