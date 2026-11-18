@@ -3419,9 +3419,9 @@ Only MS600 has alarm-mode choices. No shared receive parser expands these gates.
 | TV, Save TV | MS600 |
 | Lounge, Save Lounge | MS200 |
 | Toggle Light | all except MS200 |
-| Massage: Head/Foot Intensity Up, Mode, Off, Timer 10/20/30 Minutes | MS300, MS300-SH, MS600 |
-| Massage: Lumbar Intensity Up | MS600 |
-| Fan: Head/Foot Intensity Up, Mode, Off, Timer 2/3/5 Hours | PowerCool |
+| Massage: Head/Foot Up, Mode, Off, Timer 10/20/30 Minutes | MS300, MS300-SH, MS600 |
+| Massage: Lumbar Up | MS600 |
+| Fan: Head/Foot Up, Mode, Off, Timer 2/3/5 Hours | PowerCool |
 | Model (diagnostic, disabled by default) | all |
 
 PowerCool sends the massage codes to its fans, with 2/3/5-hour timers; the

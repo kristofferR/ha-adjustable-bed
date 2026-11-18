@@ -47,9 +47,9 @@ LABELS: Final = {
     "AntiSnoring": "Anti-Snore",
     "TVPosition": "TV",
     "LoungePosition": "Lounge",
-    "MassageHeadInstensityStrengthen": "Massage: Head Intensity Up",
-    "MassageFootInstensityStrengthen": "Massage: Foot Intensity Up",
-    "MassageLumbarInstensityStrengthen": "Massage: Lumbar Intensity Up",
+    "MassageHeadInstensityStrengthen": "Massage: Head Up",
+    "MassageFootInstensityStrengthen": "Massage: Foot Up",
+    "MassageLumbarInstensityStrengthen": "Massage: Lumbar Up",
     "MassageModeChange": "Massage: Mode",
     "MassageModeAllOff": "Massage: Off",
     "Massage10MinuteTimer": "Massage: Timer 10 Minutes",
@@ -59,8 +59,8 @@ LABELS: Final = {
 # PowerCool sends the same codes to its fans, with 2/3/5-hour timers.
 COOLING_LABELS: Final = {
     **LABELS,
-    "MassageHeadInstensityStrengthen": "Fan: Head Intensity Up",
-    "MassageFootInstensityStrengthen": "Fan: Foot Intensity Up",
+    "MassageHeadInstensityStrengthen": "Fan: Head Up",
+    "MassageFootInstensityStrengthen": "Fan: Foot Up",
     "MassageModeChange": "Fan: Mode",
     "MassageModeAllOff": "Fan: Off",
     "Massage10MinuteTimer": "Fan: Timer 2 Hours",

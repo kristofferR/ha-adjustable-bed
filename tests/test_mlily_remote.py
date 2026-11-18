@@ -63,9 +63,9 @@ def test_buttons_add_only_what_shared_presets_lack():
     assert controller.standard_button_requires_confirmation("program_memory_3")
     assert [s.name for s in controller.controller_button_specs] == [
         "Toggle Light",
-        "Massage: Head Intensity Up",
-        "Massage: Lumbar Intensity Up",
-        "Massage: Foot Intensity Up",
+        "Massage: Head Up",
+        "Massage: Lumbar Up",
+        "Massage: Foot Up",
         "Massage: Mode",
         "Massage: Off",
         "Massage: Timer 10 Minutes",
@@ -199,7 +199,7 @@ async def test_powercool_labels_and_no_massage_release():
         "Fan: Timer 5 Hours",
     }
     assert all("Massage" not in s.name for s in specs)
-    spec = next(s for s in specs if s.name == "Fan: Head Intensity Up")
+    spec = next(s for s in specs if s.name == "Fan: Head Up")
     c.client.write_gatt_char.reset_mock()
     await spec.press_fn(controller)
     assert frames(c) == ["6e01004cbb"]
