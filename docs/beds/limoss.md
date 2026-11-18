@@ -397,8 +397,9 @@ controller's.
 - Configuration 1 selects the eight-key chair's custom Alpha ordering.
 - Every rendered lamp/massage combination is retained, including blank cells and
   omitted combined/shift directions. The key tables are generated above.
-- Controls use literal motor channels rather than unproven physical axes or
-  angle units.
+- Controls use motor channels (Motor 1-4) rather than unproven physical axes or
+  angle units. Capability counts, calibration replies and raw positions stay in
+  diagnostics; the versions and serial are disabled diagnostic sensors.
 
 **Local settings**
 

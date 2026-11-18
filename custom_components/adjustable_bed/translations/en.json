@@ -2645,7 +2645,7 @@
         "name": "Hip (app label) Down"
       },
       "limoss_remote_motor_2_up": {
-        "name": "Motor channel 2 Up"
+        "name": "Motor 2 Up"
       },
       "bedsense_hip_up": {
         "name": "Hip (app label) Up"
@@ -2672,7 +2672,7 @@
         "name": "Full tilt Up"
       },
       "limoss_remote_motor_2_down": {
-        "name": "Motor channel 2 Down"
+        "name": "Motor 2 Down"
       },
       "both_backs_down": {
         "name": "Both backs Down"
@@ -2714,7 +2714,7 @@
         "name": "Motor 5 Up"
       },
       "limoss_remote_motor_1_up": {
-        "name": "Motor channel 1 Up"
+        "name": "Motor 1 Up"
       },
       "richmat_mh_pillow_lumbar_up": {
         "name": "Pillow and lumbar Up"
@@ -2732,7 +2732,7 @@
         "name": "Head tilt Down"
       },
       "limoss_remote_motor_3_up": {
-        "name": "Motor channel 3 Up"
+        "name": "Motor 3 Up"
       },
       "keeson_head_up": {
         "name": "Head Up"
@@ -2756,13 +2756,13 @@
         "name": "Auxiliary Up"
       },
       "limoss_remote_motor_4_up": {
-        "name": "Motor channel 4 Up"
+        "name": "Motor 4 Up"
       },
       "motor_3_up": {
         "name": "Motor 3 Up"
       },
       "limoss_remote_motor_4_down": {
-        "name": "Motor channel 4 Down"
+        "name": "Motor 4 Down"
       },
       "octo_motors_1_2_down": {
         "name": "Motors 1 + 2 Down"
@@ -2771,7 +2771,7 @@
         "name": "Both legs Up"
       },
       "limoss_remote_motor_3_down": {
-        "name": "Motor channel 3 Down"
+        "name": "Motor 3 Down"
       },
       "richmat_mh_motor_5_down": {
         "name": "Motor 5 Down"
@@ -2792,7 +2792,7 @@
         "name": "Back and leg Down"
       },
       "limoss_remote_motor_1_down": {
-        "name": "Motor channel 1 Down"
+        "name": "Motor 1 Down"
       },
       "right_back_up": {
         "name": "Right back Up"
@@ -3448,16 +3448,16 @@
         "name": "Head and foot together"
       },
       "limoss_remote_motor_4": {
-        "name": "Motor channel 4"
+        "name": "Motor 4"
       },
       "limoss_remote_motor_1": {
-        "name": "Motor channel 1"
+        "name": "Motor 1"
       },
       "limoss_remote_motor_2": {
-        "name": "Motor channel 2"
+        "name": "Motor 2"
       },
       "limoss_remote_motor_3": {
-        "name": "Motor channel 3"
+        "name": "Motor 3"
       },
       "all_motors": {
         "name": "All motors"
@@ -4089,44 +4089,14 @@
       "svane_manufacturer": {
         "name": "Observed manufacturer"
       },
-      "limoss_remote_motor_2_position_raw": {
-        "name": "Motor 2 Raw Position"
-      },
       "limoss_remote_hardware_version": {
-        "name": "App Hardware Version"
-      },
-      "limoss_remote_reported_entry": {
-        "name": "Reported App Product"
-      },
-      "limoss_remote_motor_3_position_raw": {
-        "name": "Motor 3 Raw Position"
-      },
-      "limoss_remote_motor_count": {
-        "name": "Reported Motor Count"
-      },
-      "limoss_remote_configuration": {
-        "name": "App Configuration Code"
+        "name": "Hardware version"
       },
       "limoss_remote_software_version": {
-        "name": "App Software Version"
-      },
-      "limoss_remote_memory_slots": {
-        "name": "Reported Memory Slots"
-      },
-      "limoss_remote_key_count": {
-        "name": "Reported App Keys"
-      },
-      "limoss_remote_calibration_result": {
-        "name": "Calibration Reply"
+        "name": "Firmware version"
       },
       "limoss_remote_serial": {
-        "name": "App Serial Value"
-      },
-      "limoss_remote_motor_4_position_raw": {
-        "name": "Motor 4 Raw Position"
-      },
-      "limoss_remote_motor_1_position_raw": {
-        "name": "Motor 1 Raw Position"
+        "name": "Serial number"
       },
       "simmons_alarm_1": {
         "name": "Alarm 1"
