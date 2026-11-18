@@ -86,7 +86,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
-    BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -105,10 +104,8 @@ from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
     CONF_BLE_BOND_ESTABLISHED,
-    CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISABLE_DISCOVERY,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
     CONF_KAIDI_PRODUCT_ID,
@@ -139,7 +136,6 @@ from custom_components.adjustable_bed.const import (
     KAIDI_VARIANT_SEAT_1,
     KEESON_VARIANT_ERGOMOTION,
     LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_OKIN,
     MALOUF_LAYOUT_HILO,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
@@ -156,7 +152,6 @@ from custom_components.adjustable_bed.const import (
     SUTA_SERVICE_UUID,
     TIMOTION_AHF_SERVICE_UUID,
     VARIANT_AUTO,
-    get_motor_pulse_defaults,
     requires_pairing,
 )
 from custom_components.adjustable_bed.detection import (
@@ -165,7 +160,6 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type,
 )
 from custom_components.adjustable_bed.discovery_settings import (
-    async_is_discovery_disabled,
     async_set_discovery_disabled,
 )
 from custom_components.adjustable_bed.pairing import get_child
@@ -3314,50 +3308,6 @@ class TestOptionsFlow:
         yield
         await hass.async_block_till_done()
 
-    @pytest.mark.parametrize(
-        ("initial_variant", "initial_count", "requested_variant", "expected_count"),
-        [
-            (VARIANT_AUTO, 3, OKIN_CST_VARIANT_CAREFREE, 2),
-            (OKIN_CST_VARIANT_CAREFREE, 2, OKIN_CST_VARIANT_MF900, 3),
-        ],
-    )
-    async def test_okin_cst_profile_change_rebuilds_fixed_motor_count(
-        self,
-        hass: HomeAssistant,
-        enable_custom_integrations,
-        initial_variant: str,
-        initial_count: int,
-        requested_variant: str,
-        expected_count: int,
-    ) -> None:
-        """Changing CST profiles should replace the prior profile's motor count."""
-        del enable_custom_integrations
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Okin CST Bed",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:94",
-                CONF_NAME: "Okin CST Bed",
-                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                CONF_MOTOR_COUNT: initial_count,
-                CONF_PROTOCOL_VARIANT: initial_variant,
-            },
-            unique_id="AA:BB:CC:DD:EE:94",
-        )
-        entry.add_to_hass(hass)
-        await async_setup_component(hass, DOMAIN, {})
-        await hass.async_block_till_done()
-
-        initial = await _open_options_form(hass, entry.entry_id)
-        rebuilt = await hass.config_entries.options.async_configure(
-            initial["flow_id"],
-            user_input={CONF_PROTOCOL_VARIANT: requested_variant},
-        )
-
-        assert rebuilt["type"] == FlowResultType.FORM
-        markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert markers[CONF_PROTOCOL_VARIANT].default() == requested_variant
-        assert markers[CONF_MOTOR_COUNT].default() == expected_count
 
     async def test_richmat_options_can_replace_detected_qrrm_with_lp_profile(
         self,
@@ -3435,17 +3385,11 @@ class TestOptionsFlow:
         initial = await _open_options_form(hass, entry.entry_id)
         saved = await hass.config_entries.options.async_configure(
             initial["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
-                CONF_MOTOR_COUNT: 4,
-                CONF_MOTOR_PULSE_COUNT: "10",
-                CONF_MOTOR_PULSE_DELAY_MS: "100",
-            },
+            user_input={CONF_MOTOR_COUNT: 4, CONF_MOTOR_PULSE_COUNT: 12},
         )
 
         assert saved["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_MOTOR_PULSE_COUNT] == 10
-        assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == 100
+        assert entry.data[CONF_MOTOR_PULSE_COUNT] == 12
         assert entry.data[CONF_MOTOR_PULSE_USER_SET] is True
 
     @pytest.mark.parametrize("motor_count", [2, 3, 4])
@@ -3528,85 +3472,6 @@ class TestOptionsFlow:
         assert CONF_READ_POSITIONS not in markers
         assert CONF_BACK_MAX_ANGLE not in markers
 
-    @pytest.mark.parametrize("initial_type", [BED_TYPE_OKIN_CST, BED_TYPE_OKIN_7BYTE])
-    async def test_options_flow_can_change_bed_type_and_rebuild_dependent_fields(
-        self,
-        hass: HomeAssistant,
-        enable_custom_integrations,
-        initial_type: str,
-    ) -> None:
-        """Changing type rebuilds the form, then saves type-specific settings."""
-        del enable_custom_integrations
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Okin CST Bed",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:96",
-                CONF_NAME: "Okin CST Bed",
-                CONF_BED_TYPE: initial_type,
-                CONF_MOTOR_COUNT: 3,
-                CONF_BLE_BOND_ESTABLISHED: True,
-                CONF_BLE_BOND_MARKER_UNRELIABLE: True,
-                CONF_BACK_MAX_ANGLE: 68.0,
-                CONF_DISABLE_ANGLE_SENSING: False,
-            },
-            unique_id="AA:BB:CC:DD:EE:96",
-        )
-        entry.add_to_hass(hass)
-        await async_setup_component(hass, DOMAIN, {})
-        await hass.async_block_till_done()
-
-        initial = await _open_options_form(hass, entry.entry_id)
-        bed_type_marker = next(
-            marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
-        )
-        bed_type_selector = initial["data_schema"].schema[bed_type_marker]
-        option_values = {
-            bed_type_selector(option["value"]) for option in bed_type_selector.config["options"]
-        }
-        assert bed_type_selector(bed_type_marker.default()) == initial_type
-        assert BED_TYPE_OCTO in option_values
-
-        rebuilt = await hass.config_entries.options.async_configure(
-            initial["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_OCTO,
-                CONF_MOTOR_COUNT: 3,
-            },
-        )
-
-        assert rebuilt["type"] == FlowResultType.FORM
-        rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        bed_type = rebuilt_markers[CONF_BED_TYPE]
-        assert rebuilt["data_schema"].schema[bed_type](bed_type.default()) == BED_TYPE_OCTO
-        assert CONF_MOTOR_COUNT not in rebuilt_markers
-        assert rebuilt_markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
-        assert CONF_PROTOCOL_VARIANT in rebuilt_markers
-        assert CONF_OCTO_PIN in rebuilt_markers
-        assert CONF_BACK_MAX_ANGLE not in rebuilt_markers
-        assert CONF_DISABLE_ANGLE_SENSING not in rebuilt_markers
-
-        saved = await hass.config_entries.options.async_configure(
-            rebuilt["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_OCTO,
-                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "3",
-                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
-                CONF_OCTO_PIN: "1234",
-            },
-        )
-
-        assert saved["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OCTO
-        assert entry.data[CONF_MOTOR_COUNT] == 3
-        assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "3"
-        assert entry.data[CONF_PROTOCOL_VARIANT] == OCTO_VARIANT_STANDARD
-        assert entry.data[CONF_OCTO_PIN] == "1234"
-        assert CONF_BLE_BOND_ESTABLISHED not in entry.data
-        # Both pairing markers describe the old protocol's requirements.
-        assert CONF_BLE_BOND_MARKER_UNRELIABLE not in entry.data
-        assert CONF_BACK_MAX_ANGLE not in entry.data
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
     async def test_manual_octo_setup_defaults_to_advertised_motor_count(
         self,
@@ -3623,492 +3488,6 @@ class TestOptionsFlow:
         assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
         assert CONF_MOTOR_COUNT not in markers
 
-    async def test_options_flow_normalizes_fields_after_bed_type_change(
-        self,
-        hass: HomeAssistant,
-        enable_custom_integrations,
-    ) -> None:
-        """A new type cannot inherit an invalid motor count or stale variant."""
-        del enable_custom_integrations
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="OCTO Lift",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:95",
-                CONF_NAME: "OCTO Lift",
-                CONF_BED_TYPE: BED_TYPE_OCTO,
-                CONF_MOTOR_COUNT: 1,
-                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
-                CONF_OCTO_PIN: "3060",
-                CONF_DISABLE_ANGLE_SENSING: True,
-            },
-            unique_id="AA:BB:CC:DD:EE:95",
-        )
-        entry.add_to_hass(hass)
-        await async_setup_component(hass, DOMAIN, {})
-        await hass.async_block_till_done()
-
-        initial = await _open_options_form(hass, entry.entry_id)
-        initial_markers = {marker.schema: marker for marker in initial["data_schema"].schema}
-        assert initial_markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "1"
-        rebuilt = await hass.config_entries.options.async_configure(
-            initial["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "1",
-                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
-            },
-        )
-
-        rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert rebuilt_markers[CONF_MOTOR_COUNT].default() == 2
-        assert rebuilt_markers[CONF_DISABLE_ANGLE_SENSING].default() is False
-        assert rebuilt_markers[CONF_PROTOCOL_VARIANT].default() == VARIANT_AUTO
-        assert CONF_OCTO_PIN not in rebuilt_markers
-
-        saved = await hass.config_entries.options.async_configure(
-            rebuilt["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_LINAK,
-                CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-            },
-        )
-
-        assert saved["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
-        assert entry.data[CONF_MOTOR_COUNT] == 2
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
-        assert entry.data[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
-        assert CONF_OCTO_PIN not in entry.data
-
-    async def test_options_flow_keeps_current_legacy_bed_type_selectable(
-        self,
-        hass: HomeAssistant,
-        enable_custom_integrations,
-    ) -> None:
-        """An existing legacy alias remains valid while editing other options."""
-        del enable_custom_integrations
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Legacy Okimat",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:91",
-                CONF_NAME: "Legacy Okimat",
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
-                CONF_MOTOR_COUNT: 2,
-            },
-            unique_id="AA:BB:CC:DD:EE:91",
-        )
-        entry.add_to_hass(hass)
-        await async_setup_component(hass, DOMAIN, {})
-        await hass.async_block_till_done()
-
-        initial = await _open_options_form(hass, entry.entry_id)
-        marker = next(
-            marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
-        )
-        selector = initial["data_schema"].schema[marker]
-        option_values = {selector(option["value"]) for option in selector.config["options"]}
-
-        assert selector(marker.default()) == BED_TYPE_OKIMAT
-        assert BED_TYPE_OKIMAT in option_values
-
-        saved = await hass.config_entries.options.async_configure(
-            initial["flow_id"],
-            user_input={CONF_HAS_MASSAGE: True},
-        )
-
-        assert saved["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_HAS_MASSAGE] is True
-        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIMAT
-
-    async def test_options_flow_resets_variant_and_timing_for_new_protocol(
-        self,
-        hass: HomeAssistant,
-        enable_custom_integrations,
-    ) -> None:
-        """A new protocol starts with its own dialect and command timing defaults."""
-        del enable_custom_integrations
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Leggett Okin",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:94",
-                CONF_NAME: "Leggett Okin",
-                CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_OKIN,
-                CONF_MOTOR_PULSE_COUNT: 25,
-                CONF_MOTOR_PULSE_DELAY_MS: 50,
-            },
-            unique_id="AA:BB:CC:DD:EE:94",
-        )
-        entry.add_to_hass(hass)
-        await async_setup_component(hass, DOMAIN, {})
-        await hass.async_block_till_done()
-
-        initial = await _open_options_form(hass, entry.entry_id)
-        rebuilt = await hass.config_entries.options.async_configure(
-            initial["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_OKIN,
-                CONF_MOTOR_PULSE_COUNT: "25",
-                CONF_MOTOR_PULSE_DELAY_MS: "50",
-            },
-        )
-
-        rebuilt_markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert rebuilt_markers[CONF_PROTOCOL_VARIANT].default() == VARIANT_AUTO
-        assert rebuilt_markers[CONF_MOTOR_PULSE_COUNT].default() == "10"
-        assert rebuilt_markers[CONF_MOTOR_PULSE_DELAY_MS].default() == "100"
-
-        variant_rebuilt = await hass.config_entries.options.async_configure(
-            rebuilt["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ERGOMOTION,
-            },
-        )
-
-        variant_markers = {
-            marker.schema: marker for marker in variant_rebuilt["data_schema"].schema
-        }
-        assert variant_rebuilt["type"] == FlowResultType.FORM
-        assert variant_markers[CONF_PROTOCOL_VARIANT].default() == KEESON_VARIANT_ERGOMOTION
-        assert variant_markers[CONF_DISABLE_ANGLE_SENSING].default() is False
-
-        saved = await hass.config_entries.options.async_configure(
-            variant_rebuilt["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ERGOMOTION,
-                CONF_DISABLE_ANGLE_SENSING: True,
-            },
-        )
-
-        assert saved["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_ERGOMOTION
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
-        assert entry.data[CONF_MOTOR_PULSE_COUNT] == 10
-        assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == 100
-
-    async def test_options_flow_reconfigures_to_nectar_move_profile(
-        self,
-        hass: HomeAssistant,
-        enable_custom_integrations,
-    ) -> None:
-        """Nectar Move can be selected in Configure and hides app-owned fields."""
-        del enable_custom_integrations
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="OKIN CST",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:96",
-                CONF_NAME: "OKIN Receiver",
-                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
-                CONF_MOTOR_COUNT: 3,
-                CONF_HAS_MASSAGE: False,
-            },
-            unique_id="AA:BB:CC:DD:EE:96",
-        )
-        entry.add_to_hass(hass)
-
-        choice = bed_type_choice(BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE)
-        initial = await _open_options_form(hass, entry.entry_id)
-        bed_type_marker = next(
-            marker for marker in initial["data_schema"].schema if marker.schema == CONF_BED_TYPE
-        )
-        selector = initial["data_schema"].schema[bed_type_marker]
-        assert choice in {selector(option["value"]) for option in selector.config["options"]}
-
-        rebuilt = await hass.config_entries.options.async_configure(
-            initial["flow_id"], user_input={CONF_BED_TYPE: choice}
-        )
-        assert rebuilt["type"] == FlowResultType.FORM
-        markers = shown_markers(rebuilt)
-        assert CONF_MOTOR_COUNT not in markers
-        assert CONF_HAS_MASSAGE not in markers
-        assert CONF_DISABLE_ANGLE_SENSING not in markers
-        assert CONF_MOTOR_PULSE_COUNT in markers
-        assert CONF_MOTOR_PULSE_DELAY_MS not in markers
-
-        saved = await hass.config_entries.options.async_configure(
-            rebuilt["flow_id"], user_input={CONF_BED_TYPE: choice}
-        )
-        assert saved["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CST
-        assert entry.data[CONF_PROTOCOL_VARIANT] == OKIN_CST_VARIANT_NECTAR_MOVE
-        assert entry.data[CONF_MOTOR_COUNT] == 2
-
-    async def test_options_flow_sends_a_keeson_route_change_to_the_guided_change(
-        self,
-        hass: HomeAssistant,
-        enable_custom_integrations,
-        mock_coordinator_connected,
-    ) -> None:
-        """A Keeson route picks the app, so Configure refuses to change it alone."""
-        del enable_custom_integrations, mock_coordinator_connected
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Keeson Bed",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:95",
-                CONF_NAME: "Keeson Bed",
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-            },
-            unique_id="AA:BB:CC:DD:EE:95",
-        )
-        entry.add_to_hass(hass)
-        await async_setup_component(hass, DOMAIN, {})
-        await hass.async_block_till_done()
-
-        initial = await _open_options_form(hass, entry.entry_id)
-        refused = await hass.config_entries.options.async_configure(
-            initial["flow_id"],
-            user_input={
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: KEESON_VARIANT_ERGOMOTION,
-            },
-        )
-
-        assert refused["errors"] == {"base": "migration_reconfigure_required"}
-        assert entry.data[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
-
-    @pytest.mark.parametrize(
-        ("bed_type", "initial_variant", "requested_variant", "initial_count", "expected_count"),
-        [
-            (BED_TYPE_KEESON, VARIANT_AUTO, KEESON_VARIANT_ERGOMOTION, 2, 2),
-            (BED_TYPE_OKIN_CST, VARIANT_AUTO, OKIN_CST_VARIANT_CAREFREE, 3, 2),
-            (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_CAREFREE, OKIN_CST_VARIANT_MF900, 2, 3),
-        ],
-    )
-    async def test_paired_options_preserve_variant_change_across_rebuild(
-        self,
-        hass: HomeAssistant,
-        bed_type: str,
-        initial_variant: str,
-        requested_variant: str,
-        initial_count: int,
-        expected_count: int,
-    ) -> None:
-        """A rebuild must not lose a variant edit before paired children are saved."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Paired Keeson Bed",
-            data={
-                CONF_NAME: "Paired Keeson Bed",
-                CONF_BED_TYPE: bed_type,
-                CONF_MOTOR_COUNT: initial_count,
-                CONF_PROTOCOL_VARIANT: initial_variant,
-                CONF_PAIR_ID: "pair_keeson_variant",
-                CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-                CONF_PAIR_MEMBER_ADDRESSES: [
-                    "AA:BB:CC:DD:EE:95",
-                    "AA:BB:CC:DD:EE:96",
-                ],
-                CONF_PAIR_CHILDREN: [
-                    {
-                        CONF_SIDE: SIDE_LEFT,
-                        CONF_ADDRESS: "AA:BB:CC:DD:EE:95",
-                        CONF_NAME: "Left Keeson",
-                        CONF_BED_TYPE: bed_type,
-                        CONF_MOTOR_COUNT: initial_count,
-                        CONF_PROTOCOL_VARIANT: initial_variant,
-                    },
-                    {
-                        CONF_SIDE: SIDE_RIGHT,
-                        CONF_ADDRESS: "AA:BB:CC:DD:EE:96",
-                        CONF_NAME: "Right Keeson",
-                        CONF_BED_TYPE: bed_type,
-                        CONF_MOTOR_COUNT: initial_count,
-                        CONF_PROTOCOL_VARIANT: initial_variant,
-                    },
-                ],
-            },
-            unique_id="pair_keeson_variant",
-            entry_id="pair_keeson_variant",
-        )
-        entry.add_to_hass(hass)
-        flow = AdjustableBedOptionsFlow(entry)
-        flow.hass = hass
-        flow.handler = entry.entry_id
-
-        initial = await flow._async_options_form(None, step_id="settings")
-        rebuilt = await flow._async_options_form(
-            {
-                CONF_BED_TYPE: bed_type,
-                CONF_MOTOR_COUNT: initial_count,
-                CONF_PROTOCOL_VARIANT: requested_variant,
-            },
-            step_id="settings",
-        )
-        markers = {marker.schema: marker for marker in rebuilt["data_schema"].schema}
-        assert markers[CONF_MOTOR_COUNT].default() == expected_count
-        saved = await flow._async_options_form(
-            {
-                CONF_BED_TYPE: bed_type,
-                CONF_MOTOR_COUNT: expected_count,
-                CONF_PROTOCOL_VARIANT: requested_variant,
-            },
-            step_id="settings",
-        )
-
-        assert initial["type"] == FlowResultType.FORM
-        assert rebuilt["type"] == FlowResultType.FORM
-        assert saved["type"] == FlowResultType.CREATE_ENTRY
-        for child in entry.data[CONF_PAIR_CHILDREN]:
-            assert child[CONF_PROTOCOL_VARIANT] == requested_variant
-            assert child[CONF_MOTOR_COUNT] == expected_count
-            if bed_type == BED_TYPE_KEESON:
-                assert child[CONF_DISABLE_ANGLE_SENSING] is False
-
-    async def test_mixed_nectar_move_pair_refuses_shared_variant_change(
-        self,
-        hass: HomeAssistant,
-    ) -> None:
-        """A shared options form cannot overwrite either side's app variant."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Mixed OKIN CST Bed",
-            data={
-                CONF_NAME: "Mixed OKIN CST Bed",
-                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
-                CONF_PAIR_ID: "pair_mixed_nectar_move",
-                CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-                CONF_PAIR_MEMBER_ADDRESSES: [
-                    "AA:BB:CC:DD:EE:91",
-                    "AA:BB:CC:DD:EE:92",
-                ],
-                CONF_PAIR_CHILDREN: [
-                    {
-                        CONF_SIDE: SIDE_LEFT,
-                        CONF_ADDRESS: "AA:BB:CC:DD:EE:91",
-                        CONF_NAME: "Nectar Move",
-                        CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                        CONF_MOTOR_COUNT: 2,
-                        CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_NECTAR_MOVE,
-                    },
-                    {
-                        CONF_SIDE: SIDE_RIGHT,
-                        CONF_ADDRESS: "AA:BB:CC:DD:EE:92",
-                        CONF_NAME: "MF900",
-                        CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                        CONF_MOTOR_COUNT: 3,
-                        CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
-                    },
-                ],
-            },
-            unique_id="pair_mixed_nectar_move",
-            entry_id="pair_mixed_nectar_move",
-        )
-        entry.add_to_hass(hass)
-        flow = AdjustableBedOptionsFlow(entry)
-        flow.hass = hass
-        flow.handler = entry.entry_id
-
-        form = await flow._async_options_form(None, step_id="settings")
-        refused = await flow._async_options_form(
-            {
-                CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-                CONF_PROTOCOL_VARIANT: OKIN_CST_VARIANT_MF900,
-            },
-            step_id="settings",
-        )
-
-        assert form["type"] == FlowResultType.FORM
-        assert refused["type"] == FlowResultType.FORM
-        assert refused["errors"][CONF_PROTOCOL_VARIANT] == "app_profile_unpair_first"
-        assert refused["description_placeholders"]["profile"] == "Nectar Move"
-        assert [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]] == [
-            OKIN_CST_VARIANT_NECTAR_MOVE,
-            OKIN_CST_VARIANT_MF900,
-        ]
-
-    async def test_paired_bed_type_change_uses_new_protocol_defaults(
-        self,
-        hass: HomeAssistant,
-    ) -> None:
-        """Derived timing and motor defaults survive the paired form rebuild."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Paired Keeson Bed",
-            data={
-                CONF_NAME: "Paired Keeson Bed",
-                CONF_BED_TYPE: BED_TYPE_KEESON,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-                CONF_MOTOR_PULSE_COUNT: 10,
-                CONF_MOTOR_PULSE_DELAY_MS: 100,
-                CONF_PAIR_ID: "pair_keeson_to_octo",
-                CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-                CONF_PAIR_MEMBER_ADDRESSES: [
-                    "AA:BB:CC:DD:EE:97",
-                    "AA:BB:CC:DD:EE:98",
-                ],
-                CONF_PAIR_CHILDREN: [
-                    {
-                        CONF_SIDE: side,
-                        CONF_ADDRESS: address,
-                        CONF_NAME: f"{side.title()} Keeson",
-                        CONF_BED_TYPE: BED_TYPE_KEESON,
-                        CONF_MOTOR_COUNT: 2,
-                        CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-                        CONF_MOTOR_PULSE_COUNT: 10,
-                        CONF_MOTOR_PULSE_DELAY_MS: 100,
-                    }
-                    for side, address in (
-                        (SIDE_LEFT, "AA:BB:CC:DD:EE:97"),
-                        (SIDE_RIGHT, "AA:BB:CC:DD:EE:98"),
-                    )
-                ],
-            },
-            unique_id="pair_keeson_to_octo",
-            entry_id="pair_keeson_to_octo",
-        )
-        entry.add_to_hass(hass)
-        flow = AdjustableBedOptionsFlow(entry)
-        flow.hass = hass
-        flow.handler = entry.entry_id
-
-        rebuilt = await flow._async_options_form(
-            {
-                CONF_BED_TYPE: BED_TYPE_OCTO,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-                CONF_MOTOR_PULSE_COUNT: "10",
-                CONF_MOTOR_PULSE_DELAY_MS: "100",
-            },
-            step_id="settings",
-        )
-        defaults = get_motor_pulse_defaults(BED_TYPE_OCTO, VARIANT_AUTO)
-        saved = await flow._async_options_form(
-            {
-                CONF_BED_TYPE: BED_TYPE_OCTO,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-            },
-            step_id="settings",
-        )
-
-        assert rebuilt["type"] == FlowResultType.FORM
-        assert saved["type"] == FlowResultType.CREATE_ENTRY
-        for child in entry.data[CONF_PAIR_CHILDREN]:
-            assert child[CONF_BED_TYPE] == BED_TYPE_OCTO
-            assert child[CONF_MOTOR_COUNT] == 2
-            assert (
-                child[CONF_MOTOR_PULSE_COUNT],
-                child[CONF_MOTOR_PULSE_DELAY_MS],
-            ) == defaults
 
     @pytest.mark.parametrize(
         ("bed_type", "variant"),
@@ -4144,60 +3523,16 @@ class TestOptionsFlow:
 
         initial = await _open_options_form(hass, entry.entry_id)
         markers = {marker.schema: marker for marker in initial["data_schema"].schema}
-        assert markers[CONF_PROTOCOL_VARIANT].default() == variant
+        # The side is a route, changed in Reconfigure.
+        assert CONF_PROTOCOL_VARIANT not in markers
 
         saved = await hass.config_entries.options.async_configure(
-            initial["flow_id"],
-            user_input={
-                CONF_BED_TYPE: bed_type,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: variant,
-                CONF_HAS_MASSAGE: True,
-            },
+            initial["flow_id"], user_input={CONF_MOTOR_COUNT: 2}
         )
 
         assert saved["type"] == FlowResultType.CREATE_ENTRY
         assert entry.data[CONF_PROTOCOL_VARIANT] == variant
 
-    async def test_octo_options_can_switch_variant_and_one_motor_together(
-        self,
-        hass: HomeAssistant,
-        enable_custom_integrations,
-    ):
-        """A Star2 entry can switch to Standard and one motor in one save."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="OCTO Star2",
-            data={
-                CONF_ADDRESS: "AA:BB:CC:DD:EE:97",
-                CONF_NAME: "OCTO Star2",
-                CONF_BED_TYPE: BED_TYPE_OCTO,
-                CONF_MOTOR_COUNT: 2,
-                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STAR2,
-            },
-            unique_id="AA:BB:CC:DD:EE:97",
-        )
-        entry.add_to_hass(hass)
-        await async_setup_component(hass, DOMAIN, {})
-        await hass.async_block_till_done()
-
-        result = await _open_options_form(hass, entry.entry_id)
-        assert result["type"] == FlowResultType.FORM
-        markers = {marker.schema: marker for marker in result["data_schema"].schema}
-        assert markers[CONF_OCTO_MOTOR_COUNT_OVERRIDE].default() == "auto"
-
-        result = await hass.config_entries.options.async_configure(
-            result["flow_id"],
-            user_input={
-                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "1",
-                CONF_PROTOCOL_VARIANT: OCTO_VARIANT_STANDARD,
-            },
-        )
-
-        assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data[CONF_MOTOR_COUNT] == 2
-        assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == "1"
-        assert entry.data[CONF_PROTOCOL_VARIANT] == OCTO_VARIANT_STANDARD
 
     async def test_options_flow(
         self,
@@ -4225,7 +3560,7 @@ class TestOptionsFlow:
             user_input={
                 CONF_MOTOR_COUNT: 4,
                 CONF_HAS_MASSAGE: True,
-                CONF_DISABLE_ANGLE_SENSING: False,
+                CONF_READ_POSITIONS: True,
                 CONF_PASSIVE_POSITION_RECONCILIATION: False,
                 CONF_PREFERRED_ADAPTER: "auto",
             },
@@ -4236,51 +3571,10 @@ class TestOptionsFlow:
         # Verify the config entry was updated
         assert mock_config_entry.data[CONF_MOTOR_COUNT] == 4
         assert mock_config_entry.data[CONF_HAS_MASSAGE] is True
-        assert mock_config_entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        # Reading the position is a Linak's default, so nothing is stored.
+        assert CONF_DISABLE_ANGLE_SENSING not in mock_config_entry.data
         assert mock_config_entry.data[CONF_PASSIVE_POSITION_RECONCILIATION] is False
 
-    async def test_options_flow_toggles_discovery(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry,
-        mock_coordinator_connected,
-        enable_custom_integrations,
-    ):
-        """The discovery toggle persists globally and never lands in entry data."""
-        # Legacy releases could leave this global preference in entry data. It
-        # must neither override the global value nor survive the next save.
-        hass.config_entries.async_update_entry(
-            mock_config_entry,
-            data={**mock_config_entry.data, CONF_DISABLE_DISCOVERY: True},
-        )
-        await async_setup_component(hass, DOMAIN, {})
-        await hass.async_block_till_done()
-
-        assert await async_is_discovery_disabled(hass) is False
-
-        with patch(
-            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
-            return_value=[],
-        ):
-            result = await _open_options_form(hass, mock_config_entry.entry_id)
-            discovery_marker = next(
-                marker
-                for marker in result["data_schema"].schema
-                if marker.schema == CONF_DISABLE_DISCOVERY
-            )
-            assert discovery_marker.default() is False
-            result = await hass.config_entries.options.async_configure(
-                result["flow_id"],
-                user_input={
-                    CONF_MOTOR_COUNT: 2,
-                    CONF_DISABLE_DISCOVERY: True,
-                },
-            )
-
-        assert result["type"] == FlowResultType.CREATE_ENTRY
-        # Stored globally, not as per-entry data.
-        assert await async_is_discovery_disabled(hass) is True
-        assert CONF_DISABLE_DISCOVERY not in mock_config_entry.data
 
     async def test_malouf_options_keep_layout_separate_from_protocol(
         self,
@@ -4320,39 +3614,6 @@ class TestOptionsFlow:
         assert entry.data[CONF_BED_TYPE] == BED_TYPE_MALOUF_LEGACY_OKIN
         assert entry.data[CONF_MALOUF_LAYOUT] == MALOUF_LAYOUT_HILO
         assert entry.data[CONF_MALOUF_MEMORY_SLOTS] == 2
-
-    async def test_options_flow_toggle_not_applied_on_validation_error(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry,
-        mock_coordinator_connected,
-        enable_custom_integrations,
-    ):
-        """A rejected form must not partially apply the global discovery toggle."""
-        await async_setup_component(hass, DOMAIN, {})
-        await hass.async_block_till_done()
-
-        assert await async_is_discovery_disabled(hass) is False
-
-        with patch(
-            "custom_components.adjustable_bed.config_flow.get_discovered_service_info",
-            return_value=[],
-        ):
-            result = await _open_options_form(hass, mock_config_entry.entry_id)
-            result = await hass.config_entries.options.async_configure(
-                result["flow_id"],
-                user_input={
-                    CONF_MOTOR_COUNT: 2,
-                    CONF_DISABLE_DISCOVERY: True,
-                    CONF_MOTOR_PULSE_COUNT: "not-a-number",
-                },
-            )
-
-        # Form is rejected for the invalid number...
-        assert result["type"] == FlowResultType.FORM
-        assert result["errors"]
-        # ...and the discovery toggle was NOT persisted.
-        assert await async_is_discovery_disabled(hass) is False
 
 
 # ---------------------------------------------------------------------------

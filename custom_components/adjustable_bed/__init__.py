@@ -611,12 +611,20 @@ def _v5_6_settings(
         notes.append(f"{CONF_CONNECTION_MODE}={mode}")
     elif after is not None:
         notes.append(_LEGACY_DISCONNECT_AFTER_COMMAND)
+    view = {**route, **_route_of(new)}
+    feedback = bed_type_has_position_feedback(
+        view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
+    )
+    if CONF_DISABLE_ANGLE_SENSING not in new and feedback and not location.endswith(
+        ("options", KEY_ORIGIN_OPTIONS)
+    ):
+        # Before 5.6 an entry without the key did not read positions; the route
+        # decides only for entries created since.
+        new[CONF_DISABLE_ANGLE_SENSING] = True
+        notes.append(f"{CONF_DISABLE_ANGLE_SENSING}=True (kept off)")
     disabled = new.get(CONF_DISABLE_ANGLE_SENSING)
     if isinstance(disabled, bool):
-        view = {**route, **_route_of(new)}
-        if disabled is not bed_type_has_position_feedback(
-            view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
-        ):
+        if disabled is not feedback:
             # Equal to the route's own default: the route decides it now.
             del new[CONF_DISABLE_ANGLE_SENSING]
             notes.append(CONF_DISABLE_ANGLE_SENSING)

@@ -8012,14 +8012,16 @@ class AdjustableBedOptionsFlow(
                         )
                 return None
 
-            # Update the config entry with new options
             # Record that the stored cadence is the user's choice rather than a
             # value the flow generated, so protocol migrations leave it alone.
-            # Only displayed pulse fields count; app profiles can inject their
-            # fixed cadence into user_input without offering a user override.
-            pulse_user_set = any(
-                field in user_input and vol.Optional(field) in schema_dict
-                for field in (CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS)
+            # Only a changed Movement per tap counts: app profiles can inject
+            # their fixed cadence into user_input, and the repeat delay is not
+            # shown, so an unrelated save must not freeze it.
+            shown_pulse = _shown_option_values(schema_dict).get(CONF_MOTOR_PULSE_COUNT)
+            pulse_user_set = (
+                shown_pulse is not None
+                and CONF_MOTOR_PULSE_COUNT in user_input
+                and user_input[CONF_MOTOR_PULSE_COUNT] != shown_pulse
             )
             from .profile_recommendations import (
                 async_complete_profile_review,

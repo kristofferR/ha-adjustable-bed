@@ -1988,14 +1988,14 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_CST
         assert coordinator.disable_angle_sensing is True
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_cst_keeps_defaulted_angle_sensing_disabled(
         self,
         hass: HomeAssistant,
         mock_config_entry_data: dict,
     ):
-        """Legacy entries missing the angle key should retain the disabled default."""
+        """An entry without the key reads as its route does (schema 5.6 keeps older ones off)."""
         legacy_data = dict(mock_config_entry_data)
         legacy_data.pop(CONF_DISABLE_ANGLE_SENSING, None)
         coordinator = self._make_coordinator(
@@ -2005,7 +2005,7 @@ class TestRuntimeBedTypeCorrection:
             bed_type=BED_TYPE_OKIMAT,
         )
 
-        assert coordinator.disable_angle_sensing is True
+        assert coordinator.disable_angle_sensing is False
 
         coordinator._apply_runtime_bed_type_correction(BED_TYPE_OKIN_CST)
 
@@ -2032,7 +2032,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_CST
         assert coordinator.disable_angle_sensing is True
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_cst_same_type_keeps_angle_sensing_disabled(
         self,
@@ -2073,7 +2073,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_CST
         assert coordinator.disable_angle_sensing is True
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_rf_eco_bt_disables_angle_sensing(
         self,
@@ -2092,7 +2092,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_OKIN_RF_ECO_BT
         assert coordinator.disable_angle_sensing is True
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_box25_repairs_stored_default_angle_sensing(
         self,
@@ -2118,7 +2118,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_SLEEPYS_BOX25
         assert coordinator.disable_angle_sensing is False
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_to_box25_preserves_enabled_position_feedback(
         self,
@@ -2137,7 +2137,7 @@ class TestRuntimeBedTypeCorrection:
 
         assert coordinator.bed_type == BED_TYPE_SLEEPYS_BOX25
         assert coordinator.disable_angle_sensing is False
-        assert coordinator.entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert CONF_DISABLE_ANGLE_SENSING not in coordinator.entry.data
 
     async def test_correction_updates_richmat_to_okin_64bit(
         self,
@@ -2459,7 +2459,7 @@ class TestRuntimeBedTypeCorrection:
         assert coordinator.controller.__class__.__name__ == "LeggettOkinController"
         assert coordinator.disable_angle_sensing is True
         assert entry.data[CONF_BED_TYPE] == BED_TYPE_LEGGETT_OKIN
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+        assert CONF_DISABLE_ANGLE_SENSING not in entry.data
         assert coordinator.motor_pulse_count == LEGGETT_OKIN_PULSE_DEFAULTS[0]
         assert coordinator.motor_pulse_delay_ms == LEGGETT_OKIN_PULSE_DEFAULTS[1]
         assert entry.data[CONF_MOTOR_PULSE_COUNT] == LEGGETT_OKIN_PULSE_DEFAULTS[0]
