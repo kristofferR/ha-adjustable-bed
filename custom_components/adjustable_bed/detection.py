@@ -316,6 +316,7 @@ from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.okimiki import scan_matches as okimiki_scan_matches
+from .profiles.onlysnore import advertisement as onlysnore_advertisement
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.sophie import accepts_name as accepts_sophie_name
 from .profiles.vmatbasic import manufacturer_payload_matches
@@ -557,6 +558,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "cheerssleep": "CheersSleep app",
     "agingplace": "Aging in Place / Dawn House app",
     "smart_sleep": "OKIN Smart Sleep app",
+    "onlysnore": "Snore Monitor app",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY app",
     "smart_comfort_synergy": "Smart Comfort app (SYNERGY)",
     # v5 names the RUF and Richmat apps like the other Richmat MH apps.
@@ -3072,6 +3074,12 @@ def _detect_bed_type_detailed(
         )
         return DetectionResult(bed_type=BED_TYPE_KEESON, confidence=0.8, signals=signals)
 
+    if onlysnore_advertisement(
+        service_info.name or "", service_info.manufacturer_data or {}, service_info.address
+    ):
+        return DetectionResult(
+            "onlysnore", 0.9, ["name:SLEEP_V", "manufacturer_id:89", "manufacturer_identity"]
+        )
     if smart_sleep_advertisement(service_info.name or "", service_info.manufacturer_data or {}, service_info.address):
         return DetectionResult("smart_sleep", 0.9, ["name:smart_sleep", "manufacturer_id:89"])
 

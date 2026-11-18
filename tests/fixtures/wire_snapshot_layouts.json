@@ -7,8 +7,12 @@
       ]
     },
     "properties": {
-      "0000b002-0000-1000-8000-00805f9b34fb": ["write"],
-      "0000b004-0000-1000-8000-00805f9b34fb": ["indicate"]
+      "0000b002-0000-1000-8000-00805f9b34fb": [
+        "write"
+      ],
+      "0000b004-0000-1000-8000-00805f9b34fb": [
+        "indicate"
+      ]
     }
   },
   "adjustable_lumbar": {
@@ -6041,6 +6045,22 @@
       "0000e0ff-3c17-d293-8e48-14fe2e4da212": [
         "00000002-3c17-d293-8e48-14fe2e4da212",
         "00000003-3c17-d293-8e48-14fe2e4da212"
+      ]
+    }
+  },
+  "onlysnore": {
+    "services": {
+      "6e400001-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+        "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    },
+    "properties": {
+      "6e400002-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write-without-response"
+      ],
+      "6e400003-b5a3-f393-e0a9-e50e24dcca9e": [
+        "notify"
       ]
     }
   },

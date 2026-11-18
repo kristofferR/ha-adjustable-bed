@@ -99,6 +99,7 @@ if TYPE_CHECKING:
     from .okin_rf_eco_bt import OkinRfEcoBtController as OkinRfEcoBtController
     from .okin_uuid.controller import OkinUuidController as OkinUuidController
     from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
+    from .onlysnore.controller import OnlySnoreController as OnlySnoreController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
     from .paramount.controller import ParamountController as ParamountController
     from .personal_comfort.air import PersonalComfortAir as PersonalComfortAir

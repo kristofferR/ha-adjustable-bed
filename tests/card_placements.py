@@ -154,6 +154,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
         OreUltramaticController,
     )
+    from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
     from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
@@ -197,6 +198,8 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         elif isinstance(controller, OreUltramaticController):
             for route in ("P1", "P2"):
                 yield variant(controller, _route=route, profile=ultramatic.profile(route))
+        elif isinstance(controller, OnlySnoreController):
+            yield variant(controller, _alarm_count=3)
         elif isinstance(controller, ParamountController):
             yield variant(controller, _mask=31, _height_bounds=(20, 70))
         elif isinstance(controller, OkimikiController):

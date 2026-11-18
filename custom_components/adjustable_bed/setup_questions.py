@@ -2008,6 +2008,28 @@ def _smart_sleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
             if data.get(CONF_PROTOCOL_VARIANT) != "p2" or model == 80}
 
 
+def _onlysnore_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.onlysnore import MODELS
+
+    return {model: model for model in MODELS}
+
+
+def _onlysnore_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from .profiles.onlysnore import advertisement
+
+    result = dict(data)
+    if discovered and result.get(CONF_PRODUCT_TYPE) not in _onlysnore_models(result):
+        result[CONF_PRODUCT_TYPE] = (
+            advertisement(
+                discovered.name or "", discovered.manufacturer_data or {}, discovered.address
+            )
+            or "unKnow"
+        )
+    return result
+
+
 def _smart_sleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
     from .profiles.smart_sleep import advertisement
     result = dict(data)
@@ -2205,6 +2227,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},
         questions=(Question(CONF_PRODUCT_TYPE, _cheerssleep_models, "45", searchable=True),),
         seed=_cheerssleep_seed, validate=_cheerssleep_errors, derive=_cheerssleep_settings, imports=("beds.cheerssleep.catalog",),
+    ),
+    "onlysnore": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: SET_BY_PROFILE,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 150,
+        },
+        questions=(Question(CONF_PRODUCT_TYPE, _onlysnore_models, "unKnow", searchable=True),),
+        seed=_onlysnore_seed,
     ),
     "smart_sleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,

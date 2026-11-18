@@ -125,6 +125,15 @@
   "binary_sensor:motion_bed_thermal_timer_enabled": {
     "card_section": "hidden"
   },
+  "binary_sensor:onlysnore_alarm_1_enabled": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:onlysnore_alarm_2_enabled": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:onlysnore_alarm_3_enabled": {
+    "card_section": "hidden"
+  },
   "binary_sensor:nerum_light": {
     "card_section": "hidden"
   },
@@ -1374,6 +1383,47 @@
   "button:okin_bedding_app_save": {
     "card_section": "presets",
     "card_role": "save"
+  },
+  "button:onlysnore_demo_1": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_demo_3": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_demo_6": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_massage_foot_strength_next": {
+    "card_section": "massage"
+  },
+  "button:onlysnore_massage_head_strength_next": {
+    "card_section": "massage"
+  },
+  "button:onlysnore_massage_timer_next": {
+    "card_section": "massage",
+    "card_role": "timer"
+  },
+  "button:onlysnore_refresh": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_save_anti_snore_preset": {
+    "card_section": "presets",
+    "card_role": "save"
+  },
+  "button:onlysnore_save_reading": {
+    "card_section": "presets",
+    "card_role": "save"
+  },
+  "button:onlysnore_save_tv": {
+    "card_section": "presets",
+    "card_role": "save"
+  },
+  "button:onlysnore_save_zero_gravity": {
+    "card_section": "presets",
+    "card_role": "save"
+  },
+  "button:onlysnore_stop_intervention": {
+    "card_section": "utility"
   },
   "button:ore_comfort_massage_start": {
     "card_section": "massage"
@@ -3542,6 +3592,9 @@
   "select:okin_app_installation": {
     "card_section": "utility"
   },
+  "select:onlysnore_intervention": {
+    "card_section": "utility"
+  },
   "select:ore_comfort_massage_timer": {
     "card_section": "massage",
     "card_role": "timer"
@@ -4327,6 +4380,21 @@
   "sensor:okin_bedding_app_massage_timer_minutes": {
     "card_section": "hidden"
   },
+  "sensor:onlysnore_alarm_1_time": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_2_time": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_3_time": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_firmware": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_hardware": {
+    "card_section": "hidden"
+  },
   "sensor:ore_ultramatic_alarm_time": {
     "card_section": "hidden"
   },
@@ -4758,6 +4826,15 @@
   },
   "switch:motionbed_light": {
     "card_section": "lighting"
+  },
+  "switch:onlysnore_detection": {
+    "card_section": "utility"
+  },
+  "switch:onlysnore_massage": {
+    "card_section": "massage"
+  },
+  "switch:onlysnore_privacy": {
+    "card_section": "utility"
   },
   "switch:paramount_call_prohibition": {
     "card_section": "utility"

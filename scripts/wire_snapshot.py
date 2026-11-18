@@ -1275,6 +1275,8 @@ def default_scenario(bed_type: str) -> Scenario:
         data.update({const.CONF_BLE_DEVICE_NAME: "KSWF07S123456789", "agingplace_bed_mode": "auto", "agingplace_bed_side": 0})
     if bed_type == const.BED_TYPE_SONICSLEEP:
         data[const.CONF_PRODUCT_TYPE] = "one"
+    if bed_type == const.BED_TYPE_ONLYSNORE:
+        data[const.CONF_PRODUCT_TYPE] = "single"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
         from custom_components.adjustable_bed.profiles.keeson import DEFAULT_LAYOUTS
 
