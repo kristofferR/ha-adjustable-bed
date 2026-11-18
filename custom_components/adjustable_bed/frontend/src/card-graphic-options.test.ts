@@ -186,19 +186,19 @@ test("a bed-specific motor is headed by its cover's name, not its key", () => {
   const hass: HomeAssistant = placed({
     states: {}, devices: { bed: { id: "bed", name: "Bed" } },
     entities: {
-      "cover.bed_posture": {
-        entity_id: "cover.bed_posture", device_id: "bed", platform: "adjustable_bed",
-        translation_key: "ultramatic_lumbar", name: "Posture",
+      "cover.bed_lift": {
+        entity_id: "cover.bed_lift", device_id: "bed", platform: "adjustable_bed",
+        translation_key: "adjustamattress_lift", name: "Lift",
       },
     },
     locale: { language: "en" }, language: "en", themes: {},
     formatEntityName: (stateObj) => hass.entities[stateObj.entity_id]?.name ?? "",
     callService: async () => undefined,
   });
-  hass.states["cover.bed_posture"] = {
-    entity_id: "cover.bed_posture", state: "open", last_changed: "", last_updated: "", attributes: {},
+  hass.states["cover.bed_lift"] = {
+    entity_id: "cover.bed_lift", state: "open", last_changed: "", last_updated: "", attributes: {},
   };
   const markup = render(hass, {});
-  expect(markup).toContain("Posture");
-  expect(markup).not.toContain("Ultramatic Lumbar");
+  expect(markup).toContain("<span>Lift</span>");
+  expect(markup).not.toContain("Adjustamattress Lift");
 });
