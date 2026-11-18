@@ -35,6 +35,18 @@
  "binary_sensor:ble_connection": {
   "card_section": "connection"
  },
+ "binary_sensor:cheerssleep_left_asleep": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:cheerssleep_left_on_bed": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:cheerssleep_right_asleep": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:cheerssleep_right_on_bed": {
+  "card_section": "hidden"
+ },
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
@@ -484,6 +496,88 @@
  },
  "button:casper_base_action": {
   "card_section": "utility"
+ },
+ "button:cheerssleep_all_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "cheerssleep_all"
+ },
+ "button:cheerssleep_all_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "cheerssleep_all"
+ },
+ "button:cheerssleep_combined_down": {
+  "card_section": "utility"
+ },
+ "button:cheerssleep_combined_up": {
+  "card_section": "utility"
+ },
+ "button:cheerssleep_lift_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "cheerssleep_lift"
+ },
+ "button:cheerssleep_lift_foot_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "cheerssleep_lift_foot"
+ },
+ "button:cheerssleep_lift_foot_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "cheerssleep_lift_foot"
+ },
+ "button:cheerssleep_lift_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "cheerssleep_lift_head"
+ },
+ "button:cheerssleep_lift_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "cheerssleep_lift_head"
+ },
+ "button:cheerssleep_lift_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "cheerssleep_lift"
+ },
+ "button:cheerssleep_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_massage_head": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_massage_mode": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_refresh": {
+  "card_section": "utility"
+ },
+ "button:cheerssleep_sonic_back": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_decrease": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_foot": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_increase": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_mode_1": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_mode_2": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_switch": {
+  "card_section": "massage"
+ },
+ "button:cheerssleep_sonic_toggle": {
+  "card_section": "massage"
  },
  "button:child_lock_toggle": {
   "card_section": "utility"
@@ -2330,6 +2424,22 @@
   "card_section": "motors",
   "card_motor": "both"
  },
+ "cover:cheerssleep_all": {
+  "card_section": "motors",
+  "card_motor": "cheerssleep_all"
+ },
+ "cover:cheerssleep_lift": {
+  "card_section": "motors",
+  "card_motor": "cheerssleep_lift"
+ },
+ "cover:cheerssleep_lift_foot": {
+  "card_section": "motors",
+  "card_motor": "cheerssleep_lift_foot"
+ },
+ "cover:cheerssleep_lift_head": {
+  "card_section": "motors",
+  "card_motor": "cheerssleep_lift_head"
+ },
  "cover:comfy_foot": {
   "card_section": "motors",
   "card_motor": "comfy_foot"
@@ -2668,6 +2778,9 @@
   "card_section": "massage"
  },
  "number:bf_cherish_wave": {
+  "card_section": "massage"
+ },
+ "number:cheerssleep_sonic_level": {
   "card_section": "massage"
  },
  "number:fan_level": {
@@ -3279,6 +3392,39 @@
   "card_section": "hidden"
  },
  "sensor:casper_sleep_r_snoring": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_foot_massage": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_head_massage": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_left_breath": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_left_heart": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_left_snore_count": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_left_snore_power": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_massage_mode": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_right_breath": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_right_heart": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_right_snore_count": {
+  "card_section": "hidden"
+ },
+ "sensor:cheerssleep_right_snore_power": {
   "card_section": "hidden"
  },
  "sensor:comfy_lock_status": {

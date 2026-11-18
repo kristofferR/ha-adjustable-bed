@@ -341,7 +341,7 @@ the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
 name gates, timing and control release policies. No sibling app's parameters
 select its capabilities.
 
-CheersSleep's accepted row098 adds `codec/cheerssleep.py`: the serial/PID P1
+CheersSleep 2.7.0 adds `codec/cheerssleep.py`: the serial/PID P1
 encoder is extracted from Remacro's existing `build_frame`, retaining that import
 API and all app-specific counters. The accepted P1 literals prove identical
 framing; CheersSleep's distinct counters and timing remain in its own profile.

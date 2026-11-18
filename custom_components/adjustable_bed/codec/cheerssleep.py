@@ -1,4 +1,4 @@
-"""CheersSleep's serial/PID and EE key/setting formats, accepted row098.
+"""CheersSleep 2.7.0 serial/PID and EE key/setting formats.
 
 P1 is extracted from Remacro's proven serial/PID encoder; P2 adds EE
 key/settings/query frames. Values truncate like Java byte/short/int stores.

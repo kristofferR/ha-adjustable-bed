@@ -8,8 +8,7 @@
       "command": 513,
       "parameter": 300
     },
-    "expected_bytes": "020101022c010000",
-    "evidence": "Accepted COMMANDS C0011/C0012/C0014-C0016, finite speed and timer parameters"
+    "expected_bytes": "020101022c010000"
   },
   {
     "id": "Yb-1-900",
@@ -20,8 +19,7 @@
       "command": 513,
       "parameter": 900
     },
-    "expected_bytes": "0201010284030000",
-    "evidence": "Accepted COMMANDS C0011/C0012/C0014-C0016, finite speed and timer parameters"
+    "expected_bytes": "0201010284030000"
   },
   {
     "id": "Yb-2-300",
@@ -32,8 +30,7 @@
       "command": 514,
       "parameter": 300
     },
-    "expected_bytes": "020102022c010000",
-    "evidence": "Accepted COMMANDS C0011/C0012/C0014-C0016, finite speed and timer parameters"
+    "expected_bytes": "020102022c010000"
   },
   {
     "id": "Yb-2-900",
@@ -44,8 +41,7 @@
       "command": 514,
       "parameter": 900
     },
-    "expected_bytes": "0201020284030000",
-    "evidence": "Accepted COMMANDS C0011/C0012/C0014-C0016, finite speed and timer parameters"
+    "expected_bytes": "0201020284030000"
   },
   {
     "id": "Yb-3-300",
@@ -56,8 +52,7 @@
       "command": 515,
       "parameter": 300
     },
-    "expected_bytes": "020103022c010000",
-    "evidence": "Accepted COMMANDS C0011/C0012/C0014-C0016, finite speed and timer parameters"
+    "expected_bytes": "020103022c010000"
   },
   {
     "id": "Yb-3-900",
@@ -68,8 +63,7 @@
       "command": 515,
       "parameter": 900
     },
-    "expected_bytes": "0201030284030000",
-    "evidence": "Accepted COMMANDS C0011/C0012/C0014-C0016, finite speed and timer parameters"
+    "expected_bytes": "0201030284030000"
   },
   {
     "id": "RGB-save-packed",
@@ -80,7 +74,6 @@
       "command": 1295,
       "parameter": 287454020
     },
-    "expected_bytes": "02010f0544332211",
-    "evidence": "Accepted C0003/C0006 RGB-save command and packed parameter formula"
+    "expected_bytes": "02010f0544332211"
   }
 ]

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
@@ -49,6 +48,7 @@ async def handle_request(call: ServiceCall) -> None:
         _call_targets,
         _capture_command_admission,
         _command_targets,
+        _invalid,
         _preflight_and_execute,
     )
 
@@ -84,8 +84,8 @@ async def handle_request(call: ServiceCall) -> None:
                 and previous._coordinator is controller._coordinator
             ):
                 if previous is not controller or controller._link is not link:
-                    raise ServiceValidationError(
-                        "CheersSleep physical link changed during admission"
+                    raise _invalid(
+                        "bed_changed", "CheersSleep physical link changed during admission"
                     )
         controller.validate_request(request)
 

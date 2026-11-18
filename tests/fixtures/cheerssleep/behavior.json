@@ -1,5 +1,4 @@
 {
-  "provenance": "Constructed decoder/counter fixtures preserved from accepted row098 report assertions; not peripheral captures",
   "b0": [
     {"frame": "eeb000aa000002030201", "selected": 1, "light": true, "mode": 1, "head": 3, "foot": 2},
     {"frame": "eeb000bb000002030201", "selected": 1, "light": true, "mode": null, "head": null, "foot": null},

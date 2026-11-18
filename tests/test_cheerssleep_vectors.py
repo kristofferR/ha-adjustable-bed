@@ -1,4 +1,4 @@
-"""Codec-first proof of the complete accepted row098 literals/catalog."""
+"""CheersSleep 2.7.0 literal frames and model catalog through the codec."""
 
 import pytest
 

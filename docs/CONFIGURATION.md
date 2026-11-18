@@ -1037,8 +1037,8 @@ SonicSleep selects its fixed one/IQRM product under Richmat. Setup owns the two-
 
 ### CheersSleep
 
-Choose **CheersSleep (com.cheers.sleep)** and the exact model key in the app
-profile step. All36 keys are selectable in new setup and Configure. The key
+Choose **CheersSleep app** and the exact model key in the app
+profile step. All 36 keys are selectable in new setup and Reconfigure. The key
 sets the wire format, actuators, presets and massage/lighting capabilities;
 shared UUIDs and device names do not establish an app identity. Imported entries
 retain their explicit `product_type`, and each paired physical side owns its

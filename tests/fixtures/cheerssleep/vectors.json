@@ -9,10 +9,7 @@
       "pid": 1,
       "command": 257
     },
-    "expected_bytes": "0201010100000000",
-    "evidence": [
-      "utils/SynToByte.java:10-19; utils/CommandUtils.java:280-298; controlActivity/TwoActivity.java:101-111"
-    ]
+    "expected_bytes": "0201010100000000"
   },
   {
     "id": "P1-head-stop",
@@ -24,10 +21,7 @@
       "pid": 1,
       "command": 256
     },
-    "expected_bytes": "0301000100000000",
-    "evidence": [
-      "controlActivity/TwoActivity.java:106-113; utils/SynToByte.java:10-19"
-    ]
+    "expected_bytes": "0301000100000000"
   },
   {
     "id": "P1-right-mode-anomaly",
@@ -39,10 +33,7 @@
       "pid": 1,
       "command": 9217
     },
-    "expected_bytes": "0401012400000000",
-    "evidence": [
-      "utils/CommandUtils.java:116; controlActivity/NineActivity.java:244"
-    ]
+    "expected_bytes": "0401012400000000"
   },
   {
     "id": "P1-rgb-packing",
@@ -55,10 +46,7 @@
       "command": 1281,
       "parameter": 287454020
     },
-    "expected_bytes": "0501010544332211",
-    "evidence": [
-      "activity/RGBActivity.java:44-45; utils/SynToByte.java:13-18"
-    ]
+    "expected_bytes": "0501010544332211"
   },
   {
     "id": "P1-delay",
@@ -71,10 +59,7 @@
       "command": 4353,
       "parameter": 10
     },
-    "expected_bytes": "010301110a000000",
-    "evidence": [
-      "activity/RGB2Activity.java:103; utils/SetUtils.java:20-25"
-    ]
+    "expected_bytes": "010301110a000000"
   },
   {
     "id": "P1-mac-query",
@@ -86,10 +71,7 @@
       "pid": 7,
       "command": 0
     },
-    "expected_bytes": "0107000000000000",
-    "evidence": [
-      "utils/CommandUtils.java:307-312; bean/SynData.java:27-37"
-    ]
+    "expected_bytes": "0107000000000000"
   },
   {
     "id": "P2-head-up",
@@ -99,10 +81,7 @@
     "inputs": {
       "key": 1
     },
-    "expected_bytes": "ee01050000000100c0",
-    "evidence": [
-      "newControlActivity/NewTwoActivity.java:84; utils/NewCommandUtils.java:140-148"
-    ]
+    "expected_bytes": "ee01050000000100c0"
   },
   {
     "id": "P2-all-three-left",
@@ -113,10 +92,7 @@
       "key": 21,
       "selected": 1
     },
-    "expected_bytes": "ee010500000015aac0",
-    "evidence": [
-      "newControlActivity/NewEightActivity.java:181; utils/NewCommandUtils.java:140-148"
-    ]
+    "expected_bytes": "ee010500000015aac0"
   },
   {
     "id": "P2-release-actual",
@@ -126,10 +102,7 @@
     "inputs": {
       "key": 0
     },
-    "expected_bytes": "ee01050000000000c0",
-    "evidence": [
-      "base/BaseActivity.java:235-239"
-    ]
+    "expected_bytes": "ee01050000000000c0"
   },
   {
     "id": "P2-flat-right",
@@ -140,10 +113,7 @@
       "key": 134217728,
       "selected": 2
     },
-    "expected_bytes": "ee010508000000bbc0",
-    "evidence": [
-      "newControlActivity/NewEightActivity.java:89"
-    ]
+    "expected_bytes": "ee010508000000bbc0"
   },
   {
     "id": "P2-memory2-recall",
@@ -153,10 +123,7 @@
     "inputs": {
       "key": 262144
     },
-    "expected_bytes": "ee01050004000000c0",
-    "evidence": [
-      "newControlActivity/NewThreeActivity.java:91"
-    ]
+    "expected_bytes": "ee01050004000000c0"
   },
   {
     "id": "P2-neck-sixth",
@@ -166,10 +133,7 @@
     "inputs": {
       "key": 1024
     },
-    "expected_bytes": "ee01050000040000c0",
-    "evidence": [
-      "fragment/Position600iFragment.java:138"
-    ]
+    "expected_bytes": "ee01050000040000c0"
   },
   {
     "id": "P2-lift-both",
@@ -179,10 +143,7 @@
     "inputs": {
       "key": 320
     },
-    "expected_bytes": "ee01050000014000c0",
-    "evidence": [
-      "fragment/Position500xlFragment.java:256"
-    ]
+    "expected_bytes": "ee01050000014000c0"
   },
   {
     "id": "P2-massage-mode-switch",
@@ -192,10 +153,7 @@
     "inputs": {
       "key": 3084
     },
-    "expected_bytes": "ee010500000c0c00c0",
-    "evidence": [
-      "fragment/Position200IFragment.java:207"
-    ]
+    "expected_bytes": "ee010500000c0c00c0"
   },
   {
     "id": "P2-save1-right",
@@ -207,10 +165,7 @@
       "a": 5,
       "selected": 2
     },
-    "expected_bytes": "ee020506050000bbc0",
-    "evidence": [
-      "newControlActivity/NewNineActivity.java:209; utils/NewCommandUtils.java:92-99"
-    ]
+    "expected_bytes": "ee020506050000bbc0"
   },
   {
     "id": "P2-save2",
@@ -221,10 +176,7 @@
       "opcode": 6,
       "a": 6
     },
-    "expected_bytes": "ee02050606000000c0",
-    "evidence": [
-      "fragment/Position200IFragment.java:258"
-    ]
+    "expected_bytes": "ee02050606000000c0"
   },
   {
     "id": "P2-setting-release",
@@ -234,10 +186,7 @@
     "inputs": {
       "opcode": 170
     },
-    "expected_bytes": "ee0205aa00000000c0",
-    "evidence": [
-      "utils/NewCommandUtils.java:101-108"
-    ]
+    "expected_bytes": "ee0205aa00000000c0"
   },
   {
     "id": "P2-color",
@@ -250,10 +199,7 @@
       "b": 34,
       "c": 51
     },
-    "expected_bytes": "ee02050511223300c0",
-    "evidence": [
-      "fragment/ColorLightFragment.java:51-58; utils/NewCommandUtils.java:65-72"
-    ]
+    "expected_bytes": "ee02050511223300c0"
   },
   {
     "id": "P2-brightness",
@@ -264,10 +210,7 @@
       "opcode": 10,
       "a": 100
     },
-    "expected_bytes": "ee02050a64000000c0",
-    "evidence": [
-      "fragment/ColorLightFragment.java:43-45; utils/NewCommandUtils.java:56-63"
-    ]
+    "expected_bytes": "ee02050a64000000c0"
   },
   {
     "id": "P2-sonic-level",
@@ -279,10 +222,7 @@
       "a": 3,
       "b": 60
     },
-    "expected_bytes": "ee02050b033c0000c0",
-    "evidence": [
-      "fragment/Music2Fragment.java:53-55"
-    ]
+    "expected_bytes": "ee02050b033c0000c0"
   },
   {
     "id": "P2-sonic-increase",
@@ -294,10 +234,7 @@
       "a": 2,
       "b": 1
     },
-    "expected_bytes": "ee02050b02010000c0",
-    "evidence": [
-      "fragment/MusicFragment.java:88"
-    ]
+    "expected_bytes": "ee02050b02010000c0"
   },
   {
     "id": "P2-query-left",
@@ -307,10 +244,7 @@
     "inputs": {
       "selected": 1
     },
-    "expected_bytes": "eeb001aac0",
-    "evidence": [
-      "newControlActivity/NewNineActivity.java:71"
-    ]
+    "expected_bytes": "eeb001aac0"
   },
   {
     "id": "P2-query-music-right",
@@ -321,9 +255,6 @@
       "music": true,
       "selected": 2
     },
-    "expected_bytes": "eed001bbc0",
-    "evidence": [
-      "fragment/Position500iFragment.java:67"
-    ]
+    "expected_bytes": "eed001bbc0"
   }
 ]

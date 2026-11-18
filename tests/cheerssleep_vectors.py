@@ -1,8 +1,7 @@
-"""Accepted row098 literals and independent numeric catalog expansions.
+"""CheersSleep 2.7.0 literal frames and independent numeric catalog expansions.
 
-The original report has 1012 caller rows. Numeric fixtures expand its signed
-stores and side selector without importing the production encoder. Audit
-counts (266 P1 pairs/775 P2 arguments) count source checks, not unique frames.
+Numeric fixtures expand the app's signed stores and side selector without
+importing the production encoder.
 """
 
 import json
