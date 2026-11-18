@@ -5,7 +5,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from ...const import DOMAIN, SIDE_LEFT, SIDE_RIGHT
+from ...const import DOMAIN, SIDE_BOTH, SIDE_LEFT, SIDE_RIGHT
 from ...import_executor import async_import_modules
 from ...paired_coordinator import SingleAddressPairedCoordinator
 from ..casper_base.protocol import ALARM_MODES, Request
@@ -21,6 +21,18 @@ async def handle(call: ServiceCall) -> None:
                 raise ServiceValidationError("The default-left intervention cannot target Right")
         # This callback has no side operand. Bind parent/Both to its one physical
         # left owner before STOP admission, rather than fan it out to both children.
+        targets = [
+            (parent, SIDE_LEFT if isinstance(parent, SingleAddressPairedCoordinator) else side)
+            for parent, side in targets
+        ]
+    else:
+        # The clock and the countdown alarm belong to the one receiver both sides
+        # share: target the bed itself and run once, never once per side.
+        for parent, side in targets:
+            if isinstance(parent, SingleAddressPairedCoordinator) and side != SIDE_BOTH:
+                raise ServiceValidationError(
+                    "The clock and alarm belong to the whole bed; select the bed, not one side"
+                )
         targets = [
             (parent, SIDE_LEFT if isinstance(parent, SingleAddressPairedCoordinator) else side)
             for parent, side in targets

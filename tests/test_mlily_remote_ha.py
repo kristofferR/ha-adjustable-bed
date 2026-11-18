@@ -333,3 +333,40 @@ async def test_default_left_intervention_resolves_real_registry_targets_before_a
             await ControllerActionButton(right_owner, spec).async_press()
         assert frames(c) == ["6e010146b6"]
     await shutdown(c)
+
+
+@pytest.mark.parametrize("selection", ["parent", "left"])
+async def test_shared_receiver_clock_runs_once_for_the_bed(hass, selection):
+    from homeassistant.config_entries import ConfigEntryState
+    from homeassistant.helpers import device_registry as dr
+
+    from custom_components.adjustable_bed import _async_ensure_paired_device_registry
+    from custom_components.adjustable_bed.paired_devices import side_identifier
+
+    c = runtime(hass, product="ms600", layout="double")
+    entry = MockConfigEntry(domain=const.DOMAIN, data={
+        const.CONF_BED_TYPE: const.BED_TYPE_MLILY_REMOTE,
+        const.CONF_PAIR_MODE: const.PAIR_MODE_SINGLE_ADDRESS,
+        const.CONF_PAIR_ID: "mlily-clock",
+    })
+    entry.add_to_hass(hass)
+    entry.mock_state(hass, ConfigEntryState.LOADED)
+    pair = SingleAddressPairedCoordinator(hass, entry, c)
+    hass.data.setdefault(const.DOMAIN, {})[entry.entry_id] = pair
+    _async_ensure_paired_device_registry(hass, entry, pair)
+    registry = dr.async_get(hass)
+    parent = registry.async_get_device_by_identifier(next(iter(pair.device_info["identifiers"])), entry.entry_id)
+    left = registry.async_get_child_device_by_identifier(side_identifier(pair, "left"), entry.entry_id)
+    assert parent is not None and left is not None
+    register_services(hass)
+    data = {"device_id": [parent.id if selection == "parent" else left.id], "operation": "time_sync"}
+    with virtual_clock():
+        if selection == "left":
+            with pytest.raises(ServiceValidationError, match="whole bed"):
+                await hass.services.async_call(const.DOMAIN, "mlily_remote", data, blocking=True)
+            assert not frames(c)
+        else:
+            await hass.services.async_call(const.DOMAIN, "mlily_remote", data, blocking=True)
+            # One calendar frame for the shared receiver, not one per side.
+            assert len(frames(c)) == 1 and frames(c)[0].startswith("6e20")
+    await shutdown(c)

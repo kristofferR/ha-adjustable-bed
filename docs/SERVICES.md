@@ -1216,7 +1216,9 @@ gestures, notifications and sleep operations.
 countdown alarms (`alarm`, `alarm_cancel`) and the direct default-left
 `anti_snore` action. Alarm mode choices and connection gates are documented in
 the [MLILY Remote guide](beds/richmat.md#mlily-remote). All selected targets are
-validated before commands run. Child-device targeting retains the physical side.
+validated before commands run. Two separate receivers keep their own side. When
+both sides share one receiver, select the bed for the clock and alarm, which run
+once; the anti-snore intervention runs on the left.
 
 ## Motion Bed
 

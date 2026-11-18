@@ -8465,7 +8465,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Target side of a combined bed."
+          "description": "For two separate receivers, the side to set. When both sides share one receiver, select the bed: its clock and alarm are shared and the anti-snore intervention runs on the left."
         }
       }
     }
