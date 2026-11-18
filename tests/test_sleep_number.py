@@ -15,6 +15,10 @@ from custom_components.adjustable_bed.beds.sleep_number.controller import (
     SleepNumberCommands,
     SleepNumberController,
 )
+from custom_components.adjustable_bed.binary_sensor import (
+    AdjustableBedPresenceSensor,
+    _binary_sensor_entities_for,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -717,6 +721,53 @@ class TestSleepNumberController:
         assert coordinator.controller._coordinator.controller_state["bed_presence"] == "in"
         assert coordinator.controller._coordinator.controller_state["bed_presence_left"] == "in"
         assert coordinator.controller._coordinator.controller_state["bed_presence_right"] == "out"
+
+    async def test_presence_poll_keeps_the_idle_window(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """The occupancy poll reads an open link without extending its idle window."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2A",
+            name="Smart bed 0074F0",
+            entry_id="sleep_number_presence_idle_window",
+        )
+        timer = coordinator._disconnect_timer
+        deadline = coordinator._idle_deadline
+        assert timer is not None
+        assert deadline is not None
+        coordinator.controller.read_bed_presence_cached = AsyncMock(return_value=True)
+
+        await coordinator.async_refresh_bed_presence()
+
+        coordinator.controller.read_bed_presence_cached.assert_awaited_once()
+        assert coordinator._disconnect_timer is timer
+        assert coordinator._idle_deadline == deadline
+
+    async def test_presence_poll_does_not_connect(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client,
+    ) -> None:
+        """A released bed stays released when the occupancy sensor polls."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2B",
+            name="Smart bed 0074F1",
+            entry_id="sleep_number_presence_released",
+        )
+        sensor = next(
+            entity
+            for entity in _binary_sensor_entities_for(coordinator.hass, coordinator)
+            if isinstance(entity, AdjustableBedPresenceSensor)
+        )
+        await coordinator.async_disconnect()
+        mock_bleak_client.is_connected = False
+        attempts = coordinator.connection_attempt_count
+
+        await sensor.async_update()
+
+        assert coordinator.connection_attempt_count == attempts
+        assert not coordinator.is_connected
 
     async def test_read_bed_presence_primes_required_characteristics_once(
         self,

@@ -15,7 +15,7 @@ import time
 import traceback
 from collections.abc import AsyncIterator, Callable, Coroutine, Iterator
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
@@ -63,6 +63,9 @@ from .const import (
     BED_TYPE_VMATBASIC,
     CONF_PAIRLINK_ROLE,
     CONF_VIBRADORM_APP_PROFILE,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
     IDLE_DISCONNECT_KEEP_CONNECTED,
     LEGGETT_VARIANT_GEN2,
     OKIMAT_SERVICE_UUID,
@@ -101,6 +104,14 @@ _COMMAND_BURST_GRACE_SECONDS = 1.0
 _PAIRING_RELEASE_RESTORE_TIMEOUT = 5.0
 # Delay before recovering a link the bed or adapter dropped.
 _AUTO_RECONNECT_DELAY_SECONDS = 5.0
+
+
+class ConnectionSettings(TypedDict):
+    """Effective Bluetooth connection behavior, as diagnostics report it."""
+
+    mode: str
+    idle_seconds: int | None
+    reads_positions: bool
 
 
 class PairingOnlyConnectionActiveError(RuntimeError):
@@ -267,6 +278,23 @@ class CoordinatorConnectionMixin:
     def connection_attempt_details(self: AdjustableBedCoordinator) -> list[dict[str, Any]]:
         """Return detailed recent connection attempts."""
         return list(self._connection_attempt_details)
+
+    @property
+    def connection_settings(self: AdjustableBedCoordinator) -> ConnectionSettings:
+        """Return how this bed actually connects, after defaults and bed requirements."""
+        if self._disconnect_after_operation_enabled():
+            mode = CONNECTION_MODE_RELEASE
+        elif self._uses_persistent_connection():
+            mode = CONNECTION_MODE_ALWAYS
+        else:
+            mode = CONNECTION_MODE_IDLE
+        return {
+            "mode": mode,
+            "idle_seconds": (
+                self._idle_disconnect_seconds if mode == CONNECTION_MODE_IDLE else None
+            ),
+            "reads_positions": not self._disable_angle_sensing,
+        }
 
     @property
     def connection_attempt_count(self: AdjustableBedCoordinator) -> int:

@@ -57,7 +57,6 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
     CONF_PROFILE_MIGRATION,
@@ -213,21 +212,9 @@ SETUP_CLEANUP_TIMEOUT = 5.0
 
 _LOGGER = logging.getLogger(__name__)
 
+# Standalone and paired beds (both single- and separate-address pairs) set up
+# the same platforms; a pair builds per-side entities on native child devices.
 PLATFORMS: list[Platform] = [
-    Platform.BINARY_SENSOR,
-    Platform.BUTTON,
-    Platform.CLIMATE,
-    Platform.COVER,
-    Platform.LIGHT,
-    Platform.NUMBER,
-    Platform.SELECT,
-    Platform.SENSOR,
-    Platform.SWITCH,
-]
-
-# Platforms a paired bed (Dual Bed 4.0) sets up. Each builds per-side entities
-# against native child devices for both single- and separate-address pairs.
-PAIRED_PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.CLIMATE,
@@ -536,7 +523,7 @@ def migrate_v5_5_data(
 # Settings 5.6 removed (#v5 settings simplification). Their behaviour is now
 # one value for every bed, or the per-bed default.
 V5_6_REMOVED_KEYS: Final = frozenset(
-    {"position_mode", "connection_profile", CONF_PAIR_CONNECTION_MODE}
+    {"position_mode", "connection_profile", "pair_connection_mode"}
 )
 _LEGACY_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 
@@ -1432,8 +1419,8 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 entry.entry_id,
                 [(child.address, side) for side, child in coordinator.children.items()],
             )
-            await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
-            async_sweep_after_setup(hass, entry, PAIRED_PLATFORMS)
+            await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+            async_sweep_after_setup(hass, entry, PLATFORMS)
         except (Exception, asyncio.CancelledError):
             hass.data[DOMAIN].pop(entry.entry_id, None)
             await _shutdown_failed_pair()
@@ -1509,8 +1496,8 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
     try:
         async_register_children(hass, coordinator)
         entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-        await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
-        async_sweep_after_setup(hass, entry, PAIRED_PLATFORMS)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        async_sweep_after_setup(hass, entry, PLATFORMS)
     except (Exception, asyncio.CancelledError):
         hass.data[DOMAIN].pop(entry.entry_id, None)
         await coordinator.async_shutdown()
@@ -1782,8 +1769,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Unload a config entry."""
     _LOGGER.info("Unloading Adjustable Bed integration for %s", entry.title)
 
-    platforms = PAIRED_PLATFORMS if is_paired(entry.data) else PLATFORMS
-    await hass.config_entries.async_unload_platforms_or_raise(entry, platforms)
+    await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
     coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[DOMAIN].pop(
         entry.entry_id
     )

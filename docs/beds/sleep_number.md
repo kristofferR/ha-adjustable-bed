@@ -326,7 +326,7 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 | `Under Bed Lights` switch | Fuzion, MCR | |
 | `Light Level` number | Fuzion | Values `0-3` |
 | `Light Timer` select | Fuzion | `Off`, `15 min`, `30 min`, `45 min`, `1 hr`, `2 hr`, and `3 hr` |
-| `Left Bed Presence` / `Right Bed Presence` binary sensors | Fuzion | Disabled by default because they require active polling over BLE |
+| `Left Bed Presence` / `Right Bed Presence` binary sensors | Fuzion | Disabled by default. They update only while the bed is connected and never keep it connected |
 | `Sleep Number Setting` number | Fuzion | Configured side |
 | `Sleep Number Setting Left` / `Sleep Number Setting Right` numbers | MCR | |
 | `Foundation Preset Left` / `Foundation Preset Right` selects | MCR | `Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G`, `Snore`, as supported |
@@ -336,7 +336,9 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 | `Footwarming Timer` select | Fuzion | `30 min` through `6 hr` |
 
 - Occupancy polling sends a grouped `BAMG` request for both sides in one call,
-  then publishes separate left/right binary sensors.
+  then publishes separate left/right binary sensors. The poll runs only over
+  an open link and does not extend **Seconds to stay connected**; choose
+  "Always stay connected" for continuous occupancy.
   The former single `Bed Presence` alias is removed once the per-side sensors
   exist.
 - Implemented BAM/MCR operations include the init handshake, reading and setting

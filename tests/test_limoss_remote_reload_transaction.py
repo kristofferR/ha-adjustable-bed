@@ -14,6 +14,7 @@ from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.beds.limoss import remote_services as limoss_remote_services
 from custom_components.adjustable_bed.beds.limoss.remote_state import get_limoss_remote_session
 from custom_components.adjustable_bed.codec import limoss as codec
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_config import app_data
 from tests.test_limoss_remote_review_lifecycle import CAPS
@@ -33,7 +34,7 @@ async def loaded_runtime(hass, paired):
     }) for address, side in zip(addresses, (const.SIDE_LEFT, const.SIDE_RIGHT), strict=False)]
     entry = MockConfigEntry(domain=const.DOMAIN, version=4, data={
         const.CONF_PAIR_ID: "reload-review",
-        const.CONF_PAIR_CONNECTION_MODE: const.PAIR_CONNECTION_MODE_SEQUENTIAL,
+        CONF_PAIR_CONNECTION_MODE: const.PAIR_CONNECTION_MODE_SEQUENTIAL,
         const.CONF_PAIR_CHILDREN: data,
     } if paired else data[0])
     entry.add_to_hass(hass)

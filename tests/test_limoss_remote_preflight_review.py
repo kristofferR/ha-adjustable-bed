@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from tests.coordinator_patches import patch_coordinator_global
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_review_lifecycle import (
     CAPS,
@@ -52,7 +53,7 @@ async def test_registered_sequential_pair_rejects_fresh_second_profile_before_an
     old_pair, children, cached = await pair_runtime(hass)
     entry = old_pair.entry
     hass.config_entries.async_update_entry(entry, data={
-        **entry.data, const.CONF_PAIR_CONNECTION_MODE: const.PAIR_CONNECTION_MODE_SEQUENTIAL,
+        **entry.data, CONF_PAIR_CONNECTION_MODE: const.PAIR_CONNECTION_MODE_SEQUENTIAL,
     })
     pair = PairedBedCoordinator(hass, entry, children)
     hass.data[const.DOMAIN][entry.entry_id] = pair

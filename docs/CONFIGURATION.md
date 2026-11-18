@@ -343,6 +343,9 @@ Assistant holds blocks the physical Bluetooth remote and the bed's app.
   controls keep state on the connection, and for LP Comfort Connect (Leggett
   & Platt Gen2), whose reconnects need its bond. LP Comfort Connect holds the
   link for the rest of the session once a reconnect stalls.
+  If the bed drops the link during that window, Home Assistant reconnects it,
+  but the window still ends at the same time. After the window, the next
+  command reconnects.
 - **Always stay connected**: keeps the link while Home Assistant runs. Use it
   only for mains-powered beds: it blocks the vendor app and any Bluetooth
   remote (RF remotes are unaffected) and keeps the bed's radio active. If the

@@ -2900,6 +2900,22 @@ class AdjustableBedCoordinator(
         )
         return cast(T, result)
 
+    async def async_refresh_bed_presence(self) -> None:
+        """Read occupancy for both sides over a link that is already open.
+
+        Never connects and never renews the idle window, so the occupancy
+        sensors cannot override the Bluetooth connection setting.
+        """
+        if not self.is_connected:
+            return
+        await self.async_execute_controller_query(
+            lambda controller: controller.read_bed_presence_cached(),
+            cancel_running=False,
+            skip_disconnect=True,
+            run_if=lambda: self.is_connected,
+            preserve_idle_deadline=True,
+        )
+
     def _cancel_diagnostic_polling(self) -> None:
         """End live-link queries and invalidate this connection's observed values."""
         task = self._diagnostic_poll_task

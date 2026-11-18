@@ -395,7 +395,6 @@ PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
 # each receiver keeps its own connection policy) and falls back to
 # ``sequential`` (one link at a time) when the adapter cannot hold both. The
 # stored key is obsolete: nothing ever set it, and schema 5.6 drops it.
-CONF_PAIR_CONNECTION_MODE: Final = "pair_connection_mode"
 PAIR_CONNECTION_MODE_AUTO: Final = "auto"
 PAIR_CONNECTION_MODE_CONCURRENT: Final = "concurrent"
 PAIR_CONNECTION_MODE_SEQUENTIAL: Final = "sequential"
