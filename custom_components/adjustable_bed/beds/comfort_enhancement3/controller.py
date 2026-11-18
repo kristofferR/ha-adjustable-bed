@@ -549,7 +549,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
                 link.write.uuid, data, response=True, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, data, response=True)
-            note_frame_written()
+            note_frame_written(cancel)
             return True
 
     async def write_command(

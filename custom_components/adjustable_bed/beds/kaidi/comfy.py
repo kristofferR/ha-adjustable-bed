@@ -18,7 +18,11 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from ...app_session import app_session
 from ...card import CARD_PRESETS, CARD_UTILITY
 from ...codec import kaidi as codec
-from ...command_scheduler import current_command_context, note_frame_written
+from ...command_scheduler import (
+    command_frames_not_counted,
+    current_command_context,
+    note_frame_written,
+)
 from ...controller_state import StateKey, sided
 from ...execution import ExecutionCapabilities
 from ...profiles.comfy import (
@@ -398,7 +402,7 @@ class ComfyController(KaidiAppController):
                     raise ConnectionError("App frame belongs to a disconnected session")
                 self._record_command_trace(codec.WRITE_CHAR_UUID, command, response=True)
                 await client.write_gatt_char(codec.WRITE_CHAR_UUID, command, response=True)
-                note_frame_written()
+                note_frame_written(cancel)
                 self._next_write_at = time.monotonic() + self.profile.write_spacing_s
 
     async def _ensure_session(self) -> None:
@@ -412,7 +416,8 @@ class ComfyController(KaidiAppController):
                     self._own_event.clear()
                 self._auth.clear()
                 self._auth_status = None
-                await self.write_command(codec.join(self.profile.room))
+                with command_frames_not_counted():
+                    await self.write_command(codec.join(self.profile.room))
                 await self._wait(self._auth, self.profile.join_timeout_s, generation)
                 if self._auth_status != 0:
                     raise ConnectionError("Existing-room authentication failed")
@@ -421,7 +426,8 @@ class ComfyController(KaidiAppController):
                 self._ready = True
             self._roster.clear()
             assert self._own is not None
-            await self.write_command(codec.ping(self._own))
+            with command_frames_not_counted():
+                await self.write_command(codec.ping(self._own))
             if self._target is None:
                 await self._wait(self._roster, self.profile.join_timeout_s, generation)
             if self._target is None or self._target == 0:
@@ -483,7 +489,8 @@ class ComfyController(KaidiAppController):
             if generation != self._generation:
                 return
             try:
-                await self.write_command(codec.ping(own))
+                with command_frames_not_counted():
+                    await self.write_command(codec.ping(own))
             except ConnectionError:
                 # Roster hydration is retried by the next admitted operation.
                 return

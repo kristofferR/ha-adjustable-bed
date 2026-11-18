@@ -306,7 +306,7 @@ class ComfortMotionController(JiecangProfileController):
             await self.client.write_gatt_char(
                 self._name_uuid, payload, response=self._name_response
             )
-            note_frame_written()
+            note_frame_written(self._coordinator.cancel_command)
 
     # Wake routine
 

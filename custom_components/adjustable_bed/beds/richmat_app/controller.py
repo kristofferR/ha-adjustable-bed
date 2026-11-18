@@ -233,7 +233,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                 controller_class=type(self).__name__,
             )
             await link.client.write_gatt_char(link.tx, data, response=response)
-            note_frame_written()
+            note_frame_written(cancel)
         return True
 
     async def write_command(

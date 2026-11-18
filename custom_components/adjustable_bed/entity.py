@@ -10,7 +10,12 @@ from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
 from .card import CARD_ATTRIBUTES, CardPlacement
-from .command_scheduler import Delivery, command_delivery
+from .command_scheduler import (
+    Delivery,
+    command_cancelled,
+    command_delivery,
+    command_frames_written,
+)
 from .const import TIMED_MOVE_MOTOR_OPTIONS
 from .entity_runtime import controller_side_scope
 from .execution import ExecutionCapabilities
@@ -110,20 +115,41 @@ class AdjustableBedEntity(RenamesInPlace, PlacedInCard):
         return controller_side_scope(self._coordinator)
 
     async def _async_send(
-        self, command: Callable[[BedController], Coroutine[Any, Any, None]], **kwargs: Any
+        self,
+        command: Callable[[BedController], Coroutine[Any, Any, None]],
+        *,
+        on_delivery: Callable[[Delivery], None] | None = None,
+        **kwargs: Any,
     ) -> Delivery:
         """Run ``command`` and return what of it reached the bed.
 
         STOP or a replacing command settles a cancelled command without an
         error. Nothing sent keeps the previous state; a value sent only in
-        part is unknown.
+        part is unknown. ``on_delivery`` shows the result inside the command,
+        before the next queued command can read this entity's state.
         """
         delivery = Delivery.NONE
 
         async def run(controller: BedController) -> None:
             nonlocal delivery
-            await command(controller)
-            delivery = command_delivery()
+            try:
+                await command(controller)
+            except BaseException:
+                # A command cancelled during its release cleanup may already
+                # have sent its frame; one that failed sent at most part of it.
+                delivery = (
+                    command_delivery()
+                    if command_cancelled()
+                    else Delivery.PARTIAL
+                    if command_frames_written()
+                    else Delivery.NONE
+                )
+                raise
+            else:
+                delivery = command_delivery()
+            finally:
+                if on_delivery is not None:
+                    on_delivery(delivery)
 
         await self._coordinator.async_execute_controller_command(run, **kwargs)
         return delivery

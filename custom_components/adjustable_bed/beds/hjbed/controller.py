@@ -419,7 +419,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             if on_attempt is not None:
                 on_attempt()
             await session.client.write_gatt_char(session.write, frame, response=response)
-            note_frame_written()
+            note_frame_written(cancel)
         return True
 
     async def write_command(

@@ -421,7 +421,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                 )
                 async with asyncio.timeout(WRITE_TIMEOUT_S):
                     await link.client.write_gatt_char(link.write, data, response=response)
-                    note_frame_written()
+                    note_frame_written(cancel)
                 return True
 
         # Drain submitted GATT work before cleanup or releasing ownership.

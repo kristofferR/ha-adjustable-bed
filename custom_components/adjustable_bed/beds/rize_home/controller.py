@@ -485,7 +485,7 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
             )
             async with asyncio.timeout(15):
                 await link.client.write_gatt_char(link.write, frame, response=False)
-                note_frame_written()
+                note_frame_written(cancel)
 
     async def _repeat(
         self,

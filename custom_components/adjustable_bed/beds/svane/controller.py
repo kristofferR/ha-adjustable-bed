@@ -365,7 +365,7 @@ class SvaneController(BedController):
         self._record_command_trace(char, data, response=response, characteristic=role)
         async with self._ble_lock:
             await client.write_gatt_char(role, data, response=response)
-            note_frame_written()
+            note_frame_written(self._coordinator.cancel_command)
 
     async def _wait(self, seconds: float) -> bool:
         cancel = self._coordinator.cancel_command

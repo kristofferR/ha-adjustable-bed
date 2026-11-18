@@ -170,7 +170,7 @@ class JensenLinonController(BedController):
             try:
                 async with self._ble_lock:
                     await self.client.write_gatt_char(char, command, response=True)
-                    note_frame_written()
+                    note_frame_written(effective_cancel)
             except BleakError:
                 _LOGGER.exception(
                     "Failed to write to service %s char %s",

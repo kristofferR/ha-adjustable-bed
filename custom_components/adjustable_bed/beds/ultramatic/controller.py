@@ -337,7 +337,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
                 link.write.uuid, command, response=False, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, command, response=False)
-            note_frame_written()
+            note_frame_written(cancel)
             self._live(link)
 
     async def write_command(

@@ -12,7 +12,11 @@ from typing import TYPE_CHECKING, Any
 from bleak import BleakClient
 from bleak.exc import BleakError
 
-from ..command_scheduler import note_frame_skipped, note_frame_written
+from ..command_scheduler import (
+    note_frame_skipped,
+    note_frame_written,
+    note_write_not_counted,
+)
 from ..diagnostic_payloads import format_payload
 
 if TYPE_CHECKING:
@@ -98,6 +102,7 @@ class GattWriter(ABC):
         expected_client: BleakClient | None = None,
         before_write: Callable[[], None] | None = None,
         command_factory: Callable[[], bytes] | None = None,
+        track_command_write: bool = True,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -133,6 +138,8 @@ class GattWriter(ABC):
                      under the BLE lock, after all connection and cancellation checks.
             command_factory: Rebuild a caller's mode-dependent frame at the final
                      dispatch boundary, after validation and before tracing/writing.
+            track_command_write: Whether this write is the running command's
+                     frame. Set False for writes that only prepare the link.
 
         Raises:
             ConnectionError: If not connected to the bed
@@ -216,7 +223,10 @@ class GattWriter(ABC):
                         outbound,
                         response=response,
                     )
-                    note_frame_written()
+                    if track_command_write:
+                        note_frame_written(effective_cancel)
+                    else:
+                        note_write_not_counted()
                     if on_write is not None:
                         on_write()
             except BleakError:

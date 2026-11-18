@@ -198,7 +198,7 @@ class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedCont
                     await self.client.write_gatt_char(
                         RONDURE_WRITE_CHAR_UUID, command, response=False
                     )
-                    note_frame_written()
+                    note_frame_written(effective_cancel)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

@@ -192,7 +192,7 @@ class MlilyRemoteController(CasperBaseController):
                 submitted()
             # A non-idempotent command is never replayed after a write failure.
             await link.client.write_gatt_char(link.tx, packet, response=response)
-            note_frame_written()
+            note_frame_written(cancel)
         return True
 
     async def _send(self, packet: bytes, *, cleanup: bool = False) -> None:

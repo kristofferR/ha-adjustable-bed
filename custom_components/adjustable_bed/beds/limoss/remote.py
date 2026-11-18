@@ -409,7 +409,7 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
                     self._request_reply = reply
                 self._last_write_started = asyncio.get_running_loop().time()
                 await client.write_gatt_char(char, packet, response=response)
-                note_frame_written()
+                note_frame_written(event)
 
     async def write_command(
         self,

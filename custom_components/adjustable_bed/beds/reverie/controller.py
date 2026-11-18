@@ -417,7 +417,7 @@ class ReverieController(BedController, ReverieComfortActions):
                         note_frame_skipped()
                         return
                     await self.client.write_gatt_char(REVERIE_CHAR_UUID, command, response=True)
-                    note_frame_written()
+                    note_frame_written(effective_cancel)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

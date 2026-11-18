@@ -183,7 +183,7 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
                 link.write.uuid, data, response=False, characteristic=link.write
             )
             await settled(link.client.write_gatt_char(link.write, data, response=False))
-            note_frame_written()
+            note_frame_written(cancel)
             self._live(link)
 
     async def write_command(

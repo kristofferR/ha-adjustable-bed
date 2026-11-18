@@ -229,7 +229,7 @@ class ResidentController(Okin64BitController):
                 link.write.uuid, command, response=True, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, command, response=True)
-            note_frame_written()
+            note_frame_written(cancel)
 
     async def write_command(
         self,

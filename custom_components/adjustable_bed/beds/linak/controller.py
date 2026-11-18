@@ -1394,6 +1394,8 @@ class LinakController(BedController):
                     cancel_event=cancel_event,
                     log_errors=False,
                     on_write=mark_ready,
+                    # A readiness probe only prepares the link.
+                    track_command_write=False,
                 )
             except BleakError as err:
                 if not self._is_authentication_window_error(err):

@@ -336,7 +336,7 @@ class FsmRelaxController(ProfileExecution[LimossProfile], BedController):
                 )
                 # Source forces no-response; properties are not a protocol gate.
                 await client.write_gatt_char(role, packet, response=False)
-                note_frame_written()
+                note_frame_written(event)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self._subscribed:

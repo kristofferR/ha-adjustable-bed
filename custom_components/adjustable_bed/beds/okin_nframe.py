@@ -82,7 +82,7 @@ class OkinNFrameController(BedController):
                         command,
                         response=self._write_with_response,
                     )
-                    note_frame_written()
+                    note_frame_written(effective_cancel)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

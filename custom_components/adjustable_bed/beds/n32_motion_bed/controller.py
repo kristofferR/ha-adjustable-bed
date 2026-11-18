@@ -371,7 +371,7 @@ class N32MotionBedController(Okin64BitController):
                 link.write.uuid, frame, response=True, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, frame, response=True)
-            note_frame_written()
+            note_frame_written(cancel)
         return True
 
     async def write_command(

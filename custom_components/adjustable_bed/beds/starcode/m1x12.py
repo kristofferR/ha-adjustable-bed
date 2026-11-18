@@ -1380,7 +1380,7 @@ class StarElevateM1X12Controller(StarElevateController):
                 command,
                 response=False,
             )
-            note_frame_written()
+            note_frame_written(cancel_event)
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)

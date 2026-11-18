@@ -313,7 +313,7 @@ class VMatBasicController(BedController):
                         controller_class=type(self).__name__,
                     )
                 await client.write_gatt_char(characteristic, packet, response=True)
-                note_frame_written()
+                note_frame_written(event)
 
         async with asyncio.timeout(0.8):
             await _cancellable(operation(), event)

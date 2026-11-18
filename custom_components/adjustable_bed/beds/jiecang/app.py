@@ -658,7 +658,7 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
             )
             async with self._ble_lock:
                 await self.client.write_gatt_char(self._name_uuid, command, response=response)
-                note_frame_written()
+                note_frame_written(self._coordinator.cancel_command)
 
     # Alarm and wake
 

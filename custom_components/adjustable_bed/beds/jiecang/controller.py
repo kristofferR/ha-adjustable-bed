@@ -104,7 +104,7 @@ class JiecangProfileController(ProfileExecution[JiecangProfile], BedController):
                 await self.client.write_gatt_char(
                     self._write_uuid, command, response=self._write_with_response
                 )
-                note_frame_written()
+                note_frame_written(cancel)
 
     @staticmethod
     async def _pause(milliseconds: float, cancel: asyncio.Event) -> bool:

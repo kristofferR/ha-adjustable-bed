@@ -304,7 +304,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
                 self._record_command_trace(link.write.uuid, packet, response=response, characteristic=link.write)
                 async with asyncio.timeout(WRITE_TIMEOUT_S):
                     await link.client.write_gatt_char(link.write, packet, response=response)
-                    note_frame_written()
+                    note_frame_written(cancel)
 
         # A cancelled owner must settle the write already handed to BLE. There
         # is no pending FIFO and no retry/backfill after a slow radio write.

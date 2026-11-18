@@ -222,7 +222,7 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
                 )
                 async with asyncio.timeout(WRITE_TIMEOUT_S):
                     await link.client.write_gatt_char(link.tx, packet, response=response)
-                    note_frame_written()
+                    note_frame_written(cancel)
 
         await _settle(asyncio.create_task(write()))
 

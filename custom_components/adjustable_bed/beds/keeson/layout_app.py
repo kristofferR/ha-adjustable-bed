@@ -286,7 +286,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
                         controller_class=type(self).__name__,
                     )
                 await self.client.write_gatt_char(self._tx, command, response=response)
-                note_frame_written()
+                note_frame_written(event)
             if index + 1 < repeat_count and await self._wait(repeat_delay_ms):
                 note_frame_skipped()
                 return

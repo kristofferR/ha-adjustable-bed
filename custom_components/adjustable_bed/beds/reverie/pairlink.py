@@ -197,7 +197,7 @@ class _TracedCentralWriter:
             char_specifier, data, response=bool(response), command_origin="pairlink"
         )
         await self._client.write_gatt_char(char_specifier, data, response=response)
-        note_frame_written()
+        note_frame_written(self._controller._coordinator.cancel_command)
 
 
 class ReveriePairlinkController(BedController, PairlinkComfortActions):

@@ -67,7 +67,7 @@ class LeggettWilinkeController(RichmatProfileController):
             try:
                 async with self._ble_lock:
                     await self.client.write_gatt_char(self._char_uuid, command, response=True)
-                    note_frame_written()
+                    note_frame_written(effective_cancel)
             except BleakError as err:
                 _LOGGER.exception("Failed to write command")
                 if "not found" in str(err).lower() or "invalid" in str(err).lower():

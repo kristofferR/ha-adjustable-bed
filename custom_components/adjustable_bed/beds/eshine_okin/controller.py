@@ -345,7 +345,7 @@ class EshineOkinController(BedController):
                     note_frame_skipped()
                     return
                 await session.client.write_gatt_char(session.write, command, response=False)
-                note_frame_written()
+                note_frame_written(cancel)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback

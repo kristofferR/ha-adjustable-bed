@@ -540,7 +540,7 @@ class SutaController(BedController):
                 self._record_command_trace(link.write.uuid, packet, response=True, characteristic=link.write)
                 async with asyncio.timeout(WRITE_TIMEOUT):
                     await link.client.write_gatt_char(link.write, packet, response=True)
-                    note_frame_written()
+                    note_frame_written(cancel)
 
         task = asyncio.create_task(write())
         interrupted = False

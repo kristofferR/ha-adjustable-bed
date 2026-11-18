@@ -2180,7 +2180,7 @@ class SleepNumberController(BedController, SleepNumberActions):
                     await client.write_gatt_char(
                         SLEEP_NUMBER_BAMKEY_CHAR_UUID, chunk, response=False
                     )
-                    note_frame_written()
+                    note_frame_written(effective_cancel)
 
         async def read_response() -> str:
             async with asyncio.timeout(_BAMKEY_RESPONSE_TIMEOUT):

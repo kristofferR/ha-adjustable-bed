@@ -568,7 +568,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                     controller_class=type(self).__name__,
                 )
             await target.write_gatt_char(role, packet, response=write_response)
-            note_frame_written()
+            note_frame_written(event)
 
     async def write_command(
         self,

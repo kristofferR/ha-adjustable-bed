@@ -42,8 +42,13 @@ def test_every_function_that_writes_marks_the_frame() -> None:
             if not isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             names = {_name(call) for call in _direct_calls(function)}
-            if "write_gatt_char" in names and "note_frame_written" not in names:
+            # Each write says whether it is the command's frame.
+            declared = {"note_frame_written", "note_write_not_counted"}
+            if "write_gatt_char" in names and not names & declared:
                 unmarked.append(f"{path.relative_to(ROOT)}:{function.lineno} {function.name}")
-    assert not unmarked, "Call note_frame_written() after each write_gatt_char:\n" + "\n".join(
+    assert not unmarked, (
+        "Call note_frame_written(cancel_event) after each write_gatt_char, or "
+        "note_write_not_counted() for link preparation and cleanup:\n"
+    ) + "\n".join(
         unmarked
     )

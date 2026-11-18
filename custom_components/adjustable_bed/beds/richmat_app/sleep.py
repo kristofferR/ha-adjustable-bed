@@ -492,7 +492,7 @@ class SleepController(BedController):
                 await client.write_gatt_char(
                     tx, data[offset : offset + stride], response=not self.mm
                 )
-                note_frame_written()
+                note_frame_written(self._coordinator.cancel_command)
             self._last_write = asyncio.get_running_loop().time()
 
     def validate_request(self, r: Request) -> None:

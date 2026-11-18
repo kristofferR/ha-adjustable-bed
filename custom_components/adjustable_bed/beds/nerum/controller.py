@@ -143,7 +143,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                 link.write.uuid, command, response=link.response, characteristic=link.write
             )
             await settled(link.client.write_gatt_char(link.write, command, response=link.response))
-            note_frame_written()
+            note_frame_written(cancel)
             self._live(link)
 
     async def write_command(

@@ -243,7 +243,7 @@ class SophieController(SolaceController):
             self._record_command_trace(char.uuid, command, response=response, characteristic=char)
             # No app repeat, retry or fixed write type is proven.
             await client.write_gatt_char(char, command, response=response)
-            note_frame_written()
+            note_frame_written(cancel_event)
 
     async def write_command(
         self,

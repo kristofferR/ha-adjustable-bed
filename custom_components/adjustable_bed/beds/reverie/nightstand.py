@@ -522,7 +522,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                         note_frame_skipped()
                         return
                     await self.client.write_gatt_char(char_uuid, command, response=True)
-                    note_frame_written()
+                    note_frame_written(effective_cancel)
                 except BleakError:
                     _LOGGER.exception("Failed to write to %s", char_uuid)
                     raise
@@ -551,7 +551,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                 return
             try:
                 await self.client.write_gatt_char(char_uuid, value, response=True)
-                note_frame_written()
+                note_frame_written(effective_cancel)
             except BleakError:
                 _LOGGER.exception("Failed to write to %s", char_uuid)
                 raise

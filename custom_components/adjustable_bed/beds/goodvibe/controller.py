@@ -651,7 +651,7 @@ class GoodVibeController(BedController):
                 on_submit()
             if self.catalog.bed is None:
                 await link.client.write_gatt_char(link.tx, data, response=response)
-                note_frame_written()
+                note_frame_written(cancel)
             else:
                 write = asyncio.create_task(link.client.write_gatt_char(link.tx, data, response=response))
                 try:
@@ -667,7 +667,7 @@ class GoodVibeController(BedController):
                                 raise
                     write.result()
                     raise
-                note_frame_written()
+                note_frame_written(cancel)
             self._last_write = asyncio.get_running_loop().time()
         return True
 

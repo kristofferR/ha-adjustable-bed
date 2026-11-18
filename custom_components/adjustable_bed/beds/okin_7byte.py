@@ -133,7 +133,7 @@ class Okin7ByteController(ProfileExecution[Okin5AProfile], BedController):
                             frame,
                             response=profile.wake_with_response,
                         )
-                        note_frame_written()
+                        note_frame_written(effective_cancel)
                     await asyncio.sleep(0.1)
                 self._initialized = True
             except BleakError:
