@@ -2,9 +2,6 @@
   {
     "id": "M014",
     "model_key": 14,
-    "page": "StorageActivity",
-    "label": "BS200C/BS200P",
-    "fragments": [],
     "command_ids": [
       "C1025",
       "C1026",
@@ -16,21 +13,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "combined storage lift controls"
-      ],
-      "memory_slots": 0,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 0
     }
   },
   {
     "id": "M016",
     "model_key": 16,
-    "page": "StorageActivity",
-    "label": "BS200C/BS200P",
-    "fragments": [],
     "command_ids": [
       "C1025",
       "C1026",
@@ -42,21 +30,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "combined storage lift controls"
-      ],
-      "memory_slots": 0,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 0
     }
   },
   {
     "id": "M045",
     "model_key": 45,
-    "page": "TwoActivity",
-    "label": "CS-B200",
-    "fragments": [],
     "command_ids": [
       "C0365",
       "C0366",
@@ -77,22 +56,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 0,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 0
     }
   },
   {
     "id": "M046",
     "model_key": 46,
-    "page": "SixActivity",
-    "label": "CS-B200A",
-    "fragments": [],
     "command_ids": [
       "C0293",
       "C0294",
@@ -124,28 +93,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "light": true,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M047",
     "model_key": 47,
-    "page": "ThreeActivity",
-    "label": "CS-B200M",
-    "fragments": [],
     "command_ids": [
       "C0327",
       "C0328",
@@ -190,24 +143,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "massage": "head/foot3 levels,2 wave modes",
-      "light": true,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M048",
     "model_key": 48,
-    "page": "OneActivity",
-    "label": "CS-B300",
-    "fragments": [],
     "command_ids": [
       "C0247",
       "C0248",
@@ -231,23 +172,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 0,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 0
     }
   },
   {
     "id": "M049",
     "model_key": 49,
-    "page": "FiveActivity",
-    "label": "CS-B300A",
-    "fragments": [],
     "command_ids": [
       "C0099",
       "C0100",
@@ -283,29 +213,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "light": true,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M050",
     "model_key": 50,
-    "page": "FourActivity",
-    "label": "CS-B300M",
-    "fragments": [],
     "command_ids": [
       "C0128",
       "C0129",
@@ -354,25 +267,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "massage": "head/foot3 levels,2 wave modes",
-      "light": true,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M051",
     "model_key": 51,
-    "page": "EightActivity",
-    "label": "CS-B500YA",
-    "fragments": [],
     "command_ids": [
       "C0048",
       "C0049",
@@ -430,32 +330,13 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "left head/back",
-        "right head/back",
-        "left waist",
-        "right waist",
-        "shared foot"
-      ],
       "memory_slots": 2,
-      "side_selection": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "light": true,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "side_selection": true
     }
   },
   {
     "id": "M052",
     "model_key": 52,
-    "page": "NineActivity",
-    "label": "CS-B500YM",
-    "fragments": [],
     "command_ids": [
       "C0170",
       "C0171",
@@ -539,28 +420,13 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "left head/back",
-        "right head/back",
-        "left waist",
-        "right waist",
-        "shared foot"
-      ],
       "memory_slots": 2,
-      "side_selection": true,
-      "massage": "left/right head/foot3 levels,2 wave modes",
-      "light": true,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "side_selection": true
     }
   },
   {
     "id": "M053",
     "model_key": 53,
-    "page": "TwoActivity1",
-    "label": "BA210",
-    "fragments": [],
     "command_ids": [
       "C0379",
       "C0380",
@@ -581,22 +447,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 0,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 0
     }
   },
   {
     "id": "M054",
     "model_key": 54,
-    "page": "FourActivity",
-    "label": "CS-B300M",
-    "fragments": [],
     "command_ids": [
       "C0128",
       "C0129",
@@ -645,25 +501,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "massage": "head/foot3 levels,2 wave modes",
-      "light": true,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M055",
     "model_key": 55,
-    "page": "ThreeActivity",
-    "label": "CS-B200M",
-    "fragments": [],
     "command_ids": [
       "C0327",
       "C0328",
@@ -708,24 +551,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "massage": "head/foot3 levels,2 wave modes",
-      "light": true,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M057",
     "model_key": 57,
-    "page": "Bs300yaActivity",
-    "label": "BS300YA",
-    "fragments": [],
     "command_ids": [
       "C0019",
       "C0020",
@@ -761,29 +592,12 @@
       "P1"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "light": true,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M134",
     "model_key": 134,
-    "page": "NewTwoActivity",
-    "label": "CS-B200",
-    "fragments": [],
     "command_ids": [
       "C0999",
       "C1000",
@@ -803,23 +617,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 0,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 0
     }
   },
   {
     "id": "M135",
     "model_key": 135,
-    "page": "NewSixActivity",
-    "label": "CS-B200A",
-    "fragments": [],
     "command_ids": [
       "C0943",
       "C0944",
@@ -851,29 +654,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "light": true,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M136",
     "model_key": 136,
-    "page": "NewThreeActivity",
-    "label": "CS-B200M",
-    "fragments": [],
     "command_ids": [
       "C0977",
       "C0978",
@@ -902,25 +688,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "massage": "head/foot3 levels,2 wave modes",
-      "light": true,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M137",
     "model_key": 137,
-    "page": "NewOneActivity",
-    "label": "CS-B300",
-    "fragments": [],
     "command_ids": [
       "C0926",
       "C0927",
@@ -944,24 +717,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 0,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 0
     }
   },
   {
     "id": "M138",
     "model_key": 138,
-    "page": "NewFiveActivity",
-    "label": "CS-B300A",
-    "fragments": [],
     "command_ids": [
       "C0828",
       "C0829",
@@ -997,30 +758,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "light": true,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M139",
     "model_key": 139,
-    "page": "NewFourActivity",
-    "label": "CS-B300M",
-    "fragments": [],
     "command_ids": [
       "C0857",
       "C0858",
@@ -1053,26 +796,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "massage": "head/foot3 levels,2 wave modes",
-      "light": true,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M140",
     "model_key": 140,
-    "page": "NewEightActivity",
-    "label": "CS-B500YA",
-    "fragments": [],
     "command_ids": [
       "C0799",
       "C0800",
@@ -1108,31 +837,13 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "side-selected head/back",
-        "side-selected waist",
-        "side-selected foot"
-      ],
       "memory_slots": 2,
-      "side_selection": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "light": true,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "side_selection": true
     }
   },
   {
     "id": "M141",
     "model_key": 141,
-    "page": "NewNineActivity",
-    "label": "CS-B500YM",
-    "fragments": [],
     "command_ids": [
       "C0899",
       "C0900",
@@ -1166,27 +877,13 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "side-selected head/back",
-        "side-selected waist",
-        "side-selected foot"
-      ],
       "memory_slots": 2,
-      "side_selection": true,
-      "massage": "left/right head/foot3 levels,2 wave modes",
-      "light": true,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "side_selection": true
     }
   },
   {
     "id": "M142",
     "model_key": 142,
-    "page": "NewTwoActivity1",
-    "label": "BA210",
-    "fragments": [],
     "command_ids": [
       "C1012",
       "C1013",
@@ -1206,27 +903,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 0,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 0
     }
   },
   {
     "id": "M145",
     "model_key": 145,
-    "page": "NewMusicBed200IActivity",
-    "label": "CS-B200I",
-    "fragments": [
-      "Position200IFragment",
-      "ColorLightFragment",
-      "Music2Fragment"
-    ],
     "command_ids": [
       "C0426",
       "C0427",
@@ -1271,43 +953,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "sonic_massage": "back/foot zone,mode1/mode2,switch,shared mode select",
-      "bed_rgb": true,
-      "brightness_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_channel": 3,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M153",
     "model_key": 153,
-    "page": "NewMusicBedActivity",
-    "label": "CS-B200AS",
-    "fragments": [
-      "ColorLightFragment",
-      "PositionFragment",
-      "MusicFragment"
-    ],
     "command_ids": [
       "C0426",
       "C0427",
@@ -1347,38 +998,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "bed_rgb": true,
-      "brightness_range": [
-        0,
-        100
-      ],
-      "sonic_massage": "channel2 relative up/down/toggle; audio channels1/3 excluded",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M154",
     "model_key": 154,
-    "page": "NewMusicBed300ASActivity",
-    "label": "CS-B300AS",
-    "fragments": [
-      "ColorLightFragment",
-      "MusicFragment",
-      "Position4Fragment"
-    ],
     "command_ids": [
       "C0426",
       "C0427",
@@ -1422,39 +1047,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "bed_rgb": true,
-      "brightness_range": [
-        0,
-        100
-      ],
-      "sonic_massage": "channel2 relative up/down/toggle; audio channels1/3 excluded",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M169",
     "model_key": 169,
-    "page": "NewMusicBedActivity",
-    "label": "CS-B200MS",
-    "fragments": [
-      "ColorLightFragment",
-      "PositionFragment",
-      "MusicFragment"
-    ],
     "command_ids": [
       "C0426",
       "C0427",
@@ -1494,38 +1092,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "bed_rgb": true,
-      "brightness_range": [
-        0,
-        100
-      ],
-      "sonic_massage": "channel2 relative up/down/toggle; audio channels1/3 excluded",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M170",
     "model_key": 170,
-    "page": "NewMusicBed300IActivity",
-    "label": "CS-B300I",
-    "fragments": [
-      "ColorLightFragment",
-      "Music2Fragment",
-      "Position300iFragment"
-    ],
     "command_ids": [
       "C0426",
       "C0427",
@@ -1574,44 +1146,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "sonic_massage": "back/foot zone,mode1/mode2,switch,shared mode select",
-      "bed_rgb": true,
-      "brightness_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_channel": 3,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M171",
     "model_key": 171,
-    "page": "NewMusicBed400IActivity",
-    "label": "CS-B400I",
-    "fragments": [
-      "ColorLightFragment",
-      "Music2Fragment",
-      "Position400iFragment"
-    ],
     "command_ids": [
       "C0426",
       "C0427",
@@ -1660,45 +1200,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot",
-        "neck(motor4)"
-      ],
-      "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "sonic_massage": "back/foot zone,mode1/mode2,switch,shared mode select",
-      "bed_rgb": true,
-      "brightness_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_channel": 3,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M172",
     "model_key": 172,
-    "page": "NewMusicBed500IActivity",
-    "label": "CS-B500YI",
-    "fragments": [
-      "ColorLightFragment",
-      "Music2Fragment",
-      "Position500iFragment"
-    ],
     "command_ids": [
       "C0426",
       "C0427",
@@ -1747,45 +1254,13 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "side-selected head/back",
-        "side-selected waist",
-        "side-selected foot"
-      ],
       "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "sonic_massage": "back/foot zone,mode1/mode2,switch,shared mode select",
-      "side_selection": true,
-      "bed_rgb": true,
-      "brightness_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_channel": 3,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "side_selection": true
     }
   },
   {
     "id": "M173",
     "model_key": 173,
-    "page": "NewMusicBed500xlActivity",
-    "label": "CS-B500XL",
-    "fragments": [
-      "ColorLightFragment",
-      "Music2Fragment",
-      "Position500xlFragment"
-    ],
     "command_ids": [
       "C0426",
       "C0427",
@@ -1846,46 +1321,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot",
-        "head lift",
-        "foot lift"
-      ],
-      "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "sonic_massage": "back/foot zone,mode1/mode2,switch,shared mode select",
-      "bed_rgb": true,
-      "brightness_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_channel": 3,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M174",
     "model_key": 174,
-    "page": "NewMusicBed600IActivity",
-    "label": "CS-B600I",
-    "fragments": [
-      "ColorLightFragment",
-      "Music2Fragment",
-      "Position600iFragment"
-    ],
     "command_ids": [
       "C0426",
       "C0427",
@@ -1946,43 +1387,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot",
-        "head lift",
-        "foot lift",
-        "neck(motor6)"
-      ],
-      "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "sonic_massage": "back/foot zone,mode1/mode2,switch,shared mode select",
-      "bed_rgb": true,
-      "brightness_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_channel": 3,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M175",
     "model_key": 175,
-    "page": "NewBx200Activity",
-    "label": "CS-BX200",
-    "fragments": [],
     "command_ids": [
       "C0786",
       "C0787",
@@ -2002,23 +1412,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 0,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 0
     }
   },
   {
     "id": "M176",
     "model_key": 176,
-    "page": "B200m2Activity",
-    "label": "CB-B200M2",
-    "fragments": [],
     "command_ids": [
       "C0736",
       "C0737",
@@ -2047,25 +1446,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "massage": "head/foot3 levels,2 wave modes",
-      "light": true,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M177",
     "model_key": 177,
-    "page": "B300m2Activity",
-    "label": "CB-B300M2",
-    "fragments": [],
     "command_ids": [
       "C0758",
       "C0759",
@@ -2098,29 +1484,12 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "waist",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "massage": "head/foot3 levels,2 wave modes",
-      "light": true,
-      "note": "Capabilities independently confirmed from this activity callsites. P2 bytes are different; no P1 timing inherited.",
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   },
   {
     "id": "M179",
     "model_key": 179,
-    "page": "BS20HIActivity",
-    "label": "BS20HI",
-    "fragments": [
-      "Music2Fragment",
-      "BS20HIPositionFragment"
-    ],
     "command_ids": [
       "C0393",
       "C0394",
@@ -2162,26 +1531,7 @@
       "P2"
     ],
     "capabilities": {
-      "axes": [
-        "head/back",
-        "foot"
-      ],
-      "memory_slots": 2,
-      "light": true,
-      "presets": [
-        "ZZ preset",
-        "TV",
-        "zero gravity"
-      ],
-      "sonic_massage": "back/foot zone,mode1/mode2,switch,shared mode select",
-      "sonic_massage_level_range": [
-        0,
-        100
-      ],
-      "sonic_massage_level_channel": 3,
-      "position_feedback": "NOT FOUND: no motor angle/position parser or target position action",
-      "hardware": "UNVERIFIED",
-      "capability_query": "NOT FOUND: catalog/activity driven, no negotiated bitmask"
+      "memory_slots": 2
     }
   }
 ]

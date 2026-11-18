@@ -2044,7 +2044,8 @@ def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 def _cheerssleep_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
     from .beds.cheerssleep.catalog import MODELS
-    return {str(key): f"{model.label} ({key}, {model.format.upper()})" for key, model in MODELS.items()}
+    # Several app screens share a model name; the key tells them apart.
+    return {str(key): f"{model.label} ({key})" for key, model in MODELS.items()}
 
 
 def _cheerssleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:

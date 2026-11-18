@@ -175,7 +175,9 @@ async def test_picker_new_install_and_per_side_fields(hass, key):
     assert "CheersSleep" in label
     await flow.async_step_select_app({CONF_BED_TYPE: label})
     result = await flow.async_step_manual_entry({"address": "AA:BB:CC:DD:EE:98"})
-    await finish_new_bed(flow, result, {CONF_PRODUCT_TYPE: str(key)})
+    assert result["step_id"] == "profile_questions"
+    result = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: str(key)})
+    await finish_new_bed(flow, result)
     saved = flow._finish_with_verify.await_args.args[0]
     assert saved[CONF_PRODUCT_TYPE] == str(key)
     assert saved["motor_count"] == min(4, max(2, len(app.MODELS[key].axes)))
@@ -1300,3 +1302,48 @@ async def test_p1_sleep_entities_follow_their_side(clock):
             "cheerssleep_right_on_bed",
             "cheerssleep_right_asleep",
         }
+
+
+async def test_reconfigure_asks_the_model_again(hass):
+    from homeassistant.config_entries import SOURCE_RECONFIGURE
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=5,
+        data={CONF_BED_TYPE: "cheerssleep", CONF_PRODUCT_TYPE: "45", "address": "AA:BB:CC:DD:EE:98"},
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+    result = await flow.async_step_reconfigure()
+    picker = next(v for k, v in result["data_schema"].schema.items() if k == CONF_BED_TYPE)
+    label = next(label for label, value in picker.rows().items() if value == "cheerssleep")
+    result = await flow.async_step_reconfigure_bed_type({CONF_BED_TYPE: label})
+    assert result["type"] == "form"
+    assert CONF_PRODUCT_TYPE in {str(field) for field in result["data_schema"].schema}
+
+
+async def test_discovered_bed_starts_with_its_advertised_model(hass):
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from tests.form_helpers import finish_new_bed, start_new_bed
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    info = MagicMock()
+    info.name = "CheersSleep"
+    info.address = "AA:BB:CC:DD:EE:98"
+    info.service_uuids = [codec.SERVICE]
+    info.manufacturer_data = {89: bytes((0, 0, 45))}  # Model 134.
+    info.source = "auto"
+    flow._discovery_info = info
+    flow._async_transport_note = AsyncMock(return_value="")
+    flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
+    result = await start_new_bed(flow, "picked", "cheerssleep")
+    assert result["step_id"] == "profile_questions"
+    result = await flow.async_step_profile_questions({})
+    await finish_new_bed(flow, result)
+    assert flow._finish_with_verify.await_args.args[0][CONF_PRODUCT_TYPE] == "134"
