@@ -1414,6 +1414,22 @@
  "button:richmat_classic_release": {
   "card_section": "utility"
  },
+ "button:richmat_legacy_lighting": {
+  "card_section": "lighting"
+ },
+ "button:richmat_legacy_massage": {
+  "card_section": "massage"
+ },
+ "button:richmat_legacy_presets": {
+  "card_section": "presets"
+ },
+ "button:richmat_legacy_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:richmat_legacy_utility": {
+  "card_section": "utility"
+ },
  "button:richmat_mh_action": {
   "card_section": "utility"
  },
