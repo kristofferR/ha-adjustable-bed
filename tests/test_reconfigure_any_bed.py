@@ -281,3 +281,33 @@ async def test_the_previous_apps_settings_go_before_pairing(hass: HomeAssistant)
         await flow._async_finish_family_route()
 
     assert const.CONF_VIBRADORM_APP_PROFILE not in flow._manual_data
+
+
+def test_returning_to_the_saved_bed_type_keeps_the_new_apps_settings(hass: HomeAssistant) -> None:
+    """Only the route's generic settings come back; another app's own stay cleared."""
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.profile_migration import MigrationSnapshot
+
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        title="Bed",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:49",
+            const.CONF_BED_TYPE: const.BED_TYPE_MALOUF_APP,
+            const.CONF_MALOUF_APP_PROFILE: "malouf",
+            const.CONF_MALOUF_APP_MODEL: "S755",
+        },
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, reconfigure_context(entry)
+    flow._migration = MigrationSnapshot.of(entry)
+    flow._manual_data = flow._migration.staged(entry.title)
+    # The family's answer switches the app and clears the old one's model.
+    flow._manual_data[const.CONF_MALOUF_APP_PROFILE] = "lucid"
+    flow._manual_data.pop(const.CONF_MALOUF_APP_MODEL)
+
+    flow._select_family_route(const.BED_TYPE_MALOUF_APP, None)
+
+    assert flow._manual_data[const.CONF_MALOUF_APP_PROFILE] == "lucid"
+    assert const.CONF_MALOUF_APP_MODEL not in flow._manual_data

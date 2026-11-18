@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import copy
 import dataclasses
 import logging
 import sys
@@ -1664,6 +1665,17 @@ def _keeson_route_label(bed_type: str, variant: str | None) -> str:
     return (get_variants_for_bed_type(bed_type) or {}).get(variant, variant)
 
 
+# The settings _apply_route_defaults replaces for a newly chosen route.
+_ROUTE_DEFAULT_KEYS: Final = (
+    CONF_PROTOCOL_VARIANT,
+    CONF_MOTOR_COUNT,
+    CONF_MOTOR_PULSE_COUNT,
+    CONF_MOTOR_PULSE_DELAY_MS,
+    CONF_MOTOR_PULSE_USER_SET,
+    CONF_DISABLE_ANGLE_SENSING,
+)
+
+
 def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | None) -> None:
     """Give a newly chosen route the defaults Configure gives a bed-type change."""
     data[CONF_BED_TYPE] = bed_type
@@ -2731,11 +2743,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 None,
                 saved.get(CONF_PROTOCOL_VARIANT),
             ):
-                # Back on the saved route: its own settings return too, such as
-                # Movement per tap and lift entries another route reset.
-                restored = self._migration.staged(self._get_reconfigure_entry().title)
-                data.clear()
-                data.update(restored)
+                # Back on the saved route: the generic settings another route's
+                # defaults replaced come back, such as Movement per tap. App
+                # settings stay as the family's answer left them.
+                data[CONF_BED_TYPE] = bed_type
+                for key in _ROUTE_DEFAULT_KEYS:
+                    if key in saved:
+                        data[key] = copy.deepcopy(saved[key])
+                    else:
+                        data.pop(key, None)
                 return
         if bed_type == data[CONF_BED_TYPE] and variant in (None, data.get(CONF_PROTOCOL_VARIANT)):
             return
