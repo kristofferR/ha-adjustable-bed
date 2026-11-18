@@ -662,6 +662,8 @@ class AgingPlaceController(KeesonController):
                     "mdi:timer-outline",
                     native_unit_of_measurement="s",
                     entity_registry_enabled_default=True,
+                    # Time left on a running program: a dashboard timer.
+                    entity_category=None,
                 )
                 for name in ("circulation", "sleep", "relax_cycle")
             ),

@@ -164,7 +164,11 @@ async def test_configure_and_restore_keep_model_independent_from_alarm_snapshot(
     )
     built = await build_controller(ctx)
     assert built.model == "meise" and built.capability_snapshot() == {"alarm_count": 3}
-    assert len(built.controller_state_binary_sensor_specs) == 3
+    assert len(built.controller_state_binary_sensor_specs) == 0
+    assert sum(
+        state.ALARM_OPEN[0] in spec.attribute_keys
+        for spec in built.controller_state_sensor_specs
+    ) == 1
     assert len(SETUP_PROFILES["onlysnore"].questions) == 1
     discovered = SimpleNamespace(
         name="SLEEP_V",

@@ -109,6 +109,9 @@ async def select(controller: BedController, value: str, *, key: str) -> None:
     await require_controller(controller, MotoMotionController).async_select_motomotion(key, value)
 
 
+# A user's body dimensions, in centimetres as the app enters them.
+_DIMENSIONS: Final = ("height", "buttocks", "knee")
+
 # Entity names for actions whose key does not read as one.
 _ACTION_NAMES: Final = {
     "program_release": "Program memory",
@@ -1097,7 +1100,7 @@ class MotoMotionController(BedController):
             ranges.update(dict.fromkeys(("red", "green", "blue"), (0, 255)))
             ranges["timer"] = (0, 7259)
         if self.profile.users:
-            ranges.update(dict.fromkeys(("height", "buttocks", "knee"), (0, 65535)))
+            ranges.update(dict.fromkeys(_DIMENSIONS, (0, 65535)))
             ranges.update({"target_" + k: (0, v) for k, v in FINE_LIMITS.items()})
         return tuple(
             ControllerNumberSpec(
@@ -1111,7 +1114,7 @@ class MotoMotionController(BedController):
                     number,
                     key=key,
                 ),
-                "s" if key == "timer" else None,
+                "s" if key == "timer" else "cm" if key in _DIMENSIONS else None,
             )
             for key, (low, high) in ranges.items()
         )

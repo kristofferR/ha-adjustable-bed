@@ -717,7 +717,8 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
                 str(key),
                 key,
                 icon,
-                entity_registry_enabled_default=key != state.ANTI_ANGLE,
+                # The alarm mode is the bed's raw mode and day mask.
+                entity_registry_enabled_default=key not in (state.ANTI_ANGLE, state.ALARM_MODE),
             )
             for key, icon in fields
         )
