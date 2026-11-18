@@ -111,7 +111,6 @@ from .const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
-    CONF_CONNECTION_PROFILE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_LIGHT,
@@ -127,7 +126,6 @@ from .const import (
     CONF_MOTOR_PULSE_USER_SET,
     CONF_PAIR_MODE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
-    CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROFILE_ID,
     CONF_REMACRO_LED_LEVEL,
@@ -143,15 +141,13 @@ from .const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
     CONF_VMATBASIC_PROFILE,
-    CONNECTION_PROFILES,
+    CONNECTION_SETTINGS,
     DEFAULT_BACK_MAX_ANGLE,
-    DEFAULT_CONNECTION_PROFILE,
     DEFAULT_DISABLE_ANGLE_SENSING,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
     DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_MOTOR_COUNT,
-    DEFAULT_POSITION_MODE,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
@@ -162,7 +158,6 @@ from .const import (
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIRLINK_ROLE_PERIPHERAL,
-    POSITION_MODE_ACCURACY,
     RICHMAT_MH_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
     SOLACE_VARIANT_WOOSA,
@@ -391,22 +386,9 @@ class AdjustableBedCoordinator(
                 passive_position_reconciliation_default_enabled(self._bed_type),
             )
         )
-        self._position_mode: str = entry.data.get(CONF_POSITION_MODE, DEFAULT_POSITION_MODE)
         self._preferred_adapter: str = entry.data.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO)
 
-        # Connection profile settings
-        self._connection_profile: str = entry.data.get(
-            CONF_CONNECTION_PROFILE, DEFAULT_CONNECTION_PROFILE
-        )
-        profile_settings = CONNECTION_PROFILES.get(self._connection_profile)
-        if profile_settings is None:
-            _LOGGER.warning(
-                "Unknown connection profile '%s'; defaulting to '%s'",
-                self._connection_profile,
-                DEFAULT_CONNECTION_PROFILE,
-            )
-            self._connection_profile = DEFAULT_CONNECTION_PROFILE
-            profile_settings = CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE]
+        profile_settings = CONNECTION_SETTINGS
         self._max_retries: int = profile_settings.max_retries
         self._retry_base_delay: float = profile_settings.retry_base_delay
         self._retry_jitter: float = profile_settings.retry_jitter
@@ -612,7 +594,7 @@ class AdjustableBedCoordinator(
         )
 
         _LOGGER.debug(
-            "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s, connection_profile: %s)",
+            "Coordinator initialized for %s at %s (type: %s, motors: %d, massage: %s, disable_angle_sensing: %s, adapter: %s)",
             self._name,
             self._address,
             self._bed_type,
@@ -620,7 +602,6 @@ class AdjustableBedCoordinator(
             self._has_massage,
             self._disable_angle_sensing,
             self._preferred_adapter,
-            self._connection_profile,
         )
 
     def _async_persist_config(
@@ -1915,12 +1896,8 @@ class AdjustableBedCoordinator(
 
                 # Final position read after command
                 if not self._disable_angle_sensing and not self._cancel_command.is_set():
-                    if self._position_mode == POSITION_MODE_ACCURACY:
-                        # Accuracy mode: wait for read to complete
-                        await self._async_read_positions()
-                    else:
-                        # Speed mode: fire-and-forget with lock to prevent concurrent GATT ops
-                        self._start_background_position_read()
+                    # Fire-and-forget with lock to prevent concurrent GATT ops
+                    self._start_background_position_read()
             finally:
                 if self._client is not None and self._client.is_connected:
                     self._reset_disconnect_timer()
@@ -2380,9 +2357,7 @@ class AdjustableBedCoordinator(
                     and not cancel_event.is_set()
                     and not self._command_scheduler.has_pending
                 ):
-                    if self._position_mode == POSITION_MODE_ACCURACY or (
-                        self._disconnect_after_operation_enabled() and not skip_disconnect
-                    ):
+                    if self._disconnect_after_operation_enabled() and not skip_disconnect:
                         await self._async_wait_for_controller_operation(
                             asyncio.create_task(self._async_read_positions()),
                             cancel_event=cancel_event,

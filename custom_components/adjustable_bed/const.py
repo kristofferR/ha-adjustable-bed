@@ -241,12 +241,10 @@ PRODUCT_TYPES: Final = {"bed": "Bed", "chair": "Chair"}
 CONF_REVERSE_MOTORS: Final = tuple(f"reverse_motor_{i}" for i in range(1, 5))
 CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
-CONF_CONNECTION_PROFILE: Final = "connection_profile"
 CONF_MOTOR_PULSE_COUNT: Final = "motor_pulse_count"
 CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
 CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
-CONF_POSITION_MODE: Final = "position_mode"
 CONF_PASSIVE_POSITION_RECONCILIATION: Final = "passive_position_reconciliation"
 # Global (not per-entry) toggle to suppress automatic Bluetooth discovery cards.
 # Stored separately via discovery_settings, surfaced as a checkbox in the options
@@ -397,14 +395,6 @@ DEFAULT_PAIR_CONNECTION_MODE: Final = PAIR_CONNECTION_MODE_AUTO
 DEFAULT_BACK_MAX_ANGLE: Final = 68.0
 DEFAULT_LEGS_MAX_ANGLE: Final = 45.0
 REVERIE_BACK_MAX_ANGLE: Final = 60.0
-
-# Position mode values
-POSITION_MODE_SPEED: Final = "speed"
-POSITION_MODE_ACCURACY: Final = "accuracy"
-
-# Connection profile values
-CONNECTION_PROFILE_BALANCED: Final = "balanced"
-CONNECTION_PROFILE_RELIABLE: Final = "reliable"
 
 # Special value for auto adapter selection
 ADAPTER_AUTO: Final = "auto"
@@ -2918,32 +2908,22 @@ POSITION_STALL_COUNT: Final = 3  # Number of consecutive stall detections before
 DEFAULT_MOTOR_COUNT: Final = 2
 DEFAULT_HAS_MASSAGE: Final = False
 DEFAULT_DISABLE_ANGLE_SENSING: Final = True  # For beds without angle sensing
-DEFAULT_POSITION_MODE: Final = POSITION_MODE_SPEED
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
 DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
 DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
 # Idle timeout value meaning "never idle-disconnect" (issue #700).
 IDLE_DISCONNECT_KEEP_CONNECTED: Final = 0
 DEFAULT_OCTO_PIN: Final = ""
-DEFAULT_CONNECTION_PROFILE: Final = CONNECTION_PROFILE_BALANCED
-
-# Connection profiles
-CONNECTION_PROFILES: Final = {
-    CONNECTION_PROFILE_BALANCED: ConnectionProfileSettings(
-        max_retries=3,
-        retry_base_delay=2.0,  # 2s then 4s (with jitter)
-        retry_jitter=0.2,
-        connection_timeout=20.0,
-        post_connect_delay=0.5,
-    ),
-    CONNECTION_PROFILE_RELIABLE: ConnectionProfileSettings(
-        max_retries=3,
-        retry_base_delay=3.0,  # 3s then 6s (with jitter)
-        retry_jitter=0.2,
-        connection_timeout=25.0,
-        post_connect_delay=1.0,
-    ),
-}
+# BLE connection timing. One setting for every bed: the slower values of the
+# former "Reliable" profile, since the faster ones only saved seconds on a
+# connect that had already worked.
+CONNECTION_SETTINGS: Final = ConnectionProfileSettings(
+    max_retries=3,
+    retry_base_delay=3.0,  # 3s then 6s (with jitter)
+    retry_jitter=0.2,
+    connection_timeout=25.0,
+    post_connect_delay=1.0,
+)
 
 # Default motor pulse values (can be overridden per device)
 # These control how many command pulses are sent and the delay between them

@@ -5582,7 +5582,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     if request_bond
                     and self._manual_data is not None
                     and self._manual_data.get(CONF_VIBRADORM_APP_PROFILE) == "vmat"
-                    else CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE].connection_timeout
+                    else CONNECTION_SETTINGS.connection_timeout
                 ),
                 **connect_kwargs,
             )

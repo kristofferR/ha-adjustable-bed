@@ -3577,7 +3577,6 @@ class TestStopAfterCancel:
 
         coordinator = AdjustableBedCoordinator(hass, entry)
         await coordinator.async_connect()
-        coordinator._position_mode = "accuracy"
 
         async def dummy_command(_controller) -> None:
             return None
