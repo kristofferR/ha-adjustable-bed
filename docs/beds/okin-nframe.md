@@ -5622,14 +5622,17 @@ app's five control pairs or assert a physical actuator count.
 
 #### Controls
 
-Head, Foot and Head Tilt retain the app labels. **Posture (LUMBAR)** and
-**Lumbar (HIPS)** retain both visible and internal names because their physical
-mapping is unverified. There is no angle feedback, seek, or calibration.
+Head, Foot and Head tilt use the app labels. The covers **Posture** and
+**Lumbar** also use the app's visible labels; the app's internal names for
+them are LUMBAR and HIPS, and their physical mapping is unverified. There is no
+angle feedback, seek, or calibration.
 
-Flat, ZG, ANTI, M1 and M2 are held recalls. Dedicated confirmed buttons hold
-ZG, ANTI, M1 or M2 for the app's save gesture, or hold the fixed FLAT+ZG
-combination. The app's completion toast is not a device acknowledgement;
-FLAT+ZG is not claimed to erase EEPROM or factory settings. TV and Read are
+Flat, ZG, ANTI, M1 and M2 are held recalls. Confirmed **Save zero gravity
+position** and **Save anti-snore position** buttons, and the generic **Save to
+Memory 1/2** buttons, hold that preset's frame for the app's save gesture.
+**Reset saved positions** holds the fixed FLAT+ZG combination. The app's
+completion toast is not a device acknowledgement; the reset is not claimed to
+erase EEPROM or factory settings. TV and Read are
 not exposed because they have no reachable command.
 
 Massage offers head/foot intensity steps, wave steps, timer cycling and a
@@ -5708,9 +5711,10 @@ operations use the normal coordinator admission.
 
 #### Notifications
 
-Massage and alarm reports contain two seven-byte records. Each A/AB/B massage
-timer sensor has raw wave and head/foot intensity attributes; each bed alarm
-sensor has days, wake type, raw position index and enabled attributes. These
+Massage and alarm reports contain two seven-byte records. The Left (A), Right
+(B) and Both sides (AB) massage timer sensors have raw wave and head/foot
+intensity attributes; each alarm sensor has days, wake type, raw position index
+and enabled attributes. These
 states clear on disconnect. A record with side zero marks standalone operation
 and always selects the first record, even when the second record contains zero.
 AB requires A/B records to agree. Massage uses whole timer buckets for the low
@@ -5733,8 +5737,10 @@ minute, a Sunday-bit-0 weekday mask, enabled, and Vibrate, ZG or M1. Mask 128
 chooses today only if the selected minute is strictly after local now,
 otherwise tomorrow; 255 preserves the app default. Toggle requires a valid
 report on the current connection and preserves its other fields. Every target
-is validated before mutation. Refresh and explicit clock-sync buttons use the
-same scheduler as all other controls. Bed alarms already written can run while
+is validated before mutation. **Refresh massage** and **Refresh alarm** are
+diagnostic buttons, disabled by default, and use the same scheduler as the
+**Sync bed clock** button and all other controls. The card's hidden **Release
+held control** button ends a held control without an extra STOP. Bed alarms already written can run while
 HA is disconnected.
 
 #### Evidence
