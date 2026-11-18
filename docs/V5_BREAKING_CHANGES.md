@@ -230,19 +230,21 @@ The same control now looks the same on every bed:
   "--". In bed, snoring and body movement are binary sensors with the occupancy,
   sound and motion device classes. They are enabled and no longer under
   Diagnostic. Every bed uses the same names ("Left heart rate", "Right in bed").
-  The sensors that stay sensors keep their entity IDs; in-bed, snoring and
+  Heart and breathing rate sensors keep their entity IDs and settings, so one
+  that was disabled stays disabled until you enable it. In-bed, snoring and
   movement readings that were text sensors are new binary sensors with new
-  entity IDs. A reading that was disabled before the upgrade stays disabled:
-  enable it in its entity settings. The DoubleSleep breathing rate's unit
-  changes from brpm to breaths/min, and Home Assistant offers to update its
+  entity IDs: they start enabled, and the old sensor's name, area and other
+  settings do not carry over. The DoubleSleep breathing rate's unit changes
+  from brpm to breaths/min, and Home Assistant offers to update its
   statistics.
 - **Sleep Number bed presence is enabled by default** and named "In bed",
   "Left in bed" and "Right in bed", like every other bed's occupancy.
 - **Every on/off under-bed light is a `light` entity.** It was a switch
   (`switch.<bed>_under_bed_lights`) on 32 bed types and is now
-  `light.<bed>_under_bed_lights`. Point automations and voice assistants at the
-  light. Beds that cannot report the light's state show it as assumed, as the
-  switch did. Octo keeps its switch: its light depends on the Octo PIN session
+  `light.<bed>_under_bed_lights`. The switch is removed; a name, area or other
+  setting you gave it does not carry over to the light. Point automations and
+  voice assistants at the light. Beds that cannot report the light's state show
+  it as assumed, as the switch did. Octo keeps its switch: its light depends on the Octo PIN session
   and the bed's own light timer, which the switch handles.
 - **Keeson, Serta, Ergomotion and OKIN FFE beds have a Stop button**, like the
   other beds on the same receiver. It sends the release key the remote sends
