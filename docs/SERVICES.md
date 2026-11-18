@@ -203,7 +203,7 @@ longer than 30 seconds in total, however often it is renewed. Latched beds
 (Solace, BedSense, Reverie, Kaidi, iSleep and Remacro) keep moving
 after one start frame until STOP arrives, so their holds stop after 10 seconds
 in total. A renewable
-hold targets one bed or paired bed per call; on a paired bed both sides must
+hold targets one bed or combined bed per call; on a combined bed both sides must
 declare the same hold mode, and one renewal renews both sides.
 
 The dashboard card uses this for every press on a bed that supports it: one
@@ -1589,7 +1589,7 @@ a separate Richmat sleep entry. See the [operation and parameter reference](beds
 `adjustable_bed.rize_program_preset` accepts `device_id`, `preset` (`zero_g`,
 `anti_snore`, `book`, `leisure`) and required `confirm: true`. It requires an
 extended Rize product and one physical target. Reading (`book`) programming
-requires layout5/6 (products135/136/140); Reading recall is also available on7/8. For a paired bed, select its
+requires layout5/6 (products135/136/140); Reading recall is also available on7/8. For a combined bed, select its
 child device or specify `side: left` or `side: right`; Both and multi-target
 programming are rejected. It writes once to that selected target, with no
 preliminary memory-slot write. See the [Rize guide](beds/kaidi.md#rize-beds).

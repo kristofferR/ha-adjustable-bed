@@ -6696,7 +6696,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed."
+          "description": "Which side of a combined bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed."
         }
       }
     },
@@ -6714,7 +6714,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed."
+          "description": "Which side of a combined bed to target. Leave unset to target the whole bed (or the specific side when you target one side's device); single beds always control the whole bed."
         }
       }
     },
@@ -6728,7 +6728,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to stop. Leave unset to stop the whole bed (or the specific side when you target one side's device); single beds always stop the whole bed."
+          "description": "Which side of a combined bed to stop. Leave unset to stop the whole bed (or the specific side when you target one side's device); single beds always stop the whole bed."
         }
       }
     },
@@ -6750,7 +6750,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
+          "description": "Which side of a combined bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
         }
       }
     },
@@ -6768,7 +6768,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
+          "description": "Which side of a combined bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
         }
       }
     },
@@ -6794,7 +6794,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
+          "description": "Which side of a combined bed to target. Leave unset to target both sides (or the specific side when you target one side's device); single beds use their whole-bed target."
         },
         "hold_owner": {
           "name": "Hold owner",
@@ -6823,7 +6823,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. Leave unset to target the whole bed, or the side whose device you selected."
+          "description": "Which side of a combined bed to target. Leave unset to target the whole bed, or the side whose device you selected."
         },
         "hold_owner": {
           "name": "Hold owner",
@@ -6918,7 +6918,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. Leave unset to target the whole bed, or the side whose device you selected."
+          "description": "Which side of a combined bed to target. Leave unset to target the whole bed, or the side whose device you selected."
         }
       }
     },
@@ -6935,7 +6935,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. Leave unset to target the whole bed, or the side whose device you selected."
+          "description": "Which side of a combined bed to target. Leave unset to target the whole bed, or the side whose device you selected."
         }
       }
     },
@@ -6949,7 +6949,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to use. Leave unset for both sides, or the side of the device you target."
+          "description": "Which side of a combined bed to use. Leave unset for both sides, or the side of the device you target."
         },
         "motors": {
           "name": "Motors",
@@ -6967,7 +6967,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to save. Both saves both sides; Left or Right saves only that side."
+          "description": "Which side of a combined bed to save. Both saves both sides; Left or Right saves only that side."
         },
         "name": {
           "name": "Name",
@@ -6989,7 +6989,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+          "description": "Which side of a combined bed is selected. A position that also covers the other side needs the whole bed."
         },
         "position": {
           "name": "Saved position",
@@ -7015,7 +7015,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+          "description": "Which side of a combined bed is selected. A position that also covers the other side needs the whole bed."
         },
         "position": {
           "name": "Saved position",
@@ -7033,7 +7033,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+          "description": "Which side of a combined bed is selected. A position that also covers the other side needs the whole bed."
         },
         "position": {
           "name": "Saved position",
@@ -7051,7 +7051,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed is selected. A position that also covers the other side needs the whole bed."
+          "description": "Which side of a combined bed is selected. A position that also covers the other side needs the whole bed."
         },
         "position": {
           "name": "Saved position",
@@ -7069,7 +7069,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to use. Leave unset for both sides, or the side of the device you target."
+          "description": "Which side of a combined bed to use. Leave unset for both sides, or the side of the device you target."
         },
         "motors": {
           "name": "Motors",
@@ -7087,7 +7087,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to use. Leave unset for both sides, or the side of the device you target."
+          "description": "Which side of a combined bed to use. Leave unset for both sides, or the side of the device you target."
         }
       }
     },
@@ -7101,7 +7101,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to use. Leave unset for both sides, or the side of the device you target."
+          "description": "Which side of a combined bed to use. Leave unset for both sides, or the side of the device you target."
         }
       }
     },
@@ -7137,7 +7137,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Physical side for a two-address pair."
+          "description": "Which side of a combined bed."
         },
         "operation": {
           "name": "Control",
@@ -7187,7 +7187,7 @@
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "BedTech bed or paired parent device. Select an explicit app model first."
+          "description": "BedTech bed or combined bed. Select an explicit app model first."
         },
         "action": {
           "name": "Action",
@@ -7199,7 +7199,7 @@
         },
         "side": {
           "name": "Target side",
-          "description": "Optional paired target restriction. Conflicting app sleeper routing is rejected."
+          "description": "Optional side of a combined bed. Conflicting app sleeper routing is rejected."
         }
       }
     },
@@ -7272,8 +7272,8 @@
           "description": "External status sensor used by snore detection."
         },
         "side": {
-          "name": "Paired side",
-          "description": "Side of a paired bed to target."
+          "name": "Side",
+          "description": "Side of a combined bed to target."
         }
       }
     },
@@ -7361,7 +7361,7 @@
           "name": "Bed"
         },
         "side": {
-          "name": "Paired target"
+          "name": "Side"
         },
         "action": {
           "name": "Action"
@@ -7808,8 +7808,8 @@
           "description": "External status sensor used by snore detection."
         },
         "side": {
-          "name": "Paired side",
-          "description": "Side of a paired bed to target."
+          "name": "Side",
+          "description": "Side of a combined bed to target."
         }
       }
     },
@@ -7884,7 +7884,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Select the physical side of a paired bed."
+          "description": "Select the physical side of a combined bed."
         },
         "confirmed": {
           "name": "Confirm calibration",
@@ -7906,7 +7906,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Select the physical side of a paired bed."
+          "description": "Select the physical side of a combined bed."
         },
         "underbed_light": {
           "name": "Lamp controls",
@@ -7928,7 +7928,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Select the physical side of a paired bed."
+          "description": "Select the physical side of a combined bed."
         },
         "preset": {
           "name": "Memory slot",
@@ -7995,7 +7995,7 @@
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "Luuna bed or paired bed side to control."
+          "description": "Luuna bed, or one side of a combined bed."
         },
         "operation": {
           "name": "Operation",
@@ -8022,8 +8022,8 @@
           "description": "Position preset recalled by the alarm."
         },
         "side": {
-          "name": "Paired side",
-          "description": "Side of a paired bed to target."
+          "name": "Side",
+          "description": "Side of a combined bed to target."
         }
       }
     },
@@ -8429,7 +8429,7 @@
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "Choose one OCTO receiver or one side of a paired bed."
+          "description": "Choose one OCTO receiver or one side of a combined bed."
         },
         "octo_pin": {
           "name": "New PIN",
@@ -8441,7 +8441,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Choose one side when targeting a paired bed. Both is not allowed."
+          "description": "Choose one side when targeting a combined bed. Both is not allowed."
         }
       }
     },
@@ -8451,7 +8451,7 @@
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "Choose one OCTO receiver or one side of a paired bed."
+          "description": "Choose one OCTO receiver or one side of a combined bed."
         },
         "confirmed": {
           "name": "Confirm reset",
@@ -8459,7 +8459,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Choose one side when targeting a paired bed. Both is not allowed."
+          "description": "Choose one side when targeting a combined bed. Both is not allowed."
         }
       }
     },
@@ -8469,7 +8469,7 @@
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "The Pairlink bed or paired bed device."
+          "description": "The Pairlink bed or combined bed device."
         },
         "comfort": {
           "name": "Comfort values",
@@ -8477,7 +8477,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target."
+          "description": "Which side of a combined bed to target."
         }
       }
     },
@@ -8494,7 +8494,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. This does not change an STK numeric side selection."
+          "description": "Which side of a combined bed to target. This does not change an STK numeric side selection."
         }
       }
     },
@@ -8504,7 +8504,7 @@
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "The Reverie bed or paired bed device."
+          "description": "The Reverie bed or combined bed device."
         },
         "comfort": {
           "name": "Comfort values",
@@ -8512,7 +8512,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Which side of a paired bed to target. This does not change an STK numeric side selection."
+          "description": "Which side of a combined bed to target. This does not change an STK numeric side selection."
         }
       }
     },
@@ -8676,7 +8676,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Target side of a paired bed."
+          "description": "Target side of a combined bed."
         }
       }
     },
@@ -8693,7 +8693,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Target side of a paired bed."
+          "description": "Target side of a combined bed."
         }
       }
     },
@@ -8711,7 +8711,7 @@
         },
         "side": {
           "name": "Side",
-          "description": "Target one side or both sides of a paired bed."
+          "description": "Target one side or both sides of a combined bed."
         },
         "actions": {
           "name": "Alarm actions",
@@ -8791,7 +8791,7 @@
     },
     "rize_program_preset": {
       "name": "Rize: set default preset",
-      "description": "Store the current position as a default preset on one physical Rize bed. Select a single paired side and explicitly confirm.",
+      "description": "Store the current position as a default preset on one physical Rize bed. Select one side of a combined bed and explicitly confirm.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -8843,7 +8843,7 @@
         },
         "side": {
           "name": "Physical side",
-          "description": "For paired beds, select left, right or both. A child device defaults to its own side."
+          "description": "For combined beds, select left, right or both. A child device defaults to its own side."
         },
         "command": {
           "name": "Command",
@@ -8863,7 +8863,7 @@
           "name": "Bed"
         },
         "side": {
-          "name": "Paired integration side"
+          "name": "Side"
         },
         "fan_side": {
           "name": "Fan zone"
@@ -8887,7 +8887,7 @@
           "name": "Bed"
         },
         "side": {
-          "name": "Paired integration side"
+          "name": "Side"
         },
         "action": {
           "name": "Action"
@@ -8902,7 +8902,7 @@
           "name": "Bed"
         },
         "side": {
-          "name": "Paired integration side"
+          "name": "Side"
         },
         "preset": {
           "name": "Preset"
@@ -8920,7 +8920,7 @@
           "name": "Bed"
         },
         "side": {
-          "name": "Paired integration side"
+          "name": "Side"
         },
         "action": {
           "name": "Action"
@@ -8935,7 +8935,7 @@
           "name": "Bed"
         },
         "side": {
-          "name": "Paired integration side"
+          "name": "Side"
         },
         "frequency": {
           "name": "Frequency (Hz)"
@@ -9138,17 +9138,11 @@
     "side_not_available": {
       "message": "This bed has no {side} side. Choose a side it has."
     },
-    "service_not_supported_for_paired": {
-      "message": "{device_name} is a paired bed; {service} is not yet supported on paired beds."
-    },
-    "service_needs_side_for_paired": {
-      "message": "{device_name} is a paired bed; target one side's device for {service}."
-    },
     "missing_target": {
       "message": "Provide either a device or a target MAC address for the support bundle."
     },
     "bundle_needs_side_for_paired": {
-      "message": "{device_name} is a paired bed; pick one side's device to generate a support bundle."
+      "message": "{device_name} is a combined bed. Choose one side's device to create a support bundle."
     },
     "simmons_alarm_not_reported": {
       "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."
@@ -9205,10 +9199,10 @@
       "message": "\"{position}\" includes a motor that is no longer estimated. Update or delete it."
     },
     "paired_entry_has_no_sides": {
-      "message": "This paired bed has no sides saved. Delete it and add the beds again."
+      "message": "This combined bed has no sides saved. Delete it and add the beds again."
     },
     "single_address_pair_unsupported": {
-      "message": "This bed's protocol has no side selector, so it cannot show separate sides. Open its options and split the pair to use it as one bed."
+      "message": "This bed has no side selector, so it cannot show separate sides. Open its options and choose Separate to use it as one bed."
     },
     "alarm_time_required": {
       "message": "Choose an alarm time to turn the alarm on."

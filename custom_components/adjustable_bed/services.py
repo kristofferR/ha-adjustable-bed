@@ -398,7 +398,7 @@ def _get_support_bundle_target_from_device(
             # sides; a bundle is per-address, so make the user pick one
             # side's device instead of silently capturing only the first.
             raise ServiceValidationError(
-                f"{entry.title} is a paired bed; target one side's device for the support bundle.",
+                f"{entry.title} is a combined bed; choose one side's device for the support bundle.",
                 translation_domain=DOMAIN,
                 translation_key="bundle_needs_side_for_paired",
                 translation_placeholders={"device_name": entry.title},
