@@ -3684,19 +3684,10 @@
         "name": "Massage: Timer Mode"
       },
       "reverie_head_massage_intensity": {
-        "name": "Reverie: Head Massage Strength"
+        "name": "Head massage strength"
       },
       "reverie_foot_massage_intensity": {
-        "name": "Reverie: Foot Massage Strength"
-      },
-      "reverie_massage_wave": {
-        "name": "Reverie: Wave Value"
-      },
-      "reverie_pairlink_massage_timer": {
-        "name": "Pairlink: Massage Timer Code"
-      },
-      "reverie_pairlink_massage_mode": {
-        "name": "Pairlink: Massage Mode"
+        "name": "Foot massage strength"
       },
       "linak_protocol_error": {
         "name": "Protocol Error"
@@ -4828,6 +4819,9 @@
       },
       "sleepys_app_motion_sensor": {
         "name": "Motion sensor"
+      },
+      "reverie_pairlink_massage_rhythm": {
+        "name": "Massage rhythm"
       }
     },
     "binary_sensor": {
@@ -4847,7 +4841,7 @@
         "name": "BLE Connection"
       },
       "reverie_pairlink_low_battery": {
-        "name": "Pairlink: Low Battery"
+        "name": "Low battery"
       },
       "memory_save_response_observed": {
         "name": "Memory save response observed"
@@ -5106,23 +5100,20 @@
       "light_level": {
         "name": "Light Level"
       },
-      "reverie_wave_level": {
-        "name": "Reverie: Wave Level"
-      },
       "reverie_massage_wave": {
-        "name": "Reverie: Wave Setting"
+        "name": "Massage wave"
       },
       "reverie_stk_head_wave": {
-        "name": "Reverie STK: Head Wave Level"
+        "name": "Head massage wave"
       },
       "reverie_stk_global_massage": {
-        "name": "Reverie STK: Global Massage Value"
+        "name": "Overall massage level"
       },
       "reverie_body_tilt": {
-        "name": "Reverie R650: Body Tilt"
+        "name": "Body tilt"
       },
       "reverie_pairlink_massage_timer": {
-        "name": "Pairlink: Massage Timer Code"
+        "name": "Massage timer"
       },
       "fan_level": {
         "name": "Fan Level"
@@ -5358,7 +5349,7 @@
     },
     "select": {
       "reverie_stk_side": {
-        "name": "Reverie STK Numeric Side",
+        "name": "Controlled side",
         "state": {
           "1": "Side 1",
           "2": "Side 2",
@@ -5366,20 +5357,13 @@
         }
       },
       "reverie_pairlink_massage_mode": {
-        "name": "Pairlink: Massage Mode",
+        "name": "Massage mode",
         "state": {
           "0": "Off",
           "1": "Mode 1",
           "2": "Mode 2",
           "3": "Mode 3",
           "4": "Mode 4"
-        }
-      },
-      "reverie_pairlink_massage_rhythm": {
-        "name": "Pairlink: Massage Rhythm",
-        "state": {
-          "off": "Off",
-          "on": "On"
         }
       },
       "massage_timer": {
