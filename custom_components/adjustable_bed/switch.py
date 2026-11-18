@@ -12,10 +12,13 @@ from homeassistant.components.switch import SwitchEntity, SwitchEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
+from .beds.entity_specs import ControllerSwitchSpec
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
+from .command_scheduler import current_command_context
 from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_SVANE,
@@ -134,9 +137,7 @@ async def async_setup_entry(
         )
 
 
-def _switch_entities_for(
-    hass: HomeAssistant, coordinator: EntityRuntime
-) -> list[AdjustableBedSwitch]:
+def _switch_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list[SwitchEntity]:
     """Build switch entities for a single (child or standalone) coordinator."""
     # capability_controller: an offline paired side (e.g. Linak under-bed lights)
     # still gets its switches built from a client-free controller minted from
@@ -173,7 +174,7 @@ def _switch_entities_for(
                     ),
                 )
             )
-        return entities
+        return list(entities)
 
     entities = []
     for description in SWITCH_DESCRIPTIONS:
@@ -214,7 +215,114 @@ def _switch_entities_for(
                 continue
         entities.append(AdjustableBedSwitch(coordinator, description))
 
-    return entities
+    if controller is None:
+        return list(entities)
+    return [
+        *entities,
+        *(
+            AdjustableBedControllerSwitch(coordinator, spec)
+            for spec in controller.controller_switch_specs
+        ),
+    ]
+
+
+class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
+    """A declared on/off product setting, unknown until the bed reports it."""
+
+    _attr_should_poll = False
+
+    def __init__(self, coordinator: EntityRuntime, spec: ControllerSwitchSpec) -> None:
+        super().__init__(coordinator, spec.card)
+        self._spec = spec
+        self.entity_description = SwitchEntityDescription(
+            key=f"controller_switch_{spec.key}",
+            translation_key=spec.translation_key,
+            icon=spec.icon,
+            entity_registry_enabled_default=spec.entity_registry_enabled_default,
+        )
+        self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
+        self._attr_translation_key = spec.translation_key
+        if spec.translation_placeholders is not None:
+            self._attr_translation_placeholders = dict(spec.translation_placeholders)
+        self._attr_assumed_state = spec.assumed_state or spec.state_key is None
+        # The last command actually sent, for a switch the bed never reports.
+        self._commanded: bool | None = None
+        self._unregister_callbacks: list[Callable[[], None]] = []
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self._unregister_callbacks = [
+            self._coordinator.register_controller_state_callback(
+                self._handle_controller_state_update
+            ),
+            self._coordinator.register_connection_state_callback(self._handle_connection_state),
+        ]
+
+    async def async_will_remove_from_hass(self) -> None:
+        for unregister in self._unregister_callbacks:
+            unregister()
+        self._unregister_callbacks = []
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
+        if self._spec.state_key is not None and self._spec.state_key in state:
+            self.async_write_ha_state()
+
+    @callback
+    def _handle_connection_state(self, connected: bool) -> None:
+        # Without a readback the bed may change while unwatched, so a dropped
+        # link makes the last command unknown rather than stale.
+        if not connected and self._spec.state_key is None and self._commanded is not None:
+            self._commanded = None
+            self.async_write_ha_state()
+
+    @property
+    def is_on(self) -> bool | None:
+        if self._spec.state_key is None:
+            return self._commanded
+        value = self._coordinator.controller_state.get(self._spec.state_key)
+        # A cleared or mistyped report is unknown, never "off".
+        if value is None or type(value) is not type(self._spec.on_value):
+            return None
+        return value == self._spec.on_value
+
+    async def _async_set(self, on: bool) -> None:
+        if self._spec.local_set_fn is not None:
+            # No frame is sent, so do not take the bed's single BLE link.
+            controller = self._coordinator.capability_controller
+            specs = controller.controller_switch_specs if controller is not None else ()
+            live = next((spec for spec in specs if spec.key == self._spec.key), None)
+            if live is None or live.local_set_fn is None:
+                raise ServiceValidationError("Controller no longer supports this setting")
+            live.local_set_fn(on)
+            return
+
+        sent = False
+
+        async def apply(ctrl: BedController) -> None:
+            nonlocal sent
+            live = next(
+                (spec for spec in ctrl.controller_switch_specs if spec.key == self._spec.key), None
+            )
+            if live is None:
+                raise ServiceValidationError("Controller no longer supports this setting")
+            await live.set_fn(ctrl, on)
+            # A writer returns quietly when STOP cancels it before the frame goes out.
+            context = current_command_context()
+            sent = context is None or not context.cancel_event.is_set()
+
+        await self._coordinator.async_execute_controller_command(apply)
+        # A STOP or a replacing command can settle the call without sending it.
+        if sent and self._spec.state_key is None:
+            self._commanded = on
+            self.async_write_ha_state()
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._async_set(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._async_set(False)
 
 
 class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):

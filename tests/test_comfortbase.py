@@ -250,17 +250,17 @@ async def test_ha_entities_and_alarm_service(hass, mock_coordinator_connected, m
     now = datetime(2026, 11, 10, 2, 59, 3)
     monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson.comfortbase.dt_util.now", lambda: now)
     monkeypatch.setattr(app, "ALARM_DELAY_SECONDS", 0)
-    for memory, frame in [(1, "ed8003071eff0e00000000000000005d"), (2, "ed8003071eff0f00000000000000005c")]:
+    for memory, frame in [("memory_1", "ed8003071eff0e00000000000000005d"), ("memory_2", "ed8003071eff0f00000000000000005c")]:
         mock_bleak_client.write_gatt_char.reset_mock()
-        await hass.services.async_call(DOMAIN, "comfortbase_set_alarm", {"device_id": dev, "enabled": True, "time": "07:30:00", "memory": memory}, blocking=True)
+        await hass.services.async_call(DOMAIN, "set_alarm", {"device_id": dev, "enabled": True, "time": "07:30:00", "wake_action": memory}, blocking=True)
         assert written(mock_bleak_client) == ["e780017e0a0a023b03c5"] * 2 + [frame]
     mock_bleak_client.write_gatt_char.reset_mock()
-    await hass.services.async_call(DOMAIN, "comfortbase_set_alarm", {"device_id": dev, "enabled": False}, blocking=True)
+    await hass.services.async_call(DOMAIN, "set_alarm", {"device_id": dev, "enabled": False}, blocking=True)
     assert written(mock_bleak_client) == ["ed80030000000000000000000000008f"]
     for bad in [{"enabled": True}, {"enabled": True, "time": "06:00:01"}]:
         mock_bleak_client.write_gatt_char.reset_mock()
         with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(DOMAIN, "comfortbase_set_alarm", {"device_id": dev, **bad}, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", {"device_id": dev, **bad}, blocking=True)
         assert not written(mock_bleak_client)
     assert await hass.config_entries.async_unload(e.entry_id)
 

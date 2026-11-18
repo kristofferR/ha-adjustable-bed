@@ -8,6 +8,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -45,7 +46,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     flow._discovery_info = mock_bluetooth_service_info
     settings = {
         CONF_NAME: "App bed",
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_PREFERRED_ADAPTER: "auto",
     }
     result = await start_new_bed(flow, route, const.BED_TYPE_LIMOSS_REMOTE)
@@ -68,7 +69,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
         ), settings)
     assert finish.await_args.args[0][const.CONF_PRODUCT_TYPE] == "chair"
     assert finish.await_args.args[0][const.CONF_REVERSE_MOTORS[3]] is True
-    assert finish.await_args.args[0][const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(finish.await_args.args[0])
 
 
 @pytest.mark.parametrize(

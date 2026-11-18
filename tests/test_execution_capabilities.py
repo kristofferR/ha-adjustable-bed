@@ -1,8 +1,7 @@
 """Every execution-capability declaration needs reviewed evidence (#483, #516).
 
 ``EVIDENCE`` maps each bed type or family profile that declares a capability
-to the keys proving it, per declared field. Keys are defined in the
-"Evidence keys" section of ``docs/design/execution-capabilities.md``. A
+to the keys naming the app evidence that proves it, per declared field. A
 declaration without a row fails here, so adding a capability needs a reviewed
 evidence row, and a row whose declaration is gone fails too.
 
@@ -16,7 +15,6 @@ declare one unreviewed.
 from __future__ import annotations
 
 import ast
-import re
 import sys
 from collections.abc import Iterator, Mapping
 from pathlib import Path
@@ -51,7 +49,6 @@ FAMILIES = families()
 APP_ROUTES = {
     bed_type: route for family in FAMILIES.values() for bed_type, route in family.app_routes.items()
 }
-DESIGN = Path(__file__).parents[1] / "docs" / "design" / "execution-capabilities.md"
 
 # Keeson E5/E6 (K1) profiles with stream evidence, by profile key. The base,
 # OKIN, Sino, KSBT CR, OKIN FFE, Sleepy's Box15, Rondure and Scott Living routes
@@ -465,17 +462,6 @@ CAPABILITY_FIELDS = frozenset({"hold", "sustain_ms", "concurrent", "hold_control
 DISTINCT_FIELDS = frozenset({"execution", "sustain_ms", "concurrent", "hold_controls"})
 
 
-def _design_evidence_keys() -> frozenset[str]:
-    """Keys of both tables in the design's "Evidence keys" section."""
-    section = DESIGN.read_text().split("\n## Evidence keys\n", 1)[1]
-    keys = {
-        match.group(1)
-        for line in section.splitlines()
-        if (match := re.match(r"\|\s*([^|\s]+)\s*\|", line))
-    }
-    return frozenset(keys - {"Key", "---"})
-
-
 def _instances(value: object, cls: type, depth: int = 0) -> Iterator[object]:
     if isinstance(value, cls):
         yield value
@@ -565,13 +551,10 @@ async def _declarations() -> dict[str, frozenset[str]]:
     }
 
 
-def test_evidence_keys_exist_in_design() -> None:
-    known = _design_evidence_keys()
-    assert {"p4", "useries", "clarity", "svane"} <= known
+def test_every_evidence_row_names_a_key() -> None:
     for identity, fields in EVIDENCE.items():
         for name, keys in fields.items():
             assert keys, f"{identity}.{name} needs at least one evidence key"
-            assert not set(keys) - known, (identity, name, set(keys) - known)
 
 
 async def test_every_profile_declaration_has_evidence() -> None:

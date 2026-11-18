@@ -13,7 +13,7 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import FlowResultType, InvalidData
 from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -2269,7 +2269,7 @@ class TestPairBedsConversion:
         """Splitting a provenance-bearing pair keeps the connection preferences
         chosen while combined and restores the side's original bed settings."""
         from custom_components.adjustable_bed.const import (
-            CONF_DISCONNECT_AFTER_COMMAND,
+            CONF_CONNECTION_MODE,
             CONF_IDLE_DISCONNECT_SECONDS,
             SIDE_LEFT,
         )
@@ -2309,7 +2309,7 @@ class TestPairBedsConversion:
                 {
                     CONF_PREFERRED_ADAPTER: "hci1",
                     CONF_IDLE_DISCONNECT_SECONDS: 120,
-                    CONF_DISCONNECT_AFTER_COMMAND: False,
+                    CONF_CONNECTION_MODE: "idle",
                 },
             )
             assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -2329,7 +2329,7 @@ class TestPairBedsConversion:
             **left_original,
             CONF_PREFERRED_ADAPTER: "hci1",
             CONF_IDLE_DISCONNECT_SECONDS: 120,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         }
         assert restored.data[CONF_MOTOR_COUNT] == 2
         # The original idle option no longer shadows the retained value.
@@ -3885,7 +3885,7 @@ class TestPairedReceiverSettings:
             assert actual == expected[side]
             assert "motor_pulse_user_set" not in get_child(entry.data, side)
 
-    @pytest.mark.parametrize("value", ["invalid", "-1", "0"])
+    @pytest.mark.parametrize("value", ["invalid", -1, 0, 101])
     async def test_invalid_receiver_pulses_do_not_change_either_side(
         self, hass, enable_custom_integrations, value
     ):
@@ -3895,11 +3895,11 @@ class TestPairedReceiverSettings:
         form = await hass.config_entries.options.async_configure(
             menu["flow_id"], {"next_step_id": "left_settings"}
         )
-        result = await hass.config_entries.options.async_configure(
-            form["flow_id"], {"motor_pulse_count": value}
-        )
-        assert result["type"] == FlowResultType.FORM
-        assert result["errors"] == {"motor_pulse_count": "invalid_number"}
+        # Movement per tap is a bounded number: the form refuses anything else.
+        with pytest.raises(InvalidData):
+            await hass.config_entries.options.async_configure(
+                form["flow_id"], {"motor_pulse_count": value}
+            )
         assert entry.data == before
 
 

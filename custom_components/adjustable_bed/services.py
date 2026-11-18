@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import logging
 from collections.abc import (
     AsyncIterator,
@@ -24,7 +25,7 @@ from collections.abc import (
 )
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -36,7 +37,17 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_device_and_config_entry
 from homeassistant.util import dt as dt_util
 
-from .alarm_table import AlarmTableSchedule, OneTimeAlarmRecord, WeeklyAlarmRecord
+from .alarm import (
+    ALARM_SOUNDS,
+    MASSAGE_ZONES,
+    MATTRESS_SIDES,
+    WAKE_ACTIONS,
+    AlarmCapability,
+    AlarmError,
+    AlarmRequest,
+)
+from .alarm import OPTIONAL_FIELDS as ALARM_OPTIONAL_FIELDS
+from .alarm import WEEKDAYS as ALARM_WEEKDAYS
 from .bed_traits import bed_type_has_position_feedback
 from .beds.base import BedController, controller_as
 from .beds.entity_specs import POSITION_UNIT_DEGREES, POSITION_UNIT_PERCENT
@@ -59,6 +70,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
@@ -147,20 +159,12 @@ SERVICE_SET_POSITION = "set_position"
 SERVICE_SET_POSITIONS = "set_positions"
 SERVICE_STOP_ALL = "stop_all"
 SERVICE_TIMED_MOVE = "timed_move"
-SERVICE_LINAK_RENAME = "linak_rename"
 SERVICE_HOLD_CONTROL = "hold_control"
 SERVICE_RENAME = "rename"
 SERVICE_SYNC_CLOCK = "sync_clock"
-SERVICE_CONFIGURE_ALARM_SCHEDULE = "configure_alarm_schedule"
-# Released per-app names that now alias the generic actions above (linak_rename
-# is listed above).
-SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
-SERVICE_LOGICDATA_RENAME = "logicdata_rename"
-SERVICE_JIECANG_RENAME = "jiecang_rename"
-SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
+SERVICE_SET_ALARM = "set_alarm"
 ATTR_SLOT = "slot"
 ATTR_MODE = "mode"
-ATTR_CONFIRM_CUSTOM_MODE = "confirm_custom_mode"
 
 # Service call attributes
 ATTR_PRESET = "preset"
@@ -181,13 +185,8 @@ ATTR_FIRST_DIRECTION = "first_direction"
 ATTR_SECOND_MOTOR = "second_motor"
 ATTR_SECOND_DIRECTION = "second_direction"
 ATTR_NAME = "name"
-ATTR_SECONDS = "seconds"
 ATTR_ACTIONS = "actions"
 ATTR_ACTION = "action"
-ATTR_LIFETIME = "lifetime"
-ATTR_PAUSE = "pause"
-ATTR_RECURRENCE_COUNT = "recurrence_count"
-ATTR_RECURRENCE_MINUTES = "recurrence_minutes"
 ATTR_ENABLED = "enabled"
 ATTR_TIME = "time"
 ATTR_WEEKDAYS = "weekdays"
@@ -200,18 +199,7 @@ ATTR_MINUTES = "minutes"
 ATTR_CONTROL = "control"
 ATTR_HEAD_LEVEL = "head_level"
 ATTR_FOOT_LEVEL = "foot_level"
-ATTR_WAKE_MODE = "wake_mode"
 
-
-SOLACE_WEEKDAY_OPTIONS = (
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-)
 
 
 POSITION_MOTOR_OPTIONS = (
@@ -226,20 +214,6 @@ POSITION_MOTOR_OPTIONS = (
     "right_legs",
 )
 
-LEGGETT_HELD_CONTROLS = (
-    "flat",
-    "snore",
-    "lights_toggle",
-    "massage_toggle",
-    "massage_wave",
-    "massage_head_up",
-    "massage_head_down",
-    "massage_foot_up",
-    "massage_foot_down",
-    "memory_1",
-    "memory_2",
-    "store",
-)
 
 # Default capture duration for diagnostics (seconds)
 DEFAULT_CAPTURE_DURATION = 120
@@ -376,6 +350,38 @@ def _resolve_sided_targets(
     return targets, missing
 
 
+def _invalid(key: str, message: str, **placeholders: object) -> ServiceValidationError:
+    """Build a translated validation error; ``message`` is the English fallback."""
+    return ServiceValidationError(
+        message,
+        translation_domain=DOMAIN,
+        translation_key=key,
+        translation_placeholders={name: str(value) for name, value in placeholders.items()},
+    )
+
+
+def _whole_number(value: object) -> int:
+    """Accept a whole number, also as 2.0 or "2"; reject Booleans and fractions."""
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value)
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
+        raise _invalid("whole_number_required", f"Use a whole number instead of {value!r}", value=value)
+    return int(value)
+
+
+def _validation_error(err: ValueError) -> ServiceValidationError:
+    """Turn a controller's rejection into a validation error, translated where it can be."""
+    key = getattr(err, "translation_key", None)
+    if key is None:
+        return ServiceValidationError(str(err))
+    return ServiceValidationError(
+        str(err),
+        translation_domain=DOMAIN,
+        translation_key=key,
+        translation_placeholders=getattr(err, "translation_placeholders", None),
+    )
+
+
 def _missing_device_error(device_id: str) -> ServiceValidationError:
     """Build the error for a service target that resolved to no bed."""
     return ServiceValidationError(
@@ -415,7 +421,7 @@ def _get_support_bundle_target_from_device(
             # sides; a bundle is per-address, so make the user pick one
             # side's device instead of silently capturing only the first.
             raise ServiceValidationError(
-                f"{entry.title} is a paired bed; target one side's device for the support bundle.",
+                f"{entry.title} is a combined bed; choose one side's device for the support bundle.",
                 translation_domain=DOMAIN,
                 translation_key="bundle_needs_side_for_paired",
                 translation_placeholders={"device_name": entry.title},
@@ -441,7 +447,11 @@ def _get_support_bundle_target_from_device(
 def _require_disconnected_transport_ready(target: BedChild, controller: BedController) -> None:
     """Refuse a controller whose selected non-central transport cannot take commands."""
     if controller.requires_disconnected_transport and not controller.disconnected_transport_ready:
-        raise ServiceValidationError(f"Device '{target.name}' local Pairlink session is not ready")
+        raise _invalid(
+            "pairlink_not_ready",
+            f"Device '{target.name}' is not ready over Pairlink yet; wait, then try again",
+            device_name=target.name,
+        )
 
 
 async def _get_controller_for_service(
@@ -464,8 +474,10 @@ async def _get_controller_for_service(
         return capability_controller
 
     if coordinator.pairlink_peripheral:
-        raise ServiceValidationError(
-            f"Device '{coordinator.name}' local Pairlink controller is unavailable"
+        raise _invalid(
+            "pairlink_not_ready",
+            f"Device '{coordinator.name}' is not ready over Pairlink yet; wait, then try again",
+            device_name=coordinator.name,
         )
 
     _LOGGER.debug(
@@ -475,8 +487,10 @@ async def _get_controller_for_service(
     connected = await coordinator.async_ensure_connected(reset_timer=False)
     controller = coordinator.controller
     if not connected or controller is None:
-        raise ServiceValidationError(
+        raise _invalid(
+            "bed_unavailable",
             f"Device '{coordinator.name}' is currently unavailable (unable to connect)",
+            device_name=coordinator.name,
         )
     return controller
 
@@ -531,7 +545,7 @@ def _command_targets(coordinator: BedTarget, side: str) -> list[BedChild]:
 
     if side != SIDE_BOTH:
         raise ServiceValidationError(
-            "This is a single bed; the Left/Right/Both option only applies to paired beds.",
+            "This bed has no separate sides; leave the side empty",
             translation_domain=DOMAIN,
             translation_key="side_not_supported",
         )
@@ -878,13 +892,10 @@ async def _set_position_plan(
             and not supports_direct_position_control
         ):
             raise ServiceValidationError(
-                f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
+                f"Device '{coordinator.name}' does not report motor positions",
                 translation_domain=DOMAIN,
                 translation_key="position_feedback_not_supported",
-                translation_placeholders={
-                    "device_name": coordinator.name,
-                    "bed_type": bed_type or "unknown",
-                },
+                translation_placeholders={"device_name": coordinator.name},
             )
 
         # Validate angle sensing is enabled
@@ -1061,8 +1072,8 @@ async def handle_set_positions(call: ServiceCall) -> None:
     ]
     motors = [motor for motor, _ in requests]
     if len(motors) != len(set(motors)):
-        raise ServiceValidationError(
-            "Each motor may appear only once in a set_positions call",
+        raise _invalid(
+            "duplicate_motor_positions", "Each motor may appear only once; remove the duplicate"
         )
     _LOGGER.info(
         "Service set_positions called: motors=%s (side=%s)",
@@ -1351,8 +1362,11 @@ def _hold_lease(call: ServiceCall, action: str, duration_ms: int) -> HoldLease |
     if owner is None:
         return None
     if not MIN_HOLD_LEASE_MS <= duration_ms <= MAX_HOLD_LEASE_MS:
-        raise ServiceValidationError(
-            f"A renewable hold lasts {MIN_HOLD_LEASE_MS} to {MAX_HOLD_LEASE_MS} ms per call"
+        raise _invalid(
+            "hold_lease_duration",
+            f"A held move lasts {MIN_HOLD_LEASE_MS} to {MAX_HOLD_LEASE_MS} ms per call",
+            min=MIN_HOLD_LEASE_MS,
+            max=MAX_HOLD_LEASE_MS,
         )
     return HoldLease(
         owner=owner,
@@ -1378,8 +1392,10 @@ def _require_hold_execution(
     scoped to some controls refuses the others exactly as an undeclared one.
     """
     if controller.execution.hold_for(control) is None:
-        raise ServiceValidationError(
-            f"Device '{target.name}' does not support renewable holds"
+        raise _invalid(
+            "hold_renewal_not_supported",
+            f"Device '{target.name}' does not support renewable holds; use a fixed duration",
+            device_name=target.name,
         )
 
 
@@ -1397,12 +1413,15 @@ async def _async_with_hold_lease(
     extend the reservation and a STOP before admission ends it.
     """
     if len(targets) != 1:
-        raise ServiceValidationError("A renewable hold targets one bed at a time")
+        raise _invalid("hold_one_bed", "A held move can control one bed at a time")
     _require_hold_topology(targets)
     coordinator, side = targets[0]
     if (isinstance(coordinator, PairedBedCoordinator) and side == SIDE_BOTH
             and coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL):
-        raise ServiceValidationError("A renewable Both hold requires concurrent physical links")
+        raise _invalid(
+            "hold_needs_concurrent",
+            "Holding both sides needs both beds connected at once; select one side",
+        )
     # Key every claim by the target that executes the command: a native
     # single-address Both runs once on its combined side view.
     executing = (
@@ -1411,8 +1430,8 @@ async def _async_with_hold_lease(
         else _command_targets(coordinator, side)
     )
     if len(executing) > 1 and isinstance(coordinator, PairedBedCoordinator) and not coordinator.supports_simultaneous_side_holds:
-        raise ServiceValidationError(
-            "Renewable holds require simultaneous side execution; select Left or Right"
+        raise _invalid(
+            "hold_select_side", "This bed holds one side at a time; select Left or Right"
         )
     physical = [(target, resource_for(target)) for target in executing]
     if (
@@ -1421,7 +1440,10 @@ async def _async_with_hold_lease(
         and len(executing) > 1
         and coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
     ):
-        raise ServiceValidationError("Renewable Both holds require concurrent physical connections")
+        raise _invalid(
+            "hold_needs_concurrent",
+            "Holding both sides needs both beds connected at once; select one side",
+        )
     claims = [
         target.claim_hold_lease(lease, resource=resource, reserve=False)
         for target, resource in physical
@@ -1432,16 +1454,16 @@ async def _async_with_hold_lease(
                 target.claim_hold_lease(lease, resource=resource)
         return
     if HoldClaim.STALE in claims:
-        raise ServiceValidationError(
-            f"Hold generation {lease.generation} has ended; start a new generation"
-        )
+        raise _invalid("hold_ended", "This held move has already stopped; start a new one")
     modes = {
         controller.execution.hold
         for target, _resource in physical
         if (controller := target.capability_controller) is not None
     }
     if len(modes) > 1:
-        raise ServiceValidationError("Both sides must declare the same hold mode")
+        raise _invalid(
+            "hold_modes_differ", "The two sides hold moves differently; hold one side at a time"
+        )
     for target, resource in physical:
         target.claim_hold_lease(lease, resource=resource)
     try:
@@ -1559,8 +1581,8 @@ async def _async_timed_move(
                 for target in _command_targets(coordinator, side)
             }
             if actual_resources != set(admission.resources):
-                raise ServiceValidationError(
-                    "The selected motor resource changed during timed-move preflight"
+                raise _invalid(
+                    "bed_changed", "The bed's motors changed while checking the move; try again"
                 )
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
@@ -1674,7 +1696,7 @@ async def _preflight_each(
     except (ServiceValidationError, ValueError) as err:
         await _release_preflighted(preflighted)
         if isinstance(err, ValueError):
-            raise ServiceValidationError(str(err)) from err
+            raise _validation_error(err) from err
         raise
     return preflighted
 
@@ -1695,7 +1717,12 @@ async def _preflight_capability[T](
     def check(target: BedChild, controller: BedController) -> None:
         family = controller_as(controller, interface)
         if family is None or (supported is not None and not supported(family)):
-            raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
+            raise _invalid(
+                "feature_not_supported",
+                f"Device '{target.name}' does not support {label}",
+                device_name=target.name,
+                feature=label,
+            )
         if validate is not None:
             validate(family)
 
@@ -1710,11 +1737,16 @@ def _family_command[T](
     async def execute(controller: BedController) -> None:
         family = controller_as(controller, interface)
         if family is None:
-            raise ServiceValidationError(f"This bed does not support {label}")
+            raise _invalid(
+                "feature_not_supported",
+                f"This bed does not support {label}",
+                device_name="This bed",
+                feature=label,
+            )
         try:
             await command(family)
         except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
+            raise _validation_error(err) from err
 
     return execute
 
@@ -1927,7 +1959,10 @@ async def handle_hold_control(call: ServiceCall) -> None:
     lease = _hold_lease(call, control, duration_ms)
     if lease is not None:
         if route == "svane" or control == "floor_hold":
-            raise ServiceValidationError("This control does not support renewable holds")
+            raise _invalid(
+                "control_hold_renewal_not_supported",
+                "This control does not support renewable holds; use a fixed duration",
+            )
         held = lease
         await _async_with_hold_lease(
             targets,
@@ -1991,7 +2026,10 @@ def _require_hold_topology(targets: list[tuple[BedTarget, str]]) -> None:
         and coordinator.connection_mode == "sequential"
         for coordinator, side in targets
     ):
-        raise ServiceValidationError("Hold one side at a time with a sequential Bluetooth connection")
+        raise _invalid(
+            "hold_needs_concurrent",
+            "Hold one side at a time with a sequential Bluetooth connection",
+        )
 
 
 async def _hold_targets(
@@ -2043,52 +2081,269 @@ async def _hold_targets(
         await _release_preflighted(preflighted)
 
 
-async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
-    """Preflight both tables on all physical targets before encoding or writing."""
-    schedule = AlarmTableSchedule(
-        weekly=tuple(WeeklyAlarmRecord(**{**row, "weekdays": tuple(row["weekdays"])}) for row in call.data["weekly"]),
-        one_time=tuple(OneTimeAlarmRecord(**row) for row in call.data["one_time"]),
-        dispatch=call.data["dispatch"],
+def _alarm_request(call: ServiceCall) -> AlarmRequest:
+    """Build the call's one alarm request, captured against one local time."""
+    data = call.data
+    enabled = data[ATTR_ENABLED]
+    alarm_time = data.get(ATTR_TIME)
+    if enabled and alarm_time is None:
+        raise ServiceValidationError(
+            "Choose an alarm time", translation_domain=DOMAIN, translation_key="alarm_time_required"
+        )
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError(
+            "Alarm times are set in whole minutes",
+            translation_domain=DOMAIN,
+            translation_key="alarm_time_whole_minutes",
+        )
+    optional = {name: data[name] for name in ALARM_OPTIONAL_FIELDS if name in data}
+    if "weekdays" in optional:
+        optional["weekdays"] = tuple(sorted({ALARM_WEEKDAYS.index(day) for day in optional["weekdays"]}))
+    return AlarmRequest(
+        enabled=enabled,
+        hour=alarm_time.hour if alarm_time is not None else 0,
+        minute=alarm_time.minute if alarm_time is not None else 0,
         reference_time=dt_util.now(),
+        **optional,
     )
-    await async_import_modules(call.hass, "beds.keeson.layout_app")
-    from .beds.keeson.layout_app import AppController
 
+
+def _check_alarm(
+    device_name: str, controller: BedController, alarm: AlarmRequest, given: Collection[str]
+) -> AlarmRequest:
+    """Validate one physical target's alarm and return it with its defaults filled in."""
+    capability = controller.alarm_capability
+    if capability is None:
+        raise ServiceValidationError(
+            f"Device '{device_name}' has no alarm",
+            translation_domain=DOMAIN,
+            translation_key="alarm_not_supported",
+            translation_placeholders={"device_name": device_name},
+        )
+    for name in given:
+        if not capability.accepts(name):
+            raise ServiceValidationError(
+                f"Device '{device_name}' has no alarm option '{name}'. Remove it and try again",
+                translation_domain=DOMAIN,
+                translation_key="alarm_option_not_supported",
+                translation_placeholders={"device_name": device_name, "option": name},
+            )
+    wake_action = alarm.wake_action if "wake_action" in given else None
+    if wake_action is not None and wake_action not in capability.wake_actions:
+        raise ServiceValidationError(
+            f"Device '{device_name}' cannot wake with '{wake_action}'. "
+            f"Choose one of: {', '.join(capability.wake_actions)}",
+            translation_domain=DOMAIN,
+            translation_key="alarm_wake_action_not_supported",
+            translation_placeholders={
+                "device_name": device_name,
+                "wake_action": wake_action,
+                "wake_actions": ", ".join(capability.wake_actions),
+            },
+        )
+    if (
+        alarm.enabled
+        and capability.requires_wake_action
+        and wake_action is None
+        and "mattress_side" not in given
+    ):
+        raise ServiceValidationError(
+            f"Choose a wake action for '{device_name}'",
+            translation_domain=DOMAIN,
+            translation_key="alarm_wake_action_required",
+            translation_placeholders={"device_name": device_name},
+        )
+    limits = (
+        ("slot", alarm.slot, capability.first_slot, capability.slots),
+        ("head_massage_level", alarm.head_massage_level, 0, capability.massage_levels),
+        ("foot_massage_level", alarm.foot_massage_level, 0, capability.massage_levels),
+        ("massage_intensity", alarm.massage_intensity, 1, capability.massage_intensities),
+    )
+    for name, value, low, high in limits:
+        if name in given and not low <= value <= high:
+            raise ServiceValidationError(
+                f"Device '{device_name}' accepts {name} {low} to {high}",
+                translation_domain=DOMAIN,
+                translation_key="alarm_value_out_of_range",
+                translation_placeholders={
+                    "device_name": device_name,
+                    "option": name,
+                    "min": str(low),
+                    "max": str(high),
+                },
+            )
+    if "massage_duration" in given and alarm.massage_duration not in capability.massage_durations:
+        raise ServiceValidationError(
+            f"Device '{device_name}' accepts massage durations of "
+            f"{', '.join(map(str, capability.massage_durations))} minutes",
+            translation_domain=DOMAIN,
+            translation_key="alarm_massage_duration_not_supported",
+            translation_placeholders={
+                "device_name": device_name,
+                "durations": ", ".join(map(str, capability.massage_durations)),
+            },
+        )
+    if "massage_zone" in given and alarm.massage_zone not in capability.massage_zones:
+        raise ServiceValidationError(
+            f"Device '{device_name}' cannot massage '{alarm.massage_zone}' at wake-up",
+            translation_domain=DOMAIN,
+            translation_key="alarm_massage_zone_not_supported",
+            translation_placeholders={"device_name": device_name, "zone": str(alarm.massage_zone)},
+        )
+    if "mattress_side" in given and alarm.mattress_side not in capability.mattress_sides:
+        raise ServiceValidationError(
+            f"Device '{device_name}' has no mattress alarm on side '{alarm.mattress_side}'",
+            translation_domain=DOMAIN,
+            translation_key="alarm_mattress_side_not_supported",
+            translation_placeholders={
+                "device_name": device_name,
+                "mattress_side": str(alarm.mattress_side),
+            },
+        )
+    if "sound" in given and alarm.sound not in capability.sounds:
+        raise ServiceValidationError(
+            f"Device '{device_name}' cannot play sound '{alarm.sound}'",
+            translation_domain=DOMAIN,
+            translation_key="alarm_sound_not_supported",
+            translation_placeholders={"device_name": device_name, "sound": alarm.sound},
+        )
+    resolved = _with_bed_defaults(alarm, capability, given)
+    if (
+        resolved.enabled
+        and resolved.wake_action in capability.confirm_actions
+        and not resolved.confirm_custom_position
+    ):
+        raise ServiceValidationError(
+            f"Waking '{device_name}' at its saved position can be unsafe at extreme angles. "
+            "Check the saved position, then turn on the confirmation",
+            translation_domain=DOMAIN,
+            translation_key="alarm_confirmation_required",
+            translation_placeholders={"device_name": device_name},
+        )
+    controller.validate_alarm(resolved)
+    return resolved
+
+
+def _with_bed_defaults(
+    alarm: AlarmRequest, capability: AlarmCapability, given: Collection[str]
+) -> AlarmRequest:
+    """Fill in the bed's own default for each choice the caller left out."""
+    defaults: dict[str, object] = {}
+    # A mattress topper alarm has no wake action, so none is filled in for it.
+    bed_alarm = "mattress_side" not in given
+    for name, choices in (
+        ("wake_action", capability.wake_actions if bed_alarm else ()),
+        ("sound", capability.sounds),
+        ("massage_duration", capability.massage_durations),
+        ("massage_zone", capability.massage_zones),
+    ):
+        if name not in given and choices:
+            defaults[name] = choices[0]
+    return dataclasses.replace(alarm, **defaults) if defaults else alarm
+
+
+async def handle_set_alarm(call: ServiceCall) -> None:
+    """Validate one alarm on every physical target, then write it to each."""
+    alarm = _alarm_request(call)
+    given = [name for name in ALARM_OPTIONAL_FIELDS if name in call.data]
     targets = _call_targets(call)
-    # A table call cannot connect merely to discover whether it is valid:
-    # initialization can write clock/zero/query frames. These static profiles
-    # are offline-mintable, and all other controllers lack this contract.
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            controller = controller_as(target.capability_controller, AppController)
-            if controller is None or controller.alarm_table_schedule_spec is None:
-                raise ServiceValidationError(f"Device '{target.name}' has no available alarm-table contract")
 
-    def validate(controller: AppController) -> None:
-        spec = controller.alarm_table_schedule_spec
-        if spec is None:
-            raise ServiceValidationError("This bed has no alarm-table contract")
-        spec.validate(schedule)
-
-    await _preflight_and_execute(
-        targets,
-        AppController,
-        "alarm tables",
-        lambda controller: controller.configure_alarm_table_schedule(schedule),
-        validate=validate,
+    route = _profile_route(
+        targets, {BED_TYPE_ZSERIES: "zseries", BED_TYPE_SYMPHONY: "symphony"}, SERVICE_SET_ALARM
     )
+    if route == "symphony":
+        # Symphony reads the current alarm table live before rewriting one side.
+        from .beds.symphony.services import set_symphony_alarm
+
+        await set_symphony_alarm(call, alarm, given)
+        return
+    if route == "zseries":
+        await async_import_modules(call.hass, "beds.serenity.services")
+        from .beds.serenity.services import _execute_zseries_alarm
+
+        # Z-Series alarms exist only after a live manufacturer read. The options
+        # are checked on every target, connecting where needed, before anything
+        # is scheduled.
+        async def write_zseries(controller: BedController) -> None:
+            await controller.configure_alarm(_check_alarm("", controller, alarm, given))
+
+        def check_zseries(controller: BedController) -> None:
+            _check_alarm(controller._coordinator.name, controller, alarm, given)
+
+        await _execute_zseries_alarm(call, "alarms", write_zseries, validate=check_zseries)
+        return
+
+    # How each physical target schedules its write, from its own capability.
+    scheduling: dict[int, AlarmCapability] = {}
+
+    def check(target: BedChild, controller: BedController) -> None:
+        _check_alarm(target.name, controller, alarm, given)
+        scheduling[target.operation_identity] = cast("AlarmCapability", controller.alarm_capability)
+
+    # Capture STOP ownership for every lane an alarm may write on, before any
+    # await; the lane is known only once preflight has each target's capability.
+    lanes: tuple[str | None, ...] = (None, "configuration", "*")
+    admissions = [
+        {
+            lane: _capture_command_admission(
+                coordinator, side, ALL_COMMAND_RESOURCES if lane is None else (lane,)
+            )
+            for lane in lanes
+        }
+        for coordinator, side in targets
+    ]
+    preflighted = await _preflight_each(targets, check)
+
+    def step(
+        run: Callable[[BedController, AlarmRequest], Awaitable[None]],
+    ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
+        async def execute(controller: BedController) -> None:
+            capability = controller.alarm_capability
+            if capability is None:
+                raise AlarmError(
+                    "alarm_lost", "This bed no longer reports an alarm; reload it and try again"
+                )
+            await run(controller, _with_bed_defaults(alarm, capability, given))
+
+        return _family_command(BedController, "alarms", execute)
+
+    # Beds that must read their stored alarms check every target before any write.
+    check_step = step(lambda controller, request: controller.check_alarm(request))
+    write_step = step(lambda controller, request: controller.configure_alarm(request))
+    try:
+        for command in (check_step, write_step):
+            for (coordinator, side), captured in zip(targets, admissions, strict=True):
+                physical = [
+                    scheduling[target.operation_identity]
+                    for target in _command_targets(coordinator, side)
+                ]
+                capability = physical[0]
+                if command is check_step and not any(item.live_check for item in physical):
+                    continue
+                await _execute_sided(
+                    coordinator,
+                    side,
+                    command,
+                    cancel_running=capability.cancel_running,
+                    resource=capability.resource,
+                    admission=captured[capability.resource],
+                )
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
 
 
 async def handle_sync_clock(call: ServiceCall) -> None:
     """Synchronize each targeted device clock to Home Assistant's local time."""
-    from .beds.serenity.services import _execute_zseries_alarm
-
     targets = _call_targets(call)
 
     async def sync(controller: BedController) -> None:
         await controller.sync_clock()
 
     if _profile_route(targets, {BED_TYPE_ZSERIES: "zseries"}, SERVICE_SYNC_CLOCK):
+        await async_import_modules(call.hass, "beds.serenity.services")
+        from .beds.serenity.services import _execute_zseries_alarm
+
         # Z-Series clocks live on the alarm page, gated by a live manufacturer read.
         await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
         return
@@ -2117,6 +2372,45 @@ async def handle_sync_clock(call: ServiceCall) -> None:
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
+
+
+# English text of the support-bundle notifications, used when no translation loads.
+_NOTICES: Final = {
+    "support_bundle_ready_title": "Adjustable bed: support bundle ready",
+    "support_bundle_ready_message": (
+        "[**Download the support bundle**]({url})\n\n"
+        "Bluetooth messages captured: {count}, over {seconds} seconds.\n\n"
+        "Next, attach the file to your bug report or bed support request. The download "
+        "link works for one hour or until Home Assistant restarts; the file stays saved "
+        "at `{path}`."
+    ),
+    "support_bundle_warnings": "**While capturing:**",
+    "support_bundle_no_logs_title": "Adjustable bed: this bundle will have no logs",
+    "support_bundle_no_logs_message": (
+        "The capture is running anyway, so you will still get a bundle with the Bluetooth details."
+    ),
+    "support_bundle_timeout_title": "Adjustable bed: support bundle timed out",
+    "support_bundle_timeout_message": (
+        "The capture for {address} did not finish within {seconds} seconds. Move the bed "
+        "closer to its Bluetooth adapter or proxy, then run the action again."
+    ),
+    "support_bundle_failed_title": "Adjustable bed: support bundle failed",
+    "support_bundle_failed_message": (
+        "The support bundle for {address} could not be created. Check the Home Assistant "
+        "log for details, then run the action again."
+    ),
+}
+
+
+async def _notice(hass: HomeAssistant, key: str, **placeholders: object) -> str:
+    """Return one support-bundle notification text in the user's language."""
+    from homeassistant.helpers.translation import async_get_translations
+
+    translations = await async_get_translations(
+        hass, hass.config.language, "exceptions", {DOMAIN}
+    )
+    template = translations.get(f"component.{DOMAIN}.exceptions.{key}.message", _NOTICES[key])
+    return template.format(**placeholders)
 
 
 async def handle_generate_support_bundle(call: ServiceCall) -> None:
@@ -2153,6 +2447,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 "XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX.",
                 translation_domain=DOMAIN,
                 translation_key="invalid_mac_address",
+                translation_placeholders={"address": str(target_address)},
             )
         _LOGGER.info(
             "Generating support bundle for unconfigured device at %s",
@@ -2178,12 +2473,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 address,
             )
         else:
-            raise ServiceValidationError(
-                f"Could not find Adjustable Bed device with ID: {selected_device_id}. "
-                "Please verify the device is configured and try again.",
-                translation_domain=DOMAIN,
-                translation_key="device_not_found",
-            )
+            raise _missing_device_error(selected_device_id)
     else:
         raise ServiceValidationError(
             "No device_id or target_address was provided. "
@@ -2252,9 +2542,9 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 async_create(
                     hass,
                     build_missing_log_notice(log_check["reason"], log_check["error"], future=True)
-                    + "\n\nThe capture is running anyway, so you will still get a "
-                    "bundle with Bluetooth diagnostics.",
-                    title="Adjustable Bed: this bundle will have no logs",
+                    + "\n\n"
+                    + await _notice(hass, "support_bundle_no_logs_message"),
+                    title=await _notice(hass, "support_bundle_no_logs_title"),
                     notification_id=log_notification_id,
                 )
                 hass.data.setdefault(_LOG_NOTICE_OWNERS, {}).setdefault(
@@ -2288,7 +2578,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         evidence_warnings = evidence.get("warnings", [])
         warning_summary = ""
         if evidence_warnings:
-            warning_summary = "\n\n**Capture warnings:**\n" + "\n".join(
+            warning_summary = "\n\n" + await _notice(hass, "support_bundle_warnings") + "\n" + "\n".join(
                 f"- {warning}" for warning in evidence_warnings
             )
 
@@ -2318,16 +2608,17 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
         async_create(
             hass,
-            f"[**Download support bundle**]({download_url})\n\n"
-            "The download link expires in one hour or when Home Assistant restarts. "
-            "The saved file remains available at the path below.\n\n"
-            f"Captured {notification_count} notifications. "
-            f"Requested capture window: {capture_duration} seconds."
-            f"{logging_notice}"
-            f"{warning_summary}\n\n"
-            "Attach this JSON file when reporting unsupported or broken beds.\n\n"
-            f"File path: `{filepath}`",
-            title="Adjustable Bed Support Bundle Ready",
+            await _notice(
+                hass,
+                "support_bundle_ready_message",
+                url=download_url,
+                path=filepath,
+                count=notification_count,
+                seconds=capture_duration,
+            )
+            + logging_notice
+            + warning_summary,
+            title=await _notice(hass, "support_bundle_ready_title"),
             notification_id=f"adjustable_bed_support_bundle_{address.replace(':', '_').lower()}",
         )
         _LOGGER.info("Support bundle saved to %s", filepath)
@@ -2339,19 +2630,22 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         )
         async_create(
             hass,
-            f"Support bundle generation timed out after {capture_duration + 120} seconds "
-            f"for {address}.\n\n"
-            "The BLE diagnostics may be hanging. Check Bluetooth connectivity and try again.",
-            title="Adjustable Bed Support Bundle Timeout",
+            await _notice(
+                hass,
+                "support_bundle_timeout_message",
+                address=address,
+                seconds=capture_duration + 120,
+            ),
+            title=await _notice(hass, "support_bundle_timeout_title"),
             notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
         )
         raise
-    except Exception as err:
+    except Exception:
         _LOGGER.exception("Failed to generate support bundle for %s", address)
         async_create(
             hass,
-            f"Failed to generate support bundle for {address}:\n\n{err}",
-            title="Adjustable Bed Support Bundle Error",
+            await _notice(hass, "support_bundle_failed_message", address=address),
+            title=await _notice(hass, "support_bundle_failed_title"),
             notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
         )
         raise
@@ -2376,37 +2670,26 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     """Import the family action modules, which import this one, in the import executor."""
     from .beds.bedgear.services import async_register_bedgear_services
     from .beds.bedtech.services import register_services as register_bedtech_services
-    from .beds.bf_cherish.services import register_services as register_bf_cherish_services
     from .beds.casper_base.services import async_register_casper_base_services
     from .beds.comfort_enhancement3.services import register_services as register_apex_services
-    from .beds.comfort_enhancements.services import async_register_comfort_enhancements_services
     from .beds.customatic.services import async_register_customatic_services
     from .beds.doublesleep.services import async_register_doublesleep_services
-    from .beds.eshine_okin.services import async_register_eshine_okin_services
     from .beds.fsm_relax.services import async_register_fsm_relax_services
     from .beds.furnimove.services import async_register_furnimove_services
-    from .beds.glideaway_motion.services import async_register_glideaway_motion_services
     from .beds.gmmotor.services import async_register_gmmotor_services
     from .beds.goodvibe.services import async_register_goodvibe_services
     from .beds.hjbed.services import async_register_hjbed_services
-    from .beds.jalon_bed.services import register_services as register_jalon_services
     from .beds.jiecang.app_services import async_register_jiecang_app_services
     from .beds.kaidi.comfy_services import async_register_comfy_services
     from .beds.kaidi.floyd_services import async_register_floyd_services
     from .beds.kaidi.rize_services import async_register_rize_services
-    from .beds.keeson.comfortbase_services import async_register_comfortbase_services
-    from .beds.keeson.jalon_services import async_register_jalon_services
-    from .beds.keeson.symphony_services import register_symphony_services
-    from .beds.keeson.yamada_services import async_register_yamada_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
     from .beds.limoss.remote_services import async_register_limoss_remote_services
     from .beds.linak.services import async_register_linak_services
     from .beds.logicdata.app_services import async_register_logicdata_app_services
-    from .beds.malouf.app_services import async_register_malouf_app_services
     from .beds.mline.services import register_services as register_mline_services
     from .beds.motion_bed.services import async_register_motion_bed_services
     from .beds.motomotion.services import async_register_motomotion_services
-    from .beds.n32_motion_bed.services import register_services as register_n32_services
     from .beds.octo.services import async_register_octo_services
     from .beds.reverie.services import async_register_reverie_services
     from .beds.richmat_app.services import async_register_richmat_app_services
@@ -2416,12 +2699,8 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.richmat_legacy.services import async_register_richmat_legacy_services
     from .beds.richmat_mh.services import async_register_richmat_mh_services
     from .beds.rmcontrol.services import async_register_rmcontrol_services
-    from .beds.ruf_richmat.services import async_register_ruf_richmat_services
-    from .beds.serenity.services import async_register_serenity_services
-    from .beds.simmons.services import async_register_simmons_services
     from .beds.sleep_number.services import async_register_sleep_number_services
     from .beds.sleeptracker.services import async_register_sleeptracker_services
-    from .beds.smart_sleep.services import register_services as register_smart_sleep_services
     from .beds.solace.services import async_register_solace_services
     from .beds.sonicsleep.services import async_register_sonicsleep_services
     from .beds.starcode.accessory_group import register_group_services
@@ -2433,18 +2712,12 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_bedgear_services,
         register_mline_services,
         register_bedtech_services,
-        register_n32_services,
-        register_bf_cherish_services,
-        register_smart_sleep_services,
-        register_jalon_services,
-        register_symphony_services,
         register_symphony_sense_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,
         async_register_gmmotor_services,
         async_register_richmat_mh_services,
         async_register_position_estimate_services,
-        async_register_ruf_richmat_services,
         async_register_richmat_classic_services,
         async_register_resource_bed_services,
         async_register_richmat_legacy_services,
@@ -2470,16 +2743,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_furnimove_services,
         async_register_fsm_relax_services,
         async_register_limoss_remote_services,
-        async_register_serenity_services,
-        async_register_eshine_okin_services,
         register_apex_services,
-        async_register_jalon_services,
-        async_register_glideaway_motion_services,
-        async_register_simmons_services,
-        async_register_comfort_enhancements_services,
-        async_register_comfortbase_services,
-        async_register_yamada_services,
-        async_register_malouf_app_services,
         async_register_logicdata_app_services,
         async_register_jiecang_app_services,
         async_register_svane_services,
@@ -2599,32 +2863,6 @@ async def async_register_services(hass: HomeAssistant) -> None:
             }
         ),
     )
-    # Released per-app rename actions keep their original schemas.
-    for service, devices, name_rule in (
-        (SERVICE_LINAK_RENAME, cv.ensure_list, vol.Length(min=1, max=17)),
-        (
-            SERVICE_LOGICDATA_RENAME,
-            DEVICE_IDS,
-            vol.Match(r"\A[\x20-\x7eäöüÄÖÜß]{1,255}\Z"),
-        ),
-        (
-            SERVICE_JIECANG_RENAME,
-            DEVICE_IDS,
-            vol.Match(r"\A[A-Za-z0-9]{1,20}\Z"),
-        ),
-    ):
-        hass.services.async_register(
-            DOMAIN,
-            service,
-            handle_rename,
-            schema=vol.Schema(
-                {
-                    vol.Required(CONF_DEVICE_ID): devices,
-                    vol.Required(ATTR_NAME): vol.All(cv.string, name_rule),
-                    **SIDE_FIELD,
-                }
-            ),
-        )
     hold_fields = {
         vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         vol.Required(ATTR_DURATION): _hold_seconds,
@@ -2645,42 +2883,37 @@ async def async_register_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN,
-        SERVICE_LEGGETT_HOLD_CONTROL,
-        handle_hold_control,
+        SERVICE_SET_ALARM,
+        handle_set_alarm,
+        # Each target's controller declares which of these its alarm accepts.
         schema=vol.Schema(
-            {**hold_fields, vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS)}
+            {
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+                vol.Required(ATTR_ENABLED): cv.boolean,
+                vol.Optional(ATTR_TIME): cv.time,
+                vol.Optional(ATTR_WEEKDAYS): vol.All(cv.ensure_list, [vol.In(ALARM_WEEKDAYS)]),
+                vol.Optional(ATTR_SLOT): vol.All(_whole_number, vol.Range(min=0, max=99)),
+                vol.Optional("wake_action"): vol.In(WAKE_ACTIONS),
+                vol.Optional(ATTR_MASSAGE): cv.boolean,
+                vol.Optional("head_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),
+                vol.Optional("foot_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),
+                vol.Optional("massage_intensity"): vol.All(_whole_number, vol.Range(min=1, max=10)),
+                vol.Optional("massage_duration"): vol.All(_whole_number, vol.Range(min=1, max=120)),
+                vol.Optional("massage_zone"): vol.In(MASSAGE_ZONES),
+                vol.Optional("mattress_side"): vol.In(MATTRESS_SIDES),
+                vol.Optional(ATTR_SOUND): vol.In(ALARM_SOUNDS),
+                vol.Optional("light"): cv.boolean,
+                vol.Optional("confirm_custom_position"): cv.boolean,
+                **SIDE_FIELD,
+            }
         ),
     )
-    alarm_fields = {
-        vol.Optional("enabled", default=False): cv.boolean,
-        vol.Optional("wake", default=False): cv.boolean,
-        vol.Optional("hour", default=0): vol.All(int, vol.Range(min=0, max=23)),
-        vol.Optional("minute", default=0): vol.All(int, vol.Range(min=0, max=59)),
-    }
     hass.services.async_register(
         DOMAIN,
-        SERVICE_CONFIGURE_ALARM_SCHEDULE,
-        handle_configure_alarm_schedule,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-            vol.Required("weekly"): [vol.Schema({**alarm_fields, vol.Optional("weekdays", default=[]): [vol.All(int, vol.Range(min=0, max=6))]})],
-            vol.Required("one_time"): [vol.Schema(alarm_fields)],
-            vol.Required("dispatch"): vol.In(("both", "weekly", "one_time")),
-            **SIDE_FIELD,
-        }),
+        SERVICE_SYNC_CLOCK,
+        handle_sync_clock,
+        schema=vol.Schema({vol.Required(CONF_DEVICE_ID): DEVICE_IDS, **SIDE_FIELD}),
     )
-    for service in (SERVICE_SYNC_CLOCK, SERVICE_MALOUF_SYNC_CLOCK):
-        hass.services.async_register(
-            DOMAIN,
-            service,
-            handle_sync_clock,
-            schema=vol.Schema(
-                {
-                    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                    **SIDE_FIELD,
-                }
-            ),
-        )
     hass.services.async_register(
         DOMAIN,
         SERVICE_GENERATE_SUPPORT_BUNDLE,

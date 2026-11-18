@@ -33,6 +33,7 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
 )
 from .app import KaidiAppController
@@ -41,11 +42,14 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
     from ..lifecycle import ControllerSession
 
-SELECTED_SIDE: Final = StateKey[str | None]("comfy_selected_side")
 TIMER_SELECTION: Final = StateKey[str | None]("comfy_timer_selection")
 TIMER_REMAINING: Final = StateKey[int | None]("comfy_timer_remaining")
+TIMER_RUNNING: Final = StateKey[bool | None]("comfy_timer_running")
 LOCK_STATUS: Final = StateKey[str | None]("comfy_lock_status")
 LOCK_OWNER: Final = StateKey[int | None]("comfy_lock_owner")
+LOCKED: Final = StateKey[bool | None]("comfy_locked")
+# Lock and timer have switches; query only re-reads what notifications report.
+_SWITCHED_ACTIONS: Final = frozenset({"lock", "unlock", "query", "timer_start", "timer_stop"})
 
 
 @dataclass
@@ -186,26 +190,35 @@ class ComfyController(KaidiAppController):
                 card=CARD_PRESETS if action == "zero" else CARD_UTILITY,
             )
             for action in COMFY_ACTIONS
+            if action not in _SWITCHED_ACTIONS
+        )
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        return (
+            ControllerSwitchSpec(
+                "comfy_control_lock",
+                "comfy_control_lock",
+                lambda c, on: cast(ComfyController, c).control("lock" if on else "unlock"),
+                LOCKED,
+                icon="mdi:lock",
+            ),
+            ControllerSwitchSpec(
+                "comfy_timer",
+                "comfy_timer",
+                lambda c, on: cast(ComfyController, c).control(
+                    "timer_start" if on else "timer_stop"
+                ),
+                sided(TIMER_RUNNING, self.command_side),
+                icon="mdi:timer-outline",
+                # Started and expired from the app's local countdown, not the bed.
+                assumed_state=True,
+            ),
         )
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        side = (
-            (
-                ControllerSelectSpec(
-                    "comfy_selected_side",
-                    "comfy_selected_side",
-                    SELECTED_SIDE,
-                    ("left", "both", "right"),
-                    lambda c, value: cast(ComfyController, c).select_side(value),
-                    local_select_fn=self._select_side,
-                ),
-            )
-            if self.profile.split and self.command_side is None
-            else ()
-        )
         return (
-            *side,
             ControllerSelectSpec(
                 "comfy_timer_selection",
                 "comfy_timer_selection",
@@ -224,6 +237,7 @@ class ComfyController(KaidiAppController):
                 LOCK_STATUS,
                 "mdi:lock",
                 attribute_keys=(LOCK_OWNER,),
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 "comfy_timer_remaining",
@@ -231,18 +245,14 @@ class ComfyController(KaidiAppController):
                 sided(TIMER_REMAINING, self.command_side),
                 "mdi:timer-outline",
                 "s",
+                entity_registry_enabled_default=True,
             ),
         )
 
     def _publish(self) -> None:
-        side = (
-            None
-            if self._selected_side is None
-            else {0: "left", 1: "both", 2: "right"}[self._selected_side]
-        )
         self.forward_controller_state_updates(
-            SELECTED_SIDE(side),
             LOCK_STATUS(self._lock_status),
+            LOCKED(self._lock_status != "unlocked"),
             LOCK_OWNER(self._lock_owner),
         )
         for name, lane in (
@@ -258,6 +268,7 @@ class ComfyController(KaidiAppController):
             self.forward_controller_state_updates(
                 sided(TIMER_SELECTION, name)(str(self._timer_minutes[lane])),
                 sided(TIMER_REMAINING, name)(remaining),
+                sided(TIMER_RUNNING, name)(remaining > 0),
                 sided(UNDER_BED_LIGHTS_ON, name)(
                     self._led[
                         (self._feature_lane("light") if name is None else lane)
@@ -344,15 +355,6 @@ class ComfyController(KaidiAppController):
             list(started),
         )
         self._tick()
-
-    def _select_side(self, value: str) -> None:
-        if not self.profile.split or value not in ("left", "both", "right"):
-            raise ValueError("This product has no selectable bed side")
-        self._selected_side = {"left": 0, "both": 1, "right": 2}[value]
-        self._save_local()
-
-    async def select_side(self, value: str) -> None:
-        self._select_side(value)
 
     def on_disconnect(self) -> None:
         own = self._own

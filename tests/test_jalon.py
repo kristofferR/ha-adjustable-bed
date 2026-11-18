@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bleak.exc import BleakError
 
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.builder import BuildContext
 from custom_components.adjustable_bed.beds.keeson import jalon as controller
 from custom_components.adjustable_bed.beds.keeson.jalon_state import parse_notification
@@ -368,13 +369,13 @@ async def test_alarm_action_uses_scheduler_and_validates_before_writes(hass):
         "device_id": [device.id],
         "enabled": True,
         "time": "06:30:00",
-        "weekdays": ["mon", "sun"],
-        "wake_mode": "memory_1",
+        "weekdays": ["monday", "sunday"],
+        "wake_action": "memory_1",
     }
-    await hass.services.async_call(DOMAIN, "jalon_set_alarm", data, blocking=True)
+    await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_awaited_once()
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    bed = MagicMock(spec=controller.JalonController)
+    bed = coordinator.controller
     bed.configure_clock_alarm = AsyncMock()
     await command(bed)
     bed.configure_clock_alarm.assert_awaited_once_with(
@@ -383,10 +384,10 @@ async def test_alarm_action_uses_scheduler_and_validates_before_writes(hass):
     coordinator.async_execute_controller_command.reset_mock()
     for invalid in ({**data, "time": "06:30:01"}, {"device_id": [device.id], "enabled": True}):
         with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(DOMAIN, "jalon_set_alarm", invalid, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", invalid, blocking=True)
     coordinator._controller = controller.JalonController(coordinator, protocol="P1", layout="0")
     with pytest.raises(ServiceValidationError):
-        await hass.services.async_call(DOMAIN, "jalon_set_alarm", data, blocking=True)
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 
 
@@ -394,7 +395,6 @@ async def test_alarm_action_uses_scheduler_and_validates_before_writes(hass):
 async def test_manual_setup_saves_app_owned_layout(hass, layout, axes):
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import (
-        CONF_DISABLE_ANGLE_SENSING,
         CONF_MOTOR_PULSE_DELAY_MS,
     )
     from tests.form_helpers import finish_new_bed, start_new_bed
@@ -410,7 +410,7 @@ async def test_manual_setup_saves_app_owned_layout(hass, layout, axes):
     assert saved[CONF_PRODUCT_TYPE] == layout
     assert saved[CONF_MOTOR_COUNT] == len(axes)
     assert saved[CONF_MOTOR_PULSE_DELAY_MS] == 300
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(saved)
 
 
 @pytest.mark.parametrize(
@@ -498,10 +498,10 @@ def test_entity_translation_keys_follow_home_assistant_contract():
 def test_massage_connection_state_keeps_link_between_commands_by_default():
     from custom_components.adjustable_bed.bed_traits import (
         bed_traits,
-        disconnect_after_command_default_enabled,
+        default_connection_mode,
     )
 
     traits = bed_traits(BED_TYPE_JALON)
     assert traits.connection_scoped_state
     assert not traits.persistent_connection
-    assert not disconnect_after_command_default_enabled(BED_TYPE_JALON)
+    assert default_connection_mode(BED_TYPE_JALON) != "release"

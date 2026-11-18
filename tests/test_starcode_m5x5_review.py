@@ -53,8 +53,15 @@ async def test_pair_conversion_rechecks_group_members_without_absorbing_ids(
     hass.config_entries.async_update_entry(
         main.entry, data={**main.entry.data, CONF_STARCODE_LIFT_ENTRIES: []}
     )
+    from collections import Counter
+
+    from custom_components.adjustable_bed.pairing_candidates import _protocol
+
+    members = [member.entry for member in (main, *lifts, *free)]
+    protocols = Counter(_protocol(entry) for entry in members)
+    # Only beds with another bed of their protocol can be one bed's two sides.
     assert {entry.entry_id for entry in active_pairing_candidates(hass)} == {
-        member.entry.entry_id for member in (main, *lifts, *free)
+        entry.entry_id for entry in members if protocols[_protocol(entry)] >= 2
     }
 
 

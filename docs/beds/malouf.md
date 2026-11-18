@@ -253,7 +253,7 @@ STOP arrives, up to 30 s, then sends the same STOP. The Keeson-framed
 ### Vectors
 
 `tests/malouf_vectors.py` freezes each profile's single frames: the app profiles
-take every reachable literal of their accepted reports, and `malouf_new_okin`
+take every reachable literal of their apps, and `malouf_new_okin`
 every frame its pre-v5 controller sent. `tests/test_malouf_vectors.py` proves
 each literal round-trips through the codec and that each profile sends exactly
 its frozen frames.
@@ -307,12 +307,12 @@ A STOP that fails during cleanup is logged, not raised.
 #### Evidence
 
 Reverse engineered from Malouf Base 2.4.3 and checked against Lucid Base 1.3.3.
-The route has no accepted report of its own; it sends only its frozen pre-v5
+The route sends only its frozen pre-v5
 frames.
 
 ### Malouf Base / Lucid Base family
 
-**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 The `malouf_app` bed type. Retail model, GATT transport and physical role are
 independent choices. Controls follow the selected model and its reachable app
@@ -450,7 +450,7 @@ massage-remaining sensor in minutes.
 
 #### Services
 
-Use `adjustable_bed.malouf_set_alarm` to set or clear an alarm. The selected
+Use `adjustable_bed.set_alarm` to set or clear an alarm. The selected
 model must expose the app's alarm UI, and the connected transport must be OKIN.
 The choices are the alarm types above, subject to the model's memory capacity.
 An alarm choice can be available even when the same manual preset is absent.
@@ -459,19 +459,17 @@ An alarm choice can be available even when the same manual preset is absent.
 - Selected weekdays create a repeating alarm. An empty weekday list selects the
   next occurrence of that local time, using the app's one-shot weekday encoding.
 - Clock synchronization runs immediately before programming an enabled alarm.
-  `adjustable_bed.sync_clock` (or the older `malouf_sync_clock`) also permits
+  `adjustable_bed.sync_clock` (or the older `sync_clock`) also permits
   explicit clock synchronization. Connecting alone never writes the clock.
 - Both actions validate every selected physical bed before any write and use
   the coordinator's serialized configuration path. An active movement is not
   cancelled to change an alarm.
 
-See [action examples](../SERVICES.md#malouf-base--lucid-base-clock-and-alarm).
+See [action examples](../SERVICES.md#set_alarm).
 
 #### Evidence
 
-The accepted cluster007 reports for both apps and the row023 audit, which
-account for every reachable behavior and exclusion. Both app profiles send
-only their frozen frames.
+Both app profiles send only their frozen frames.
 
 ### Malouf Base
 
@@ -548,7 +546,4 @@ app profiles still need reports from real users after a beta or release.
 
 ### Analysis provenance
 
-- The evidence is the accepted APK Protocol Audit cluster007 reports for Malouf
-  Base 2.4.3 (`com.malouf.bedbase`) and Lucid Base 1.3.3 (`com.lucid.bedbase`),
-  with the accepted write-mode and routing amendments.
-- The row023 audit accounts for the complete reachable behavior and exclusions.
+Based on Malouf Base 2.4.3 (`com.malouf.bedbase`) and Lucid Base 1.3.3 (`com.lucid.bedbase`).

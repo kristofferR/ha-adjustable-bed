@@ -26,8 +26,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
@@ -422,7 +422,7 @@ class TestSolaceProfiles:
             mock_solace_config_entry,
             data={
                 **mock_solace_config_entry.data,
-                CONF_DISCONNECT_AFTER_COMMAND: True,
+                CONF_CONNECTION_MODE: "release",
             },
         )
 

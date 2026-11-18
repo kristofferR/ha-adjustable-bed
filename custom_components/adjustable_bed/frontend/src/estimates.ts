@@ -122,12 +122,6 @@ export function savedPositions(
   });
 }
 
-// The bed keys a pane covers: a standalone bed, both sides, or one side.
-export function paneBedKeys(paneSide: string | undefined, paired: boolean): string[] {
-  if (!paired) return ["bed"];
-  return paneSide === "left" || paneSide === "right" ? [paneSide] : ["left", "right"];
-}
-
 // Both shows every position; a side only the positions saved for that side,
 // because a side selection never moves or changes the other side.
 export function positionsForPane(

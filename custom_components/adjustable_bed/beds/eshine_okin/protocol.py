@@ -1,8 +1,8 @@
 """com.okin.eshine 1.1.8 clock, alarm and reply rules, independent of the E6000 app.
 
 Key words and hold timing are the ``ESHINE_PROFILES`` data; every frame is an
-Okin N-frame (``codec/okin_nframe.py``). Evidence: APK Protocol Audit row122,
-with deliberate malformed-input corrections.
+Okin N-frame (``codec/okin_nframe.py``). HA deliberately
+corrects malformed-input handling.
 """
 
 from __future__ import annotations

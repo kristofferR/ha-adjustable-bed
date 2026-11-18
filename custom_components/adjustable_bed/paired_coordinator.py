@@ -48,7 +48,6 @@ from .const import (
     BED_TYPE_OKIN_CB24,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
@@ -123,12 +122,10 @@ class PairedBedCoordinator:
         if not self._children:
             raise ValueError("PairedBedCoordinator requires at least one child")
         # Separate receivers retain their standalone connection lifecycles. Auto
-        # starts concurrent and can fall back at runtime when a real adapter-slot
-        # exhaustion error proves that both links cannot coexist. Explicit choices
-        # never change automatically.
-        raw_mode = connection_mode or entry.data.get(
-            CONF_PAIR_CONNECTION_MODE, DEFAULT_PAIR_CONNECTION_MODE
-        )
+        # starts concurrent and falls back to sequential at runtime when a real
+        # adapter-slot exhaustion error proves that both links cannot coexist.
+        # A caller's explicit mode never changes automatically.
+        raw_mode = connection_mode or DEFAULT_PAIR_CONNECTION_MODE
         self._automatic_connection_mode = raw_mode == PAIR_CONNECTION_MODE_AUTO
         if self._automatic_connection_mode:
             raw_mode = PAIR_CONNECTION_MODE_CONCURRENT

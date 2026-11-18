@@ -181,6 +181,7 @@ class GmmotorSleepController(BedController, GmmotorActions):
                     INVALID,
                 ),
                 card=CARD_UTILITY,
+                entity_registry_enabled_default=False,
             ),
         )
 

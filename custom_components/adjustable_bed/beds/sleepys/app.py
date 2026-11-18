@@ -19,6 +19,7 @@ from ...card import (
     CARD_LIGHT_LEVEL,
     CARD_LIGHTING,
     CARD_MASSAGE,
+    CARD_PRESET_SAVE,
     CARD_PRESETS,
     CARD_UTILITY,
     CardPlacement,
@@ -46,6 +47,7 @@ from ..entity_specs import (
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
 )
 from .app_routes import CANONICAL_ROUTE_SHA256, ROUTES, SleepysAppRoute
@@ -71,80 +73,24 @@ _APP_HOLD_MIN_MS = 100
 _APP_HOLD_MAX_MS = 60_000
 _MOTION_SENSOR_REFRESH_MS = 5_000
 _DEADLINE_EPSILON_SECONDS = 1e-9
-_BOX24_STATE_FIELDS = frozenset(
+
+
+_SAVE_BUTTONS: Final = frozenset(
     {
-        "field_0x0b",
-        "field_0x13",
-        "field_0x1b",
-        "field_0x23",
-        "field_0x67",
-        "field_0x6b",
-        "field_0x73",
-        "field_0x7b",
-        "field_0x83",
+        "sleepys_app_program",
+        "sleepys_app_reset_memory",
+        "sleepys_app_save_zero_gravity",
+        "sleepys_app_save_lounge",
+        "sleepys_app_save_tv",
     }
 )
-_APP_STATE_FIELDS_BY_SELECTOR = {
-    "none": _BOX24_STATE_FIELDS,
-    "BOX15": frozenset(
-        {
-            "field_0x0b",
-            "field_0x13",
-            "field_0x1b",
-            "field_0x23",
-            "field_0x67",
-            "field_0x6b",
-            "field_0x73",
-            "field_0x7b",
-            "field_0x83",
-        }
-    ),
-    "BOX24": _BOX24_STATE_FIELDS,
-    "BOX1220": _BOX24_STATE_FIELDS,
-    "BOX1221": _BOX24_STATE_FIELDS,
-    "BOX2422": _BOX24_STATE_FIELDS,
-    "BOX2442": _BOX24_STATE_FIELDS,
-    "BOX3633": _BOX24_STATE_FIELDS,
-    "BOX25": frozenset(
-        {
-            "field_0x0b",
-            "field_0x13",
-            "field_0x1b",
-            "field_0x23",
-            "field_0x43",
-            "field_0x47",
-            "field_0x4b",
-            "field_0x53",
-            "field_0x5f",
-            "field_0x67",
-            "field_0x6b",
-            "field_0x73",
-            "field_0x7b",
-            "field_0x83",
-        }
-    ),
-    "BOX25_STAR": frozenset(
-        {
-            "field_0x0b",
-            "field_0x13",
-            "field_0x1b",
-            "field_0x23",
-            "field_0x43",
-            "field_0x47",
-            "field_0x4b",
-            "field_0x53",
-            "field_0x5f",
-            "field_0x67",
-            "field_0x6b",
-            "field_0x73",
-            "field_0x7b",
-            "field_0x83",
-        }
-    ),
-}
+
+
 def _button_card(key: str) -> CardPlacement:
     """Place an app button in the card by its key."""
     name = key.removeprefix("sleepys_app_")
+    if name.startswith("save_"):
+        return CARD_PRESET_SAVE
     if name.startswith("preset_"):
         return CARD_PRESETS
     if name.startswith("memory_"):
@@ -308,11 +254,13 @@ class SleepysEliteAppController(BedController):
         return True
 
     @property
-    def protocol_diagnostics(self) -> dict[str, str]:
+    def protocol_diagnostics(self) -> dict[str, object]:
         return {
             "app_profile": "sleepys_elite_app",
             "selector": self.selector,
             "canonical_route_sha256": CANONICAL_ROUTE_SHA256,
+            # Parsed app state fields; only positions and the timer are entities.
+            "app_fields": dict(self._app_fields),
         }
 
     def _route(self, builder: str) -> SleepysAppRoute:
@@ -561,14 +509,18 @@ class SleepysEliteAppController(BedController):
         duration_ms: int,
         *,
         release: bool,
-    ) -> None:
-        """Refresh at the accepted cadence for an elapsed window, then release once."""
+    ) -> bool:
+        """Refresh at the accepted cadence for an elapsed window, then release once.
+
+        Return whether any refresh frame was written.
+        """
         now = self._monotonic()
         cancel_event = self._coordinator.cancel_command
         deadline = now + duration_ms / 1000
         next_refresh = now
         context = current_command_context()
         failed = False
+        written = False
         try:
             while await self._wait_until_or_cancel(next_refresh, deadline, cancel_event):
                 started = self._monotonic()
@@ -576,6 +528,7 @@ class SleepysEliteAppController(BedController):
                     break
                 if not await self._write_route_before_deadline(route, deadline, cancel_event):
                     break
+                written = True
                 now = self._monotonic()
                 if cancel_event.is_set() or now >= deadline - _DEADLINE_EPSILON_SECONDS:
                     break
@@ -591,6 +544,7 @@ class SleepysEliteAppController(BedController):
                     if not failed:
                         raise
                     _LOGGER.debug("Sleepy's STOP cleanup failed", exc_info=True)
+        return written
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Refresh one held app action until its elapsed deadline, then send STOP."""
@@ -600,9 +554,11 @@ class SleepysEliteAppController(BedController):
     async def set_motion_sensor(self, *, enabled: bool) -> None:
         """Run the app's cancellable five-second sensor refresh without STOP."""
         builder = "motionSensorOn" if enabled else "motionSensorOff"
-        await self._run_refresh_window(
+        if not await self._run_refresh_window(
             self._route(builder), _MOTION_SENSOR_REFRESH_MS, release=False
-        )
+        ):
+            # The switch must not show a setting the bed never received.
+            raise ConnectionError("Sleepy's motion sensor setting was not sent")
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Set up the chosen route, then subscribe to its response characteristic."""
@@ -1028,7 +984,6 @@ class SleepysEliteAppController(BedController):
         app_actions = {
             "sleepys_app_program": ("program", "Program", "mdi:content-save-outline"),
             "sleepys_app_reset_memory": ("resetMemory", "Reset memory", "mdi:backup-restore"),
-            "sleepys_app_voice_stop": ("voiceStop", "Voice stop", "mdi:stop-circle-outline"),
             "sleepys_app_query_position": (
                 "queryPosition",
                 "Refresh position state",
@@ -1048,30 +1003,10 @@ class SleepysEliteAppController(BedController):
             "sleepys_app_preset_zero_g": ("zeroGravity", "Zero gravity", "mdi:rocket-launch"),
             "sleepys_app_preset_lounge": ("lounge", "Lounge", "mdi:seat-recline-normal"),
             "sleepys_app_preset_tv": ("tv", "TV", "mdi:television"),
-            "sleepys_app_motion_sensor_on": (
-                "motionSensorOn",
-                "Motion sensor on",
-                "mdi:motion-sensor",
-            ),
-            "sleepys_app_motion_sensor_off": (
-                "motionSensorOff",
-                "Motion sensor off",
-                "mdi:motion-sensor-off",
-            ),
         }
         if self.selector in _BOX25_SELECTORS:
             app_actions.update(
                 {
-                    "sleepys_app_light_on": (
-                        "turnonUnderbedLighting",
-                        "Light on",
-                        "mdi:lightbulb-on",
-                    ),
-                    "sleepys_app_light_off": (
-                        "turnoffUnderbedLighting",
-                        "Light off",
-                        "mdi:lightbulb-off",
-                    ),
                     "sleepys_app_light_mode": (
                         "underbedLighting",
                         "Light mode",
@@ -1160,6 +1095,12 @@ class SleepysEliteAppController(BedController):
                         SleepysEliteAppController, ctrl
                     )._press_app_action(key, builder),
                     card=_button_card(key),
+                    # Saving, programming or resetting overwrites stored
+                    # positions, so the card asks first.
+                    requires_confirmation=key in _SAVE_BUTTONS,
+                    # The bed reports both itself; the queries are fallbacks.
+                    diagnostic=key
+                    in ("sleepys_app_query_position", "sleepys_app_massage_query"),
                     hold=(
                         ControllerHoldSpec(
                             control=builder,
@@ -1172,43 +1113,29 @@ class SleepysEliteAppController(BedController):
                 )
             )
 
-        if self.selector in _BOX25_SELECTORS:
-            for delta, direction in ((-1, "down"), (1, "up")):
-                key = f"sleepys_app_voice_brightness_{direction}"
-                specs.append(
-                    ControllerButtonSpec(
-                        key=key,
-                        name=f"Brightness {direction} by one",
-                        translation_key=key,
-                        icon="mdi:brightness-6",
-                        press_fn=lambda ctrl, delta=delta: cast(
-                            SleepysEliteAppController, ctrl
-                        ).adjust_light_level(delta),
-                        card=CARD_LIGHTING,
-                    )
-                )
-            for axis in range(3):
-                for target in (100, 0):
-                    key = f"sleepys_app_voice_axis_{axis}_{target}"
-                    specs.append(
-                        ControllerButtonSpec(
-                            key=key,
-                            name=f"Position axis {axis} target {target}",
-                            translation_key=key,
-                            icon="mdi:bed-outline",
-                            press_fn=lambda ctrl, axis=axis, target=target: cast(
-                                SleepysEliteAppController, ctrl
-                            ).set_position_target(axis, target),
-                        )
-                    )
+        # The app's voice shortcuts (STOP, one-step brightness, position
+        # targets 0 and 100) repeat the light, brightness buttons and target
+        # numbers, so they stay available through those entities only.
         return tuple(specs)
 
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if ("motionSensorOn", self.selector) not in ROUTES:
+            return ()
+        return (
+            ControllerSwitchSpec(
+                key="sleepys_app_motion_sensor",
+                translation_key="sleepys_app_motion_sensor",
+                set_fn=lambda ctrl, enabled: cast(
+                    SleepysEliteAppController, ctrl
+                ).set_motion_sensor(enabled=enabled),
+                icon="mdi:motion-sensor",
+                assumed_state=True,
+            ),
+        )
+
     async def _press_app_action(self, key: str, builder: str) -> None:
-        if key == "sleepys_app_motion_sensor_on":
-            await self.set_motion_sensor(enabled=True)
-        elif key == "sleepys_app_motion_sensor_off":
-            await self.set_motion_sensor(enabled=False)
-        elif key in _REPEATABLE_BUTTONS:
+        if key in _REPEATABLE_BUTTONS:
             await self._run_refresh_window(
                 self._route(builder), SLEEPYS_ELITE_NATIVE_ACTION_MS, release=True
             )
@@ -1217,16 +1144,9 @@ class SleepysEliteAppController(BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        specs = [
-            ControllerStateSensorSpec(
-                key=f"sleepys_app_{field}",
-                translation_key=f"sleepys_app_{field}",
-                state_key=_field_key(field),
-                icon="mdi:code-braces",
-                card=CARD_UTILITY,
-            )
-            for field in sorted(_APP_STATE_FIELDS_BY_SELECTOR.get(self.selector, ()))
-        ]
+        # The app's state fields carry no proven meaning beyond the timer and
+        # light level the select and number show; they stay in diagnostics.
+        specs: list[ControllerStateSensorSpec] = []
         if self.selector in _BOX25_SELECTORS:
             specs.extend(
                 ControllerStateSensorSpec(
@@ -1235,6 +1155,7 @@ class SleepysEliteAppController(BedController):
                     state_key=_field_key(f"position_axis_{axis}"),
                     icon="mdi:bed-outline",
                     native_unit_of_measurement="%",
+                    entity_registry_enabled_default=True,
                     suggested_display_precision=0,
                     card=CARD_UTILITY,
                 )
@@ -1310,16 +1231,6 @@ class SleepysEliteAppController(BedController):
         if level == 0:
             await self.lights_off()
             return
-        await self.set_light_level(level)
-
-    async def adjust_light_level(self, delta: int) -> None:
-        """Provide the source's one-step brightness caller as an HA button."""
-        if delta not in (-1, 1):
-            raise ValueError("Sleepy's brightness adjustment must be one step")
-        if not self._light_level_known:
-            return
-        candidate = self._light_level + delta
-        level = candidate if 0 <= candidate <= self.light_level_max else self._light_level
         await self.set_light_level(level)
 
     async def set_light_color_code(self, code: int) -> None:

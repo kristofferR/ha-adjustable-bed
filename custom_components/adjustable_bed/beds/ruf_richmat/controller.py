@@ -6,6 +6,8 @@ import asyncio
 import re
 from typing import TYPE_CHECKING, Final
 
+from ...alarm import AlarmCapability, AlarmError
+from ...alarm import AlarmRequest as SharedAlarm
 from ...card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
 from ...codec import richmat as codec
 from ...controller_state import StateKey, StateUpdate
@@ -16,6 +18,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..richmat_mh.controller import (
+    _ALARM_POSITIONS,
     ANGLE_KEYS,
     INTENSITY_KEYS,
     LIGHT_TIMER_KEY,
@@ -30,6 +33,7 @@ from ..richmat_mh.controller import (
     _invoke,
 )
 from ..richmat_mh.protocol import (
+    ALARM_OPTION_CODES,
     INIT_VER0,
     INIT_VER1,
     MOTOR_MODE_BITS,
@@ -692,6 +696,7 @@ class RufRichmatController(RichmatMhController):
                     "mdi:music",
                     attribute_keys=(MUSIC_VALUES,),
                     card=CARD_UTILITY,
+                    entity_registry_enabled_default=False,
                 )
             )
         if self._calendar_page():
@@ -703,13 +708,14 @@ class RufRichmatController(RichmatMhController):
                     "mdi:alarm",
                     attribute_keys=(CALENDAR_ALARMS,),
                     card=CARD_UTILITY,
+                    entity_registry_enabled_default=True,
                 )
             )
         if self._normal_ready:
             for side in ("left", "right"):
                 key = _mattress_alarm_key(side)
                 specs.append(
-                    ControllerStateSensorSpec(key, key, key, "mdi:alarm", card=CARD_UTILITY)
+                    ControllerStateSensorSpec(key, key, key, "mdi:alarm", card=CARD_UTILITY, entity_registry_enabled_default=True)
                 )
         return tuple(specs)
 
@@ -803,6 +809,127 @@ class RufRichmatController(RichmatMhController):
             and _feature(self._app, self.model.model_id, "hasNewAlarm")
             and _feature(self._app, self.model.model_id, "alarmList")
         )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        inherited = super().alarm_capability
+        calendar, mattress = self._calendar_page(), self._normal_ready
+        if not calendar and not mattress:
+            return inherited
+        model = self.model
+        if calendar and model is not None:
+            # The calendar page replaces the single bed alarm on these models.
+            codes = set(_ints(_feature(self._app, model.model_id, "alarmList")))
+            wake_actions = tuple(
+                action
+                for action, option in _ALARM_POSITIONS.items()
+                if ALARM_OPTION_CODES[option] in codes
+            )
+            bed: dict[str, object] = {"wake_actions": wake_actions, "slots": 7}
+        elif inherited is not None:
+            bed = {
+                "wake_actions": inherited.wake_actions,
+                "slots": inherited.slots,
+                "massage": inherited.massage,
+                "massage_zones": inherited.massage_zones,
+            }
+        else:
+            bed = {}
+        sides = ("left", "right") if mattress else inherited.mattress_sides if inherited else ()
+        return AlarmCapability(
+            **bed,  # type: ignore[arg-type]
+            # Turning a calendar slot off first reads it from every bed.
+            live_check=calendar,
+            # The app asks for a position before saving a calendar alarm.
+            requires_wake_action=calendar,
+            weekdays=True,
+            mattress_sides=sides,
+            massage_intensities=3 if sides else 0,
+        )
+
+    def _app_alarm(self, alarm: SharedAlarm) -> AlarmRequest | None:
+        """Return this app's own request, or None for the inherited bed alarm."""
+        if alarm.mattress_side is not None:
+            if not self._normal_ready:
+                return None
+            if alarm.wake_action != "none" or alarm.massage:
+                raise AlarmError(
+                    "alarm_mattress_vibrates_only",
+                    "The mattress alarm only vibrates; remove the wake action and massage",
+                )
+            return AlarmRequest(
+                family="mattress",
+                enabled=alarm.enabled,
+                hour=alarm.hour,
+                minute=alarm.minute,
+                mattress_side="left" if alarm.mattress_side == "left" else "right",
+                repeat=self._waist_repeat(alarm),  # type: ignore[arg-type]
+                intensity=alarm.massage_intensity,
+            )
+        if not self._calendar_page():
+            return None
+        if not alarm.enabled:
+            # Turning a slot off keeps its reported time, days and position.
+            observed = self._calendar_alarms.get(alarm.slot)
+            if observed is None:
+                raise AlarmError("alarm_refresh_needed", "Refresh the bed alarms, then try again")
+            return AlarmRequest(
+                family="calendar",
+                enabled=False,
+                hour=observed["hour"],
+                minute=observed["minute"],
+                slot=alarm.slot,
+                mode=observed["mode"],
+                weekdays=tuple(day for day in range(7) if observed["week"] & (1 << (7 - day))),
+            )
+        option = _ALARM_POSITIONS.get(alarm.wake_action)
+        if option is None:
+            raise ValueError("Choose a wake position from this bed's alarm list")
+        return AlarmRequest(
+            family="calendar",
+            enabled=alarm.enabled,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            slot=alarm.slot,
+            mode=ALARM_OPTION_CODES[option],
+            weekdays=alarm.weekdays,
+        )
+
+    def validate_alarm(self, alarm: SharedAlarm) -> None:
+        if self._calendar_disable(alarm) and alarm.slot not in self._calendar_alarms:
+            return  # check_alarm reads the slot from the bed before any bed is written.
+        request = self._app_alarm(alarm)
+        if request is None:
+            super().validate_alarm(alarm)
+        else:
+            self.validate_ruf_richmat_alarm(request)
+
+    def _calendar_disable(self, alarm: SharedAlarm) -> bool:
+        return alarm.mattress_side is None and not alarm.enabled and self._calendar_page()
+
+    async def _read_calendar_slot(self, alarm: SharedAlarm) -> None:
+        """Read an unknown slot before turning it off, so its settings are kept."""
+        if not self._calendar_disable(alarm) or alarm.slot in self._calendar_alarms:
+            return
+        # The app's calendar query; replies fill the slot records.
+        await self.write_command(codec.record_20_len(5, 1, 0, (0,)))
+        for _ in range(30):
+            if alarm.slot in self._calendar_alarms:
+                return
+            await asyncio.sleep(0.1)
+        raise AlarmError("alarm_refresh_needed", "Refresh the bed alarms, then try again")
+
+    async def check_alarm(self, alarm: SharedAlarm) -> None:
+        await self._read_calendar_slot(alarm)
+
+    async def configure_alarm(self, alarm: SharedAlarm) -> None:
+        # Read again if a reconnect between the check and the write lost the slot.
+        await self._read_calendar_slot(alarm)
+        request = self._app_alarm(alarm)
+        if request is None:
+            await super().configure_alarm(alarm)
+        else:
+            await self.ruf_richmat_alarm(request)
 
     def validate_ruf_richmat_alarm(self, request: AlarmRequest) -> None:
         request.validate()

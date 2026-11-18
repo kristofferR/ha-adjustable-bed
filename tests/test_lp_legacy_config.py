@@ -18,7 +18,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_RICHMAT,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_READ_UUID,
@@ -68,7 +68,7 @@ def test_explicit_choices_have_no_guessed_defaults() -> None:
         CONF_LP_LEGACY_READ_UUID,
     ]
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
-    assert options[BED_TYPE_LEGGETT_LP_LEGACY] == "L&P Adjustable Base (legacy app)"
+    assert options[BED_TYPE_LEGGETT_LP_LEGACY] == "L&P Adjustable Base app"
     assert BED_TYPE_RICHMAT in options
 
 
@@ -100,7 +100,7 @@ async def test_manual_entry_collects_and_saves_legacy_settings(hass: HomeAssista
         result = await flow.async_step_profile_questions(_settings())
         assert result["step_id"] == "finish_settings"
         result = await flow.async_step_finish_settings(
-            {CONF_NAME: "Legacy app bed", CONF_DISCONNECT_AFTER_COMMAND: False}
+            {CONF_NAME: "Legacy app bed", CONF_CONNECTION_MODE: "idle"}
         )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_BED_TYPE] == BED_TYPE_LEGGETT_LP_LEGACY
@@ -187,9 +187,8 @@ async def test_paired_options_preserve_each_sides_profile_and_endpoints(
     shown = {marker.schema for marker in result["data_schema"].schema}
     assert shown.isdisjoint(_settings())
     # A side's own profile is not part of the shared form.
-    refused = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20", **right})
-    assert refused["errors"] == {"base": "app_profile_unpair_first"}
-    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20"})
+    # A side's own app fields are not on the shared form, so they are ignored.
+    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: 20, **right})
     assert result["type"] == FlowResultType.CREATE_ENTRY
     for child, original in zip(entry.data[CONF_PAIR_CHILDREN], (left, right), strict=True):
         assert {key: child[key] for key in _settings()} == {
@@ -199,19 +198,3 @@ async def test_paired_options_preserve_each_sides_profile_and_endpoints(
     assert set(entry.data).isdisjoint(_settings())
 
 
-async def test_paired_type_change_cannot_create_unconfigured_lp_sides(hass: HomeAssistant) -> None:
-    data = build_pair_entry_data(
-        {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_RICHMAT},
-        {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", CONF_BED_TYPE: BED_TYPE_RICHMAT},
-        name="Pair",
-    )
-    entry = MockConfigEntry(domain=DOMAIN, data=data)
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LEGGETT_LP_LEGACY})
-
-    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert entry.data == data

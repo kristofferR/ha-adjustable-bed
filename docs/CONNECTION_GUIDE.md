@@ -10,17 +10,16 @@ Most adjustable beds use Bluetooth Low Energy (BLE) to communicate with their re
 **Key Points:**
 - **BLE Range**: Typically 10-30 meters, but walls and interference reduce this
 - **Single Connection**: Most beds only accept ONE Bluetooth connection at a time - disconnect manufacturer apps first
-- **Remote handoff**: With Disconnect After Command enabled, rapid commands share a connection until one second after the last operation finishes. Otherwise the configured idle timeout applies (default 40 seconds). Controllers requiring persistent connections keep their existing lifecycle.
+- **Remote handoff**: With **Bluetooth connection** set to "Release right after each command", rapid commands share a connection until one second after the last operation finishes. "Stay connected for a while" keeps it for its seconds (default 40). Controllers requiring persistent connections keep their existing lifecycle.
 
 ### Multiple adapters and proxies
 
 Home Assistant ranks the available Bluetooth paths each time it connects. The
 strongest signal is not always the path that can successfully establish a link.
 When more than one usable path is available, the integration allows at least
-five connection attempts and caps the exponential backoff at twice the selected
-connection profile's base delay. This gives HA time to penalize failed paths and
-select an alternative within the same request. Single-path connections retain
-the profile's normal retry budget.
+five connection attempts and caps the exponential backoff at twice the base
+delay. This gives HA time to penalize failed paths and select an alternative
+within the same request. Single-path connections keep the normal three attempts.
 
 The integration continues to use HA's routing, connection slots, and pairing
 ownership. It does not transfer bonds between proxies, force a particular route,
@@ -213,13 +212,12 @@ then use [Combine two beds into one](CONFIGURATION.md#two-independent-frames).
 
 After setup, you can adjust additional settings via **Settings → Devices & services → Adjustable Bed → Configure** (gear icon), then **Change settings**:
 
-- **Protocol variant** - Override if auto-detection fails. A family with a
-  [guided change](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed),
-  such as Okin, Keeson or Leggett & Platt, changes its app or route through
-  **Reconfigure** in the entry's three-dot menu instead; Configure refuses it
-- **Motor pulse settings** - Fine-tune movement behavior
+- **Bed type, app or route** - Change it with
+  [Reconfigure](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
+  in the entry's three-dot menu if auto-detection picked the wrong one
+- **Movement per tap** - How far a tap moves
 - **Bluetooth adapter** - Choose a specific adapter or proxy
-- **Disable angle sensing** - Turn it on only if position monitoring interferes
+- **Read bed position** - Turn it off only if position monitoring interferes
   with the physical remote; it removes position feedback
 
 The same menu has a **Remove the Bluetooth bond** action for beds that pair. It
