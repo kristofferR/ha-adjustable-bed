@@ -23,9 +23,9 @@ establish physical motor counts or packet-level side addressing.
 | Position feedback | No motor angle/position data |
 | Presets | Flat, reading, TV, zero gravity, anti-snore, M1 and M2 |
 | Save | Six non-flat presets |
-| Massage | Start/stop, wave, timer and head/foot strength cycles; reported option indices |
+| Massage | Massage switch (state from the reported timer option), wave, timer and head/foot strength cycles |
 | Lights | One light action; no proven discrete on/off or feedback |
-| Local settings | Privacy, detection, anti-snore intervention and bounded demonstration |
+| Local settings | Privacy and snore detection switches, anti-snore intervention select and bounded level tests |
 | Alarms | One or three, according to BED configuration |
 
 ## Choosing a profile
@@ -169,21 +169,33 @@ side's settings; there is no single-address side selector.
 
 #### Movement and presets
 
-Use the covers or dashboard holds for app-labelled actuators. Recall buttons use
-a finite hold, and explicit save buttons save only the selected non-flat preset.
-Holding a programmable preset through the source threshold changes to its save
-frame. Renewable holds use Home Assistant's admitted lease; sequential paired
+Use the covers or dashboard holds for app-labelled actuators. The Flat, Reading,
+TV, Zero Gravity and Anti-Snore preset buttons recall with a finite hold, and the
+save buttons save only the selected non-flat preset. Holding a programmable preset
+through the source threshold changes to its save frame. Renewable holds use Home Assistant's admitted lease; sequential paired
 Both holds are refused before motion.
 
 #### Massage and lights
 
-Use the cycle buttons and reported indices. No absolute massage level setter,
-light brightness, color or discrete light state is inferred.
+The **Massage** switch starts and stops massage; it is on while the reported
+massage timer option is nonzero. Use the cycle buttons for wave (Massage: Mode),
+timer and head/foot strength. The reported option indices stay internal. No
+absolute massage level setter, light brightness, color or discrete light state is
+inferred.
 
 #### Settings and alarms
 
-Use the privacy, detection and anti-snore intervention selects. Demonstration
-is bounded and sends its distinct intervention stop at completion or cancellation.
+Use the **Privacy** and **Snore detection** switches and the **Anti-snore
+intervention** select. The **Test anti-snore level** buttons run a bounded
+demonstration and send the distinct intervention stop at completion or
+cancellation. **Refresh status** (diagnostic, disabled by default) re-queries
+status and alarms; HA also queries them on every connection.
+
+Each alarm slot shows an **Alarm N time** sensor, with the repeat mask, action
+code and soft wake as attributes, and an **Alarm N enabled** binary sensor.
+**Firmware version** and **Hardware version** are diagnostic and disabled by
+default. The app's local management command (`management_1`) has no known
+user-visible effect and is not exposed.
 These names describe device commands and make no clinical efficacy claim.
 
 `adjustable_bed.onlysnore_set_alarm` takes the one-based slot, enabled state,

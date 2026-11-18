@@ -25,6 +25,7 @@ def test_app_declared_entity_names_exist_in_both_languages():
             for domain, specs in (
                 ("button", controller.controller_button_specs),
                 ("select", controller.controller_select_specs),
+                ("switch", controller.controller_switch_specs),
                 ("sensor", controller.controller_state_sensor_specs),
                 ("binary_sensor", controller.controller_state_binary_sensor_specs),
             ):
@@ -57,6 +58,6 @@ def test_actual_app_entities_match_appended_card_entries():
     fixture = json.loads((ROOT / "tests/fixtures/card_placements.json").read_text())
     actual = placements(controller_entities(controllers()))
     app = {key: value for key, value in actual.items() if ":onlysnore_" in key}
-    assert len(app) == 49
+    assert len(app) == 24
     assert {key: value for key, value in fixture.items() if ":onlysnore_" in key} == app
     assert all(fixture[key] == value for key, value in actual.items())

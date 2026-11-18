@@ -28,6 +28,7 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
     PositionNumberSpec,
 )
@@ -64,7 +65,6 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
         self._notify: BleakGATTCharacteristic | None = None
         self._status: codec.Status | None = None
         self._alarms: dict[int, codec.Alarm] = {}
-        self.forward_controller_state_updates(keys.MODEL(model))
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -321,8 +321,10 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
     async def preset_tv(self) -> None:
         await self._hold("tv")
 
-    async def preset_lounge(self) -> None:
+    async def preset_reading(self) -> None:
         await self._hold("reading")
+
+    preset_lounge = preset_reading
 
     async def preset_memory(self, memory_num: int) -> None:
         self.validate_memory_recall(memory_num)
@@ -358,7 +360,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
         return True
 
     @property
-    def supports_preset_lounge(self) -> bool:
+    def supports_preset_reading(self) -> bool:
         return True
 
     @property
@@ -366,9 +368,15 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
         return True
 
     def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
-        if key.startswith("preset_memory_"):
-            return ControllerHoldSpec(key)
-        return None
+        # Holding a programmable preset past the save threshold saves it.
+        control = {
+            "preset_flat": "preset_flat",
+            "preset_zero_g": "preset_zero_gravity",
+            "preset_tv": "preset_tv",
+            "preset_reading": "preset_reading",
+            "preset_anti_snore": "preset_anti_snore_preset",
+        }.get(key, key if key.startswith("preset_memory_") else None)
+        return None if control is None else ControllerHoldSpec(control)
 
     @property
     def supports_lights(self) -> bool:
@@ -456,20 +464,13 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
             await self._release(codec.INTERVENTION_STOP, generation, client, delay_ms=0)
 
     @property
+    def supports_massage_toggle_control(self) -> bool:
+        return False  # the Massage switch starts and stops it
+
+    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        controls = tuple(
-            ControllerButtonSpec(
-                f"onlysnore_{name}",
-                name.replace("_", " ").title(),
-                lambda ctrl, name=name: require_controller(ctrl, OnlySnoreController)._hold(name),
-                translation_key=f"onlysnore_{name}",
-                hold=ControllerHoldSpec(f"preset_{name}"),
-                card=CARD_PRESETS,
-                invalidates_position=True,
-            )
-            for name in ("flat", *app.PRESETS)
-            if not name.startswith("memory_")
-        )
+        # Recall buttons are the standard presets; wave cycling is the standard
+        # massage mode step; start/stop is the Massage switch.
         saves = tuple(
             ControllerButtonSpec(
                 f"onlysnore_save_{name}",
@@ -490,24 +491,27 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 translation_key=f"onlysnore_{name}",
                 card=CARD_MASSAGE_TIMER if name == "massage_timer_next" else CARD_MASSAGE,
             )
-            for name in app.KEYS
-            if name.startswith("massage_")
+            for name in (
+                "massage_timer_next",
+                "massage_foot_strength_next",
+                "massage_head_strength_next",
+            )
         )
         return (
-            *controls,
             *saves,
             *utilities,
             ControllerButtonSpec(
                 "onlysnore_refresh",
-                "Refresh BED state",
+                "Refresh status",
                 lambda ctrl: require_controller(ctrl, OnlySnoreController).refresh_all(),
                 translation_key="onlysnore_refresh",
                 cancel_movement=False,
+                diagnostic=True,
             ),
             *(
                 ControllerButtonSpec(
                     f"onlysnore_demo_{level}",
-                    f"Demonstrate anti-snore level {level}",
+                    f"Test anti-snore level {level}",
                     lambda ctrl, level=level: require_controller(ctrl, OnlySnoreController).demo(
                         level=level
                     ),
@@ -521,31 +525,51 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 lambda ctrl: ctrl.write_command(codec.INTERVENTION_STOP),
                 translation_key="onlysnore_stop_intervention",
             ),
-            ControllerButtonSpec(
-                "onlysnore_management",
-                "Open local BLE management",
-                lambda ctrl: ctrl.write_command(codec.setting(180, 1)),
-                translation_key="onlysnore_management",
+        )
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        def setting(name: str):
+            async def set_value(ctrl: BedController, on: bool) -> None:
+                await require_controller(ctrl, OnlySnoreController).select_setting(
+                    name, "on" if on else "off"
+                )
+
+            return set_value
+
+        async def massage(ctrl: BedController, on: bool) -> None:
+            await require_controller(ctrl, OnlySnoreController).utility(
+                "massage_all" if on else "massage_stop_all"
+            )
+
+        return (
+            ControllerSwitchSpec(
+                "onlysnore_massage", "onlysnore_massage", massage, keys.MASSAGE, icon="mdi:vibrate"
+            ),
+            ControllerSwitchSpec(
+                "onlysnore_privacy", "onlysnore_privacy", setting("privacy"), keys.PRIVACY, "on"
+            ),
+            ControllerSwitchSpec(
+                "onlysnore_detection",
+                "onlysnore_detection",
+                setting("detection"),
+                keys.DETECTION,
+                "on",
             ),
         )
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        return tuple(
+        return (
             ControllerSelectSpec(
-                f"onlysnore_{name}",
-                f"onlysnore_{name}",
-                key,
-                options,
-                lambda ctrl, option, name=name: require_controller(
-                    ctrl, OnlySnoreController
-                ).select_setting(name, option),
-            )
-            for name, key, options in (
-                ("privacy", keys.PRIVACY, ("off", "on")),
-                ("detection", keys.DETECTION, ("off", "on")),
-                ("intervention", keys.INTERVENTION, ("off", "1", "3", "6")),
-            )
+                "onlysnore_intervention",
+                "onlysnore_intervention",
+                keys.INTERVENTION,
+                ("off", "1", "3", "6"),
+                lambda ctrl, option: require_controller(ctrl, OnlySnoreController).select_setting(
+                    "intervention", option
+                ),
+            ),
         )
 
     def alarm_frame(
@@ -694,12 +718,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 keys.INTERVENTION(
                     str(parsed.anti_snore_level) if parsed.anti_snore_enabled else "off"
                 ),
-                keys.LEVEL(parsed.anti_snore_level),
-                keys.TIMER(parsed.massage_timer_index),
-                keys.PATTERN(parsed.massage_pattern_index),
-                keys.HEAD(parsed.massage_head_index),
-                keys.FOOT(parsed.massage_foot_index),
-                keys.SHARED(parsed.massage_shared_index),
+                keys.MASSAGE(parsed.massage_timer_index != 0),
             )
         elif isinstance(parsed, codec.Alarm):
             if parsed.index >= self._alarm_count:
@@ -743,12 +762,7 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
             keys.PRIVACY(None),
             keys.DETECTION(None),
             keys.INTERVENTION(None),
-            keys.LEVEL(None),
-            keys.TIMER(None),
-            keys.PATTERN(None),
-            keys.HEAD(None),
-            keys.FOOT(None),
-            keys.SHARED(None),
+            keys.MASSAGE(None),
             keys.ALARM_COUNT(None),
             keys.FIRMWARE(None),
             keys.HARDWARE(None),
@@ -770,33 +784,39 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return tuple(
-            ControllerStateSensorSpec(str(key), str(key), key, "mdi:information-outline")
-            for key in (
-                keys.MODEL,
-                keys.LEVEL,
-                keys.TIMER,
-                keys.PATTERN,
-                keys.HEAD,
-                keys.FOOT,
-                keys.SHARED,
-                keys.ALARM_COUNT,
-                keys.FIRMWARE,
-                keys.HARDWARE,
-                *keys.ALARM_TIME[: self._alarm_count],
-                *keys.ALARM_WEEK[: self._alarm_count],
-                *keys.ALARM_ACTION[: self._alarm_count],
+        # Repeat days, action and soft wake are attributes of each alarm's time.
+        alarms = tuple(
+            ControllerStateSensorSpec(
+                str(keys.ALARM_TIME[i]),
+                str(keys.ALARM_TIME[i]),
+                keys.ALARM_TIME[i],
+                "mdi:alarm",
+                attribute_keys=(keys.ALARM_WEEK[i], keys.ALARM_ACTION[i], keys.ALARM_SOFT[i]),
+                entity_registry_enabled_default=True,
             )
+            for i in range(self._alarm_count)
+        )
+        return (
+            *alarms,
+            *(
+                ControllerStateSensorSpec(
+                    str(key),
+                    str(key),
+                    key,
+                    "mdi:information-outline",
+                    entity_registry_enabled_default=False,
+                )
+                for key in (keys.FIRMWARE, keys.HARDWARE)
+            ),
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return tuple(
-            ControllerStateBinarySensorSpec(str(key), str(key), key, "mdi:alarm")
-            for key in (
-                *keys.ALARM_OPEN[: self._alarm_count],
-                *keys.ALARM_SOFT[: self._alarm_count],
+            ControllerStateBinarySensorSpec(
+                str(key), str(key), key, "mdi:alarm", entity_registry_enabled_default=True
             )
+            for key in keys.ALARM_OPEN[: self._alarm_count]
         )
 
 

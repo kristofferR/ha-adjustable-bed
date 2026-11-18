@@ -83,10 +83,11 @@ def test_models_keep_proven_ui_without_guessed_sensing_or_side(model):
     assert not ctrl.execution.concurrent
     assert ctrl.memory_slot_count == 2 and ctrl.supports_memory_programming
     assert ctrl.supports_lights and not ctrl.supports_discrete_light_control
-    assert {s.key for s in ctrl.controller_select_specs} == {
+    assert {s.key for s in ctrl.controller_select_specs} == {"onlysnore_intervention"}
+    assert {s.key for s in ctrl.controller_switch_specs} == {
+        "onlysnore_massage",
         "onlysnore_privacy",
         "onlysnore_detection",
-        "onlysnore_intervention",
     }
 
 
@@ -163,7 +164,7 @@ async def test_configure_and_restore_keep_model_independent_from_alarm_snapshot(
     )
     built = await build_controller(ctx)
     assert built.model == "meise" and built.capability_snapshot() == {"alarm_count": 3}
-    assert len(built.controller_state_binary_sensor_specs) == 6
+    assert len(built.controller_state_binary_sensor_specs) == 3
     assert len(SETUP_PROFILES["onlysnore"].questions) == 1
     discovered = SimpleNamespace(
         name="SLEEP_V",
@@ -258,7 +259,7 @@ async def test_notifications_state_writers_alarm_capability_and_stale_cache():
     callback(char, bytearray(STATUS))
     assert ctrl._coordinator.controller_state[state.PRIVACY] == "on"
     assert ctrl._coordinator.controller_state[state.INTERVENTION] == "7"
-    assert ctrl._coordinator.controller_state[state.TIMER] == 2
+    assert ctrl._coordinator.controller_state[state.MASSAGE] is True
     callback(char, bytearray(CONFIG_THREE))
     callback(char, bytearray(ALARM))
     assert ctrl._coordinator.controller_state[state.ALARM_COUNT] == 3
@@ -315,6 +316,9 @@ async def test_real_specs_reach_wire_through_entities(hass):
                 await entity.async_press()
         for spec in ctrl.controller_select_specs:
             await spec.select_fn(ctrl, spec.options[-1])
+        for spec in ctrl.controller_switch_specs:
+            await spec.set_fn(ctrl, True)
+        await ctrl.preset_reading()
         await ctrl.lights_toggle()
         await ctrl.program_memory(1)
         await ctrl.preset_memory(2)
@@ -326,7 +330,6 @@ async def test_real_specs_reach_wire_through_entities(hass):
     } <= sent
     assert codec.intervention(2, 1) in sent and codec.INTERVENTION_STOP in sent
     assert codec.setting(178, 1) in sent and codec.setting(181, 1) in sent
-    assert codec.setting(180, 1) in sent
     assert codec.control(app.KEYS["memory_1"], save=True) in sent
     assert not {codec.setting(177, 1), codec.setting(177, 2), codec.setting(179, 1)} & sent
 

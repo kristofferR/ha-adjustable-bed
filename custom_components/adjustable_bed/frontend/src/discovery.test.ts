@@ -68,12 +68,12 @@ test("OKIN Motion Bed keeps neutral middle holds and raw light actions reachable
   expect(bed.lights.buttons).toEqual(["button.light_0", "button.light_1"]);
 });
 
-test("Snore Monitor keeps presets, massage cycles and BED settings reachable", () => {
+test("Snore Monitor keeps presets, massage cycles and bed settings reachable", () => {
   const hass = hassWith([
     entry("cover.snore_back", "smart_sleep_head"),
-    entry("button.snore_reading", "onlysnore_reading"),
+    entry("button.snore_reading", "preset_reading"),
     entry("button.snore_save", "onlysnore_save_reading"),
-    entry("button.snore_wave", "onlysnore_massage_wave_next"),
+    entry("button.snore_wave", "massage_mode_step"),
     entry("button.snore_timer", "onlysnore_massage_timer_next"),
     entry("select.snore_intervention", "onlysnore_intervention"),
     entry("button.snore_memory", "preset_memory_1"),

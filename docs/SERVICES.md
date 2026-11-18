@@ -1,6 +1,6 @@
 # Actions and Automations
 
-## Snore Monitor BED alarm
+## Snore Monitor alarm
 
 `adjustable_bed.onlysnore_set_alarm` configures a local Snore Monitor 2.3.8 BED
 alarm. Select `device_id`, optional paired `side`, `slot` (1 to 3), `enabled`,
