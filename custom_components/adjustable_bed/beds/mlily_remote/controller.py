@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS
+from ...card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESET_SAVE, CARD_PRESETS
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.mlily_remote import ACTIONS, PROFILES, SAVE_MS, STARTUP, TICK_S
@@ -39,7 +39,7 @@ EVENTS: Final = StateKey[dict[str, object]]("mlily_remote_events")
 ALARM: Final = StateKey[dict[str, object]]("mlily_remote_alarm")
 ERROR: Final = StateKey[str | None]("mlily_remote_error")
 
-# Button names for the product's discrete actions, matching the shared preset and
+# Button names for the product's discrete actions, in the shared preset and Richmat MH
 # massage names. Flat, memory recall/save and movement have their own entities.
 LABELS: Final = {
     "BedLight": "Toggle Light",
@@ -50,8 +50,8 @@ LABELS: Final = {
     "MassageHeadInstensityStrengthen": "Massage: Head Up",
     "MassageFootInstensityStrengthen": "Massage: Foot Up",
     "MassageLumbarInstensityStrengthen": "Massage: Lumbar Up",
-    "MassageModeChange": "Massage: Mode",
-    "MassageModeAllOff": "Massage: Off",
+    "MassageModeChange": "Massage mode",
+    "MassageModeAllOff": "All Off",
     "Massage10MinuteTimer": "Massage: Timer 10 Minutes",
     "Massage20MinuteTimer": "Massage: Timer 20 Minutes",
     "Massage30MinuteTimer": "Massage: Timer 30 Minutes",
@@ -334,7 +334,7 @@ class MlilyRemoteController(CasperBaseController):
                         translation_key=key,
                         translation_placeholders={"action": title},
                         requires_confirmation=save,
-                        card=card,
+                        card=CARD_PRESET_SAVE if save else card,
                     )
                 )
         return tuple(specs)

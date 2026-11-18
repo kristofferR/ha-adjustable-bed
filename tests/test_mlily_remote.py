@@ -1,4 +1,4 @@
-"""MLILY Remote unit162 literals, product gates and physical session ownership."""
+"""MLILY Remote 1.0.1 (10103) literals, product gates and physical session ownership."""
 
 import asyncio
 import json
@@ -66,8 +66,8 @@ def test_buttons_add_only_what_shared_presets_lack():
         "Massage: Head Up",
         "Massage: Lumbar Up",
         "Massage: Foot Up",
-        "Massage: Mode",
-        "Massage: Off",
+        "Massage mode",
+        "All Off",
         "Massage: Timer 10 Minutes",
         "Massage: Timer 20 Minutes",
         "Massage: Timer 30 Minutes",

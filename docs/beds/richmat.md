@@ -3388,7 +3388,7 @@ Only MS600 has alarm-mode choices. No shared receive parser expands these gates.
 | TV, Save TV | MS600 |
 | Lounge, Save Lounge | MS200 |
 | Toggle Light | all except MS200 |
-| Massage: Head/Foot Up, Mode, Off, Timer 10/20/30 Minutes | MS300, MS300-SH, MS600 |
+| Massage: Head/Foot Up, Massage mode, All Off, Massage: Timer 10/20/30 Minutes | MS300, MS300-SH, MS600 |
 | Massage: Lumbar Up | MS600 |
 | Fan: Head/Foot Up, Mode, Off, Timer 2/3/5 Hours | PowerCool |
 | Model (diagnostic, disabled by default) | all |
@@ -3507,13 +3507,7 @@ side instead.
 
 #### Evidence
 
-Accepted APK Protocol Audit unit162, all 17 gates passing and independent
-audit001 accepted with no material findings. The existing Richmat codec passes
-all 119 frozen TX vectors; 80 RX cases cover BED parsing, ignored branches and
-explicit audio diagnostic exclusions. Fixtures are in `tests/fixtures/mlily_remote/`.
-Artifact-set SHA-256: `b85664ee88d148a67473997d6ead917f43bcc4c320c5109308af70dde7467871`.
-No new extraction or artifact audit was required. Hardware qualification belongs
-to external beta/release users.
+Based on MLILY Remote 1.0.1 (10103).
 
 ### MLILY Control
 

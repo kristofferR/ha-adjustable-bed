@@ -1,4 +1,4 @@
-"""MLILY Remote 1.0.1 (10103), accepted unit162, independent of MLILY Control.
+"""MLILY Remote 1.0.1 (10103), independent of MLILY Control.
 
 Static product gates and literals from the accepted Dart 3.7.0 artifact.
 No advertisement or shared response parser identifies a product.
