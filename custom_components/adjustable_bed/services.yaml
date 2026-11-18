@@ -3532,20 +3532,12 @@ onlysnore_set_alarm:
       required: true
       selector:
         time:
-    week_mask:
-      default: 0
-      selector:
-        number:
-          min: 0
-          max: 255
-          step: 1
-          mode: box
-    action:
-      default: action_1
+    weekdays:
       selector:
         select:
-          options: [action_1, action_9, action_5, action_6, action_8]
-          translation_key: onlysnore_alarm_action
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+          translation_key: weekday
     soft_wake:
       default: false
       selector:

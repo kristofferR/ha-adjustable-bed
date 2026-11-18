@@ -9404,7 +9404,7 @@
     },
     "onlysnore_set_alarm": {
       "name": "Snore Monitor: set bed alarm",
-      "description": "Set or turn off one of the bed's own alarms. Snore Monitor keeps this action instead of Set alarm because its alarm actions and raw repeat mask have no confirmed meaning.",
+      "description": "Set or turn off one of the bed's own alarms.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -9426,13 +9426,9 @@
           "name": "Time",
           "description": "Alarm time, to the minute."
         },
-        "week_mask": {
-          "name": "Repeat days (app mask)",
-          "description": "The app's repeat mask: add 1 for Sunday, 2 Monday, 4 Tuesday, 8 Wednesday, 16 Thursday, 32 Friday and 64 Saturday. 0 or 128 uses the app's one-time calculation, which picks one day for you."
-        },
-        "action": {
-          "name": "Alarm action",
-          "description": "One of the app's five alarm actions, named by the code it sends. What each does on the bed is not known."
+        "weekdays": {
+          "name": "Repeat on",
+          "description": "Leave empty for a one-time alarm."
         },
         "soft_wake": {
           "name": "Soft wake",
@@ -11806,15 +11802,6 @@
         "tv": "TV",
         "memory_1": "Memory 1",
         "memory_2": "Memory 2"
-      }
-    },
-    "onlysnore_alarm_action": {
-      "options": {
-        "action_1": "Action 1",
-        "action_9": "Action 9",
-        "action_5": "Action 5",
-        "action_6": "Action 6",
-        "action_8": "Action 8"
       }
     },
     "agingplace_action": {

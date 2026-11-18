@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
+from ...alarm import WEEKDAYS
 from ...command_scheduler import current_command_context
 from ...const import (
     CONF_PRODUCT_TYPE,
@@ -21,9 +22,14 @@ from ...const import (
 from ...import_executor import async_import_modules
 from ...profile_id import profile_route_from_data
 
-# The app's five alarm actions in its own order, named by the code each sends
-# (01, 09, 05, 06, 08). Their physical effects are not established.
-ALARM_ACTIONS = ("action_1", "action_9", "action_5", "action_6", "action_8")
+# The app's alarm action list sends one of five codes, whose physical effects
+# are not established. Only the first, the app's default, is offered.
+DEFAULT_ALARM_ACTION = 0
+
+
+def week_mask(weekdays: list[str]) -> int:
+    """The app's repeat bits: 1 Sunday, 2 Monday ... 64 Saturday; none is a one-time alarm."""
+    return sum(1 << ((WEEKDAYS.index(day) + 1) % 7) for day in set(weekdays))
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -253,8 +259,8 @@ def register_services(hass: HomeAssistant) -> None:
             "enabled": call.data["enabled"],
             "hour": time.hour,
             "minute": time.minute,
-            "week": call.data["week_mask"],
-            "type_index": ALARM_ACTIONS.index(call.data["action"]),
+            "week": week_mask(call.data["weekdays"]),
+            "type_index": DEFAULT_ALARM_ACTION,
             "soft": call.data["soft_wake"],
         }
         validated: dict[AdjustableBedCoordinator, OnlySnoreController] = {}
@@ -355,10 +361,9 @@ def register_services(hass: HomeAssistant) -> None:
                 vol.Required("time"): cv.time,
                 vol.Optional("slot", default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=3)),
                 vol.Optional("enabled", default=True): cv.boolean,
-                vol.Optional("week_mask", default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=255)
+                vol.Optional("weekdays", default=[]): vol.All(
+                    cv.ensure_list, [vol.In(WEEKDAYS)]
                 ),
-                vol.Optional("action", default=ALARM_ACTIONS[0]): vol.In(ALARM_ACTIONS),
                 vol.Optional("soft_wake", default=False): cv.boolean,
                 **SIDE_FIELD,
             }
