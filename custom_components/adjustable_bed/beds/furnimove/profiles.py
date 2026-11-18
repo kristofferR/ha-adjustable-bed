@@ -1000,6 +1000,6 @@ def get_furnimove_profile(handset_id: str) -> FurniMoveProfile:
 def furnimove_handset_choices(current: object = None) -> dict[str, str]:
     """Offer every captured handset for the explicitly selected FurniMove app."""
     return {
-        key: f"{key}: {clean_choice_label(profile.description) or 'Shipped offline table'}"
+        key: f"{key}: {clean_choice_label(profile.description or '') or 'Shipped offline table'}"
         for key, profile in FURNIMOVE_PROFILES.items()
     }
