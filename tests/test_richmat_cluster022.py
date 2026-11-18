@@ -403,4 +403,3 @@ async def test_nisco_alarm_cancel_uses_the_shared_set_alarm_route(sleeps) -> Non
     controller.validate_alarm(request)
     await controller.configure_alarm(request)
     assert frames(controller) == [frame.hex() for frame in protocol.TX_ALARM_CANCEL]
-

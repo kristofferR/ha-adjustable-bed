@@ -259,4 +259,3 @@ def command_label(label: str, *, save: bool = False) -> str:
     else:
         name = _COMMAND_NAMES.get(label, label)
     return f"Save {name}" if save else name
-
