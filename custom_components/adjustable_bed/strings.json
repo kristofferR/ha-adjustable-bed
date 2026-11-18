@@ -1640,7 +1640,7 @@
         "name": "Use Press-and-Release Controls"
       },
       "wake_controller": {
-        "name": "Wake Controller"
+        "name": "Wake controller"
       },
       "reset_defaults": {
         "name": "Reset Defaults"
@@ -3620,12 +3620,6 @@
       "timotion_ahf_lamp_display_code": {
         "name": "AHF lamp display code"
       },
-      "rmcontrol_protocol_version": {
-        "name": "RMControl protocol version"
-      },
-      "rmcontrol_bed_mode": {
-        "name": "RMControl bed mode"
-      },
       "rmcontrol_light_timer": {
         "name": "Light timer"
       },
@@ -3645,7 +3639,7 @@
         "name": "Music volume"
       },
       "rmcontrol_fan_gear": {
-        "name": "Fan gear"
+        "name": "Fan level"
       },
       "rmcontrol_aroma_timer": {
         "name": "Aromatherapy timer"
@@ -3654,13 +3648,10 @@
         "name": "Heating temperature"
       },
       "rmcontrol_anti_snore_count": {
-        "name": "Anti-snore intervention count"
+        "name": "Anti-snore interventions"
       },
       "rmcontrol_anti_snore_time": {
         "name": "Anti-snore intervention time"
-      },
-      "rmcontrol_alarm_record": {
-        "name": "Alarm record"
       },
       "head_angle": {
         "name": "Head Angle"
@@ -3690,28 +3681,28 @@
         "name": "Foot massage strength"
       },
       "linak_protocol_error": {
-        "name": "Protocol Error"
+        "name": "Protocol error"
       },
       "linak_base_reported_speed": {
-        "name": "Base Reported Speed"
+        "name": "Base motor speed"
       },
       "linak_feet_reported_speed": {
-        "name": "Feet Reported Speed"
+        "name": "Feet motor speed"
       },
       "linak_head_reported_speed": {
-        "name": "Head Reported Speed"
+        "name": "Head motor speed"
       },
       "linak_legs_reported_speed": {
-        "name": "Legs Reported Speed"
+        "name": "Legs motor speed"
       },
       "linak_back_reported_speed": {
-        "name": "Back Reported Speed"
+        "name": "Back motor speed"
       },
       "linak_alarm_status": {
-        "name": "Alarm Status"
+        "name": "Alarm"
       },
       "solace_audio_volume": {
-        "name": "Audio Volume"
+        "name": "Audio volume"
       },
       "leggett_led_mask": {
         "name": "LED mask"
@@ -4653,7 +4644,7 @@
         "name": "Luuna + status"
       },
       "massage_timer": {
-        "name": "Massage timer category"
+        "name": "Massage timer"
       },
       "galaxy_status": {
         "name": "Galaxy bed status"
@@ -4806,7 +4797,7 @@
         "name": "Controller Sync"
       },
       "linak_automatic_drive": {
-        "name": "Automatic Drive"
+        "name": "Automatic drive"
       },
       "remote_control_lock": {
         "name": "Remote control lock"
@@ -4847,10 +4838,10 @@
         "name": "Bed Presence"
       },
       "linak_position_feedback_fault": {
-        "name": "Position Feedback Fault"
+        "name": "Position feedback fault"
       },
       "solace_alarm_enabled": {
-        "name": "Alarm Enabled"
+        "name": "Alarm"
       },
       "bed_presence_left": {
         "name": "Left Bed Presence"

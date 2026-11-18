@@ -805,6 +805,7 @@ class LinakController(BedController):
                         PROTOCOL_ERROR_CODE,
                         PROTOCOL_ERROR_PAYLOAD,
                     ),
+                    entity_registry_enabled_default=False,
                 )
             )
         for axis in self._capabilities.position_axes:
@@ -815,6 +816,7 @@ class LinakController(BedController):
                     state_key=_AxisKeys.of(axis).reported_speed,
                     icon="mdi:speedometer",
                     attribute_keys=_AxisKeys.of(axis).attributes,
+                    entity_registry_enabled_default=False,
                     suggested_display_precision=3,
                 )
             )
@@ -834,6 +836,7 @@ class LinakController(BedController):
                         ALARM_PAUSE,
                         ALARM_ERROR_CODE,
                     ),
+                    entity_registry_enabled_default=False,
                 )
             )
         return tuple(specs)
@@ -852,6 +855,7 @@ class LinakController(BedController):
                 state_key=POSITION_FEEDBACK_FAULT,
                 icon="mdi:alert",
                 attribute_keys=(FAULT_AXES,),
+                entity_registry_enabled_default=True,
             ),
         )
 

@@ -443,7 +443,9 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="wake_controller",
         translation_key="wake_controller",
         icon="mdi:power",
-        entity_category=EntityCategory.CONFIG,
+        # A maintenance action normal control does not need.
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
         press_fn=lambda ctrl: ctrl.wake(),
         is_supported=lambda c: c.supports_wake_control,
     ),
