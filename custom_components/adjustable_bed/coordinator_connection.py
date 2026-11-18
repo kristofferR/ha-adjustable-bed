@@ -1790,10 +1790,12 @@ class CoordinatorConnectionMixin:
             self._schedule_pending_capability_reload()
             return
 
-        # Many beds drop an idle link by design; a drop under a running command
-        # is worth a warning.
+        # Many beds drop an idle link by design, and a drop while connecting is
+        # part of an outage its summary reports. A drop of a ready link under a
+        # running command is worth a warning.
+        ready = self._controller is not None and not self._connecting
         _LOGGER.log(
-            logging.WARNING if self._command_lock.locked() else logging.DEBUG,
+            logging.WARNING if ready and self._command_lock.locked() else logging.DEBUG,
             "Disconnected from %s by the bed or adapter. Client details: is_connected=%s, "
             "address=%s",
             self._address,

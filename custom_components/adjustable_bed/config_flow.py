@@ -6160,6 +6160,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._migration is not None
             and not self._migration_requires_check
             and not needs_pin_check
+            # AdjustableM5X4 resolves and checks its transport on the live link.
+            and entry_data.get(CONF_BED_TYPE) != BED_TYPE_STARCODE_ABM5_4
         ):
             return await self._async_create_selected_app_entry(title=title, data=entry_data)
         if (
@@ -6798,11 +6800,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         errors: dict[str, str] = {}
         if user_input is not None and self._octo_pin_form_shown:
             if status.allows_setup:
-                return self.async_create_entry(
-                    title=self._pending_title
-                    or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
-                    data=self._pending_entry,
-                )
+                title = self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed")
+                if self._migration is not None:
+                    # Reconfigure saves only after its review is applied.
+                    return await self._async_create_selected_app_entry(
+                        title=title, data=self._pending_entry
+                    )
+                return self.async_create_entry(title=title, data=self._pending_entry)
             pin = normalize_octo_pin(user_input.get(CONF_OCTO_PIN, ""))
             if not is_valid_octo_pin(pin):
                 errors[CONF_OCTO_PIN] = "invalid_pin"

@@ -578,3 +578,34 @@ async def test_corrupt_pin_capability_cannot_look_like_pin_free_bed(client, cap)
         DEVICEINFO_QUERY,
         CAP_QUERY,
     ]
+
+
+@pytest.mark.parametrize("status", [OctoPinStatus.ACCEPTED, OctoPinStatus.NOT_REQUIRED])
+async def test_reconfigure_reviews_a_verified_pin_before_saving(hass, status):
+    """Reconfigure cannot create an entry: a verified PIN goes to its review."""
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import DOMAIN
+    from custom_components.adjustable_bed.profile_migration import (
+        MigrationSnapshot,
+        reconfigure_context,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Octo bed",
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_NAME: "Octo bed", CONF_BED_TYPE: "linak"},
+        unique_id="AA:BB:CC:DD:EE:01",
+    )
+    entry.add_to_hass(hass)
+    flow = pin_flow(hass, status)
+    flow.context = reconfigure_context(entry)
+    flow._migration = MigrationSnapshot.of(entry)
+    flow._migration_verified = True
+    await flow.async_step_verify_octo_pin()
+
+    result = await flow.async_step_verify_octo_pin({})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "migration_confirm"
+    assert entry.data[CONF_BED_TYPE] == "linak"
