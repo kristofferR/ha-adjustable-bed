@@ -159,11 +159,11 @@ commands.
 
 | Operation | Exact construction / field meaning |
 |-----------|------------------------------------|
-| `clock_sync` | `6E 0C 20 08 02 01 UNIX_BE32 ZONE_HOURS SUM8`, then `6E 0D 20 08 03 01 YEAR_MINUS_1970 MONTH DAY HOUR MINUTE SECOND SUM8` |
+| Clock ([`sync_clock`](../SERVICES.md#sync_clock)) | `6E 0C 20 08 02 01 UNIX_BE32 ZONE_HOURS SUM8`, then `6E 0D 20 08 03 01 YEAR_MINUS_1970 MONTH DAY HOUR MINUTE SECOND SUM8` |
 | `alarm` | `6E 05 MINUTES_LOW 00 SUM8`, then `6E 06 MINUTES_HIGH MODE SUM8` |
 | `alarm_at` | Same countdown frames; HA local hour/minute, seconds removed, nonpositive difference plus exactly 86400 seconds |
 | `alarm_cancel` | The two countdown frames with minutes/mode zero |
-| `repeat_alarm` | `6E 0D 20 05 01 01 ID REPEAT HOUR MINUTE MODE STATUS SUM8` |
+| `repeat_alarm` | `6E 0D 20 05 01 01 ID REPEAT HOUR MINUTE MODE STATUS SUM8`; the action sends `REPEAT` 0 and `STATUS` 1, whose other values have no established meaning |
 | `repeat_delete` | `6E 08 20 05 02 01 ID SUM8` |
 | `repeat_query` | `6E 08 20 05 01 00 00 SUM8` |
 | `light_color` | `6E 0C FF RED SUM8`, then `6E 0D GREEN BLUE SUM8`, concatenated in one write |
