@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from bleak.exc import BleakError
 
 from ...app_session import app_session
-from ...card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CardPlacement, CardSection
+from ...card import CARD_CONTROLLED_SIDE, CARD_LIGHT_LEVEL, CARD_LIGHTING
 from ...const import CONF_REMACRO_MODEL, REMACRO_READ_CHAR_UUID, REMACRO_WRITE_CHAR_UUID
 from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
@@ -349,7 +349,7 @@ class RemacroController(BedController):
                 options=("left", "right"),
                 select_fn=_select_side,
                 local_select_fn=self.select_control_side,
-                card=CardPlacement(CardSection.MOTORS),
+                card=CARD_CONTROLLED_SIDE,
             ),
         )
 

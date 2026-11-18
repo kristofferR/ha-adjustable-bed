@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 from homeassistant.const import EntityCategory
 
-from ...card import CARD_MASSAGE, motor_card
+from ...card import CARD_CONTROLLED_SIDE, CARD_MASSAGE, motor_card
 from ...const import (
     REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
     REVERIE_NIGHTSTAND_FOOT_WAVE_UUID,
@@ -412,6 +412,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                 options=("1", "2", "3"),
                 select_fn=lambda _ctrl, side: self._select_stk_side(side),
                 local_select_fn=self._set_stk_side,
+                card=CARD_CONTROLLED_SIDE,
             ),
         )
 

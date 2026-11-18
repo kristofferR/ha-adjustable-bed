@@ -291,6 +291,17 @@ on every entity that tells the dashboard card where it belongs.
   another motor of the same bed or side; that move ends first, then the Stop
   goes out. On Jiecang, Comfort Motion and Jensen LinOn beds, a Stop during a
   move reaches the bed at once instead of at the next repeat.
+- **Stop wins while an action is still checking.** A Stop on any selected bed
+  while `set_alarm`, `set_position` or `set_positions` is still connecting to
+  or checking its beds ends the action: nothing is written or moved. In 4.x the
+  first beds could still be written or moved afterwards.
+- **Actions write only what they checked.** When a bed reconnects, is replaced
+  or is paired differently after the check, `set_alarm` and `set_positions`
+  stop with "The bed changed while the action was being checked" and write
+  nothing. Preset, rename, clock and hold actions check the bed again when it
+  connects and show its own reason if it no longer accepts the request.
+- **Combined beds** connect and check both sides before an alarm is written to
+  either. A failed alarm check no longer stops the other side.
 - **Customatic covers** queue a second motor's move behind the first, as on
   other beds, instead of replacing it.
 - **Leggett Okin Prodigy CE and U Series** send the release once after a
@@ -340,6 +351,11 @@ on every entity that tells the dashboard card where it belongs.
   [Dashboard Card guide](DASHBOARD_CARD.md).
 - The card names entities the way Home Assistant 2026.11 does, so a renamed
   device updates its labels.
+- A split bed's side selector is named **Controlled side** on every bed and
+  sits with the motor controls. Nerum's light button and light state sit with
+  the lights.
+- A bed with two controls for one card role, such as a massage timer button
+  and a remaining-time sensor, shows both.
 
 ## Rollback
 

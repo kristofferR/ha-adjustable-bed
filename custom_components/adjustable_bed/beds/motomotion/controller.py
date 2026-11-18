@@ -11,7 +11,7 @@ from math import isfinite
 from time import monotonic
 from typing import TYPE_CHECKING, Final
 
-from ...card import CARD_UTILITY
+from ...card import CARD_CONTROLLED_SIDE, CARD_UTILITY
 from ...codec import motomotion as codec
 from ...codec.motomotion import Position, ascii_command, binary_command, music_command
 from ...const import CONF_BLE_DEVICE_NAME
@@ -1042,6 +1042,7 @@ class MotoMotionController(BedController):
                 _option_key(key),
                 values,
                 partial(select, key=key),
+                card=CARD_CONTROLLED_SIDE if key == "side" else CARD_UTILITY,
             )
             for key, values in choices.items()
         )

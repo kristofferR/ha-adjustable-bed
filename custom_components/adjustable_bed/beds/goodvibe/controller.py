@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Final, Literal
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
-from ...card import CARD_HIDDEN, CARD_PRESET_SAVE, CARD_UTILITY, CardPlacement, CardSection
+from ...card import CARD_CONTROLLED_SIDE, CARD_HIDDEN, CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import richmat as codec
 from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
@@ -1360,7 +1360,7 @@ class GoodVibeController(BedController):
                     tuple(map(str, self.product.sides)),
                     set_side,
                     local_select_fn=self._select_side,
-                    card=CardPlacement(CardSection.MOTORS),
+                    card=CARD_CONTROLLED_SIDE,
                 )
             )
         if self.product.light and (self.catalog.bed is None or self.menu_available("light")):
