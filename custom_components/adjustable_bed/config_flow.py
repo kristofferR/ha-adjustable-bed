@@ -2368,12 +2368,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """
         assert self._manual_data is not None
         bed_type = self._manual_data[CONF_BED_TYPE]
-        if self._migration is not None and bed_type != self._migration.data.get(CONF_BED_TYPE):
-            # The previous bed type's own settings must not steer the new one,
-            # such as a VMAT app's connection timeout.
-            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
-                self._manual_data, bed_type
-            )
         # The destination's own family checks its link before the review.
         self._migration_family = next(
             (family for family in GUIDED_FAMILIES if bed_type in family.managed | family.asks),
@@ -6078,7 +6072,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if self._migration is not None:
             if self._migration_requires_check and not self._migration_verified:
                 return self.async_abort(reason="migration_verification_required")
-            self._pending_entry = dict(data)
+            data = dict(data)
+            if data.get(CONF_BED_TYPE) != self._migration.data.get(CONF_BED_TYPE):
+                # The previous bed type's own settings must not steer the final
+                # one, such as a VMAT app's connection timeout.
+                AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
+                    data, data[CONF_BED_TYPE]
+                )
+            self._pending_entry = data
             return await self._async_show_migration_confirm()
         self._record_selected_app_intent(data)
         if data.get(CONF_BED_TYPE) == BED_TYPE_SVANE:

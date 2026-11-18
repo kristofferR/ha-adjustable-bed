@@ -194,3 +194,31 @@ async def test_reconfigure_to_adjustablem5x4_needs_a_proven_transport(hass: Home
         result = await flow._async_probe_worker_reserved()
 
     assert result.outcome is OperationOutcome.CONNECTION_FAILED
+
+
+async def test_a_reconfigure_back_to_the_saved_bed_type_keeps_its_settings(
+    hass: HomeAssistant,
+) -> None:
+    """Only the final bed type decides whether the saved one's settings go."""
+    from unittest.mock import AsyncMock
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.profile_migration import MigrationSnapshot
+
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:46",
+            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_M5X5,
+            const.CONF_STARCODE_LIFT_ENTRIES: ["lift-1"],
+        },
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, reconfigure_context(entry)
+    flow._migration = MigrationSnapshot.of(entry)
+    with patch.object(AdjustableBedConfigFlow, "_async_show_migration_confirm", AsyncMock()):
+        await flow._async_create_selected_app_entry(title="Bed", data=dict(entry.data))
+
+    assert flow._pending_entry is not None
+    assert flow._pending_entry[const.CONF_STARCODE_LIFT_ENTRIES] == ["lift-1"]

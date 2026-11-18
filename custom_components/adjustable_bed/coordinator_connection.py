@@ -1519,6 +1519,7 @@ class CoordinatorConnectionMixin:
 
                 # Ready for commands: the next outage warns again.
                 self._connect_failure_logged = False
+                self._link_ready = True
                 return True
 
             except asyncio.CancelledError:
@@ -1730,6 +1731,8 @@ class CoordinatorConnectionMixin:
                 self._address,
             )
             return
+        # Whether the dropped link had finished startup and accepted commands.
+        ready, self._link_ready = self._link_ready, False
 
         if self._furnimove_bond_task is not None:
             if not self._furnimove_bond_task.done() and not self._intentional_disconnect:
@@ -1793,7 +1796,6 @@ class CoordinatorConnectionMixin:
         # Many beds drop an idle link by design, and a drop while connecting is
         # part of an outage its summary reports. A drop of a ready link under a
         # running command is worth a warning.
-        ready = self._controller is not None and not self._connecting
         _LOGGER.log(
             logging.WARNING if ready and self._command_lock.locked() else logging.DEBUG,
             "Disconnected from %s by the bed or adapter. Client details: is_connected=%s, "

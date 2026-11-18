@@ -203,7 +203,7 @@ asking; otherwise it asks which base the bed is, and a detected transport stays
 one answer away. A Fuzion entry then asks its side; a BAM/MCR entry asks no
 side, since it exposes both. Either then asks whether to read the bed's
 positions. A model name alone never chooses the
-transport, and existing entries are not moved to the other one. **Configure**
+transport, and existing entries are not moved to the other one. **Reconfigure**
 lists both transports under their own names.
 
 Typical device names look like:
