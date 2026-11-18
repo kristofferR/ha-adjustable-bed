@@ -404,3 +404,26 @@ async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
     assert saved[const.CONF_MOTOR_COUNT] == 4
     assert saved[const.CONF_HAS_MASSAGE] is True
     assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True
+
+
+@pytest.mark.parametrize(
+    ("label", "route"),
+    [
+        ("Revive Control app · Richmat", const.BED_TYPE_RICHMAT_REVIVE),
+        ("Forty Winks app · Richmat", const.BED_TYPE_RICHMAT_CLASSIC_APPS),
+        ("MLILY Control app · Richmat", const.BED_TYPE_MLILY),
+    ],
+)
+async def test_an_app_found_by_its_own_row_skips_the_richmat_question(hass, label, route):
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    flow._app_after_device = "manual_entry"
+    form = await flow.async_step_select_app()
+    picker = next(value for key, value in form["data_schema"].schema.items() if key == const.CONF_BED_TYPE)
+    assert label in picker.rows()
+    result = await flow.async_step_select_app({const.CONF_BED_TYPE: label})
+    assert result["step_id"] == "manual_entry"
+    result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:36"})
+    assert result["step_id"] != "richmat_family"
+    assert flow._manual_data[const.CONF_BED_TYPE] == route
