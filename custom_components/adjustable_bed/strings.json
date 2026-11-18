@@ -4715,44 +4715,14 @@
       "bedsense_wave_steps": {
         "name": "Massage frequency level"
       },
-      "casper_sleep_l_body_move": {
-        "name": "Left body movement"
-      },
-      "casper_sleep_r_on_bed": {
-        "name": "Right on bed"
-      },
-      "casper_sleep_r_heart": {
-        "name": "Right heart rate"
-      },
-      "casper_sleep_l_heart": {
-        "name": "Left heart rate"
-      },
-      "casper_sleep_l_snoring": {
-        "name": "Left snoring"
-      },
-      "casper_sleep_l_on_bed": {
-        "name": "Left on bed"
-      },
       "casper_sleep": {
         "name": "Sleep sensor state"
-      },
-      "casper_sleep_r_body_move": {
-        "name": "Right body movement"
       },
       "casper_remote": {
         "name": "Remote finder state"
       },
-      "casper_sleep_r_snoring": {
-        "name": "Right snoring"
-      },
       "casper_base": {
         "name": "Model"
-      },
-      "casper_sleep_l_breath": {
-        "name": "Left breathing rate"
-      },
-      "casper_sleep_r_breath": {
-        "name": "Right breathing rate"
       },
       "bf_cherish_alarm": {
         "name": "Alarm"
@@ -4787,23 +4757,11 @@
       "doublesleep_left_sensitivity": {
         "name": "Left sensitivity"
       },
-      "doublesleep_left_heart_rate": {
-        "name": "Left heart rate"
-      },
-      "doublesleep_left_breath_rate": {
-        "name": "Left breath rate"
-      },
       "doublesleep_left_status": {
         "name": "Left bed status"
       },
       "doublesleep_right_sensitivity": {
         "name": "Right sensitivity"
-      },
-      "doublesleep_right_heart_rate": {
-        "name": "Right heart rate"
-      },
-      "doublesleep_right_breath_rate": {
-        "name": "Right breath rate"
       },
       "doublesleep_right_status": {
         "name": "Right bed status"
@@ -4877,38 +4835,8 @@
       "saved_positions": {
         "name": "Saved positions"
       },
-      "goodvibe_l_movement": {
-        "name": "Left body movement"
-      },
-      "goodvibe_l_respiration": {
-        "name": "Left respiration"
-      },
-      "goodvibe_r_respiration": {
-        "name": "Right respiration"
-      },
-      "goodvibe_r_heart": {
-        "name": "Right heart rate"
-      },
-      "goodvibe_r_snore": {
-        "name": "Right snoring"
-      },
       "goodvibe_status": {
         "name": "Status"
-      },
-      "goodvibe_r_occupancy": {
-        "name": "Right occupancy"
-      },
-      "goodvibe_l_snore": {
-        "name": "Left snoring"
-      },
-      "goodvibe_l_heart": {
-        "name": "Left heart rate"
-      },
-      "goodvibe_r_movement": {
-        "name": "Right body movement"
-      },
-      "goodvibe_l_occupancy": {
-        "name": "Left occupancy"
       },
       "eshine_okin_massage": {
         "name": "Massage"
@@ -4946,32 +4874,8 @@
       "ruf_richmat_mattress_left_alarm": {
         "name": "Left mattress alarm"
       },
-      "ruf_richmat_sleep_left_heart_rate": {
-        "name": "Left heart rate"
-      },
-      "ruf_richmat_sleep_left_breathing_rate": {
-        "name": "Left breathing rate"
-      },
-      "ruf_richmat_sleep_left_occupancy": {
-        "name": "Left occupancy"
-      },
-      "ruf_richmat_sleep_left_movement": {
-        "name": "Left movement"
-      },
       "ruf_richmat_mattress_right_alarm": {
         "name": "Right mattress alarm"
-      },
-      "ruf_richmat_sleep_right_heart_rate": {
-        "name": "Right heart rate"
-      },
-      "ruf_richmat_sleep_right_breathing_rate": {
-        "name": "Right breathing rate"
-      },
-      "ruf_richmat_sleep_right_occupancy": {
-        "name": "Right occupancy"
-      },
-      "ruf_richmat_sleep_right_movement": {
-        "name": "Right movement"
       },
       "ruf_richmat_calendar_alarms": {
         "name": "Calendar alarms"
@@ -5134,12 +5038,6 @@
       "bedgear_sync_state": {
         "name": "Synchronization state"
       },
-      "mline_heart": {
-        "name": "Heart signal"
-      },
-      "mline_breath": {
-        "name": "Breathing signal"
-      },
       "mline_anti_angle": {
         "name": "Anti-snore angle"
       },
@@ -5181,12 +5079,6 @@
       },
       "onlysnore_alarm_3_time": {
         "name": "Alarm 3 time"
-      },
-      "agingplace_heart_rate": {
-        "name": "Heart rate"
-      },
-      "agingplace_breathing_rate": {
-        "name": "Breathing rate"
       },
       "agingplace_circulation_remaining": {
         "name": "Circulation cycle remaining"
@@ -5236,23 +5128,11 @@
       "cheerssleep_massage_mode": {
         "name": "Massage mode"
       },
-      "cheerssleep_left_heart": {
-        "name": "Left heart rate"
-      },
-      "cheerssleep_left_breath": {
-        "name": "Left breath rate"
-      },
       "cheerssleep_left_snore_count": {
         "name": "Left snore count"
       },
       "cheerssleep_left_snore_power": {
         "name": "Left snore power"
-      },
-      "cheerssleep_right_heart": {
-        "name": "Right heart rate"
-      },
-      "cheerssleep_right_breath": {
-        "name": "Right breath rate"
       },
       "cheerssleep_right_snore_count": {
         "name": "Right snore count"
@@ -5332,6 +5212,24 @@
       },
       "ormatek_alarm_time": {
         "name": "Alarm time"
+      },
+      "heart_rate": {
+        "name": "Heart rate"
+      },
+      "heart_rate_left": {
+        "name": "Left heart rate"
+      },
+      "heart_rate_right": {
+        "name": "Right heart rate"
+      },
+      "breathing_rate": {
+        "name": "Breathing rate"
+      },
+      "breathing_rate_left": {
+        "name": "Left breathing rate"
+      },
+      "breathing_rate_right": {
+        "name": "Right breathing rate"
       }
     },
     "light": {
@@ -5499,7 +5397,7 @@
         "name": "Memory save confirmed"
       },
       "bed_presence": {
-        "name": "Bed Presence"
+        "name": "In bed"
       },
       "linak_position_feedback_fault": {
         "name": "Position feedback fault"
@@ -5508,10 +5406,10 @@
         "name": "Alarm"
       },
       "bed_presence_left": {
-        "name": "Left Bed Presence"
+        "name": "Left in bed"
       },
       "bed_presence_right": {
-        "name": "Right Bed Presence"
+        "name": "Right in bed"
       },
       "leggett_alarm_indicator": {
         "name": "Alarm"
@@ -5660,9 +5558,6 @@
       "symphony_light_on": {
         "name": "Under-bed light"
       },
-      "mline_motion": {
-        "name": "Motion"
-      },
       "mline_privacy": {
         "name": "Privacy mode"
       },
@@ -5684,17 +5579,8 @@
       "onlysnore_alarm_3_enabled": {
         "name": "Alarm 3 enabled"
       },
-      "agingplace_occupancy": {
-        "name": "Occupancy"
-      },
-      "cheerssleep_left_on_bed": {
-        "name": "Left in bed"
-      },
       "cheerssleep_left_asleep": {
         "name": "Left asleep"
-      },
-      "cheerssleep_right_on_bed": {
-        "name": "Right in bed"
       },
       "cheerssleep_right_asleep": {
         "name": "Right asleep"
@@ -5725,6 +5611,24 @@
       },
       "ormatek_massage": {
         "name": "Massage"
+      },
+      "snoring": {
+        "name": "Snoring"
+      },
+      "snoring_left": {
+        "name": "Left snoring"
+      },
+      "snoring_right": {
+        "name": "Right snoring"
+      },
+      "body_movement": {
+        "name": "Body movement"
+      },
+      "body_movement_left": {
+        "name": "Left body movement"
+      },
+      "body_movement_right": {
+        "name": "Right body movement"
       }
     },
     "number": {

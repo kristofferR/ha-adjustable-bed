@@ -12,7 +12,12 @@ from homeassistant.util import dt as dt_util
 from ...controller_state import StateKey, StateUpdate
 from ..base import BedController
 from ..casper_base.protocol import CasperBaseActions, Request, SensorKind
-from ..entity_specs import ControllerStateSensorSpec
+from ..entity_specs import (
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    sleep_flag_binary_sensor_spec,
+    sleep_rate_sensor_spec,
+)
 from .protocol import (
     NOTIFY,
     SERVICES,
@@ -45,6 +50,29 @@ REMOTE_STATUS: Final = StateKey[str]("casper_remote_status")
 def live_key(side: str, field: str) -> StateKey[object]:
     """One side's live sensor field."""
     return StateKey[object](f"casper_sleep_{side}_{field}")
+
+
+def _rate_key(side: str, field: str) -> StateKey[int | None]:
+    return StateKey[int | None](f"casper_sleep_{side}_{field}")
+
+
+def _flag_key(side: str, field: str) -> StateKey[bool | None]:
+    return StateKey[bool | None](f"casper_sleep_{side}_{field}")
+
+
+def _typed_live(field: str, value: object) -> int | bool | None:
+    """The app shows "--" for an unknown reading; Home Assistant shows unknown."""
+    if field in ("heart", "breath"):
+        if not isinstance(value, str):
+            return None
+        try:
+            return int(value, 0) if value.strip().lower().startswith(("0x", "+0x", "-0x")) else int(value)
+        except ValueError:
+            return None
+    return value if isinstance(value, bool) else None
+
+
+_SIDES: Final = {"L": "left", "R": "right"}
 
 
 class CasperSleepController(BedController, CasperBaseActions):
@@ -121,19 +149,36 @@ class CasperSleepController(BedController, CasperBaseActions):
                 entity_registry_enabled_default=False,
             )
         ]
-        for side in ("L", "R"):
-            for field in ("on_bed", "heart", "breath", "body_move", "snoring"):
-                specs.append(
-                    ControllerStateSensorSpec(
-                        f"casper_sleep_{side}_{field}",
-                        f"casper_sleep_{side.lower()}_{field}",
-                        live_key(side, field),
-                        "mdi:sleep",
-                        attribute_keys=(live_key(side, "valid"),),
-                        entity_registry_enabled_default=True,
-                    )
+        for side, name in _SIDES.items():
+            specs.extend(
+                sleep_rate_sensor_spec(
+                    kind,
+                    f"casper_sleep_{side}_{field}",
+                    _rate_key(side, field),
+                    name,
+                    attribute_keys=(live_key(side, "valid"),),
                 )
+                for field, kind in (("heart", "heart_rate"), ("breath", "breathing_rate"))
+            )
         return tuple(specs)
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        return tuple(
+            sleep_flag_binary_sensor_spec(
+                kind,
+                f"casper_sleep_{side}_{field}",
+                _flag_key(side, field),
+                name,
+                attribute_keys=(live_key(side, "valid"),),
+            )
+            for side, name in _SIDES.items()
+            for field, kind in (
+                ("on_bed", "bed_presence"),
+                ("body_move", "body_movement"),
+                ("snoring", "snoring"),
+            )
+        )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self.client is None:
@@ -300,7 +345,7 @@ class CasperSleepController(BedController, CasperBaseActions):
     def _publish_live(self) -> None:
         updates: list[StateUpdate] = []
         for side, state in self._live.state.items():
-            updates += [live_key(side, key)(value) for key, value in state.items()]
+            updates += [live_key(side, key)(_typed_live(key, value)) for key, value in state.items()]
             updates.append(live_key(side, "valid")(self._live.valid[side]))
         self.forward_controller_state_updates(*updates)
 

@@ -30,6 +30,8 @@ from ..entity_specs import (
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
+    sleep_flag_binary_sensor_spec,
+    sleep_rate_sensor_spec,
 )
 from ..lifecycle import ControllerSession
 from . import history, state
@@ -708,14 +710,8 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
             (state.ALARM_MODE, "mdi:alarm-check"),
         ]
         if self.profile.key == "sleep":
-            fields.extend(
-                (
-                    (state.HEART, "mdi:heart-pulse"),
-                    (state.BREATH, "mdi:lungs"),
-                    (state.ANTI_ANGLE, "mdi:angle-acute"),
-                )
-            )
-        return tuple(
+            fields.append((state.ANTI_ANGLE, "mdi:angle-acute"))
+        specs = tuple(
             ControllerStateSensorSpec(
                 str(key),
                 str(key),
@@ -725,26 +721,38 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
             )
             for key, icon in fields
         )
+        if self.profile.key != "sleep":
+            return specs
+        # The sensor reports raw bytes, so the rates carry no unit.
+        return (
+            sleep_rate_sensor_spec("heart_rate", str(state.HEART), state.HEART, has_unit=False),
+            sleep_rate_sensor_spec(
+                "breathing_rate", str(state.BREATH), state.BREATH, has_unit=False
+            ),
+            *specs,
+        )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         if self.profile.key != "sleep":
             return ()
-        return tuple(
-            ControllerStateBinarySensorSpec(
-                str(key),
-                str(key),
-                key,
-                icon,
-                attribute_keys=(state.MOTION_WINDOW,) if key == state.MOTION else (),
-                entity_registry_enabled_default=True,
-            )
+        return (
+            sleep_flag_binary_sensor_spec(
+                "body_movement",
+                str(state.MOTION),
+                state.MOTION,
+                attribute_keys=(state.MOTION_WINDOW,),
+            ),
             # The sensor's unnamed boolean stays in published state for diagnostics.
-            for key, icon in (
-                (state.MOTION, "mdi:motion-sensor"),
-                (state.PRIVACY, "mdi:eye-off"),
-                (state.ANTI_ENABLED, "mdi:sleep"),
-            )
+            *(
+                ControllerStateBinarySensorSpec(
+                    str(key), str(key), key, icon, entity_registry_enabled_default=True
+                )
+                for key, icon in (
+                    (state.PRIVACY, "mdi:eye-off"),
+                    (state.ANTI_ENABLED, "mdi:sleep"),
+                )
+            ),
         )
 
     async def read_history(self, *, all_records: bool = False) -> dict[str, JsonValueType]:

@@ -333,7 +333,10 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
         super().__init__(coordinator, spec.card)
         self._spec = spec
         self.entity_description = SelectEntityDescription(
-            key=f"controller_select_{spec.key}", translation_key=spec.translation_key
+            key=f"controller_select_{spec.key}",
+            translation_key=spec.translation_key,
+            entity_category=spec.entity_category,
+            entity_registry_enabled_default=spec.entity_registry_enabled_default,
         )
         self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
         self._attr_translation_key = spec.translation_key

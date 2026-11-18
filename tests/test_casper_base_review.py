@@ -85,7 +85,8 @@ async def test_sensor_translation_keys_preserve_case_sensitive_state(hass, kind)
         assert "_L_" in spec.state_key or "_R_" in spec.state_key
         entity = AdjustableBedControllerStateSensor(coordinator, spec)
         coordinator.handle_controller_state_update(spec.state_key, 42)
-        assert entity.translation_key == spec.state_key.lower()
+        side = "left" if "_L_" in spec.state_key else "right"
+        assert entity.translation_key in (f"heart_rate_{side}", f"breathing_rate_{side}")
         assert entity.unique_id == coordinator.entity_unique_id(spec.state_key)
         assert entity.native_value == 42
 

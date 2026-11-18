@@ -29,7 +29,10 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
+    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    sleep_flag_binary_sensor_spec,
+    sleep_rate_sensor_spec,
 )
 from ..richmat.labels import function_label
 from . import protocol as p
@@ -88,6 +91,9 @@ MASSAGE_TIMER: Final = StateKey[str | None]("goodvibe_massage_timer")
 def _live_key(side: str, name: str) -> StateKey[object]:
     """One realtime sleep-monitoring reading."""
     return StateKey[object](f"goodvibe_{side}_{name}")
+
+
+_LIVE_SIDES: Final = {"L": "left", "R": "right"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -451,9 +457,9 @@ class GoodVibeController(BedController):
             SNORE_TIME(time if isinstance(time, int) else None),
             MASSAGE_TIMER(timer if isinstance(timer, str) else None),
             *(
-                _live_key(side, name)(getattr(live, name))
+                _live_key(side, name)(value)
                 for side, live in self.choices.realtime.items()
-                for name in ("heart", "respiration", "occupancy", "movement", "snore")
+                for name, value in live.typed().items()
             ),
         )
 
@@ -1435,20 +1441,36 @@ class GoodVibeController(BedController):
             )
         ]
         if self.product is None:
-            for side in ("L", "R"):
-                for name in ("heart", "respiration", "occupancy", "movement", "snore"):
-                    key = f"goodvibe_{side}_{name}"
-                    specs.append(
-                        ControllerStateSensorSpec(
-                            key,
-                            key.lower(),
-                            _live_key(side, name),
-                            "mdi:bed",
-                            entity_registry_enabled_default=True,
-                            card=CARD_UTILITY,
-                        )
-                    )
+            specs.extend(
+                sleep_rate_sensor_spec(
+                    kind,
+                    f"goodvibe_{side}_{name}",
+                    StateKey[int | None](f"goodvibe_{side}_{name}"),
+                    sleeper,
+                )
+                for side, sleeper in _LIVE_SIDES.items()
+                for name, kind in (("heart", "heart_rate"), ("respiration", "breathing_rate"))
+            )
         return tuple(specs)
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        if self.product is not None:
+            return ()
+        return tuple(
+            sleep_flag_binary_sensor_spec(
+                kind,
+                f"goodvibe_{side}_{name}",
+                StateKey[bool | None](f"goodvibe_{side}_{name}"),
+                sleeper,
+            )
+            for side, sleeper in _LIVE_SIDES.items()
+            for name, kind in (
+                ("occupancy", "bed_presence"),
+                ("movement", "body_movement"),
+                ("snore", "snoring"),
+            )
+        )
 
     async def stop_all(self) -> None:
         if CONTROLLER_GESTURE_RELEASE.get():

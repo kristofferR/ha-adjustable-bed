@@ -528,6 +528,8 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
             native_step=spec.native_step,
             native_unit_of_measurement=spec.native_unit_of_measurement,
             mode=NumberMode.SLIDER,
+            entity_category=spec.entity_category,
+            entity_registry_enabled_default=spec.entity_registry_enabled_default,
         )
         self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
         self._attr_translation_key = spec.translation_key

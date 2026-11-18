@@ -86,6 +86,13 @@ def new_day_schema(version: str) -> bool:
     return parts + [0] * (length - len(parts)) >= other + [0] * (length - len(other))
 
 
+def _rate(text: str) -> int | None:
+    try:
+        return round(float(text))
+    except ValueError, OverflowError:
+        return None
+
+
 @dataclass
 class Realtime:
     heart: str = "--"
@@ -131,6 +138,16 @@ class Realtime:
             (str(value[2]), str(value[3])) if status != 0 else ("--", "--")
         )
         self.snore = "Snoring" if value[4] == 1 else "--"
+
+    def typed(self) -> dict[str, int | bool | None]:
+        """The readings as Home Assistant state; the app's "--" is unknown."""
+        return {
+            "heart": _rate(self.heart),
+            "respiration": _rate(self.respiration),
+            "occupancy": {"On Bed": True, "Off Bed": False}.get(self.occupancy),
+            "movement": {"Body Move": True, "No Body Move": False}.get(self.movement),
+            "snore": {"Snoring": True, "No Snoring": False}.get(self.snore),
+        }
 
 
 @dataclass

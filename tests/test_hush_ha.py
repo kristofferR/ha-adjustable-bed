@@ -308,7 +308,7 @@ async def test_monitoring_recovers_through_actual_notify_and_write_paths(hass, f
         assert attempts >= 2
         assert controller.requests_connection_recovery
         assert controller.requires_persistent_connection
-        assert coordinator.controller_state["casper_sleep_L_heart"] == "65"
+        assert coordinator.controller_state["casper_sleep_L_heart"] == 65
         await controller.async_execute_casper_base_request(Request("sensor_stop"))
         await asyncio.gather(poll, return_exceptions=True)
     assert not controller.requests_connection_recovery

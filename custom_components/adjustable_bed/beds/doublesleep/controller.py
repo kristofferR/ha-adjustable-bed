@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final, Literal, cast
 
 from homeassistant.util import dt as dt_util
 
@@ -27,6 +27,7 @@ from ..entity_specs import (
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
+    sleep_rate_sensor_spec,
 )
 from . import protocol as p
 from .state import Notifications, Report, report_records
@@ -76,17 +77,7 @@ _REFRESH_S = (DOUBLESLEEP.hold.repeat_ms or 0) / 1000
 CHILD_LOCK: Final = StateKey[str | None]("doublesleep_child_lock")
 # Refreshes, clock and sensor upkeep: diagnostic buttons, disabled by default.
 _MAINTENANCE_ACTIONS: Final = frozenset({47, 50, 51, 52, 53, 54, 55, 66, 69, 71, 73, 77})
-# Sensor fields a user reads on a dashboard; the rest are diagnostic.
-_DASHBOARD_FIELDS: Final = frozenset(
-    {
-        "left_heart_rate",
-        "left_breath_rate",
-        "right_heart_rate",
-        "right_breath_rate",
-        "alarm",
-        "light",
-    }
-)
+_SIDES: Final[tuple[Literal["left", "right"], ...]] = ("left", "right")
 
 
 def _field_key(field: str) -> StateKey[object]:
@@ -1147,23 +1138,29 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
             ("left_sensitivity", None),
             ("right_sensitivity", None),
         ]
-        rows.extend(
-            (f"{side}_{key}", unit)
-            for side in ("left", "right")
-            for key, unit in (("heart_rate", "bpm"), ("breath_rate", "brpm"), ("status", None))
-        )
+        rows.extend((f"{side}_status", None) for side in _SIDES)
         specs = [
+            sleep_rate_sensor_spec(
+                kind,
+                f"doublesleep_{side}_{field}",
+                cast(StateKey[int | None], _field_key(f"{side}_{field}")),
+                side,
+            )
+            for side in _SIDES
+            for field, kind in (("heart_rate", "heart_rate"), ("breath_rate", "breathing_rate"))
+        ]
+        specs.extend(
             ControllerStateSensorSpec(
                 "doublesleep_" + key,
                 "doublesleep_" + key,
                 _field_key(key),
                 "mdi:bed",
                 unit,
-                entity_registry_enabled_default=key in _DASHBOARD_FIELDS,
+                entity_registry_enabled_default=False,
                 card=CARD_UTILITY,
             )
             for key, unit in rows
-        ]
+        )
         for side in ("left", "right"):
             specs.append(
                 ControllerStateSensorSpec(

@@ -318,12 +318,13 @@ class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_translation_key = spec.translation_key
         self._attr_icon = spec.icon
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_entity_category = spec.entity_category
         self._attr_entity_registry_enabled_default = spec.entity_registry_enabled_default
         self._attr_native_unit_of_measurement = spec.native_unit_of_measurement
         self._attr_suggested_display_precision = spec.suggested_display_precision
-        if spec.native_unit_of_measurement is not None:
-            self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_state_class = spec.state_class or (
+            SensorStateClass.MEASUREMENT if spec.native_unit_of_measurement is not None else None
+        )
         self._unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
@@ -350,7 +351,7 @@ class AdjustableBedControllerStateSensor(AdjustableBedEntity, SensorEntity):
     def native_value(self) -> str | int | float | None:
         """Return the latest controller-published value."""
         value = self._coordinator.controller_state.get(self._spec.state_key)
-        return value if isinstance(value, (str, int, float)) else None
+        return value if isinstance(value, (str, int, float)) and type(value) is not bool else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

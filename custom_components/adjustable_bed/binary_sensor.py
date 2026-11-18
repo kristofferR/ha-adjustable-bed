@@ -19,7 +19,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 
-from .card import CARD_HIDDEN, CardPlacement, CardSection
+from .card import CARD_UTILITY, CardPlacement, CardSection
 from .const import DOMAIN
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
@@ -55,7 +55,6 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[AdjustableBedBinarySensorEntityDescription, ..
         key="bed_presence",
         translation_key="bed_presence",
         device_class=BinarySensorDeviceClass.OCCUPANCY,
-        entity_registry_enabled_default=False,
         state_key=BED_PRESENCE,
     ),
 )
@@ -67,7 +66,6 @@ def _build_side_presence_description(side: str) -> AdjustableBedBinarySensorEnti
         key=f"bed_presence_{side}",
         translation_key=f"bed_presence_{side}",
         device_class=BinarySensorDeviceClass.OCCUPANCY,
-        entity_registry_enabled_default=False,
         state_key=sided(BED_PRESENCE, side),
         side=side,
     )
@@ -210,7 +208,7 @@ class AdjustableBedConnectionSensor(AdjustableBedEntity, BinarySensorEntity):
 
 
 class AdjustableBedControllerStateBinarySensor(AdjustableBedEntity, BinarySensorEntity):
-    """Binary diagnostic backed by typed controller-published state."""
+    """Binary sensor backed by typed controller-published state."""
 
     def __init__(
         self,
@@ -223,7 +221,8 @@ class AdjustableBedControllerStateBinarySensor(AdjustableBedEntity, BinarySensor
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_translation_key = spec.translation_key
         self._attr_icon = spec.icon
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_device_class = spec.device_class
+        self._attr_entity_category = spec.entity_category
         self._attr_entity_registry_enabled_default = spec.entity_registry_enabled_default
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -273,7 +272,7 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         description: AdjustableBedBinarySensorEntityDescription,
     ) -> None:
         """Initialize the presence sensor."""
-        super().__init__(coordinator, CARD_HIDDEN)
+        super().__init__(coordinator, CARD_UTILITY)
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)

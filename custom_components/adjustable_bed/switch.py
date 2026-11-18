@@ -239,6 +239,7 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             translation_key=spec.translation_key,
             icon=spec.icon,
             entity_registry_enabled_default=spec.entity_registry_enabled_default,
+            entity_category=spec.entity_category,
         )
         self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
         self._attr_translation_key = spec.translation_key
