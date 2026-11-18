@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN, CARD_PRESETS, CardPlacement, CardSection
+from ...card import CARD_HIDDEN, CARD_PRESET_SAVE, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateKey
@@ -431,7 +431,7 @@ class OkimikiController(GoodVibeController):
                         translation_key="okimiki_action",
                         translation_placeholders={"action": label},
                         requires_confirmation=True,
-                        card=CARD_PRESETS,
+                        card=CARD_PRESET_SAVE,
                     )
                 )
         buttons.append(
