@@ -2179,6 +2179,19 @@
     "card_section": "motors",
     "card_role": "stop"
   },
+  "button:suta_action": {
+    "card_section": "utility"
+  },
+  "button:suta_preset": {
+    "card_section": "presets"
+  },
+  "button:suta_release": {
+    "card_section": "hidden"
+  },
+  "button:suta_save": {
+    "card_section": "presets",
+    "card_role": "save"
+  },
   "button:symphony_elevation_down": {
     "card_section": "motors",
     "card_role": "down",
@@ -3099,6 +3112,12 @@
   "number:starcode_m1x12_brightness": {
     "card_section": "lighting",
     "card_role": "level"
+  },
+  "number:suta_1_setpoint": {
+    "card_section": "utility"
+  },
+  "number:suta_2_setpoint": {
+    "card_section": "utility"
   },
   "number:symphony_light_brightness": {
     "card_section": "lighting"
@@ -4402,6 +4421,21 @@
     "card_section": "massage"
   },
   "switch:smart_sleep_privacy": {
+    "card_section": "utility"
+  },
+  "switch:suta_heating": {
+    "card_section": "utility"
+  },
+  "switch:suta_heating_light": {
+    "card_section": "utility"
+  },
+  "switch:suta_left_automatic_adjustment": {
+    "card_section": "utility"
+  },
+  "switch:suta_lock": {
+    "card_section": "utility"
+  },
+  "switch:suta_right_automatic_adjustment": {
     "card_section": "utility"
   },
   "switch:symphony_child_mode": {

@@ -37,6 +37,7 @@ from custom_components.adjustable_bed.execution import (
 )
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from custom_components.adjustable_bed.profiles import vibradorm as vibradorm_profiles
+from custom_components.adjustable_bed.profiles.suta import PROFILES as SUTA_PROFILES
 from tests.codec_families import families
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
@@ -103,6 +104,8 @@ KEESON_APP_STREAM: dict[str, tuple[str, ...]] = {
 ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUCTS.values())
 
 # Declaration -> declared field -> evidence keys from the design document.
+SUTA_STREAM = tuple(f"SutaProfile:{p.key}@{p.layout}" for p in SUTA_PROFILES.values() if p.execution.declared)
+
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     **{f"PersonalComfortProfile:{key}": {"hold": ("Personal Comfort 2.6.1",)}
        for key in ("malouf", "reverie_v1", "reverie_v2")},
@@ -110,6 +113,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     **{f"LinxProfile:{key}": {"hold": ("linx079",)} for key in ("quest", "orbes")},
     **{f"NerumProfile:{key}": {"hold": ("nerum103",)} for key in ("p1", "p2", "p3")},
     **{f"KeesonProfile:somos_{key}": {"hold": ("row099",)} for key in "abcde"},
+    **{identity: {"hold": ("suta128",), "hold_controls": ("suta128",)} for identity in SUTA_STREAM},
     "SmartSleepProfile:p1": {"hold": ("row094",)},
     "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
@@ -326,6 +330,9 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
 
     "profiles/linx.py:<module>.LinxProfile": ("LinxProfile:quest", "LinxProfile:orbes"),
     "profiles/somos.py:<module>.PROFILES": tuple(f"KeesonProfile:somos_{key}" for key in "abcde"),
+    "profiles/suta.py:<module>.SutaProfile": SUTA_STREAM,
+    "profiles/suta.py:<module>.SutaProfile.__post_init__": SUTA_STREAM,
+    "beds/suta/controller.py:<module>.SutaController": SUTA_STREAM,
     "profiles/smart_sleep.py:<module>.PROFILES": ("SmartSleepProfile:p2",),
     "profiles/smart_sleep.py:<module>.SmartSleepProfile": ("SmartSleepProfile:p1", "SmartSleepProfile:p2"),
     "profiles/comfort_enhancement3.py:<module>.profile": tuple(f"OkinNFrameProfile:apex_{i}" for i in range(15)),

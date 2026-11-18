@@ -320,7 +320,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_OKIN_FFE: _ControllerSpec(
         "keeson.controller", "KeesonController", MappingProxyType({"variant": KEESON_VARIANT_OKIN})
     ),
-    BED_TYPE_SUTA: _ControllerSpec("suta", "SutaController"),
     BED_TYPE_TIMOTION_AHF: _ControllerSpec("timotion_ahf", "TiMOTIONAhfController"),
     BED_TYPE_BEDJET_POWERLAYER: _ControllerSpec(
         "bedjet_powerlayer", "BedJetPowerLayerController"
@@ -357,6 +356,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_RIZE_HOME: _BuilderSpec("rize_home.controller"),
     "nerum": _BuilderSpec("nerum.controller"),
     "smart_sleep": _BuilderSpec("smart_sleep.controller"),
+    BED_TYPE_SUTA: _BuilderSpec("suta.controller"),
     BED_TYPE_COMFORT_ENHANCEMENT3: _BuilderSpec("comfort_enhancement3.controller"),
     BED_TYPE_N32_MOTION_BED: _BuilderSpec("n32_motion_bed.controller"),
     "paramount": _BuilderSpec("paramount.controller"),

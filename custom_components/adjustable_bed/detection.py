@@ -284,9 +284,7 @@ from .const import (
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_NAME_PATTERNS,
     STAR_ELEVATE_VARIANT_M1X12,
-    SUTA_NAME_PATTERNS,
     SUTA_SERVICE_UUID,
-    SUTA_UNSUPPORTED_NAME_PREFIXES,
     SVANE_HEAD_SERVICE_UUID,
     SVANE_NAME_PATTERNS,
     SVANE_VARIANT_JENSEN_LINON,
@@ -2050,42 +2048,15 @@ def _detect_bed_type_detailed(
             signals=signals,
         )
 
-    # Check for SUTA Smart Home bed frames (AT command protocol over FFF0).
-    # Excludes known accessory-only subtypes that use a separate binary protocol.
-    if any(device_name.startswith(pattern) for pattern in SUTA_NAME_PATTERNS):
-        if any(device_name.startswith(prefix) for prefix in SUTA_UNSUPPORTED_NAME_PREFIXES):
-            signals.append("name:suta_accessory")
-            _LOGGER.debug(
-                "Skipping SUTA accessory subtype at %s (name: %s)",
-                service_info.address,
-                service_info.name,
-            )
-            return DetectionResult(bed_type=None, confidence=0.0, signals=signals)
-        else:
-            signals.append("name:suta")
-            if SUTA_SERVICE_UUID.lower() in service_uuids:
-                signals.append("uuid:suta_fff0")
-                _LOGGER.info(
-                    "Detected SUTA bed at %s (name: %s) by FFF0 UUID + name pattern",
-                    service_info.address,
-                    service_info.name,
-                )
-                return DetectionResult(
-                    bed_type=BED_TYPE_SUTA,
-                    confidence=0.9,
-                    signals=signals,
-                )
-            if not service_uuids:
-                _LOGGER.info(
-                    "Detected SUTA bed at %s (name: %s) by name pattern",
-                    service_info.address,
-                    service_info.name,
-                )
-                return DetectionResult(
-                    bed_type=BED_TYPE_SUTA,
-                    confidence=0.3,
-                    signals=signals,
-                )
+    # SUTA's scan gate is case-sensitive and independent of advertised UUIDs.
+    # The nine-character UI route and full-name GATT route are resolved later.
+    if (service_info.name or "").startswith("SUTA-"):
+        if len(service_info.name) < 9 or service_info.name[:9] == "SUTA-DRAW":
+            return DetectionResult(bed_type=None, confidence=0.0, signals=[*signals, "name:suta_accessory"])
+        signals.append("name:suta")
+        if SUTA_SERVICE_UUID.lower() in service_uuids:
+            signals.append("uuid:suta_fff0")
+        return DetectionResult(bed_type=BED_TYPE_SUTA, confidence=0.9, signals=signals)
 
     # Check for the BedJet PowerLayer frame. The frame and the BedJet climate
     # blower both advertise the 1000 service and only the frame exposes 1001

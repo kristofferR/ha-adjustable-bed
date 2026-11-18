@@ -3059,6 +3059,38 @@ somos_action:
           options: [flat, zero_g, anti_snore, memory_1, memory_2, memory_3, head_massage, foot_massage, massage_timer_cycle, light, status_query]
           translation_key: somos_action_action
 
+suta:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+    action:
+      required: true
+      selector:
+        text:
+    suffix:
+      selector:
+        text:
+    logical_side:
+      selector:
+        select:
+          options: [left, right]
+          translation_key: suta_logical_side
+    value:
+      selector:
+        number:
+          min: 0
+          max: 40
+          mode: box
+
 starcode_move_lifts:
   fields:
     device_id:

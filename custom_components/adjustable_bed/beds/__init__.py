@@ -132,7 +132,7 @@ if TYPE_CHECKING:
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
     from .starcode.m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .starcode.star_elevate import StarElevateController as StarElevateController
-    from .suta import SutaController as SutaController
+    from .suta.controller import SutaController as SutaController
     from .svane.controller import SvaneController as SvaneController
     from .symphony.controller import SymphonyController as SymphonyController
     from .tempur_au import TempurAUController as TempurAUController
@@ -264,7 +264,7 @@ _EXPORT_MODULES = {
     "SleepysBox25LegacyController": "sleepys.box25",
     "SolaceController": "solace.controller",
     "StarElevateController": "starcode.star_elevate",
-    "SutaController": "suta",
+    "SutaController": "suta.controller",
     "SvaneController": "svane.controller",
     "TiMOTIONAhfController": "timotion_ahf",
     "VibradormController": "vibradorm.controller",

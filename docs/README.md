@@ -52,6 +52,7 @@ Each codec has one guide, with a section per profile:
 | [M Line](beds/mline.md) | M Line Sleep, Smart, Smart Sainuo, Okin and fallback selectors |
 | [Smart Comfort seats](beds/smart-comfort.md) | Smart Comfort by SYNARGY and Smart Comfort (SYNERGY) |
 | [Personal Comfort](beds/personal-comfort.md) | Personal Comfort air units and bases |
+| [SUTA](beds/suta.md) | SUTA Smart Home name-selected P1 text and P2 mattress/heating profiles |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | BedJet PowerLayer |
 
 Beds with their own wire format have their own guide in [`beds/`](beds/). Every

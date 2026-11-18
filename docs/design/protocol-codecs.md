@@ -363,3 +363,14 @@ only after all 60 accepted literal rows match. The final zero in its P1
 carrier and P3 trailer establishes no side selection. Its five explicit
 `profiles/somos.py` products use the shared family controller, extended only
 for source-specific polling, notification parsing and neutral UI axes.
+
+### SUTA P1/P2 (accepted unit128)
+
+SUTA's exact-name application panels now use `codec/suta.py`,
+`profiles/suta.py` and the shared `beds/suta/` controller. P1 adds only UTF-8
+CRLF framing; P2 uses its own 53 59 / payload / additive-sum / 54 43 format.
+No existing family represents both accepted formats and every frozen literal,
+so the new codec is deliberately limited to these two builders. The production
+harness covers all 203 accepted final frames and 56 constructor literals.
+Names, timing and capability gates stay in profile/catalog data. The historical
+standalone SUTA inventory does not describe this expanded route.

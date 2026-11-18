@@ -1208,6 +1208,8 @@ def default_scenario(bed_type: str) -> Scenario:
         variant = "a00a"
         data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
                      const.CONF_BLE_DEVICE_NAME: "KSWF07D00000000"})
+    if bed_type == const.BED_TYPE_SUTA:
+        data[const.CONF_BLE_DEVICE_NAME] = "SUTA-unknown"
     if bed_type == const.BED_TYPE_SONICSLEEP:
         data[const.CONF_PRODUCT_TYPE] = "one"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
@@ -1811,6 +1813,18 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
             entry_data={"product_type": "2", "ble_device_name": "okin-ble123"},
             replies={"*": "edfe00000000000005000000000023"},
         ))
+    # Accepted SUTA name partition, including the full-name service distinction.
+    from custom_components.adjustable_bed.profiles.suta import ROUTES as SUTA_ROUTES, service_for_name
+    for route in SUTA_ROUTES:
+        name = "SUTA-unknown" if route == "fallback" else "SUTA" if route == "short-name" else route.split("*")[0]
+        routes.append(Scenario(
+            id="suta:" + route, bed_type="suta",
+            entry_data={"ble_device_name": name},
+            layout_id="suta:ffe0" if "ffe0" in service_for_name(name) else "suta",
+        ))
+    for name in ("SUTA-YOGABED", "SUTA-STORAGE", "SUTA-ROLLSOFA", "SUTA-DRAWER"):
+        routes.append(Scenario(id="suta:" + name, bed_type="suta",
+                              entry_data={"ble_device_name": name}, layout_id="suta:ffe0"))
     return routes
 
 
@@ -1967,7 +1981,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_after_connect(None)
             return
         await controller.start_notify(lambda *_: None)
-        if controller._coordinator.bed_type in {"komfyd", "comfyds"}:
+        if controller._coordinator.bed_type in {"komfyd", "comfyds", "suta"}:
             await controller.async_after_connect(None)
         if controller._coordinator.bed_type == "solace" and controller.profile.key == "sophie":
             session = SimpleNamespace(is_current=lambda: True)

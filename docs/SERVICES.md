@@ -104,6 +104,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`solace_audio`](#solace_audio) | Solace: control audio | Select or preview MotionFlex music, query volume, or set volume. |
 | [`somos_action`](#somos_action) | Somos: press app button | Press one of the selected Somos product's buttons. Every bed is checked before any is changed. |
 | [`sonicsleep`](#sonicsleep) | SonicSleep: settings | Read alarms, create or edit a form alarm, preserve a received alarm while toggling it, delete an alarm, query the bed link name or sync its clock. |
+| [`suta`](#suta) | SUTA Smart Home: command | Send one command from the bed's SUTA layout, picked by its exact Bluetooth name. Alarms use Set alarm. |
 | [`starcode_move_lifts`](#starcode_move_lifts) | Starcode: move lifts | Control the independently addressed accessories configured on one main bed. Flat moves the main before the delayed lift action. |
 | [`svane_release_axis`](#svane_release_axis) | Svane: release motor | Signal the active writer to release one axis while the other continues. |
 | [`symphony_anti_snore`](#symphony_anti_snore) | Symphony: anti-snore | Configure Head or Elevation. Legacy strengths are 1, 3 and 6; SoundWave strengths are 1, 2 and 3. |
@@ -1768,6 +1769,31 @@ Massage and light actions press the app button without guessing its current
 state. Use the standard `hold_control`, `timed_move` and STOP actions for
 movement; Signature Split Head and Ultra Split Head lifts are `axis_1`–`axis_3`.
 See [Somos](beds/keeson.md#somos--somosbeds).
+
+## SUTA Smart Home
+
+<a id="suta"></a>
+**`suta`**: Send one command from the bed's SUTA layout, picked by its exact Bluetooth name. Alarms use Set alarm.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `action` | Command | Command key from the SUTA guide, such as both_tv, massage_timer_10 or temperature_setpoint. |
+| `suffix` | Step | Two-digit step for massage, massage level or fan commands, such as 00 or 20. |
+| `logical_side` | Mattress side | For mattress and heating commands that target one side. |
+| `value` | Value | Needed when a mattress or heating command offers several values. |
+
+### SUTA Smart Home commands
+
+
+`adjustable_bed.suta` runs only commands declared by the saved Bluetooth-name
+layout. It accepts `device_id`, optional paired `side`, `action`, and the
+command's `suffix` or `logical_side` / `value`. All targets and parameters are
+validated before any target moves. The `snore_cycle` command sends the
+anti-snore burst and the delayed flat; it performs no phone sensing.
+Text-layout alarms use [`set_alarm`](#set_alarm). See the
+[SUTA reference](beds/suta.md) for the commands, value ranges, state
+prerequisites and the six withheld light schedules. Expanded controls are
+**hardware unverified**, for external beta testing.
 
 ## Starcode
 

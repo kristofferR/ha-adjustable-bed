@@ -773,12 +773,12 @@ class TestDetectBedTypeByNamePattern:
         service_info = _make_service_info(name="SUTA-B207", service_uuids=[])
         result = detect_bed_type_detailed(service_info)
         assert result.bed_type == BED_TYPE_SUTA
-        assert result.confidence == 0.3
+        assert result.confidence == 0.9
 
     def test_skip_suta_accessory_subtypes(self):
-        """Test SUTA accessory/mattress subtypes are excluded from bed detection."""
+        """Drawer-only routes remain outside direct BED detection."""
         service_info = _make_service_info(
-            name="SUTA-MOON",
+            name="SUTA-DRAWER",
             service_uuids=[SOLACE_SERVICE_UUID],
         )
         result = detect_bed_type_detailed(service_info)

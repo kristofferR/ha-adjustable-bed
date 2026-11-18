@@ -171,9 +171,11 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         _POSITIVE_SELECTORS,
         StarcodeAbm5_4Controller,
     )
+    from custom_components.adjustable_bed.beds.suta.controller import SutaController
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
+    from custom_components.adjustable_bed.profiles.suta import ROUTES as SUTA_ROUTES
 
     def variant(controller: BedController, **attributes: object) -> BedController:
         clone = copy.copy(controller)
@@ -183,7 +185,11 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     for controller in controllers:
         yield controller
-        if isinstance(controller, ParamountController):
+        if isinstance(controller, SutaController):
+            for route in SUTA_ROUTES:
+                name = "SUTA-unknown" if route == "fallback" else "SUTA" if route == "short-name" else route.split("*")[0]
+                yield SutaController(controller._coordinator, name=name)
+        elif isinstance(controller, ParamountController):
             yield variant(controller, _mask=31, _height_bounds=(20, 70))
         elif isinstance(controller, SleeptrackerController):
             for model in sleeptracker_protocol.MODELS.values():

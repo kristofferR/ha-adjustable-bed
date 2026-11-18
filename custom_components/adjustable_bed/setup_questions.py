@@ -296,6 +296,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2118,6 +2119,23 @@ def _nerum_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: Bluet
     return result
 
 
+def _suta_derive(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.suta import profile_for_name
+
+    name = str(data.get(CONF_BLE_DEVICE_NAME, ""))
+    profile = profile_for_name(name)
+    return {CONF_DISABLE_ANGLE_SENSING: not name.startswith("SUTA-RBHC"),
+            CONF_MOTOR_PULSE_DELAY_MS: profile.refresh_ms or 150 if profile else 150}
+
+
+def _suta_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.suta import profile_for_name
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    profile = profile_for_name(name) if isinstance(name, str) and name.startswith("SUTA-") else None
+    return {} if profile is not None and profile.key != "MattressControllerDrawerFragment" else {CONF_BLE_DEVICE_NAME: "suta_name"}
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     "ormatek": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
@@ -2173,6 +2191,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "OkinComfortBed Ⅱ (Jalon)",
     ),
     **_BASE,
+    "suta": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: SET_BY_PROFILE, CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),),
+        derive=_suta_derive,
+        validate=_suta_errors, seed=_motion_bed_seed,
+        imports=("profiles.suta",),
+    ),
     BED_TYPE_RIZE_REMEDY_II: SetupProfile(
         owns={CONF_MOTOR_COUNT: 3, CONF_MOTOR_PULSE_DELAY_MS: 100,
               CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: True,

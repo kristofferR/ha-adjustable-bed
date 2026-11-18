@@ -957,6 +957,14 @@ class BedController(GattWriter):
         return False
 
     @property
+    def reports_angles(self) -> bool:
+        """Return True when position notifications carry angles the bed type's traits cannot declare.
+
+        For a layout chosen at runtime, such as by the exact Bluetooth name.
+        """
+        return False
+
+    @property
     def supports_position_feedback(self) -> bool:
         """Return True if bed reports position feedback.
 
