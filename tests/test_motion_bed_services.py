@@ -6,6 +6,7 @@ import asyncio
 import json
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
+from datetime import datetime
 from pathlib import Path
 from typing import TypedDict, cast
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -16,6 +17,7 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_ensure_paired_device_registry
@@ -106,7 +108,6 @@ async def invoke(
 
 _VALID_PUBLIC_CASES: tuple[tuple[str, str, dict[str, object]], ...] = (
     ("motion_bed_action", "QMS4", {"action": "home_activity_bed_status"}),
-    ("motion_bed_clock", "QMS4", {"timestamp": "2026-09-30T07:45:00"}),
     (
         "motion_bed_sleep_angles",
         "QMS4",
@@ -189,7 +190,6 @@ async def test_module_rebinding_and_deletion_are_confirmed(
 @pytest.mark.parametrize(
     "service, profile, data",
     (
-        ("motion_bed_clock", "QMS4", {"timestamp": "not-a-date"}),
         (
             "motion_bed_sleep_angles",
             "QMS4",
@@ -235,21 +235,23 @@ async def test_invalid_public_domains_fail_before_connection_or_write(
 
 
 @pytest.mark.parametrize(
-    "profile, thermal",
-    (("TL-A", False), ("TL-A", True), ("TL-W", False), ("QMS4", True), ("TL-B", True)),
+    ("profile", "vector_id"),
+    (("QMS4", "clock-0"), ("TL-B", "clock-0"), ("TL-W", "thermal_clock-0")),
 )
-async def test_clock_protocol_cannot_cross_module_surface(
-    hass: HomeAssistant, profile: str, thermal: bool
+async def test_sync_clock_sets_each_surface_with_its_own_app_frame(
+    hass: HomeAssistant, freezer, profile: str, vector_id: str
 ) -> None:
-    target = make_target(hass, profile)
-    with pytest.raises(ServiceValidationError):
-        await invoke(
-            hass,
-            [target],
-            "motion_bed_clock",
-            {"timestamp": "2026-09-30T07:45:00", "thermal": thermal},
-        )
-    assert not target.writes
+    """The motor or home clock and the thermal clock never cross module surfaces."""
+    freezer.move_to(datetime(2026, 9, 30, 7, 45, tzinfo=dt_util.get_default_time_zone()))
+    controller = make_target(hass, profile).controller
+    assert controller.supports_clock_sync
+    controller.validate_clock_sync()
+    (write,) = controller._clock_writes()
+    assert [frame.hex().upper() for frame in write.frames] == [_BUILDER_EXPECTED[vector_id]]
+
+
+def test_air_module_has_no_clock(hass: HomeAssistant) -> None:
+    assert not make_target(hass, "TL-A").controller.supports_clock_sync
 
 
 async def test_day_report_offset_is_not_graph_viewport_offset(hass: HomeAssistant) -> None:
@@ -303,8 +305,8 @@ async def test_native_paired_child_targets_retain_their_side(
     pair, _, _, left_id, right_id = await make_registered_pair(hass)
     await hass.services.async_call(
         DOMAIN,
-        "motion_bed_clock",
-        {"device_id": left_id if side == "left" else right_id, "timestamp": "2026-09-30T07:45:00"},
+        "motion_bed_action",
+        {"device_id": left_id if side == "left" else right_id, "action": "home_activity_bed_status"},
         blocking=True,
     )
     pair.async_execute_controller_command.assert_awaited_once()
@@ -320,8 +322,8 @@ async def test_native_child_conflicting_explicit_side_rejected_before_io(
     with pytest.raises(ServiceValidationError) as error:
         await hass.services.async_call(
             DOMAIN,
-            "motion_bed_clock",
-            {"device_id": left_id, "side": explicit_side, "timestamp": "2026-09-30T07:45:00"},
+            "motion_bed_action",
+            {"device_id": left_id, "side": explicit_side, "action": "home_activity_bed_status"},
             blocking=True,
         )
     assert error.value.translation_key == "side_selection_conflict"
@@ -356,8 +358,8 @@ async def test_matching_children_dispatch_once_with_both(hass: HomeAssistant) ->
     pair, _, _, left_id, right_id = await make_registered_pair(hass)
     await hass.services.async_call(
         DOMAIN,
-        "motion_bed_clock",
-        {"device_id": [left_id, right_id], "timestamp": "2026-09-30T07:45:00"},
+        "motion_bed_action",
+        {"device_id": [left_id, right_id], "action": "home_activity_bed_status"},
         blocking=True,
     )
     pair.async_execute_controller_command.assert_awaited_once()
@@ -465,20 +467,6 @@ _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None
         None,
     ),
     (
-        "DianDongSetActivity:653",
-        "motion_bed_clock",
-        {"timestamp": "2026-09-30T07:45:00", "thermal": False},
-        "clock-0",
-        None,
-    ),
-    (
-        "HomeActivity:337",
-        "motion_bed_clock",
-        {"timestamp": "2026-09-30T07:45:00", "thermal": False},
-        "clock-0",
-        None,
-    ),
-    (
         "PressSetActivity:59",
         "motion_bed_pressure",
         {"operation": "live", "channel": 0, "value": 0},
@@ -549,13 +537,6 @@ _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None
         None,
     ),
     (
-        "DiandongFragment:340",
-        "motion_bed_clock",
-        {"timestamp": "2026-09-30T07:45:00", "thermal": False},
-        "clock-0",
-        None,
-    ),
-    (
         "KuaijieK2MFragment:452",
         "motion_bed_audio",
         {"operation": "track", "value": 1},
@@ -567,13 +548,6 @@ _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None
         "motion_bed_audio",
         {"operation": "volume", "value": 1},
         "audio-volume-1",
-        None,
-    ),
-    (
-        "LengnuanFragment:206",
-        "motion_bed_clock",
-        {"timestamp": "2026-09-30T07:45:00", "thermal": True},
-        "thermal_clock-0",
         None,
     ),
 )
@@ -606,7 +580,8 @@ async def test_every_dynamic_source_builder_is_bound_to_public_request(
 
 
 def test_all_ble_dynamic_source_rows_are_covered() -> None:
-    assert len(_DYNAMIC_SOURCE_ROUTES) == len({row[0] for row in _DYNAMIC_SOURCE_ROUTES}) == 23
+    # The four clock builders belong to Set bed clock, covered by the sync_clock test.
+    assert len(_DYNAMIC_SOURCE_ROUTES) == len({row[0] for row in _DYNAMIC_SOURCE_ROUTES}) == 19
 
 
 @pytest.mark.parametrize(
