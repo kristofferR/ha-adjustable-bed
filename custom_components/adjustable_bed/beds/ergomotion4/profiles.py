@@ -491,4 +491,4 @@ PRODUCT_LABELS = {
 }
 # fmt: on
 PRODUCT_CHOICES = {key: PRODUCT_LABELS.get(key, key) for key in PRODUCTS}
-PRODUCT_CHOICES["custom"] = "Other catalog product (explicit feature keys)"
+PRODUCT_CHOICES["custom"] = "Other product (enter its features)"
