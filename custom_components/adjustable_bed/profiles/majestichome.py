@@ -1,4 +1,4 @@
-"""Majestic Home 1.0.4/code10400, accepted row151 product lists (E9-E13).
+"""Majestic Home 1.0.4 (10400) product lists.
 
 Identifiers describe app layouts, not independently verified hardware models.
 No advertised name or service selects a layout. Hardware UNVERIFIED.
@@ -67,10 +67,10 @@ MASSAGE: Final = (
     Control("foot_massage_1", "Massage: Foot Level 1", 0x9D, "massage"),
     Control("foot_massage_2", "Massage: Foot Level 2", 0x9E, "massage"),
     Control("foot_massage_3", "Massage: Foot Level 3", 0x9F, "massage"),
-    Control("massage_constant", "Massage: Constant", 0x3A, "massage"),
-    Control("massage_pulse", "Massage: Pulse", 0x38, "massage"),
-    Control("massage_wave", "Massage: Wave", 0x39, "massage"),
-    Control("massage_off", "Massage: Off", 0x5E, "massage"),
+    Control("massage_constant", "Constant", 0x3A, "massage"),
+    Control("massage_pulse", "Pulse", 0x38, "massage"),
+    Control("massage_wave", "Wave", 0x39, "massage"),
+    Control("massage_off", "All Off", 0x5E, "massage"),
     Control("massage_10", "Massage: Timer 10 Minutes", 0x5F, "massage"),
     Control("massage_20", "Massage: Timer 20 Minutes", 0x63, "massage"),
     Control("massage_30", "Massage: Timer 30 Minutes", 0x61, "massage"),

@@ -6177,7 +6177,7 @@ Physical validation is for real beta/release users and is not implied here.
 
 **App:** [Majestic Home](https://play.google.com/store/apps/details?id=com.richmat.majestichome) 1.0.4 (10400), `com.richmat.majestichome`
 
-**Status:** ❓ Hardware UNVERIFIED, external beta qualification only. The analyzed delivery was frozen on 2026-07-14; this is not a latest-version claim.
+**Status:** ❓ Needs testing (APK-verified; hardware unverified).
 
 #### Setup
 
@@ -6244,10 +6244,10 @@ extra memory slots, single-address split controls or factory reset.
 | JLRM | Massage: Foot Level 1 | `9D` | `6E 01 00 9D 0C` | none | none |
 | JLRM | Massage: Foot Level 2 | `9E` | `6E 01 00 9E 0D` | none | none |
 | JLRM | Massage: Foot Level 3 | `9F` | `6E 01 00 9F 0E` | none | none |
-| JLRM | Massage: Constant | `3A` | `6E 01 00 3A A9` | none | none |
-| JLRM | Massage: Pulse | `38` | `6E 01 00 38 A7` | none | none |
-| JLRM | Massage: Wave | `39` | `6E 01 00 39 A8` | none | none |
-| JLRM | Massage: Off | `5E` | `6E 01 00 5E CD` | none | none |
+| JLRM | Constant | `3A` | `6E 01 00 3A A9` | none | none |
+| JLRM | Pulse | `38` | `6E 01 00 38 A7` | none | none |
+| JLRM | Wave | `39` | `6E 01 00 39 A8` | none | none |
+| JLRM | All Off | `5E` | `6E 01 00 5E CD` | none | none |
 | JLRM | Massage: Timer 10 Minutes | `5F` | `6E 01 00 5F CE` | none | none |
 | JLRM | Massage: Timer 20 Minutes | `63` | `6E 01 00 63 D2` | none | none |
 | JLRM | Massage: Timer 30 Minutes | `61` | `6E 01 00 61 D0` | none | none |
@@ -6271,10 +6271,10 @@ extra memory slots, single-address split controls or factory reset.
 | FARM | Massage: Foot Level 1 | `9D` | `6E 01 00 9D 0C` | none | none |
 | FARM | Massage: Foot Level 2 | `9E` | `6E 01 00 9E 0D` | none | none |
 | FARM | Massage: Foot Level 3 | `9F` | `6E 01 00 9F 0E` | none | none |
-| FARM | Massage: Constant | `3A` | `6E 01 00 3A A9` | none | none |
-| FARM | Massage: Pulse | `38` | `6E 01 00 38 A7` | none | none |
-| FARM | Massage: Wave | `39` | `6E 01 00 39 A8` | none | none |
-| FARM | Massage: Off | `5E` | `6E 01 00 5E CD` | none | none |
+| FARM | Constant | `3A` | `6E 01 00 3A A9` | none | none |
+| FARM | Pulse | `38` | `6E 01 00 38 A7` | none | none |
+| FARM | Wave | `39` | `6E 01 00 39 A8` | none | none |
+| FARM | All Off | `5E` | `6E 01 00 5E CD` | none | none |
 | FARM | Massage: Timer 10 Minutes | `5F` | `6E 01 00 5F CE` | none | none |
 | FARM | Massage: Timer 20 Minutes | `63` | `6E 01 00 63 D2` | none | none |
 | FARM | Massage: Timer 30 Minutes | `61` | `6E 01 00 61 D0` | none | none |
@@ -6367,11 +6367,7 @@ queued waits and at packet submission, before any settings mutation.
 
 #### Evidence
 
-Accepted APK Protocol Audit row151, sole audit001 ACCEPT with no static gap.
-Artifact set SHA-256 `99b8ce6861c80502060d04a68f1b9e6a0f94d6269dbfe4af5db3963b3253f8f5`.
-The committed Majestic Home fixtures retain 97 protocol, 25 parser and five
-lifecycle cases. Byte-for-byte production codec proof preceded profile selection.
-Hardware qualification is external beta only, with no maintainer hardware task.
+Based on Majestic Home 1.0.4 (10400).
 
 ## Notes
 

@@ -61,7 +61,7 @@ async def live_pair(hass, mock_coordinator_connected, clock):
                 {
                     const.CONF_BED_TYPE: "majestichome",
                     const.CONF_PROTOCOL_VARIANT: product,
-                    const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                    const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
                 }
             )
             row.pop("capabilities", None)

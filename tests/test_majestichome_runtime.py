@@ -45,7 +45,7 @@ async def runtime(hass, mock_coordinator_connected, mock_bleak_client, clock):
                 const.CONF_BED_TYPE: "majestichome",
                 const.CONF_PROTOCOL_VARIANT: "FARM",
                 const.CONF_DISABLE_ANGLE_SENSING: True,
-                const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             }
         ),
     )
@@ -175,7 +175,7 @@ async def test_native_motor_lease_renews_one_stream_and_refuses_ended_generation
         await asyncio.wait_for(start, 2)
         assert written(target)[-1] == "6e01006edd"
         assert set(written(target)[:-1]) == {"6e01002493"}
-        with pytest.raises(ServiceValidationError, match="has ended"):
+        with pytest.raises(ServiceValidationError, match="already stopped"):
             await hass.services.async_call(const.DOMAIN, "timed_move", data, blocking=True)
 
 
@@ -245,7 +245,7 @@ async def test_real_native_pair_parent_and_child_devices_route_settings(
             {
                 const.CONF_BED_TYPE: "majestichome",
                 const.CONF_PROTOCOL_VARIANT: product,
-                const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             }
         )
         row.pop("capabilities", None)
