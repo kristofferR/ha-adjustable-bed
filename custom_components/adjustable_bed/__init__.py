@@ -1635,6 +1635,44 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     )
 
     coordinator = await AdjustableBedCoordinator.async_create(hass, entry)
+    try:
+        await _async_setup_standalone_entry(hass, entry, coordinator)
+    except BaseException:
+        # A failed setup must not leave a reconnect timer or bond task behind:
+        # Home Assistant's retry builds a new coordinator for the same bed,
+        # which accepts one connection.
+        domain_data = hass.data.get(DOMAIN, {})
+        if domain_data.get(entry.entry_id) is coordinator:
+            domain_data.pop(entry.entry_id)
+
+        async def _bounded_shutdown() -> None:
+            # A stalled disconnect must not block the setup retry.
+            async with asyncio.timeout(SETUP_CLEANUP_TIMEOUT):
+                await coordinator.async_shutdown()
+
+        shutdown = hass.async_create_task(
+            _bounded_shutdown(), "adjustable_bed.failed_setup_shutdown"
+        )
+        cancelled = False
+        while not shutdown.done():
+            try:
+                # Unlike awaiting the task, this neither cancels it nor raises its error.
+                await asyncio.wait((shutdown,))
+            except asyncio.CancelledError:
+                cancelled = True
+        if not shutdown.cancelled() and (err := shutdown.exception()) is not None:
+            _LOGGER.warning(
+                "Failed to stop %s after its setup failed: %r", entry.title, err
+            )
+        if cancelled:
+            raise asyncio.CancelledError from None
+        raise
+
+
+async def _async_setup_standalone_entry(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: AdjustableBedCoordinator
+) -> None:
+    """Connect a standalone bed and forward its platforms."""
     _async_ensure_device_registry_entry(hass, entry, coordinator)
     await async_watch_profile_recommendations(hass, entry, ((None, coordinator),))
 
