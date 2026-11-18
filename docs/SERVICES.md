@@ -486,10 +486,11 @@ selected bed before changing any.
 
 `bedtech_app_command` uses the selected [BedTech 7.1.3 model](beds/richmat.md#bedtech)
 and its sleeper routing. Each receiver must use the same explicit model.
-`action` names a control from that model's ordinary screen, such as `headUp`,
-`footDown`, `headMassageUp`, `massageTimer20`, `presetFlat`, `memory1Save` or
-`lightToggle`. A normal movement action uses the finite pulse count; use
-`timed_move` for an elapsed duration or renewable hold. `connectionTest` explicitly
+`action` names a control from that model's ordinary screen, such as `head_up`,
+`foot_down`, `head_massage_up`, `massage_timer20`, `preset_flat`, `memory1_save` or
+`light_toggle` (the app's camelCase names, such as `headUp`, still work in existing
+automations). A normal movement action uses the finite pulse count; use
+`timed_move` for an elapsed duration or renewable hold. `connection_test` explicitly
 raises the first head for two seconds and returns the link through HA's normal
 connection handoff. Automatic setup never moves the bed. Unsupported model or
 secondary-head actions fail before any receiver is commanded.
@@ -508,7 +509,7 @@ An unpaired FH receiver can also select its bank with `sleeper`.
 action: adjustable_bed.bedtech_app_command
 data:
   device_id: YOUR_PAIRED_BED_DEVICE_ID
-  action: footUp
+  action: foot_up
   sleeper: 4
 ```
 
@@ -1659,7 +1660,7 @@ ActiveBreeze `fan_side` separately chooses the processor's fan fields.
 | `sleeptracker_preset` | `preset`; optional `save: false` | Recall `all_flat`, `zero_g`, `anti_snore`, `user_favorite`, `tv_pc` or `favorite_2`, subject to layout. `save: true` programs a supported preset; Flat is recall only. Processor types 5–7 reject saving. |
 | `sleeptracker_climate` | `mode: heat` or `cool`, `level: 0`–`3`; optional `fan_side: both`, `constant: true` | ActiveBreeze only. Level 0 turns the selected fan off. Heat sends a fixed 3600-second timer, cool 36000 seconds; timers are not configurable. |
 | `sleeptracker_wave` | `frequency`; optional `minutes: 30` | Premium layouts: 28, 40, 52, 68 or 88 Hz and 5–105 minutes in steps of five. |
-| `sleeptracker_massage` | `action` | `head`, `foot`, `pattern`, `28Hz`, `40Hz` or `off`, subject to layout. `off` uses selected-unit massage stop. |
+| `sleeptracker_massage` | `action` | `head`, `foot`, `pattern`, `28hz`, `40hz` or `off`, subject to layout (`28Hz` and `40Hz` still work). `off` uses selected-unit massage stop. |
 | `sleeptracker_relaxation` | `action` | Premium layouts: `wind_down_1`, `wind_down_2` or `local_animation`. Local animation contains motor/massage statements only. |
 
 ```yaml
@@ -1676,7 +1677,7 @@ data:
 action: adjustable_bed.sleeptracker_massage
 data:
   device_id: YOUR_PROCESSOR_DEVICE_ID
-  action: 40Hz
+  action: 40hz
 ```
 
 ```yaml
