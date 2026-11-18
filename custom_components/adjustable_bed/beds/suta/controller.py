@@ -322,7 +322,8 @@ class SutaController(BedController):
                     "suta_" + key + suffix, label, partial(_action, key=key, suffix=suffix),
                     translation_key="suta_save" if command.text.startswith("AT+SETMODE") else "suta_preset" if command.text.startswith("AT+MODE") else "suta_action",
                     translation_placeholders={"action": label},
-                    hold=ControllerHoldSpec(key, release_button_key="suta_release") if command.kind in ("motion", "save") else None,
+                    # The card confirms a save and sends it whole; hold_control still runs saves.
+                    hold=ControllerHoldSpec(key, release_button_key="suta_release") if command.kind == "motion" else None,
                     requires_confirmation=command.kind == "save" or key == "reset_on",
                     invalidates_position=command.kind in ("motion", "save") or command.text.startswith("AT+MODE"),
                     card=CARD_PRESET_SAVE if command.text.startswith("AT+SETMODE") else CARD_PRESETS if command.text.startswith("AT+MODE") else CARD_UTILITY,
@@ -704,7 +705,7 @@ class SutaController(BedController):
         link, cancel = self._live(), self._coordinator.cancel_command
         if request.action in BINARY and self.family in BINARY[request.action].controllers:
             sent = await self._send(link, codec.from_prefix(self._binary_prefix(request)), cancel)
-            if sent is not None and request.action == "automatic_adjustment_switch":
+            if sent is not None and request.action == "automatic_adjustment_switch" and self._link is link:
                 # The bed does not echo this write; like the app's checkbox, show the sent value
                 # until the next full-state report replaces it.
                 self.observations[f"side_{request.logical_side}_automatic_checked"] = request.value == 1
@@ -751,7 +752,9 @@ class SutaController(BedController):
     @property
     def alarm_capability(self) -> AlarmCapability | None:
         # Text layouts keep one alarm per weekday and time; the app lists them with get_alarm.
-        return AlarmCapability(weekdays=True) if self.family == "P1" and "get_alarm" in self.commands else None
+        if self.family != "P1" or "get_alarm" not in self.commands:
+            return None
+        return AlarmCapability(weekdays=True, time_to_turn_off=True)
 
     def _alarm_texts(self, alarm: AlarmRequest) -> tuple[str, ...]:
         """One frame per weekday, Sunday 0. The app's Loop switch repeats the days weekly."""

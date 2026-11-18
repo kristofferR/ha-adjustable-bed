@@ -2280,7 +2280,15 @@ async def handle_set_alarm(call: ServiceCall) -> None:
 
     def check(target: BedChild, controller: BedController) -> None:
         _check_alarm(target.name, controller, alarm, given)
-        scheduling[target.operation_identity] = cast("AlarmCapability", controller.alarm_capability)
+        capability = cast("AlarmCapability", controller.alarm_capability)
+        if not alarm.enabled and capability.time_to_turn_off and ATTR_TIME not in call.data:
+            raise ServiceValidationError(
+                f"Choose the time of the alarm to turn off on '{target.name}'",
+                translation_domain=DOMAIN,
+                translation_key="alarm_time_required_to_turn_off",
+                translation_placeholders={"device_name": target.name},
+            )
+        scheduling[target.operation_identity] = capability
 
     # Capture STOP ownership for every lane an alarm may write on, before any
     # await; the lane is known only once preflight has each target's capability.

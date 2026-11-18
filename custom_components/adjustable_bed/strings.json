@@ -8545,6 +8545,9 @@
     "alarm_time_required": {
       "message": "Choose an alarm time to turn the alarm on."
     },
+    "alarm_time_required_to_turn_off": {
+      "message": "Choose the time of the alarm to turn off on '{device_name}'."
+    },
     "alarm_time_whole_minutes": {
       "message": "Alarm times are set in whole minutes. Remove the seconds."
     },

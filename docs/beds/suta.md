@@ -28,7 +28,7 @@ Bluetooth name selects the panel. Legacy Dreams Sleepmotion / SUTA-B202B
 | Massage | Model-specific P1 zones or MOON side controls |
 | Fans | F260 app steps |
 | Lights | Only layouts with a complete proven schedule |
-| Local clock / alarm | P1 date, list, set, disable and delete |
+| Local clock / alarm | P1 date, list, set and disable |
 | Heating | TEMP power, light, side setpoint and timer |
 | Split sides | Explicit MOON/TEMP payload side; two-address pairs retain each bed's name |
 

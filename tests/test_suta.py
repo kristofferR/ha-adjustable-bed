@@ -361,6 +361,8 @@ def test_entity_labels_follow_the_app_buttons():
     assert labels["suta_ctrl_two_up"] == "Back and foot up"
     assert labels["suta_ctrl_bott_down"] == "Storage lift down"
     assert labels["suta_both_set_tv"] == "Save TV position"
+    save = next(spec for spec in b702.controller_button_specs if spec.key == "suta_both_set_tv")
+    assert save.hold is None and save.requires_confirmation
     assert labels["suta_release"] == "Release held control"
     assert {s.key for s in b702.controller_switch_specs} == {"suta_lock"}
     b402, _ = make("SUTA-B402")

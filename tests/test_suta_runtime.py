@@ -168,6 +168,14 @@ async def test_text_alarm_and_active_zone_level_use_proven_schedules(hass, runti
         "device_id": "bed", "enabled": False, "time": "06:30:00", "weekdays": ["sunday"],
     }, blocking=True)
     assert written(client) == [codec.text("AT+CA=00063001")] * 3 + [codec.text("AT+GA")] * 3
+    # The bed finds the alarm to turn off by its time, so a time is required.
+    client.write_gatt_char.reset_mock()
+    with pytest.raises(ServiceValidationError) as raised:
+        await hass.services.async_call(const.DOMAIN, "set_alarm", {
+            "device_id": "bed", "enabled": False, "weekdays": ["sunday"],
+        }, blocking=True)
+    assert raised.value.translation_key == "alarm_time_required_to_turn_off"
+    assert not written(client)
     client.write_gatt_char.reset_mock()
     await action(hass, "mass_head_dt", suffix="20")
     await action(hass, "mass_foot_dt", suffix="33")
