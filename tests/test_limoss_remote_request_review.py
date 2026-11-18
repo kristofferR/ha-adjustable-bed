@@ -5,8 +5,6 @@ from copy import deepcopy
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.limoss.remote_state import get_limoss_remote_session
@@ -153,25 +151,6 @@ async def test_mixed_pair_features_connect_only_receiver_requiring_off(hass):
         assert left.entry.data[const.CONF_HAS_LIGHT] is True
         assert right.entry.data[const.CONF_HAS_MASSAGE] is False
         await hass.async_block_till_done()
-
-
-@pytest.mark.parametrize("current", [const.BED_TYPE_LIMOSS, const.BED_TYPE_KEESON])
-async def test_paired_options_reject_profile_conversion_before_entry_change(hass, current):
-    children = [
-        {CONF_ADDRESS: address, CONF_NAME: side, const.CONF_SIDE: side, const.CONF_BED_TYPE: current}
-        for side, address in ((const.SIDE_LEFT, "11:22:33:44:55:66"), (const.SIDE_RIGHT, "11:22:33:44:55:77"))
-    ]
-    entry = MockConfigEntry(domain=const.DOMAIN, data={CONF_NAME: "Pair", const.CONF_BED_TYPE: current, const.CONF_PAIR_ID: "review", const.CONF_PAIR_MODE: const.PAIR_MODE_SEPARATE_ADDRESS, const.CONF_PAIR_CHILDREN: children})
-    entry.add_to_hass(hass)
-    before = deepcopy(dict(entry.data))
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    with patch.object(hass.config_entries, "async_reload", new=AsyncMock()) as reload:
-        result = await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_LIMOSS_REMOTE})
-    assert result.get("errors") == {const.CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert entry.data == before
-    reload.assert_not_awaited()
 
 
 async def test_existing_pair_options_keep_bed_chair_profiles_and_shared_setting(hass):

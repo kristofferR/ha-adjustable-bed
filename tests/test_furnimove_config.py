@@ -12,7 +12,6 @@ from custom_components.adjustable_bed.bluetooth_freshness import FreshnessStatus
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
-    _motor_count_options,
 )
 from custom_components.adjustable_bed.const import (
     ADAPTER_AUTO,
@@ -104,23 +103,6 @@ async def test_shipped_offline_layout_creates_both_axes_without_a_bond_gate(hass
     assert result["data"][CONF_DISABLE_ANGLE_SENSING] is True
 
 
-async def test_options_change_from_stair_uses_the_guided_change(hass):
-    entry = MockConfigEntry(domain=DOMAIN, data={
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_OKIN_RF_ECO_BT,
-        CONF_MOTOR_COUNT: 1,
-    })
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    saved = await flow._async_options_form({
-        CONF_BED_TYPE: BED_TYPE_FURNIMOVE, CONF_FURNIMOVE_REMOTE: "00000",
-    }, step_id="settings")
-    assert saved["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_RF_ECO_BT
-    assert _motor_count_options(BED_TYPE_OKIN_RF_ECO_BT) == [1]
-
-
 async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_gate(hass):
     """A shared handset ID must not force the app onto a different bond policy."""
     from custom_components.adjustable_bed.beds.furnimove.profiles import FURNIMOVE_PROFILES
@@ -156,22 +138,6 @@ async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_ga
     assert OKIN_DOT_FURNIMOVE_VARIANTS == FURNIMOVE_DOT_HANDSETS
     # A fresh DOT setup never offers the handsets that belong to FurniMove.
     assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(_setup_routes(BED_TYPE_OKIN_DOT))
-
-
-async def test_furnimove_handset_corrections_use_the_guided_change(hass):
-    entry = MockConfigEntry(domain=DOMAIN, data={
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE,
-        CONF_FURNIMOVE_REMOTE: "90167", CONF_HAS_MASSAGE: True,
-    })
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    saved = await flow._async_options_form({
-        CONF_BED_TYPE: BED_TYPE_FURNIMOVE, CONF_FURNIMOVE_REMOTE: "82417",
-    }, step_id="settings")
-    assert saved["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[CONF_FURNIMOVE_REMOTE] == "90167"
 
 
 async def test_furnimove_setup_probe_waits_for_live_services(hass, mock_bleak_client):

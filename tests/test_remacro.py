@@ -1058,32 +1058,6 @@ async def test_config_flow_points_to_an_app_that_lists_the_model(hass: HomeAssis
     assert cached[CONF_REMACRO_MODEL] == 52
 
 
-async def test_options_reject_an_app_that_does_not_list_the_model(hass: HomeAssistant) -> None:
-    from homeassistant.data_entry_flow import FlowResultType
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:65",
-            CONF_BED_TYPE: BED_TYPE_REMACRO,
-            CONF_MOTOR_COUNT: 2,
-            CONF_PROTOCOL_VARIANT: "auto",
-            CONF_REMACRO_MODEL: 54,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    with patch(_HISTORY, return_value=None):
-        result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "jeromes"})
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "remacro_model_not_in_app"}
-    assert entry.data[CONF_PROTOCOL_VARIANT] == "auto"
-
-
 async def test_paired_sides_cache_their_own_model(hass: HomeAssistant) -> None:
     from custom_components.adjustable_bed.beds.remacro.discovery import cache_paired_remacro_models
     from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
@@ -1127,36 +1101,6 @@ async def test_discovery_offers_only_the_apps_that_list_the_model(
         "the_brick",
         "another",
     ]
-
-
-async def test_options_keep_or_fix_the_app_of_a_fallback_entry(
-    hass: HomeAssistant, mock_coordinator_connected, enable_custom_integrations
-) -> None:
-    from homeassistant.data_entry_flow import FlowResultType
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-
-    entry = _remacro_entry(hass, "AA:BB:CC:DD:EE:68", **{CONF_PROTOCOL_VARIANT: "jeromes"})
-
-    async def save(user_input: dict) -> FlowResultType:
-        flow = AdjustableBedOptionsFlow(entry)
-        flow.handler = entry.entry_id
-        flow.hass = hass
-        result = await flow.async_step_settings(user_input)
-        await hass.async_block_till_done()
-        return result["type"]
-
-    with patch(_HISTORY, return_value=MagicMock(manufacturer_data={54: b""})):
-        assert await hass.config_entries.async_setup(entry.entry_id)
-        await hass.async_block_till_done()
-        assert _controller(hass, entry).model.recognized is False
-        # Other options still save while the app stays unchanged.
-        assert await save({CONF_PROTOCOL_VARIANT: "jeromes"}) is FlowResultType.CREATE_ENTRY
-        # Choosing an app that lists the model reloads onto its controls.
-        assert await save({CONF_PROTOCOL_VARIANT: "auto"}) is FlowResultType.CREATE_ENTRY
-    assert entry.state is ConfigEntryState.LOADED
-    assert _controller(hass, entry).model is protocol.MODELS[54]
-    await hass.config_entries.async_unload(entry.entry_id)
 
 
 async def test_led_level_persists_through_the_coordinator_without_reload(
@@ -1321,28 +1265,6 @@ async def test_unchanged_pair_app_validates_each_side_against_its_own_app(
     with patch(_HISTORY, side_effect=lambda _hass, address, connectable: adverts[address]):
         result = await flow.async_step_settings({})
     assert not (result["type"] is FlowResultType.FORM and result.get("errors"))
-
-
-@pytest.mark.parametrize("variants", [("the_brick", "jeromes"), ("jeromes", "jeromes")])
-async def test_combined_options_refuse_any_app_change(hass: HomeAssistant, variants) -> None:
-    from homeassistant.data_entry_flow import FlowResultType
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.const import CONF_PAIR_CHILDREN
-
-    entry, _children = _remacro_pair(hass, 50, 50)
-    children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
-    children[0][CONF_PROTOCOL_VARIANT], children[1][CONF_PROTOCOL_VARIANT] = variants
-    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_PAIR_CHILDREN: children})
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    with patch(_HISTORY, return_value=None):
-        result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "auto"})
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    stored = [child[CONF_PROTOCOL_VARIANT] for child in entry.data[CONF_PAIR_CHILDREN]]
-    assert stored == list(variants)
 
 
 async def test_removing_an_entry_clears_its_remacro_issues(

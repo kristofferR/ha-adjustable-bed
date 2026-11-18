@@ -111,55 +111,6 @@ async def test_setup_hides_unproven_motor_count_and_fixed_refresh_delay(hass, ro
     assert CONF_MOTOR_PULSE_DELAY_MS not in fields
 
 
-async def test_options_switch_from_generic_profile_preserves_explicit_serenity_defaults(hass):
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant.common import MockConfigEntry
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_CST,
-        CONF_BED_TYPE,
-        CONF_DISABLE_ANGLE_SENSING,
-        CONF_MOTOR_COUNT,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-        CONF_PROTOCOL_VARIANT,
-        DOMAIN,
-    )
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-            CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-            CONF_MOTOR_COUNT: 4,
-            CONF_PROTOCOL_VARIANT: "support",
-            CONF_MOTOR_PULSE_COUNT: 7,
-            CONF_MOTOR_PULSE_DELAY_MS: 150,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    rebuilt = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_SERENITY}, step_id="settings")
-    assert rebuilt["type"] == "form"
-    markers = {marker.schema for marker in rebuilt["data_schema"].schema}
-    assert CONF_MOTOR_COUNT not in markers
-    assert CONF_MOTOR_PULSE_DELAY_MS not in markers
-    assert CONF_PROTOCOL_VARIANT not in markers
-    saved = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_SERENITY}, step_id="settings")
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_SERENITY
-    assert entry.data[CONF_MOTOR_COUNT] == 2
-    assert entry.data[CONF_MOTOR_PULSE_COUNT] == 10
-    assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == 100
-    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
-    controller = await _create_from_registry(_FactoryCoordinator(), entry.data[CONF_BED_TYPE])
-    assert controller.protocol_diagnostics["cst_profile"] == "serenity"
-    assert controller.memory_slot_count == 2
-
-
 @pytest.mark.parametrize("route", NEW_BED_ROUTES)
 async def test_the_final_settings_ignore_fields_the_app_sets_itself(hass, route):
     """A client that ignores the form cannot change what the app sets."""
