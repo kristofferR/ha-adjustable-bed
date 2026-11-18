@@ -83,6 +83,7 @@ from .const import (
 from .coordinator import AdjustableBedCoordinator, ChildEntryView
 from .coordinator_connection import PairingOnlyConnectionActiveError
 from .download import SupportBundleDownloadView
+from .entity_retypes import async_carry_over_retyped_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import async_sweep_after_setup
 from .entry_hooks import ENTRY_PREPARE_STEPS, entry_hooks
@@ -1012,6 +1013,7 @@ async def _async_finish_entry_setup(
     await async_setup_position_estimates(hass, entry.entry_id, [(coordinator.address, None)])
 
     _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
+    async_carry_over_retyped_entities(hass, entry, coordinator)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     async_sweep_after_setup(hass, entry, PLATFORMS)
 
@@ -1432,6 +1434,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 entry.entry_id,
                 [(child.address, side) for side, child in coordinator.children.items()],
             )
+            async_carry_over_retyped_entities(hass, entry, coordinator)
             await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
             async_sweep_after_setup(hass, entry, PAIRED_PLATFORMS)
         except (Exception, asyncio.CancelledError):
@@ -1509,6 +1512,7 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
     try:
         async_register_children(hass, coordinator)
         entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+        async_carry_over_retyped_entities(hass, entry, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
         async_sweep_after_setup(hass, entry, PAIRED_PLATFORMS)
     except (Exception, asyncio.CancelledError):

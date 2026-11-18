@@ -230,20 +230,25 @@ The same control now looks the same on every bed:
   "--". In bed, snoring and body movement are binary sensors with the occupancy,
   sound and motion device classes. They are enabled and no longer under
   Diagnostic. Every bed uses the same names ("Left heart rate", "Right in bed").
-  Heart and breathing rate sensors keep their entity IDs and settings, so one
-  that was disabled stays disabled until you enable it. In-bed, snoring and
-  movement readings that were text sensors are new binary sensors with new
-  entity IDs: they start enabled, and the old sensor's name, area and other
-  settings do not carry over. The DoubleSleep breathing rate's unit changes
-  from brpm to breaths/min, and Home Assistant offers to update its
-  statistics.
+  Heart and breathing rate sensors keep their entity IDs and settings. In-bed,
+  snoring and movement readings that were text sensors become binary sensors
+  with the same object ID (`sensor.bed_left_occupancy` becomes
+  `binary_sensor.bed_left_occupancy`), keeping the name, area, labels, icon
+  and aliases you gave them, and staying disabled or hidden if you made them
+  so. A reading that an earlier version created disabled is enabled once, as
+  on a new installation. The DoubleSleep breathing rate's unit changes from
+  brpm to breaths/min, and Home Assistant offers to update its statistics.
 - **Sleep Number bed presence is enabled by default** and named "In bed",
   "Left in bed" and "Right in bed", like every other bed's occupancy.
 - **Every on/off under-bed light is a `light` entity.** It was a switch
   (`switch.<bed>_under_bed_lights`) on 32 bed types and is now
-  `light.<bed>_under_bed_lights`. The switch is removed; a name, area or other
-  setting you gave it does not carry over to the light. Point automations and
-  voice assistants at the light. Beds that cannot report the light's state show
+  `light.<bed>_under_bed_lights`, with the same object ID and the name, area,
+  labels, icon, aliases and disabled or hidden state you gave the switch.
+  Automations and scripts that call `switch.turn_on` or `switch.turn_off` on
+  it must call `light.turn_on` or `light.turn_off` instead: a repair lists
+  each one that still names the old switch. The same happens for the other
+  controls that changed type (Heal Every Night settings, Motion Bed toggles,
+  AdjustaMattress massage levels and per-bed massage timers). Beds that cannot report the light's state show
   it as assumed, as the switch did. Octo keeps its switch: its light depends on the Octo PIN session
   and the bed's own light timer, which the switch handles.
 - **Keeson, Serta, Ergomotion and OKIN FFE beds have a Stop button**, like the
