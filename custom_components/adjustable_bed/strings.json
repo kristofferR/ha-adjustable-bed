@@ -9332,6 +9332,12 @@
     },
     "alarm_refresh_needed": {
       "message": "Refresh the bed's alarms, then try again."
+    },
+    "bed_release_failed": {
+      "message": "Could not disconnect {device_name} before checking the next bed. Try again."
+    },
+    "zseries_alarm_unknown": {
+      "message": "Could not read whether {device_name} has an alarm. Check that it is in range, then try again."
     }
   },
   "issues": {

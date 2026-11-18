@@ -35,7 +35,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import (
-    SERVICE_LOGICDATA_RENAME,
+    SERVICE_RENAME,
     async_register_services,
 )
 
@@ -187,7 +187,7 @@ async def test_rename_validates_every_app_rule_before_any_write(hass, services):
     services.return_value = ([(phone, SIDE_BOTH), (pump, SIDE_BOTH)], [])
     with pytest.raises(ServiceValidationError, match="1..20"):
         await hass.services.async_call(
-            DOMAIN, SERVICE_LOGICDATA_RENAME, {"device_id": ["a", "b"], "name": "My Bed"},
+            DOMAIN, SERVICE_RENAME, {"device_id": ["a", "b"], "name": "My Bed"},
             blocking=True,
         )
     phone.async_execute_controller_command.assert_not_called()

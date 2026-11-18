@@ -465,7 +465,7 @@ An alarm choice can be available even when the same manual preset is absent.
   the coordinator's serialized configuration path. An active movement is not
   cancelled to change an alarm.
 
-See [action examples](../SERVICES.md#malouf-base--lucid-base-clock-and-alarm).
+See [action examples](../SERVICES.md#set_alarm).
 
 #### Evidence
 
