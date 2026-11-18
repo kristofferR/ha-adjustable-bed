@@ -575,26 +575,64 @@ async def test_native_both_rejects_later_owner_drift_before_mutation(hass, actio
             "right",
             events,
         )
-        original_roster = dict(children)
+        # children is a copy; inject faults into the store the topology reads.
+        live_roster = parent._children
+        original_roster = dict(live_roster)
+        original_clients = {side: child.client for side, child in original_roster.items()}
+        original_controllers = {side: child._controller for side, child in original_roster.items()}
+        original_history = tuple(history)
+        roster_fault = drift in {"owner", "roster"}
+        hook_calls = []
+        replacements = {}
         original_import = actions.async_import_modules
         boundary = []
 
+        if roster_fault:
+            service_name = (
+                "betterliving2_set_alarm" if action == "alarm" else "betterliving2_massage"
+            )
+            handler = actions.set_alarm if action == "alarm" else actions.massage
+            assert (
+                hass.services.async_services_for_domain(DOMAIN)[service_name].job.target is handler
+            )
+            assert parent.children == original_roster and parent.children is not live_roster
+            assert not events
+
         async def change_then_import(*args):
             right = children["right"]
+            if roster_fault:
+                hook_calls.append(drift)
+                selection = runtime.current_selection()
+                assert isinstance(selection, actions.Selection)
+                assert selection.batches[0].roster == tuple(original_roster.items())
+                for side, child in original_roster.items():
+                    owner = selection.owners[id(child)]
+                    assert owner.child is child
+                    assert owner.client is original_clients[side]
+                    assert owner.controller is original_controllers[side]
+                    assert owner.link is getattr(original_controllers[side], "_link", None)
             if drift == "layout":
                 right.entry.persist_data(
                     {**right.entry.data, "product_type": "2"}, keys={"product_type"}
                 )
             elif drift == "owner":
-                parent.children["right"] = _build_paired_children(hass, parent.entry)["right"]
+                replacements.update(_build_paired_children(hass, parent.entry))
+                live_roster["right"] = replacements["right"]
+                assert parent.child_for_side("right") is replacements["right"]
+                assert replacements["right"] is not right
             elif drift == "roster":
-                parent.children.pop("right")
+                assert live_roster.pop("right") is right
+                assert parent.child_for_side("right") is None
             elif drift == "stop":
                 await parent.async_stop_command(side="right")
             else:
                 await right.async_disconnect("intentional")
                 with pytest.raises(ServiceValidationError):
                     await bind(right, right.entry.data["protocol_variant"], history, events)
+            if roster_fault:
+                assert [child for _, child in parent._targets_for("both")] == list(
+                    live_roster.values()
+                )
             boundary.append(len(events))
             await original_import(*args)
 
@@ -603,15 +641,29 @@ async def test_native_both_rejects_later_owner_drift_before_mutation(hass, actio
                 if drift == "stop":
                     await call_app(hass, device, action)
                 else:
-                    with pytest.raises(ServiceValidationError):
+                    with pytest.raises(ServiceValidationError) as rejected:
                         await call_app(hass, device, action)
+                    if roster_fault:
+                        assert str(rejected.value) == "BetterLiving2 physical roster changed"
+            if roster_fault:
+                assert hook_calls == [drift]
+                assert tuple(history) == original_history
+                assert not events
+                for side, child in original_roster.items():
+                    assert child.client is original_clients[side]
+                    assert child._controller is original_controllers[side]
+                    if (client := original_clients[side]) is not None:
+                        assert not writes(client)
+                assert all(child.client is None for child in replacements.values())
             assert not action_frames(events, original_roster["left"], action)
             assert not action_frames(events, original_roster["right"], action)
             assert len(events) == boundary[0]
         finally:
-            parent.children.clear()
-            parent.children.update(original_roster)
+            live_roster.clear()
+            live_roster.update(original_roster)
             await parent.async_shutdown()
+            for child in replacements.values():
+                await child.async_shutdown()
 
 
 @pytest.mark.parametrize("action", ("alarm", "massage"))

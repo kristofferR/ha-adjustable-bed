@@ -493,6 +493,7 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
 _QUIET_BED_TYPES = (
     const.BED_TYPE_SYMPHONY_SLEEP,
     const.BED_TYPE_YAMADA,
+    const.BED_TYPE_BETTERLIVING2,
     const.BED_TYPE_COMFORTBASE,
     const.BED_TYPE_COOLBASE,
     const.BED_TYPE_DOUBLESLEEP,
