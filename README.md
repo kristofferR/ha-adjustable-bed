@@ -157,7 +157,7 @@ Each linked guide has a Status line with the details.
 | [Solace](docs/beds/ff_frame.md) | [Solace remotes and the HomeKobo, Sealy MotionFlex and Sweet Night apps](docs/beds/ff_frame.md#solace-name-routes) ⚠️, [Woosa Sleep app](docs/beds/ff_frame.md#woosa-sleep) ✅, [Sophie app](docs/beds/ff_frame.md#sophie) 🧪, [BedSense app](docs/beds/ff_frame.md#bedsense) 🧪, [Motion Bed app](docs/beds/ff_frame.md#motion-bed) 🧪 | Solace, Sealy, Woosa |
 | [StarCode](docs/beds/okin-nframe.md#adjustablem5x4) | [AdjustableM5X4](docs/beds/okin-nframe.md#adjustablem5x4) 🧪, [AdjustableM5X5](docs/beds/starcode-m5x5.md) 🧪, [Adjustable Comfort M1X12](docs/beds/starcode-m1x12.md) 🧪 | StarCode |
 | [SUTA Smart Home](docs/beds/suta.md) | [SUTA Smart Home](docs/beds/suta.md) ⚠️ | SUTA |
-| [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | [Tempur Sleeptracker-AI processor](docs/beds/sleeptracker.md) ⚠️ | Tempur ProSmart / ProSmart Air, ActiveBreeze |
+| [Tempur Sleeptracker-AI](docs/beds/sleeptracker.md) | [Tempur Sleeptracker-AI processor (TEMPUR-Ergo ProSmart / ProSmart Air, ActiveBreeze)](docs/beds/sleeptracker.md) ⚠️ | Tempur |
 | [TiMOTION AHF](docs/beds/timotion-ahf.md) | [TiMOTION AHF](docs/beds/timotion-ahf.md) 🧪 | TiMOTION |
 | [Vibradorm](docs/beds/vibradorm.md) | [Vibradorm remotes](docs/beds/vibradorm.md) ✅, [VMAT](docs/beds/vibradorm.md#vmat) 🧪, [Caresse Diamant and Werkmeister](docs/beds/vibradorm.md#caresse-and-werkmeister) 🧪, [V-MAT Basic (CBI / XT-Box)](docs/beds/vibradorm.md#v-mat-basic) 🧪 | Vibradorm, Caresse, Werkmeister |
 

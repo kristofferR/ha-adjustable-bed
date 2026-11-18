@@ -298,9 +298,10 @@ receivers and Sleep Number MCR).
   stores nothing.
 - Releasing the BLE link is separate: use **Bluetooth connection** or the
   Disconnect button to let a remote or app reconnect.
-- After a command, the position is read in the background while the link stays
-  open, or before the link is released with **Release right after each
-  command**. No read is made when another command is waiting. An accepted target is never treated as a measured position;
+- When a command asks for a position read afterwards, it happens in the
+  background while the link stays open, or before the link is released with
+  **Release right after each command**. No read is made when another command
+  is waiting. An accepted target is never treated as a measured position;
   missing or stale feedback can prevent a seek, see
   [position troubleshooting](TROUBLESHOOTING.md#position-commands-and-reported-state).
 
