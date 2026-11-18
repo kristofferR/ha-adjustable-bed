@@ -20,8 +20,7 @@ from tests.test_richmat_mh import sleeps as sleeps
 
 
 def receiver(app="nisco"):
-    coordinator = make(app)._coordinator
-    coordinator.entry.data[CONF_ADDRESS] = "11:22:33:44:55:66"
+    coordinator = make(app, entry_data={CONF_ADDRESS: "11:22:33:44:55:66"})._coordinator
     controller = Cluster022SleepController(coordinator, app=app)
     controller._char = MagicMock(uuid=CHARACTERISTIC)
     controller._owner = coordinator.client

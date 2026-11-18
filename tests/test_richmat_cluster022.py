@@ -31,12 +31,14 @@ FIXTURES = Path(__file__).parent / "fixtures/richmat_cluster022"
 DIAGNOSTICS = json.loads((FIXTURES / "mlily_diagnostic_cases.json").read_text())
 
 
-def make(app: str, model: str = "garm") -> Cluster022Controller:
+def make(
+    app: str, model: str = "garm", *, entry_data: dict[str, object] | None = None,
+) -> Cluster022Controller:
     coordinator = MagicMock()
     coordinator.cancel_command = asyncio.Event()
     coordinator.motor_pulse_count = 2
     coordinator.motor_pulse_delay_ms = 100
-    coordinator.entry = SimpleNamespace(data={})
+    coordinator.entry = SimpleNamespace(data=dict(entry_data or {}))
     coordinator.controller_state = {}
     coordinator.client = MagicMock(is_connected=True)
     coordinator.client.write_gatt_char = AsyncMock()
@@ -317,6 +319,7 @@ async def test_nisco_mode_alarm_has_its_separate_150ms_caller(sleeps) -> None:
 async def test_native_memory_save_uses_attached_fixed_remote_long_caller(sleeps) -> None:
     controller = make("mlily_supreme", "aerm")
     controller._wait_cancel = AsyncMock()
+    assert controller._remote_long_codes
     code = controller._remote_long_codes[0]
     await controller.tap(code)
     assert [call.args[0] for call in controller._wait_cancel.call_args_list] == [3, 0.15]
@@ -366,4 +369,11 @@ def test_aliases_and_entity_metadata_are_owned_by_each_catalog() -> None:
                     for spec in specs:
                         assert spec.translation_key in strings[platform], (app, model, spec)
                         if platform == "select":
-                            assert set(spec.options) <= strings[platform][spec.translation_key]["state"].keys()
+                            assert {option.lower() for option in spec.options} <= strings[platform][spec.translation_key]["state"].keys()
+
+
+@pytest.mark.parametrize("filename", ("strings.json", "translations/en.json"))
+def test_group_type_translations_use_schema_keys(filename: str) -> None:
+    path = Path(__file__).parents[1] / "custom_components/adjustable_bed" / filename
+    states = json.loads(path.read_text())["entity"]["select"]["richmat_cluster022_group_type"]["state"]
+    assert set(states) == {"single", "group_sync", "group_split"}

@@ -6063,7 +6063,7 @@
       },
       "richmat_cluster022_group_type": {
         "name": "Motor group",
-        "state": {"SINGLE": "Single", "GROUP_SYNC": "Synchronized group", "GROUP_SPLIT": "Split group"}
+        "state": {"single": "Single", "group_sync": "Synchronized group", "group_split": "Split group"}
       },
       "richmat_mh_waist_mode": {
         "name": "Waist mattress mode",
