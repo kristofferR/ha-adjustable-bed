@@ -73,7 +73,7 @@ window.hass = { entities: {}, devices: {}, states: {}, language: 'en',
     return Promise.resolve();
   }
 };
-for (const [id, name] of [['pair','Bed'], ['left','Left'], ['right','Right']]) {
+for (const [id, name] of [['pair','Bed'], ['left','Bed Left'], ['right','Bed Right']]) {
   hass.devices[id] = {id, name, ...(id === 'pair' ? {} : {parent_device_id:'pair'})};
   const add = (domain,key,state,attrs={}) => {
     const entity_id = `${domain}.${id}_${key}`;
@@ -147,12 +147,14 @@ async def main():
             assert await page.evaluate(measure_header, ".compact-header") == baseline
         await page.locator("main").evaluate("el=>el.style.width='320px'")
         assert await card.locator(".dual-bed-side").count() == 2
-        await card.get_by_role("button", name="Left", exact=True).click()
+        # Readouts name each side by its own part of the device name.
+        assert await card.locator(".compact-side-label").all_inner_texts() == ["Left", "Right"]
+        await card.get_by_role("button", name="Bed Left", exact=True).click()
         assert await card.locator(".dual-bed-side").count() == 2
         await card.locator(".compact-actions .tile").first.click()
         assert (await page.evaluate("calls.at(-1).entity_id")) == "button.left_preset_flat"
         assert await page.evaluate("location.pathname") == "/"
-        await card.get_by_role("button", name="Right", exact=True).click()
+        await card.get_by_role("button", name="Bed Right", exact=True).click()
         await card.get_by_role("button", name="Stop", exact=True).click()
         assert await page.evaluate("calls.some(c=>c.entity_id==='button.left_stop')")
         assert await page.evaluate("calls.some(c=>c.entity_id==='button.right_stop')")
@@ -176,9 +178,9 @@ async def main():
             }""",
                 {"useCovers": use_covers, "failedTarget": failed_target},
             )
-            await card.get_by_role("button", name="Left", exact=True).click()
+            await card.get_by_role("button", name="Bed Left", exact=True).click()
             await card.locator(".compact-actions .tile").first.click()
-            await card.get_by_role("button", name="Right", exact=True).click()
+            await card.get_by_role("button", name="Bed Right", exact=True).click()
             await card.locator(".compact-stop").click()
             await page.evaluate("card.updateComplete")
             await card.get_by_role("button", name="Both", exact=True).click()
@@ -204,12 +206,12 @@ async def main():
             return Promise.resolve();
           }};card.hass=hass;await configure();
         }""")
-        await card.get_by_role("button", name="Left", exact=True).click()
+        await card.get_by_role("button", name="Bed Left", exact=True).click()
         await card.locator(".compact-actions .tile").first.click()
         await card.locator(".compact-stop").click()
         await card.locator(".compact-actions .tile").first.click()
         await page.evaluate("async ()=>{finishStop();await card.updateComplete;}")
-        await card.get_by_role("button", name="Right", exact=True).click()
+        await card.get_by_role("button", name="Bed Right", exact=True).click()
         await page.evaluate("calls=[]")
         await card.locator(".compact-stop").click()
         assert await page.evaluate("calls.some(c=>c.entity_id==='button.left_stop')")
@@ -228,11 +230,11 @@ async def main():
 
         # A target change releases a pointer/keyboard hold on its original side.
         await page.evaluate("configure({show_motors:true})")
-        await card.get_by_role("button", name="Left", exact=True).click()
-        up = card.get_by_role("button", name="Up", exact=True).first
+        await card.get_by_role("button", name="Bed Left", exact=True).click()
+        up = card.get_by_role("button", name="Back up", exact=True).first
         await up.focus()
         await page.keyboard.down("Space")
-        await card.get_by_role("button", name="Right", exact=True).click()
+        await card.get_by_role("button", name="Bed Right", exact=True).click()
         await page.keyboard.up("Space")
         assert await page.evaluate(
             "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='stop_cover')"
@@ -249,11 +251,11 @@ async def main():
         await page.evaluate(
             "async ()=>{calls=[];await configure({layout:'full',default_target:'right',show_motors:true})}"
         )
-        await card.get_by_role("tab", name="Right", exact=True).click()
-        right_up = card.get_by_role("button", name="Up", exact=True).first
+        await card.get_by_role("tab", name="Bed Right", exact=True).click()
+        right_up = card.get_by_role("button", name="Back up", exact=True).first
         await right_up.focus()
         await page.keyboard.down("Space")
-        await card.get_by_role("tab", name="Left", exact=True).click()
+        await card.get_by_role("tab", name="Bed Left", exact=True).click()
         await card.locator(".stop-all").click()
         assert await page.evaluate(
             "calls.some(c=>c.entity_id==='button.left_stop') && calls.filter(c=>c.entity_id==='cover.right_back' && c.service==='stop_cover').length===1"
@@ -280,11 +282,11 @@ async def main():
           await configure({layout:'full',default_target:'both',show_motors:true});
         }""")
         await card.get_by_role("tab", name="Both", exact=True).click()
-        pair_up = card.get_by_role("button", name="Up", exact=True).first
+        pair_up = card.get_by_role("button", name="Back up", exact=True).first
         await pair_up.focus()
         await page.keyboard.down("Space")
         assert await page.evaluate("calls.some(c=>c.entity_id==='button.pair_back_up')")
-        await card.get_by_role("tab", name="Left", exact=True).click()
+        await card.get_by_role("tab", name="Bed Left", exact=True).click()
         await card.locator(".stop-all").click()
         assert await page.evaluate(
             "calls.map(c=>c.entity_id).filter(id=>id.endsWith('_stop'))"
@@ -300,8 +302,8 @@ async def main():
 
         # Side-scoped assistive activation also remains stoppable after a tab change.
         await page.evaluate("calls=[]")
-        await card.get_by_role("button", name="Up", exact=True).first.evaluate("el=>el.click()")
-        await card.get_by_role("button", name="Left", exact=True).click()
+        await card.get_by_role("button", name="Back up", exact=True).first.evaluate("el=>el.click()")
+        await card.get_by_role("button", name="Bed Left", exact=True).click()
         await card.locator(".compact-stop").click()
         assert await page.evaluate("calls.some(c=>c.entity_id==='button.right_stop')")
 
@@ -421,7 +423,7 @@ async def main():
           editor.setConfig({...base,device_id:'left',default_target:'removed'});
           await editor.updateComplete;
         }""")
-        stale = editor.locator("label").filter(has_text="Default / fixed target").locator("select")
+        stale = editor.locator("label").filter(has_text="Side to control").locator("select")
         await stale.select_option("both")
         assert await page.evaluate("edited.default_target") == "both"
         await editor.evaluate("el=>el.remove()")
@@ -553,7 +555,7 @@ async def main():
         # Abandoning the dialog mid-hold still sends STOP to the held bed.
         await page.evaluate("configure({device_id:'left',open_dialog:true})")
         await card.locator(".compact-graphic").click()
-        await card.locator("dialog").get_by_role("button", name="Up", exact=True).first.focus()
+        await card.locator("dialog").get_by_role("button", name="Back up", exact=True).first.focus()
         await page.keyboard.down("Space")
         await page.wait_for_function(
             "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='open_cover')"
@@ -584,7 +586,7 @@ async def main():
         )
         stopped = "calls.some(c=>c.entity_id==='cover.left_back' && c.service==='stop_cover')"
         await card.locator(".compact-graphic").click()
-        await card.locator("dialog").get_by_role("button", name="Up", exact=True).first.focus()
+        await card.locator("dialog").get_by_role("button", name="Back up", exact=True).first.focus()
         await page.keyboard.down("Space")
         await page.wait_for_function(f"{leases}.length >= 3")
         await page.keyboard.up("Space")
@@ -596,7 +598,7 @@ async def main():
             "async () => {calls=[];await configure({device_id:'left',open_dialog:true,tap_to_move:true})}"
         )
         await card.locator(".compact-graphic").click()
-        tap_up = card.locator("dialog").get_by_role("button", name="Up", exact=True).first
+        tap_up = card.locator("dialog").get_by_role("button", name="Back up", exact=True).first
         await tap_up.click()
         await page.wait_for_function(f"{leases}.length >= 3")
         assert await tap_up.get_attribute("aria-pressed") == "true"

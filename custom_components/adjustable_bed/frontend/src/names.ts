@@ -25,3 +25,12 @@ export function entityLabel(
     : hass?.entities[entityId]?.name;
   return name || fallback;
 }
+
+// A paired side's own part of its name: "Bed Left" under the parent "Bed" is
+// "Left". A side named on its own keeps its whole name.
+export function sideName(name: string, parentName: string | undefined): string {
+  if (!parentName || name.length <= parentName.length ||
+    !name.toLowerCase().startsWith(parentName.toLowerCase())) return name;
+  const rest = name.slice(parentName.length);
+  return /^[\s\-·:,]/.test(rest) ? rest.replace(/^[\s\-·:,]+/, "") || name : name;
+}

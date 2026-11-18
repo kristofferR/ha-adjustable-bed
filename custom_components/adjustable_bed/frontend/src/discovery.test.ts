@@ -593,8 +593,9 @@ test("two-address profile controls keep independent child state and parent actio
   ]);
   hass.devices = {
     parent: { id: "parent", name: "Pair" },
-    left: { id: "left", name: "Left", parent_device_id: "parent" },
-    right: { id: "right", name: "Right", parent_device_id: "parent" },
+    // Names that sort the wrong way round: order comes from each side.
+    left: { id: "left", name: "Zed", parent_device_id: "parent" },
+    right: { id: "right", name: "Amy", parent_device_id: "parent" },
   };
   for (const [id, state, attributes] of [
     ["select.left_palette", "palette_3", { bed_side: "left", options: ["palette_3", "palette_4"] }],
