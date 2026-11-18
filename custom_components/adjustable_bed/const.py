@@ -382,18 +382,14 @@ TIMED_MOVE_MOTOR_OPTIONS: Final = (
 # The two physical sides, in stable order (left first, right second).
 PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
 
-# How the two sides' BLE links are driven. ``auto``/``concurrent`` let each
-# independent receiver retain its own connection policy. Explicit ``sequential``
-# mode switches the active connection per command, holding one link at a time.
+# How the two sides' BLE links are driven. A pair starts ``auto`` (concurrent:
+# each receiver keeps its own connection policy) and falls back to
+# ``sequential`` (one link at a time) when the adapter cannot hold both. The
+# stored key is obsolete: nothing ever set it, and schema 5.6 drops it.
 CONF_PAIR_CONNECTION_MODE: Final = "pair_connection_mode"
 PAIR_CONNECTION_MODE_AUTO: Final = "auto"
 PAIR_CONNECTION_MODE_CONCURRENT: Final = "concurrent"
 PAIR_CONNECTION_MODE_SEQUENTIAL: Final = "sequential"
-PAIR_CONNECTION_MODES: Final = (
-    PAIR_CONNECTION_MODE_AUTO,
-    PAIR_CONNECTION_MODE_CONCURRENT,
-    PAIR_CONNECTION_MODE_SEQUENTIAL,
-)
 DEFAULT_PAIR_CONNECTION_MODE: Final = PAIR_CONNECTION_MODE_AUTO
 
 # Default angle limits (from Linak beds)
