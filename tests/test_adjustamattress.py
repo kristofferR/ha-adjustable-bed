@@ -346,6 +346,10 @@ async def test_alarm_switch_sends_the_set_alarm_and_anti_snore_needs_no_notice()
     snore = next(s for s in c.controller_switch_specs if s.key == "adjustamattress_snore_control")
     await snore.set_fn(c, True)
     assert c.write_command.call_args.args[0] == bytes((5, 11, 1, 6, 1, 35, 0))
+    # The switch shows the sent setting until a status reply replaces it.
+    c._coordinator.handle_controller_state_update.assert_called_with(
+        "adjustamattress_snore_enabled", True
+    )
     assert c.persisted_app_state is None
 
 

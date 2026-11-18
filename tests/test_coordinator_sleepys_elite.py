@@ -17,6 +17,9 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
+# The hold action imports this on demand in the executor; loading it up front
+# keeps virtual time from racing a real import thread.
+import custom_components.adjustable_bed.beds.vmatbasic.services  # noqa: F401
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
 from custom_components.adjustable_bed.beds.sleepys.app_routes import ROUTES

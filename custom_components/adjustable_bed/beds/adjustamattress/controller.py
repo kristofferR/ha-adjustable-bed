@@ -607,6 +607,11 @@ class AdjustaMattressController(
             if self.state.snore_enabled:
                 self.state.demonstration = False
             await self._send_snore()
+            # The switch shows the sent setting until a status reply replaces it.
+            if not self._coordinator.cancel_command.is_set():
+                self.forward_controller_state_update(
+                    _field_key("snore_enabled"), self.state.snore_enabled
+                )
         else:
             self.local_setting(key, option)
 

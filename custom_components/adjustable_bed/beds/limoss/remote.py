@@ -171,6 +171,7 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
         self.memories = session.memories
         self.sequence = sequence if sequence is not None else APP_SEQUENCE
         self._metadata = session.metadata
+        self._observed: dict[str, str | int] = {}
         self._parser = codec.StreamParser(verify=False)
         self._notify_client: BleakClient | None = None
         self._notify_char: BleakGATTCharacteristic | None = None
@@ -344,6 +345,8 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
             "theme": self.theme,
             "local_features": {"light": self.underbed_light, "massage": self.massage},
             "metadata": dict(self._metadata),
+            # Raw replies that are no entity: positions without units, calibration.
+            "observed": dict(self._observed),
             "memories": self.memories.serialize(),
             "sequence": self.sequence.value,
             "position_units": "opaque_signed_int32",
@@ -589,6 +592,7 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
                 else:
                     self._coordinator.remember_limoss_remote_capabilities(asdict(self.capabilities))
             elif opcode == codec.CALIBRATE:
+                self._observed["calibration_result"] = "reply_received"
                 self.forward_controller_state_update(
                     _field_key("calibration_result"), "reply_received"
                 )
@@ -598,9 +602,10 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
                 self._coordinator.save_app_state(self)
                 self.forward_controller_state_update(_field_key("serial"), value)
             elif opcode in codec.POSITION_OPCODES:
+                position = int.from_bytes(parameters, "big", signed=True)
+                self._observed[f"motor_{opcode // 16}_position_raw"] = position
                 self.forward_controller_state_update(
-                    _field_key(f"motor_{opcode // 16}_position_raw"),
-                    int.from_bytes(parameters, "big", signed=True),
+                    _field_key(f"motor_{opcode // 16}_position_raw"), position
                 )
             if self._request_reply is not None:
                 expected, future = self._request_reply

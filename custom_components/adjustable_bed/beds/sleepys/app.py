@@ -254,11 +254,13 @@ class SleepysEliteAppController(BedController):
         return True
 
     @property
-    def protocol_diagnostics(self) -> dict[str, str]:
+    def protocol_diagnostics(self) -> dict[str, object]:
         return {
             "app_profile": "sleepys_elite_app",
             "selector": self.selector,
             "canonical_route_sha256": CANONICAL_ROUTE_SHA256,
+            # Parsed app state fields; only positions and the timer are entities.
+            "app_fields": dict(self._app_fields),
         }
 
     def _route(self, builder: str) -> SleepysAppRoute:
