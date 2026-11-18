@@ -992,6 +992,29 @@ export class AdjustableBedCard extends LitElement {
         ? "combined.mixed"
         : "combined.off";
     const label = localize(this.hass, "combined.lights");
+    // A light the bed cannot confirm reads unknown as off, so a toggle could
+    // only ever send On: offer both commands instead.
+    const unconfirmed = lights.some((id) => {
+      const st = this._state(id);
+      return st?.attributes.assumed_state === true || (st?.state !== "on" && st?.state !== "off");
+    });
+    if (unconfirmed) {
+      const off = this._t("action.off");
+      const on = this._t("action.on");
+      return html`
+        ${this._heading("section.lighting")}
+        <div class="entity-row combined-entity-row" role="group" aria-label=${label}>
+          <ha-icon class="icon" icon="mdi:lightbulb-group-outline"></ha-icon>
+          <div class="entity-row-text">
+            <span>${label}</span>
+          </div>
+          <button class="dialog-btn" aria-label=${`${label}: ${off}`}
+            @click=${() => this._setEntities(lights, false)}>${off}</button>
+          <button class="dialog-btn" aria-label=${`${label}: ${on}`}
+            @click=${() => this._setEntities(lights, true)}>${on}</button>
+        </div>
+      `;
+    }
     return html`
       ${this._heading("section.lighting")}
       <div class="entity-row combined-entity-row">

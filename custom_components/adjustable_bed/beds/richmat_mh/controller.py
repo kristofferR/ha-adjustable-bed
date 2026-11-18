@@ -713,10 +713,6 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             key = f"richmat_mh_{c.code:02x}"
             if c.area == "memory":
                 base = group_labels.get(c.group, _display_label(c.label))
-                if re.fullmatch(r"V\d+", base):
-                    # A held-position recall the app labels only "V15"/"V30";
-                    # nothing says what it does, so it is not an entity.
-                    continue
                 if c.kind == "save":
                     taps.append(Tap(key, f"Save {base}", c.code, "richmat_mh_save"))
                 elif c.group in ("FACTORY_RESET", "Factory Reset"):

@@ -60,7 +60,8 @@ def problems(name: str) -> list[str]:
     found += [
         f"all-caps {word!r}"
         for word in re.findall(r"\b[A-Z]{2,}\b", name)
-        # M1-M9 are memory slots and II, III preset numbers, not shouting.
+        # Remote labels such as M1 or V15 are one letter and digits, so the
+        # all-caps pattern never sees them; II and III are preset numbers.
         if word.upper() not in ACRONYMS and not re.fullmatch(r"M\d|[IVX]+", word)
     ]
     if match := TITLE_ARTIFACTS.search(name):
@@ -90,6 +91,7 @@ def _translated_names() -> list[tuple[str, str]]:
         ("Usb on", ["title() artifact 'Usb'"]),
         ("Hold to increase head massage", ["'Hold ...' phrasing"]),
         ("Save M1 position on TV", []),
+        ("V15", []),
     ],
 )
 def test_rules_flag_known_bad_names(label: str, issues: list[str]) -> None:
@@ -160,3 +162,5 @@ def test_richmat_mh_catalog_labels_use_the_shared_wording() -> None:
     assert mh_label("Head Intensity+", "HEAD_INTENSITY_INC3") == "Massage: Head Up"
     assert mh_label("10Min", "MIN") == "Massage: Timer 10 Minutes"
     assert mh_label("FLAT2") == "Flat 2"
+    # A terse app preset label stays: the owner knows it from the app or remote.
+    assert mh_label("V15") == "V15"
