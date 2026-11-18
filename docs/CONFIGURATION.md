@@ -172,7 +172,7 @@ remote and product. Nothing changes until you submit settings. Closing them keep
 your profile. Saving this review confirms your selection.
 
 When every suggested profile belongs to the bed's family with a
-[guided change](#changing-the-app-or-layout-of-an-existing-bed), **Review
+[guided change](#changing-the-bed-type-app-or-layout-of-an-existing-bed), **Review
 profile settings** opens that guided change instead, because Configure refuses
 an app or route change within the family. Applying a change there confirms the
 review, and the question's keep answer there keeps the current profile. Closing it
@@ -466,7 +466,7 @@ list sets its route itself. The final settings list the routes in a collapsed
 the app list: a discovered bed shows its detected route, the brand list under
 **My app isn't listed** lists them, and Configure keeps them by name. Configure lists
 the routes of the saved bed type. In a family with a
-[guided change](#changing-the-app-or-layout-of-an-existing-bed), the app question chooses the route and Configure
+[guided change](#changing-the-bed-type-app-or-layout-of-an-existing-bed), the app question chooses the route and Configure
 refuses a route change; use **Reconfigure**. Additional
 controller-specific choices are documented here:
 

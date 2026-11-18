@@ -168,7 +168,7 @@ An app row in the bed-type list answers the question itself; the one
 that names an app, a remote route or a Restonic remote style answers both.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
 The same question appears, with **Keep** leaving the entry as it is. A Keeson
 route has no endpoint or bond to check: the controllers fall back across their
 write roles, as Configure's switch did. A review lists the added and removed

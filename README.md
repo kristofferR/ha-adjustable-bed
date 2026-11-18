@@ -30,7 +30,7 @@
 - **Position control** - Position sliders in degrees or percentages, according to the controller
 - **Estimated positions** - Calibrated travel-time estimates and saved positions for beds without position feedback ([details](docs/ESTIMATED_POSITIONS.md))
 - **Memory presets** - Jump to saved positions with one tap
-- **Guided changes** - Switch an existing bed to another app or layout through **Reconfigure** ([details](docs/CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed))
+- **Guided changes** - Switch an existing bed to another app or layout through **Reconfigure** ([details](docs/CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed))
 - **Under-bed lights** - RGB color control on supported beds, on and off on others
 - **Climate controls** - Cooling, heating and foot warming on supported beds
 - **Massage control** - Adjust massage intensity and patterns

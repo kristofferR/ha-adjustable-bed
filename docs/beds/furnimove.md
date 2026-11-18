@@ -150,7 +150,7 @@ below.
 > Legs, with no massage or memory slots. `90167: RF1058` is a different layout
 > and is not a fallback for this receiver. Correct an existing entry through its
 > **Reconfigure** (see
-> [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+> [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
 > selecting `82417` does not require replacing the entry or removing an
 > operating-system bond.
 

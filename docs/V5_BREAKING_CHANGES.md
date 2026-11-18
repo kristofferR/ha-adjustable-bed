@@ -401,7 +401,7 @@ For existing beds ([#792](https://github.com/kristofferR/ha-adjustable-bed/pull/
   **Apply this change** and **Keep current setup** as equal answers, a failed
   check says **Nothing was changed** and offers **Try again** or **Keep**, and
   an applied change names the new setup and the way back.
-  [Changing the app or layout](CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)
+  [Changing the app or layout](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
   describes the steps.
 - **Reconfigure** also reaches routes that had no way in ([#889](https://github.com/kristofferR/ha-adjustable-bed/pull/889)). An Okin
   CST entry answers the Okin question, so it can move to another Okin route
