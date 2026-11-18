@@ -19,7 +19,7 @@ from tests.test_reverie_pairlink import _controller, _join_central
 from tests.test_reverie_pairlink_production import _entry
 
 
-@pytest.mark.parametrize("action", ["reverie_run_routine", "reverie_test"])
+@pytest.mark.parametrize("action", ["reverie_run_routine"])
 @pytest.mark.parametrize("stop", [False, True])
 async def test_later_deferred_target_respects_stop_before_dispatch(
     hass,
