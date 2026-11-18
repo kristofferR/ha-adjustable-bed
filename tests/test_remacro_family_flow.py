@@ -50,12 +50,12 @@ def test_one_row_names_the_three_store_apps():
 @pytest.mark.parametrize(
     ("manufacturer_data", "model", "apps"),
     [
-        ({}, "none seen yet", ["slumberland", "the_brick", "jeromes"]),
+        ({}, "Not reported yet", ["slumberland", "the_brick", "jeromes"]),
         ({50: b""}, "CS-B300M", ["slumberland", "the_brick", "jeromes"]),
         # Jerome's lists company IDs 45 to 53 only.
         ({54: b""}, "CS-B300M(ASI)", ["slumberland", "the_brick"]),
         # No app lists it, so every app runs the fallback controls.
-        ({99: b""}, "company ID 99", ["slumberland", "the_brick", "jeromes"]),
+        ({99: b""}, "Unknown model", ["slumberland", "the_brick", "jeromes"]),
     ],
 )
 async def test_the_question_offers_the_apps_that_list_the_model(

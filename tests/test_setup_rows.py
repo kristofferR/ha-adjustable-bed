@@ -72,7 +72,6 @@ def test_the_brand_list_names_a_detected_routes_family_first():
 def test_protocol_routes_are_off_the_list_but_reachable():
     listed = {option["value"] for option in get_bed_type_options()}
     assert not PROTOCOL_ROUTES & listed
-    assert {choice for choice, _label in _family_rows()} >= PROTOCOL_ROUTES
     configure = _bed_type_selector(const.BED_TYPE_LINAK, show_saved_id=True)
     assert set(configure.rows().values()) >= PROTOCOL_ROUTES
     # A detected protocol route is still its own row on a discovered bed's list.
@@ -175,3 +174,71 @@ async def test_an_app_whose_route_is_its_product_is_reachable_from_the_app_list(
     if variant == "mc3":
         # The answered layout's own profile settles what it owns: MC3 has no massage.
         assert saved[const.CONF_HAS_MASSAGE] is False
+
+
+# Saved compatibility IDs from older releases: detection and Configure keep
+# them for existing entries, and each runs as a route the lists do offer.
+_DETECTION_ONLY = {
+    const.BED_TYPE_DEWERTOKIN: "older entries; runs as the DewertOkin Okin receiver",
+    const.BED_TYPE_OKIMAT: "older entries; runs as the Okimat Okin receiver",
+    const.BED_TYPE_NECTAR: "older entries; runs as the Nectar Okin receiver",
+    const.BED_TYPE_MATTRESSFIRM: "older entries; runs as the Mattress Firm Okin receiver",
+    const.BED_TYPE_LEGGETT_PLATT: "older entries; runs as a Leggett & Platt route",
+}
+
+
+def test_every_bed_a_user_can_own_can_be_chosen_in_setup():
+    """Each bed type is a row of the app list, a family answer or an Okin receiver."""
+    from custom_components.adjustable_bed.config_flow import OKIN_RECEIVER_ROUTES
+
+    offered = {
+        resolve_bed_type_choice(choice)[0] for choice in _bed_type_selector(None).rows().values()
+    }
+    offered |= {answer.bed_type for family in APP_FAMILIES for answer in family.answers.values()}
+    offered |= set(OKIN_RECEIVER_ROUTES)
+    assert set(const.SUPPORTED_BED_TYPES) - offered == set(_DETECTION_ONLY)
+
+
+def test_personal_comfort_is_a_row_everywhere_a_comparable_app_is():
+    for rows in (
+        _bed_type_selector(None).rows().values(),
+        _bed_type_selector(const.BED_TYPE_LINAK, show_saved_id=True).rows().values(),
+        (choice for choice, _label in _family_rows()),
+    ):
+        assert "personal_comfort" in set(rows)
+
+
+async def test_personal_comfort_asks_its_unit_from_its_row(hass):
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    result = await start_new_bed(flow, "typed", "personal_comfort", ADDRESS)
+    assert result["step_id"] == "profile_questions"
+    assert const.CONF_PROTOCOL_VARIANT in {m.schema for m in form_fields(result["data_schema"])}
+    # Nothing is guessed.
+    assert suggested(result, const.CONF_PROTOCOL_VARIANT) is None
+
+
+async def test_the_brand_list_asks_which_okin_receiver_in_plain_words(hass):
+    from custom_components.adjustable_bed.config_flow import OKIN_RECEIVER_ROUTES
+
+    rows = dict(_family_rows())
+    assert not PROTOCOL_ROUTES & set(rows)
+    assert rows["okin_receivers"] == "Okin (other receivers)"
+    assert set(OKIN_RECEIVER_ROUTES) == PROTOCOL_ROUTES
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    result = await flow.async_step_select_family({const.CONF_BED_TYPE: "Okin (other receivers)"})
+    assert result["step_id"] == "okin_receiver"
+    selector = result["data_schema"].schema["choice"]
+    assert selector.config["options"] == list(OKIN_RECEIVER_ROUTES)
+    assert selector.config["translation_key"] == "okin_receiver_choice"
+    with patch.object(flow, "_async_after_app_choice", new=AsyncMock()) as after:
+        await flow.async_step_okin_receiver({"choice": const.BED_TYPE_OKIN_FFE})
+    after.assert_awaited_once()
+    assert flow._selected_bed_type == const.BED_TYPE_OKIN_FFE
+    # A protocol route submitted by its ID, as the brand list once offered it, still works.
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    with patch.object(flow, "_async_after_app_choice", new=AsyncMock()):
+        await flow.async_step_select_family({const.CONF_BED_TYPE: const.BED_TYPE_OKIN_ORE})
+    assert flow._selected_bed_type == const.BED_TYPE_OKIN_ORE

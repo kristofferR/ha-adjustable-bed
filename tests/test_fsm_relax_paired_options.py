@@ -74,7 +74,7 @@ async def test_public_options_invalid_names_has_renderable_explanatory_translati
     assert result["errors"] == {"base": "fsm_relax_invalid"}
     translations = await async_get_translations(hass, "en", "options", {const.DOMAIN})
     message = translations[f"component.{const.DOMAIN}.options.error.fsm_relax_invalid"]
-    assert "exactly eight memory names" in message
+    assert "each of the eight memories" in message
     assert entry.data[const.CONF_FSM_RELAX_MEMORY_NAMES] == ["Sleep"] + [""] * 7
     hass.config_entries.options.async_abort(result["flow_id"])
 
