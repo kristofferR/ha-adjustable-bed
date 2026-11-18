@@ -220,7 +220,7 @@ phone app's internals.
   as Home Assistant 2026.11 does, so the card no longer shows doubled names
   such as "Bed Left Back".
 
-### One Shape per Control
+### One shape per control
 
 The same control now looks the same on every bed:
 
