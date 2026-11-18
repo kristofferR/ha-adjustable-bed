@@ -9,7 +9,7 @@
 import { LitElement, type TemplateResult, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { SECTION_ORDER } from "./discovery";
-import { applyCompactPreset, COMPACT_PRESETS, compactActionChoices, compactTargets,
+import { applyCompactPreset, COMPACT_PRESETS, compactActionChoices, compactActions, compactTargets,
   FULL_CARD_EDITOR_DEFAULTS, fullCardDialogConfig } from "./compact";
 import { presentSections } from "./sections";
 import { defineElement } from "./registration";
@@ -112,10 +112,14 @@ export class AdjustableBedCardEditor
       saved.every((value) => typeof value !== "string" || value.includes("."))) return saved;
     const targets = compactTargets(this.hass, next.device_id as string | undefined);
     const target = targets.find((t) => t.key === ((next.default_target as string | undefined) ?? "both"));
-    const resolves = (value: string) =>
-      compactActionChoices(this.hass!, targets, target, [value]).selected.length === 1;
-    return saved.every((value) => typeof value === "string" && resolves(value))
-      ? compactActionChoices(this.hass, targets, target, saved as string[]).selected : saved;
+    if (!saved.every((value) => typeof value === "string")) return saved;
+    const ids = compactActionChoices(this.hass, targets, target, saved).selected;
+    if (ids.length !== new Set(saved).size) return saved;
+    // Keep the keys unless the ids recall exactly the same actions on every side.
+    const same = (t: { bed: BedEntities }) =>
+      compactActions(this.hass!, t.bed, saved).map((a) => a.entityId).join() ===
+      compactActions(this.hass!, t.bed, ids).map((a) => a.entityId).join();
+    return targets.every(same) ? ids : saved;
   }
 
   private _emit(next: Record<string, unknown>): void {
