@@ -26,10 +26,10 @@
 | Presets | Flat, Zero G, M1–M4 recall | Flat, Zero G, Sleep / anti-snore |
 | Memory programming | None | None |
 | Light | One-shot action | One-shot action |
-| Massage | Head, foot, timer, mode actions | None |
+| Massage | Head massage, foot massage, cycle massage timer, mode | None |
 | Device-resident alarms | Clear any of six slots, or all | Clear any of six slots, or all |
 | Manual snore intervention | Parameterized BLE action and status follow-up | Same |
-| Diagnostics | Status, bed mode, self-check | Same; UART device-version reply |
+| Diagnostics | Self-check; result sensor on A00A, firmware version on UART | Same |
 
 Alarm creation, editing, enable/disable of existing populated rows and scheduled
 recall need the app's unavailable account-fed alarm catalog and matching alarm
@@ -162,16 +162,19 @@ entity's editable display name. Alarm examples below are clears only.
 
 ### Responses
 
-Complete A00A indication JSON updates the raw bed-mode cache. The wire selector uses
+Complete A00A indication JSON updates the internal bed-mode cache. Its selector uses
 the app's literal substring check, including its match on `bedmd` value 20 and
 its whitespace sensitivity. Quest consumes that cache at a new touch; Orbes
 retains it for the current connection. The hold captures its selected command
 once, so an arriving notification cannot change an active gesture's cleanup.
 
-Quest's `data.apld` reports off or 10/20/30-minute timer indicators, and
-`data.mgmd` reports the mode indicator. These are reported state, not success
-acknowledgements for commands. The Android light callbacks are empty, so `blsw`
-is exposed only as a raw diagnostic report. No angle or position is inferred.
+Quest's `data.apld` reports off or 10/20/30-minute timer indicators (the
+**Massage timer** sensor), and `data.mgmd` reports the mode indicator (**Active
+massage mode**). These are reported state, not success acknowledgements for
+commands. The Android light callbacks are empty, so `blsw` has no proven
+meaning and stays in the support bundle's raw notification capture. The bed
+mode cache only selects command parameters and is not an entity. No angle or
+position is inferred.
 HA keeps valid updates fresh within the session instead of copying Android's
 15-field UI freeze.
 
@@ -181,8 +184,9 @@ the next two uppercase hexadecimal nibbles are dotted components. A nondecimal
 first pair is an invalid-version result, not a fabricated firmware version or
 an uncaught exception. Byte 4 equal to 1 reports connection failure. Other
 lengths, prefixes and selectors are ignored. There is no checksum or ACK match.
-The version and reply result are diagnostic sensors, separate from HA's actual
-BLE connectivity and setup admission. No HTTP registration is performed.
+The version is the disabled-by-default **Firmware version** diagnostic sensor,
+with the reply result as its `linx_setup_reply` attribute. Both are separate
+from HA's actual BLE connectivity and setup admission. No HTTP registration is performed.
 
 Self-check consumes `chkStatu`, `headPlus` and `footPlus`. Its completion and
 fault fields preserve the app's leading binary-string interpretation; the
@@ -265,7 +269,7 @@ belong to the physical receiver, including in a two-address pair.
 
 - `adjustable_bed.hold_control`: the six head/feet/both directions.
 - `adjustable_bed.linx_clear_alarm`: clear one slot, or all six when omitted.
-  The sensor records the submitted clear, not an acknowledged alarm inventory.
+  The bed acknowledges no alarm inventory, so no clear state is shown.
 - `adjustable_bed.linx_snore_intervention`: stored hold minutes, lift time and
   up-speed parameters, defaulting to the app's values. This is a manual BLE
   effect, not phone recording or snore detection. Its single later status query
@@ -274,7 +278,11 @@ belong to the physical receiver, including in a two-address pair.
   cancelled on disconnect/unload. The follow-up uses the app's signed integer
   milliseconds calculation, with elapsed time measured from dispatch; slow writes
   do not restart that delay. No cloud-result polling is simulated.
-- The utility buttons refresh status and run the bed's self-check.
+- **Run self-check** starts the bed's self-check; on A00A, **Self-check result**
+  shows its outcome with the fault and ripple fields as attributes. UART carries
+  no self-check reply, so that route has no result sensor. Status is queried
+  on every connection and then arrives by notification, so there is no refresh
+  button.
 
 #### Evidence
 
@@ -309,8 +317,8 @@ retention policy in the generated profile table.
 
 #### Notifications
 
-UART exposes version/result diagnostics; A00A exposes raw bed-mode/light reports.
-Quest-only massage indicators are hidden.
+UART exposes the firmware version diagnostic. Quest-only massage indicators
+are hidden.
 
 #### Services
 

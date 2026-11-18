@@ -4819,22 +4819,10 @@
     "card_section": "massage",
     "card_role": "timer"
   },
-  "button:linx_query_status": {
-    "card_section": "utility"
-  },
   "button:linx_self_check": {
     "card_section": "utility"
   },
-  "sensor:linx_alarm_clear_submitted": {
-    "card_section": "hidden"
-  },
-  "sensor:linx_bed_mode": {
-    "card_section": "hidden"
-  },
   "sensor:linx_device_version": {
-    "card_section": "hidden"
-  },
-  "sensor:linx_light_report": {
     "card_section": "hidden"
   },
   "sensor:linx_massage_minutes": {
@@ -4845,9 +4833,6 @@
     "card_section": "massage"
   },
   "sensor:linx_self_check": {
-    "card_section": "hidden"
-  },
-  "sensor:linx_setup_reply": {
     "card_section": "hidden"
   }
 }

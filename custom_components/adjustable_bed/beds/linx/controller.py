@@ -13,11 +13,11 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ...app_session import app_session
-from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER
 from ...codec import linx as codec
 from ...command_scheduler import current_command_context
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE
-from ...controller_state import AnyStateKey, StateKey
+from ...controller_state import StateKey
 from ...profiles import linx as app
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
@@ -35,13 +35,10 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 TIMER: Final = StateKey[int | None]("linx_massage_minutes")
 MODE: Final = StateKey[int | None]("linx_massage_mode")
-BED_MODE: Final = StateKey[int | None]("linx_bed_mode")
-LIGHT_REPORT: Final = StateKey[int | None]("linx_light_report")
 VERSION: Final = StateKey[str | None]("linx_device_version")
 SETUP_RESULT: Final = StateKey[str | None]("linx_setup_reply")
 CHECK: Final = StateKey[str | None]("linx_self_check")
 CHECK_DETAIL: Final = StateKey[dict[str, object] | None]("linx_self_check_detail")
-ALARM_CLEAR: Final = StateKey[str | None]("linx_alarm_clear_submitted")
 
 
 @dataclass(slots=True)
@@ -56,6 +53,13 @@ class _Link:
     notify: BleakGATTCharacteristic
     device: str
     owner: object
+
+
+_MASSAGE_BUTTON_NAMES: Final = {
+    "head": "Head massage",
+    "foot": "Foot massage",
+    "timer": "Cycle massage timer",
+}
 
 
 class _HoldExpired(Exception):
@@ -272,7 +276,7 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
         if not session.is_current():
             raise ConnectionError("Linx startup session ended")
         await session.async_start_notify()
-        await self.query_status(startup=True)
+        await self.query_status()
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         link = self._live()
@@ -306,13 +310,10 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
             self.forward_controller_state_updates(
                 TIMER(None),
                 MODE(None),
-                BED_MODE(None),
-                LIGHT_REPORT(None),
                 VERSION(None),
                 SETUP_RESULT(None),
                 CHECK(None),
                 CHECK_DETAIL(None),
-                ALARM_CLEAR(None),
             )
 
     def _cancel_jobs(self) -> None:
@@ -341,20 +342,17 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
             # turn its short-packet crash or unused offsets into measured state.
             return
         self._bed_mode = codec.bed_mode(raw, self._bed_mode)
-        self.forward_controller_state_updates(BED_MODE(self._bed_mode))
         payload = codec.status(raw)
         reported = payload.get("data")
         if isinstance(reported, dict):
-            timer, mode, light = (reported.get(key) for key in ("apld", "mgmd", "blsw"))
+            timer, mode = (reported.get(key) for key in ("apld", "mgmd"))
+            # ``blsw`` has no proven meaning (both Android callbacks are empty),
+            # so it stays in the raw notification capture only.
             if self.profile.massage:
                 if type(timer) is int and 0 <= timer <= 3:
                     self.forward_controller_state_updates(TIMER(timer * 10))
                 if type(mode) is int and 0 <= mode <= 3:
                     self.forward_controller_state_updates(MODE(mode))
-            if type(light) is int and light in (0, 1):
-                # Both live Android light callbacks are empty. Keep the raw
-                # report diagnostic rather than claiming desired-state control.
-                self.forward_controller_state_updates(LIGHT_REPORT(light))
         result = codec.diagnostic(payload)
         if result is not None and self._check_task is not None and result.complete:
             self._check_task.cancel()
@@ -377,10 +375,10 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
                 ),
             )
 
-    async def query_status(self, *, startup: bool = False) -> None:
+    async def query_status(self) -> None:
         link = self._live()
         event = self._coordinator.cancel_command
-        if startup and self.transport == "uart":
+        if self.transport == "uart":
             await self._send(link, codec.startup_query(link.device), event)
         else:
             await self._send(link, codec.request(link.device, 4, {"sw": 1}), event)
@@ -572,7 +570,6 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
             if self._coordinator.cancel_command.is_set():
                 return
             await self._send(link, frame, self._coordinator.cancel_command)
-        self.forward_controller_state_updates(ALARM_CLEAR("all" if slot is None else str(slot)))
 
     def validate_snore_intervention(self) -> None:
         link = self._live()
@@ -662,17 +659,12 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # Status is queried on every connect and arrives by notification, so
+        # there is no refresh button.
         buttons = [
             ControllerButtonSpec(
-                "linx_query_status",
-                "Refresh status",
-                lambda c: cast(LinxController, c).query_status(),
-                translation_key="linx_query_status",
-                card=CARD_UTILITY,
-            ),
-            ControllerButtonSpec(
                 "linx_self_check",
-                "Run bed self-check",
+                "Run self-check",
                 lambda c: cast(LinxController, c).self_check(),
                 translation_key="linx_self_check",
                 scheduler_resource="*",
@@ -683,7 +675,7 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
             buttons.extend(
                 ControllerButtonSpec(
                     f"linx_massage_{key}",
-                    f"Massage {key}",
+                    _MASSAGE_BUTTON_NAMES[key],
                     lambda c, key=key: cast(LinxController, c).massage_action(key),
                     translation_key=f"linx_massage_{key}",
                     card=CARD_MASSAGE_TIMER if key == "timer" else CARD_MASSAGE,
@@ -695,24 +687,30 @@ class LinxController(ProfileExecution[app.LinxProfile], BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        reported: list[tuple[AnyStateKey, str]] = [
-            (CHECK, "mdi:stethoscope"),
-            (ALARM_CLEAR, "mdi:alarm-off"),
-        ]
-        if self.transport == "uart":
-            reported.extend(((VERSION, "mdi:information-outline"), (SETUP_RESULT, "mdi:bluetooth")))
-        else:
-            reported.extend(((BED_MODE, "mdi:bed"), (LIGHT_REPORT, "mdi:lightbulb-outline")))
-        specs = [
-            ControllerStateSensorSpec(
-                key=str(key),
-                translation_key=str(key),
-                state_key=key,
-                icon=icon,
-                attribute_keys=(CHECK_DETAIL,) if key == CHECK else (),
+        specs: list[ControllerStateSensorSpec] = []
+        if self.transport == "a00a":
+            # Only A00A notifications carry the self-check reply.
+            specs.append(
+                ControllerStateSensorSpec(
+                    key=str(CHECK),
+                    translation_key=str(CHECK),
+                    state_key=CHECK,
+                    icon="mdi:stethoscope",
+                    attribute_keys=(CHECK_DETAIL,),
+                )
             )
-            for key, icon in reported
-        ]
+        else:
+            # Only the UART startup reply carries a version; its result rides along.
+            specs.append(
+                ControllerStateSensorSpec(
+                    key=str(VERSION),
+                    translation_key=str(VERSION),
+                    state_key=VERSION,
+                    icon="mdi:information-outline",
+                    attribute_keys=(SETUP_RESULT,),
+                    entity_registry_enabled_default=False,
+                )
+            )
         if self.profile.massage and self.transport == "a00a":
             specs.extend(
                 (

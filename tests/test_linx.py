@@ -375,7 +375,6 @@ async def test_registered_alarm_clears_are_isolated_from_unrelated_callbacks(has
         DOMAIN, "linx_clear_alarm", {"device_id": [device.id]}, blocking=True
     )
     assert frames(client) == [codec.alarm_slot(NAME, slot) for slot in range(1, 7)]
-    assert coord.controller_state[ctrl.ALARM_CLEAR] == "all"
     client.write_gatt_char.reset_mock()
     client.write_gatt_char.side_effect = BleakError("failed slot")
     with pytest.raises(BleakError):
@@ -606,7 +605,6 @@ async def test_uart_does_not_infer_json_reply_support_from_unchanged_outbound_js
     )
     assert bed._bed_mode is None
     assert coord.controller_state.get(ctrl.TIMER) is None
-    assert coord.controller_state.get(ctrl.LIGHT_REPORT) is None
 
 
 async def test_factory_prefers_live_raw_bluetooth_name_over_saved_title(hass):
@@ -675,8 +673,9 @@ async def test_state_entities_follow_the_actual_incoming_route(hass, model, rout
     _, bed, _, _ = await target(hass, model, route)
     keys = {spec.state_key for spec in bed.controller_state_sensor_specs}
     uart = app.ROUTES[route].event_transport == "uart"
-    assert (ctrl.VERSION in keys) == (ctrl.SETUP_RESULT in keys) == uart
-    assert (ctrl.BED_MODE in keys) == (ctrl.LIGHT_REPORT in keys) == (not uart)
+    assert (ctrl.VERSION in keys) == uart
+    assert ctrl.SETUP_RESULT not in keys
+    assert (ctrl.CHECK in keys) == (not uart)
     assert (ctrl.TIMER in keys) == (ctrl.MODE in keys) == (model == "quest" and not uart)
 
 
