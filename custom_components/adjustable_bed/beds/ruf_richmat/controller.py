@@ -814,9 +814,10 @@ class RufRichmatController(RichmatMhController):
         calendar, mattress = self._calendar_page(), self._normal_ready
         if not calendar and not mattress:
             return inherited
-        if calendar:
+        model = self.model
+        if calendar and model is not None:
             # The calendar page replaces the single bed alarm on these models.
-            codes = set(_ints(_feature(self._app, self.model.model_id, "alarmList")))
+            codes = set(_ints(_feature(self._app, model.model_id, "alarmList")))
             wake_actions = tuple(
                 action
                 for action, option in _ALARM_POSITIONS.items()

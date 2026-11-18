@@ -2262,14 +2262,10 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         async def write_zseries(controller: BedController) -> None:
             await controller.configure_alarm(_check_alarm("", controller, alarm, given))
 
-        await _execute_zseries_alarm(
-            call,
-            "alarms",
-            write_zseries,
-            validate=lambda controller: _check_alarm(
-                controller._coordinator.name, controller, alarm, given
-            ),
-        )
+        def check_zseries(controller: BedController) -> None:
+            _check_alarm(controller._coordinator.name, controller, alarm, given)
+
+        await _execute_zseries_alarm(call, "alarms", write_zseries, validate=check_zseries)
         return
 
     # How each physical target schedules its write, from its own capability.
