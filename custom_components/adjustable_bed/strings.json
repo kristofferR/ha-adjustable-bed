@@ -364,7 +364,6 @@
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
           "mline_child_mode": "Local child mode",
-          "agingplace_bed_mode": "Sensor display mode",
           "agingplace_bed_side": "Telemetry side",
           "agingplace_selected_side": "Selected telemetry side"
         },
@@ -420,7 +419,6 @@
           "starcode_lift_entries": "Choose other configured lift entries: up to three AdjustableM5X5 or DewertOkin ELEVATE entries for an AdjustableM5X5 main, or up to two ELEVATE entries set to Adjustable Comfort M1X12 ELEVATE for an M1X12 main. Each keeps its own Bluetooth address and controls.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
-          "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them.",
           "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown with two sensors. It does not choose which side the controls move.",
           "agingplace_selected_side": "The telemetry side used when Selectable side is chosen. This setting belongs to this physical bed."
         },
@@ -447,7 +445,8 @@
               "serta_mp_memory_3_head": "Memory 3 head angle",
               "serta_mp_memory_3_foot": "Memory 3 foot angle",
               "serta_mp_memory_4_head": "Memory 4 head angle",
-              "serta_mp_memory_4_foot": "Memory 4 foot angle"
+              "serta_mp_memory_4_foot": "Memory 4 foot angle",
+              "agingplace_bed_mode": "Sensor display mode"
             },
             "data_description": {
               "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
@@ -469,7 +468,8 @@
               "serta_mp_memory_3_head": "Only if you changed memory 3 in the app: its head angle, in degrees.",
               "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
               "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
-              "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees."
+              "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
+              "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them."
             }
           }
         }

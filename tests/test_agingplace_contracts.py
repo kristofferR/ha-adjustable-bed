@@ -67,9 +67,10 @@ def test_questions_own_every_side_setting_and_have_explanations():
     assert {question.key for question in profile.questions} == app.CONFIG_KEYS | {"ble_device_name"}
     for path in TRANSLATION_FILES:
         strings = json.loads(path.read_text())
-        labels = strings["config"]["step"]["profile_questions"]
+        step = strings["config"]["step"]["profile_questions"]
         configured = strings["options"]["step"]["settings"]["data"]
         for question in profile.questions:
+            labels = step["sections"]["advanced"] if question.advanced else step
             assert question.key in labels["data"]
             assert question.key in labels["data_description"]
             assert question.key in configured
