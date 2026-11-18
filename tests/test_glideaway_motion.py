@@ -624,7 +624,8 @@ async def test_public_hold_and_sync_clock_dispatch(hass, alarm_target):
         {"device_id": [device_id], "control": "back_up", "duration": 0.6},
         blocking=True,
     )
-    controller = MagicMock()
+    # The checked controller, so the hold is not checked again.
+    controller = coordinator.capability_controller
     controller.hold_control = AsyncMock()
     await coordinator.async_execute_controller_command.await_args.args[0](controller)
     controller.hold_control.assert_awaited_once_with("back_up", 600)
