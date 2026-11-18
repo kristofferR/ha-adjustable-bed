@@ -17,6 +17,8 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Final
 
+from ...choice_labels import clean_choice_label
+
 APK_SHA256: Final = "b1bc3e67399e560b204882c7076bc8f82a6abecbfb6b33f234edf7bd1453dc76"
 REPORT_INDEX_SHA256: Final = "73f8e70c91a22e6a410a8720178bcf7effd25128d32f051fa51233bef37ca457"
 PROFILE_CAPTURE_DATE: Final = "2026-09-30"
@@ -998,6 +1000,6 @@ def get_furnimove_profile(handset_id: str) -> FurniMoveProfile:
 def furnimove_handset_choices(current: object = None) -> dict[str, str]:
     """Offer every captured handset for the explicitly selected FurniMove app."""
     return {
-        key: f"{key}: {profile.description or 'Shipped offline table'}"
+        key: f"{key}: {clean_choice_label(profile.description) or 'Shipped offline table'}"
         for key, profile in FURNIMOVE_PROFILES.items()
     }
