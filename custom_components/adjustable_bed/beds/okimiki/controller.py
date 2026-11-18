@@ -368,7 +368,9 @@ class OkimikiController(GoodVibeController):
     def _publish(self) -> None:
         seconds = self._requests.get("seconds") if self.supports_lights else None
         repeat = self.model.alarm == "repeat"
-        alarms = sorted(getattr(self, "_alarms", []), key=lambda row: row.id) if repeat else []
+        # The last record per slot, as the edit action reads it.
+        latest = {row.id: row for row in getattr(self, "_alarms", [])} if repeat else {}
+        alarms = [latest[slot] for slot in sorted(latest)]
         self.forward_controller_state_updates(
             DURATION(seconds if type(seconds) is int else None),
             ALARM_COUNT(len(alarms) if repeat and getattr(self, "_link", None) is not None else None),

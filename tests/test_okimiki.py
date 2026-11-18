@@ -535,3 +535,9 @@ def test_kwrn_alarm_records_are_decoded_for_the_alarms_sensor(obj):
     ]
     (sensor,) = obj.controller_state_sensor_specs
     assert sensor.translation_key == "okimiki_alarms"
+
+
+def test_alarms_sensor_shows_the_last_record_per_slot(obj):
+    obj._alarms = [p.Alarm(1, 0, 6, 0, 0x59, 1), p.Alarm(1, 0, 7, 0, 0x59, 1)]
+    obj._publish()
+    assert [row["time"] for row in obj._coordinator.controller_state[bed.ALARM_RECORDS]] == ["07:00"]
