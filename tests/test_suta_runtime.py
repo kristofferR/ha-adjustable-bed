@@ -340,3 +340,16 @@ async def test_automatic_adjustment_shows_the_sent_value_until_the_next_report(h
     assert left.is_on is False
     callback(sender, full_state)
     assert left.is_on is True
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-RBHC", "SUTA-B905"], indirect=True)
+async def test_only_rbhc_gets_angle_sensors(hass, runtime):
+    from custom_components.adjustable_bed.sensor import (
+        AdjustableBedAngleSensor,
+        _sensor_entities_for,
+    )
+
+    target, _client, _ = runtime
+    target._disable_angle_sensing = False
+    keys = {e.entity_description.key for e in _sensor_entities_for(hass, target) if isinstance(e, AdjustableBedAngleSensor)}
+    assert keys == ({"back_angle", "legs_angle"} if target.capability_controller.name.startswith("SUTA-RBHC") else set())

@@ -244,6 +244,11 @@ class SutaController(BedController):
         return self.profile.key == "MattressControllerMotorFragment"
 
     @property
+    def reports_angles(self) -> bool:
+        # RBHC notifications carry BACK and FOOT degrees; no other layout reports angles.
+        return self.supports_position_feedback
+
+    @property
     def position_number_specs(self) -> tuple[()]:
         # Raw RBHC feedback proves no target-angle command or seek calibration.
         return ()
