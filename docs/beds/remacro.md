@@ -174,7 +174,7 @@ Remacro bed did up to v4.0.2, with the **fallback** controls described below:
 
 The fallback keeps only the v4.0.2 controls whose codes every listed screen
 agrees on: Head, Feet and Lumbar (each released with its own STOP), Flat
-(`0x0111`), TV (`0x0302`), Zero-G (`0x0303`), the light switch and Stop
+(`0x0111`), TV (`0x0302`), Zero-G (`0x0303`), the light and Stop
 (`0x0001`). Some may do nothing on a bed without that motor or light. v4.0.2's
 tilt cover, color light and massage buttons sent codes no app uses, and its
 Flat, TV and Zero-G sent the wrong presets, so those are not kept.
