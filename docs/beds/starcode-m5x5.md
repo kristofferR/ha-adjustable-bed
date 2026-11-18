@@ -1,6 +1,6 @@
 # AdjustableM5X5 app
 
-**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -106,7 +106,7 @@ the original name unchanged:
 
 For example, `Star254202…` selects CB25. The app uses Android's cached
 platform name, which is separate from the advertised name HA receives. Its
-audited factory is case-sensitive; HA accepts advertised-name case variations
+factory is case-sensitive; HA accepts advertised-name case variations
 to support [beds reported working in the app](https://github.com/kristofferR/ha-adjustable-bed/issues/914#issuecomment-6862684356).
 
 - These names and the shared transport cannot distinguish the app from other
@@ -348,10 +348,9 @@ runs.
 
 ### Evidence and deferred validation
 
-The full 225-item row005 disposition ledger binds implementation and exclusions to code and executed tests. All 111 owned
+All 111 owned
 command rows, 138 inherited command routes, accepted packet/parser vectors and
-exhaustive enum branches have focused tests. Raw APKs, decompilation and frozen
-reports stay machine-local.
+exhaustive enum branches have focused tests.
 
 Real users after beta/release can validate five physical domains:
 

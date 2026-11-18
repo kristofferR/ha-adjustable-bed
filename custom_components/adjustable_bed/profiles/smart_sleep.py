@@ -1,4 +1,4 @@
-"""OKIN Smart Sleep 2.4.9 (263), accepted row094. No inferred model anatomy.
+"""OKIN Smart Sleep 2.4.9 (263). No inferred model anatomy.
 
 Catalogs transcribed from the accepted report, without a generator. Models 3
 and 67 deliberately retain distinct identity; P2 scan selection forces 80.

@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
@@ -22,9 +22,8 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
-    ControllerSelectSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
@@ -75,6 +74,19 @@ _REFRESH_S = (DOUBLESLEEP.hold.repeat_ms or 0) / 1000
 
 
 CHILD_LOCK: Final = StateKey[str | None]("doublesleep_child_lock")
+# Refreshes, clock and sensor upkeep: diagnostic buttons, disabled by default.
+_MAINTENANCE_ACTIONS: Final = frozenset({47, 50, 51, 52, 53, 54, 55, 66, 69, 71, 73, 77})
+# Sensor fields a user reads on a dashboard; the rest are diagnostic.
+_DASHBOARD_FIELDS: Final = frozenset(
+    {
+        "left_heart_rate",
+        "left_breath_rate",
+        "right_heart_rate",
+        "right_breath_rate",
+        "alarm",
+        "light",
+    }
+)
 
 
 def _field_key(field: str) -> StateKey[object]:
@@ -978,13 +990,13 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        items = {47: "Synchronize clock", 53: "Refresh state"}
+        items = {47: "Sync clock", 53: "Refresh state"}
         if self.protocol != "p3":
             items.update(
                 {
-                    27: "App all stop",
-                    28: "Massage on / toggle",
-                    29: "Massage off / toggle",
+                    27: "Stop all",
+                    28: "Massage on",
+                    29: "Massage off",
                     31: "Massage time up",
                     32: "Massage time down",
                     35: "Head massage up",
@@ -997,8 +1009,6 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     50: "Refresh massage",
                     52: "Refresh alarm",
                     58: "Toggle light",
-                    59: "Privacy on",
-                    60: "Privacy off",
                     63: "Disable anti-snore",
                 }
             )
@@ -1009,7 +1019,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 {
                     51: "Refresh sonic massage",
                     54: "Refresh light",
-                    73: "Read sensor version",
+                    73: "Refresh sensor version",
                     79: "Sonic head up",
                     80: "Sonic head down",
                     81: "Sonic foot up",
@@ -1027,11 +1037,9 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
         if self.protocol == "p3":
             items.update(
                 {
-                    55: "Query clock",
-                    59: "Privacy on",
-                    60: "Privacy off",
-                    69: "Read sensitivities",
-                    71: "Read sensor sides",
+                    55: "Refresh clock",
+                    69: "Refresh sensitivities",
+                    71: "Refresh sensor sides",
                     73: "Initialize sensor",
                     77: "Refresh realtime data",
                 }
@@ -1069,6 +1077,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 action(i),
                 translation_key=f"doublesleep_{kind}action",
                 translation_placeholders={"action": name},
+                diagnostic=i in _MAINTENANCE_ACTIONS,
                 card=card,
             )
             for i, name in items.items()
@@ -1090,39 +1099,51 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
         return not (index in (28, 29, 31, 32, 35, 36, 37, 38, 40, 41) and self.ui.sonic_ui)
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        async def choose(controller: BedController, option: str) -> None:
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        async def choose(controller: BedController, on: bool) -> None:
             current = selected(controller)
-            current.session.child_lock = option == "on"
+            current.session.child_lock = on
             current._publish()
 
-        def local(option: str) -> None:
+        def local(on: bool) -> None:
             current = self._coordinator.capability_controller
             if current is None or selected(current).session is not self.session:
                 raise ValueError("The SleepEase app profile changed")
-            self.session.child_lock = option == "on"
-            self.forward_controller_state_updates(CHILD_LOCK(option))
+            self.session.child_lock = on
+            self.forward_controller_state_updates(CHILD_LOCK("on" if on else "off"))
+
+        async def privacy(controller: BedController, on: bool) -> None:
+            await selected(controller).press(59 if on else 60)
 
         return (
-            ControllerSelectSpec(
+            ControllerSwitchSpec(
                 "doublesleep_child_lock",
                 "doublesleep_child_lock",
-                CHILD_LOCK,
-                ("off", "on"),
                 choose,
-                local_select_fn=local,
+                CHILD_LOCK,
+                "on",
+                "mdi:lock",
+                local_set_fn=local,
+            ),
+            ControllerSwitchSpec(
+                "doublesleep_privacy",
+                "doublesleep_privacy",
+                privacy,
+                # Published with the other parsed fields as "on" or "off".
+                cast(StateKey[str | None], _field_key("privacy")),
+                "on",
+                "mdi:shield-lock-outline",
             ),
         )
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        # Privacy is a switch; parser errors stay in the diagnostics download.
         rows: list[tuple[str, str | None]] = [
             ("model", None),
             ("sensor_version", None),
             ("firmware_version", None),
-            ("privacy", None),
             ("use_side", None),
-            ("parser_error", None),
             ("left_sensitivity", None),
             ("right_sensitivity", None),
         ]
@@ -1138,6 +1159,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 _field_key(key),
                 "mdi:bed",
                 unit,
+                entity_registry_enabled_default=key in _DASHBOARD_FIELDS,
                 card=CARD_UTILITY,
             )
             for key, unit in rows
@@ -1152,6 +1174,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     attribute_keys=tuple(
                         _field_key(f"{side}_{field}") for field in ("report", "history", "raw")
                     ),
+                    entity_registry_enabled_default=False,
                     card=CARD_UTILITY,
                 )
             )
@@ -1162,6 +1185,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 _field_key("model"),
                 "mdi:chart-line",
                 attribute_keys=(_field_key("legacy_report"),),
+                entity_registry_enabled_default=False,
                 card=CARD_UTILITY,
             )
         )
@@ -1173,6 +1197,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     _field_key("model"),
                     "mdi:cog",
                     attribute_keys=(_field_key("configuration"),),
+                    entity_registry_enabled_default=False,
                     card=CARD_UTILITY,
                 ),
                 ControllerStateSensorSpec(
@@ -1181,6 +1206,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     _field_key("alarm_enabled"),
                     "mdi:alarm",
                     attribute_keys=(_field_key("alarm"),),
+                    entity_registry_enabled_default=True,
                     card=CARD_UTILITY,
                 ),
                 ControllerStateSensorSpec(
@@ -1189,6 +1215,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     _field_key("light_on"),
                     "mdi:lightbulb",
                     attribute_keys=(_field_key("light_raw"),),
+                    entity_registry_enabled_default=True,
                     card=CARD_LIGHTING,
                 ),
             )
@@ -1206,24 +1233,15 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 name = f"doublesleep_{domain}_{key}"
                 specs.append(
                     ControllerStateSensorSpec(
-                        name, name, _field_key(f"{domain}_{key}"), "mdi:vibrate", card=CARD_MASSAGE
+                        name,
+                        name,
+                        _field_key(f"{domain}_{key}"),
+                        "mdi:vibrate",
+                        entity_registry_enabled_default=True,
+                        card=CARD_MASSAGE,
                     )
                 )
         return tuple(specs)
-
-    @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return tuple(
-            ControllerStateBinarySensorSpec(
-                f"doublesleep_{side}_{flag}",
-                f"doublesleep_{side}_{flag}",
-                _field_key(f"{side}_{flag}"),
-                "mdi:bed",
-                card=CARD_UTILITY,
-            )
-            for side in ("left", "right")
-            for flag in ("flag1", "flag2")
-        )
 
 
 async def build_controller(ctx: BuildContext) -> DoubleSleepController:

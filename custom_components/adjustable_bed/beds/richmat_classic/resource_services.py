@@ -1,4 +1,4 @@
-"""Public direct BED actions for the four cluster-017 resource apps."""
+"""Public direct BED actions for the four Richmat resource apps."""
 
 from typing import cast
 

@@ -21,7 +21,7 @@ from ...const import CONF_MOTOR_PULSE_COUNT, CONF_RICHMAT_CLASSIC_THIRD_SERVICE
 from ...controller_state import StateKey
 from ...profiles.richmat_resource_apps import APPS, worker_interval
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
-from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec, ProductButtonSpec
+from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec
 from . import resource_protocol as p
 from .caller import Selection, selected_operand
 from .controller import APP, LAYOUT, PREFERENCES, REJECTION, STATE, STATUS, RichmatClassicController
@@ -299,50 +299,16 @@ class ResourceBedController(RichmatClassicController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        # Distinct BED callback requests, disabled by default: these do not
-        # declare physical memory slots or add XML/alarm capabilities.
-        generic = tuple(
-            ProductButtonSpec(
-                "richmat_resource_" + command,
-                "App " + command.replace("_", " "),
-                partial(_bed_command, command=command),
-                translation_key="richmat_classic_action",
-                translation_placeholders={"action": "App " + command.replace("_", " ")},
-            )
-            for command in p.BED_COMMANDS
-        )
-        labels = {
-            "com": "",
-            "msg": "massage",
-            "ubl": "underbed light",
-            "m1": "memory 1",
-            "m2": "memory 2",
-            "m3": "memory 3",
-            "return": "recall",
-            "set": "save",
-            "zg": "zero gravity",
-            "inc": "increase",
-            "dec": "decrease",
-        }
         buttons = []
         for spec in super().controller_button_specs:
             if spec.hold is not None:
                 node = int(spec.hold.control.removeprefix("richmat_classic_"))
                 if not self._keeps(self._button(node), self._selection):
                     spec = replace(spec, hold=None)
-            name = (
-                " ".join(labels.get(word, word) for word in spec.name.split()).strip().capitalize()
-            )
-            buttons.append(
-                replace(spec, name=name, translation_placeholders={"action": name})
-                if spec.translation_key == "richmat_classic_action"
-                else spec
-            )
-        return (*buttons, *generic)
+            buttons.append(spec)
+        return tuple(buttons)
 
     def controller_button_available(self, key: str) -> bool:
-        if key.startswith("richmat_resource_"):
-            return key.removeprefix("richmat_resource_") in p.BED_COMMANDS
         if not super().controller_button_available(key):
             return False
         if key == "richmat_classic_release":

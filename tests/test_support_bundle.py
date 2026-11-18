@@ -2106,7 +2106,7 @@ class TestSupportBundleLoggingWarning:
 
         assert len(created) == 1
         title, message = created[0]
-        assert title == "Adjustable Bed Support Bundle Ready"
+        assert title == "Adjustable bed: support bundle ready"
         assert "This bundle contains no logs" in message
         assert "Enable debug logging" in message
         # `logger:` only sets levels; it cannot create a missing log file.
@@ -2262,7 +2262,7 @@ class TestSupportBundlePreCaptureLogWarning:
         )
 
         titles = [title for title, _ in events]
-        assert titles.index("Adjustable Bed: this bundle will have no logs") < titles.index(
+        assert titles.index("Adjustable bed: this bundle will have no logs") < titles.index(
             "__capture_ran__"
         )
         pre_capture = next(msg for title, msg in events if "no logs" in title)
@@ -3018,7 +3018,7 @@ async def test_bundle_shows_the_schema_5_migration_record(
 
     assert report["profile"] == {
         "schema_version": 5,
-        "schema_minor_version": 5,
+        "schema_minor_version": 6,
         "profile_id": "keeson:sino",
         "migration": {
             "from_version": 4,
@@ -3026,6 +3026,8 @@ async def test_bundle_shows_the_schema_5_migration_record(
             "resolver_version": PROFILE_RESOLVER_VERSION,
             "profile_id": "keeson:sino",
             "fields": {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "sino"},
+            # Schema 5.6 dropped an angle-sensing value equal to the route's default.
+            "settings_5_6": {"data": ["disable_angle_sensing"]},
         },
     }
 

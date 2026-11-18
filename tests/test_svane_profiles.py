@@ -8,14 +8,16 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
+from custom_components.adjustable_bed.bed_traits import (
+    bed_type_has_position_feedback,
+    reads_positions,
+)
 from custom_components.adjustable_bed.beds.jensen.linon import JensenLinonController
 from custom_components.adjustable_bed.beds.svane.controller import HEAD, POSITION, SvaneController
 from custom_components.adjustable_bed.beds.svane.state import get_svane_session
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
@@ -136,7 +138,7 @@ async def test_preverification_normalizes_legacy_options_before_probe(hass):
     await flow._finish_with_verify(entry, "Bed")
     assert flow._pending_entry[CONF_MOTOR_COUNT] == 2
     assert flow._pending_entry[CONF_HAS_MASSAGE] is False
-    assert flow._pending_entry[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(flow._pending_entry)
 
 
 async def test_explicit_jmc_change_persists_with_its_own_session(hass, enable_custom_integrations):
@@ -159,21 +161,6 @@ async def test_explicit_jmc_change_persists_with_its_own_session(hass, enable_cu
     await change_profile(hass, entry, SVANE_VARIANT_JMC)
     assert entry.data[CONF_PROTOCOL_VARIANT] == SVANE_VARIANT_JMC
     assert not get_svane_session(hass, entry.data[CONF_ADDRESS], "jmc").light_on
-
-
-async def test_configure_sends_a_profile_change_to_reconfigure(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_SVANE},
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    result = await flow._async_options_form(
-        {CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC}, step_id="settings"
-    )
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert CONF_PROTOCOL_VARIANT not in entry.data
 
 
 @pytest.mark.parametrize(
@@ -215,9 +202,7 @@ async def test_native_entities_expose_literals_raw_records_and_unknown_assumed_l
     assert {c.unique_id for c in covers} == {"bed_back_left", "bed_legs_left"}
     numbers = _number_entities_for(hass, runtime)
     # The established 0-100 light slider stays; levels snap to the app's steps.
-    intensity = next(
-        n for n in numbers if n.entity_description.key == "light_level"
-    )
+    intensity = next(n for n in numbers if n.entity_description.key == "light_level")
     assert (intensity.native_min_value, intensity.native_max_value) == (0, 100)
     assert not any("position" in n.unique_id for n in numbers)
     assert _light_entities_for(hass, runtime) == []
@@ -249,20 +234,20 @@ async def test_real_parser_coordinator_and_diagnostic_freshness_no_angle_inferen
     coordinator._client = controller.client
     controller._coordinator = coordinator
     sensors = {
-        s._spec.key: s
+        s._spec.key
         for s in _sensor_entities_for(hass, coordinator)
         if hasattr(s, "_spec") and s._spec.key.startswith("svane_")
     }
-    assert sensors["svane_head_raw"].native_value is None
+    # Opaque observations are published state for diagnostics, not entities.
+    assert sensors == {"svane_firmware", "svane_hardware", "svane_manufacturer"}
+    state = coordinator.controller_state
+    assert state.get("svane_head_raw") is None
     assert controller.accept_response(HEAD, POSITION, b"\x81\x38\xff")
-    assert sensors["svane_head_raw"].native_value == "8138ff"
-    assert sensors["svane_head_raw"].extra_state_attributes["svane_head_raw_observed_at"]
-    assert sensors["svane_head_raw"].extra_state_attributes["svane_head_raw_service"] == HEAD
-    assert (
-        sensors["svane_head_raw"].extra_state_attributes["svane_head_raw_target_address"]
-        == entry.data[CONF_ADDRESS]
-    )
-    assert sensors["svane_feet_raw"].native_value is None
+    assert state["svane_head_raw"] == "8138ff"
+    assert state["svane_head_raw_observed_at"]
+    assert state["svane_head_raw_service"] == HEAD
+    assert state["svane_head_raw_target_address"] == entry.data[CONF_ADDRESS]
+    assert state.get("svane_feet_raw") is None
     assert not coordinator.position_data
     assert not controller.position_number_specs
 
@@ -388,7 +373,7 @@ async def test_new_explicit_svane_selection_uses_case_sensitive_app_name_rule(ha
     answer = {SVANE_VARIANT_JMC: "svane_jmc400", VARIANT_AUTO: "svane_bed"}[expected]
     assert choice.default() == answer
     result = await flow.async_step_jensen_family({"choice": choice.default()})
-    await finish_new_bed(flow, result, {"disconnect_after_command": False})
+    await finish_new_bed(flow, result, {"connection_mode": "idle"})
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected
 
 
@@ -470,7 +455,7 @@ async def test_untouched_fields_take_the_chosen_bed_types_defaults(hass):
     from custom_components.adjustable_bed.const import BED_TYPE_LINAK
 
     saved = await _accept_final_settings_as(hass, BED_TYPE_LINAK)
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is False
+    assert reads_positions(saved)
     assert (saved[CONF_MOTOR_PULSE_COUNT], saved[CONF_MOTOR_PULSE_DELAY_MS]) == (
         get_motor_pulse_defaults(BED_TYPE_LINAK)
     )
@@ -483,4 +468,4 @@ async def test_a_field_the_user_changed_keeps_its_value(hass):
         hass, BED_TYPE_LINAK, **{CONF_MOTOR_COUNT: 4, CONF_MOTOR_PULSE_COUNT: "7"}
     )
     assert (saved[CONF_MOTOR_COUNT], saved[CONF_MOTOR_PULSE_COUNT]) == (4, 7)
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is False
+    assert reads_positions(saved)

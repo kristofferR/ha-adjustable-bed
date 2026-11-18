@@ -1,4 +1,4 @@
-"""OkinComfortBed II's app-owned layouts, keys and setup choices (unit132)."""
+"""OkinComfortBed II's app-owned layouts, keys and setup choices (2.0.2)."""
 
 from __future__ import annotations
 

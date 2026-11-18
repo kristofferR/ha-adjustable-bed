@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Final
 from bleak import BleakClient
 from bleak.exc import BleakError
 
-from ...card import CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ...controller_state import StateKey
 from ...profiles import rize_home as p
 from ..base import BedController, ProfileExecution
@@ -26,6 +26,7 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
     ProductButtonSpec,
 )
@@ -249,19 +250,18 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
                 translation_key="rize_home_query",
                 card=CARD_MASSAGE,
                 scheduler_resource="*",
+                diagnostic=True,
+            ),
+            ControllerButtonSpec(
+                "rize_home_reset_memories",
+                "Reset saved presets",
+                lambda c: _rize(c).action("reset_memories"),
+                translation_key="rize_home_reset_memories",
+                scheduler_resource="*",
+                requires_confirmation=True,
+                card=CARD_UTILITY,
             ),
         ]
-        for action in ("motion_on", "motion_off", "reset_memories"):
-            specs.append(
-                ControllerButtonSpec(
-                    f"rize_home_{action}",
-                    action.replace("_", " "),
-                    lambda c, a=action: _rize(c).action(a),
-                    translation_key=f"rize_home_{action}",
-                    scheduler_resource="*",
-                    card=CARD_UTILITY,
-                )
-            )
         for preset in self.profile.programmable:
             specs.append(
                 ControllerButtonSpec(
@@ -270,7 +270,9 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
                     lambda c, a=preset: _rize(c).program_preset(a),
                     translation_key=f"rize_home_save_{preset}",
                     scheduler_resource="*",
-                    card=CARD_PRESETS,
+                    # Saving overwrites the stored preset, so the card asks first.
+                    requires_confirmation=True,
+                    card=CARD_PRESET_SAVE,
                 )
             )
         # The common voice dispatcher reaches controls absent from a product's
@@ -278,7 +280,7 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
         specs.extend(
             ProductButtonSpec(
                 f"rize_home_voice_{action}",
-                f"Voice action: {action.replace('_', ' ')}",
+                f"Voice: {action.replace('_', ' ').capitalize()}",
                 lambda c, a=action: _rize(c).action(f"voice_{a}"),
                 scheduler_resource="*",
                 hold=ControllerHoldSpec(f"voice_{action}"),
@@ -287,6 +289,18 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
             for action in p.VOICE_ACTIONS
         )
         return tuple(specs)
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        # The bed reports no motion-sensor state, so the switch shows the last command.
+        return (
+            ControllerSwitchSpec(
+                "rize_home_motion",
+                "rize_home_motion",
+                lambda c, on: _rize(c).action("motion_on" if on else "motion_off"),
+                icon="mdi:motion-sensor",
+            ),
+        )
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
@@ -327,6 +341,7 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
                 f"rize_home_{key}",
                 state,
                 "mdi:vibrate",
+                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE,
             )
             for key, state in values
@@ -340,6 +355,7 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
                 "rize_home_active",
                 ACTIVE,
                 "mdi:vibrate",
+                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE,
             ),
         )

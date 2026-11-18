@@ -82,28 +82,16 @@ async def answer(flow, choice: str):
     return result, finish
 
 
-def test_one_row_names_every_app_and_the_remotes():
+def test_every_app_has_a_searchable_row_and_the_family_row_stays_short():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
-    for app in (
-        "RMControl",
-        "Revive Control",
-        "Best Mattress",
-        "Blvd Home",
-        "HARMONY",
-        "Idealbed",
-        "Avocado Eco Base",
-        "CoasterSleep",
-        "Forty Winks",
-        "Milemont",
-        "Superior",
-        "SleepFunction",
-        "SVEN & SON",
-        "Richmat remotes",
-    ):
+    for app in ("RMControl", "SleepFunction", "SVEN & SON", "Richmat remotes"):
         assert app in rows[const.BED_TYPE_RICHMAT]
-    assert not set(rows) & {*const.RICHMAT_MH_BED_TYPES, "richmat_classic_apps:fortywinks"}
-    # A saved entry keeps its own label.
-    assert bed_type_label(const.BED_TYPE_RICHMAT_REVIVE) == "Revive Control app (Richmat)"
+    assert len(rows[const.BED_TYPE_RICHMAT]) < 100
+    # Each other app is found by its own name and selects its own route.
+    assert rows[const.BED_TYPE_RICHMAT_REVIVE] == "Revive Control app"
+    assert rows["richmat_classic_apps:fortywinks"] == "Forty Winks app"
+    assert rows[const.BED_TYPE_MLILY] == "MLILY Control app"
+    assert bed_type_label(const.BED_TYPE_RICHMAT_REVIVE) == "Revive Control app"
 
 
 def test_configure_accepts_the_hidden_apps_by_id():
@@ -293,45 +281,6 @@ async def test_configure_returns_an_rmcontrol_entry_to_the_remote(hass):
     assert entry.data[const.CONF_RMCONTROL_PRODUCT] == ""
 
 
-async def test_configure_switches_a_remote_entry_to_an_mh_app(hass):
-    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    form = await flow.async_step_settings()
-    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
-    choice = selector("Revive Control app · Richmat")
-    form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
-    assert form["type"] is FlowResultType.FORM
-    assert const.CONF_PROTOCOL_VARIANT in fields(form)
-    # Switching apps first asks its model, without changing the saved entry.
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await flow.async_step_settings({const.CONF_PROTOCOL_VARIANT: "model_vorm"})
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT_REVIVE
-    assert entry.data[const.CONF_PROTOCOL_VARIANT] == "model_vorm"
-
-
-@pytest.mark.parametrize("product", ("FARM", "JLRM", "JGRN", "JHRN"))
-async def test_configure_lists_majestichome_and_requires_its_saved_product(hass, product):
-    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    form = await flow.async_step_settings()
-    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
-    label = next(label for label, value in selector.rows().items() if value == "majestichome")
-    assert "Majestic Home" in label
-    form = await flow.async_step_settings({const.CONF_BED_TYPE: selector(label)})
-    assert form["type"] is FlowResultType.FORM
-    assert const.CONF_PROTOCOL_VARIANT in fields(form)
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await flow.async_step_settings({const.CONF_PROTOCOL_VARIANT: product})
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == "majestichome"
-    assert entry.data[const.CONF_PROTOCOL_VARIANT] == product
-
-
 async def test_each_receiver_of_a_pair_answers_for_itself(hass, enable_custom_integrations):
     from tests.test_paired_receiver_questions import child, pair_entry, receiver_form
     from tests.test_paired_receiver_questions import fields as receiver_fields
@@ -356,7 +305,8 @@ async def test_each_receiver_of_a_pair_answers_for_itself(hass, enable_custom_in
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert child(entry, "left")[const.CONF_RMCONTROL_SIDE] == "right"
     right = await receiver_form(hass, entry, "right")
-    assert receiver_fields(right)[const.CONF_PROTOCOL_VARIANT].default() == "model_vorm"
+    # The model picks the route, which changes in Reconfigure.
+    assert const.CONF_PROTOCOL_VARIANT not in receiver_fields(right)
     hass.config_entries.options.async_abort(right["flow_id"])
     assert child(entry, "right")[const.CONF_PROTOCOL_VARIANT] == "model_vorm"
 
@@ -391,33 +341,6 @@ async def test_an_mh_app_from_the_app_question_reaches_its_model_question(
     )
 
 
-async def test_configure_switches_a_remote_entry_to_a_classic_app(hass):
-    from custom_components.adjustable_bed.beds.richmat_classic.models import MODEL_CHOICES
-
-    entry = entry_for(hass, **{const.CONF_RMCONTROL_PRODUCT: ""})
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    form = await flow.async_step_settings()
-    selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
-    # Each classic app keeps its own label in Configure's list, with its family.
-    choice = selector("Forty Winks · Richmat")
-    assert choice == "richmat_classic_apps:fortywinks"
-    form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
-    assert const.CONF_PRODUCT_TYPE in fields(form)
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_RICHMAT
-    layout = next(
-        code for code in MODEL_CHOICES["fortywinks"] if code not in ("TEST", "RMCS", "ZRS6")
-    )
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await flow.async_step_settings({const.CONF_PRODUCT_TYPE: layout})
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert (entry.data[const.CONF_BED_TYPE], entry.data[const.CONF_PROTOCOL_VARIANT]) == (
-        const.BED_TYPE_RICHMAT_CLASSIC_APPS,
-        "fortywinks",
-    )
-    assert entry.data[const.CONF_PRODUCT_TYPE] == layout
-
-
 async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
     flow = setup_flow(hass, "QRRM0001")
     result, _finish = await answer(flow, "luuna")
@@ -437,3 +360,27 @@ async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
     assert saved[const.CONF_MOTOR_COUNT] == 4
     assert saved[const.CONF_HAS_MASSAGE] is True
     assert saved[const.CONF_DISABLE_ANGLE_SENSING] is True
+
+
+@pytest.mark.parametrize(
+    ("label", "route"),
+    [
+        ("Revive Control app · Richmat", const.BED_TYPE_RICHMAT_REVIVE),
+        ("Forty Winks app · Richmat", const.BED_TYPE_RICHMAT_CLASSIC_APPS),
+        ("MLILY Control app · Richmat", const.BED_TYPE_MLILY),
+        ("Majestic Home app · Richmat", "majestichome"),
+    ],
+)
+async def test_an_app_found_by_its_own_row_skips_the_richmat_question(hass, label, route):
+    flow = AdjustableBedConfigFlow()
+    flow.hass = hass
+    flow.context = {}
+    flow._app_after_device = "manual_entry"
+    form = await flow.async_step_select_app()
+    picker = next(value for key, value in form["data_schema"].schema.items() if key == const.CONF_BED_TYPE)
+    assert label in picker.rows()
+    result = await flow.async_step_select_app({const.CONF_BED_TYPE: label})
+    assert result["step_id"] == "manual_entry"
+    result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:36"})
+    assert result["step_id"] != "richmat_family"
+    assert flow._manual_data[const.CONF_BED_TYPE] == route

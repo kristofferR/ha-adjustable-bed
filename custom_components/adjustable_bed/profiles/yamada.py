@@ -1,7 +1,6 @@
 """アシステック 1.0.1 (6), com.okin.yamada: app data over proven codecs.
 
-Row178's verified scope is accepted under the stall rule, with report/helper
-dispatch equivalence R1 deferred. No data here relies on that disputed guard.
+No data here relies on the app's unproven report/helper dispatch equivalence.
 """
 
 from __future__ import annotations

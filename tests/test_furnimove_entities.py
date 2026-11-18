@@ -22,9 +22,13 @@ async def test_initial_off_feedback_changes_reported_sensors_from_unknown_to_off
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_FURNIMOVE)
     runtime.controller_state = controller._coordinator.controller_state
     sensors = [
-        sensor for sensor in _binary_sensor_entities_for(hass, runtime)
-        if sensor.unique_id in {
-            "bed_furnimove_ubl_left", "bed_furnimove_sync_left", "bed_furnimove_child_lock_left",
+        sensor
+        for sensor in _binary_sensor_entities_for(hass, runtime)
+        if sensor.unique_id
+        in {
+            "bed_furnimove_ubl_left",
+            "bed_furnimove_sync_left",
+            "bed_furnimove_child_lock_left",
         }
     ]
     assert len(sensors) == 3
@@ -69,8 +73,9 @@ async def test_shorter_profile_builds_only_its_actions(hass):
     controller = make_controller("00000")
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_FURNIMOVE)
     buttons = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
-    assert "bed_furnimove_action_4_left" in buttons
-    assert "bed_furnimove_action_50_left" not in buttons
+    # Its only non-motor row, Flat, is the standard Flat preset button.
+    assert "bed_preset_flat_left" in buttons
+    assert not any(unique_id.startswith("bed_furnimove_action_") for unique_id in buttons)
 
 
 async def test_confirming_staircase_drops_furnimove_state(hass):
@@ -79,6 +84,18 @@ async def test_confirming_staircase_drops_furnimove_state(hass):
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_OKIN_RF_ECO_BT)
     built = {
         entity.unique_id
-        for entity in (*_sensor_entities_for(hass, runtime), *_binary_sensor_entities_for(hass, runtime))
+        for entity in (
+            *_sensor_entities_for(hass, runtime),
+            *_binary_sensor_entities_for(hass, runtime),
+        )
     }
     assert not {"bed_furnimove_model_left", "bed_furnimove_sync_left"} & built
+
+
+async def test_action_buttons_skip_standard_rows_and_use_readable_names(hass):
+    from custom_components.adjustable_bed.beds.furnimove.controller import _ACTION_LABELS
+
+    controller = make_controller()
+    rows = {spec.name for spec in controller.furnimove_action_specs}
+    names = {spec.name for spec in controller.controller_button_specs}
+    assert names == {_ACTION_LABELS[row] for row in rows if row in _ACTION_LABELS}

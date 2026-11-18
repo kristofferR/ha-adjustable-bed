@@ -9,17 +9,15 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_LINAK,
     BED_TYPE_MALOUF_APP,
-    BED_TYPE_MALOUF_NEW_OKIN,
     CONF_BED_TYPE,
-    CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_MALOUF_APP_MODEL,
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
@@ -53,14 +51,14 @@ async def test_setup_routes_require_app_and_model(hass, mock_bluetooth_service_i
         await finish_new_bed(
             flow,
             await flow.async_step_profile_questions(schema({CONF_MALOUF_APP_MODEL: "Premium"})),
-            {CONF_NAME: "App bed", CONF_DISCONNECT_AFTER_COMMAND: False},
+            {CONF_NAME: "App bed", CONF_CONNECTION_MODE: "idle"},
         )
     saved = finish.call_args.args[0]
     assert saved[CONF_MALOUF_APP_PROFILE] == "lucid"
     assert saved[CONF_MALOUF_APP_MODEL] == "Premium"
     assert saved[CONF_MALOUF_APP_TRANSPORT] == "auto"
     assert saved[CONF_MALOUF_APP_PRIMARY] is True
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(saved)
 
 
 @pytest.mark.parametrize("profile,models,rejected", [
@@ -91,43 +89,6 @@ async def test_fresh_model_picker_matches_app_and_rejects_cross_app_input(
     finish.assert_not_called()
 
 
-async def test_options_retain_only_stored_persisted_model_and_send_app_changes_to_reconfigure(
-    hass,
-):
-    entry = MockConfigEntry(domain=DOMAIN, data={
-        CONF_BED_TYPE: BED_TYPE_MALOUF_APP, CONF_MOTOR_COUNT: 2,
-        CONF_MALOUF_APP_PROFILE: "lucid", CONF_MALOUF_APP_MODEL: "GoodLifeProBase",
-        CONF_MALOUF_APP_TRANSPORT: "richmat_framed", CONF_MALOUF_APP_PRIMARY: False,
-    })
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings()
-    keys = {marker.schema for marker in result["data_schema"].schema}
-    # The app changes only through Reconfigure.
-    assert CONF_MALOUF_APP_PROFILE not in keys
-    choices = next(validator.container for marker, validator in result["data_schema"].schema.items()
-                   if marker.schema == CONF_MALOUF_APP_MODEL)
-    assert set(choices) == {"L300", "L600", "Premium", "GoodLifeProBase"}
-    # The form offers no other app's model.
-    schema = result["data_schema"]
-    assert schema is not None
-    with pytest.raises(vol.Invalid):
-        schema({CONF_MALOUF_APP_MODEL: "S755"})
-    result = await flow.async_step_settings({CONF_MALOUF_APP_PRIMARY: True})
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_MALOUF_APP_MODEL] == "GoodLifeProBase"
-    assert entry.data[CONF_MALOUF_APP_PRIMARY] is True
-
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_MALOUF_APP_PROFILE: "malouf"})
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[CONF_MALOUF_APP_PROFILE] == "lucid"
-
-
 async def test_options_preserve_explicit_app_and_role(hass):
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_BED_TYPE: BED_TYPE_MALOUF_APP, CONF_MOTOR_COUNT: 2,
@@ -146,54 +107,6 @@ async def test_options_preserve_explicit_app_and_role(hass):
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_MALOUF_APP_MODEL] == "Altitude"
     assert entry.data[CONF_MALOUF_APP_PRIMARY] is False
-
-
-async def test_switching_another_bed_type_to_the_app_asks_app_and_model(hass):
-    """Only an entry already on the Malouf family leaves the app to Reconfigure."""
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_LINAK, CONF_MOTOR_COUNT: 2})
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_MALOUF_APP})
-    assert result["type"] == FlowResultType.FORM
-    schema = result["data_schema"]
-    assert schema is not None
-    with pytest.raises(vol.Invalid, match="required key"):
-        schema({})
-    # One form asks the app and model together, so it offers every app's models.
-    keys = {marker.schema for marker in schema.schema}
-    assert {CONF_MALOUF_APP_PROFILE, CONF_MALOUF_APP_MODEL} <= keys
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
-    # A model the chosen app does not list is refused on save.
-    result = await flow.async_step_settings(
-        {CONF_MALOUF_APP_PROFILE: "lucid", CONF_MALOUF_APP_MODEL: "S755"}
-    )
-    assert result["errors"] == {CONF_MALOUF_APP_MODEL: "malouf_app_required"}
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await flow.async_step_settings(
-            {CONF_MALOUF_APP_PROFILE: "lucid", CONF_MALOUF_APP_MODEL: "Premium"}
-        )
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_MALOUF_APP
-    assert (entry.data[CONF_MALOUF_APP_PROFILE], entry.data[CONF_MALOUF_APP_MODEL]) == (
-        "lucid",
-        "Premium",
-    )
-    assert entry.data[CONF_MALOUF_APP_PRIMARY] is True
-    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
-
-
-async def test_a_receiver_entry_changes_to_the_app_in_reconfigure(hass):
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_MALOUF_NEW_OKIN, CONF_MOTOR_COUNT: 2})
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_MALOUF_APP})
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_MALOUF_NEW_OKIN
 
 
 async def test_pair_common_settings_keep_distinct_app_models_and_roles(hass):

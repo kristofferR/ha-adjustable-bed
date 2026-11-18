@@ -53,28 +53,6 @@ globalThis.KeyboardEvent = class {
 const { AdjustableBedCard } = await import("./adjustable-bed-card.ts");
 const { bedEntitiesForDevice } = await import("./discovery.ts");
 
-test("explicit preset save asks for confirmation before the one-shot press", () => {
-  const card = new AdjustableBedCard();
-  const calls = [];
-  card.hass = {
-    states: { "button.save": { attributes: { requires_confirmation: true } } },
-    formatEntityName: () => "Save Lounge",
-    callService: (...args) => { calls.push(args); return Promise.resolve(); },
-  };
-  const previous = window.confirm;
-  try {
-    window.confirm = () => false;
-    card._press("button.save");
-    assert.equal(calls.length, 0);
-    window.confirm = (text) => { assert.match(text, /Save Lounge/); return true; };
-    card._press("button.save");
-    assert.deepEqual(calls, [["button", "press", { entity_id: "button.save" }]]);
-  } finally {
-    if (previous) window.confirm = previous;
-    else delete window.confirm;
-  }
-});
-
 class FakeClock {
   now = 0;
   nextId = 0;
@@ -417,7 +395,7 @@ for (const key of Object.keys(smartSleepRoutes.p1)) {
     fixture.handler("@keydown")(new KeyboardEvent("keydown"));
     await flushMicrotasks();
     assert.equal(fixture.calls[0]?.service, "hold_control");
-    assert.equal(fixture.calls[0].data.control, key);
+    assert.equal(fixture.calls[0].data.control, smartSleepRoutes.p1[key].held_control);
     assert.equal(fixture.calls[0].data.duration, 0.75);
     assert.equal(typeof fixture.calls[0].data.hold_owner, "string");
     fixture.handler("@keyup")(new KeyboardEvent("keyup"));
@@ -427,3 +405,29 @@ for (const key of Object.keys(smartSleepRoutes.p1)) {
     await flushMicrotasks();
   });
 }
+
+test("combined light of unconfirmed switches offers On and Off instead of a toggle", () => {
+  const calls = [];
+  const card = new AdjustableBedCard();
+  card.hass = {
+    states: {
+      "switch.left_light": { entity_id: "switch.left_light", state: "unknown", attributes: { assumed_state: true } },
+      "switch.right_light": { entity_id: "switch.right_light", state: "on", attributes: {} },
+    },
+    entities: {}, devices: {}, locale: { language: "en" }, language: "en",
+    callService(domain, service, data) { calls.push({ domain, service, data }); return Promise.resolve(); },
+  };
+  const pane = (id) => ({ bed: { lights: { switch: id } } });
+  const parent = { lights: {} };
+  const template = card._combinedLighting(parent, [pane("switch.left_light"), pane("switch.right_light")]);
+  assert.ok(template.strings.join("").includes('role="group"'), "expected an On/Off group");
+  assert.ok(!template.strings.join("").includes('role="switch"'), "no toggle for unsure lights");
+  const handlers = template.values.filter((value) => typeof value === "function");
+  handlers.at(-2)();
+  handlers.at(-1)();
+  const both = { entity_id: ["switch.left_light", "switch.right_light"] };
+  assert.deepEqual(calls, [
+    { domain: "homeassistant", service: "turn_off", data: both },
+    { domain: "homeassistant", service: "turn_on", data: both },
+  ]);
+});

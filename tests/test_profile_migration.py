@@ -4,7 +4,6 @@ from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant.common import MockConfigEntry
@@ -16,7 +15,6 @@ from custom_components.adjustable_bed.app_families import (
     VIBRADORM_FAMILY,
 )
 from custom_components.adjustable_bed.config_flow import (
-    AdjustableBedOptionsFlow,
     _vibradorm_app_data,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -91,7 +89,7 @@ async def test_control_changes_compare_entity_sets_and_name_automations(
 
     assert changes.known
     assert "Memory 1" in changes.removed and "Under Bed Lights" in changes.removed
-    assert "Hold all controls down" in changes.added
+    assert "All motors down" in changes.added
     # Kept controls (address-based IDs) are neither added nor removed.
     assert "Back" not in changes.added + changes.removed
     assert changes.unchanged == 6
@@ -214,29 +212,6 @@ def test_split_carries_an_open_review_and_an_earlier_keep_to_each_bed():
         **single,
         const.CONF_PROFILE_REVIEW_KEPT: {"route": "richmat:auto", "apps": ["richmat_revive"]},
     }
-
-
-async def test_configure_offers_one_generic_change_item(hass):
-    entry = _entry(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler, flow.hass = entry.entry_id, hass
-    menu = await flow.async_step_init()
-    assert "change_app" in menu["menu_options"]
-    assert "vibradorm_setup" not in menu["menu_options"]
-    form = await flow.async_step_change_app()
-    assert form["description_placeholders"]["current"].startswith("Vibradorm")
-    result = await flow.async_step_change_app({})
-    assert result["type"] == FlowResultType.ABORT
-    assert result["reason"] == "migration_reconfigure_required"
-
-    other = MockConfigEntry(
-        domain=const.DOMAIN,
-        data={CONF_ADDRESS: "11:22:33:44:55:99", const.CONF_BED_TYPE: const.BED_TYPE_LINAK},
-    )
-    other.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(other)
-    flow.handler, flow.hass = other.entry_id, hass
-    assert "change_app" not in (await flow.async_step_init())["menu_options"]
 
 
 async def test_preview_never_touches_the_live_app_session(hass, enable_custom_integrations):

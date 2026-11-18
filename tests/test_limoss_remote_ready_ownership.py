@@ -26,13 +26,13 @@ from tests.test_limoss_remote_review_lifecycle import CAPS
 @pytest.mark.parametrize("retire", [False, True])
 async def test_retirement_after_ready_before_waiter_resumes_prevents_first_movement(hass, retire):
     left = actual_coordinator(hass, **{
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:01", const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:01", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     left_controller, left_client = await prepare_live(left)
     left_controller._sleep = LimossRemoteController._sleep.__get__(left_controller)
     right = actual_coordinator(hass, **{
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:02", const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:02", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     right._post_connect_delay, right._max_retries = 0, 1
