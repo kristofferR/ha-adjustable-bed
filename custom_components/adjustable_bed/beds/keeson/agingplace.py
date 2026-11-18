@@ -65,7 +65,7 @@ class _AutomaticIntent:
         return True
 
 
-async def _drain(operation: Awaitable[None]) -> None:
+async def _drain[T](operation: Awaitable[T]) -> T:
     """Let an admitted write finish before cancellation can start its release."""
     task = asyncio.ensure_future(operation)
     interrupted: asyncio.CancelledError | None = None
@@ -74,9 +74,10 @@ async def _drain(operation: Awaitable[None]) -> None:
             await asyncio.wait((task,))
         except asyncio.CancelledError as err:
             interrupted = err
-    task.result()
+    result = task.result()
     if interrupted is not None:
         raise interrupted
+    return result
 
 
 def _action(name: str) -> MotorCommandCallable:
@@ -284,10 +285,16 @@ class AgingPlaceController(KeesonController):
 
     async def _send(
         self, command: bytes, client: BleakClient, epoch: int, cancel: asyncio.Event
-    ) -> None:
+    ) -> bool:
         self._current(client, epoch)
         char = self._role(codec.TRANSPORTS["json"].write_uuid)
         failure: BleakError | None = None
+        written = 0
+
+        def on_write() -> None:
+            nonlocal written
+            written += 1
+
         for start in range(0, len(command), app.CHUNK_BYTES):
             try:
                 await self._write_gatt_with_retry(
@@ -298,12 +305,15 @@ class AgingPlaceController(KeesonController):
                     characteristic=char,
                     expected_client=client,
                     before_write=lambda: self._current(client, epoch),
+                    on_write=on_write,
                 )
             except BleakError as err:
                 # FastBle advances the split queue on either callback, without retry.
                 failure = failure or err
         if failure is not None:
             raise failure
+        expected = (len(command) + app.CHUNK_BYTES - 1) // app.CHUNK_BYTES
+        return written > 0 and written == expected
 
     async def write_command(
         self,
@@ -433,9 +443,18 @@ class AgingPlaceController(KeesonController):
             self._diagnostic_timeout = asyncio.get_running_loop().call_later(
                 app.SELF_CHECK_TIMEOUT, timeout
             )
-        await self.write_command(action.frame(self.device_id))
+        flat_sent = False
+        if name == "flat":
+            # A cancelled writer can return normally without transmitting any chunks.
+            flat_sent = await _drain(
+                self._send(
+                    action.frame(self.device_id), client, epoch, self._coordinator.cancel_command
+                )
+            )
+        else:
+            await self.write_command(action.frame(self.device_id))
         self._current(client, epoch)
-        if name == "flat" and self._automatic.clear(generation):
+        if flat_sent and self._automatic.clear(generation):
             self._diagnostic_generation = None
             self._clear_timers()
 

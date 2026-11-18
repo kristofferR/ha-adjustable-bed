@@ -908,6 +908,71 @@ async def test_failed_flat_cannot_forget_automatic_intent(hass, monkeypatch, cle
     assert packets(fresh) == [app.ACTIONS["flat"].frame(IDENTITY)]
 
 
+@pytest.mark.parametrize("action", ("circulation", "sleep", "relax_cycle", "diagnostic"))
+async def test_cancelled_flat_before_first_write_retains_automatic_stop(hass, monkeypatch, action):
+    coordinator, controller, client, _, device = await target(hass, monkeypatch)
+    await async_register_services(hass)
+    await hass.services.async_call(
+        DOMAIN, "agingplace_action", {"device_id": [device], "action": action}, blocking=True
+    )
+    client.write_gatt_char.reset_mock()
+    original = controller.run_action
+    after_flat = []
+
+    async def preempt_flat(name):
+        if name == "flat":
+            coordinator.request_command_cancel()
+        try:
+            await original(name)
+        finally:
+            if name == "flat":
+                after_flat.append((controller._flat_cancel_active, packets(client)))
+
+    monkeypatch.setattr(controller, "run_action", preempt_flat)
+    await hass.services.async_call(
+        DOMAIN, "agingplace_action", {"device_id": [device], "action": "flat"}, blocking=True
+    )
+    assert after_flat == [(True, [])]
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device]}, blocking=True)
+    assert packets(client) == [app.ACTIONS["flat"].frame(IDENTITY)]
+    assert not controller._flat_cancel_active
+
+
+@pytest.mark.parametrize("cancel_after", ("first_chunk", "last_chunk"))
+async def test_flat_requires_every_chunk_receipt_before_clearing_intent(
+    hass, monkeypatch, cancel_after
+):
+    coordinator, controller, client, _, device = await target(hass, monkeypatch)
+    await async_register_services(hass)
+    await hass.services.async_call(
+        DOMAIN, "agingplace_action", {"device_id": [device], "action": "sleep"}, blocking=True
+    )
+    client.write_gatt_char.reset_mock()
+    flat = app.ACTIONS["flat"].frame(IDENTITY)
+    chunk_bytes = len(flat) // 2
+    monkeypatch.setattr(app, "CHUNK_BYTES", chunk_bytes)
+    chunks = [flat[start : start + chunk_bytes] for start in range(0, len(flat), chunk_bytes)]
+    writes = 0
+
+    async def write(_char, _frame, **_kwargs):
+        nonlocal writes
+        writes += 1
+        if writes == (1 if cancel_after == "first_chunk" else len(chunks)):
+            coordinator.request_command_cancel()
+
+    client.write_gatt_char.side_effect = write
+    await hass.services.async_call(
+        DOMAIN, "agingplace_action", {"device_id": [device], "action": "flat"}, blocking=True
+    )
+    assert packets(client) == (chunks[:1] if cancel_after == "first_chunk" else chunks)
+    assert controller._flat_cancel_active is (cancel_after == "first_chunk")
+    client.write_gatt_char.reset_mock(side_effect=True)
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device]}, blocking=True)
+    expected = app.ACTIONS["flat" if cancel_after == "first_chunk" else "release"].frame(IDENTITY)
+    assert b"".join(packets(client)) == expected
+    assert not controller._flat_cancel_active
+
+
 async def test_obsolete_diagnostic_completion_cannot_clear_new_cycle_intent(hass, monkeypatch):
     coordinator, _, client, receivers, device = await target(hass, monkeypatch)
     await async_register_services(hass)
