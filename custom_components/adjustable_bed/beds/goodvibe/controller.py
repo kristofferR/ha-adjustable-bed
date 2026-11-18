@@ -1142,7 +1142,9 @@ class GoodVibeController(BedController):
             raise ValueError("This control does not support renewable holds")
         side, link = self._side(), self._current_link()
         bed = self.catalog.bed
-        deadline = monotonic() + duration / 1000 if bed is not None else None
+        started = monotonic() if bed is not None else 0.0
+        deadline = started + duration / 1000 if bed is not None else None
+        refresh_deadline: float | None = None
         cancel = self._coordinator.cancel_command
         long = action.force_long or memory
         # The artifact replaces flagged items with the None descriptor while its local release mode is off.
@@ -1173,7 +1175,7 @@ class GoodVibeController(BedController):
                 cleanup=released,
                 release_gesture=gesture_state if released else None,
                 on_submit=mark_submitted,
-                deadline=deadline if gesture == "sustainPress" and not released else None,
+                deadline=refresh_deadline if gesture == "sustainPress" and not released else None,
             )
 
         def released_short() -> bool:
@@ -1190,10 +1192,16 @@ class GoodVibeController(BedController):
                 if gesture == "sustainPress":
                     if bed is not None:
                         assert deadline is not None
-                        while monotonic() + bed.tick_ms / 1000 <= deadline:
+                        tick = bed.tick_ms / 1000
+                        next_tick = started + tick
+                        while next_tick <= deadline:
                             if not await self._delay(bed.tick_ms):
                                 break
+                            # A due tick has one cadence to reach the wire. Small
+                            # timer overruns are valid; missed ticks are not queued.
+                            refresh_deadline = next_tick + tick
                             await send()
+                            next_tick = monotonic() + tick
                     else:
                         remaining = duration
                         while remaining >= TICK_MS and await self._delay(TICK_MS):
