@@ -501,6 +501,8 @@ async def test_alarm_service_validation_and_queue(hass, alarm_target):
     assert coordinator.async_execute_controller_command.await_args.kwargs["resource"] is None
     controller = MagicMock(spec=gm.GlideawayMotionController)
     controller.configure_clock_alarm = AsyncMock()
+    # The write checks the request again on the controller that writes it.
+    controller.alarm_capability = coordinator.capability_controller.alarm_capability
     await command(controller)
     alarm = controller.configure_alarm.await_args.args[0]
     assert (alarm.enabled, alarm.weekdays, alarm.hour, alarm.minute, alarm.wake_action) == (

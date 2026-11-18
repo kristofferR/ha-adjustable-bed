@@ -246,6 +246,10 @@ class PairedBedCoordinator:
     def _pair_cancel_generation(self, side: str, resources: Collection[str]) -> tuple[int, ...]:
         return self._admission.generation(side, self._topology.command_scope(resources))
 
+    def stop_count(self, side: str) -> int:
+        """Return how many STOPs this pair has accepted for ``side``."""
+        return self._admission.stop_count[side]
+
     @property
     def supports_simultaneous_side_holds(self) -> bool:
         """Whether Both can execute one shared lease without serial side waits."""
@@ -483,7 +487,7 @@ class PairedBedCoordinator:
         # a lane for that side drops instead of starting after this stop,
         # including a side that gets no STOP frame below.
         for target_side, _ in targets:
-            self._admission.bump(target_side, command_resources("*"))
+            self._admission.note_stop(target_side, command_resources("*"))
         # A Remacro side without a global STOP frame only has its running
         # movement cancelled, which sends that axis's release STOP; it is never
         # reconnected for a frame it cannot take.
@@ -521,7 +525,9 @@ class PairedBedCoordinator:
         targets = self._topology.cancellation_targets(self._targets_for(side))
         # A movement for this motor still queued on a side lane drops.
         for target_side, _ in targets:
-            self._admission.bump(target_side, self._topology.command_scope(command_resources(resource)))
+            self._admission.note_stop(
+                target_side, self._topology.command_scope(command_resources(resource))
+            )
         async with self._connection_mode_transition_lock:
             errors = await self._topology.stop_motor(targets, stop_fn, resource)
         if errors:

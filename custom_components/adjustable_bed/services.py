@@ -97,6 +97,7 @@ from .paired_coordinator import (
     SingleAddressSideCoordinator,
 )
 from .paired_devices import side_identifier
+from .paired_topology import PairedSideError, ready_disconnected_transport
 from .pairing import is_paired, pair_member_addresses
 from .position_estimate import (
     invalidate_on_command,
@@ -599,6 +600,109 @@ async def _execute_sided(
             expected_stop_epoch=expected_stop_epoch,
             lease=lease,
         )
+
+
+async def _execute_sided_translated(
+    coordinator: BedTarget,
+    side: str,
+    command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
+    **kwargs: Any,
+) -> None:
+    """Run ``_execute_sided``, surfacing a combined bed's translated side error.
+
+    A combined bed wraps each side's failure in one untranslated error. When
+    every side failed validation, raise the first side's own message instead.
+    """
+    try:
+        await _execute_sided(coordinator, side, command_fn, **kwargs)
+    except PairedSideError as err:
+        errors = list(err.side_errors.values())
+        if errors and all(isinstance(error, ServiceValidationError) for error in errors):
+            raise errors[0] from err
+        raise
+
+
+def _bed_changed() -> ServiceValidationError:
+    return _invalid("bed_changed", "The bed changed while the action was being checked; try again")
+
+
+def _pair_mode(parent: BedTarget) -> str | None:
+    return parent.connection_mode if isinstance(parent, PairedBedCoordinator) else None
+
+
+def _child_side(parent: BedTarget, side: str, child: BedChild) -> str:
+    """Return the side that runs ``child`` on its own."""
+    if not isinstance(parent, PairedBedCoordinator):
+        return side
+    return next(name for name, item in parent.children.items() if item is child)
+
+
+def _stop_marks(
+    targets: Sequence[tuple[BedTarget, str]], children: Sequence[Sequence[BedChild]]
+) -> tuple[int, ...]:
+    """Counters that only a STOP advances, for every selected side.
+
+    Commands preempting each other never move them, so a call can tell a
+    user's STOP apart from its own earlier steps.
+    """
+    marks: list[int] = []
+    for (parent, side), group in zip(targets, children, strict=True):
+        if isinstance(parent, PairedBedCoordinator):
+            sides = (SIDE_LEFT, SIDE_RIGHT) if side == SIDE_BOTH else (side,)
+            marks.extend(parent.stop_count(name) for name in sides)
+            marks.extend(child.stop_epoch for child in group)
+        else:
+            marks.append(parent.stop_epoch)
+    return tuple(marks)
+
+
+@dataclass(frozen=True, slots=True)
+class _Selection:
+    """The physical sides a call selected, captured before its first await."""
+
+    targets: tuple[tuple[BedTarget, str], ...]
+    children: tuple[tuple[BedChild, ...], ...]
+    modes: tuple[str | None, ...]
+    stops: tuple[int, ...]
+
+    @classmethod
+    def capture(cls, targets: Sequence[tuple[BedTarget, str]]) -> _Selection:
+        children = tuple(tuple(_command_targets(parent, side)) for parent, side in targets)
+        return cls(
+            tuple(targets),
+            children,
+            tuple(_pair_mode(parent) for parent, _ in targets),
+            _stop_marks(targets, children),
+        )
+
+    def stopped(self) -> bool:
+        """Return whether a STOP reached any selected side since the capture."""
+        return _stop_marks(self.targets, self.children) != self.stops
+
+    def require_unchanged(self, call: ServiceCall) -> None:
+        """Refuse a selection whose beds were replaced, removed or re-paired."""
+        try:
+            current = _call_targets(call)
+            children = [tuple(_command_targets(parent, side)) for parent, side in current]
+        except ServiceValidationError as err:
+            raise _bed_changed() from err
+        same = (
+            len(current) == len(self.targets)
+            and all(
+                parent is old_parent and side == old_side
+                for (parent, side), (old_parent, old_side) in zip(
+                    current, self.targets, strict=True
+                )
+            )
+            and all(
+                len(group) == len(old)
+                and all(child is old_child for child, old_child in zip(group, old, strict=True))
+                for group, old in zip(children, self.children, strict=True)
+            )
+            and tuple(_pair_mode(parent) for parent, _ in current) == self.modes
+        )
+        if not same:
+            raise _bed_changed()
 
 
 async def _release_preflighted(preflighted: PreflightedSides) -> None:
@@ -2371,8 +2475,9 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         await _execute_zseries_alarm(call, "alarms", write_zseries, validate=check_zseries)
         return
 
-    # How each physical target schedules its write, from its own capability.
-    scheduling: dict[int, AlarmCapability] = {}
+    selection = _Selection.capture(targets)
+    # Each physical side's scheduling, from the capability preflight checked.
+    plans: dict[int, AlarmCapability] = {}
 
     def check(target: BedChild, controller: BedController) -> None:
         _check_alarm(target.name, controller, alarm, given)
@@ -2384,24 +2489,65 @@ async def handle_set_alarm(call: ServiceCall) -> None:
                 translation_key="alarm_time_required_to_turn_off",
                 translation_placeholders={"device_name": target.name},
             )
-        scheduling[target.operation_identity] = capability
+        plans[id(target)] = capability
 
-    # Capture STOP ownership for every lane an alarm may write on, before any
-    # await; the lane is known only once preflight has each target's capability.
-    lanes: tuple[str | None, ...] = (None, "configuration", "*")
-    admissions = [
-        {
-            lane: _capture_command_admission(
-                coordinator, side, ALL_COMMAND_RESOURCES if lane is None else (lane,)
-            )
-            for lane in lanes
-        }
-        for coordinator, side in targets
-    ]
     preflighted = await _preflight_each(targets, check)
+    try:
+        finished = await _write_checked_alarms(call, selection, plans, preflighted, alarm, given)
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
+    if not finished:
+        # STOP won: hand the links opened for the check back to their idle timer.
+        await _release_preflighted(preflighted)
+
+
+@dataclass(frozen=True, slots=True)
+class _CheckedSession:
+    """The connection a side's alarm was checked on."""
+
+    controller: BedController
+    generation: object
+
+
+def _connection_generation(child: BedChild) -> object:
+    """Return the side's connection generation; each new connection advances it."""
+    return getattr(child, "_position_connection_generation", None)
+
+
+async def _write_checked_alarms(
+    call: ServiceCall,
+    selection: _Selection,
+    plans: Mapping[int, AlarmCapability],
+    preflighted: PreflightedSides,
+    alarm: AlarmRequest,
+    given: Collection[str],
+) -> bool:
+    """Prepare every side, verify the whole selection, then write each target.
+
+    Returns False when a STOP ended the call early. A STOP before the first
+    write leaves every bed unwritten; one during the writes skips the rest.
+    """
+    call_task = asyncio.current_task()
+    groups = list(zip(selection.targets, selection.children, strict=True))
+    sessions: dict[int, _CheckedSession] = {}
+
+    # Beds that read their stored alarms are checked live, and both sides of a
+    # concurrent combined bed connect, before anything is written.
+    prepare: list[tuple[BedTarget, str, BedChild]] = []
+    for (parent, side), group in groups:
+        barrier = (
+            _pair_mode(parent) == PAIR_CONNECTION_MODE_CONCURRENT
+            and len({child.operation_identity for child in group}) > 1
+        )
+        for child in group:
+            if (plans[id(child)].live_check or barrier) and all(
+                child is not other for _, _, other in prepare
+            ):
+                prepare.append((parent, _child_side(parent, side, child), child))
 
     def step(
-        run: Callable[[BedController, AlarmRequest], Awaitable[None]],
+        run: Callable[[BedController, AlarmCapability], Awaitable[None]],
     ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
         async def execute(controller: BedController) -> None:
             capability = controller.alarm_capability
@@ -2409,34 +2555,124 @@ async def handle_set_alarm(call: ServiceCall) -> None:
                 raise AlarmError(
                     "alarm_lost", "This bed no longer reports an alarm; reload it and try again"
                 )
-            await run(controller, _with_bed_defaults(alarm, capability, given))
+            await run(controller, capability)
 
         return _family_command(BedController, "alarms", execute)
 
-    # Beds that must read their stored alarms check every target before any write.
-    check_step = step(lambda controller, request: controller.check_alarm(request))
-    write_step = step(lambda controller, request: controller.configure_alarm(request))
-    try:
-        for command in (check_step, write_step):
-            for (coordinator, side), captured in zip(targets, admissions, strict=True):
-                physical = [
-                    scheduling[target.operation_identity]
-                    for target in _command_targets(coordinator, side)
-                ]
-                capability = physical[0]
-                if command is check_step and not any(item.live_check for item in physical):
+    async def prepare_side(parent: BedTarget, side: str, child: BedChild) -> None:
+        plan = plans[id(child)]
+        if not plan.live_check:
+            controller = await _get_controller_for_service(child)
+            preflighted.append((parent, child))
+            sessions[id(child)] = _CheckedSession(controller, _connection_generation(child))
+            return
+
+        async def check_live(controller: BedController, capability: AlarmCapability) -> None:
+            await controller.check_alarm(_with_bed_defaults(alarm, capability, given))
+            sessions[id(child)] = _CheckedSession(controller, _connection_generation(child))
+
+        # One side at a time: a failed read is not a reason to STOP the other side.
+        await _execute_alarm_step(parent, side, step(check_live), plan)
+
+    def require_checked_sessions() -> None:
+        """Refuse a side whose link dropped or reconnected after its check."""
+        for (parent, _side), group in groups:
+            sequential = _pair_mode(parent) == PAIR_CONNECTION_MODE_SEQUENTIAL
+            for child in group:
+                session = sessions.get(id(child))
+                if session is None:
                     continue
-                await _execute_sided(
-                    coordinator,
-                    side,
-                    command,
-                    cancel_running=capability.cancel_running,
-                    resource=capability.resource,
-                    admission=captured[capability.resource],
-                )
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
+                if _connection_generation(child) == session.generation and (
+                    child.is_connected
+                    or ready_disconnected_transport(child)
+                    # A sequential pair releases each side after its check, by plan.
+                    or (sequential and child.last_disconnect_reason == "sequential_switch")
+                ):
+                    continue
+                raise _bed_changed()
+
+    def require_write_session(
+        parent: BedTarget, group: tuple[BedChild, ...], controller: BedController
+    ) -> BedChild:
+        """Return the side writing on ``controller``, if it writes on the checked session."""
+        child = next((item for item in group if item.controller is controller), None)
+        checked = [sessions[id(item)] for item in group if id(item) in sessions]
+        if not checked or any(controller is session.controller for session in checked):
+            return child or group[0]
+        # Only the sequential cycle of this call may open a new session.
+        sequential = getattr(parent, "_sequential", None)
+        cycle = sequential._cycle if sequential is not None else None
+        if (
+            child is not None
+            and cycle is not None
+            and cycle.task is call_task
+            and isinstance(parent, PairedBedCoordinator)
+            and cycle.matches(parent._admission)
+        ):
+            session = sessions.get(id(child))
+            if session is None:
+                return child
+            if (
+                getattr(child, "_connection_creator_task", None) is cycle.task
+                and _connection_generation(child) == cast("int", session.generation) + 1
+            ):
+                return child
+        raise _bed_changed()
+
+    def write(
+        parent: BedTarget, group: tuple[BedChild, ...]
+    ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
+        async def configure(controller: BedController, _capability: AlarmCapability) -> None:
+            child = require_write_session(parent, group, controller)
+            # Check the request again on the controller that actually writes.
+            try:
+                request = _check_alarm(child.name, controller, alarm, given)
+            except (ServiceValidationError, ValueError) as err:
+                raise _bed_changed() from err
+            await controller.configure_alarm(request)
+
+        return step(configure)
+
+    with contextlib.ExitStack() as held:
+        # Keep checked links up until written, whatever the idle setting.
+        for _, _, child in prepare:
+            held.enter_context(child.hold_command_connection())
+        for parent, side, child in prepare:
+            if selection.stopped():
+                return False
+            await prepare_side(parent, side, child)
+
+        # Verify the whole selection before the first write.
+        selection.require_unchanged(call)
+        require_checked_sessions()
+        if selection.stopped() or any(id(child) not in sessions for _, _, child in prepare):
+            return False
+
+        for index, ((parent, side), group) in enumerate(groups):
+            if index:
+                selection.require_unchanged(call)
+                if selection.stopped():
+                    return False
+            await _execute_alarm_step(parent, side, write(parent, group), plans[id(group[0])])
+    return True
+
+
+async def _execute_alarm_step(
+    parent: BedTarget,
+    side: str,
+    command: Callable[[BedController], Coroutine[Any, Any, None]],
+    plan: AlarmCapability,
+) -> None:
+    """Run one alarm step, owning the STOP state current right now."""
+    resources = ALL_COMMAND_RESOURCES if plan.resource is None else (plan.resource,)
+    await _execute_sided_translated(
+        parent,
+        side,
+        command,
+        cancel_running=plan.cancel_running,
+        resource=plan.resource,
+        admission=_capture_command_admission(parent, side, resources),
+    )
 
 
 async def handle_sync_clock(call: ServiceCall) -> None:
