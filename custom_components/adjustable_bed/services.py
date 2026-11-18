@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import logging
 from collections.abc import (
     AsyncIterator,
@@ -36,7 +37,9 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import async_get_device_and_config_entry
 from homeassistant.util import dt as dt_util
 
-from .alarm_table import AlarmTableSchedule, OneTimeAlarmRecord, WeeklyAlarmRecord
+from .alarm import ALARM_SOUNDS, WAKE_ACTIONS, AlarmCapability, AlarmRequest
+from .alarm import OPTIONAL_FIELDS as ALARM_OPTIONAL_FIELDS
+from .alarm import WEEKDAYS as ALARM_WEEKDAYS
 from .bed_traits import bed_type_has_position_feedback
 from .beds.base import BedController, controller_as
 from .beds.entity_specs import POSITION_UNIT_DEGREES, POSITION_UNIT_PERCENT
@@ -147,17 +150,10 @@ SERVICE_SET_POSITION = "set_position"
 SERVICE_SET_POSITIONS = "set_positions"
 SERVICE_STOP_ALL = "stop_all"
 SERVICE_TIMED_MOVE = "timed_move"
-SERVICE_LINAK_RENAME = "linak_rename"
 SERVICE_HOLD_CONTROL = "hold_control"
 SERVICE_RENAME = "rename"
 SERVICE_SYNC_CLOCK = "sync_clock"
-SERVICE_CONFIGURE_ALARM_SCHEDULE = "configure_alarm_schedule"
-# Released per-app names that now alias the generic actions above (linak_rename
-# is listed above).
-SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
-SERVICE_LOGICDATA_RENAME = "logicdata_rename"
-SERVICE_JIECANG_RENAME = "jiecang_rename"
-SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
+SERVICE_SET_ALARM = "set_alarm"
 ATTR_SLOT = "slot"
 ATTR_MODE = "mode"
 ATTR_CONFIRM_CUSTOM_MODE = "confirm_custom_mode"
@@ -2043,40 +2039,182 @@ async def _hold_targets(
         await _release_preflighted(preflighted)
 
 
-async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
-    """Preflight both tables on all physical targets before encoding or writing."""
-    schedule = AlarmTableSchedule(
-        weekly=tuple(WeeklyAlarmRecord(**{**row, "weekdays": tuple(row["weekdays"])}) for row in call.data["weekly"]),
-        one_time=tuple(OneTimeAlarmRecord(**row) for row in call.data["one_time"]),
-        dispatch=call.data["dispatch"],
+def _alarm_request(call: ServiceCall) -> AlarmRequest:
+    """Build the call's one alarm request, captured against one local time."""
+    data = call.data
+    enabled = data[ATTR_ENABLED]
+    alarm_time = data.get(ATTR_TIME)
+    if enabled and alarm_time is None:
+        raise ServiceValidationError(
+            "Choose an alarm time", translation_domain=DOMAIN, translation_key="alarm_time_required"
+        )
+    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
+        raise ServiceValidationError(
+            "Alarm times are set in whole minutes",
+            translation_domain=DOMAIN,
+            translation_key="alarm_time_whole_minutes",
+        )
+    optional = {name: data[name] for name in ALARM_OPTIONAL_FIELDS if name in data}
+    if "weekdays" in optional:
+        optional["weekdays"] = tuple(sorted({ALARM_WEEKDAYS.index(day) for day in optional["weekdays"]}))
+    return AlarmRequest(
+        enabled=enabled,
+        hour=alarm_time.hour if alarm_time is not None else 0,
+        minute=alarm_time.minute if alarm_time is not None else 0,
         reference_time=dt_util.now(),
+        **optional,
     )
-    await async_import_modules(call.hass, "beds.keeson.layout_app")
-    from .beds.keeson.layout_app import AppController
 
+
+def _check_alarm(
+    device_name: str, controller: BedController, alarm: AlarmRequest, given: Collection[str]
+) -> AlarmRequest:
+    """Validate one physical target's alarm and return it with its defaults filled in."""
+    capability = controller.alarm_capability
+    if capability is None:
+        raise ServiceValidationError(
+            f"Device '{device_name}' has no alarm",
+            translation_domain=DOMAIN,
+            translation_key="alarm_not_supported",
+            translation_placeholders={"device_name": device_name},
+        )
+    for name in given:
+        if not capability.accepts(name):
+            raise ServiceValidationError(
+                f"Device '{device_name}' has no alarm option '{name}'. Remove it and try again",
+                translation_domain=DOMAIN,
+                translation_key="alarm_option_not_supported",
+                translation_placeholders={"device_name": device_name, "option": name},
+            )
+    wake_action = alarm.wake_action if "wake_action" in given else None
+    if wake_action is not None and wake_action not in capability.wake_actions:
+        raise ServiceValidationError(
+            f"Device '{device_name}' cannot wake with '{wake_action}'. "
+            f"Choose one of: {', '.join(capability.wake_actions)}",
+            translation_domain=DOMAIN,
+            translation_key="alarm_wake_action_not_supported",
+            translation_placeholders={
+                "device_name": device_name,
+                "wake_action": wake_action,
+                "wake_actions": ", ".join(capability.wake_actions),
+            },
+        )
+    limits = (
+        ("slot", alarm.slot, 1, capability.slots),
+        ("head_massage_level", alarm.head_massage_level, 0, capability.massage_levels),
+        ("foot_massage_level", alarm.foot_massage_level, 0, capability.massage_levels),
+        ("massage_intensity", alarm.massage_intensity, 1, capability.massage_intensities),
+    )
+    for name, value, low, high in limits:
+        if name in given and not low <= value <= high:
+            raise ServiceValidationError(
+                f"Device '{device_name}' accepts {name} {low} to {high}",
+                translation_domain=DOMAIN,
+                translation_key="alarm_value_out_of_range",
+                translation_placeholders={
+                    "device_name": device_name,
+                    "option": name,
+                    "min": str(low),
+                    "max": str(high),
+                },
+            )
+    if "massage_duration" in given and alarm.massage_duration not in capability.massage_durations:
+        raise ServiceValidationError(
+            f"Device '{device_name}' accepts massage durations of "
+            f"{', '.join(map(str, capability.massage_durations))} minutes",
+            translation_domain=DOMAIN,
+            translation_key="alarm_massage_duration_not_supported",
+            translation_placeholders={
+                "device_name": device_name,
+                "durations": ", ".join(map(str, capability.massage_durations)),
+            },
+        )
+    if "sound" in given and alarm.sound not in capability.sounds:
+        raise ServiceValidationError(
+            f"Device '{device_name}' cannot play sound '{alarm.sound}'",
+            translation_domain=DOMAIN,
+            translation_key="alarm_sound_not_supported",
+            translation_placeholders={"device_name": device_name, "sound": alarm.sound},
+        )
+    resolved = _resolve_wake_action(alarm, capability, given)
+    if (
+        resolved.enabled
+        and resolved.wake_action in capability.confirm_actions
+        and not resolved.confirm_custom_position
+    ):
+        raise ServiceValidationError(
+            f"Check the saved position of '{device_name}', then turn on the confirmation to use it",
+            translation_domain=DOMAIN,
+            translation_key="alarm_confirmation_required",
+            translation_placeholders={"device_name": device_name},
+        )
+    controller.validate_alarm(resolved)
+    return resolved
+
+
+def _resolve_wake_action(
+    alarm: AlarmRequest, capability: AlarmCapability, given: Collection[str]
+) -> AlarmRequest:
+    """Fill in the bed's own default wake action when the caller chose none."""
+    if "wake_action" in given or not capability.wake_actions:
+        return alarm
+    return dataclasses.replace(alarm, wake_action=capability.wake_actions[0])
+
+
+async def handle_set_alarm(call: ServiceCall) -> None:
+    """Validate one alarm on every physical target, then write it to each."""
+    from .beds.serenity.services import _execute_zseries_alarm
+
+    alarm = _alarm_request(call)
+    given = [name for name in ALARM_OPTIONAL_FIELDS if name in call.data]
     targets = _call_targets(call)
-    # A table call cannot connect merely to discover whether it is valid:
-    # initialization can write clock/zero/query frames. These static profiles
-    # are offline-mintable, and all other controllers lack this contract.
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            controller = controller_as(target.capability_controller, AppController)
-            if controller is None or controller.alarm_table_schedule_spec is None:
-                raise ServiceValidationError(f"Device '{target.name}' has no available alarm-table contract")
 
-    def validate(controller: AppController) -> None:
-        spec = controller.alarm_table_schedule_spec
-        if spec is None:
-            raise ServiceValidationError("This bed has no alarm-table contract")
-        spec.validate(schedule)
+    if _profile_route(targets, {BED_TYPE_ZSERIES: "zseries"}, SERVICE_SET_ALARM):
+        # Z-Series alarms exist only after a live manufacturer read; every
+        # target is the same profile, so the first check fails before any write.
+        async def write_zseries(controller: BedController) -> None:
+            await controller.configure_alarm(_check_alarm("", controller, alarm, given))
 
-    await _preflight_and_execute(
-        targets,
-        AppController,
-        "alarm tables",
-        lambda controller: controller.configure_alarm_table_schedule(schedule),
-        validate=validate,
-    )
+        await _execute_zseries_alarm(call, "alarms", write_zseries)
+        return
+
+    # How each physical target schedules its write, from its own capability.
+    scheduling: dict[int, AlarmCapability] = {}
+
+    def check(target: BedChild, controller: BedController) -> None:
+        _check_alarm(target.name, controller, alarm, given)
+        scheduling[target.operation_identity] = cast("AlarmCapability", controller.alarm_capability)
+
+    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
+    preflighted = await _preflight_each(targets, check)
+
+    async def write(controller: BedController) -> None:
+        capability = controller.alarm_capability
+        if capability is None:
+            raise ValueError("This bed no longer reports an alarm; reload it and try again")
+        await controller.configure_alarm(_resolve_wake_action(alarm, capability, given))
+
+    try:
+        for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            capability = scheduling[_command_targets(coordinator, side)[0].operation_identity]
+            await _execute_sided(
+                coordinator,
+                side,
+                _family_command(BedController, "alarms", write),
+                cancel_running=capability.cancel_running,
+                resource=capability.resource,
+                admission=admission,
+            )
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
+
+
+def _check_alarm_capability(controller: BedController) -> AlarmCapability:
+    capability = controller.alarm_capability
+    if capability is None:
+        raise ValueError("This bed has no alarm")
+    return capability
 
 
 async def handle_sync_clock(call: ServiceCall) -> None:
@@ -2376,7 +2514,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     """Import the family action modules, which import this one, in the import executor."""
     from .beds.bedgear.services import async_register_bedgear_services
     from .beds.bedtech.services import register_services as register_bedtech_services
-    from .beds.bf_cherish.services import register_services as register_bf_cherish_services
     from .beds.casper_base.services import async_register_casper_base_services
     from .beds.comfort_enhancement3.services import register_services as register_apex_services
     from .beds.comfort_enhancements.services import async_register_comfort_enhancements_services
@@ -2433,7 +2570,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_mline_services,
         register_bedtech_services,
         register_n32_services,
-        register_bf_cherish_services,
         register_smart_sleep_services,
         register_jalon_services,
         register_symphony_services,
@@ -2597,32 +2733,6 @@ async def async_register_services(hass: HomeAssistant) -> None:
             }
         ),
     )
-    # Released per-app rename actions keep their original schemas.
-    for service, devices, name_rule in (
-        (SERVICE_LINAK_RENAME, cv.ensure_list, vol.Length(min=1, max=17)),
-        (
-            SERVICE_LOGICDATA_RENAME,
-            DEVICE_IDS,
-            vol.Match(r"\A[\x20-\x7eäöüÄÖÜß]{1,255}\Z"),
-        ),
-        (
-            SERVICE_JIECANG_RENAME,
-            DEVICE_IDS,
-            vol.Match(r"\A[A-Za-z0-9]{1,20}\Z"),
-        ),
-    ):
-        hass.services.async_register(
-            DOMAIN,
-            service,
-            handle_rename,
-            schema=vol.Schema(
-                {
-                    vol.Required(CONF_DEVICE_ID): devices,
-                    vol.Required(ATTR_NAME): vol.All(cv.string, name_rule),
-                    **SIDE_FIELD,
-                }
-            ),
-        )
     hold_fields = {
         vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         vol.Required(ATTR_DURATION): _hold_seconds,
@@ -2643,42 +2753,35 @@ async def async_register_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN,
-        SERVICE_LEGGETT_HOLD_CONTROL,
-        handle_hold_control,
+        SERVICE_SET_ALARM,
+        handle_set_alarm,
+        # Each target's controller declares which of these its alarm accepts.
         schema=vol.Schema(
-            {**hold_fields, vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS)}
+            {
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+                vol.Required(ATTR_ENABLED): cv.boolean,
+                vol.Optional(ATTR_TIME): cv.time,
+                vol.Optional(ATTR_WEEKDAYS): vol.All(cv.ensure_list, [vol.In(ALARM_WEEKDAYS)]),
+                vol.Optional(ATTR_SLOT): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
+                vol.Optional("wake_action"): vol.In(WAKE_ACTIONS),
+                vol.Optional(ATTR_MASSAGE): cv.boolean,
+                vol.Optional("head_massage_level"): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
+                vol.Optional("foot_massage_level"): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
+                vol.Optional("massage_intensity"): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
+                vol.Optional("massage_duration"): vol.All(vol.Coerce(int), vol.Range(min=1, max=120)),
+                vol.Optional(ATTR_SOUND): vol.In(ALARM_SOUNDS),
+                vol.Optional("light"): cv.boolean,
+                vol.Optional("confirm_custom_position"): cv.boolean,
+                **SIDE_FIELD,
+            }
         ),
     )
-    alarm_fields = {
-        vol.Optional("enabled", default=False): cv.boolean,
-        vol.Optional("wake", default=False): cv.boolean,
-        vol.Optional("hour", default=0): vol.All(int, vol.Range(min=0, max=23)),
-        vol.Optional("minute", default=0): vol.All(int, vol.Range(min=0, max=59)),
-    }
     hass.services.async_register(
         DOMAIN,
-        SERVICE_CONFIGURE_ALARM_SCHEDULE,
-        handle_configure_alarm_schedule,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-            vol.Required("weekly"): [vol.Schema({**alarm_fields, vol.Optional("weekdays", default=[]): [vol.All(int, vol.Range(min=0, max=6))]})],
-            vol.Required("one_time"): [vol.Schema(alarm_fields)],
-            vol.Required("dispatch"): vol.In(("both", "weekly", "one_time")),
-            **SIDE_FIELD,
-        }),
+        SERVICE_SYNC_CLOCK,
+        handle_sync_clock,
+        schema=vol.Schema({vol.Required(CONF_DEVICE_ID): DEVICE_IDS, **SIDE_FIELD}),
     )
-    for service in (SERVICE_SYNC_CLOCK, SERVICE_MALOUF_SYNC_CLOCK):
-        hass.services.async_register(
-            DOMAIN,
-            service,
-            handle_sync_clock,
-            schema=vol.Schema(
-                {
-                    vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                    **SIDE_FIELD,
-                }
-            ),
-        )
     hass.services.async_register(
         DOMAIN,
         SERVICE_GENERATE_SUPPORT_BUNDLE,
