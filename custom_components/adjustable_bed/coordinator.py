@@ -2844,8 +2844,13 @@ class AdjustableBedCoordinator(
         resources: Collection[str],
         cancel_running: bool = True,
         group_id: str | None = None,
+        expected_stop_epoch: int | None = None,
     ) -> None:
-        """Run ordered operations as one resource-scoped scheduler intent."""
+        """Run ordered operations as one resource-scoped scheduler intent.
+
+        ``expected_stop_epoch`` drops the group when a STOP arrived after the
+        caller captured it.
+        """
         operation_list = tuple(operations)
         if not operation_list:
             return
@@ -2868,6 +2873,12 @@ class AdjustableBedCoordinator(
         if context is not None and context.scheduler_token is self._command_scheduler.token:
             await group_operation()
             return
+        if (
+            expected_stop_epoch is not None
+            and expected_stop_epoch != self._command_scheduler.stop_epoch
+        ):
+            # A STOP overtook the request: preempt nothing.
+            return
 
         controller = self.capability_controller
         cancel_running = cancel_running or (
@@ -2887,7 +2898,7 @@ class AdjustableBedCoordinator(
             cancel_running=cancel_running,
             group_id=group_id or uuid4().hex,
         )
-        await self._command_scheduler.execute(intent)
+        await self._command_scheduler.execute(intent, expected_stop_epoch=expected_stop_epoch)
 
     async def async_execute_controller_query(
         self,
