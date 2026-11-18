@@ -146,6 +146,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     Some controls exist only for a reported model, layout or page, which no
     offline configuration reaches.
     """
+    from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
     from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
@@ -179,7 +180,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     for controller in controllers:
         yield controller
-        if isinstance(controller, ParamountController):
+        if isinstance(controller, OnlySnoreController):
+            yield variant(controller, _alarm_count=3)
+        elif isinstance(controller, ParamountController):
             yield variant(controller, _mask=31, _height_bounds=(20, 70))
         elif isinstance(controller, SleeptrackerController):
             for model in sleeptracker_protocol.MODELS.values():

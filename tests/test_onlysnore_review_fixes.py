@@ -60,9 +60,16 @@ async def connect(receiver: Receiver):
     client.disconnect = AsyncMock(side_effect=disconnect)
     receiver.clients.append(client)
     coordinator._client = client
-    coordinator._controller = await create_controller(coordinator, "onlysnore", None, client)
-    coordinator._position_connection_generation += 1
-    await coordinator.controller.start_notify()
+    try:
+        coordinator._controller = await create_controller(coordinator, "onlysnore", None, client)
+        coordinator._position_connection_generation += 1
+        await coordinator.controller.start_notify()
+    except BaseException:
+        await client.disconnect()
+        if coordinator._client is client:
+            coordinator._client = None
+            coordinator._controller = None
+        raise
     return True
 
 
@@ -150,19 +157,152 @@ async def alarm(hass, ids, *, slot=1):
     )
 
 
+@asynccontextmanager
+async def paused_factory(second, *, fail=False):
+    entered, release, drained = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    original = create_controller
+
+    async def construct(coordinator, *args, **kwargs):
+        nonlocal fail
+        if coordinator is second:
+            entered.set()
+            try:
+                await release.wait()
+                if fail:
+                    fail = False
+                    raise ConnectionError("peer factory failed")
+            finally:
+                drained.set()
+        return await original(coordinator, *args, **kwargs)
+
+    with patch(__name__ + ".create_controller", construct):
+        try:
+            yield entered, release, drained
+        finally:
+            release.set()
+
+
 @pytest.mark.parametrize("topology", ["standalone", "concurrent", "sequential"])
 async def test_mixed_live_and_valid_offline_physical_receivers(hass, topology):
     async with receivers(hass, topology=topology) as (items, ids, _pair):
         admitted = items[0].coordinator.controller
         assert items[1].coordinator.controller is None
         with virtual_clock():
-            await alarm(hass, ids)
+            try:
+                await alarm(hass, ids)
+            except PairedSideError as error:
+                pytest.fail(f"Mixed physical receiver failure: {error.side_errors!r}")
         assert items[0].mutations == items[1].mutations == [bytes.fromhex("07057f01071e000101")]
         assert items[1].clients
         # Concurrent and standalone retain the admitted live controller;
         # sequential topology may intentionally release its completed side.
         if topology != "sequential":
             assert items[0].coordinator.controller is admitted
+
+
+async def test_concurrent_alarm_waits_for_offline_construction_before_any_mutation(hass):
+    async with receivers(hass, topology="concurrent") as (items, ids, _pair):
+        second = items[1].coordinator
+        async with paused_factory(second) as (entered, release, drained):
+            with virtual_clock():
+                task = asyncio.create_task(alarm(hass, ids))
+                try:
+                    await entered.wait()
+                    await asyncio.sleep(0)
+                    assert second.client is not None and second.controller is None
+                    assert not task.done()
+                    assert all(not item.mutations for item in items)
+                    release.set()
+                    await task
+                    assert drained.is_set()
+                    assert (
+                        items[0].mutations
+                        == items[1].mutations
+                        == [bytes.fromhex("07057f01071e000101")]
+                    )
+                finally:
+                    release.set()
+                    if not task.done():
+                        task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_concurrent_alarm_stop_drains_waiting_cohort_without_alarm_mutation(hass):
+    async with receivers(hass, topology="concurrent") as (items, ids, pair):
+        scheduler = items[0].coordinator._command_scheduler
+        admitted = asyncio.Event()
+        original_stop = scheduler.admit_stop
+        stop_epoch = items[0].coordinator.stop_epoch
+
+        def admit_stop(*args, **kwargs):
+            result = original_stop(*args, **kwargs)
+            admitted.set()
+            return result
+
+        async with paused_factory(items[1].coordinator) as (entered, release, drained):
+            with patch.object(scheduler, "admit_stop", admit_stop), virtual_clock():
+                task = asyncio.create_task(alarm(hass, ids))
+                stop = None
+                try:
+                    await entered.wait()
+                    await asyncio.sleep(0)
+                    assert not task.done() and all(not item.mutations for item in items)
+                    async with asyncio.timeout(1):
+                        stop = asyncio.create_task(pair.async_stop_command())
+                        await admitted.wait()
+                        assert items[0].coordinator.stop_epoch > stop_epoch
+                        release.set()
+                        await stop
+                        await task
+                    assert task.done() and stop.done() and drained.is_set()
+                    assert all(not item.mutations for item in items)
+                finally:
+                    release.set()
+                    for pending in (task, stop):
+                        if pending is not None and not pending.done():
+                            pending.cancel()
+                    await asyncio.gather(
+                        *(pending for pending in (task, stop) if pending is not None),
+                        return_exceptions=True,
+                    )
+    assert all(not client.is_connected for item in items for client in item.clients)
+    assert all(
+        item.coordinator._command_scheduler._worker is None
+        or item.coordinator._command_scheduler._worker.done()
+        for item in items
+    )
+
+
+async def test_concurrent_alarm_peer_factory_failure_drains_waiting_cohort(hass):
+    async with (
+        receivers(hass, topology="concurrent") as (items, ids, _pair),
+        paused_factory(items[1].coordinator, fail=True) as (entered, release, drained),
+    ):
+        with virtual_clock():
+            task = asyncio.create_task(alarm(hass, ids))
+            try:
+                await entered.wait()
+                await asyncio.sleep(0)
+                assert not task.done() and all(not item.mutations for item in items)
+                release.set()
+                with pytest.raises(PairedSideError) as error:
+                    async with asyncio.timeout(1):
+                        await task
+                assert isinstance(error.value.side_errors["right"], ConnectionError)
+                assert str(error.value.side_errors["right"]) == "peer factory failed"
+                assert task.done() and drained.is_set()
+                assert all(not item.mutations for item in items)
+            finally:
+                release.set()
+                if not task.done():
+                    task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+    assert all(not client.is_connected for item in items for client in item.clients)
+    assert all(
+        item.coordinator._command_scheduler._worker is None
+        or item.coordinator._command_scheduler._worker.done()
+        for item in items
+    )
 
 
 @pytest.mark.parametrize("topology", ["standalone", "concurrent", "sequential"])

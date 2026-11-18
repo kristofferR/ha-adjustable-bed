@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -10,7 +11,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from ...const import CONF_PRODUCT_TYPE, DOMAIN
+from ...const import CONF_PRODUCT_TYPE, DOMAIN, PAIR_CONNECTION_MODE_CONCURRENT
 from ...import_executor import async_import_modules
 from ...profile_id import profile_route_from_data
 
@@ -111,6 +112,7 @@ class _Owner:
 
 def register_services(hass: HomeAssistant) -> None:
     from ...coordinator import AdjustableBedCoordinator
+    from ...paired_coordinator import PairedBedCoordinator
     from ...services import (
         DEVICE_IDS,
         SIDE_FIELD,
@@ -126,14 +128,22 @@ def register_services(hass: HomeAssistant) -> None:
         # Capture every physical connection/controller before the first await.
         owners: dict[AdjustableBedCoordinator, _Owner] = {}
         roster = []
+        linked = []
         for parent, side in targets:
-            for child in _command_targets(parent, side):
+            physical = tuple(_command_targets(parent, side))
+            for child in physical:
                 if not isinstance(child, AdjustableBedCoordinator):
                     raise ServiceValidationError(
                         "Snore Monitor alarms require physical BED receivers"
                     )
                 owners.setdefault(child, _Owner.capture(child))
-            roster.append(tuple(_command_targets(parent, side)))
+            roster.append(physical)
+            if (
+                isinstance(parent, PairedBedCoordinator)
+                and parent.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
+                and len(physical) > 1
+            ):
+                linked.append((parent, physical, asyncio.Event()))
         await async_import_modules(hass, "beds.onlysnore.controller")
         from .controller import AlarmArguments, OnlySnoreController
 
@@ -143,6 +153,13 @@ def register_services(hass: HomeAssistant) -> None:
                 for (parent, side), admitted in zip(targets, roster, strict=True)
             ):
                 raise ServiceValidationError("BED target roster changed during alarm admission")
+            if any(
+                parent.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+                for parent, _physical, _ready in linked
+            ):
+                raise ServiceValidationError(
+                    "BED connection topology changed during alarm admission"
+                )
 
         check_roster()
         for owner in owners.values():
@@ -173,6 +190,7 @@ def register_services(hass: HomeAssistant) -> None:
             "soft": call.data["soft_wake"],
         }
         validated: dict[AdjustableBedCoordinator, OnlySnoreController] = {}
+        prepared: set[AdjustableBedCoordinator] = set()
         mutation_started = False
 
         def owner_for(ctrl: OnlySnoreController) -> _Owner:
@@ -196,6 +214,17 @@ def register_services(hass: HomeAssistant) -> None:
             owner = owner_for(ctrl)
             if owner.receiver.controller is not ctrl:
                 raise ServiceValidationError("BED controller changed after alarm preflight")
+            prepared.add(owner.receiver)
+            for _parent, physical, ready in linked:
+                if owner.receiver not in physical:
+                    continue
+                # Both physical schedulers must finish their own connection
+                # preparation before either checks peer sessions or mutates.
+                if all(child in prepared for child in physical):
+                    ready.set()
+                await ready.wait()
+            check_roster()
+            owner_for(ctrl)
             if not mutation_started:
                 # Recheck the whole immutable selection after scheduler/connect
                 # waits, before the first requested mutation on any receiver.

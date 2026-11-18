@@ -521,13 +521,18 @@ async def test_real_registry_parent_and_child_alarm_targets_keep_side_and_confli
         coordinator = AdjustableBedCoordinator(hass, entry)
         coordinator._client = controller().client
         coordinator._client.address = address
-        coordinator._client.disconnect = AsyncMock()
-        ctrl = OnlySnoreController(coordinator)
+
+        async def disconnect(client=coordinator._client):
+            client.is_connected = False
+
+        coordinator._client.disconnect = AsyncMock(side_effect=disconnect)
+        ctrl = OnlySnoreController(coordinator, "single")
         coordinator._controller = ctrl
         coordinator._position_connection_generation = 1
         coordinator.async_ensure_connected = AsyncMock(return_value=True)
         ctrl.set_alarm = AsyncMock()
         physical[side] = (coordinator, ctrl)
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     pair_entry = MockConfigEntry(domain=DOMAIN, version=5, data={"pair_id": "onlysnore-registry"})
     pair_entry.add_to_hass(hass)
     pair_entry.mock_state(hass, ConfigEntryState.LOADED)
