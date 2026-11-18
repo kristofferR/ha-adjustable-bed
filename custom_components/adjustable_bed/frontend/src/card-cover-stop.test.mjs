@@ -417,7 +417,7 @@ for (const key of Object.keys(smartSleepRoutes.p1)) {
     fixture.handler("@keydown")(new KeyboardEvent("keydown"));
     await flushMicrotasks();
     assert.equal(fixture.calls[0]?.service, "hold_control");
-    assert.equal(fixture.calls[0].data.control, key);
+    assert.equal(fixture.calls[0].data.control, smartSleepRoutes.p1[key].held_control);
     assert.equal(fixture.calls[0].data.duration, 0.75);
     assert.equal(typeof fixture.calls[0].data.hold_owner, "string");
     fixture.handler("@keyup")(new KeyboardEvent("keyup"));

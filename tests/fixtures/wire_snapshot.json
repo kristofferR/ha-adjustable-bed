@@ -26722,6 +26722,10 @@
 "select:smart_comfort_seat=2": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000455",1,0]]},
 "select:smart_comfort_seat=1": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000257",1,0]]},
 "select:smart_comfort_seat=0": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000158",1,0]]},
+"switch:smart_comfort_cup=on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600000108fd",1,0]]},
+"switch:smart_comfort_cup=off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601000108fc",1,0]]},
+"switch:smart_comfort_read=on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601010104ff",1,0]]},
+"switch:smart_comfort_read=off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1602010104fe",1,0]]},
 "number:smart_comfort_read_brightness=4": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1604000104fd",1,0]]},
 "number:smart_comfort_read_brightness=100": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe16640001049d",1,0]]}
 }},
@@ -26783,6 +26787,10 @@
 "select:smart_comfort_seat=2": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000455",1,0]]},
 "select:smart_comfort_seat=1": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000257",1,0]]},
 "select:smart_comfort_seat=0": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000158",1,0]]},
+"switch:smart_comfort_cup=on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600000108fd",1,0]]},
+"switch:smart_comfort_cup=off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601000108fc",1,0]]},
+"switch:smart_comfort_read=on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601010104ff",1,0]]},
+"switch:smart_comfort_read=off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1602010104fe",1,0]]},
 "number:smart_comfort_read_brightness=4": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1604000104fd",1,0]]},
 "number:smart_comfort_read_brightness=100": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe16640001049d",1,0]]}
 }},
