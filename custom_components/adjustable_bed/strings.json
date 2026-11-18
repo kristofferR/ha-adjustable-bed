@@ -9347,6 +9347,9 @@
     },
     "sleep_number_command_not_supported": {
       "message": "{device_name} does not accept the Sleep Number command \"{command}\"."
+    },
+    "whole_number_required": {
+      "message": "Use a whole number instead of \"{value}\"."
     }
   },
   "issues": {

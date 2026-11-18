@@ -365,7 +365,7 @@ def _whole_number(value: object) -> int:
     if isinstance(value, str) and value.strip().isdigit():
         return int(value)
     if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
-        raise vol.Invalid("Expected a whole number")
+        raise _invalid("whole_number_required", f"Use a whole number instead of {value!r}", value=value)
     return int(value)
 
 
