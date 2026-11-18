@@ -190,8 +190,9 @@ async def test_two_address_options_cannot_copy_app_selectors_between_children(ha
     assert not const.STARCODE_APP_CONFIG_KEYS.intersection(
         key.schema for key in result["data_schema"].schema
     )
+    # A side's own selector is not on the shared form, so it is ignored.
     result = await flow.async_step_settings({const.CONF_STARCODE_COMMAND_SELECTOR: "BOX1220"})
-    assert result["errors"] == {"base": "app_profile_unpair_first"}
+    assert result["type"] == FlowResultType.CREATE_ENTRY
     assert [
         child[const.CONF_STARCODE_COMMAND_SELECTOR]
         for child in entry.data[const.CONF_PAIR_CHILDREN]

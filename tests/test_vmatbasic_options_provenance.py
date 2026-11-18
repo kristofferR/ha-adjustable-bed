@@ -137,4 +137,5 @@ async def test_paired_displayed_pulse_override_updates_both_children(hass: HomeA
     assert flow.config_entry.data[const.CONF_MOTOR_PULSE_USER_SET] is True
     for child in flow.config_entry.data[const.CONF_PAIR_CHILDREN]:
         assert child[const.CONF_MOTOR_PULSE_COUNT] == 17
-        assert child[const.CONF_MOTOR_PULSE_DELAY_MS] == 90
+        # The repeat delay is the bed's own; only Movement per tap is shown.
+        assert child[const.CONF_MOTOR_PULSE_DELAY_MS] == 100

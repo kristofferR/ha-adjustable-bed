@@ -204,9 +204,8 @@ async def test_paired_options_preserve_each_sides_app_profile(hass):
     shown = {marker.schema for marker in result["data_schema"].schema}
     assert shown.isdisjoint(app_fields)
     # A side's own app profile is not part of the shared form.
-    refused = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20", **right})
-    assert refused["errors"] == {"base": "app_profile_unpair_first"}
-    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20"})
+    # A side's own app fields are not on the shared form, so they are ignored.
+    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: 20, **right})
     assert result["type"] == FlowResultType.CREATE_ENTRY
     for child, original in zip(entry.data[CONF_PAIR_CHILDREN], (left, right), strict=True):
         assert {key: child[key] for key in app_fields} == {key: original[key] for key in app_fields}

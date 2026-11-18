@@ -197,8 +197,9 @@ async def test_two_address_pair_keeps_different_side_profiles(hass):
     assert not const.VIBRADORM_APP_CONFIG_KEYS.intersection(
         key.schema for key in result["data_schema"].schema
     )
+    # A side's own control type is not on the shared form, so it is ignored.
     result = await flow.async_step_settings({const.CONF_VIBRADORM_CONTROL_TYPE: "5"})
-    assert result["errors"] == {"base": "app_profile_unpair_first"}
+    assert result["type"] == FlowResultType.CREATE_ENTRY
     assert [child[const.CONF_VIBRADORM_CONTROL_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == ["2", "7"]
     assert not supports_single_address_pairing(const.BED_TYPE_VIBRADORM_APP)
     assert (await flow.async_step_settings({const.CONF_IDLE_DISCONNECT_SECONDS: 55}))["type"] == FlowResultType.CREATE_ENTRY

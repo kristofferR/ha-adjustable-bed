@@ -282,7 +282,6 @@ async def test_setup_saves_each_product_profile_and_configure_reloads(hass, prod
     from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
     from custom_components.adjustable_bed.config_flow import (
         AdjustableBedConfigFlow,
-        AdjustableBedOptionsFlow,
     )
     from custom_components.adjustable_bed.detection import get_bed_type_options
     from custom_components.adjustable_bed.profile_id import with_profile_ids
@@ -309,11 +308,22 @@ async def test_setup_saves_each_product_profile_and_configure_reloads(hass, prod
     assert const.CONF_MOTOR_COUNT in hidden_generic_fields("rize_home", product)
     entry = MockConfigEntry(domain=const.DOMAIN, title="Rize Home", data=data)
     entry.add_to_hass(hass)
-    options = AdjustableBedOptionsFlow(entry)
-    options.hass, options.handler = hass, entry.entry_id
     other = "contempo_iv" if product == "remedy_iii" else "remedy_iii"
+    from custom_components.adjustable_bed.profile_migration import reconfigure_context
+
+    manager = hass.config_entries.flow
     with patch.object(hass.config_entries, "async_schedule_reload"):
-        await options._async_options_form({const.CONF_PROTOCOL_VARIANT: other}, step_id="settings")
+        # The product is a route, so it changes in Reconfigure.
+        result = await manager.async_init(const.DOMAIN, context=reconfigure_context(entry))
+        assert result["step_id"] == "reconfigure_bed_type"
+        result = await manager.async_configure(result["flow_id"], {const.CONF_BED_TYPE: "rize_home"})
+        assert result["step_id"] == "profile_questions"
+        result = await manager.async_configure(
+            result["flow_id"], {const.CONF_PROTOCOL_VARIANT: other}
+        )
+        assert result["step_id"] == "migration_confirm"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+        assert result["reason"] == "migration_applied"
         assert entry.data[const.CONF_PROTOCOL_VARIANT] == other
         assert with_profile_ids(entry.data)[const.CONF_PROFILE_ID] == f"rize_home:{other}"
         from custom_components.adjustable_bed import _async_sync_profile_ids
