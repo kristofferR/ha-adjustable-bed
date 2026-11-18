@@ -314,6 +314,45 @@ Removed and replaced entities by bed:
 | BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons | |
 | V-MAT Basic | ED motor status binary sensor | |
 
+### Buttons named after an app's controls
+
+Beds whose buttons come from an app's button list or a remote layout now show
+each button as what it is, the same way on every bed. Unique IDs do not change,
+so entity IDs, history and settings stay.
+
+- **Placed by kind.** Motor up and down buttons sit in the card's motor rows,
+  presets and memories in their tiles, and massage and light controls in their
+  sections, instead of one row of generic buttons.
+- **Shared names.** A preset, memory slot or massage step that every bed has
+  takes the shared name, for example **Zero Gravity**, **Memory 1** or
+  **Massage: Head Up**. Other buttons keep the app's label without notes or
+  internal identifiers ("MasFootAdd" is now **Increase foot massage**,
+  "Ubb" is **Under-bed light**).
+- **Extras start disabled.** Music, fan, heating, aromatherapy, Bluetooth,
+  reset and similar buttons are created disabled for new installations. Enable
+  them under the device's entities if you use them.
+- **One rule for saves.** A preset save sits with the presets in its save role,
+  is a configuration entity and asks first in the card. A memory save is only
+  offered in the card's Set mode and no longer opens a second confirmation.
+- **Same-named buttons are numbered**, for example **Wave** and **Wave 2**,
+  where an app lists two different controls under one label.
+
+Removed buttons, by bed or app:
+
+| Bed or app | Removed | Use instead |
+|------------|---------|-------------|
+| Good Vibe, Galaxy, MLILY | "No action", "Logo" and "… menu" buttons from empty catalog slots; "(long press)" twins; a control a remote listed twice (four MLILY remotes created it with one unique ID twice) | The plain button. Power Bob Base keeps its long presses as **Save …** buttons |
+| Casper Base, Hush Base, Luuna | "Memory position 1–3" and "Save Memory position 1–3", "Motor reset" | **Memory 1–3**, **Save to Memory 1–3**, **Flat** |
+| Jalon | Flat, Zero G, Lounge, TV, Anti-snore and Memory 1–2 "(app gesture)" buttons | The shared preset and memory buttons, which now hold the gesture in the card |
+| Tempur, Ergomotion, Q-Plus, Serta MP, Omazz, ROW Control, Ergo Slim, TEMPUR AU apps | The app's Flat button | **Flat** |
+| BedSense | Memory recall buttons for slots 3–5 | **TV**, **Zero Gravity** and **Anti-Snore** (**Flat** on layouts 6 and 8) recall those slots; their saves stay |
+| OKIN CST, Rize Remedy II | Memory recall buttons for slots a named preset recalls | **Zero Gravity**, **Incline**, **Reading** or **Lounge**; the slot's save stays |
+| Serenity, Tranquil, Z-Series | "Toggle light" app button | The shared **Toggle Light** |
+| TiMOTION AHF | "Control N up/down" buttons for controls a cover already moves, and "Light" | The covers and **Toggle Light** |
+| Symphony | Save buttons for memory slots | **Save to Memory 1–2** |
+| Richmat classic apps | Long presses of other buttons than presets | Preset and memory long presses are now **Save …** buttons |
+
+
 ## New Entities, Attributes and Actions
 
 These are additions. Existing entities keep their names, states and attributes.

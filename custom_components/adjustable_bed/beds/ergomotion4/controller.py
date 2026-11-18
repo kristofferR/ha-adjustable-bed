@@ -294,7 +294,8 @@ class Ergomotion4Controller(AppController):
         specs = [
             catalog_button(
                 a.key,
-                a.name,
+                # The Light binary sensor shows the state this button toggles.
+                "Toggle light" if a.name == "Light" else a.name,
                 press(a.key),
                 hold=ControllerHoldSpec(a.key, 0, 0) if a.held else None,
             )

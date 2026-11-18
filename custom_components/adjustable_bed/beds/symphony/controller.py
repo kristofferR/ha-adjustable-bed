@@ -757,6 +757,14 @@ class SymphonyController(KeesonController):
             ),
         ]
         for name in self.app.saves:
+            # The shared Save to Memory buttons send the same memory saves.
+            slot = name.removeprefix("memory_")
+            if (
+                slot.isdigit()
+                and self.supports_memory_programming
+                and int(slot) <= self.memory_slot_count
+            ):
+                continue
             buttons.append(
                 button(
                     "save_" + name,

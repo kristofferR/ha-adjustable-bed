@@ -148,7 +148,7 @@ _SAVE: Final = re.compile(r"(?:save|program|set)\s+(?:to\s+)?(?P<rest>.+)", re.I
 
 # Massage controls every bed names the same way, as their shared description.
 _MASSAGE_ZONE: Final = re.compile(
-    r"(?:increase|decrease|massage)?\s*(?P<zone>head|foot|feet|leg|all)?\s*"
+    r"(?P<lead>increase|decrease)?\s*(?:massage\s*)?(?P<zone>head|foot|feet|leg|all)?\s*"
     r"(?:massage|massager)?\s*(?:intensity|strength)?\s*"
     r"(?P<op>up|down|\+|-|add|increase|decrease|strengthen|weaken)?",
     re.IGNORECASE,
@@ -182,7 +182,7 @@ class CatalogControl:
 
     @property
     def enabled(self) -> bool:
-        return self.kind is not Kind.EXTRA
+        return self.kind not in (Kind.EXTRA, Kind.CLIMATE)
 
 
 def _shaped(kind: Kind, key: str, name: str) -> CatalogControl:
@@ -208,13 +208,11 @@ def _massage_key(name: str) -> str | None:
     if text in ("massage timer", "cycle massage timer"):
         return "massage_timer_step"
     match = _MASSAGE_ZONE.fullmatch(text)
-    if match is None or match["op"] is None or "massage" not in text and "intensity" not in text:
+    op = match and (match["op"] or match["lead"])
+    if not op or "massage" not in text and "intensity" not in text:
         return None
     zone = {"feet": "foot", "leg": "foot", None: "all"}.get(match["zone"], match["zone"])
-    up = match["op"] in ("up", "+", "add", "increase", "strengthen")
-    if text.startswith("decrease"):
-        up = False
-    return f"massage_{zone}_{'up' if up else 'down'}"
+    return f"massage_{zone}_{'up' if op in ('up', '+', 'add', 'increase', 'strengthen') else 'down'}"
 
 
 def is_placeholder(label: str) -> bool:
@@ -268,8 +266,7 @@ def classify(label: str, *, kind: Kind | None = None) -> CatalogControl | None:
             return CatalogControl(Kind.MASSAGE, key, CARD_MASSAGE, name, None)
         return _shaped(Kind.MASSAGE, MASSAGE_KEY, name)
     if kind in (None, Kind.LIGHT) and (kind is Kind.LIGHT or _LIGHT_WORDS.search(name)):
-        # One Light button turns the light on or off.
-        return _shaped(Kind.LIGHT, LIGHT_KEY, "Toggle light" if name == "Light" else name)
+        return _shaped(Kind.LIGHT, LIGHT_KEY, name)
     if kind in (None, Kind.PRESET) and (kind is Kind.PRESET or _PRESET_WORDS.search(name)):
         return _preset(name)
     return _shaped(Kind.EXTRA, EXTRA_KEY, name)
@@ -293,7 +290,15 @@ def catalog_button(
     control = classify(meaning if meaning is not None else label, kind=kind)
     if control is None:
         return None
-    if meaning is not None and control.placeholders is not None:
+    if (
+        meaning is not None
+        and control.kind is not Kind.SAVE
+        and _EXTRA_WORDS.search(display_label(label))
+        and "massage" not in label.lower()
+    ):
+        # The shown label names a fan, music or reset control the enum files elsewhere.
+        control = _shaped(Kind.EXTRA, EXTRA_KEY, display_label(label))
+    elif meaning is not None and control.placeholders is not None:
         name = display_label(label)
         placeholders = (
             {"preset": re.sub(r"^Save\s+", "", name)}
@@ -430,6 +435,7 @@ def relabel(
         translation_key=control.translation_key,
         translation_placeholders=control.placeholders,
         card=control.card,
-        requires_confirmation=spec.requires_confirmation or control.card == CARD_PRESET_SAVE,
+        requires_confirmation=control.card == CARD_PRESET_SAVE
+        or spec.requires_confirmation and kind_of(spec) is not Kind.SAVE,
         entity_registry_enabled_default=spec.entity_registry_enabled_default and control.enabled,
     )

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -188,3 +189,112 @@ def test_richmat_mh_app_command_labels_use_the_mh_wording() -> None:
     # The second head step never shares a model with the first, so it has no number.
     assert command_label("Massage Head Intensity Inc2") == "Massage: Head Up"
     assert command_label("Zg2 Set") == "Save Zero Gravity 2"
+
+
+# Every entity of every offline controller variant, built once for the checks below.
+@pytest.fixture(scope="module")
+def devices():
+    import asyncio
+
+    from tests.entity_surface import devices as build
+
+    return asyncio.run(build())
+
+
+# Same-named entities on one device that the typed sensor, light and number work
+# replaces (v5-entities-typed). Remove an entry once its device has one name each.
+KNOWN_DUPLICATE_NAMES = {
+    ("DoubleSleepController", "sleep report status"),
+    ("LogicdataAppController", "under bed lights"),
+    ("ParamountController", "bed height"),
+}
+
+
+def test_every_shown_name_follows_the_rules(devices) -> None:
+    offenders = {
+        (device.bed, entity.name): issues
+        for device in devices
+        for entity in device.entities
+        if entity.name and (issues := problems(entity.name))
+    }
+    assert offenders == {}
+
+
+def test_one_device_never_shows_one_name_twice(devices) -> None:
+    offenders = set()
+    for device in devices:
+        names = Counter(entity.name.casefold() for entity in device.entities if entity.name)
+        offenders |= {(device.bed, name) for name, count in names.items() if count > 1}
+    assert offenders - KNOWN_DUPLICATE_NAMES == set()
+
+
+def test_unique_ids_are_unique_on_every_device(devices) -> None:
+    """Four MLILY remotes once listed the same control twice (one unique ID, two entities)."""
+    offenders = set()
+    for device in devices:
+        ids = Counter((entity.domain, entity.unique_id) for entity in device.entities)
+        offenders |= {(device.bed, key) for key, count in ids.items() if count > 1}
+    assert offenders == set()
+
+
+def test_no_entity_comes_from_an_empty_catalog_slot(devices) -> None:
+    placeholder = re.compile(r"(?:no action|menu|.* menu|logo)(?: \d+)?", re.IGNORECASE)
+    assert {
+        (device.bed, entity.name)
+        for device in devices
+        for entity in device.entities
+        if entity.name and placeholder.fullmatch(entity.name)
+    } == set()
+
+
+def test_catalog_controls_sit_with_what_they_are(devices) -> None:
+    """A catalog's motor moves, presets and massage never fall back to the utility row."""
+    shaped = re.compile(
+        r"\b(?:up|down)$|\b(?:flat|zero g(?:ravity)?|tv|lounge|anti-snore|memory \d|m\d)\b"
+        r"|\bmassage\b",
+        re.IGNORECASE,
+    )
+    assert {
+        (device.bed, entity.name)
+        for device in devices
+        for entity in device.entities
+        if entity.domain == "button"
+        and entity.translation_key in ("catalog_action", "remote_action")
+        and entity.section == "utility"
+        and entity.enabled
+        and entity.name
+        and shaped.search(entity.name)
+    } == set()
+
+
+def test_every_save_is_a_guarded_save(devices) -> None:
+    """One rule: a save sits in a save role; the card confirms a preset save first.
+
+    A memory slot's save needs no dialog: the card only offers it in Set mode.
+    """
+    offenders = set()
+    for device in devices:
+        for entity in device.entities:
+            if entity.domain != "button" or entity.role != "save":
+                continue
+            confirms = entity.section == "presets"
+            if entity.requires_confirmation is not confirms or entity.category != "config":
+                offenders.add((device.bed, entity.name))
+    assert offenders == set()
+
+
+def test_catalog_extras_start_disabled(devices) -> None:
+    """Music, fans, resets and the like are there to enable, not on every dashboard."""
+    extra = re.compile(r"\b(?:music|fan|fans|bluetooth|volume|aromatherapy|reset)\b", re.IGNORECASE)
+    assert {
+        (device.bed, entity.name)
+        for device in devices
+        for entity in device.entities
+        if entity.domain == "button"
+        and entity.translation_key is not None
+        and entity.translation_key.startswith("catalog_")
+        and entity.enabled
+        and entity.name
+        and extra.search(entity.name)
+        and not re.search(r"\bmassage\b|^save\b", entity.name, re.IGNORECASE)
+    } == set()

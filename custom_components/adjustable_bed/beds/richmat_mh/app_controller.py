@@ -493,7 +493,8 @@ class RichmatMHAppController(RufRichmatController):
                 spec = relabelled
             if control and control.keep_ms:
                 spec = replace(spec, hold=ControllerHoldSpec(f"mh_{control.code:02x}"))
-            if control and (control.kind == "save" or control.code == 0x62):
+            # A preset save already asks; a memory save is offered only in Set mode.
+            if control and control.code == 0x62:
                 spec = replace(spec, requires_confirmation=True)
             specs.append(spec)
         if self._smart_light_lock():

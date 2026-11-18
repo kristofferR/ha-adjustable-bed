@@ -285,7 +285,7 @@ class SutaController(BedController):
             # TWO drives back and foot together; alone it is the panel's only motion.
             direction = "up" if key.endswith("_up") else "down"
             both = all(f"ctrl_{axis}_up" in self.profile.commands for axis in ("back", "foot"))
-            return f"{'Back and foot' if both else 'Bed'} {direction}"
+            return f"{'Back and foot' if both else 'Whole bed'} {direction}"
         return _TEXT_LABELS.get(key)
 
     @staticmethod
@@ -320,12 +320,12 @@ class SutaController(BedController):
                     continue
                 result.append(catalog_button(
                     "suta_" + key + suffix, label, partial(_action, key=key, suffix=suffix),
-                    kind=Kind.SAVE if command.text.startswith("AT+SETMODE") or command.kind == "save"
+                    kind=Kind.SAVE if command.text.startswith("AT+SETMODE")
                     else Kind.PRESET if command.text.startswith("AT+MODE")
                     else Kind.MOTOR if command.kind == "motion" else None,
                     # The card confirms a save and sends it whole; hold_control still runs saves.
                     hold=ControllerHoldSpec(key, release_button_key="suta_release") if command.kind == "motion" else None,
-                    requires_confirmation=key == "reset_on",
+                    requires_confirmation=command.kind == "save" or key == "reset_on",
                     invalidates_position=command.kind in ("motion", "save") or command.text.startswith("AT+MODE"),
                 ))
         for action in BINARY.values():
