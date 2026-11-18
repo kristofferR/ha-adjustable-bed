@@ -292,6 +292,11 @@ on every entity that tells the dashboard card where it belongs.
   [Dashboard Card guide](DASHBOARD_CARD.md).
 - The card names entities the way Home Assistant 2026.11 does, so a renamed
   device updates its labels.
+- A split bed's side selector is named **Controlled side** on every bed and
+  sits with the motor controls. Nerum's light button and light state sit with
+  the lights.
+- A bed with two controls for one card role, such as a massage timer button
+  and a remaining-time sensor, shows both.
 
 ## Rollback
 
