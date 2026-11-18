@@ -9,7 +9,6 @@ from homeassistant.config_entries import SOURCE_RECONFIGURE
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.codec import limoss as codec
-from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote_review_lifecycle import CAPS, live_controller, pair_runtime
 
@@ -27,11 +26,9 @@ async def test_offline_paired_cached_capability_sensors_publish_restored_values(
         "key_count": 8, "motor_count": 2, "configuration": 0,
         "memory_slots": 8, "reported_entry": "bed",
     }
-    sensors = {
-        spec.state_key: AdjustableBedControllerStateSensor(child, spec)
-        for spec in controller.controller_state_sensor_specs
-    }
-    assert {field: sensors["limoss_remote_" + field].native_value for field in expected} == expected
+    # Capabilities stay controller state for diagnostics, not entities.
+    state = child.controller_state
+    assert {field: state.get("limoss_remote_" + field) for field in expected} == expected
     client.write_gatt_char.assert_not_awaited()
     client.start_notify.assert_awaited_once()  # Original ready session only; offline rebuild performs no I/O.
     assert child.client is None

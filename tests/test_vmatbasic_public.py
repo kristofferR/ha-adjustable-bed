@@ -278,17 +278,17 @@ async def test_real_public_profile_entities_and_parser_state_have_no_extra_capab
             if hasattr(entity, "_spec")
         }
         assert all(entity.native_value is None for entity in sensors.values())
-        assert binaries["vmatbasic_ed"].is_on is None
+        # The ED bit has no known meaning: diagnostics only, never an entity.
+        assert "vmatbasic_ed" not in binaries
         await coordinator.async_execute_controller_query(
             lambda ctrl: ctrl.async_refresh_diagnostics()
         )
         assert sensors["vmatbasic_temperature"].native_value == 25.0
         assert sensors["vmatbasic_floor_minutes_observed"].native_value == 1439
         assert sensors["vmatbasic_model"].native_value == " model \0"
-        assert binaries["vmatbasic_ed"].is_on is True
+        assert coordinator.controller_state["vmatbasic_ed"] is True
         coordinator.controller.invalidate_diagnostics()
         assert all(entity.native_value is None for entity in sensors.values())
-        assert binaries["vmatbasic_ed"].is_on is None
     finally:
         await close(coordinator)
 

@@ -692,6 +692,7 @@ class RufRichmatController(RichmatMhController):
                     "mdi:music",
                     attribute_keys=(MUSIC_VALUES,),
                     card=CARD_UTILITY,
+                    entity_registry_enabled_default=False,
                 )
             )
         if self._calendar_page():
@@ -703,13 +704,14 @@ class RufRichmatController(RichmatMhController):
                     "mdi:alarm",
                     attribute_keys=(CALENDAR_ALARMS,),
                     card=CARD_UTILITY,
+                    entity_registry_enabled_default=True,
                 )
             )
         if self._normal_ready:
             for side in ("left", "right"):
                 key = _mattress_alarm_key(side)
                 specs.append(
-                    ControllerStateSensorSpec(key, key, key, "mdi:alarm", card=CARD_UTILITY)
+                    ControllerStateSensorSpec(key, key, key, "mdi:alarm", card=CARD_UTILITY, entity_registry_enabled_default=True)
                 )
         return tuple(specs)
 

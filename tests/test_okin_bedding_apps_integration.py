@@ -123,9 +123,9 @@ async def test_profile_change_builds_only_the_current_app_namespace(hass, factor
     buttons = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
     sensors = {entity.unique_id for entity in _sensor_entities_for(hass, runtime)}
     assert "bed_serenity_save_tv_left" not in buttons
-    assert "bed_serenity_status_code_left" not in sensors
+    assert "bed_serenity_massage_timer_minutes_left" not in sensors
     assert f"bed_{prefix}_save_zero_g_left" in buttons
-    assert f"bed_{prefix}_status_code_left" in sensors
+    assert f"bed_{prefix}_massage_timer_minutes_left" in sensors
     # Moving away from the app profile removes its namespace again.
     retired = configure_entity_runtime(
         hass,

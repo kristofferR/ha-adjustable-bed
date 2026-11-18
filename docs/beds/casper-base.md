@@ -227,7 +227,7 @@ Builders in
 
 ## Position Feedback / Notifications
 
-The **Casper Base state** diagnostic exposes the product, all parsed events,
+The disabled-by-default **Model** diagnostic sensor exposes the product, all parsed events,
 alarm records and malformed-packet errors. Raw motor and desk events are not
 calibrated angles or positions. The
 [Casper and Hush family](richmat.md#casper-and-hush-family) lists every

@@ -137,19 +137,21 @@ class KaidiAppController(BedController):
             *(
                 ControllerButtonSpec(
                     f"{self.profile.key}_pattern_{i}",
-                    f"Massage pattern {i}" if i else "Cancel massage pattern",
+                    f"Massage pattern {i}" if i else "Massage pattern off",
                     lambda c, i=i: cast(KaidiAppController, c).set_pattern(i),
-                    translation_key=f"{self.profile.key}_pattern",
-                    translation_placeholders={"pattern": str(i)},
+                    translation_key=f"{self.profile.key}_pattern" + ("" if i else "_off"),
+                    translation_placeholders={"pattern": str(i)} if i else None,
                     card=CARD_MASSAGE,
                 )
                 for i in range(self.pattern_count + 1)
             ),
             ControllerButtonSpec(
                 f"{self.profile.key}_enroll",
-                "Enroll unprovisioned bed in selected room",
+                "Add bed to room",
                 lambda c: cast(KaidiAppController, c).enroll_room(),
                 translation_key=f"{self.profile.key}_enroll",
+                # One-time setup for a bed not yet in a room.
+                diagnostic=True,
                 card=CARD_HIDDEN,
             ),
         )

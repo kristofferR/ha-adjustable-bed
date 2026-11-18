@@ -1541,13 +1541,13 @@
         "name": "Quiet sleep"
       },
       "comfort_enhancements_head_cycle": {
-        "name": "Head massage intensity"
+        "name": "Cycle head massage intensity"
       },
       "comfort_enhancements_foot_cycle": {
-        "name": "Foot massage intensity"
+        "name": "Cycle foot massage intensity"
       },
       "comfort_enhancements_timer_cycle": {
-        "name": "Massage timer / stop"
+        "name": "Cycle massage timer"
       },
       "product_action": {
         "name": "{action}"
@@ -1646,7 +1646,7 @@
         "name": "Use Press-and-Release Controls"
       },
       "wake_controller": {
-        "name": "Wake Controller"
+        "name": "Wake controller"
       },
       "reset_defaults": {
         "name": "Reset Defaults"
@@ -1787,7 +1787,7 @@
         "name": "Toggle mood light"
       },
       "vibradorm_app_floor_timer_toggle": {
-        "name": "Toggle pending floor light timer"
+        "name": "Toggle floor light timer"
       },
       "vibradorm_app_massage_automatic": {
         "name": "Toggle automatic massage"
@@ -1796,37 +1796,37 @@
         "name": "Toggle individual massage"
       },
       "vibradorm_app_all_up": {
-        "name": "Hold all controls up"
+        "name": "All motors up"
       },
       "vibradorm_app_all_down": {
-        "name": "Hold all controls down"
+        "name": "All motors down"
       },
       "vibradorm_app_sync": {
-        "name": "Hold synchronization control"
+        "name": "Synchronize"
       },
       "vibradorm_app_refresh_info": {
         "name": "Refresh device information"
       },
       "vmatbasic_all_up": {
-        "name": "All up"
+        "name": "All motors up"
       },
       "vmatbasic_all_down": {
-        "name": "All down"
+        "name": "All motors down"
       },
       "vmatbasic_refresh_info": {
         "name": "Refresh device information"
       },
       "vmatbasic_floor_toggle": {
-        "name": "Floor light toggle (fresh status)"
+        "name": "Toggle floor light"
       },
       "vmatbasic_floor_hold": {
-        "name": "Floor light held action"
+        "name": "Floor light button"
       },
       "vmatbasic_mood_toggle": {
-        "name": "Mood light toggle"
+        "name": "Toggle mood light"
       },
       "vmatbasic_mood_nightlight": {
-        "name": "Mood nightlight command"
+        "name": "Mood nightlight"
       },
       "vmatbasic_massage_back": {
         "name": "Massage back"
@@ -1846,32 +1846,17 @@
       "vmatbasic_massage_program_3": {
         "name": "Massage program 3"
       },
-      "starcode_abm5_4_wake": {
-        "name": "Wake controller"
-      },
       "starcode_abm5_4_refresh": {
-        "name": "Refresh app state"
-      },
-      "starcode_abm5_4_firmware": {
-        "name": "Read firmware version"
+        "name": "Refresh massage state"
       },
       "starcode_abm5_4_use_detected_profile": {
-        "name": "Use detected transport profile"
-      },
-      "starcode_abm5_4_massage_release": {
-        "name": "Release massage control"
+        "name": "Use detected controls"
       },
       "starcode_abm5_4_union_up": {
-        "name": "Raise both control axes"
+        "name": "Raise head and foot"
       },
       "starcode_abm5_4_union_down": {
-        "name": "Lower both control axes"
-      },
-      "starcode_abm5_4_light_on": {
-        "name": "Turn floor light on"
-      },
-      "starcode_abm5_4_light_off": {
-        "name": "Turn floor light off"
+        "name": "Lower head and foot"
       },
       "starcode_abm5_4_light_plus": {
         "name": "Increase floor light"
@@ -1904,37 +1889,37 @@
         "name": "Save Memory 8"
       },
       "coolbase_left_fan": {
-        "name": "Left fan"
+        "name": "Cycle left fan"
       },
       "coolbase_right_fan": {
-        "name": "Right fan"
+        "name": "Cycle right fan"
       },
       "coolbase_fan_sync": {
-        "name": "Fan sync"
+        "name": "Sync fans"
       },
       "coolbase_head_massage": {
-        "name": "Head massage"
+        "name": "Cycle head massage"
       },
       "coolbase_foot_massage": {
-        "name": "Foot massage"
+        "name": "Cycle foot massage"
       },
       "coolbase_massage_mode": {
-        "name": "Massage mode"
+        "name": "Cycle massage mode"
       },
       "coolbase_star": {
-        "name": "Star button"
+        "name": "Star"
       },
       "restonic_zzz": {
-        "name": "ZZZ"
+        "name": "Zzz"
       },
       "starcode_save_tv": {
-        "name": "Save Ascent"
+        "name": "Save TV position"
       },
       "starcode_save_zero_g": {
-        "name": "Save Zero Gravity"
+        "name": "Save zero gravity position"
       },
       "starcode_save_lounge": {
-        "name": "Save Lounge"
+        "name": "Save lounge position"
       },
       "starcode_reset": {
         "name": "Reset saved positions"
@@ -1946,10 +1931,7 @@
         "name": "Cycle light color"
       },
       "starcode_query": {
-        "name": "Refresh massage and RGB"
-      },
-      "starcode_m1x12_memory_8": {
-        "name": "Recall MemoryType 8"
+        "name": "Refresh massage and light state"
       },
       "starcode_m1x12_save_tv": {
         "name": "Save TV position"
@@ -1979,28 +1961,28 @@
         "name": "Refresh bed state"
       },
       "starcode_m1x12_hold_massage_wave_up": {
-        "name": "Hold to increase massage wave"
+        "name": "Increase massage wave"
       },
       "starcode_m1x12_hold_massage_wave_down": {
-        "name": "Hold to decrease massage wave"
+        "name": "Decrease massage wave"
       },
       "starcode_m1x12_hold_massage_head_up": {
-        "name": "Hold to increase head massage"
+        "name": "Increase head massage"
       },
       "starcode_m1x12_hold_massage_head_down": {
-        "name": "Hold to decrease head massage"
+        "name": "Decrease head massage"
       },
       "starcode_m1x12_hold_massage_foot_up": {
-        "name": "Hold to increase foot massage"
+        "name": "Increase foot massage"
       },
       "starcode_m1x12_hold_massage_foot_down": {
-        "name": "Hold to decrease foot massage"
+        "name": "Decrease foot massage"
       },
       "starcode_m1x12_hold_massage_both_up": {
-        "name": "Hold to increase both-zone massage"
+        "name": "Increase head and foot massage"
       },
       "starcode_m1x12_hold_massage_both_down": {
-        "name": "Hold to decrease both-zone massage"
+        "name": "Decrease head and foot massage"
       },
       "simmons_inclined_left": {
         "name": "Inclined left"
@@ -2042,7 +2024,7 @@
         "name": "Massage on"
       },
       "adjustable_lumbar_check_massage": {
-        "name": "Check massage"
+        "name": "Refresh massage"
       },
       "remacro_led_brightness_save": {
         "name": "Save light level"
@@ -2077,29 +2059,26 @@
       "richmat_mh_action": {
         "name": "{action}"
       },
-      "richmat_mh_toggle_smart_set_lock": {
-        "name": "Toggle smart set lock"
-      },
       "richmat_mh_start_detection": {
-        "name": "Start detection"
+        "name": "Start component check"
       },
       "richmat_mh_stop_detection": {
-        "name": "Stop detection"
+        "name": "Stop component check"
       },
       "ore_comfort_program_flat": {
-        "name": "Save Flat"
+        "name": "Save flat"
       },
       "ore_comfort_program_zero_g": {
-        "name": "Save Zero G"
+        "name": "Save zero gravity"
       },
       "ore_comfort_massage_start": {
         "name": "Start massage"
       },
       "innova_massage_level": {
-        "name": "Massage level"
+        "name": "Cycle massage level"
       },
       "innova_massage_timer_hold": {
-        "name": "Massage timer (memory page)"
+        "name": "Cycle massage timer"
       },
       "okin_app_home": {
         "name": "Home"
@@ -2114,7 +2093,7 @@
         "name": "Refresh bed state"
       },
       "sleeptracker_identify": {
-        "name": "Identify split light (wire unit 1)"
+        "name": "Identify"
       },
       "sleeptracker_save_zero_g": {
         "name": "Save zero gravity"
@@ -2132,31 +2111,28 @@
         "name": "40 Hz massage"
       },
       "sleeptracker_wind_down_1": {
-        "name": "Wind down 1 (app 16 min)"
+        "name": "Wind-down 1"
       },
       "sleeptracker_wind_down_2": {
-        "name": "Wind down 2 (app 10 min)"
+        "name": "Wind-down 2"
       },
       "sleeptracker_local_animation": {
-        "name": "Local bed animation"
+        "name": "Bed animation"
       },
       "sleeptracker_wave_start": {
         "name": "Start relaxation wave"
       },
       "sleeptracker_identify_local": {
-        "name": "Identify local safety light"
+        "name": "Identify with safety light"
       },
       "sleepys_app_program": {
-        "name": "Program"
+        "name": "Program memory"
       },
       "sleepys_app_reset_memory": {
         "name": "Reset memory"
       },
-      "sleepys_app_voice_stop": {
-        "name": "Voice stop"
-      },
       "sleepys_app_query_position": {
-        "name": "Refresh position state"
+        "name": "Refresh position"
       },
       "sleepys_app_memory_1": {
         "name": "Memory 1"
@@ -2188,35 +2164,17 @@
       "sleepys_app_preset_tv": {
         "name": "TV"
       },
-      "sleepys_app_motion_sensor_on": {
-        "name": "Motion sensor on"
-      },
-      "sleepys_app_motion_sensor_off": {
-        "name": "Motion sensor off"
-      },
-      "sleepys_app_light_on": {
-        "name": "Light on"
-      },
-      "sleepys_app_light_off": {
-        "name": "Light off"
-      },
       "sleepys_app_light_mode": {
-        "name": "Light mode"
+        "name": "Toggle light"
       },
       "sleepys_app_light_brightness_down": {
-        "name": "Reduce light"
+        "name": "Decrease light brightness"
       },
       "sleepys_app_light_brightness_up": {
-        "name": "Increase light"
-      },
-      "sleepys_app_voice_brightness_down": {
-        "name": "Decrease brightness by one"
-      },
-      "sleepys_app_voice_brightness_up": {
-        "name": "Increase brightness by one"
+        "name": "Increase light brightness"
       },
       "sleepys_app_rgb_action": {
-        "name": "RGB action"
+        "name": "RGB light mode"
       },
       "sleepys_app_massage_mode_1": {
         "name": "Massage mode 1"
@@ -2231,7 +2189,7 @@
         "name": "Refresh massage state"
       },
       "sleepys_app_massage_timer": {
-        "name": "Massage timer"
+        "name": "Cycle massage timer"
       },
       "sleepys_app_massage_wave_down": {
         "name": "Previous massage wave"
@@ -2258,7 +2216,7 @@
         "name": "Increase lumbar massage"
       },
       "sleepys_app_massage_toggle": {
-        "name": "Massage mode"
+        "name": "Cycle massage mode"
       },
       "sleepys_app_massage_off": {
         "name": "Massage off"
@@ -2266,35 +2224,17 @@
       "sleepys_app_massage_on": {
         "name": "Massage on"
       },
-      "sleepys_app_voice_axis_0_0": {
-        "name": "Position axis 0 target 0"
-      },
-      "sleepys_app_voice_axis_0_100": {
-        "name": "Position axis 0 target 100"
-      },
-      "sleepys_app_voice_axis_1_0": {
-        "name": "Position axis 1 target 0"
-      },
-      "sleepys_app_voice_axis_1_100": {
-        "name": "Position axis 1 target 100"
-      },
-      "sleepys_app_voice_axis_2_0": {
-        "name": "Position axis 2 target 0"
-      },
-      "sleepys_app_voice_axis_2_100": {
-        "name": "Position axis 2 target 100"
-      },
       "eshine_save_zero_g": {
-        "name": "Save Zero Gravity"
+        "name": "Save zero gravity"
       },
       "eshine_save_anti_snore": {
-        "name": "Save Anti-Snore"
+        "name": "Save anti-snore"
       },
       "eshine_massage_head_strength": {
-        "name": "Head massage strength"
+        "name": "Cycle head massage strength"
       },
       "eshine_massage_foot_strength": {
-        "name": "Foot massage strength"
+        "name": "Cycle foot massage strength"
       },
       "eshine_massage_10_minutes": {
         "name": "Massage 10 minutes"
@@ -2309,7 +2249,7 @@
         "name": "Refresh alarm"
       },
       "isleep_pattern": {
-        "name": "Massage pattern {pattern} (0 cancels)"
+        "name": "Massage pattern {pattern}"
       },
       "isleep_all_down": {
         "name": "All down"
@@ -2318,7 +2258,7 @@
         "name": "All up"
       },
       "isleep_enroll": {
-        "name": "Enroll unprovisioned bed in selected room"
+        "name": "Add bed to room"
       },
       "bedsense_action": {
         "name": "{action}"
@@ -2339,7 +2279,7 @@
         "name": "Back and legs down"
       },
       "bf_query_alarm": {
-        "name": "Query bed alarm"
+        "name": "Refresh alarm"
       },
       "doublesleep_action": {
         "name": "{action}"
@@ -2356,12 +2296,6 @@
       "adjustamattress_lift_down": {
         "name": "Lift down"
       },
-      "adjustamattress_sync_clock": {
-        "name": "Synchronize clock"
-      },
-      "adjustamattress_query_alarm": {
-        "name": "Refresh alarm"
-      },
       "adjustamattress_query_massage": {
         "name": "Refresh massage"
       },
@@ -2377,12 +2311,6 @@
       "adjustamattress_timer30": {
         "name": "Massage timer 30 minutes"
       },
-      "adjustamattress_query_massage_once": {
-        "name": "Query massage once"
-      },
-      "adjustamattress_sleep": {
-        "name": "Sleep"
-      },
       "adjustamattress_demonstration": {
         "name": "Demonstrate anti-snore"
       },
@@ -2390,19 +2318,19 @@
         "name": "Refresh anti-snore status"
       },
       "adjustamattress_head_strength_add": {
-        "name": "Head massage step"
+        "name": "Cycle head massage"
       },
       "adjustamattress_foot_strength_add": {
-        "name": "Foot massage step"
+        "name": "Cycle foot massage"
       },
       "adjustamattress_wave_add": {
-        "name": "Wave step"
+        "name": "Cycle wave massage"
       },
       "adjustamattress_massage_timer": {
-        "name": "Massage timer step"
+        "name": "Cycle massage timer"
       },
       "adjustamattress_underbed_lighting": {
-        "name": "Underbed lighting"
+        "name": "Toggle under-bed light"
       },
       "adjustamattress_lift_head": {
         "name": "Lift head"
@@ -2414,7 +2342,7 @@
         "name": "{action}"
       },
       "hjbed_release": {
-        "name": "Release held action"
+        "name": "Release held control"
       },
       "set_back_reference": {
         "name": "Set back reference"
@@ -2438,49 +2366,46 @@
         "name": "Release held control"
       },
       "eshine_okin_flat_zero_g": {
-        "name": "Flat + Zero Gravity"
+        "name": "Flat and zero gravity"
       },
       "eshine_okin_query_state": {
         "name": "Refresh bed state"
       },
-      "eshine_okin_query_alarm": {
-        "name": "Refresh alarm"
-      },
       "eshine_okin_sync_clock": {
-        "name": "Synchronize bed clock"
+        "name": "Sync clock"
       },
       "eshine_okin_massage_on": {
         "name": "Massage on"
       },
       "eshine_okin_massage_head_strength": {
-        "name": "Head massage strength"
+        "name": "Cycle head massage strength"
       },
       "eshine_okin_massage_foot_strength": {
-        "name": "Foot massage strength"
+        "name": "Cycle foot massage strength"
       },
       "eshine_okin_massage_timer": {
-        "name": "Massage timer"
+        "name": "Cycle massage timer"
       },
       "richmat_classic_action": {
         "name": "{action}"
       },
       "richmat_classic_release": {
-        "name": "Release held action"
+        "name": "Release held control"
       },
       "motomotion_action": {
         "name": "{action}"
       },
       "motomotion_release": {
-        "name": "Release"
+        "name": "Release held control"
       },
       "hush_base_action": {
         "name": "{action}"
       },
       "motion_bed_left_legs_down": {
-        "name": "Left LEG Down"
+        "name": "Left legs Down"
       },
       "motion_bed_tilt_down": {
-        "name": "TILT Down"
+        "name": "Tilt Down"
       },
       "pillow_down": {
         "name": "Pillow Down"
@@ -2495,43 +2420,40 @@
         "name": "Auxiliary 1 Down"
       },
       "bedsense_waist_down": {
-        "name": "Waist (app label) Down"
+        "name": "Waist Down"
       },
       "motion_bed_left_legs_up": {
-        "name": "Left LEG Up"
+        "name": "Left legs Up"
       },
       "motion_bed_back_down": {
-        "name": "BACK Down"
+        "name": "Back Down"
       },
       "bedsense_back_up": {
         "name": "Back Up"
       },
-      "starcode_m1x12_part_16_down": {
-        "name": "Part 16 Down"
-      },
       "motion_bed_right_back_down": {
-        "name": "Right BACK Down"
+        "name": "Right back Down"
       },
       "stair_down": {
         "name": "Stair Down"
       },
       "starcode_m1x12_part_2_down": {
-        "name": "Part 2 Down"
+        "name": "Foot Down"
       },
       "motion_bed_right_legs_down": {
-        "name": "Right LEG Down"
+        "name": "Right legs Down"
       },
       "starcode_union_down": {
         "name": "Head and foot together Down"
       },
       "motion_bed_back_legs_down": {
-        "name": "BACK LEG Down"
+        "name": "Back and legs Down"
       },
       "motion_bed_right_back_up": {
-        "name": "Right BACK Up"
+        "name": "Right back Up"
       },
       "elevate_actuator_1_up": {
-        "name": "ELEVATE Actuator 1 Up"
+        "name": "Lift actuator 1 Up"
       },
       "auxiliary_2_up": {
         "name": "Auxiliary 2 Up"
@@ -2540,7 +2462,7 @@
         "name": "Hip Down"
       },
       "motion_bed_head_up": {
-        "name": "HEAD Up"
+        "name": "Head Up"
       },
       "bedsense_head_up": {
         "name": "Head Up"
@@ -2549,46 +2471,46 @@
         "name": "Pillow Up"
       },
       "motion_bed_left_back_down": {
-        "name": "Left BACK Down"
+        "name": "Left back Down"
       },
       "bedsense_head_down": {
         "name": "Head Down"
       },
       "elevate_actuator_1_down": {
-        "name": "ELEVATE Actuator 1 Down"
+        "name": "Lift actuator 1 Down"
       },
       "bedsense_legs_down": {
         "name": "Legs Down"
       },
       "motion_bed_lift_down": {
-        "name": "LIFT Down"
+        "name": "Lift Down"
       },
       "both_up": {
         "name": "Back and legs Up"
       },
       "starcode_m1x12_part_2_up": {
-        "name": "Part 2 Up"
+        "name": "Foot Up"
       },
       "motion_bed_right_legs_up": {
-        "name": "Right LEG Up"
+        "name": "Right legs Up"
       },
       "head_end_tilt_down": {
         "name": "Head End Tilt Down"
       },
       "starcode_m1x12_part_1_down": {
-        "name": "Part 1 Down"
+        "name": "Head Down"
       },
       "both_down": {
         "name": "Back and legs Down"
       },
       "starcode_m1x12_part_1_up": {
-        "name": "Part 1 Up"
+        "name": "Head Up"
       },
       "motion_bed_lift_up": {
-        "name": "LIFT Up"
+        "name": "Lift Up"
       },
       "starcode_m1x12_part_4_down": {
-        "name": "Part 4 Down"
+        "name": "Lumbar Down"
       },
       "head_end_tilt_up": {
         "name": "Head End Tilt Up"
@@ -2600,10 +2522,10 @@
         "name": "Back Down"
       },
       "motion_bed_left_back_up": {
-        "name": "Left BACK Up"
+        "name": "Left back Up"
       },
       "motion_bed_lumbar_down": {
-        "name": "LUMBAR Down"
+        "name": "Lumbar Down"
       },
       "tilt_up": {
         "name": "Tilt Up"
@@ -2618,7 +2540,7 @@
         "name": "Tilt Down"
       },
       "bedsense_waist_up": {
-        "name": "Waist (app label) Up"
+        "name": "Waist Up"
       },
       "keeson_legs_down": {
         "name": "Legs Down"
@@ -2627,40 +2549,34 @@
         "name": "All motors Up"
       },
       "motion_bed_tilt_up": {
-        "name": "TILT Up"
+        "name": "Tilt Up"
       },
       "head_feet_down": {
         "name": "Head + Feet Down"
       },
       "elevate_actuator_2_down": {
-        "name": "ELEVATE Actuator 2 Down"
+        "name": "Lift actuator 2 Down"
       },
       "motion_bed_legs_up": {
-        "name": "LEG Up"
+        "name": "Legs Up"
       },
       "starcode_m1x12_part_4_up": {
-        "name": "Part 4 Up"
+        "name": "Lumbar Up"
       },
       "elevate_both_down": {
-        "name": "ELEVATE Both Actuators Down"
+        "name": "Lift Down"
       },
       "all_motors_down": {
         "name": "All motors Down"
       },
       "motion_bed_hip_down": {
-        "name": "HIP Down"
+        "name": "Hip Down"
       },
       "motion_bed_legs_down": {
-        "name": "LEG Down"
-      },
-      "starcode_m1x12_part_8_up": {
-        "name": "Part 8 Up"
+        "name": "Legs Down"
       },
       "neck_up": {
         "name": "Neck Up"
-      },
-      "starcode_m1x12_part_8_down": {
-        "name": "Part 8 Down"
       },
       "neck_down": {
         "name": "Neck Down"
@@ -2668,20 +2584,17 @@
       "keeson_legs_up": {
         "name": "Legs Up"
       },
-      "starcode_m1x12_part_16_up": {
-        "name": "Part 16 Up"
-      },
       "motion_bed_lumbar_up": {
-        "name": "LUMBAR Up"
+        "name": "Lumbar Up"
       },
       "motion_bed_head_down": {
-        "name": "HEAD Down"
+        "name": "Head Down"
       },
       "motion_bed_back_up": {
-        "name": "BACK Up"
+        "name": "Back Up"
       },
       "motion_bed_back_legs_up": {
-        "name": "BACK LEG Up"
+        "name": "Back and legs Up"
       },
       "keeson_back_down": {
         "name": "Back Down"
@@ -2690,7 +2603,7 @@
         "name": "Stair Up"
       },
       "motion_bed_hip_up": {
-        "name": "HIP Up"
+        "name": "Hip Up"
       },
       "bedsense_legs_up": {
         "name": "Legs Up"
@@ -2699,10 +2612,10 @@
         "name": "Auxiliary 1 Up"
       },
       "elevate_actuator_2_up": {
-        "name": "ELEVATE Actuator 2 Up"
+        "name": "Lift actuator 2 Up"
       },
       "elevate_both_up": {
-        "name": "ELEVATE Both Actuators Up"
+        "name": "Lift Up"
       },
       "waist_down": {
         "name": "Waist Down"
@@ -2717,13 +2630,13 @@
         "name": "Lumbar 2 Down"
       },
       "bedsense_hip_down": {
-        "name": "Hip (app label) Down"
+        "name": "Hip Down"
       },
       "limoss_remote_motor_2_up": {
-        "name": "Motor channel 2 Up"
+        "name": "Motor 2 Up"
       },
       "bedsense_hip_up": {
-        "name": "Hip (app label) Up"
+        "name": "Hip Up"
       },
       "hjbed_foot_box_down": {
         "name": "Foot box Down"
@@ -2741,13 +2654,13 @@
         "name": "Right legs Up"
       },
       "bedsense_lift_down": {
-        "name": "Lift (app label) Down"
+        "name": "Lift Down"
       },
       "malouf_full_tilt_up": {
         "name": "Full tilt Up"
       },
       "limoss_remote_motor_2_down": {
-        "name": "Motor channel 2 Down"
+        "name": "Motor 2 Down"
       },
       "both_backs_down": {
         "name": "Both backs Down"
@@ -2789,7 +2702,7 @@
         "name": "Motor 5 Up"
       },
       "limoss_remote_motor_1_up": {
-        "name": "Motor channel 1 Up"
+        "name": "Motor 1 Up"
       },
       "richmat_mh_pillow_lumbar_up": {
         "name": "Pillow and lumbar Up"
@@ -2807,7 +2720,7 @@
         "name": "Head tilt Down"
       },
       "limoss_remote_motor_3_up": {
-        "name": "Motor channel 3 Up"
+        "name": "Motor 3 Up"
       },
       "keeson_head_up": {
         "name": "Head Up"
@@ -2822,7 +2735,7 @@
         "name": "Motors 1 + 2 Up"
       },
       "bedsense_lift_up": {
-        "name": "Lift (app label) Up"
+        "name": "Lift Up"
       },
       "foot_end_tilt_down": {
         "name": "Foot End Tilt Down"
@@ -2831,13 +2744,13 @@
         "name": "Auxiliary Up"
       },
       "limoss_remote_motor_4_up": {
-        "name": "Motor channel 4 Up"
+        "name": "Motor 4 Up"
       },
       "motor_3_up": {
         "name": "Motor 3 Up"
       },
       "limoss_remote_motor_4_down": {
-        "name": "Motor channel 4 Down"
+        "name": "Motor 4 Down"
       },
       "octo_motors_1_2_down": {
         "name": "Motors 1 + 2 Down"
@@ -2846,7 +2759,7 @@
         "name": "Both legs Up"
       },
       "limoss_remote_motor_3_down": {
-        "name": "Motor channel 3 Down"
+        "name": "Motor 3 Down"
       },
       "richmat_mh_motor_5_down": {
         "name": "Motor 5 Down"
@@ -2867,7 +2780,7 @@
         "name": "Back and leg Down"
       },
       "limoss_remote_motor_1_down": {
-        "name": "Motor channel 1 Down"
+        "name": "Motor 1 Down"
       },
       "right_back_up": {
         "name": "Right back Up"
@@ -2900,28 +2813,10 @@
         "name": "Linked motion down"
       },
       "adjustable_bed_speech": {
-        "name": "App speech: {action}"
+        "name": "Voice: {action}"
       },
       "smart_comfort_home": {
         "name": "Home"
-      },
-      "smart_comfort_base_on": {
-        "name": "Base light on"
-      },
-      "smart_comfort_base_off": {
-        "name": "Base light off"
-      },
-      "smart_comfort_cup_on": {
-        "name": "Cup holder on"
-      },
-      "smart_comfort_cup_off": {
-        "name": "Cup holder off"
-      },
-      "smart_comfort_read_on": {
-        "name": "Reading light on"
-      },
-      "smart_comfort_read_off": {
-        "name": "Reading light off"
       },
       "smart_comfort_reclining_up": {
         "name": "Reclining up"
@@ -2939,19 +2834,19 @@
         "name": "Refresh alarm"
       },
       "jalon_massage_timer": {
-        "name": "Massage timer"
+        "name": "Cycle massage timer"
       },
       "jalon_massage_wave": {
-        "name": "Massage wave"
+        "name": "Cycle massage wave"
       },
       "jalon_head_intensity": {
-        "name": "Head massage intensity"
+        "name": "Cycle head massage intensity"
       },
       "jalon_foot_intensity": {
-        "name": "Foot massage intensity"
+        "name": "Cycle foot massage intensity"
       },
       "rize_pattern": {
-        "name": "Massage pattern {pattern} (0 cancels)"
+        "name": "Massage pattern {pattern}"
       },
       "rize_all_down": {
         "name": "All down"
@@ -2960,13 +2855,7 @@
         "name": "All up"
       },
       "rize_enroll": {
-        "name": "Enroll unprovisioned bed in selected room"
-      },
-      "rize_motion_on": {
-        "name": "Motion sensor on"
-      },
-      "rize_motion_off": {
-        "name": "Motion sensor off"
+        "name": "Add bed to room"
       },
       "bedtech_massage_timer_20": {
         "name": "Massage 20 minutes"
@@ -2975,7 +2864,7 @@
         "name": "Refresh massage timer"
       },
       "resident_sync_clock": {
-        "name": "Sync bed clock"
+        "name": "Sync clock"
       },
       "luuna_preset": {
         "name": "{action}"
@@ -2984,19 +2873,19 @@
         "name": "{action}"
       },
       "comfortbase_save_flat": {
-        "name": "Save Flat"
+        "name": "Save flat"
       },
       "comfortbase_save_zero_g": {
-        "name": "Save Zero gravity"
+        "name": "Save zero gravity"
       },
       "comfortbase_save_anti_snore": {
-        "name": "Save Anti-snore"
+        "name": "Save anti-snore"
       },
       "richmat_app_action": {
         "name": "{action}"
       },
       "richmat_app_release": {
-        "name": "Release movement"
+        "name": "Release held control"
       },
       "richmat_app_all_motor_up": {
         "name": "All motors up"
@@ -3043,176 +2932,128 @@
       "rize_home_query": {
         "name": "Refresh massage state"
       },
-      "rize_home_motion_on": {
-        "name": "Enable motion sensor (6 seconds)"
-      },
-      "rize_home_motion_off": {
-        "name": "Disable motion sensor (6 seconds)"
-      },
       "rize_home_reset_memories": {
-        "name": "Reset programmed presets (6 seconds)"
+        "name": "Reset saved presets"
       },
       "rize_home_save_reading": {
-        "name": "Save Reading (6 seconds)"
+        "name": "Save reading"
       },
       "rize_home_save_memory": {
-        "name": "Save Memory (6 seconds)"
+        "name": "Save memory"
       },
       "rize_home_save_anti_snore": {
-        "name": "Save Anti-snore (6 seconds)"
+        "name": "Save anti-snore"
       },
       "rize_home_save_leisure": {
-        "name": "Save Leisure (6 seconds)"
+        "name": "Save leisure"
       },
       "rize_home_save_zero_g": {
-        "name": "Save Zero gravity (6 seconds)"
+        "name": "Save zero gravity"
       },
       "motionbed_preset_stop": {
         "name": "Stop preset"
-      },
-      "motionbed_light_parameter_0": {
-        "name": "Bed light parameter 0"
-      },
-      "motionbed_light_parameter_1": {
-        "name": "Bed light parameter 1"
       },
       "motionbed_release": {
         "name": "Release held control"
       },
       "motionbed_middle_up": {
-        "name": "Middle controls (lumbar icon) up"
+        "name": "Middle section up"
       },
       "motionbed_middle_down": {
-        "name": "Middle controls (lumbar icon) down"
+        "name": "Middle section down"
       },
       "comfy_zero": {
-        "name": "Zero (app preset)"
+        "name": "Zero"
       },
       "comfy_h_increase": {
-        "name": "H increase (app step)"
+        "name": "Head increase"
       },
       "comfy_h_decrease": {
-        "name": "H decrease (app step)"
+        "name": "Head decrease"
       },
       "comfy_f_increase": {
-        "name": "F increase (app step)"
+        "name": "Foot increase"
       },
       "comfy_f_decrease": {
-        "name": "F decrease (app step)"
-      },
-      "comfy_timer_start": {
-        "name": "App timer start"
-      },
-      "comfy_timer_stop": {
-        "name": "App timer stop"
-      },
-      "comfy_lock": {
-        "name": "Lock controls"
-      },
-      "comfy_unlock": {
-        "name": "Unlock controls"
-      },
-      "comfy_query": {
-        "name": "Query lock status"
+        "name": "Foot decrease"
       },
       "comfy_head_up": {
-        "name": "Head up (app control)"
+        "name": "Head up"
       },
       "comfy_head_down": {
-        "name": "Head down (app control)"
+        "name": "Head down"
       },
       "comfy_foot_up": {
-        "name": "Foot up (app control)"
+        "name": "Foot up"
       },
       "comfy_foot_down": {
-        "name": "Foot down (app control)"
+        "name": "Foot down"
       },
       "comfy_waist_up": {
-        "name": "Waist up (app control)"
+        "name": "Waist up"
       },
       "comfy_waist_down": {
-        "name": "Waist down (app control)"
+        "name": "Waist down"
       },
       "smart_sleep_refresh": {
         "name": "Refresh bed state"
       },
-      "smart_sleep_flat": {
-        "name": "Flat"
-      },
-      "smart_sleep_zero_g": {
-        "name": "Zero G"
-      },
-      "smart_sleep_read": {
-        "name": "Read"
-      },
-      "smart_sleep_tv": {
-        "name": "Tv"
-      },
-      "smart_sleep_anti_snore": {
-        "name": "Anti Snore"
-      },
       "smart_sleep_ai_zero": {
-        "name": "Ai Zero"
+        "name": "AI zero"
       },
       "smart_sleep_save_zero_g": {
-        "name": "Save Zero G"
+        "name": "Save zero gravity"
       },
       "smart_sleep_save_read": {
-        "name": "Save Read"
+        "name": "Save read"
       },
       "smart_sleep_save_tv": {
-        "name": "Save Tv"
+        "name": "Save TV"
       },
       "smart_sleep_save_anti_snore": {
-        "name": "Save Anti Snore"
-      },
-      "smart_sleep_massage_all": {
-        "name": "Massage all"
-      },
-      "smart_sleep_massage_off": {
-        "name": "Massage off"
+        "name": "Save anti-snore"
       },
       "smart_sleep_massage_wave": {
-        "name": "Massage wave"
+        "name": "Cycle massage wave"
       },
       "smart_sleep_massage_timer": {
-        "name": "Massage timer"
+        "name": "Cycle massage timer"
       },
       "smart_sleep_massage_head_strength": {
-        "name": "Massage head strength"
+        "name": "Cycle head massage strength"
       },
       "smart_sleep_massage_foot_strength": {
-        "name": "Massage foot strength"
+        "name": "Cycle foot massage strength"
       },
       "smart_sleep_head_up": {
-        "name": "Head up (app)"
+        "name": "Head up"
       },
       "smart_sleep_head_down": {
-        "name": "Head down (app)"
+        "name": "Head down"
       },
       "smart_sleep_foot_up": {
-        "name": "Foot up (app)"
+        "name": "Foot up"
       },
       "smart_sleep_foot_down": {
-        "name": "Foot down (app)"
+        "name": "Foot down"
       },
       "smart_sleep_headrest_up": {
-        "name": "Headrest up (app)"
+        "name": "Headrest up"
       },
       "smart_sleep_headrest_down": {
-        "name": "Headrest down (app)"
+        "name": "Headrest down"
       },
       "smart_sleep_lumbar_up": {
-        "name": "Lumbar up (app)"
+        "name": "Lumbar up"
       },
       "smart_sleep_lumbar_down": {
-        "name": "Lumbar down (app)"
+        "name": "Lumbar down"
       },
       "smart_sleep_hips_up": {
-        "name": "Hips up (app)"
+        "name": "Hips up"
       },
       "smart_sleep_hips_down": {
-        "name": "Hips down (app)"
+        "name": "Hips down"
       },
       "rize_remedy_ii_wave_1": {
         "name": "Massage wave 1"
@@ -3239,13 +3080,13 @@
         "name": "{action}"
       },
       "apex_massage_both": {
-        "name": "Step Head + Feet massage"
+        "name": "Cycle head and foot massage"
       },
       "n32_relax": {
         "name": "Relax"
       },
       "n32_refresh_alarms": {
-        "name": "Refresh bed alarms"
+        "name": "Refresh alarms"
       },
       "n32_upper_up": {
         "name": "Upper up"
@@ -3266,10 +3107,10 @@
         "name": "Cervical down"
       },
       "symphony_query_alarm": {
-        "name": "Refresh bed alarm"
+        "name": "Refresh alarm"
       },
       "symphony_sync_clock": {
-        "name": "Sync bed clock"
+        "name": "Sync clock"
       },
       "symphony_utility_action": {
         "name": "{action}"
@@ -3326,19 +3167,19 @@
         "name": "Head and foot lifting down"
       },
       "yamada_sync_clock": {
-        "name": "Sync bed clock"
+        "name": "Sync clock"
       },
       "yamada_query_alarms": {
-        "name": "Refresh bed alarms"
+        "name": "Refresh alarms"
       },
       "bedgear_release": {
-        "name": "Release control"
+        "name": "Release held control"
       },
       "bedgear_massage": {
         "name": "{action}"
       },
       "bedgear_light_toggle": {
-        "name": "Light toggle"
+        "name": "Toggle light"
       },
       "bedgear_actuator_up": {
         "name": "Actuator up"
@@ -3354,6 +3195,51 @@
       },
       "sonicsleep_action": {
         "name": "{action}"
+      },
+      "starcode_abm5_4_light_on": {
+        "name": "Turn floor light on"
+      },
+      "starcode_abm5_4_light_off": {
+        "name": "Turn floor light off"
+      },
+      "isleep_pattern_off": {
+        "name": "Massage pattern off"
+      },
+      "rize_pattern_off": {
+        "name": "Massage pattern off"
+      },
+      "symphony_save_action": {
+        "name": "{action}"
+      },
+      "okin_bedding_app_save": {
+        "name": "{action}"
+      },
+      "richmat_mh_toggle_smart_set_lock": {
+        "name": "Toggle smart set lock"
+      },
+      "hjbed_save": {
+        "name": "{action}"
+      },
+      "richmat_app_save": {
+        "name": "{action}"
+      },
+      "woosa_program_love": {
+        "name": "Save anti-snore position"
+      },
+      "woosa_program_tv": {
+        "name": "Save TV position"
+      },
+      "woosa_program_zero_g": {
+        "name": "Save zero gravity position"
+      },
+      "customatic_save_zg": {
+        "name": "Save zero G"
+      },
+      "customatic_save_incline": {
+        "name": "Save incline"
+      },
+      "malouf_oz_save_memory_2": {
+        "name": "Save memory 2"
       }
     },
     "cover": {
@@ -3364,13 +3250,13 @@
         "name": "Head"
       },
       "elevate_actuator_1": {
-        "name": "ELEVATE Actuator 1"
+        "name": "Lift actuator 1"
       },
       "elevate_actuator_2": {
-        "name": "ELEVATE Actuator 2"
+        "name": "Lift actuator 2"
       },
       "elevate_both": {
-        "name": "ELEVATE Both Actuators"
+        "name": "Lift"
       },
       "back": {
         "name": "Back"
@@ -3478,55 +3364,55 @@
         "name": "Full tilt"
       },
       "motion_bed_back": {
-        "name": "BACK"
+        "name": "Back"
       },
       "motion_bed_head": {
-        "name": "HEAD"
+        "name": "Head"
       },
       "motion_bed_legs": {
-        "name": "LEG"
+        "name": "Legs"
       },
       "motion_bed_lumbar": {
-        "name": "LUMBAR"
+        "name": "Lumbar"
       },
       "motion_bed_hip": {
-        "name": "HIP"
+        "name": "Hip"
       },
       "motion_bed_lift": {
-        "name": "LIFT"
+        "name": "Lift"
       },
       "motion_bed_tilt": {
-        "name": "TILT"
+        "name": "Tilt"
       },
       "motion_bed_back_legs": {
-        "name": "BACK LEG"
+        "name": "Back and legs"
       },
       "motion_bed_left_back": {
-        "name": "Left BACK"
+        "name": "Left back"
       },
       "motion_bed_right_back": {
-        "name": "Right BACK"
+        "name": "Right back"
       },
       "motion_bed_left_legs": {
-        "name": "Left LEG"
+        "name": "Left legs"
       },
       "motion_bed_right_legs": {
-        "name": "Right LEG"
+        "name": "Right legs"
       },
       "starcode_union": {
         "name": "Head and foot together"
       },
       "limoss_remote_motor_4": {
-        "name": "Motor channel 4"
+        "name": "Motor 4"
       },
       "limoss_remote_motor_1": {
-        "name": "Motor channel 1"
+        "name": "Motor 1"
       },
       "limoss_remote_motor_2": {
-        "name": "Motor channel 2"
+        "name": "Motor 2"
       },
       "limoss_remote_motor_3": {
-        "name": "Motor channel 3"
+        "name": "Motor 3"
       },
       "all_motors": {
         "name": "All motors"
@@ -3544,37 +3430,31 @@
         "name": "Pillow and lumbar"
       },
       "starcode_m1x12_part_1": {
-        "name": "Part 1"
+        "name": "Head"
       },
       "starcode_m1x12_part_2": {
-        "name": "Part 2"
+        "name": "Foot"
       },
       "starcode_m1x12_part_4": {
-        "name": "Part 4"
-      },
-      "starcode_m1x12_part_8": {
-        "name": "Part 8"
-      },
-      "starcode_m1x12_part_16": {
-        "name": "Part 16"
+        "name": "Lumbar"
       },
       "bedsense_back": {
         "name": "Back"
       },
       "bedsense_waist": {
-        "name": "Waist (app label)"
+        "name": "Waist"
       },
       "bedsense_head": {
         "name": "Head"
       },
       "bedsense_hip": {
-        "name": "Hip (app label)"
+        "name": "Hip"
       },
       "bedsense_legs": {
         "name": "Legs"
       },
       "bedsense_lift": {
-        "name": "Lift (app label)"
+        "name": "Lift"
       },
       "bedsense_rise_and_fall": {
         "name": "Rise and fall"
@@ -3622,31 +3502,31 @@
         "name": "Tilt 2"
       },
       "motionbed_middle": {
-        "name": "Middle controls (lumbar icon)"
+        "name": "Middle section"
       },
       "comfy_head": {
-        "name": "Head (app control)"
+        "name": "Head"
       },
       "comfy_foot": {
-        "name": "Foot (app control)"
+        "name": "Foot"
       },
       "comfy_waist": {
-        "name": "Waist (app control)"
+        "name": "Waist"
       },
       "smart_sleep_head": {
-        "name": "Head (app)"
+        "name": "Head"
       },
       "smart_sleep_foot": {
-        "name": "Foot (app)"
+        "name": "Foot"
       },
       "smart_sleep_headrest": {
-        "name": "Headrest (app)"
+        "name": "Headrest"
       },
       "smart_sleep_lumbar": {
-        "name": "Lumbar (app)"
+        "name": "Lumbar"
       },
       "smart_sleep_hips": {
-        "name": "Hips (app)"
+        "name": "Hips"
       },
       "n32_upper": {
         "name": "Upper"
@@ -3687,19 +3567,13 @@
     },
     "sensor": {
       "timotion_ahf_status": {
-        "name": "AHF status communication"
+        "name": "Status"
       },
       "timotion_ahf_lock_mask": {
-        "name": "AHF raw lock mask"
+        "name": "Control locks"
       },
       "timotion_ahf_lamp_display_code": {
-        "name": "AHF lamp display code"
-      },
-      "rmcontrol_protocol_version": {
-        "name": "RMControl protocol version"
-      },
-      "rmcontrol_bed_mode": {
-        "name": "RMControl bed mode"
+        "name": "Lamp display"
       },
       "rmcontrol_light_timer": {
         "name": "Light timer"
@@ -3720,7 +3594,7 @@
         "name": "Music volume"
       },
       "rmcontrol_fan_gear": {
-        "name": "Fan gear"
+        "name": "Fan level"
       },
       "rmcontrol_aroma_timer": {
         "name": "Aromatherapy timer"
@@ -3729,13 +3603,10 @@
         "name": "Heating temperature"
       },
       "rmcontrol_anti_snore_count": {
-        "name": "Anti-snore intervention count"
+        "name": "Anti-snore interventions"
       },
       "rmcontrol_anti_snore_time": {
         "name": "Anti-snore intervention time"
-      },
-      "rmcontrol_alarm_record": {
-        "name": "Alarm record"
       },
       "head_angle": {
         "name": "Head Angle"
@@ -3759,58 +3630,49 @@
         "name": "Massage: Timer Mode"
       },
       "reverie_head_massage_intensity": {
-        "name": "Reverie: Head Massage Strength"
+        "name": "Head massage strength"
       },
       "reverie_foot_massage_intensity": {
-        "name": "Reverie: Foot Massage Strength"
-      },
-      "reverie_massage_wave": {
-        "name": "Reverie: Wave Value"
-      },
-      "reverie_pairlink_massage_timer": {
-        "name": "Pairlink: Massage Timer Code"
-      },
-      "reverie_pairlink_massage_mode": {
-        "name": "Pairlink: Massage Mode"
+        "name": "Foot massage strength"
       },
       "linak_protocol_error": {
-        "name": "Protocol Error"
+        "name": "Protocol error"
       },
       "linak_base_reported_speed": {
-        "name": "Base Reported Speed"
+        "name": "Base motor speed"
       },
       "linak_feet_reported_speed": {
-        "name": "Feet Reported Speed"
+        "name": "Feet motor speed"
       },
       "linak_head_reported_speed": {
-        "name": "Head Reported Speed"
+        "name": "Head motor speed"
       },
       "linak_legs_reported_speed": {
-        "name": "Legs Reported Speed"
+        "name": "Legs motor speed"
       },
       "linak_back_reported_speed": {
-        "name": "Back Reported Speed"
+        "name": "Back motor speed"
       },
       "linak_alarm_status": {
-        "name": "Alarm Status"
+        "name": "Alarm"
       },
       "solace_audio_volume": {
-        "name": "Audio Volume"
+        "name": "Audio volume"
       },
       "leggett_led_mask": {
-        "name": "LED mask"
+        "name": "Display indicators"
       },
       "leggett_status": {
-        "name": "Status byte"
+        "name": "Status"
       },
       "logicdata_app_family_match": {
         "name": "Command family matches"
       },
       "logicdata_app_alarm": {
-        "name": "Bed alarm"
+        "name": "Alarm"
       },
       "lp_legacy_notification": {
-        "name": "App response"
+        "name": "Last bed response"
       },
       "malouf_massage_remaining": {
         "name": "Massage remaining time"
@@ -3833,65 +3695,57 @@
       "okin_bedding_app_manufacturer": {
         "name": "Manufacturer"
       },
-      "okin_bedding_app_status_code": {
-        "name": "App status code"
-      },
-      "okin_bedding_app_massage_timer_code": {
-        "name": "Massage timer code"
-      },
       "okin_bedding_app_massage_timer_minutes": {
         "name": "Massage timer"
       },
-      "okin_bedding_app_save_event_code": {
-        "name": "Local memory save event"
-      },
       "okin_bedding_app_alarm_type": {
-        "name": "App alarm state"
+        "name": "Alarm action"
       },
       "furnimove_model": {
-        "name": "FurniMove model"
+        "name": "Model"
       },
       "furnimove_hardware": {
-        "name": "FurniMove hardware version"
+        "name": "Hardware version"
       },
       "furnimove_software": {
-        "name": "FurniMove software version"
+        "name": "Software version"
       },
       "furnimove_firmware": {
-        "name": "FurniMove firmware version"
+        "name": "Firmware version"
       },
       "furnimove_control_mode": {
-        "name": "FurniMove local control mode"
+        "name": "Control mode",
+        "state": {
+          "press_and_hold": "Press and hold",
+          "press_and_release": "Press and release"
+        }
       },
       "furnimove_massage_type": {
-        "name": "FurniMove local massage zone"
+        "name": "Massage zone"
       },
       "furnimove_massage_intensity": {
-        "name": "FurniMove local massage intensity"
+        "name": "Massage intensity"
       },
       "furnimove_massage_program": {
-        "name": "FurniMove local massage program"
+        "name": "Massage program"
       },
       "furnimove_massage_timer_minutes": {
-        "name": "FurniMove advisory massage duration"
-      },
-      "furnimove_function_result": {
-        "name": "FurniMove function feedback result"
+        "name": "Massage timer"
       },
       "vibradorm_app_model": {
-        "name": "App model metadata"
+        "name": "Model"
       },
       "vibradorm_app_firmware": {
-        "name": "App firmware metadata"
+        "name": "Firmware"
       },
       "vibradorm_app_software": {
-        "name": "App software metadata"
+        "name": "Software version"
       },
       "vibradorm_app_main_firmware_article": {
-        "name": "App firmware article"
+        "name": "Firmware article number"
       },
       "vibradorm_app_sync_observed": {
-        "name": "Observed synchronization",
+        "name": "Synchronization",
         "state": {
           "on": "On",
           "off": "Off"
@@ -3904,7 +3758,7 @@
         "name": "Onboarding operating mode"
       },
       "vibradorm_app_device_name": {
-        "name": "App device name"
+        "name": "Device name"
       },
       "vibradorm_app_revision_id": {
         "name": "Revision ID"
@@ -3913,37 +3767,28 @@
         "name": "Revision string"
       },
       "vibradorm_app_variant": {
-        "name": "App variant"
+        "name": "Variant"
       },
       "vmatbasic_floor_minutes_observed": {
-        "name": "Observed floor timer"
+        "name": "Current floor light timer"
       },
       "vmatbasic_model": {
-        "name": "App model number"
+        "name": "Model"
       },
       "vmatbasic_temperature": {
-        "name": "Controller die temperature"
+        "name": "Controller temperature"
       },
       "vmatbasic_floor_percent_observed": {
-        "name": "Observed floor brightness"
+        "name": "Current floor light brightness"
       },
       "vmatbasic_firmware": {
-        "name": "App firmware revision"
+        "name": "Firmware"
       },
       "vmatbasic_floor_level_observed": {
-        "name": "Observed floor level"
+        "name": "Current floor light level"
       },
       "vmatbasic_rssi": {
-        "name": "Advertisement signal strength"
-      },
-      "starcode_abm5_4_command_selector": {
-        "name": "Command/parser selector"
-      },
-      "starcode_abm5_4_transport_selector": {
-        "name": "Bluetooth transport selector"
-      },
-      "starcode_abm5_4_ui_selector": {
-        "name": "Retained app UI selector"
+        "name": "Signal strength"
       },
       "starcode_abm5_4_manufacturer": {
         "name": "Manufacturer"
@@ -3952,310 +3797,73 @@
         "name": "Firmware version"
       },
       "starcode_abm5_4_massage_timer": {
-        "name": "Massage timer minutes"
+        "name": "Massage timer"
       },
       "starcode_abm5_4_light_level": {
         "name": "Floor light level"
       },
-      "starcode_abm5_4_massage_on": {
-        "name": "App massage active"
-      },
-      "starcode_abm5_4_light_on": {
-        "name": "App floor light active"
-      },
       "starcode_abm5_4_wave": {
-        "name": "App wave value"
+        "name": "Massage wave"
       },
       "starcode_abm5_4_head_intensity": {
-        "name": "App displayed head intensity"
-      },
-      "starcode_abm5_4_low_4b": {
-        "name": "App field 4b value"
-      },
-      "starcode_abm5_4_automatic_white_flag": {
-        "name": "App automatic-white flag"
-      },
-      "starcode_abm5_4_raw_b": {
-        "name": "Raw app field b"
-      },
-      "starcode_abm5_4_raw_13": {
-        "name": "Raw app field 13"
-      },
-      "starcode_abm5_4_raw_1b": {
-        "name": "Raw app field 1b"
-      },
-      "starcode_abm5_4_raw_23": {
-        "name": "Raw app field 23"
-      },
-      "starcode_abm5_4_raw_2b": {
-        "name": "Raw app field 2b"
-      },
-      "starcode_abm5_4_raw_33": {
-        "name": "Raw app field 33"
-      },
-      "starcode_abm5_4_raw_3b": {
-        "name": "Raw app field 3b"
-      },
-      "starcode_abm5_4_raw_43": {
-        "name": "Raw app field 43"
-      },
-      "starcode_abm5_4_raw_47": {
-        "name": "Raw app field 47"
-      },
-      "starcode_abm5_4_raw_4b": {
-        "name": "Raw app field 4b"
-      },
-      "starcode_abm5_4_raw_53": {
-        "name": "Raw app field 53"
-      },
-      "starcode_abm5_4_raw_5f": {
-        "name": "Raw app field 5f"
-      },
-      "starcode_abm5_4_raw_67": {
-        "name": "Raw app field 67"
-      },
-      "starcode_abm5_4_raw_6f": {
-        "name": "Raw app field 6f"
-      },
-      "starcode_abm5_4_raw_77": {
-        "name": "Raw app field 77"
-      },
-      "starcode_abm5_4_raw_7f": {
-        "name": "Raw app field 7f"
+        "name": "Head massage intensity"
       },
       "motion_bed_audio_volume": {
         "name": "Audio volume"
       },
-      "motion_bed_day_received_segments": {
-        "name": "Day received segments"
-      },
-      "motion_bed_pressure_triplet_tags": {
-        "name": "Pressure triplet tags"
-      },
-      "motion_bed_massage_timer_raw": {
-        "name": "Massage timer raw"
-      },
-      "motion_bed_alarm_weekdays": {
-        "name": "Alarm weekdays"
-      },
       "motion_bed_air_timer": {
-        "name": "Air timer"
-      },
-      "motion_bed_alarm_mode": {
-        "name": "Alarm mode"
-      },
-      "motion_bed_sensor_mac": {
-        "name": "Sensor mac"
+        "name": "Air massage timer"
       },
       "motion_bed_air_lower_gear": {
-        "name": "Air lower gear"
-      },
-      "motion_bed_calibration_flat": {
-        "name": "Calibration flat"
-      },
-      "motion_bed_day_segment": {
-        "name": "Day segment"
-      },
-      "motion_bed_air_setting_mode": {
-        "name": "Air setting mode"
-      },
-      "motion_bed_first_module_type": {
-        "name": "First module type"
-      },
-      "motion_bed_air_lower_raw": {
-        "name": "Air lower raw"
+        "name": "Lower air massage level"
       },
       "motion_bed_brightness": {
-        "name": "Brightness"
+        "name": "Light brightness"
       },
       "motion_bed_lower_massage": {
-        "name": "Lower massage"
-      },
-      "motion_bed_thermal_timer_mode": {
-        "name": "Thermal timer mode"
-      },
-      "motion_bed_calibration_kk": {
-        "name": "Calibration kk"
-      },
-      "motion_bed_month_average_rolls": {
-        "name": "Month average rolls"
-      },
-      "motion_bed_alarm_hour": {
-        "name": "Alarm hour"
-      },
-      "motion_bed_calibration_side": {
-        "name": "Calibration side"
-      },
-      "motion_bed_month_minimum_rolls": {
-        "name": "Month minimum rolls"
-      },
-      "motion_bed_alarm_weekday_mask": {
-        "name": "Alarm weekday mask"
+        "name": "Leg massage level"
       },
       "motion_bed_upper_massage": {
-        "name": "Upper massage"
-      },
-      "motion_bed_motor_programmed_bits": {
-        "name": "Motor programmed bits"
-      },
-      "motion_bed_app_initial_module_type": {
-        "name": "App initial module type"
+        "name": "Back massage level"
       },
       "motion_bed_fault": {
         "name": "Fault"
       },
       "motion_bed_massage_wave": {
-        "name": "Massage wave"
-      },
-      "motion_bed_raw_positions": {
-        "name": "Raw positions"
-      },
-      "motion_bed_calibration_aa": {
-        "name": "Calibration aa"
-      },
-      "motion_bed_month_flat": {
-        "name": "Month flat"
-      },
-      "motion_bed_day_operation": {
-        "name": "Day operation"
-      },
-      "motion_bed_module_status_raw": {
-        "name": "Module status raw"
-      },
-      "motion_bed_month_maximum_sleep": {
-        "name": "Month maximum sleep"
-      },
-      "motion_bed_pressure_values": {
-        "name": "Pressure values"
+        "name": "Massage frequency"
       },
       "motion_bed_month_average_sleep": {
-        "name": "Month average sleep"
-      },
-      "motion_bed_day_rolls": {
-        "name": "Day rolls"
-      },
-      "motion_bed_fault_part_raw": {
-        "name": "Fault part raw"
+        "name": "Monthly average sleep"
       },
       "motion_bed_sleep_timer": {
         "name": "Sleep timer"
       },
-      "motion_bed_thermal_mode": {
-        "name": "Thermal mode"
-      },
-      "motion_bed_thermal_timer_minute": {
-        "name": "Thermal timer minute"
-      },
-      "motion_bed_day_flat": {
-        "name": "Day flat"
-      },
-      "motion_bed_stored_side_positions": {
-        "name": "Stored side positions"
-      },
       "motion_bed_light_timer": {
         "name": "Light timer"
       },
-      "motion_bed_thermal_slider_index": {
-        "name": "Thermal slider index"
-      },
-      "motion_bed_month_side": {
-        "name": "Month side"
-      },
-      "motion_bed_pressure_raw": {
-        "name": "Pressure raw"
-      },
       "motion_bed_air_upper_gear": {
-        "name": "Air upper gear"
-      },
-      "motion_bed_month_days": {
-        "name": "Month days"
-      },
-      "motion_bed_month_minimum_sleep": {
-        "name": "Month minimum sleep"
+        "name": "Upper air massage level"
       },
       "motion_bed_fall_timer": {
-        "name": "Fall timer"
+        "name": "Fall-asleep timer"
       },
       "motion_bed_day_total": {
-        "name": "Day total"
-      },
-      "motion_bed_day_previous_window": {
-        "name": "Day previous window"
-      },
-      "motion_bed_app_day_previous_window": {
-        "name": "App day previous window"
-      },
-      "motion_bed_day_window": {
-        "name": "Day window"
+        "name": "Daily sleep report"
       },
       "motion_bed_massage_timer": {
         "name": "Massage timer"
       },
-      "motion_bed_day_slots": {
-        "name": "Day slots"
-      },
-      "motion_bed_fault_code_raw": {
-        "name": "Fault code raw"
-      },
       "motion_bed_thermal_gear": {
-        "name": "Thermal gear"
-      },
-      "motion_bed_thermal_temperature_display": {
-        "name": "Thermal temperature display"
-      },
-      "motion_bed_fault_part": {
-        "name": "Fault part"
+        "name": "Climate level"
       },
       "motion_bed_thermal_temperature": {
-        "name": "Thermal temperature"
-      },
-      "motion_bed_air_upper_raw": {
-        "name": "Air upper raw"
-      },
-      "motion_bed_thermal_timer_gear": {
-        "name": "Thermal timer gear"
+        "name": "Temperature"
       },
       "motion_bed_thermal_water": {
-        "name": "Thermal water"
-      },
-      "motion_bed_stored_flat_positions": {
-        "name": "Stored flat positions"
-      },
-      "motion_bed_alarm_minute": {
-        "name": "Alarm minute"
-      },
-      "motion_bed_day_next_window": {
-        "name": "Day next window"
-      },
-      "motion_bed_app_day_next_window": {
-        "name": "App day next window"
-      },
-      "motion_bed_day_window_start_hour": {
-        "name": "Day window start hour"
-      },
-      "motion_bed_alarm_music": {
-        "name": "Alarm music"
-      },
-      "motion_bed_alarm_flag": {
-        "name": "Alarm flag"
+        "name": "Water level"
       },
       "motion_bed_audio_track": {
         "name": "Audio track"
-      },
-      "motion_bed_day_unit": {
-        "name": "Day unit"
-      },
-      "motion_bed_app_day_unit": {
-        "name": "App day unit"
-      },
-      "motion_bed_thermal_timer_hour": {
-        "name": "Thermal timer hour"
-      },
-      "motion_bed_day_side": {
-        "name": "Day side"
-      },
-      "motion_bed_month_maximum_rolls": {
-        "name": "Month maximum rolls"
       },
       "coolbase_right_fan_level": {
         "name": "Right fan level"
@@ -4267,37 +3875,34 @@
         "name": "Left fan level"
       },
       "starcode_eq_band_1": {
-        "name": "Eq band 1"
+        "name": "Equalizer 64 Hz"
       },
       "starcode_eq_band_6": {
-        "name": "Eq band 6"
+        "name": "Equalizer 2 kHz"
       },
       "starcode_firmware": {
-        "name": "Firmware"
-      },
-      "starcode_massage_time_raw": {
-        "name": "Massage time raw"
+        "name": "Firmware version"
       },
       "starcode_kneading_mode": {
         "name": "Kneading mode"
       },
       "starcode_eq_preset": {
-        "name": "Eq preset"
+        "name": "Equalizer preset"
       },
       "starcode_sonic_foot_level": {
-        "name": "Sonic foot level"
+        "name": "Foot sonic level"
       },
       "starcode_eq_low_frequency": {
-        "name": "Eq low frequency"
+        "name": "Equalizer low frequency"
       },
       "starcode_sonic_massage_type": {
         "name": "Sonic massage type"
       },
       "starcode_eq_volume": {
-        "name": "Eq volume"
+        "name": "Equalizer volume"
       },
       "starcode_alarm_0": {
-        "name": "Alarm 0"
+        "name": "Alarm 1 enabled"
       },
       "starcode_sonic_frequency": {
         "name": "Sonic frequency"
@@ -4306,67 +3911,46 @@
         "name": "Massage mode"
       },
       "starcode_eq_band_7": {
-        "name": "Eq band 7"
+        "name": "Equalizer 4 kHz"
       },
       "starcode_sonic_head_level": {
-        "name": "Sonic head level"
+        "name": "Head sonic level"
       },
       "starcode_light_color_index": {
         "name": "Light color index"
       },
       "starcode_eq_band_3": {
-        "name": "Eq band 3"
+        "name": "Equalizer 250 Hz"
       },
       "starcode_eq_band_0": {
-        "name": "Eq band 0"
-      },
-      "starcode_light_rgb_mode": {
-        "name": "Light rgb mode"
-      },
-      "starcode_motor_part4": {
-        "name": "Motor part4"
+        "name": "Equalizer 32 Hz"
       },
       "starcode_massage_head_level": {
-        "name": "Massage head level"
-      },
-      "starcode_light_brightness": {
-        "name": "Light brightness"
-      },
-      "starcode_sonic_time_raw": {
-        "name": "Sonic time raw"
+        "name": "Head massage level"
       },
       "starcode_eq_band_5": {
-        "name": "Eq band 5"
-      },
-      "starcode_motor_part6": {
-        "name": "Motor part6"
+        "name": "Equalizer 1 kHz"
       },
       "starcode_eq_band_2": {
-        "name": "Eq band 2"
-      },
-      "starcode_motor_part5": {
-        "name": "Motor part5"
+        "name": "Equalizer 125 Hz"
       },
       "starcode_eq_high_frequency": {
-        "name": "Eq high frequency"
+        "name": "Equalizer high frequency"
       },
       "starcode_massage_foot_level": {
-        "name": "Massage foot level"
+        "name": "Foot massage level"
       },
       "starcode_eq_band_4": {
-        "name": "Eq band 4"
+        "name": "Equalizer 500 Hz"
       },
       "starcode_light_mode": {
         "name": "Light mode"
       },
       "starcode_alarm_1": {
-        "name": "Alarm 1"
+        "name": "Alarm 2 enabled"
       },
       "starcode_sonic_mode": {
         "name": "Sonic mode"
-      },
-      "starcode_kneading_time_raw": {
-        "name": "Kneading time raw"
       },
       "adjustable_lite_massage_timer": {
         "name": "Massage timer"
@@ -4374,104 +3958,32 @@
       "innova_massage_timer": {
         "name": "Massage timer"
       },
-      "fsm_relax_key_count": {
-        "name": "FSM Relax key count"
-      },
-      "fsm_relax_vibration_count": {
-        "name": "FSM Relax vibration count"
-      },
-      "fsm_relax_reported_memory_count": {
-        "name": "FSM Relax reported memory count"
-      },
       "fsm_relax_hardware_version": {
-        "name": "FSM Relax hardware version"
+        "name": "Hardware version"
       },
       "fsm_relax_software_version": {
-        "name": "FSM Relax software version"
+        "name": "Software version"
       },
       "fsm_relax_serial": {
-        "name": "FSM Relax serial"
-      },
-      "fsm_relax_acknowledgement": {
-        "name": "FSM Relax acknowledgement"
-      },
-      "fsm_relax_calibration_observed": {
-        "name": "FSM Relax calibration observed"
-      },
-      "fsm_relax_memory_quarantined": {
-        "name": "FSM Relax memory quarantined"
-      },
-      "fsm_relax_optional_information": {
-        "name": "FSM Relax optional information"
-      },
-      "fsm_relax_motor_1_raw": {
-        "name": "FSM Relax motor 1 raw"
-      },
-      "fsm_relax_motor_2_raw": {
-        "name": "FSM Relax motor 2 raw"
-      },
-      "fsm_relax_motor_3_raw": {
-        "name": "FSM Relax motor 3 raw"
-      },
-      "fsm_relax_motor_4_raw": {
-        "name": "FSM Relax motor 4 raw"
-      },
-      "svane_head_raw": {
-        "name": "Observed head bytes"
-      },
-      "svane_feet_raw": {
-        "name": "Observed feet bytes"
-      },
-      "svane_position_raw": {
-        "name": "Observed position bytes"
+        "name": "Serial number"
       },
       "svane_firmware": {
-        "name": "Observed firmware"
+        "name": "Firmware"
       },
       "svane_hardware": {
-        "name": "Observed hardware"
+        "name": "Hardware"
       },
       "svane_manufacturer": {
-        "name": "Observed manufacturer"
-      },
-      "limoss_remote_motor_2_position_raw": {
-        "name": "Motor 2 Raw Position"
+        "name": "Manufacturer"
       },
       "limoss_remote_hardware_version": {
-        "name": "App Hardware Version"
-      },
-      "limoss_remote_reported_entry": {
-        "name": "Reported App Product"
-      },
-      "limoss_remote_motor_3_position_raw": {
-        "name": "Motor 3 Raw Position"
-      },
-      "limoss_remote_motor_count": {
-        "name": "Reported Motor Count"
-      },
-      "limoss_remote_configuration": {
-        "name": "App Configuration Code"
+        "name": "Hardware version"
       },
       "limoss_remote_software_version": {
-        "name": "App Software Version"
-      },
-      "limoss_remote_memory_slots": {
-        "name": "Reported Memory Slots"
-      },
-      "limoss_remote_key_count": {
-        "name": "Reported App Keys"
-      },
-      "limoss_remote_calibration_result": {
-        "name": "Calibration Reply"
+        "name": "Firmware version"
       },
       "limoss_remote_serial": {
-        "name": "App Serial Value"
-      },
-      "limoss_remote_motor_4_position_raw": {
-        "name": "Motor 4 Raw Position"
-      },
-      "limoss_remote_motor_1_position_raw": {
-        "name": "Motor 1 Raw Position"
+        "name": "Serial number"
       },
       "simmons_alarm_1": {
         "name": "Alarm 1"
@@ -4486,7 +3998,7 @@
         "name": "Air pressure"
       },
       "richmat_mh_detection": {
-        "name": "Detection",
+        "name": "Component check",
         "state": {
           "running": "Running",
           "stopped": "Stopped"
@@ -4521,31 +4033,19 @@
         }
       },
       "sleeptracker_layout": {
-        "name": "Sleeptracker layout"
-      },
-      "sleeptracker_massage_pattern": {
-        "name": "Massage pattern (reported)"
-      },
-      "sleeptracker_massage_head_strength": {
-        "name": "Head massage strength (raw)"
-      },
-      "sleeptracker_massage_foot_strength": {
-        "name": "Foot massage strength (raw)"
+        "name": "Foundation layout"
       },
       "sleeptracker_left_commanded_timer_seconds": {
-        "name": "Left ActiveBreeze timer (last command)"
+        "name": "Left ActiveBreeze run time"
       },
       "sleeptracker_right_commanded_timer_seconds": {
-        "name": "Right ActiveBreeze timer (last command)"
+        "name": "Right ActiveBreeze run time"
       },
       "starcode_m1x12_firmware": {
         "name": "Firmware version"
       },
       "starcode_m1x12_elevate_firmware": {
-        "name": "ELEVATE firmware version"
-      },
-      "starcode_m1x12_massage_time_raw": {
-        "name": "Massage time (raw)"
+        "name": "Firmware version"
       },
       "starcode_m1x12_massage_head_level": {
         "name": "Head massage level"
@@ -4556,20 +4056,11 @@
       "starcode_m1x12_massage_mode": {
         "name": "Massage mode"
       },
-      "starcode_m1x12_light_brightness": {
-        "name": "Light brightness (raw)"
-      },
       "starcode_m1x12_light_color_index": {
         "name": "Light color index"
       },
-      "starcode_m1x12_light_rgb_mode": {
-        "name": "Direct RGB mode"
-      },
       "starcode_m1x12_light_mode": {
         "name": "Light mode"
-      },
-      "starcode_m1x12_sonic_time_raw": {
-        "name": "Sonic time (raw)"
       },
       "starcode_m1x12_sonic_frequency": {
         "name": "Sonic frequency"
@@ -4587,22 +4078,13 @@
         "name": "Sonic massage type"
       },
       "starcode_m1x12_part_1_position": {
-        "name": "Part 1 position (%)"
+        "name": "Head position"
       },
       "starcode_m1x12_part_2_position": {
-        "name": "Part 2 position (%)"
+        "name": "Foot position"
       },
       "starcode_m1x12_part_4_position": {
-        "name": "Part 4 position (%)"
-      },
-      "starcode_m1x12_part_8_position": {
-        "name": "Part 8 position (%)"
-      },
-      "starcode_m1x12_part_16_position": {
-        "name": "Part 16 position (%)"
-      },
-      "starcode_m1x12_part_32_position": {
-        "name": "Part 32 position (%)"
+        "name": "Lumbar position"
       },
       "starcode_m1x12_alarm_0": {
         "name": "Alarm 1 enabled"
@@ -4646,71 +4128,23 @@
       "starcode_m1x12_eq_band_7": {
         "name": "Equalizer 4 kHz"
       },
-      "starcode_m1x12_kneading_time_raw": {
-        "name": "Kneading time (raw)"
-      },
       "starcode_m1x12_kneading_mode": {
         "name": "Kneading mode"
       },
       "app_timer_status": {
-        "name": "App timer status"
-      },
-      "app_memory_request": {
-        "name": "App memory request"
+        "name": "Massage timer"
       },
       "sleepys_app_position_axis_0": {
-        "name": "App position axis 0"
+        "name": "Head position"
       },
       "sleepys_app_position_axis_1": {
-        "name": "App position axis 1"
+        "name": "Foot position"
       },
       "sleepys_app_position_axis_2": {
-        "name": "App position axis 2"
-      },
-      "sleepys_app_field_0x0b": {
-        "name": "App state field 0x0B"
-      },
-      "sleepys_app_field_0x13": {
-        "name": "App state field 0x13"
-      },
-      "sleepys_app_field_0x1b": {
-        "name": "App state field 0x1B"
-      },
-      "sleepys_app_field_0x23": {
-        "name": "App state field 0x23"
-      },
-      "sleepys_app_field_0x43": {
-        "name": "App state field 0x43"
-      },
-      "sleepys_app_field_0x47": {
-        "name": "App state field 0x47"
-      },
-      "sleepys_app_field_0x4b": {
-        "name": "App state field 0x4B"
-      },
-      "sleepys_app_field_0x53": {
-        "name": "App state field 0x53"
-      },
-      "sleepys_app_field_0x5f": {
-        "name": "App state field 0x5F"
-      },
-      "sleepys_app_field_0x67": {
-        "name": "App state field 0x67"
-      },
-      "sleepys_app_field_0x6b": {
-        "name": "App state field 0x6B"
-      },
-      "sleepys_app_field_0x73": {
-        "name": "App state field 0x73"
-      },
-      "sleepys_app_field_0x7b": {
-        "name": "App state field 0x7B"
-      },
-      "sleepys_app_field_0x83": {
-        "name": "App state field 0x83"
+        "name": "Lumbar position"
       },
       "eshine_capabilities": {
-        "name": "Capabilities"
+        "name": "Capability reports"
       },
       "eshine_motors": {
         "name": "Motor reports"
@@ -4722,7 +4156,7 @@
         "name": "Light reports"
       },
       "eshine_rgb": {
-        "name": "RGB reports"
+        "name": "RGB light reports"
       },
       "eshine_alarm": {
         "name": "Alarm reports"
@@ -4743,34 +4177,28 @@
         "name": "Component reports"
       },
       "glideaway_motion_alarm": {
-        "name": "Bed alarm"
+        "name": "Alarm"
       },
       "glideaway_motion_massage_timer": {
         "name": "Massage timer"
       },
-      "bedsense_head_bar": {
-        "name": "Head bar (app display width)"
-      },
-      "bedsense_wave_bar": {
-        "name": "Wave bar (app display width)"
-      },
       "bedsense_circulation": {
-        "name": "Circulation (app indicator)"
+        "name": "Circulation mode"
       },
       "bedsense_massage_timer": {
-        "name": "Massage timer (app selection, minutes)"
+        "name": "Massage timer"
       },
       "bedsense_light_duration": {
-        "name": "Light duration (app selection)"
+        "name": "Light duration"
       },
       "bedsense_head_steps": {
-        "name": "Head massage (app steps)"
+        "name": "Head massage level"
       },
       "bedsense_foot_steps": {
-        "name": "Foot massage (app steps)"
+        "name": "Foot massage level"
       },
       "bedsense_wave_steps": {
-        "name": "Wave frequency (app steps)"
+        "name": "Massage frequency level"
       },
       "casper_sleep_l_body_move": {
         "name": "Left body movement"
@@ -4803,7 +4231,7 @@
         "name": "Right snoring"
       },
       "casper_base": {
-        "name": "Casper Base state"
+        "name": "Model"
       },
       "casper_sleep_l_breath": {
         "name": "Left breathing rate"
@@ -4812,10 +4240,10 @@
         "name": "Right breathing rate"
       },
       "bf_cherish_alarm": {
-        "name": "Bed alarm"
+        "name": "Alarm"
       },
       "doublesleep_model": {
-        "name": "App model"
+        "name": "Model"
       },
       "doublesleep_sensor_version": {
         "name": "Sensor version"
@@ -4823,14 +4251,8 @@
       "doublesleep_firmware_version": {
         "name": "Firmware version"
       },
-      "doublesleep_privacy": {
-        "name": "Privacy"
-      },
       "doublesleep_use_side": {
         "name": "Sensor sides"
-      },
-      "doublesleep_parser_error": {
-        "name": "Last parser error"
       },
       "doublesleep_report": {
         "name": "Sleep report status"
@@ -4857,7 +4279,7 @@
         "name": "Left breath rate"
       },
       "doublesleep_left_status": {
-        "name": "Left sensor status"
+        "name": "Left bed status"
       },
       "doublesleep_right_sensitivity": {
         "name": "Right sensitivity"
@@ -4869,7 +4291,7 @@
         "name": "Right breath rate"
       },
       "doublesleep_right_status": {
-        "name": "Right sensor status"
+        "name": "Right bed status"
       },
       "doublesleep_massage_mode": {
         "name": "Massage mode"
@@ -4878,13 +4300,13 @@
         "name": "Massage strength"
       },
       "doublesleep_massage_head": {
-        "name": "Massage head"
+        "name": "Head massage"
       },
       "doublesleep_massage_foot": {
-        "name": "Massage foot"
+        "name": "Foot massage"
       },
       "doublesleep_massage_time": {
-        "name": "Massage time"
+        "name": "Massage timer"
       },
       "doublesleep_massage_running": {
         "name": "Massage running"
@@ -4893,64 +4315,49 @@
         "name": "Massage source"
       },
       "doublesleep_sonic_mode": {
-        "name": "Sonic mode"
+        "name": "Sonic massage mode"
       },
       "doublesleep_sonic_strength": {
-        "name": "Sonic strength"
+        "name": "Sonic massage strength"
       },
       "doublesleep_sonic_head": {
-        "name": "Sonic head"
+        "name": "Sonic head massage"
       },
       "doublesleep_sonic_foot": {
-        "name": "Sonic foot"
+        "name": "Sonic foot massage"
       },
       "doublesleep_sonic_time": {
-        "name": "Sonic time"
+        "name": "Sonic massage timer"
       },
       "doublesleep_sonic_running": {
-        "name": "Sonic running"
+        "name": "Sonic massage running"
       },
       "doublesleep_sonic_source": {
-        "name": "Sonic source"
-      },
-      "adjustamattress_alarm_hour": {
-        "name": "Reported alarm hour"
-      },
-      "adjustamattress_alarm_minute": {
-        "name": "Reported alarm minute"
-      },
-      "adjustamattress_alarm_type": {
-        "name": "Reported alarm action code"
-      },
-      "adjustamattress_alarm_repeat": {
-        "name": "Reported alarm repeat byte"
+        "name": "Sonic massage source"
       },
       "adjustamattress_massage_time": {
-        "name": "Reported massage time"
+        "name": "Massage timer"
       },
       "adjustamattress_head_intensity": {
-        "name": "Reported head intensity"
+        "name": "Head massage intensity"
       },
       "adjustamattress_foot_intensity": {
-        "name": "Reported foot intensity"
+        "name": "Foot massage intensity"
       },
       "adjustamattress_wave": {
-        "name": "Reported wave"
+        "name": "Wave massage intensity"
       },
       "adjustamattress_sensitivity": {
-        "name": "Reported sensitivity index"
-      },
-      "adjustamattress_strength_index": {
-        "name": "Reported anti-snore strength index"
+        "name": "Anti-snore sensitivity"
       },
       "hjbed_status": {
-        "name": "HJBed status"
+        "name": "Status"
       },
       "gmmotor_state": {
-        "name": "GM Control state"
+        "name": "Status"
       },
       "gmmotor_sleep_state": {
-        "name": "GM Control sleep module state"
+        "name": "Sleep sensor status"
       },
       "saved_positions": {
         "name": "Saved positions"
@@ -4971,7 +4378,7 @@
         "name": "Right snoring"
       },
       "goodvibe_status": {
-        "name": "Good Vibe Sleep status"
+        "name": "Status"
       },
       "goodvibe_r_occupancy": {
         "name": "Right occupancy"
@@ -4989,16 +4396,16 @@
         "name": "Left occupancy"
       },
       "eshine_okin_massage": {
-        "name": "Massage state"
+        "name": "Massage"
       },
       "eshine_okin_alarm": {
-        "name": "Alarm state"
+        "name": "Alarm"
       },
       "richmat_classic_status": {
-        "name": "App connection and state"
+        "name": "Status"
       },
       "motomotion_status": {
-        "name": "MotoMotion status"
+        "name": "Status"
       },
       "motomotion_heat": {
         "name": "Heat level"
@@ -5019,7 +4426,7 @@
         "name": "Right massage level"
       },
       "hush_sleep_settings": {
-        "name": "Hush sleep settings"
+        "name": "Sleep sensor settings"
       },
       "ruf_richmat_mattress_left_alarm": {
         "name": "Left mattress alarm"
@@ -5055,7 +4462,7 @@
         "name": "Calendar alarms"
       },
       "ruf_richmat_sleep_attributes": {
-        "name": "Sleep receiver firmware"
+        "name": "Sleep sensor firmware"
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
@@ -5067,52 +4474,37 @@
         "name": "Bed height"
       },
       "paramount_tilt": {
-        "name": "Tilt (raw)"
+        "name": "Tilt"
       },
       "paramount_rssi": {
-        "name": "Bed reply signal strength"
+        "name": "Signal strength"
       },
       "paramount_serial": {
-        "name": "Serial identifier"
-      },
-      "paramount_session_state": {
-        "name": "Session state"
-      },
-      "paramount_registration_result": {
-        "name": "Registration result"
+        "name": "Serial number"
       },
       "smart_comfort_model": {
-        "name": "Smart Comfort model code"
-      },
-      "smart_comfort_counter_1": {
-        "name": "Feedback counter 1 (raw)"
-      },
-      "smart_comfort_counter_2": {
-        "name": "Feedback counter 2 (raw)"
-      },
-      "smart_comfort_counter_3": {
-        "name": "Feedback counter 3 (raw)"
+        "name": "Model"
       },
       "jalon_massage": {
         "name": "Massage timer indicator"
       },
       "jalon_alarm": {
-        "name": "Bed alarm"
+        "name": "Alarm"
       },
       "resident_massage_timer": {
         "name": "Massage timer"
       },
       "luuna": {
-        "name": "Luuna + status"
+        "name": "Model"
       },
       "massage_timer": {
-        "name": "Massage timer category"
+        "name": "Massage timer"
       },
       "galaxy_status": {
-        "name": "Galaxy bed status"
+        "name": "Status"
       },
       "richmat_app_status": {
-        "name": "Richmat app status"
+        "name": "Status"
       },
       "richmat_app_sleep_status": {
         "name": "Sleep session status"
@@ -5121,7 +4513,7 @@
         "name": "Massage timer indicator"
       },
       "rize_home_timer_index": {
-        "name": "Massage timer index"
+        "name": "Massage timer setting"
       },
       "rize_home_combined_intensity": {
         "name": "Combined massage intensity"
@@ -5136,21 +4528,21 @@
         "name": "Massage mode"
       },
       "comfy_lock_status": {
-        "name": "App control lock",
+        "name": "Control lock owner",
         "state": {
           "unlocked": "Unlocked",
-          "local": "Locally owned",
-          "other": "Owned by another controller"
+          "local": "Home Assistant",
+          "other": "Another controller"
         }
       },
       "comfy_timer_remaining": {
-        "name": "Local app timer remaining"
+        "name": "Timer remaining (estimated)"
       },
       "smart_sleep_model": {
-        "name": "App model ID"
+        "name": "Model"
       },
       "smart_sleep_alarm_week": {
-        "name": "Alarm week mask"
+        "name": "Alarm days"
       },
       "smart_sleep_alarm_action": {
         "name": "Alarm action"
@@ -5159,58 +4551,58 @@
         "name": "Alarm time"
       },
       "smart_sleep_light_brightness": {
-        "name": "Light brightness (reported)"
+        "name": "Light brightness"
       },
       "smart_sleep_ai_status": {
-        "name": "AI-zero status"
+        "name": "AI zero status"
       },
       "smart_sleep_ai_score": {
-        "name": "AI-zero score"
+        "name": "AI zero score"
       },
       "rize_remedy_ii_save_acknowledged": {
-        "name": "Save acknowledgment code"
+        "name": "Preset save confirmation"
       },
       "apex_local_massage_end": {
-        "name": "Local massage end (estimated)"
+        "name": "Massage end (estimated)"
       },
       "apex_firmware": {
         "name": "Firmware version"
       },
       "n32_alarm_1": {
-        "name": "Bed alarm 1"
+        "name": "Alarm 1"
       },
       "n32_alarm_2": {
-        "name": "Bed alarm 2"
+        "name": "Alarm 2"
       },
       "n32_alarm_3": {
-        "name": "Bed alarm 3"
+        "name": "Alarm 3"
       },
       "symphony_massage_minutes": {
-        "name": "Massage time"
+        "name": "Massage timer"
       },
       "symphony_alarm_time": {
-        "name": "Bed alarm time"
+        "name": "Alarm time"
       },
       "symphony_firmware": {
-        "name": "Bed firmware"
+        "name": "Firmware"
       },
       "symphony_protocol": {
-        "name": "Bed protocol identification"
+        "name": "Protocol"
       },
       "symphony_alarm": {
-        "name": "Alarm hour"
+        "name": "Alarm"
       },
       "symphony_massage": {
-        "name": "Massage timer index"
+        "name": "Massage timer"
       },
       "yamada_alarm_1": {
-        "name": "Bed alarm 1"
+        "name": "Alarm 1"
       },
       "yamada_alarm_2": {
-        "name": "Bed alarm 2"
+        "name": "Alarm 2"
       },
       "bedgear_rgb": {
-        "name": "Reported RGB"
+        "name": "Light color"
       },
       "bedgear_light_minutes": {
         "name": "Light shutdown timer"
@@ -5234,16 +4626,16 @@
         "name": "Breathing signal"
       },
       "mline_anti_angle": {
-        "name": "Anti-snore angle code"
+        "name": "Anti-snore angle"
       },
       "mline_alarm": {
-        "name": "Alarm fields"
+        "name": "Alarm"
       },
       "mline_alarm_mode": {
         "name": "Alarm wake mode"
       },
       "sonicsleep": {
-        "name": "SonicSleep state"
+        "name": "Model"
       }
     },
     "light": {
@@ -5259,13 +4651,103 @@
         "name": "Controller Sync"
       },
       "linak_automatic_drive": {
-        "name": "Automatic Drive"
+        "name": "Automatic drive"
       },
       "remote_control_lock": {
         "name": "Remote control lock"
       },
       "automatic_light": {
         "name": "Automatic under-bed light"
+      },
+      "sleepys_app_motion_sensor": {
+        "name": "Motion sensor"
+      },
+      "reverie_pairlink_massage_rhythm": {
+        "name": "Massage rhythm"
+      },
+      "smart_comfort_cup": {
+        "name": "Cup holder light"
+      },
+      "smart_comfort_read": {
+        "name": "Reading light"
+      },
+      "ruf_richmat_sleep_left_intervention": {
+        "name": "Left snore intervention"
+      },
+      "ruf_richmat_sleep_right_intervention": {
+        "name": "Right snore intervention"
+      },
+      "comfy_control_lock": {
+        "name": "Control lock"
+      },
+      "comfy_timer": {
+        "name": "Timer"
+      },
+      "smart_sleep_child_mode": {
+        "name": "Child mode"
+      },
+      "smart_sleep_privacy": {
+        "name": "Privacy"
+      },
+      "smart_sleep_massage": {
+        "name": "Massage"
+      },
+      "adjustamattress_alarm": {
+        "name": "Alarm"
+      },
+      "adjustamattress_snore_control": {
+        "name": "Intelligent anti-snore"
+      },
+      "adjustamattress_sleep": {
+        "name": "Sleep mode"
+      },
+      "doublesleep_child_lock": {
+        "name": "Child lock"
+      },
+      "doublesleep_privacy": {
+        "name": "Privacy"
+      },
+      "rize_motion": {
+        "name": "Motion sensor"
+      },
+      "rize_home_motion": {
+        "name": "Motion sensor"
+      },
+      "motionbed_light": {
+        "name": "Bed light"
+      },
+      "paramount_call_prohibition": {
+        "name": "Call button"
+      },
+      "paramount_switch_prohibition": {
+        "name": "Bed switches"
+      },
+      "paramount_head_range": {
+        "name": "Head movement"
+      },
+      "paramount_legs_range": {
+        "name": "Legs movement"
+      },
+      "paramount_height_range": {
+        "name": "Height movement"
+      },
+      "paramount_gearing_range": {
+        "name": "Linked motion movement"
+      },
+      "symphony_child_mode": {
+        "name": "Child mode"
+      },
+      "symphony_privacy": {
+        "name": "Privacy"
+      },
+      "symphony_light": {
+        "name": "Under-bed light"
+      },
+      "symphony_massage_running": {
+        "name": "Massage"
+      },
+      "symphony_sonic": {
+        "name": "Sonic massage"
       }
     },
     "binary_sensor": {
@@ -5285,19 +4767,19 @@
         "name": "BLE Connection"
       },
       "reverie_pairlink_low_battery": {
-        "name": "Pairlink: Low Battery"
+        "name": "Low battery"
       },
       "memory_save_response_observed": {
-        "name": "Memory save response observed"
+        "name": "Memory save confirmed"
       },
       "bed_presence": {
         "name": "Bed Presence"
       },
       "linak_position_feedback_fault": {
-        "name": "Position Feedback Fault"
+        "name": "Position feedback fault"
       },
       "solace_alarm_enabled": {
-        "name": "Alarm Enabled"
+        "name": "Alarm"
       },
       "bed_presence_left": {
         "name": "Left Bed Presence"
@@ -5306,160 +4788,73 @@
         "name": "Right Bed Presence"
       },
       "leggett_alarm_indicator": {
-        "name": "Alarm indicator"
+        "name": "Alarm"
       },
       "leggett_sleep_timer_indicator": {
-        "name": "Sleep timer indicator"
+        "name": "Sleep timer"
       },
       "under_bed_lights": {
         "name": "Under Bed Lights"
       },
       "furnimove_sync": {
-        "name": "FurniMove synchronization"
+        "name": "Synchronized"
       },
       "furnimove_child_lock": {
-        "name": "FurniMove child lock"
+        "name": "Child lock"
       },
       "furnimove_massage_running": {
-        "name": "FurniMove local massage session"
-      },
-      "vmatbasic_ed": {
-        "name": "ED motor status"
-      },
-      "motion_bed_snore": {
-        "name": "Snore"
-      },
-      "motion_bed_coupled_right_memory": {
-        "name": "Coupled right memory"
-      },
-      "motion_bed_sync_visible": {
-        "name": "Sync visible"
-      },
-      "motion_bed_motor_massage_visible": {
-        "name": "Motor massage visible"
-      },
-      "motion_bed_alarm_repeat": {
-        "name": "Alarm repeat"
+        "name": "Massage"
       },
       "motion_bed_sync_enabled": {
-        "name": "Sync enabled"
+        "name": "Sync"
       },
       "motion_bed_thermal_timer_enabled": {
-        "name": "Thermal timer enabled"
-      },
-      "motion_bed_alarm_sound": {
-        "name": "Alarm sound"
+        "name": "Climate timer"
       },
       "motion_bed_sensor_present": {
-        "name": "Sensor present"
-      },
-      "motion_bed_air_full_custom": {
-        "name": "Air full custom"
-      },
-      "motion_bed_memory_2": {
-        "name": "Memory 2"
-      },
-      "motion_bed_audio_available": {
-        "name": "Audio available"
+        "name": "Sleep sensor"
       },
       "motion_bed_alarm_enabled": {
-        "name": "Alarm enabled"
+        "name": "Alarm"
       },
       "motion_bed_air_module_present": {
-        "name": "Air module present"
-      },
-      "motion_bed_first_modular_alarm": {
-        "name": "First modular alarm"
+        "name": "Air massage module"
       },
       "motion_bed_motor_light_enabled": {
-        "name": "Motor light enabled"
+        "name": "Light"
       },
       "motion_bed_air_adaptive": {
-        "name": "Air adaptive"
+        "name": "Adaptive air massage"
       },
       "motion_bed_motor_massage_enabled": {
-        "name": "Motor massage enabled"
-      },
-      "motion_bed_alarm_massage": {
-        "name": "Alarm massage"
+        "name": "Massage"
       },
       "motion_bed_sleep_enabled": {
-        "name": "Sleep enabled"
+        "name": "Smart sleep"
       },
       "motion_bed_motor_module_present": {
-        "name": "Motor module present"
-      },
-      "motion_bed_left_tv": {
-        "name": "Left tv"
-      },
-      "motion_bed_memory_1": {
-        "name": "Memory 1"
-      },
-      "motion_bed_tv": {
-        "name": "Tv"
+        "name": "Motor module"
       },
       "motion_bed_thermal_module_present": {
-        "name": "Thermal module present"
+        "name": "Climate module"
       },
       "motion_bed_night_light_enabled": {
-        "name": "Night light enabled"
-      },
-      "motion_bed_coupled_left_memory": {
-        "name": "Coupled left memory"
-      },
-      "motion_bed_left_memory": {
-        "name": "Left memory"
-      },
-      "motion_bed_air_back_custom": {
-        "name": "Air back custom"
-      },
-      "motion_bed_right_tv": {
-        "name": "Right tv"
-      },
-      "motion_bed_right_memory": {
-        "name": "Right memory"
-      },
-      "motion_bed_calibration_reset_received": {
-        "name": "Calibration reset received"
-      },
-      "motion_bed_motor_sensor_enabled": {
-        "name": "Motor sensor enabled"
-      },
-      "motion_bed_zero_gravity": {
-        "name": "Zero gravity"
+        "name": "Night light"
       },
       "motion_bed_thermal_low_water": {
-        "name": "Thermal low water"
-      },
-      "motion_bed_right_zero_gravity": {
-        "name": "Right zero gravity"
-      },
-      "motion_bed_left_zero_gravity": {
-        "name": "Left zero gravity"
+        "name": "Low water"
       },
       "starcode_massage_active": {
         "name": "Massage active"
       },
       "starcode_kneading_on": {
-        "name": "Kneading on"
-      },
-      "starcode_motor_stopped": {
-        "name": "Motor stopped"
-      },
-      "starcode_light_on": {
-        "name": "Light on"
+        "name": "Kneading active"
       },
       "starcode_usb_on": {
-        "name": "Usb on"
+        "name": "USB on"
       },
       "starcode_sonic_active": {
         "name": "Sonic active"
-      },
-      "starcode_kneading_demo": {
-        "name": "Kneading demo"
-      },
-      "starcode_firmware_read_ok": {
-        "name": "Firmware read ok"
       },
       "adjustable_lite_light": {
         "name": "Light"
@@ -5467,26 +4862,17 @@
       "innova_light": {
         "name": "Light"
       },
-      "richmat_mh_smart_set_lock": {
-        "name": "Smart set lock"
-      },
       "richmat_mh_smart_light_lock": {
         "name": "Smart light lock"
       },
       "sleeptracker_light_on": {
-        "name": "Safety light (reported)"
+        "name": "Safety light"
       },
       "sleeptracker_wind_down_running": {
-        "name": "Wind-down running (reported)"
-      },
-      "starcode_m1x12_motor_stopped": {
-        "name": "Motor stopped"
+        "name": "Wind-down"
       },
       "starcode_m1x12_massage_active": {
         "name": "Massage active"
-      },
-      "starcode_m1x12_light_on": {
-        "name": "Light on"
       },
       "starcode_m1x12_sonic_active": {
         "name": "Sonic active"
@@ -5497,74 +4883,38 @@
       "starcode_m1x12_kneading_on": {
         "name": "Kneading active"
       },
-      "starcode_m1x12_kneading_demo": {
-        "name": "Kneading demo available"
-      },
       "bedsense_m1_saved": {
-        "name": "M1 saved (app indicator)"
+        "name": "Memory 1 saved"
       },
       "bedsense_m2_saved": {
-        "name": "M2 saved (app indicator)"
+        "name": "Memory 2 saved"
       },
       "bedsense_m3_saved": {
-        "name": "M3 saved (app indicator)"
+        "name": "Memory 3 saved"
       },
       "bedsense_m4_saved": {
-        "name": "M4 saved (app indicator)"
+        "name": "Memory 4 saved"
       },
       "bedsense_m5_saved": {
-        "name": "M5 saved (app indicator)"
+        "name": "Memory 5 saved"
       },
       "floyd_battery_mode": {
-        "name": "Battery power mode"
-      },
-      "doublesleep_left_flag1": {
-        "name": "Left sensor flag1"
-      },
-      "doublesleep_left_flag2": {
-        "name": "Left sensor flag2"
-      },
-      "doublesleep_right_flag1": {
-        "name": "Right sensor flag1"
-      },
-      "doublesleep_right_flag2": {
-        "name": "Right sensor flag2"
-      },
-      "adjustamattress_alarm_on": {
-        "name": "Reported alarm enabled"
-      },
-      "adjustamattress_sleeping": {
-        "name": "Reported sleeping"
-      },
-      "adjustamattress_snore_enabled": {
-        "name": "Reported intelligent anti-snore"
+        "name": "Battery power"
       },
       "adjustamattress_demonstration": {
-        "name": "Reported demonstration"
-      },
-      "adjustamattress_auxiliary_status_bit_1": {
-        "name": "Auxiliary status bit 1"
+        "name": "Anti-snore demonstration"
       },
       "adjustamattress_busy": {
         "name": "Control box busy"
       },
       "ergomotion4_light": {
-        "name": "Reported light state"
-      },
-      "smart_comfort_read": {
-        "name": "Reading light (group report)"
-      },
-      "smart_comfort_cup": {
-        "name": "Cup holder (group report)"
+        "name": "Light"
       },
       "rize_battery_mode": {
-        "name": "Battery mode"
+        "name": "Battery power"
       },
       "rize_home_active": {
         "name": "Massage active"
-      },
-      "smart_sleep_massage_on": {
-        "name": "Massage"
       },
       "smart_sleep_alarm_on": {
         "name": "Alarm"
@@ -5573,7 +4923,7 @@
         "name": "Flexible wake"
       },
       "symphony_alarm_enabled": {
-        "name": "Bed alarm enabled"
+        "name": "Alarm"
       },
       "symphony_privacy": {
         "name": "Privacy"
@@ -5582,19 +4932,22 @@
         "name": "Automatic anti-snore"
       },
       "symphony_light_on": {
-        "name": "Underbed light"
+        "name": "Under-bed light"
       },
       "mline_motion": {
         "name": "Motion"
-      },
-      "mline_boolean_projection": {
-        "name": "Sensor Boolean projection"
       },
       "mline_privacy": {
         "name": "Privacy mode"
       },
       "mline_anti_enabled": {
         "name": "Anti-snore enabled"
+      },
+      "starcode_abm5_4_massage_active": {
+        "name": "Massage"
+      },
+      "richmat_mh_smart_set_lock": {
+        "name": "Smart set lock"
       }
     },
     "number": {
@@ -5634,23 +4987,20 @@
       "light_level": {
         "name": "Light Level"
       },
-      "reverie_wave_level": {
-        "name": "Reverie: Wave Level"
-      },
       "reverie_massage_wave": {
-        "name": "Reverie: Wave Setting"
+        "name": "Massage wave"
       },
       "reverie_stk_head_wave": {
-        "name": "Reverie STK: Head Wave Level"
+        "name": "Head massage wave"
       },
       "reverie_stk_global_massage": {
-        "name": "Reverie STK: Global Massage Value"
+        "name": "Overall massage level"
       },
       "reverie_body_tilt": {
-        "name": "Reverie R650: Body Tilt"
+        "name": "Body tilt"
       },
       "reverie_pairlink_massage_timer": {
-        "name": "Pairlink: Massage Timer Code"
+        "name": "Massage timer"
       },
       "fan_level": {
         "name": "Fan Level"
@@ -5686,13 +5036,13 @@
         "name": "Massage speed"
       },
       "vibradorm_app_floor_timer_minutes": {
-        "name": "Floor light timer minutes"
+        "name": "Floor light timer"
       },
       "vmatbasic_floor_level": {
-        "name": "Requested floor level"
+        "name": "Floor light level"
       },
       "vmatbasic_floor_minutes": {
-        "name": "Requested floor timer"
+        "name": "Floor light timer"
       },
       "vmatbasic_mood_brightness": {
         "name": "Mood brightness"
@@ -5704,7 +5054,7 @@
         "name": "Floor light level"
       },
       "starcode_brightness": {
-        "name": "RGB brightness"
+        "name": "Light brightness"
       },
       "richmat_mh_light_timer": {
         "name": "Light timeout"
@@ -5737,25 +5087,25 @@
         "name": "Right ActiveBreeze level"
       },
       "starcode_m1x12_brightness": {
-        "name": "RGB brightness level"
+        "name": "Light brightness"
       },
       "sleepys_app_target_axis_0": {
-        "name": "App target axis 0"
+        "name": "Head target position"
       },
       "sleepys_app_target_axis_1": {
-        "name": "App target axis 1"
+        "name": "Foot target position"
       },
       "sleepys_app_target_axis_2": {
-        "name": "App target axis 2"
+        "name": "Lumbar target position"
       },
       "sleepys_app_color_code": {
-        "name": "App color code"
+        "name": "Light color"
       },
       "adjustamattress_alarm_draft_hour": {
-        "name": "Alarm hour (draft)"
+        "name": "Alarm hour"
       },
       "adjustamattress_alarm_draft_minute": {
-        "name": "Alarm minute (draft)"
+        "name": "Alarm minute"
       },
       "bf_cherish_intensity": {
         "name": "Massage intensity"
@@ -5803,7 +5153,7 @@
         "name": "Blue"
       },
       "motomotion_timer": {
-        "name": "Light timer (seconds)"
+        "name": "Light timer"
       },
       "motomotion_height": {
         "name": "User height"
@@ -5815,19 +5165,19 @@
         "name": "Knee height"
       },
       "motomotion_target_head": {
-        "name": "Target head (Hall units)"
+        "name": "Fine-tune head"
       },
       "motomotion_target_base": {
-        "name": "Target base (Hall units)"
+        "name": "Fine-tune base"
       },
       "motomotion_target_back": {
-        "name": "Target back (Hall units)"
+        "name": "Fine-tune back"
       },
       "motomotion_target_lumbar": {
-        "name": "Target lumbar (Hall units)"
+        "name": "Fine-tune lumbar"
       },
       "motomotion_target_tilt": {
-        "name": "Target tilt (Hall units)"
+        "name": "Fine-tune tilt"
       },
       "octo_light_duration": {
         "name": "Light duration"
@@ -5872,21 +5222,21 @@
         "name": "Lamp timer"
       },
       "symphony_light_color": {
-        "name": "Light color code"
+        "name": "Light color"
       },
       "symphony_light_brightness": {
         "name": "Light brightness"
       },
       "richmat_resource_lamp_timeout": {
-        "name": "Light timeout request"
+        "name": "Light timeout"
       },
       "richmat_resource_massage_timer": {
-        "name": "Massage timer request"
+        "name": "Massage timer"
       }
     },
     "select": {
       "reverie_stk_side": {
-        "name": "Reverie STK Numeric Side",
+        "name": "Controlled side",
         "state": {
           "1": "Side 1",
           "2": "Side 2",
@@ -5894,20 +5244,13 @@
         }
       },
       "reverie_pairlink_massage_mode": {
-        "name": "Pairlink: Massage Mode",
+        "name": "Massage mode",
         "state": {
           "0": "Off",
           "1": "Mode 1",
           "2": "Mode 2",
           "3": "Mode 3",
           "4": "Mode 4"
-        }
-      },
-      "reverie_pairlink_massage_rhythm": {
-        "name": "Pairlink: Massage Rhythm",
-        "state": {
-          "off": "Off",
-          "on": "On"
         }
       },
       "massage_timer": {
@@ -6013,7 +5356,7 @@
         }
       },
       "starcode_color": {
-        "name": "RGB palette index",
+        "name": "Light color",
         "state": {
           "0": "Off",
           "1": "White",
@@ -6201,9 +5544,9 @@
         "name": "Massage pattern",
         "state": {
           "off": "Off",
-          "one": "Wave Form One",
-          "two": "Wave Form Two",
-          "three": "Wave Form Three"
+          "one": "Wave 1",
+          "two": "Wave 2",
+          "three": "Wave 3"
         }
       },
       "sleeptracker_left_mode": {
@@ -6237,17 +5580,15 @@
         }
       },
       "sleepys_app_massage_timer_code": {
-        "name": "Massage time code"
-      },
-      "doublesleep_child_lock": {
-        "name": "Child lock",
+        "name": "Massage timer",
         "state": {
-          "off": "Off",
-          "on": "On"
+          "1": "10 minutes",
+          "2": "20 minutes",
+          "3": "30 minutes"
         }
       },
       "adjustamattress_alarm_draft_type": {
-        "name": "Alarm action (draft)",
+        "name": "Alarm action",
         "state": {
           "0": "Default",
           "9": "Massage",
@@ -6255,78 +5596,49 @@
           "19": "Position"
         }
       },
-      "adjustamattress_alarm_commit": {
-        "name": "Alarm",
-        "state": {
-          "on": "On",
-          "off": "Off"
-        }
-      },
       "adjustamattress_head_selector": {
-        "name": "Head massage selection",
+        "name": "Head massage",
         "state": {
-          "0": "0",
-          "1": "1",
-          "2": "2",
-          "3": "3"
+          "0": "Level 1",
+          "1": "Level 2",
+          "2": "Level 3",
+          "3": "Level 4"
         }
       },
       "adjustamattress_foot_selector": {
-        "name": "Foot massage selection",
+        "name": "Foot massage",
         "state": {
-          "0": "0",
-          "1": "1",
-          "2": "2",
-          "3": "3"
+          "0": "Level 1",
+          "1": "Level 2",
+          "2": "Level 3",
+          "3": "Level 4"
         }
       },
       "adjustamattress_wave_selector": {
-        "name": "Wave selection",
+        "name": "Wave massage",
         "state": {
-          "0": "0",
-          "1": "1",
-          "2": "2",
-          "3": "3"
-        }
-      },
-      "adjustamattress_privacy": {
-        "name": "Anti-snore privacy agreement",
-        "state": {
-          "accepted": "Accepted",
-          "not_accepted": "Not accepted"
+          "0": "Level 1",
+          "1": "Level 2",
+          "2": "Level 3",
+          "3": "Level 4"
         }
       },
       "adjustamattress_strength_setting": {
-        "name": "Anti-snore strength (next command)",
+        "name": "Anti-snore strength",
         "state": {
-          "0": "0",
-          "1": "1",
-          "2": "2"
-        }
-      },
-      "adjustamattress_snore_control": {
-        "name": "Intelligent anti-snore",
-        "state": {
-          "on": "On",
-          "off": "Off"
+          "0": "Level 1",
+          "1": "Level 2",
+          "2": "Level 3"
         }
       },
       "hjbed_layout": {
-        "name": "HJBed layout"
-      },
-      "goodvibe_side": {
-        "name": "App side",
-        "state": {
-          "0": "Left",
-          "1": "Right",
-          "2": "Both"
-        }
+        "name": "Remote layout"
       },
       "goodvibe_light_duration": {
         "name": "Light duration (seconds)"
       },
       "goodvibe_massage_timer": {
-        "name": "Massage countdown",
+        "name": "Massage timer",
         "state": {
           "0": "Off",
           "10": "10 minutes",
@@ -6335,7 +5647,7 @@
         }
       },
       "richmat_classic_mode": {
-        "name": "App mode",
+        "name": "Remote mode",
         "state": {
           "0": "Mode 1",
           "1": "Mode 2",
@@ -6343,21 +5655,21 @@
         }
       },
       "richmat_classic_program": {
-        "name": "Memory selection",
+        "name": "Memory button action",
         "state": {
           "recall": "Recall",
-          "armed": "Save next action"
+          "armed": "Save"
         }
       },
       "richmat_classic_hold": {
-        "name": "Press behavior",
+        "name": "Button press mode",
         "state": {
-          "release": "Release",
-          "hold": "Hold"
+          "release": "Tap",
+          "hold": "Press and hold"
         }
       },
       "richmat_classic_head_foot": {
-        "name": "Selected control",
+        "name": "Head or foot control",
         "state": {
           "head": "Head",
           "foot": "Foot"
@@ -6384,7 +5696,7 @@
         "state": {
           "upright": "Upright",
           "recline": "Recline",
-          "tv": "Tv",
+          "tv": "TV",
           "lay": "Lay"
         }
       },
@@ -6514,24 +5826,10 @@
         }
       },
       "ruf_richmat_sleep_mode": {
-        "name": "Mode",
+        "name": "Sleep sensor mode",
         "state": {
           "single": "Single",
           "double": "Double"
-        }
-      },
-      "ruf_richmat_sleep_left_intervention": {
-        "name": "Left intervention",
-        "state": {
-          "off": "Off",
-          "on": "On"
-        }
-      },
-      "ruf_richmat_sleep_right_intervention": {
-        "name": "Right intervention",
-        "state": {
-          "off": "Off",
-          "on": "On"
         }
       },
       "paramount_speed": {
@@ -6541,91 +5839,33 @@
           "fast": "Fast"
         }
       },
-      "paramount_call_prohibition": {
-        "name": "Physical call button",
-        "state": {
-          "allowed": "Allowed",
-          "prohibited": "Prohibited"
-        }
-      },
-      "paramount_switch_prohibition": {
-        "name": "Physical bed switches",
-        "state": {
-          "allowed": "Allowed",
-          "prohibited": "Prohibited"
-        }
-      },
       "paramount_duration": {
         "name": "Tap movement duration",
         "state": {
-          "hold": "Hold",
+          "hold": "Press and hold",
           "1": "1 second",
           "2": "2 seconds",
           "3": "3 seconds",
           "4": "4 seconds"
         }
       },
-      "paramount_head_range": {
-        "name": "Head movement",
-        "state": {
-          "enabled": "Enabled",
-          "disabled": "Disabled"
-        }
-      },
-      "paramount_legs_range": {
-        "name": "Legs movement",
-        "state": {
-          "enabled": "Enabled",
-          "disabled": "Disabled"
-        }
-      },
-      "paramount_height_range": {
-        "name": "Height movement",
-        "state": {
-          "enabled": "Enabled",
-          "disabled": "Disabled"
-        }
-      },
-      "paramount_gearing_range": {
-        "name": "Linked motion movement",
-        "state": {
-          "enabled": "Enabled",
-          "disabled": "Disabled"
-        }
-      },
       "smart_comfort_seat": {
-        "name": "Logical seat",
+        "name": "Seat",
         "state": {
-          "0": "Address 0",
-          "1": "Address 1",
-          "2": "Address 2"
-        }
-      },
-      "richmat_app_side": {
-        "name": "App side",
-        "state": {
-          "left": "Left",
-          "right": "Right",
-          "both": "Both"
+          "0": "Seat 1",
+          "1": "Seat 2",
+          "2": "Seat 3"
         }
       },
       "rize_home_source": {
-        "name": "Rize Home command source",
+        "name": "Command source",
         "state": {
           "button": "Button",
           "speak": "Speech"
         }
       },
-      "comfy_selected_side": {
-        "name": "App bed side",
-        "state": {
-          "left": "Left",
-          "both": "Both",
-          "right": "Right"
-        }
-      },
       "comfy_timer_selection": {
-        "name": "App timer selection",
+        "name": "Timer duration",
         "state": {
           "10": "10 minutes",
           "20": "20 minutes",
@@ -6634,17 +5874,18 @@
           "50": "50 minutes"
         }
       },
-      "smart_sleep_child_mode": {
-        "name": "Child mode (Home Assistant)"
-      },
-      "smart_sleep_privacy": {
-        "name": "Privacy"
-      },
       "smart_sleep_antisnore": {
-        "name": "Automatic antisnore"
+        "name": "Automatic anti-snore",
+        "state": {
+          "off": "Off",
+          "1": "1",
+          "3": "3",
+          "6": "6",
+          "demo": "Demonstration"
+        }
       },
       "smart_sleep_sensitivity": {
-        "name": "Antisnore sensitivity"
+        "name": "Anti-snore sensitivity"
       },
       "smart_sleep_wave": {
         "name": "Massage wave"
@@ -6656,10 +5897,23 @@
         "name": "Foot massage strength"
       },
       "smart_sleep_timer": {
-        "name": "Massage timer option"
+        "name": "Massage timer"
       },
-      "symphony_child_mode": {
-        "name": "Local child mode"
+      "goodvibe_side": {
+        "name": "Controlled side",
+        "state": {
+          "0": "Left",
+          "1": "Right",
+          "2": "Both"
+        }
+      },
+      "richmat_app_side": {
+        "name": "Controlled side",
+        "state": {
+          "left": "Left",
+          "right": "Right",
+          "both": "Both"
+        }
       }
     },
     "climate": {
@@ -10377,14 +9631,14 @@
         "step": {
           "init": {
             "title": "Review the profile for {name}",
-            "description": "**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save Zero Gravity, Save Lounge, Save Incline, Save Anti-Snore, Wave 1, Wave 2, Wave 3, Massage On and Check Massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nReview opens the suggested profile’s settings. Check them and submit to apply the change. Closing settings keeps your current profile. Choose Keep current profile to dismiss this suggestion across restarts and updates.",
+            "description": "**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save zero gravity, Save lounge, Save incline, Save anti-snore, Wave 1, Wave 2, Wave 3, Massage on and Refresh massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nReview opens the suggested profile’s settings. Check them and submit to apply the change. Closing settings keeps your current profile. Choose Keep current profile to dismiss this suggestion across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "paired": {
             "title": "Review the profile for {target}",
-            "description": "**{target}** ({address}):\n\n**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save Zero Gravity, Save Lounge, Save Incline, Save Anti-Snore, Wave 1, Wave 2, Wave 3, Massage On and Check Massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nThis recommendation applies only to this physical bed. Changing this app profile requires restoring standalone controls first. Review opens Configure: choose {pair_action}, then change only the affected bed to the suggested profile. No split or profile change happens automatically. Keep current profile dismisses this suggestion for this bed only.",
+            "description": "**{target}** ({address}):\n\n**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save zero gravity, Save lounge, Save incline, Save anti-snore, Wave 1, Wave 2, Wave 3, Massage on and Refresh massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nThis recommendation applies only to this physical bed. Changing this app profile requires restoring standalone controls first. Review opens Configure: choose {pair_action}, then change only the affected bed to the suggested profile. No split or profile change happens automatically. Keep current profile dismisses this suggestion for this bed only.",
             "data": {
               "action": "Profile choice"
             }

@@ -14,7 +14,7 @@ export function presentSections(
       !!bed.stop ||
       !!bed.synchro,
     firmness: bed.firmness.length > 0,
-    presets: bed.presets.length > 0,
+    presets: bed.presets.length + bed.presetSaves.length > 0,
     saved_positions: !!bed.savedPositions,
     memory: bed.memory.length > 0,
     lighting: hasLightingControls(bed.lights) || !!bed.lights.state,
@@ -22,9 +22,10 @@ export function presentSections(
       bed.massage.buttons.length > 0 ||
       bed.massage.numbers.length > 0 ||
       Boolean(bed.massage.states?.length) ||
+      Boolean(bed.massage.switches?.length) ||
       !!bed.massage.selects?.length ||
       !!bed.massage.timer,
-    utility: bed.utility.length > 0,
+    utility: bed.utility.length > 0 || Boolean(bed.utilitySwitches?.length),
     climate:
       bed.climate.entities.length > 0 ||
       bed.climate.selects.length > 0 ||

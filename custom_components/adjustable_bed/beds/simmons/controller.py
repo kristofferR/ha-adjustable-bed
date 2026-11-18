@@ -340,6 +340,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
                 "Sync Clock",
                 _action("sync_clock"),
                 translation_key="simmons_sync_clock",
+                diagnostic=True,
                 icon="mdi:clock-check",
                 cancel_movement=False,
                 scheduler_resource="configuration",
@@ -349,6 +350,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
                 "Refresh Alarms",
                 _action("refresh_alarms"),
                 translation_key="simmons_refresh_alarms",
+                diagnostic=True,
                 icon="mdi:alarm",
                 cancel_movement=False,
                 scheduler_resource="configuration",
@@ -370,6 +372,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
                     _ALARM_KEYS[slot].weekday_mask,
                     _ALARM_KEYS[slot].awaiting_reply,
                 ),
+                entity_registry_enabled_default=True,
             )
             for slot in (1, 2)
         )

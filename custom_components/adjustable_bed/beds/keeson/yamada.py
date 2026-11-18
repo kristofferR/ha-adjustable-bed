@@ -154,6 +154,7 @@ class YamadaController(KeesonController):
                 "mdi:clock-check",
                 translation_key="yamada_sync_clock",
                 card=CARD_UTILITY,
+                diagnostic=True,
             ),
             ControllerButtonSpec(
                 "yamada_query_alarms",
@@ -162,6 +163,7 @@ class YamadaController(KeesonController):
                 "mdi:alarm-check",
                 translation_key="yamada_query_alarms",
                 card=CARD_UTILITY,
+                diagnostic=True,
             ),
         )
 
@@ -175,6 +177,7 @@ class YamadaController(KeesonController):
                 "mdi:alarm",
                 attribute_keys=(hour, minute, week, position),
                 card=CARD_UTILITY,
+                entity_registry_enabled_default=True,
             )
             for state, hour, minute, week, position in _KEYS
         )

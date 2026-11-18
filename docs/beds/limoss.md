@@ -237,7 +237,7 @@ bytes on the app profiles; the legacy route sends them clear.
 | `63` | `63 00 00 00 00` | Vibration zone 4 | `massage_foot_minus` | Legs massage minus | Legacy route, Limoss Remote, FSM Relax |
 | `64` | `64 00 00 00 00` | Vibration zone 5 | `massage_both_plus` | Both massage plus | Legacy route, Limoss Remote, FSM Relax |
 | `65` | `65 00 00 00 00` | Vibration zone 6 | `massage_both_minus` | Both massage minus | Legacy route, Limoss Remote, FSM Relax |
-| `70` | `70 00 00 00 00` | Light toggle | `light` | Underbed light control | Legacy route, Limoss Remote, FSM Relax |
+| `70` | `70 00 00 00 00` | Light toggle | `light` | Toggle under-bed light | Legacy route, Limoss Remote, FSM Relax |
 
 #### Stop, release and features
 
@@ -397,8 +397,9 @@ controller's.
 - Configuration 1 selects the eight-key chair's custom Alpha ordering.
 - Every rendered lamp/massage combination is retained, including blank cells and
   omitted combined/shift directions. The key tables are generated above.
-- Controls use literal motor channels rather than unproven physical axes or
-  angle units.
+- Controls use motor channels (Motor 1-4) rather than unproven physical axes or
+  angle units. Capability counts, calibration replies and raw positions stay in
+  diagnostics; the versions and serial are disabled diagnostic sensors.
 
 **Local settings**
 
