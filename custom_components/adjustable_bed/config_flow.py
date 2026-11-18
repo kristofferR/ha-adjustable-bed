@@ -2335,7 +2335,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if current not in routes:
             current = next(iter(routes))
         if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
-            self._select_family_route(bed_type, user_input[CONF_PROTOCOL_VARIANT])
+            chosen = user_input[CONF_PROTOCOL_VARIANT]
+            if chosen != (data.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO):
+                # The saved route, even unsaved as auto, keeps its settings.
+                self._select_family_route(bed_type, chosen)
             return await self._async_reconfigure_continue(exact=True)
         return self.async_show_form(
             step_id="reconfigure_route",
