@@ -132,7 +132,8 @@ jobs:
   # pytest-split balances the shards on .test_durations. Refresh it only from
   # this job: download the test-durations artifact of a scheduled or manually
   # dispatched run and commit it on its own. Durations recorded locally, on a
-  # loaded machine, skew the shards.
+  # loaded machine, skew the shards. Schedules run only on the default branch;
+  # for another branch dispatch it: gh workflow run validate.yml --ref v5
   durations:
     needs: test
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

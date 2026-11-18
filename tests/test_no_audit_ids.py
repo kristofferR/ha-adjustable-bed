@@ -40,6 +40,8 @@ IN_FLIGHT = {
     "row132", "unit132", "row135",  # Jalon
     "row179",  # SonicSleep
 }
+# The only in-flight ids still in file names; no other exemption covers a name.
+IN_FLIGHT_NAMES = {"cluster022"}
 
 
 def legacy_ids() -> set[str]:
@@ -72,7 +74,7 @@ def _offenders() -> Iterator[str]:
     for root in (*FULL, *SOURCE):
         for path in _files(root):
             relative = path.relative_to(REPO)
-            if any(match.lower() not in allowed for match in AUDIT_ID.findall(path.name)):
+            if any(match.lower() not in IN_FLIGHT_NAMES for match in AUDIT_ID.findall(path.name)):
                 yield f"file name {relative}"
             if path.is_dir() or (root in SOURCE and path.suffix not in SOURCE_SUFFIXES):
                 continue

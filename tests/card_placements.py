@@ -183,7 +183,7 @@ def spec_entities(controller: BedController) -> Iterator[Placed]:
             yield Placed(AdjustableBedProductButton, (spec,), "product_action", spec.card)
         else:
             # An untranslated action takes the class's shared "remote_action" key.
-            key = spec.translation_key or "remote_action"
+            key = "remote_action" if spec.translation_key is None else spec.translation_key
             yield Placed(ControllerActionButton, (spec,), key, spec.card)
     for cls, specs in (
         (AdjustableBedControllerSelect, controller.controller_select_specs),
@@ -400,11 +400,11 @@ def description_entities() -> list[Entity]:
 
 def placements(entities: Iterable[Entity]) -> dict[str, dict[str, str | int]]:
     """Map ``domain:translation_key`` to the placement its entities publish."""
+    declared: list[Placed] = []
     for entity in entities:
         assert isinstance(entity, PlacedInCard), type(entity).__name__
-    return declared_placements(
-        Placed(type(entity), (), entity.translation_key, entity._card) for entity in entities
-    )
+        declared.append(Placed(type(entity), (), entity.translation_key, entity._card))
+    return declared_placements(declared)
 
 
 def declared_placements(declared: Iterable[Placed]) -> dict[str, dict[str, str | int]]:
