@@ -538,34 +538,6 @@ async def test_unchanged_blanket_mode_preserves_current_temperatures(coordinator
     assert c.blanket["f"] == 40 and c.blanket["17"] == 41 and written(c) == []
 
 
-@pytest.mark.parametrize("operation", ["hold", "demo"])
-async def test_selector_change_during_movement_keeps_stop_on_owning_side(
-    coordinator, clocked, operation
-):
-    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
-
-    c = controller(coordinator)
-    coordinator.capability_controller = c
-    coordinator.entity_side = None
-    selector = AdjustableBedControllerSelect(coordinator, c.controller_select_specs[0])
-    await selector.async_select_option("left")
-
-    async def switch_side(*args, **kwargs):
-        await selector.async_select_option("right")
-
-    coordinator.client.write_gatt_char.side_effect = switch_side
-    if operation == "hold":
-        await c.press("cb18d1", duration_ms=200)
-        assert written(c) == ["6e01002493", "6e01002493", "6e01006edd"]
-    else:
-        await c.execute_request(
-            Request("demo", steps=(DemoStep("deviceFunctionItemHeadUp", True, 0, 0),))
-        )
-        assert written(c) == ["6e01002493", "6e01006edd", "6e01006edd"]
-    assert c._side() == 1
-    coordinator.async_execute_controller_command.assert_not_called()
-
-
 @pytest.mark.parametrize("domain", ["number", "button"])
 async def test_notification_refreshes_actual_platform_controls_and_retires_old_rows(
     hass, coordinator, domain

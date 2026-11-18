@@ -595,14 +595,20 @@ def test_button_light_off_exists_only_where_the_app_emits_it(app, model, has_off
 async def test_smart_set_lock_toggle_and_callback_state() -> None:
     controller = make("revive", "CFRM0001", snapshot=vers0("cfrm"))
     await controller.async_discover_capabilities()
-    toggle = next(s for s in controller.controller_button_specs if s.key == "richmat_mh_toggle_smart_set_lock")
-    await toggle.press_fn(controller)
+    (lock,) = controller.controller_switch_specs
+    assert lock.key == "richmat_mh_smart_set_lock"
+    await lock.set_fn(controller, True)
     assert frames(controller) == ["6e010084f3"]  # once, no STOP
     controller._classifier.rx_type = "INIT"
     controller._handle_notification(None, bytearray.fromhex("6e23008415"))
     assert controller._coordinator.controller_state["richmat_mh_smart_set_lock"] is True
+    # The app only toggles, so a switch already in the requested state sends nothing.
+    await lock.set_fn(controller, True)
+    assert frames(controller) == ["6e010084f3"]
+    await lock.set_fn(controller, False)
+    assert frames(controller) == ["6e010084f3", "6e010084f3"]
     assert [s.key for s in controller.controller_state_binary_sensor_specs] == [
-        "richmat_mh_smart_set_lock", "richmat_mh_smart_light_lock"
+        "richmat_mh_smart_light_lock"
     ]
     controller._handle_notification(None, bytearray.fromhex("6e23010a9c"))  # light page unlocked
     assert controller._coordinator.controller_state["richmat_mh_smart_light_lock"] is False

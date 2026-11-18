@@ -169,14 +169,15 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        names = {"zero_gravity": "Zero Gravity", "lounge": "Lounge", "tv": "TV", "anti_snore": "Anti-snore"}
         return tuple(
             ControllerButtonSpec(
                 "sonicsleep_" + action + ("_save" if save else ""),
-                ("Save " if save else "") + action.replace("_", " ").title(),
+                ("Save " if save else "") + names[action],
                 partial(_action, action=action, save=save),
                 icon="mdi:content-save" if save else "mdi:bed",
                 translation_key="sonicsleep_action",
-                translation_placeholders={"action": ("Save " if save else "") + action.replace("_", " ").title()},
+                translation_placeholders={"action": ("Save " if save else "") + names[action]},
                 card=CARD_PRESETS,
                 requires_confirmation=save,
             )
@@ -188,7 +189,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (ControllerStateSensorSpec("sonicsleep", "sonicsleep", MODEL, "mdi:bed", attribute_keys=(OBSERVATIONS, ALARMS, LINK_NAME_STATE)),)
+        return (ControllerStateSensorSpec("sonicsleep", "sonicsleep", MODEL, "mdi:bed", attribute_keys=(OBSERVATIONS, ALARMS, LINK_NAME_STATE), entity_registry_enabled_default=False),)
 
     def _live(self, link: Link | None = None) -> Link:
         current = self._link

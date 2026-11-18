@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.adjustable_bed.beds.smart_comfort.controller import SmartComfortController
-from custom_components.adjustable_bed.beds.smart_comfort.state_keys import COUNTER_1
 from custom_components.adjustable_bed.codec import smart_comfort as codec
 from custom_components.adjustable_bed.profiles.smart_comfort import PROFILES
 from tests.smart_comfort_vectors import NOTIFICATIONS, WRITES
@@ -259,11 +258,9 @@ def test_parser_rejects_unsafe_lengths_and_keeps_unsigned_raw_counters():
     ctrl = controller()
     system(ctrl)
     ctrl._notification(MagicMock(), bytearray.fromhex("b0b1b23c1f00805b2e00802c27008035"))
-    updates = ctrl._coordinator.handle_controller_state_updates.call_args.args
-    assert next(u.value for u in updates if u.key == COUNTER_1) == 2147491644
-    assert all(
-        spec.native_unit_of_measurement is None for spec in ctrl.controller_state_sensor_specs
-    )
+    # Unknown-meaning counters are kept for diagnostics, not exposed as entities.
+    assert ctrl.protocol_diagnostics["feedback_counters"][0] == 2147491644
+    assert [s.key for s in ctrl.controller_state_sensor_specs] == ["smart_comfort_model"]
 
 
 @pytest.mark.parametrize("address", range(3))
@@ -430,3 +427,21 @@ def test_reading_brightness_appears_only_after_reading_capability(profile):
     assert ctrl.controller_number_specs == ()
     system(ctrl, flags=(1, 4, 3))
     assert [spec.key for spec in ctrl.controller_number_specs] == ["smart_comfort_read_brightness"]
+
+
+async def test_cup_and_reading_lights_are_switches_beside_the_base_light():
+    ctrl = controller()
+    system(ctrl, flags=(1 | 2, 4, 0))
+    ctrl.write_command = AsyncMock()
+    switches = {s.key: s for s in ctrl.controller_switch_specs}
+    assert set(switches) == {"smart_comfort_cup", "smart_comfort_read"}
+    await ctrl.select_seat("0")
+    await switches["smart_comfort_cup"].set_fn(ctrl, True)
+    assert ctrl.write_command.call_args.args[0] == codec.command("cup_on", 0)
+    await ctrl.select_seat("1")
+    await switches["smart_comfort_read"].set_fn(ctrl, False)
+    assert ctrl.write_command.call_args.args[0] == codec.command("read_off", 1)
+    # Without a base light the light entity already drives the cup holder light.
+    bare = controller()
+    system(bare, flags=(1, 0, 0))
+    assert bare.controller_switch_specs == ()

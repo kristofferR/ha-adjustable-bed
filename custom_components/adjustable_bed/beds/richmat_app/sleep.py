@@ -322,6 +322,7 @@ class SleepController(BedController):
                 STATUS,
                 "mdi:sleep",
                 attribute_keys=(STATE,),
+                entity_registry_enabled_default=True,
             ),
         )
 

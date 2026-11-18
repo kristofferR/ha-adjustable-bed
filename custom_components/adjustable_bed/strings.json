@@ -1781,7 +1781,7 @@
         "name": "Toggle mood light"
       },
       "vibradorm_app_floor_timer_toggle": {
-        "name": "Toggle pending floor light timer"
+        "name": "Toggle floor light timer"
       },
       "vibradorm_app_massage_automatic": {
         "name": "Toggle automatic massage"
@@ -1790,37 +1790,37 @@
         "name": "Toggle individual massage"
       },
       "vibradorm_app_all_up": {
-        "name": "Hold all controls up"
+        "name": "All motors up"
       },
       "vibradorm_app_all_down": {
-        "name": "Hold all controls down"
+        "name": "All motors down"
       },
       "vibradorm_app_sync": {
-        "name": "Hold synchronization control"
+        "name": "Synchronize"
       },
       "vibradorm_app_refresh_info": {
         "name": "Refresh device information"
       },
       "vmatbasic_all_up": {
-        "name": "All up"
+        "name": "All motors up"
       },
       "vmatbasic_all_down": {
-        "name": "All down"
+        "name": "All motors down"
       },
       "vmatbasic_refresh_info": {
         "name": "Refresh device information"
       },
       "vmatbasic_floor_toggle": {
-        "name": "Floor light toggle (fresh status)"
+        "name": "Toggle floor light"
       },
       "vmatbasic_floor_hold": {
-        "name": "Floor light held action"
+        "name": "Floor light button"
       },
       "vmatbasic_mood_toggle": {
-        "name": "Mood light toggle"
+        "name": "Toggle mood light"
       },
       "vmatbasic_mood_nightlight": {
-        "name": "Mood nightlight command"
+        "name": "Mood nightlight"
       },
       "vmatbasic_massage_back": {
         "name": "Massage back"
@@ -1883,28 +1883,28 @@
         "name": "Save Memory 8"
       },
       "coolbase_left_fan": {
-        "name": "Left fan"
+        "name": "Cycle left fan"
       },
       "coolbase_right_fan": {
-        "name": "Right fan"
+        "name": "Cycle right fan"
       },
       "coolbase_fan_sync": {
-        "name": "Fan sync"
+        "name": "Sync fans"
       },
       "coolbase_head_massage": {
-        "name": "Head massage"
+        "name": "Cycle head massage"
       },
       "coolbase_foot_massage": {
-        "name": "Foot massage"
+        "name": "Cycle foot massage"
       },
       "coolbase_massage_mode": {
-        "name": "Massage mode"
+        "name": "Cycle massage mode"
       },
       "coolbase_star": {
-        "name": "Star button"
+        "name": "Star"
       },
       "restonic_zzz": {
-        "name": "ZZZ"
+        "name": "Zzz"
       },
       "starcode_save_tv": {
         "name": "Save TV position"
@@ -2053,14 +2053,11 @@
       "richmat_mh_action": {
         "name": "{action}"
       },
-      "richmat_mh_toggle_smart_set_lock": {
-        "name": "Toggle smart set lock"
-      },
       "richmat_mh_start_detection": {
-        "name": "Start detection"
+        "name": "Start component check"
       },
       "richmat_mh_stop_detection": {
-        "name": "Stop detection"
+        "name": "Stop component check"
       },
       "ore_comfort_program_flat": {
         "name": "Save Flat"
@@ -2072,10 +2069,10 @@
         "name": "Start massage"
       },
       "innova_massage_level": {
-        "name": "Massage level"
+        "name": "Cycle massage level"
       },
       "innova_massage_timer_hold": {
-        "name": "Massage timer (memory page)"
+        "name": "Cycle massage timer"
       },
       "okin_app_home": {
         "name": "Home"
@@ -2351,7 +2348,7 @@
         "name": "{action}"
       },
       "hjbed_release": {
-        "name": "Release held action"
+        "name": "Release held control"
       },
       "set_back_reference": {
         "name": "Set back reference"
@@ -2402,13 +2399,13 @@
         "name": "{action}"
       },
       "richmat_classic_release": {
-        "name": "Release held action"
+        "name": "Release held control"
       },
       "motomotion_action": {
         "name": "{action}"
       },
       "motomotion_release": {
-        "name": "Release"
+        "name": "Release held control"
       },
       "hush_base_action": {
         "name": "{action}"
@@ -2432,7 +2429,7 @@
         "name": "Auxiliary 1 Down"
       },
       "bedsense_waist_down": {
-        "name": "Waist (app label) Down"
+        "name": "Waist Down"
       },
       "motion_bed_left_legs_up": {
         "name": "Left legs Up"
@@ -2552,7 +2549,7 @@
         "name": "Tilt Down"
       },
       "bedsense_waist_up": {
-        "name": "Waist (app label) Up"
+        "name": "Waist Up"
       },
       "keeson_legs_down": {
         "name": "Legs Down"
@@ -2642,13 +2639,13 @@
         "name": "Lumbar 2 Down"
       },
       "bedsense_hip_down": {
-        "name": "Hip (app label) Down"
+        "name": "Hip Down"
       },
       "limoss_remote_motor_2_up": {
         "name": "Motor 2 Up"
       },
       "bedsense_hip_up": {
-        "name": "Hip (app label) Up"
+        "name": "Hip Up"
       },
       "hjbed_foot_box_down": {
         "name": "Foot box Down"
@@ -2666,7 +2663,7 @@
         "name": "Right legs Up"
       },
       "bedsense_lift_down": {
-        "name": "Lift (app label) Down"
+        "name": "Lift Down"
       },
       "malouf_full_tilt_up": {
         "name": "Full tilt Up"
@@ -2747,7 +2744,7 @@
         "name": "Motors 1 + 2 Up"
       },
       "bedsense_lift_up": {
-        "name": "Lift (app label) Up"
+        "name": "Lift Up"
       },
       "foot_end_tilt_down": {
         "name": "Foot End Tilt Down"
@@ -2830,24 +2827,6 @@
       "smart_comfort_home": {
         "name": "Home"
       },
-      "smart_comfort_base_on": {
-        "name": "Base light on"
-      },
-      "smart_comfort_base_off": {
-        "name": "Base light off"
-      },
-      "smart_comfort_cup_on": {
-        "name": "Cup holder on"
-      },
-      "smart_comfort_cup_off": {
-        "name": "Cup holder off"
-      },
-      "smart_comfort_read_on": {
-        "name": "Reading light on"
-      },
-      "smart_comfort_read_off": {
-        "name": "Reading light off"
-      },
       "smart_comfort_reclining_up": {
         "name": "Reclining up"
       },
@@ -2921,7 +2900,7 @@
         "name": "{action}"
       },
       "richmat_app_release": {
-        "name": "Release movement"
+        "name": "Release held control"
       },
       "richmat_app_all_motor_up": {
         "name": "All motors up"
@@ -3257,13 +3236,13 @@
         "name": "Refresh bed alarms"
       },
       "bedgear_release": {
-        "name": "Release control"
+        "name": "Release held control"
       },
       "bedgear_massage": {
         "name": "{action}"
       },
       "bedgear_light_toggle": {
-        "name": "Light toggle"
+        "name": "Toggle light"
       },
       "bedgear_actuator_up": {
         "name": "Actuator up"
@@ -3487,19 +3466,19 @@
         "name": "Back"
       },
       "bedsense_waist": {
-        "name": "Waist (app label)"
+        "name": "Waist"
       },
       "bedsense_head": {
         "name": "Head"
       },
       "bedsense_hip": {
-        "name": "Hip (app label)"
+        "name": "Hip"
       },
       "bedsense_legs": {
         "name": "Legs"
       },
       "bedsense_lift": {
-        "name": "Lift (app label)"
+        "name": "Lift"
       },
       "bedsense_rise_and_fall": {
         "name": "Rise and fall"
@@ -3786,19 +3765,19 @@
         "name": "FurniMove function feedback result"
       },
       "vibradorm_app_model": {
-        "name": "App model metadata"
+        "name": "Model"
       },
       "vibradorm_app_firmware": {
-        "name": "App firmware metadata"
+        "name": "Firmware"
       },
       "vibradorm_app_software": {
-        "name": "App software metadata"
+        "name": "Software version"
       },
       "vibradorm_app_main_firmware_article": {
-        "name": "App firmware article"
+        "name": "Firmware article number"
       },
       "vibradorm_app_sync_observed": {
-        "name": "Observed synchronization",
+        "name": "Synchronization",
         "state": {
           "on": "On",
           "off": "Off"
@@ -3811,7 +3790,7 @@
         "name": "Onboarding operating mode"
       },
       "vibradorm_app_device_name": {
-        "name": "App device name"
+        "name": "Device name"
       },
       "vibradorm_app_revision_id": {
         "name": "Revision ID"
@@ -3820,28 +3799,28 @@
         "name": "Revision string"
       },
       "vibradorm_app_variant": {
-        "name": "App variant"
+        "name": "Variant"
       },
       "vmatbasic_floor_minutes_observed": {
-        "name": "Observed floor timer"
+        "name": "Current floor light timer"
       },
       "vmatbasic_model": {
-        "name": "App model number"
+        "name": "Model"
       },
       "vmatbasic_temperature": {
-        "name": "Controller die temperature"
+        "name": "Controller temperature"
       },
       "vmatbasic_floor_percent_observed": {
-        "name": "Observed floor brightness"
+        "name": "Current floor light brightness"
       },
       "vmatbasic_firmware": {
-        "name": "App firmware revision"
+        "name": "Firmware"
       },
       "vmatbasic_floor_level_observed": {
-        "name": "Observed floor level"
+        "name": "Current floor light level"
       },
       "vmatbasic_rssi": {
-        "name": "Advertisement signal strength"
+        "name": "Signal strength"
       },
       "starcode_abm5_4_manufacturer": {
         "name": "Manufacturer"
@@ -4093,7 +4072,7 @@
         "name": "Air pressure"
       },
       "richmat_mh_detection": {
-        "name": "Detection",
+        "name": "Component check",
         "state": {
           "running": "Running",
           "stopped": "Stopped"
@@ -4286,29 +4265,23 @@
       "glideaway_motion_massage_timer": {
         "name": "Massage timer"
       },
-      "bedsense_head_bar": {
-        "name": "Head bar (app display width)"
-      },
-      "bedsense_wave_bar": {
-        "name": "Wave bar (app display width)"
-      },
       "bedsense_circulation": {
-        "name": "Circulation (app indicator)"
+        "name": "Circulation mode"
       },
       "bedsense_massage_timer": {
-        "name": "Massage timer (app selection, minutes)"
+        "name": "Massage timer"
       },
       "bedsense_light_duration": {
-        "name": "Light duration (app selection)"
+        "name": "Light duration"
       },
       "bedsense_head_steps": {
-        "name": "Head massage (app steps)"
+        "name": "Head massage level"
       },
       "bedsense_foot_steps": {
-        "name": "Foot massage (app steps)"
+        "name": "Foot massage level"
       },
       "bedsense_wave_steps": {
-        "name": "Wave frequency (app steps)"
+        "name": "Massage frequency level"
       },
       "casper_sleep_l_body_move": {
         "name": "Left body movement"
@@ -4341,7 +4314,7 @@
         "name": "Right snoring"
       },
       "casper_base": {
-        "name": "Casper Base state"
+        "name": "Model"
       },
       "casper_sleep_l_breath": {
         "name": "Left breathing rate"
@@ -4482,13 +4455,13 @@
         "name": "Reported anti-snore strength index"
       },
       "hjbed_status": {
-        "name": "HJBed status"
+        "name": "Status"
       },
       "gmmotor_state": {
-        "name": "GM Control state"
+        "name": "Status"
       },
       "gmmotor_sleep_state": {
-        "name": "GM Control sleep module state"
+        "name": "Sleep sensor status"
       },
       "saved_positions": {
         "name": "Saved positions"
@@ -4509,7 +4482,7 @@
         "name": "Right snoring"
       },
       "goodvibe_status": {
-        "name": "Good Vibe Sleep status"
+        "name": "Status"
       },
       "goodvibe_r_occupancy": {
         "name": "Right occupancy"
@@ -4533,10 +4506,10 @@
         "name": "Alarm state"
       },
       "richmat_classic_status": {
-        "name": "App connection and state"
+        "name": "Status"
       },
       "motomotion_status": {
-        "name": "MotoMotion status"
+        "name": "Status"
       },
       "motomotion_heat": {
         "name": "Heat level"
@@ -4557,7 +4530,7 @@
         "name": "Right massage level"
       },
       "hush_sleep_settings": {
-        "name": "Hush sleep settings"
+        "name": "Sleep sensor settings"
       },
       "ruf_richmat_mattress_left_alarm": {
         "name": "Left mattress alarm"
@@ -4593,7 +4566,7 @@
         "name": "Calendar alarms"
       },
       "ruf_richmat_sleep_attributes": {
-        "name": "Sleep receiver firmware"
+        "name": "Sleep sensor firmware"
       },
       "ruf_richmat_music_status": {
         "name": "Bed audio status"
@@ -4620,16 +4593,7 @@
         "name": "Registration result"
       },
       "smart_comfort_model": {
-        "name": "Smart Comfort model code"
-      },
-      "smart_comfort_counter_1": {
-        "name": "Feedback counter 1 (raw)"
-      },
-      "smart_comfort_counter_2": {
-        "name": "Feedback counter 2 (raw)"
-      },
-      "smart_comfort_counter_3": {
-        "name": "Feedback counter 3 (raw)"
+        "name": "Model"
       },
       "jalon_massage": {
         "name": "Massage timer indicator"
@@ -4641,16 +4605,16 @@
         "name": "Massage timer"
       },
       "luuna": {
-        "name": "Luuna + status"
+        "name": "Model"
       },
       "massage_timer": {
         "name": "Massage timer"
       },
       "galaxy_status": {
-        "name": "Galaxy bed status"
+        "name": "Status"
       },
       "richmat_app_status": {
-        "name": "Richmat app status"
+        "name": "Status"
       },
       "richmat_app_sleep_status": {
         "name": "Sleep session status"
@@ -4748,7 +4712,7 @@
         "name": "Bed alarm 2"
       },
       "bedgear_rgb": {
-        "name": "Reported RGB"
+        "name": "Light color"
       },
       "bedgear_light_minutes": {
         "name": "Light shutdown timer"
@@ -4781,7 +4745,7 @@
         "name": "Alarm wake mode"
       },
       "sonicsleep": {
-        "name": "SonicSleep state"
+        "name": "Model"
       }
     },
     "light": {
@@ -4810,6 +4774,21 @@
       },
       "reverie_pairlink_massage_rhythm": {
         "name": "Massage rhythm"
+      },
+      "richmat_mh_smart_set_lock": {
+        "name": "Smart set lock"
+      },
+      "smart_comfort_cup": {
+        "name": "Cup holder light"
+      },
+      "smart_comfort_read": {
+        "name": "Reading light"
+      },
+      "ruf_richmat_sleep_left_intervention": {
+        "name": "Left snore intervention"
+      },
+      "ruf_richmat_sleep_right_intervention": {
+        "name": "Right snore intervention"
       }
     },
     "binary_sensor": {
@@ -4866,9 +4845,6 @@
       },
       "furnimove_massage_running": {
         "name": "FurniMove local massage session"
-      },
-      "vmatbasic_ed": {
-        "name": "ED motor status"
       },
       "motion_bed_sync_enabled": {
         "name": "Sync"
@@ -4927,9 +4903,6 @@
       "innova_light": {
         "name": "Light"
       },
-      "richmat_mh_smart_set_lock": {
-        "name": "Smart set lock"
-      },
       "richmat_mh_smart_light_lock": {
         "name": "Smart light lock"
       },
@@ -4952,19 +4925,19 @@
         "name": "Kneading active"
       },
       "bedsense_m1_saved": {
-        "name": "M1 saved (app indicator)"
+        "name": "Memory 1 saved"
       },
       "bedsense_m2_saved": {
-        "name": "M2 saved (app indicator)"
+        "name": "Memory 2 saved"
       },
       "bedsense_m3_saved": {
-        "name": "M3 saved (app indicator)"
+        "name": "Memory 3 saved"
       },
       "bedsense_m4_saved": {
-        "name": "M4 saved (app indicator)"
+        "name": "Memory 4 saved"
       },
       "bedsense_m5_saved": {
-        "name": "M5 saved (app indicator)"
+        "name": "Memory 5 saved"
       },
       "floyd_battery_mode": {
         "name": "Battery power mode"
@@ -5001,12 +4974,6 @@
       },
       "ergomotion4_light": {
         "name": "Reported light state"
-      },
-      "smart_comfort_read": {
-        "name": "Reading light (group report)"
-      },
-      "smart_comfort_cup": {
-        "name": "Cup holder (group report)"
       },
       "rize_battery_mode": {
         "name": "Battery mode"
@@ -5137,13 +5104,13 @@
         "name": "Massage speed"
       },
       "vibradorm_app_floor_timer_minutes": {
-        "name": "Floor light timer minutes"
+        "name": "Floor light timer"
       },
       "vmatbasic_floor_level": {
-        "name": "Requested floor level"
+        "name": "Floor light level"
       },
       "vmatbasic_floor_minutes": {
-        "name": "Requested floor timer"
+        "name": "Floor light timer"
       },
       "vmatbasic_mood_brightness": {
         "name": "Mood brightness"
@@ -5254,7 +5221,7 @@
         "name": "Blue"
       },
       "motomotion_timer": {
-        "name": "Light timer (seconds)"
+        "name": "Light timer"
       },
       "motomotion_height": {
         "name": "User height"
@@ -5266,19 +5233,19 @@
         "name": "Knee height"
       },
       "motomotion_target_head": {
-        "name": "Target head (Hall units)"
+        "name": "Fine-tune head"
       },
       "motomotion_target_base": {
-        "name": "Target base (Hall units)"
+        "name": "Fine-tune base"
       },
       "motomotion_target_back": {
-        "name": "Target back (Hall units)"
+        "name": "Fine-tune back"
       },
       "motomotion_target_lumbar": {
-        "name": "Target lumbar (Hall units)"
+        "name": "Fine-tune lumbar"
       },
       "motomotion_target_tilt": {
-        "name": "Target tilt (Hall units)"
+        "name": "Fine-tune tilt"
       },
       "octo_light_duration": {
         "name": "Light duration"
@@ -5329,10 +5296,10 @@
         "name": "Light brightness"
       },
       "richmat_resource_lamp_timeout": {
-        "name": "Light timeout request"
+        "name": "Light timeout"
       },
       "richmat_resource_massage_timer": {
-        "name": "Massage timer request"
+        "name": "Massage timer"
       }
     },
     "select": {
@@ -5761,21 +5728,13 @@
         }
       },
       "hjbed_layout": {
-        "name": "HJBed layout"
-      },
-      "goodvibe_side": {
-        "name": "App side",
-        "state": {
-          "0": "Left",
-          "1": "Right",
-          "2": "Both"
-        }
+        "name": "Remote layout"
       },
       "goodvibe_light_duration": {
         "name": "Light duration (seconds)"
       },
       "goodvibe_massage_timer": {
-        "name": "Massage countdown",
+        "name": "Massage timer",
         "state": {
           "0": "Off",
           "10": "10 minutes",
@@ -5784,7 +5743,7 @@
         }
       },
       "richmat_classic_mode": {
-        "name": "App mode",
+        "name": "Remote mode",
         "state": {
           "0": "Mode 1",
           "1": "Mode 2",
@@ -5792,21 +5751,21 @@
         }
       },
       "richmat_classic_program": {
-        "name": "Memory selection",
+        "name": "Memory button action",
         "state": {
           "recall": "Recall",
-          "armed": "Save next action"
+          "armed": "Save"
         }
       },
       "richmat_classic_hold": {
-        "name": "Press behavior",
+        "name": "Button press mode",
         "state": {
-          "release": "Release",
-          "hold": "Hold"
+          "release": "Tap",
+          "hold": "Press and hold"
         }
       },
       "richmat_classic_head_foot": {
-        "name": "Selected control",
+        "name": "Head or foot control",
         "state": {
           "head": "Head",
           "foot": "Foot"
@@ -5833,7 +5792,7 @@
         "state": {
           "upright": "Upright",
           "recline": "Recline",
-          "tv": "Tv",
+          "tv": "TV",
           "lay": "Lay"
         }
       },
@@ -5963,24 +5922,10 @@
         }
       },
       "ruf_richmat_sleep_mode": {
-        "name": "Mode",
+        "name": "Sleep sensor mode",
         "state": {
           "single": "Single",
           "double": "Double"
-        }
-      },
-      "ruf_richmat_sleep_left_intervention": {
-        "name": "Left intervention",
-        "state": {
-          "off": "Off",
-          "on": "On"
-        }
-      },
-      "ruf_richmat_sleep_right_intervention": {
-        "name": "Right intervention",
-        "state": {
-          "off": "Off",
-          "on": "On"
         }
       },
       "paramount_speed": {
@@ -6043,19 +5988,11 @@
         }
       },
       "smart_comfort_seat": {
-        "name": "Logical seat",
+        "name": "Seat",
         "state": {
-          "0": "Address 0",
-          "1": "Address 1",
-          "2": "Address 2"
-        }
-      },
-      "richmat_app_side": {
-        "name": "App side",
-        "state": {
-          "left": "Left",
-          "right": "Right",
-          "both": "Both"
+          "0": "Seat 1",
+          "1": "Seat 2",
+          "2": "Seat 3"
         }
       },
       "rize_home_source": {

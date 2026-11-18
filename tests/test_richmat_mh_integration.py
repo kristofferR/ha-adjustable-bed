@@ -35,6 +35,7 @@ from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
+from custom_components.adjustable_bed.switch import _switch_entities_for
 from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_malouf_app_entities import configure_entity_runtime
@@ -83,8 +84,8 @@ async def test_legacy_page_entities(hass) -> None:
     controller = make("revive", "CFRM0001", snapshot={**vers0("cfrm", alarm=True), "detection": True})
     runtime = configure_entity_runtime(hass, controller, "richmat_revive")
     buttons = {e.unique_id.removeprefix("bed_").removesuffix("_left") for e in _button_entities_for(hass, runtime)}
-    assert {"richmat_mh_toggle_smart_set_lock", "richmat_mh_start_detection",
-            "richmat_mh_stop_detection", "preset_flat"} <= buttons
+    assert {"richmat_mh_start_detection", "richmat_mh_stop_detection", "preset_flat"} <= buttons
+    assert "richmat_mh_toggle_smart_set_lock" not in buttons
     assert "toggle_light" not in buttons  # the colour light owns the light icon
     taps = [e for e in _button_entities_for(hass, runtime)
             if str(getattr(e, "_attr_translation_key", "")).startswith("richmat_mh_")
@@ -98,7 +99,9 @@ async def test_legacy_page_entities(hass) -> None:
     sensors = {e.unique_id for e in _sensor_entities_for(hass, runtime)}
     assert {"bed_richmat_mh_detection_left", "bed_richmat_mh_alarm_left"} <= sensors
     binary = {e.unique_id for e in _binary_sensor_entities_for(hass, runtime)}
-    assert "bed_richmat_mh_smart_set_lock_left" in binary
+    assert "bed_richmat_mh_smart_set_lock_left" not in binary
+    switches = {e.unique_id for e in _switch_entities_for(hass, runtime)}
+    assert any("richmat_mh_smart_set_lock" in key for key in switches)
 
 
 @pytest.mark.parametrize(("app", "model", "snapshot"), [

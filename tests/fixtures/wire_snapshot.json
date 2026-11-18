@@ -3095,7 +3095,6 @@
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000256c1",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_circulation_default": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000e7974a",1,0]]},
 "button:bedsense_circulation_head": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e38688",1,0]]},
 "button:bedsense_circulation_waist": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e6468b",1,0]]},
@@ -3117,8 +3116,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001600097ec2",1,0],[2207,"0000ffe1",false,"ffffffff03001f0009aec0",1,0],[2414,"0000ffe1",false,"ffffffff03002800091f0e",1,0],[2621,"0000ffe1",false,"ffffffff0300310009cec9",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:bedsense_1": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3171,7 +3169,6 @@
 "stop:back_and_leg_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000002cd6dd",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_circulation_whole_body": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e4c74a",1,0]]},
 "button:bedsense_circulation_back_and_leg": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e8c74f",1,0]]},
 "button:bedsense_circulation_waist": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e6468b",1,0]]},
@@ -3193,8 +3190,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001600097ec2",1,0],[2207,"0000ffe1",false,"ffffffff03001f0009aec0",1,0],[2414,"0000ffe1",false,"ffffffff03002800091f0e",1,0],[2621,"0000ffe1",false,"ffffffff0300310009cec9",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:bedsense_2": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3247,7 +3243,6 @@
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000256c1",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_circulation_whole_body": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e4c74a",1,0]]},
 "button:bedsense_circulation_head": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e38688",1,0]]},
 "button:bedsense_circulation_waist": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e6468b",1,0]]},
@@ -3269,8 +3264,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001600097ec2",1,0],[2207,"0000ffe1",false,"ffffffff03001f0009aec0",1,0],[2414,"0000ffe1",false,"ffffffff03002800091f0e",1,0],[2621,"0000ffe1",false,"ffffffff0300310009cec9",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:bedsense_3": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3323,7 +3317,6 @@
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000256c1",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_circulation_default": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000e7974a",1,0]]},
 "button:bedsense_circulation_head": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e38688",1,0]]},
 "button:bedsense_circulation_waist": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e6468b",1,0]]},
@@ -3345,8 +3338,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001600097ec2",1,0],[2207,"0000ffe1",false,"ffffffff03001f0009aec0",1,0],[2414,"0000ffe1",false,"ffffffff03002800091f0e",1,0],[2621,"0000ffe1",false,"ffffffff0300310009cec9",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:bedsense_4": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3399,7 +3391,6 @@
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000256c1",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_circulation_whole_body": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e4c74a",1,0]]},
 "button:bedsense_circulation_head": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e38688",1,0]]},
 "button:bedsense_circulation_hip": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e6468b",1,0]]},
@@ -3423,8 +3414,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001600097ec2",1,0],[2207,"0000ffe1",false,"ffffffff03001f0009aec0",1,0],[2414,"0000ffe1",false,"ffffffff03002800091f0e",1,0],[2621,"0000ffe1",false,"ffffffff0300310009cec9",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:bedsense_5": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3477,7 +3467,6 @@
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000256c1",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_circulation_whole_body": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e4c74a",1,0]]},
 "button:bedsense_circulation_head": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e38688",1,0]]},
 "button:bedsense_circulation_hip": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e6468b",1,0]]},
@@ -3501,8 +3490,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001600097ec2",1,0],[2207,"0000ffe1",false,"ffffffff03001f0009aec0",1,0],[2414,"0000ffe1",false,"ffffffff03002800091f0e",1,0],[2621,"0000ffe1",false,"ffffffff0300310009cec9",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:bedsense_6": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3540,7 +3528,6 @@
 "cover:back_stop": {"as":"back_stop","ok":"ok","status":"same"},
 "stop:back_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000039701",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000004d6c3",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_lumbar": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000002e571c",1,0]]},
 "button:bedsense_clear_m1": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000af0a2af7",1,0]]},
 "button:bedsense_clear_m2": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000bf0be6f7",1,0]]},
@@ -3558,8 +3545,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001400035f05",1,0],[2207,"0000ffe1",false,"ffffffff03001c0003dec7",1,0],[2414,"0000ffe1",false,"ffffffff03002400035f0a",1,0],[2621,"0000ffe1",false,"ffffffff03002c0003dec8",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:bedsense_7": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3602,7 +3588,6 @@
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000004d6c3",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_clear_m1": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000af0a2af7",1,0]]},
 "button:bedsense_clear_m2": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000bf0be6f7",1,0]]},
 "button:bedsense_clear_tv": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500005f052ef3",1,0]]},
@@ -3620,8 +3605,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001800039f06",1,0],[2207,"0000ffe1",false,"ffffffff03002000031ecb",1,0],[2414,"0000ffe1",false,"ffffffff03002800039f09",1,0],[2621,"0000ffe1",false,"ffffffff03003000031f0e",1,0],[2828,"0000ffe1",false,"ffffffff03003800039ecc",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:bedsense_8": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3664,7 +3648,6 @@
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000004d6c3",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:rise_and_fall_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:rise_and_fall_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_lumbar": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000002e571c",1,0]]},
 "button:bedsense_clear_m1": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000af0a2af7",1,0]]},
 "button:bedsense_clear_m2": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000bf0be6f7",1,0]]},
@@ -3682,8 +3665,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001400035f05",1,0],[2207,"0000ffe1",false,"ffffffff03001c0003dec7",1,0],[2414,"0000ffe1",false,"ffffffff03002400035f0a",1,0],[2621,"0000ffe1",false,"ffffffff03002c0003dec8",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:bedsense_9": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3736,7 +3718,6 @@
 "stop:lift_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000256c1",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_rise": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000116c0",1,0]]},
 "button:bedsense_decline": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000256c1",1,0]]},
 "button:bedsense_clear_m1": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000af0a2af7",1,0]]},
@@ -3756,8 +3737,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001600097ec2",1,0],[2207,"0000ffe1",false,"ffffffff03001f0009aec0",1,0],[2414,"0000ffe1",false,"ffffffff03002800091f0e",1,0],[2621,"0000ffe1",false,"ffffffff0300310009cec9",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:props_write": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3810,7 +3790,6 @@
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000256c1",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000065702",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000000796c2",1,0],[300,"0000ffe1",true,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_circulation_default": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000000e7974a",1,0]]},
 "button:bedsense_circulation_head": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000500e38688",1,0]]},
 "button:bedsense_circulation_waist": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff05000500e6468b",1,0]]},
@@ -3832,8 +3811,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",true,"ffffffff03001600097ec2",1,0],[2207,"0000ffe1",true,"ffffffff03001f0009aec0",1,0],[2414,"0000ffe1",true,"ffffffff03002800091f0e",1,0],[2621,"0000ffe1",true,"ffffffff0300310009cec9",1,0],[2828,"0000ffe1",true,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",true,"ffffffff050000001b970b",1,0]]}
 }},
 "bedsense:props_wwr": {
 "info": {"bed_type": "bedsense", "controller": "BedSenseController", "gaps": ["memory_recall_1"], "module": "bedsense", "pulse": [10, 100]},
@@ -3886,7 +3864,6 @@
 "stop:head_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000256c1",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000065702",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
 "stop:legs_close": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000000796c2",1,0],[300,"0000ffe1",false,"ffffffff0500000000d700",2,7]]},
-"button:bedsense_background_tap": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff0500000000d814",1,0]]},
 "button:bedsense_circulation_default": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000000e7974a",1,0]]},
 "button:bedsense_circulation_head": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e38688",1,0]]},
 "button:bedsense_circulation_waist": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff05000500e6468b",1,0]]},
@@ -3908,8 +3885,7 @@
 "button:bedsense_massage_timer_cancel": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001cd6c9",1,0]]},
 "button:bedsense_light_10_min": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001916ca",1,0]]},
 "button:bedsense_light_8_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001a56cb",1,0]]},
-"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]},
-"button:bedsense_refresh_memory": {"status":"ok","writes":[[2000,"0000ffe1",false,"ffffffff03001600097ec2",1,0],[2207,"0000ffe1",false,"ffffffff03001f0009aec0",1,0],[2414,"0000ffe1",false,"ffffffff03002800091f0e",1,0],[2621,"0000ffe1",false,"ffffffff0300310009cec9",1,0],[2828,"0000ffe1",false,"ffffffff03003a0009bf0b",1,0]]}
+"button:bedsense_light_10_h": {"status":"ok","writes":[[0,"0000ffe1",false,"ffffffff050000001b970b",1,0]]}
 }},
 "bedtech": {
 "info": {"bed_type": "bedtech", "controller": "BedTechController", "module": "bedtech.controller", "pulse": [10, 100]},
@@ -9353,8 +9329,6 @@
 "button:goodvibe_9c0c291dde85": {"status":"ok","writes":[[100,"d44bc439",false,"6e010063d2",1,0],[1107,"d44bc439",false,"6e01006edd",1,0]]},
 "button:goodvibe_4744e2125604": {"status":"ok","writes":[[100,"d44bc439",false,"6e010061d0",1,0],[1107,"d44bc439",false,"6e01006edd",1,0]]},
 "button:goodvibe_release": {"status":"no_writes"},
-"select:goodvibe_side=0": {"status":"no_writes"},
-"select:goodvibe_side=1": {"status":"no_writes"},
 "select:goodvibe_light_duration=0": {"status":"ok","writes":[[100,"d44bc439",false,"6e0bffff77",1,0]]},
 "select:goodvibe_light_duration=1800": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b070888",1,0]]},
 "select:goodvibe_light_duration=3600": {"status":"ok","writes":[[100,"d44bc439",false,"6e0b0e1097",1,0]]},
@@ -9752,8 +9726,6 @@
 "button:goodvibe_40be28f3c4bc616b": {"status":"ok","writes":[[1000,"d44bc439",false,"6e010045b4",1,0]]},
 "button:goodvibe_40be28f3c4bc616b_long": {"status":"ok","writes":[[3000,"d44bc439",false,"6e0100006f",1,0]]},
 "button:goodvibe_release": {"status":"no_writes"},
-"select:goodvibe_side=0": {"status":"no_writes"},
-"select:goodvibe_side=1": {"status":"no_writes"},
 "select:goodvibe_light_duration=0": {"status":"ok","writes":[[0,"d44bc439",false,"6e0bffff77",1,0]]},
 "select:goodvibe_light_duration=60": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b003cb5",1,0]]},
 "select:goodvibe_light_duration=120": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b0078f1",1,0]]},
@@ -9795,9 +9767,6 @@
 "button:goodvibe_fa82139c479a58e4_long": {"status":"ok","writes":[[3000,"d44bc439",false,"6e0100006f",1,0]]},
 "button:goodvibe_f4b7dff79f69b666": {"status":"ok","writes":[[0,"d44bc439",false,"6e010031a0",1,0],[1007,"d44bc439",false,"6e01006edd",1,0]]},
 "button:goodvibe_release": {"status":"no_writes"},
-"select:goodvibe_side=0": {"status":"no_writes"},
-"select:goodvibe_side=1": {"status":"no_writes"},
-"select:goodvibe_side=2": {"status":"no_writes"},
 "select:goodvibe_light_duration=0": {"status":"ok","writes":[[0,"d44bc439",false,"6e0bffff77",1,0]]},
 "select:goodvibe_light_duration=60": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b003cb5",1,0]]},
 "select:goodvibe_light_duration=120": {"status":"ok","writes":[[0,"d44bc439",false,"6e0b0078f1",1,0]]},
@@ -22888,20 +22857,7 @@
 "button:richmat_classic_4": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002796",10,157],[1550,"0000fff2",true,"6e01006edd",1,0]]},
 "button:richmat_classic_5": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002998",10,157],[1551,"0000fff2",true,"6e01006edd",1,0]]},
 "button:richmat_classic_6": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002a99",10,157],[1550,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_classic_release": {"status":"ok","writes":[[50,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_head_up": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002493",7,157],[1051,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_head_down": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002594",7,157],[1050,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_foot_up": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002695",7,157],[1051,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_foot_down": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002796",7,157],[1050,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_tv": {"status":"ok","writes":[[0,"0000fff2",true,"6e010058c7",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_lounge": {"status":"ok","writes":[[0,"0000fff2",true,"6e010059c8",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_zero_gravity": {"status":"ok","writes":[[0,"0000fff2",true,"6e010045b4",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_anti_snore": {"status":"ok","writes":[[0,"0000fff2",true,"6e010046b5",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_one": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002e9d",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_two": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002f9e",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_three": {"status":"ok","writes":[[0,"0000fff2",true,"6e0100309f",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_flat": {"status":"ok","writes":[[0,"0000fff2",true,"6e010031a0",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_voice_stop_request": {"status":"ok","writes":[[0,"0000fff2",true,"6e010047b6",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]}
+"button:richmat_classic_release": {"status":"ok","writes":[[50,"0000fff2",true,"6e01006edd",1,0]]}
 }},
 "richmat_classic_apps:acaa:6BRM:nordic": {
 "info": {"bed_type": "richmat_classic_apps", "controller": "ResourceBedController", "module": "richmat_classic.resource_controller", "pulse": [10, 100]},
@@ -22924,20 +22880,7 @@
 "button:richmat_classic_4": {"status":"ok","writes":[[0,"6e400002",true,"41",10,177],[1750,"6e400002",true,"6e",1,0]]},
 "button:richmat_classic_5": {"status":"ok","writes":[[0,"6e400002",true,"38",10,177],[1751,"6e400002",true,"6e",1,0]]},
 "button:richmat_classic_6": {"status":"ok","writes":[[0,"6e400002",true,"39",10,177],[1751,"6e400002",true,"6e",1,0]]},
-"button:richmat_classic_release": {"status":"ok","writes":[[50,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_head_up": {"status":"ok","writes":[[0,"6e400002",true,"24",6,177],[1051,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_head_down": {"status":"ok","writes":[[0,"6e400002",true,"25",6,177],[1050,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_foot_up": {"status":"ok","writes":[[0,"6e400002",true,"26",6,177],[1051,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_foot_down": {"status":"ok","writes":[[0,"6e400002",true,"27",6,177],[1050,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_tv": {"status":"ok","writes":[[0,"6e400002",true,"58",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_lounge": {"status":"ok","writes":[[0,"6e400002",true,"59",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_zero_gravity": {"status":"ok","writes":[[0,"6e400002",true,"45",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_anti_snore": {"status":"ok","writes":[[0,"6e400002",true,"46",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_one": {"status":"ok","writes":[[0,"6e400002",true,"2e",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_two": {"status":"ok","writes":[[0,"6e400002",true,"2f",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_three": {"status":"ok","writes":[[0,"6e400002",true,"30",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_flat": {"status":"ok","writes":[[0,"6e400002",true,"31",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_voice_stop_request": {"status":"ok","writes":[[0,"6e400002",true,"47",1,0],[157,"6e400002",true,"6e",1,0]]}
+"button:richmat_classic_release": {"status":"ok","writes":[[50,"6e400002",true,"6e",1,0]]}
 }},
 "richmat_classic_apps:avocadoecobase:GORM:nordic": {
 "info": {"bed_type": "richmat_classic_apps", "controller": "RichmatClassicController", "module": "richmat_classic.controller", "pulse": [10, 100]},
@@ -23059,20 +23002,7 @@
 "button:richmat_classic_4": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002796",10,157],[1550,"0000fff2",true,"6e01006edd",1,0]]},
 "button:richmat_classic_5": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002998",10,157],[1551,"0000fff2",true,"6e01006edd",1,0]]},
 "button:richmat_classic_6": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002a99",10,157],[1550,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_classic_release": {"status":"ok","writes":[[50,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_head_up": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002493",7,157],[1051,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_head_down": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002594",7,157],[1050,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_foot_up": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002695",7,157],[1051,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_foot_down": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002796",7,157],[1050,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_tv": {"status":"ok","writes":[[0,"0000fff2",true,"6e010058c7",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_lounge": {"status":"ok","writes":[[0,"0000fff2",true,"6e010059c8",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_zero_gravity": {"status":"ok","writes":[[0,"0000fff2",true,"6e010045b4",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_anti_snore": {"status":"ok","writes":[[0,"0000fff2",true,"6e010046b5",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_one": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002e9d",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_two": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002f9e",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_three": {"status":"ok","writes":[[0,"0000fff2",true,"6e0100309f",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_flat": {"status":"ok","writes":[[0,"0000fff2",true,"6e010031a0",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_voice_stop_request": {"status":"ok","writes":[[0,"0000fff2",true,"6e010047b6",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]}
+"button:richmat_classic_release": {"status":"ok","writes":[[50,"0000fff2",true,"6e01006edd",1,0]]}
 }},
 "richmat_classic_apps:lady_americana:6BRM:nordic": {
 "info": {"bed_type": "richmat_classic_apps", "controller": "ResourceBedController", "module": "richmat_classic.resource_controller", "pulse": [10, 100]},
@@ -23095,20 +23025,7 @@
 "button:richmat_classic_4": {"status":"ok","writes":[[0,"6e400002",true,"41",10,177],[1750,"6e400002",true,"6e",1,0]]},
 "button:richmat_classic_5": {"status":"ok","writes":[[0,"6e400002",true,"38",10,177],[1751,"6e400002",true,"6e",1,0]]},
 "button:richmat_classic_6": {"status":"ok","writes":[[0,"6e400002",true,"39",10,177],[1751,"6e400002",true,"6e",1,0]]},
-"button:richmat_classic_release": {"status":"ok","writes":[[50,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_head_up": {"status":"ok","writes":[[0,"6e400002",true,"24",6,177],[1051,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_head_down": {"status":"ok","writes":[[0,"6e400002",true,"25",6,177],[1050,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_foot_up": {"status":"ok","writes":[[0,"6e400002",true,"26",6,177],[1051,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_foot_down": {"status":"ok","writes":[[0,"6e400002",true,"27",6,177],[1050,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_tv": {"status":"ok","writes":[[0,"6e400002",true,"58",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_lounge": {"status":"ok","writes":[[0,"6e400002",true,"59",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_zero_gravity": {"status":"ok","writes":[[0,"6e400002",true,"45",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_anti_snore": {"status":"ok","writes":[[0,"6e400002",true,"46",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_one": {"status":"ok","writes":[[0,"6e400002",true,"2e",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_two": {"status":"ok","writes":[[0,"6e400002",true,"2f",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_three": {"status":"ok","writes":[[0,"6e400002",true,"30",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_flat": {"status":"ok","writes":[[0,"6e400002",true,"31",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_voice_stop_request": {"status":"ok","writes":[[0,"6e400002",true,"47",1,0],[157,"6e400002",true,"6e",1,0]]}
+"button:richmat_classic_release": {"status":"ok","writes":[[50,"6e400002",true,"6e",1,0]]}
 }},
 "richmat_classic_apps:luunarise2:AHRM:nordic": {
 "info": {"bed_type": "richmat_classic_apps", "controller": "RichmatClassicController", "module": "richmat_classic.controller", "pulse": [10, 100]},
@@ -23404,20 +23321,7 @@
 "button:richmat_classic_4": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002796",10,157],[1550,"0000fff2",true,"6e01006edd",1,0]]},
 "button:richmat_classic_5": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002998",10,157],[1551,"0000fff2",true,"6e01006edd",1,0]]},
 "button:richmat_classic_6": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002a99",10,157],[1550,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_classic_release": {"status":"ok","writes":[[50,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_head_up": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002493",7,157],[1051,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_head_down": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002594",7,157],[1050,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_foot_up": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002695",7,157],[1051,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_foot_down": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002796",7,157],[1050,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_tv": {"status":"ok","writes":[[0,"0000fff2",true,"6e010058c7",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_lounge": {"status":"ok","writes":[[0,"0000fff2",true,"6e010059c8",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_zero_gravity": {"status":"ok","writes":[[0,"0000fff2",true,"6e010045b4",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_anti_snore": {"status":"ok","writes":[[0,"0000fff2",true,"6e010046b5",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_one": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002e9d",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_two": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002f9e",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_three": {"status":"ok","writes":[[0,"0000fff2",true,"6e0100309f",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_flat": {"status":"ok","writes":[[0,"0000fff2",true,"6e010031a0",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_voice_stop_request": {"status":"ok","writes":[[0,"0000fff2",true,"6e010047b6",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]}
+"button:richmat_classic_release": {"status":"ok","writes":[[50,"0000fff2",true,"6e01006edd",1,0]]}
 }},
 "richmat_classic_apps:sta2:6BRM:nordic": {
 "info": {"bed_type": "richmat_classic_apps", "controller": "ResourceBedController", "module": "richmat_classic.resource_controller", "pulse": [10, 100]},
@@ -23440,20 +23344,7 @@
 "button:richmat_classic_4": {"status":"ok","writes":[[0,"6e400002",true,"41",10,177],[1750,"6e400002",true,"6e",1,0]]},
 "button:richmat_classic_5": {"status":"ok","writes":[[0,"6e400002",true,"38",10,177],[1751,"6e400002",true,"6e",1,0]]},
 "button:richmat_classic_6": {"status":"ok","writes":[[0,"6e400002",true,"39",10,177],[1751,"6e400002",true,"6e",1,0]]},
-"button:richmat_classic_release": {"status":"ok","writes":[[50,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_head_up": {"status":"ok","writes":[[0,"6e400002",true,"24",6,177],[1051,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_head_down": {"status":"ok","writes":[[0,"6e400002",true,"25",6,177],[1050,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_foot_up": {"status":"ok","writes":[[0,"6e400002",true,"26",6,177],[1051,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_foot_down": {"status":"ok","writes":[[0,"6e400002",true,"27",6,177],[1050,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_tv": {"status":"ok","writes":[[0,"6e400002",true,"58",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_lounge": {"status":"ok","writes":[[0,"6e400002",true,"59",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_zero_gravity": {"status":"ok","writes":[[0,"6e400002",true,"45",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_anti_snore": {"status":"ok","writes":[[0,"6e400002",true,"46",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_one": {"status":"ok","writes":[[0,"6e400002",true,"2e",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_two": {"status":"ok","writes":[[0,"6e400002",true,"2f",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_three": {"status":"ok","writes":[[0,"6e400002",true,"30",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_flat": {"status":"ok","writes":[[0,"6e400002",true,"31",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_voice_stop_request": {"status":"ok","writes":[[0,"6e400002",true,"47",1,0],[157,"6e400002",true,"6e",1,0]]}
+"button:richmat_classic_release": {"status":"ok","writes":[[50,"6e400002",true,"6e",1,0]]}
 }},
 "richmat_classic_apps:superior:YGRM": {
 "info": {"bed_type": "richmat_classic_apps", "controller": "RichmatClassicController", "gaps": ["button:richmat_classic_9", "button:richmat_classic_13", "button:richmat_classic_18", "button:richmat_classic_19", "button:richmat_classic_20"], "module": "richmat_classic.controller", "pulse": [10, 100]},
@@ -23532,20 +23423,7 @@
 "button:richmat_classic_4": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002796",10,157],[1550,"0000fff2",true,"6e01006edd",1,0]]},
 "button:richmat_classic_5": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002998",10,157],[1551,"0000fff2",true,"6e01006edd",1,0]]},
 "button:richmat_classic_6": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002a99",10,157],[1550,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_classic_release": {"status":"ok","writes":[[50,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_head_up": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002493",7,157],[1051,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_head_down": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002594",7,157],[1050,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_foot_up": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002695",7,157],[1051,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_foot_down": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002796",7,157],[1050,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_tv": {"status":"ok","writes":[[0,"0000fff2",true,"6e010058c7",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_lounge": {"status":"ok","writes":[[0,"0000fff2",true,"6e010059c8",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_zero_gravity": {"status":"ok","writes":[[0,"0000fff2",true,"6e010045b4",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_anti_snore": {"status":"ok","writes":[[0,"0000fff2",true,"6e010046b5",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_one": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002e9d",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_two": {"status":"ok","writes":[[0,"0000fff2",true,"6e01002f9e",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_memory_three": {"status":"ok","writes":[[0,"0000fff2",true,"6e0100309f",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_flat": {"status":"ok","writes":[[0,"0000fff2",true,"6e010031a0",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]},
-"button:richmat_resource_voice_stop_request": {"status":"ok","writes":[[0,"0000fff2",true,"6e010047b6",1,0],[157,"0000fff2",true,"6e01006edd",1,0]]}
+"button:richmat_classic_release": {"status":"ok","writes":[[50,"0000fff2",true,"6e01006edd",1,0]]}
 }},
 "richmat_classic_apps:zerogravity:6BRM:nordic": {
 "info": {"bed_type": "richmat_classic_apps", "controller": "ResourceBedController", "module": "richmat_classic.resource_controller", "pulse": [10, 100]},
@@ -23568,20 +23446,7 @@
 "button:richmat_classic_4": {"status":"ok","writes":[[0,"6e400002",true,"41",10,177],[1750,"6e400002",true,"6e",1,0]]},
 "button:richmat_classic_5": {"status":"ok","writes":[[0,"6e400002",true,"38",10,177],[1751,"6e400002",true,"6e",1,0]]},
 "button:richmat_classic_6": {"status":"ok","writes":[[0,"6e400002",true,"39",10,177],[1751,"6e400002",true,"6e",1,0]]},
-"button:richmat_classic_release": {"status":"ok","writes":[[50,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_head_up": {"status":"ok","writes":[[0,"6e400002",true,"24",6,177],[1051,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_head_down": {"status":"ok","writes":[[0,"6e400002",true,"25",6,177],[1050,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_foot_up": {"status":"ok","writes":[[0,"6e400002",true,"26",6,177],[1051,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_foot_down": {"status":"ok","writes":[[0,"6e400002",true,"27",6,177],[1050,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_tv": {"status":"ok","writes":[[0,"6e400002",true,"58",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_lounge": {"status":"ok","writes":[[0,"6e400002",true,"59",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_zero_gravity": {"status":"ok","writes":[[0,"6e400002",true,"45",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_anti_snore": {"status":"ok","writes":[[0,"6e400002",true,"46",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_one": {"status":"ok","writes":[[0,"6e400002",true,"2e",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_two": {"status":"ok","writes":[[0,"6e400002",true,"2f",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_memory_three": {"status":"ok","writes":[[0,"6e400002",true,"30",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_flat": {"status":"ok","writes":[[0,"6e400002",true,"31",1,0],[157,"6e400002",true,"6e",1,0]]},
-"button:richmat_resource_voice_stop_request": {"status":"ok","writes":[[0,"6e400002",true,"47",1,0],[157,"6e400002",true,"6e",1,0]]}
+"button:richmat_classic_release": {"status":"ok","writes":[[50,"6e400002",true,"6e",1,0]]}
 }},
 "richmat_harmony": {
 "info": {"bed_type": "richmat_harmony", "connect_error": "ValueError", "controller": "RichmatMhController", "module": "richmat_mh.controller", "pulse": [10, 100]},
@@ -26891,12 +26756,6 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1640000101c4",3,107],[421,"0000ffe9",true,"e5fe160000010104",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe168000010184",3,107],[421,"0000ffe9",true,"e5fe160000010104",2,7]]},
 "button:smart_comfort_home": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601300101d3",10,107],[1070,"0000ffe9",true,"e5fe160000010104",1,0]]},
-"button:smart_comfort_base_on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600010110f4",1,0]]},
-"button:smart_comfort_base_off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601010110f3",1,0]]},
-"button:smart_comfort_cup_on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600000108fd",1,0]]},
-"button:smart_comfort_cup_off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601000108fc",1,0]]},
-"button:smart_comfort_read_on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601010104ff",1,0]]},
-"button:smart_comfort_read_off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1602010104fe",1,0]]},
 "select:smart_comfort_seat=2": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000455",1,0]]},
 "select:smart_comfort_seat=1": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000257",1,0]]},
 "select:smart_comfort_seat=0": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000158",1,0]]},
@@ -26958,12 +26817,6 @@
 "stop:lumbar_open": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1640000101c4",3,107],[421,"0000ffe9",true,"e5fe160000010104",2,7]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe168000010184",3,107],[421,"0000ffe9",true,"e5fe160000010104",2,7]]},
 "button:smart_comfort_home": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601300101d3",10,107],[1070,"0000ffe9",true,"e5fe160000010104",1,0]]},
-"button:smart_comfort_base_on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600010110f4",1,0]]},
-"button:smart_comfort_base_off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601010110f3",1,0]]},
-"button:smart_comfort_cup_on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1600000108fd",1,0]]},
-"button:smart_comfort_cup_off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601000108fc",1,0]]},
-"button:smart_comfort_read_on": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1601010104ff",1,0]]},
-"button:smart_comfort_read_off": {"status":"ok","writes":[[0,"0000ffe9",true,"e5fe1602010104fe",1,0]]},
 "select:smart_comfort_seat=2": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000455",1,0]]},
 "select:smart_comfort_seat=1": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000257",1,0]]},
 "select:smart_comfort_seat=0": {"status":"ok","writes":[[0,"0000ffe9",true,"a0b1550000000158",1,0]]},

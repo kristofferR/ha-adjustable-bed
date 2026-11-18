@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
@@ -43,10 +44,12 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
 from ..family_actions import YogaPresetActions
+from ..richmat.labels import screen_label
 from ..ruf_richmat.models import MODEL_IDS as RUF_RICHMAT_MODEL_IDS
 from . import catalog
 from .models import RICHMAT_MH_MODEL_CHOICES
@@ -320,6 +323,8 @@ _BUTTON_GROUP_NAMES: Final = {
     "LOCK": "Lock",
     "SYNC": "Sync",
     "UBL": "Light",
+    "BTN_LED": "Button light off",
+    "Back Foot Both": "Back and foot up",
 }
 # Motor groups: stable entity key, translation by group.
 _AXES: Final = {
@@ -352,6 +357,41 @@ _AXIS_LABELS: Final = {
 
 def _clean_label(label: str) -> str:
     return " ".join(label.replace("\\n", " ").replace("\n", " ").split())
+
+
+# Massage-page groups whose button text only makes sense beside its heading.
+_GROUP_CONTEXT: Final = {
+    "HEAT_LEVEL": "Heat",
+    "HEAT_OFF": "Heat",
+    "MUSIC": "Music",
+    "MUSIC_PREVIOUS_NEXT": "Music",
+    "MUSIC_START_PAUSE": "Music",
+    "MODE": "Massage",
+    "MODE2": "Massage",
+    "Mode": "Massage",
+    "WAVE": "Massage wave",
+    "HEAD_FOOT_BOTH_ON": "Massage",
+    "HEAD_INTENSITY_INC3": "Head massage",
+}
+
+
+_BARE_LABELS: Final = frozenset(
+    {"off", "high", "low", "medium", "mode", "next", "previous", "switch", "on/off",
+     "intensity", "volume", "pause", "pause/start", "start stop", "volume up", "volume down"}
+)
+
+
+def _display_label(label: str, group: str | None = None) -> str:
+    """An entity name for an app button label, with its heading where needed."""
+    text = _clean_label(label)
+    text = re.sub(r"(?<=\d)(?=[A-Za-z])|(?<=[a-z])(?=\d)|(?<=[A-Z]{2})(?=\d)", " ", text)
+    text = re.sub(r"\bMins?\b", "min", text).replace("Hours", "hours")
+    text = re.sub(r"\s*\+$", " up", re.sub(r"\s*-$", " down", text))
+    if re.fullmatch(r"\d+ (?:min|hours)", text):
+        text = f"Timer {text}"
+    elif group in _GROUP_CONTEXT and text.lower() in _BARE_LABELS:
+        text = f"{_GROUP_CONTEXT[group]} {text.lower()}"
+    return screen_label(text)
 
 
 @dataclass(frozen=True, slots=True)
@@ -657,14 +697,14 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         group_labels: dict[str, str] = {}
         for c in controls:
             if c.area == "memory" and c.kind == "recall":
-                group_labels[c.group] = _clean_label(c.label)
+                group_labels[c.group] = _display_label(c.label)
         for c in controls:
             if c.area == "motor" or c.code in used:
                 continue
             used.add(c.code)
             key = f"richmat_mh_{c.code:02x}"
             if c.area == "memory":
-                base = group_labels.get(c.group, _clean_label(c.label))
+                base = group_labels.get(c.group, _display_label(c.label))
                 if c.kind == "save":
                     taps.append(Tap(key, f"Save {base}", c.code, "richmat_mh_save"))
                 elif c.group in ("FACTORY_RESET", "Factory Reset"):
@@ -672,9 +712,9 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 else:
                     taps.append(Tap(key, base, c.code, "richmat_mh_preset"))
             elif c.area == "massage":
-                taps.append(Tap(key, _clean_label(c.label), c.code, "richmat_mh_massage"))
+                taps.append(Tap(key, _display_label(c.label, c.group), c.code, "richmat_mh_massage"))
             else:
-                name = _BUTTON_GROUP_NAMES.get(c.group) or _clean_label(c.label)
+                name = _BUTTON_GROUP_NAMES.get(c.group) or _display_label(c.label)
                 taps.append(Tap(key, name, c.code, "richmat_mh_action"))
         if self._light_page() == "btn_led":
             # Only Revive and Best Mattress have an emitting button-light OFF row; it is
@@ -788,7 +828,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         specs: list[ControllerButtonSpec] = []
         for _name, (recall, save) in self._presets().items():
             if save is not None:
-                label = f"Save {_clean_label(recall.label)}"
+                label = f"Save {_display_label(recall.label)}"
                 specs.append(
                     ControllerButtonSpec(
                         f"richmat_mh_{save.code:02x}",
@@ -809,17 +849,6 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     translation_key=tap.translation_key,
                     translation_placeholders={"action": tap.name},
                     card=_TAP_CARDS.get(tap.translation_key, CARD_UTILITY),
-                )
-            )
-        if self._smart_set_lock():
-            specs.append(
-                ControllerButtonSpec(
-                    "richmat_mh_toggle_smart_set_lock",
-                    "Toggle smart set lock",
-                    lambda ctrl: _invoke(ctrl, "toggle_smart_set_lock"),
-                    icon="mdi:lock-outline",
-                    translation_key="richmat_mh_toggle_smart_set_lock",
-                    cancel_movement=False,
                 )
             )
         if self._detection_page():
@@ -942,16 +971,18 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 ControllerStateSensorSpec(
                     DETECTION_KEY, DETECTION_KEY, DETECTION_KEY, "mdi:stethoscope",
                     attribute_keys=(DETECTION_RESULTS_KEY,),
+                    entity_registry_enabled_default=True,
                 )
             )
         if self._alarm_page():
             specs.append(
-                ControllerStateSensorSpec(ALARM_STATUS_KEY, ALARM_STATUS_KEY, ALARM_STATUS_KEY, "mdi:alarm")
+                ControllerStateSensorSpec(ALARM_STATUS_KEY, ALARM_STATUS_KEY, ALARM_STATUS_KEY, "mdi:alarm", entity_registry_enabled_default=True)
             )
         if self.route == "C" and self._memory_groups():
             specs.append(
                 ControllerStateSensorSpec(
-                    MEMORY_ARRIVAL_KEY, MEMORY_ARRIVAL_KEY, MEMORY_ARRIVAL_KEY, "mdi:map-marker-check"
+                    MEMORY_ARRIVAL_KEY, MEMORY_ARRIVAL_KEY, MEMORY_ARRIVAL_KEY, "mdi:map-marker-check",
+                    entity_registry_enabled_default=False,
                 )
             )
         if self._waist:
@@ -962,6 +993,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                         attribute_keys=(
                             WAIST_ALARM_REPEAT_KEYS[side], WAIST_ALARM_INTENSITY_KEYS[side]
                         ),
+                        entity_registry_enabled_default=True,
                     )
                 )
         return tuple(specs)
@@ -974,11 +1006,28 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         specs: list[ControllerStateBinarySensorSpec] = []
-        for visible, key in ((self._smart_set_lock(), SMART_SET_LOCK_KEY),
-                             (self._smart_light_lock(), SMART_LIGHT_LOCK_KEY)):
-            if visible:
-                specs.append(ControllerStateBinarySensorSpec(key, key, key, "mdi:lock"))
+        if self._smart_light_lock():
+            specs.append(
+                ControllerStateBinarySensorSpec(
+                    SMART_LIGHT_LOCK_KEY, SMART_LIGHT_LOCK_KEY, SMART_LIGHT_LOCK_KEY, "mdi:lock",
+                    entity_registry_enabled_default=False,
+                )
+            )
         return tuple(specs)
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if not self._smart_set_lock():
+            return ()
+        return (
+            ControllerSwitchSpec(
+                SMART_SET_LOCK_KEY,
+                SMART_SET_LOCK_KEY,
+                lambda ctrl, on: _invoke(ctrl, "set_smart_set_lock", on),
+                SMART_SET_LOCK_KEY,
+                icon="mdi:lock-outline",
+            ),
+        )
 
     @property
     def motor_mode_options(self) -> tuple[str, ...]:
@@ -1619,6 +1668,12 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if not self._smart_set_lock():
             raise NotImplementedError("The selected model has no smart set lock")
         await self.write_command(control_frame(SMART_SET_LOCK_CODE), cancel_event=asyncio.Event())
+
+    async def set_smart_set_lock(self, on: bool) -> None:
+        """The app only toggles; the bed's lock callback says which way it is."""
+        if self._coordinator.controller_state.get(SMART_SET_LOCK_KEY) is on:
+            return
+        await self.toggle_smart_set_lock()
 
     async def start_detection(self) -> None:
         await self._detection_command(TX_START_DETECTION)
