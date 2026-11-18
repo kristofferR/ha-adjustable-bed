@@ -817,3 +817,14 @@ async def test_wakeup_retires_previous_massage_countdown(hass, bed, monkeypatch)
         await hass.async_block_till_done()
         assert frames(client) == ["040200000400", "0b0d0000000000000000040005"] * 2 + ["040200000000", "040200000800"]
         c.on_disconnect()
+
+
+async def test_set_alarm_reaches_every_wake_up_program_number(hass, bed):
+    from tests.alarm_helpers import call_set_alarm
+
+    c, _, _ = bed
+    await c.async_discover_capabilities()
+    c.delete_wakeup = AsyncMock()
+    for slot in (0, 99):
+        await call_set_alarm(hass, c, {"enabled": False, "slot": slot})
+    assert [call.args[0] for call in c.delete_wakeup.await_args_list] == [0, 99]

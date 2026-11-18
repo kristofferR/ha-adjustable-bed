@@ -233,8 +233,8 @@ set_alarm:
     slot:
       selector:
         number:
-          min: 1
-          max: 10
+          min: 0
+          max: 99
           mode: box
     massage:
       selector:

@@ -82,8 +82,8 @@ _WAKE_PRESETS: Final = {
     "tv": "TV",
     "anti_snore": "QS",
 }
-# Wake-up programs are identified by number; the app has no fixed count.
-WAKE_SLOTS: Final = 10
+# Wake-up programs are identified by a two-digit number; the app has no fixed count.
+WAKE_SLOTS: Final = 99
 
 
 def selected_time(now: datetime, hour: int, minute: int, next_day: bool) -> datetime:
@@ -783,6 +783,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
                 action for action, preset in _WAKE_PRESETS.items() if preset in remote.wake_presets
             ),
             slots=WAKE_SLOTS,
+            first_slot=0,
             massage=remote.wake_massage,
             massage_intensities=3 if remote.wake_massage else 0,
             massage_durations=(10, 20, 30) if remote.wake_massage else (),

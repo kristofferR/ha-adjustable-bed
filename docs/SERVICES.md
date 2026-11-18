@@ -417,7 +417,7 @@ data:
 | BF and Cherish | `none`, `memory_1`, `memory_2` | Once only |
 | Comfort Enhancements | `none`, `memory_1`, `memory_2` | `massage`; today only |
 | ComfortBase | `memory_1`, `memory_2` | Once only |
-| Comfort Enhancement 3 | Depends on the remote: `none`, `memory_1`, `memory_2`, `zero_g`, `tv`, `anti_snore` | `slot` 1–10, `massage` with zone, intensity and 10/20/30-minute duration, `light`. Once, at the next occurrence |
+| Comfort Enhancement 3 | Depends on the remote: `none`, `memory_1`, `memory_2`, `zero_g`, `tv`, `anti_snore` | `slot` 0–99, `massage` with zone, intensity and 10/20/30-minute duration, `light`. Once, at the next occurrence |
 | eShine | `zero_g`, `flat`, `massage` (by model) | Once; the bed clock is set first |
 | Glideaway Motion | `none`, `memory_1`, `memory_2` | Once |
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |

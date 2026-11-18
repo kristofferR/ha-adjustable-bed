@@ -209,11 +209,9 @@ and `zseries_set_alarm`. Field changes:
   replacement),
   Motion Bed split zero-gravity modes, the raw `switch` value and the `confirmed`
   flag (a Motion Bed alarm without a `wake_action` now rings without moving the bed), Keeson app tables
-  with more than one weekly or one-time alarm, and Comfort Enhancement 3 program
+  with more than one weekly or one-time alarm, Comfort Enhancement 3
   `next_day` (a Comfort Enhancement 3 wake-up now runs at the next occurrence of the time,
-  so it cannot be set for tomorrow while that time is still ahead today), program
-  numbers 0 and above 10 (cancel those programs with
-  `comfort_enhancement3_delete_wakeup` before upgrading), Richmat
+  so it cannot be set for tomorrow while that time is still ahead today), Richmat
   app calendar alarm deletion (`enabled: false` disables the slot instead) and calendar
   positions without a shared wake action name. RMControl clock setting moved to `sync_clock`.
 

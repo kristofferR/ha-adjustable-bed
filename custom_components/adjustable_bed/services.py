@@ -2154,7 +2154,7 @@ def _check_alarm(
             translation_placeholders={"device_name": device_name},
         )
     limits = (
-        ("slot", alarm.slot, 1, capability.slots),
+        ("slot", alarm.slot, capability.first_slot, capability.slots),
         ("head_massage_level", alarm.head_massage_level, 0, capability.massage_levels),
         ("foot_massage_level", alarm.foot_massage_level, 0, capability.massage_levels),
         ("massage_intensity", alarm.massage_intensity, 1, capability.massage_intensities),
@@ -2890,7 +2890,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Required(ATTR_ENABLED): cv.boolean,
                 vol.Optional(ATTR_TIME): cv.time,
                 vol.Optional(ATTR_WEEKDAYS): vol.All(cv.ensure_list, [vol.In(ALARM_WEEKDAYS)]),
-                vol.Optional(ATTR_SLOT): vol.All(_whole_number, vol.Range(min=1, max=10)),
+                vol.Optional(ATTR_SLOT): vol.All(_whole_number, vol.Range(min=0, max=99)),
                 vol.Optional("wake_action"): vol.In(WAKE_ACTIONS),
                 vol.Optional(ATTR_MASSAGE): cv.boolean,
                 vol.Optional("head_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),

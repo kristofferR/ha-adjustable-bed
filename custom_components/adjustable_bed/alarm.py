@@ -92,6 +92,8 @@ class AlarmCapability:
     wake_actions: tuple[str, ...] = ()
     weekdays: bool = False
     slots: int = 1
+    # Lowest alarm number; `slots` is the highest.
+    first_slot: int = 1
     massage: bool = False
     massage_levels: int = 0
     massage_intensities: int = 0
