@@ -297,7 +297,7 @@ async def test_rejected_recall_keeps_the_previous_selection(
 
     c = await make_bed(hass, mock_bleak_client)
     mock_bleak_client.write_gatt_char.side_effect = BleakError("rejected")
-    with virtual_clock(), pytest.raises(Exception):
+    with virtual_clock(), pytest.raises(BleakError):
         await c.recall_named("flat")
     # A retry recalls again instead of sending preset stop.
     assert c._selected_preset is None
