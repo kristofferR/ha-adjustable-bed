@@ -549,6 +549,8 @@ class OnlySnoreController(ProfileExecution[app.OnlySnoreProfile], BedController)
                 massage,
                 keys.MASSAGE,
                 icon="mdi:vibrate",
+                # Status is only known when queried, so on and off stay separate.
+                assumed_state=True,
                 card=CARD_MASSAGE,
             ),
             ControllerSwitchSpec(

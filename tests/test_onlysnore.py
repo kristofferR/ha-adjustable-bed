@@ -697,3 +697,29 @@ async def test_coordinator_startup_reconnect_and_stale_notification(
         assert coord.controller_state.get(state.PRIVACY) is None
         await coord.async_disconnect()
         await coord.async_shutdown()
+
+
+async def test_massage_switch_is_assumed_and_always_sends_its_command(hass):
+    from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
+
+    ctrl = controller()
+    await ctrl.start_notify()
+    char, callback = ctrl.client.start_notify.call_args.args
+    callback(char, bytearray(STATUS))  # reports a running massage
+    runtime = MagicMock()
+    runtime.controller = runtime.capability_controller = ctrl
+    runtime.controller_state = ctrl._coordinator.controller_state
+    runtime.entity_side = None
+    runtime.entity_unique_id.side_effect = lambda key: key
+
+    async def execute(command, **kwargs):
+        await command(ctrl)
+
+    runtime.async_execute_controller_command = AsyncMock(side_effect=execute)
+    spec = next(s for s in ctrl.controller_switch_specs if s.key == "onlysnore_massage")
+    switch = AdjustableBedControllerSwitch(runtime, spec)
+    assert switch.assumed_state and switch.is_on
+    ctrl.client.write_gatt_char.reset_mock()
+    with virtual_clock():
+        await switch.async_turn_on()
+    assert codec.control(app.KEYS["massage_all"]) in frames(ctrl)
