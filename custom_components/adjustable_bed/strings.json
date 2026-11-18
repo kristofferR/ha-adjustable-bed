@@ -3282,6 +3282,9 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "richmat_mh_toggle_smart_light_lock": {
+        "name": "Toggle smart light lock"
+      },
       "goodvibe_save_action": {
         "name": "{action}"
       },
@@ -5062,6 +5065,15 @@
       "sonicsleep": {
         "name": "Model"
       },
+      "richmat_mh_last_reply": {
+        "name": "Last bed reply"
+      },
+      "richmat_mh_sleep_left_state": {
+        "name": "Left sleep receiver state"
+      },
+      "richmat_mh_sleep_right_state": {
+        "name": "Right sleep receiver state"
+      },
       "bobpowerbase_status": {
         "name": "Status"
       },
@@ -6145,7 +6157,8 @@
         "state": {
           "level_1": "Level 1",
           "level_2": "Level 2",
-          "level_3": "Level 3"
+          "level_3": "Level 3",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_left_duration": {
@@ -6153,7 +6166,8 @@
         "state": {
           "15_minutes": "15 minutes",
           "20_minutes": "20 minutes",
-          "30_minutes": "30 minutes"
+          "30_minutes": "30 minutes",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_right_heat": {
@@ -6170,7 +6184,8 @@
         "state": {
           "level_1": "Level 1",
           "level_2": "Level 2",
-          "level_3": "Level 3"
+          "level_3": "Level 3",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_right_duration": {
@@ -6178,7 +6193,8 @@
         "state": {
           "15_minutes": "15 minutes",
           "20_minutes": "20 minutes",
-          "30_minutes": "30 minutes"
+          "30_minutes": "30 minutes",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_both_heat": {
@@ -6195,7 +6211,8 @@
         "state": {
           "level_1": "Level 1",
           "level_2": "Level 2",
-          "level_3": "Level 3"
+          "level_3": "Level 3",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_both_duration": {
@@ -6203,7 +6220,8 @@
         "state": {
           "15_minutes": "15 minutes",
           "20_minutes": "20 minutes",
-          "30_minutes": "30 minutes"
+          "30_minutes": "30 minutes",
+          "off": "Off"
         }
       },
       "ore_comfort_massage_timer": {
@@ -6431,7 +6449,8 @@
         "state": {
           "low": "Low",
           "medium": "Medium",
-          "high": "High"
+          "high": "High",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_left_heat_level": {
@@ -6449,7 +6468,8 @@
           "2_hours": "2 hours",
           "4_hours": "4 hours",
           "6_hours": "6 hours",
-          "8_hours": "8 hours"
+          "8_hours": "8 hours",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_left_heat_area": {
@@ -6476,7 +6496,8 @@
         "state": {
           "20_minutes": "20 minutes",
           "40_minutes": "40 minutes",
-          "60_minutes": "60 minutes"
+          "60_minutes": "60 minutes",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_left_sleep_duration": {
@@ -6492,7 +6513,8 @@
         "state": {
           "low": "Low",
           "medium": "Medium",
-          "high": "High"
+          "high": "High",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_right_heat_level": {
@@ -6510,7 +6532,8 @@
           "2_hours": "2 hours",
           "4_hours": "4 hours",
           "6_hours": "6 hours",
-          "8_hours": "8 hours"
+          "8_hours": "8 hours",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_right_heat_area": {
@@ -6537,7 +6560,8 @@
         "state": {
           "20_minutes": "20 minutes",
           "40_minutes": "40 minutes",
-          "60_minutes": "60 minutes"
+          "60_minutes": "60 minutes",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_right_sleep_duration": {
@@ -9095,6 +9119,53 @@
         }
       }
     },
+    "richmat_mh_control": {
+      "name": "Nisco and MLILY Supreme: run app control",
+      "description": "Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "opcode": {
+          "name": "Control number",
+          "description": "Decimal byte value from this app and model's control table."
+        },
+        "query": {
+          "name": "Setting to read"
+        },
+        "transmit_mode": {
+          "name": "Transmit mode",
+          "description": "The app's transmit mode for later control and release frames (Set app mode)."
+        },
+        "motor_group": {
+          "name": "Motor group",
+          "description": "The app's motor group, which decides the Motor mode choices (Set app mode)."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a combined bed."
+        }
+      }
+    },
+    "richmat_mh_sleep_mode": {
+      "name": "Nisco: Set sleep sensor mode",
+      "description": "Set the separate sleep sensor for one or two sleepers.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "mode": {
+          "name": "Sleepers"
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a combined bed."
+        }
+      }
+    },
     "bobpowerbase": {
       "name": "Power Bob Base: settings",
       "description": "Manage repeat alarms, synchronize local time, or set lighting reported by the connected bed.",
@@ -10390,6 +10461,8 @@
         "acaa": "ACAA app",
         "sta2": "STA Homecare app",
         "zerogravity": "Zero Gravity app",
+        "nisco": "Nisco app",
+        "mlily_supreme": "MLILY Supreme app",
         "okimiki": "Okimiki app",
         "luniosmart": "Lunio Smart+ app"
       }
@@ -11461,6 +11534,54 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "richmat_mh_control_action": {
+      "options": {
+        "press": "Press control",
+        "remote_long": "Save with remote button",
+        "voice_queue": "Voice command",
+        "query": "Read setting",
+        "app_mode": "Set app mode"
+      }
+    },
+    "richmat_mh_control_query": {
+      "options": {
+        "version": "Firmware version",
+        "exit_one_minute": "Leave one-minute mode",
+        "alarm": "Alarm",
+        "light": "Light",
+        "mattress": "Mattress",
+        "waist_mattress": "Waist mattress",
+        "snore": "Snore intervention",
+        "diagnostics": "Component check",
+        "motor_mode": "Motor mode",
+        "motor1_angle": "Motor 1 angle",
+        "motor2_angle": "Motor 2 angle",
+        "motor3_angle": "Motor 3 angle",
+        "motor4_angle": "Motor 4 angle",
+        "massage": "Massage",
+        "light_lock": "Light lock"
+      }
+    },
+    "richmat_mh_transmit_mode": {
+      "options": {
+        "mode_0": "Mode 0",
+        "mode_1": "Mode 1",
+        "mode_2": "Mode 2"
+      }
+    },
+    "richmat_mh_motor_group": {
+      "options": {
+        "single": "Single",
+        "group_sync": "Synchronized group",
+        "group_split": "Split group"
+      }
+    },
+    "richmat_mh_sleep_mode_mode": {
+      "options": {
+        "single": "One sleeper",
+        "double": "Two sleepers"
       }
     },
     "bobpowerbase_operation": {

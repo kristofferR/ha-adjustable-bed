@@ -163,6 +163,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.richmat_classic.resource_receive import (
         ResourceReceiveState,
     )
+    from custom_components.adjustable_bed.beds.richmat_mh.app_controller import (
+        RichmatMHAppController,
+    )
     from custom_components.adjustable_bed.beds.ruf_richmat.controller import RufRichmatController
     from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
     from custom_components.adjustable_bed.beds.sleepys.app import (
@@ -225,6 +228,17 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                 yield variant(controller, command_selector=selector)
         elif isinstance(controller, SmartComfortController):
             yield variant(controller, _model=0x89, _flags=(7, 7, 7), _ready=True)
+        elif isinstance(controller, RichmatMHAppController):
+            for version in ("0000", "0001"):
+                reported = variant(
+                    controller, _version=version, _call_page=version == "0001",
+                    _dev={"led": True, "alarm": True, "snore": True},
+                    _detection=True, _waist=controller.app == "mlily_supreme",
+                )
+                for group in controller._mode_groups or (None,):
+                    yield variant(reported, _group_type=group)
+                if controller.app == "mlily_supreme" and controller._normal_selected:
+                    yield variant(reported, _normal_ready=True)
         elif isinstance(controller, RufRichmatController):
             yield variant(controller, _normal_ready=True)
         elif isinstance(controller, ResourceBedController):

@@ -107,6 +107,8 @@ FAMILY = CodecFamily(
             "richmat_idealbed",
             "richmat_revive",
             "richmat_tx",
+            "richmat_nisco",
+            "richmat_mlily_supreme",
             "ruf_betten",
             "wsilver_products",
         }

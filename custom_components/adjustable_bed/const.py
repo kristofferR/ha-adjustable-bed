@@ -601,6 +601,12 @@ RUF_RICHMAT_APPS: Final[dict[str, str]] = {
     "bailey_bed_control": "bailey2",
     "richmat_tx": "tx",
 }
+BED_TYPE_RICHMAT_NISCO: Final = "richmat_nisco"
+BED_TYPE_RICHMAT_MLILY_SUPREME: Final = "richmat_mlily_supreme"
+RICHMAT_MH_APP_CATALOGS: Final[dict[str, str]] = {
+    BED_TYPE_RICHMAT_NISCO: "nisco",
+    BED_TYPE_RICHMAT_MLILY_SUPREME: "mlily_supreme",
+}
 RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_REVIVE: "revive",
     BED_TYPE_RICHMAT_BEST_MATTRESS: "best_mattress",
@@ -608,6 +614,7 @@ RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_HARMONY: "harmony",
     BED_TYPE_RICHMAT_IDEALBED: "idealbed",
     **RUF_RICHMAT_APPS,
+    **RICHMAT_MH_APP_CATALOGS,
 }
 RICHMAT_MH_BED_TYPES: Final = frozenset(RICHMAT_MH_APPS)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
@@ -843,6 +850,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
     *RUF_RICHMAT_APPS,
+    *RICHMAT_MH_APP_CATALOGS,
     "richmat_sleep_receiver",
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES,

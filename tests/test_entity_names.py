@@ -164,3 +164,27 @@ def test_richmat_mh_catalog_labels_use_the_shared_wording() -> None:
     assert mh_label("FLAT2") == "Flat 2"
     # A terse app preset label stays: the owner knows it from the app or remote.
     assert mh_label("V15") == "V15"
+
+
+def test_richmat_mh_app_command_labels_use_the_mh_wording() -> None:
+    """Nisco and MLILY Supreme name controls by command; they read like the MH buttons."""
+    from custom_components.adjustable_bed.beds.richmat.labels import command_label
+    from custom_components.adjustable_bed.beds.richmat_mh.app_catalog import catalog
+    from custom_components.adjustable_bed.beds.richmat_mh.controller import (
+        _display_label as mh_label,
+    )
+
+    names = {
+        display_label(command_label(control.label, save=control.kind == "save"))
+        for app in ("nisco", "mlily_supreme")
+        for model in catalog(app).values()
+        for control in model.controls
+        if control.area != "motor"
+    }
+    assert {name: problems(name) for name in names if problems(name)} == {}
+    assert command_label("Massage Head Intensity Inc") == mh_label("Head Intensity+", "HEAD_INTENSITY_INC3")
+    assert command_label("Massage 10Min") == mh_label("10Min", "MIN")
+    assert command_label("Flat2") == mh_label("FLAT2")
+    # The second head step never shares a model with the first, so it has no number.
+    assert command_label("Massage Head Intensity Inc2") == "Massage: Head Up"
+    assert command_label("Zg2 Set") == "Save Zero Gravity 2"

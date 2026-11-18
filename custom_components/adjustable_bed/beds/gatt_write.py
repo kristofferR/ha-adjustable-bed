@@ -96,6 +96,7 @@ class GattWriter(ABC):
         characteristic: BleakGATTCharacteristic | None = None,
         expected_client: BleakClient | None = None,
         before_write: Callable[[], None] | None = None,
+        command_factory: Callable[[], bytes] | None = None,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -129,6 +130,8 @@ class GattWriter(ABC):
                      the BLE lock, so queued writes cannot migrate on reconnect.
             before_write: Synchronous validation immediately before transmission,
                      under the BLE lock, after all connection and cancellation checks.
+            command_factory: Rebuild a caller's mode-dependent frame at the final
+                     dispatch boundary, after validation and before tracing/writing.
 
         Raises:
             ConnectionError: If not connected to the bed
@@ -159,15 +162,16 @@ class GattWriter(ABC):
         if caller_frame is not None and caller_frame.f_back is not None:
             command_origin = caller_frame.f_back.f_code.co_name
 
-        self._record_command_trace(
-            char_uuid,
-            command,
-            response=response,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            command_origin=command_origin,
-            characteristic=characteristic,
-        )
+        if command_factory is None:
+            self._record_command_trace(
+                char_uuid,
+                command,
+                response=response,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+                command_origin=command_origin,
+                characteristic=characteristic,
+            )
 
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
@@ -193,9 +197,20 @@ class GattWriter(ABC):
                         write_started = asyncio.get_running_loop().time()
                     if before_write is not None:
                         before_write()
+                    outbound = command_factory() if command_factory is not None else command
+                    if command_factory is not None:
+                        self._record_command_trace(
+                            char_uuid,
+                            outbound,
+                            response=response,
+                            repeat_count=1,
+                            repeat_delay_ms=repeat_delay_ms,
+                            command_origin=command_origin,
+                            characteristic=characteristic,
+                        )
                     await client.write_gatt_char(
                         characteristic if characteristic is not None else char_uuid,
-                        command,
+                        outbound,
                         response=response,
                     )
                     if on_write is not None:

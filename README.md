@@ -113,6 +113,8 @@ Each linked guide has a Status line with the details.
 | [MLILY Control](docs/beds/richmat.md#mlily-control) | MLILY Control app and its admitted product/remote profiles 🧪, independent RM-/HJ- sleep sensors 🧪 | MLILY |
 | [Okimiki](docs/beds/richmat.md#okimiki) | Okimiki app: HCRN, IPRM, IQRM and KWRN 🧪 | Okimiki |
 | [Power Bob Base](docs/beds/richmat.md#power-bob-base) | Elite, Elite SH, Ultra and Ultra SH app profiles 🧪 | Power Bob |
+| [MLILY Supreme](docs/beds/richmat.md#mlily-supreme) | MLILY Supreme 1.3.1 app profiles and separate HJ_Bed sleep receiver 🧪 | MLILY |
+| [Nisco](docs/beds/richmat.md#nisco) | Nisco 1.1.1 app profiles and separate HJ_Bed sleep receiver 🧪 | Richmat |
 | [Galaxy Bed Control](docs/beds/richmat.md#galaxy-bed-control) | [Galaxy Bed Control app](docs/beds/richmat.md#galaxy-bed-control) 🧪 | Star International |
 | [Good Vibe Sleep](docs/beds/richmat.md#good-vibe-sleep) | [Good Vibe Sleep app](docs/beds/richmat.md#good-vibe-sleep) 🧪, [Good Vibe Sleep sleep sensor, RM- or HJ-](docs/beds/richmat.md#sleep-controls-and-reports) 🧪 | Good Vibe Sleep |
 | [HJBed](docs/beds/richmat.md#hjbed) | [HJBed app](docs/beds/richmat.md#hjbed) 🧪 | HJBed |

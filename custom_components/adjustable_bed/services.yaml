@@ -3625,3 +3625,79 @@ bobpowerbase:
     rgb_color:
       selector:
         color_rgb:
+
+richmat_mh_control:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      selector:
+        select:
+          options: [press, remote_long, voice_queue, query, app_mode]
+          translation_key: richmat_mh_control_action
+    opcode:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    query:
+      selector:
+        select:
+          options:
+            - version
+            - exit_one_minute
+            - alarm
+            - light
+            - mattress
+            - waist_mattress
+            - snore
+            - diagnostics
+            - motor_mode
+            - motor1_angle
+            - motor2_angle
+            - motor3_angle
+            - motor4_angle
+            - massage
+            - light_lock
+          translation_key: richmat_mh_control_query
+    transmit_mode:
+      selector:
+        select:
+          options: [mode_0, mode_1, mode_2]
+          translation_key: richmat_mh_transmit_mode
+    motor_group:
+      selector:
+        select:
+          options: [single, group_sync, group_split]
+          translation_key: richmat_mh_motor_group
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+
+richmat_mh_sleep_mode:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    mode:
+      required: true
+      selector:
+        select:
+          options: [single, double]
+          translation_key: richmat_mh_sleep_mode_mode
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side

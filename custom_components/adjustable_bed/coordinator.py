@@ -1297,7 +1297,9 @@ class AdjustableBedCoordinator(
         if self._pending_internal_bond_marker is not None:
             self._pending_capability_reload = True
         self._async_persist_config({**self.entry.data, "capabilities": capabilities})
-        self._offline_controller = self._controller
+        # Disconnected, the offline controller saved this snapshot: keep it.
+        if self._controller is not None:
+            self._offline_controller = self._controller
         self._schedule_pending_capability_reload()
 
     def remember_fsm_relax_capabilities(self, body: bytes) -> None:

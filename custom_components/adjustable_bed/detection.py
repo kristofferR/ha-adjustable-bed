@@ -572,6 +572,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
             ("richmat_americanstar", "AMERICANSTAR"),
             ("bailey_bed_control", "Bailey's Bed Control"),
             ("richmat_tx", "TX"),
+            ("richmat_nisco", "Nisco"),
+            ("richmat_mlily_supreme", "MLILY Supreme"),
         )
     },
     "richmat_sleep_receiver": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver",
@@ -1574,6 +1576,9 @@ def _detect_bed_type_with_app_candidates(
     result = _detect_bed_type_detailed(service_info, first=first)
     # A name-only app hint must not contest an existing Richmat receiver signature.
     if first.name(BED_TYPE_RICHMAT) and not first.service(BED_TYPE_RICHMAT) and not any(
+        (service_info.name or "").lower().startswith(pattern)
+        for pattern in LEGGETT_RICHMAT_NAME_PATTERNS
+    ) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
         # Luuna's scan keywords identify a family candidate, never its product.

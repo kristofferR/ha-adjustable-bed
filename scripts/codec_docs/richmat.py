@@ -48,7 +48,7 @@ from custom_components.adjustable_bed.profiles import richmat as richmat_profile
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
 from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
-from scripts.codec_docs import _galaxy, _okimiki
+from scripts.codec_docs import _galaxy, _okimiki, _richmat_mh_apps
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -86,6 +86,7 @@ _RICHMAT_NAMES = {
             (
                 *("Revive Control", "Best Mattress", "Blvd Home", "HARMONY", "Idealbed"),
                 *("RUF Betten", "W.Silver", "AMERICANSTAR", "Bailey", "TX"),
+                *("Nisco", "MLILY Supreme"),
             ),
             strict=True,
         )
@@ -1422,6 +1423,7 @@ BLOCKS: list[Block] = [
 
 BLOCKS += _galaxy.BLOCKS
 BLOCKS += _okimiki.BLOCKS
+BLOCKS += _richmat_mh_apps.BLOCKS
 
 
 def render_richmat_app_commands() -> str:

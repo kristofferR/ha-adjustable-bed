@@ -99,6 +99,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_app`](#richmat_app) | Richmat app: settings | Sets the light, alarm, sleep sensing and other options of a Richmat app bed. Read the feature first before changing it. |
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Write the three aroma timing sliders of a Richmat MH app profile. |
 | [`richmat_mh_light_color`](#richmat_mh_light_color) | Richmat app: light color | Write the LED or button-light page colour of a Richmat MH app profile. |
+| [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run app control | Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands. |
+| [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: Set sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
 | [`rize_program_preset`](#rize_program_preset) | Rize: set default preset | Store the current position as a default preset on one physical Rize bed. Select a single paired side and explicitly confirm. |
 | [`sleep_number_command`](#sleep_number_command) | Sleep Number: run command | Runs a Sleep Number control or reading. Readings return their results. See the actions guide for each command's options. |
 | [`sleeptracker_climate`](#sleeptracker_climate) | Sleeptracker: climate | Set local left/right/both fan modes and levels. Level 0 stops the selected fans. Heat sends a 3600 second timer; cool sends a 36000 second timer. Timers and curve are commanded settings, not reported remaining time. |
@@ -1420,6 +1422,55 @@ The [Motion Bed action index](beds/ff_frame.md#services-2) covers all 12 typed a
 | `dimensions` | Body measurements | Three finite numbers in order: height, buttocks height and knee height, in centimetres. |
 | `posture` | Posture | Upright, recline, TV or lay posture. |
 | `targets` | Raw Hall targets | Target for each of the five motors: head, base, back, lumbar and tilt, within the app's slider range. |
+
+## Nisco and MLILY Supreme
+
+<a id="richmat_mh_control"></a>
+**`richmat_mh_control`**: Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `action` | Action |  |
+| `opcode` | Control number | Decimal byte value from this app and model's control table. |
+| `query` | Setting to read |  |
+| `transmit_mode` | Transmit mode | The app's transmit mode for later control and release frames (Set app mode). |
+| `motor_group` | Motor group | The app's motor group, which decides the Motor mode choices (Set app mode). |
+
+<a id="richmat_mh_sleep_mode"></a>
+**`richmat_mh_sleep_mode`**: Set the separate sleep sensor for one or two sleepers.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `mode` | Sleepers |  |
+
+### Nisco and MLILY Supreme controls
+
+`adjustable_bed.richmat_mh_control` accepts `action: press` and a decimal
+`opcode` declared by the selected app/model page, `action: remote_long` for an
+attached fixed-remote save, or `action: query` and one named included query.
+`action: voice_queue` takes a source opcode from this model's own speech map,
+resolves its BED output and uses that caller's 120 ms queue cadence. It does
+not enable microphone, recognition or phone infrastructure.
+The opcode is checked against the current profile; this is not a raw-write API.
+The fixed-remote long action waits three seconds, sends the finalized save and
+releases through that caller's sequence. STOP cancels admission or execution.
+`action: app_mode` sets the app's local `transmit_mode` (`mode_0`, `mode_1` or `mode_2`) and/or
+`motor_group` (`single`, `group_sync` or `group_split`, as the model declares)
+for later commands on that physical side. It neither connects nor waits for a
+running command, and sends nothing itself. The motor group decides which Motor
+mode choices are offered.
+
+`richmat_mh_sleep_mode` keeps Nisco's direct single/double user-mode caller;
+MLILY Supreme does not have it. Alarms use the shared `set_alarm` action with the
+alarm page the bed reports; light colour uses `richmat_mh_light_color`. A normal
+mattress alarm requires its explicit extra selection and powered initialization.
+The separate HJ_Bed receiver exposes local sensing/intervention entities and no
+bed motor actions.
+
+Each action captures physical targets before its first await and validates the
+whole selection before sending control frames. A paired child target retains
+its side. Transmit modes and mattress pad selectors do not choose another BLE
+recipient or create one-address native Left/Right devices.
 
 ## OKIN SleepEase
 

@@ -2244,3 +2244,25 @@ def _okimiki() -> frozenset[str]:
 
 # Okimiki 1.0.1's P1 command table: Nordic saves. The 42+29 fixtures are unchanged.
 FROZEN_FRAMES["okimiki"] = _okimiki() | frozenset({"2b", "2c", "65", "66"})
+
+
+def _cluster022_frames() -> dict[str, frozenset[str]]:
+    result = {}
+    directory = Path(__file__).parent / "fixtures/richmat_cluster022"
+    for app in ("nisco", "mlily_supreme"):
+        values = set()
+        for row in json.loads((directory / f"{app}_vectors.json").read_text()):
+            if row["builder"].startswith("parse_") or row["builder"] == "queue_long_at_threshold":
+                continue
+            for literal in row["expected_bytes"].split(" | "):
+                if not literal.startswith(("6e", "5e")):
+                    continue  # FA uses the shared sleep builder in the outbound proof.
+                if len(literal) == 20 and row["builder"] in ("color", "led_rgb"):
+                    values.update((literal[:10], literal[10:]))
+                else:
+                    values.add(literal)
+        result[f"richmat_mh_{app}"] = frozenset(values)
+    return result
+
+
+FROZEN_FRAMES.update(_cluster022_frames())
