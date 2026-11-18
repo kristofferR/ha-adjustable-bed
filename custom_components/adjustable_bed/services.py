@@ -223,20 +223,6 @@ POSITION_MOTOR_OPTIONS = (
     "right_legs",
 )
 
-LEGGETT_HELD_CONTROLS = (
-    "flat",
-    "snore",
-    "lights_toggle",
-    "massage_toggle",
-    "massage_wave",
-    "massage_head_up",
-    "massage_head_down",
-    "massage_foot_up",
-    "massage_foot_down",
-    "memory_1",
-    "memory_2",
-    "store",
-)
 
 # Default capture duration for diagnostics (seconds)
 DEFAULT_CAPTURE_DURATION = 120

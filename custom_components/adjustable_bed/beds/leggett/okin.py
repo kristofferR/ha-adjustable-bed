@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 from homeassistant.exceptions import HomeAssistantError
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...codec.okin_nframe import (
     REVISION_SELECTOR_UUID,
     SERVICE_UUID,
@@ -273,6 +274,17 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
 
     async def cancel_sleep_timer(self) -> None:
         await self._recall(self.profile.keys["sleep_cancel"])
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        # The bed counts down to the alarm; Home Assistant turns the time into minutes.
+        return AlarmCapability() if self.supports_alarm_timer else None
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.enabled:
+            await self.set_alarm_timer(alarm.minutes_until())
+        else:
+            await self.cancel_alarm_timer()
 
     async def set_alarm_timer(self, minutes: int) -> None:
         await self._recall(leggett_alarm(self.profile, minutes))
