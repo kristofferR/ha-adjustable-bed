@@ -21474,6 +21474,12 @@
 "select:onlysnore_intervention=1": {"status":"ok","writes":[[0,"6e400002",false,"020b0101010000",1,0],[307,"6e400002",false,"00b0",1,0]]},
 "select:onlysnore_intervention=3": {"status":"ok","writes":[[0,"6e400002",false,"020b0103010000",1,0],[307,"6e400002",false,"00b0",1,0]]},
 "select:onlysnore_intervention=6": {"status":"ok","writes":[[0,"6e400002",false,"020b0106010000",1,0],[307,"6e400002",false,"00b0",1,0]]},
+"switch:onlysnore_massage=on": {"status":"ok","writes":[[0,"6e400002",false,"0502000001000000",2,7],[114,"6e400002",false,"0502000000000000",1,0],[321,"6e400002",false,"00b0",2,57]]},
+"switch:onlysnore_massage=off": {"status":"ok","writes":[[0,"6e400002",false,"0502020000000000",2,7],[114,"6e400002",false,"0502000000000000",1,0],[321,"6e400002",false,"00b0",2,57]]},
+"switch:onlysnore_privacy=on": {"status":"ok","writes":[[0,"6e400002",false,"01b201",1,0],[307,"6e400002",false,"00b0",1,0]]},
+"switch:onlysnore_privacy=off": {"status":"ok","writes":[[0,"6e400002",false,"01b200",1,0],[307,"6e400002",false,"00b0",1,0]]},
+"switch:onlysnore_detection=on": {"status":"ok","writes":[[0,"6e400002",false,"01b501",2,107],[414,"6e400002",false,"00b0",1,0]]},
+"switch:onlysnore_detection=off": {"status":"ok","writes":[[0,"6e400002",false,"01b500",2,107],[414,"6e400002",false,"00b0",1,0]]},
 "preset_lounge": {"status":"ok","writes":[[0,"6e400002",false,"0502000020000000",10,157],[1600,"6e400002",false,"0502000000000000",1,0]]}
 }},
 "paramount": {
