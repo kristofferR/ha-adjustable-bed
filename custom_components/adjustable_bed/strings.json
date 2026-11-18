@@ -3127,6 +3127,69 @@
       "comfy_waist_down": {
         "name": "Waist down (app control)"
       },
+      "onlysnore_flat": {
+        "name": "Flat"
+      },
+      "onlysnore_reading": {
+        "name": "Reading"
+      },
+      "onlysnore_tv": {
+        "name": "TV"
+      },
+      "onlysnore_zero_gravity": {
+        "name": "Zero gravity"
+      },
+      "onlysnore_anti_snore_preset": {
+        "name": "Anti-snore preset"
+      },
+      "onlysnore_massage_all": {
+        "name": "Start massage"
+      },
+      "onlysnore_massage_stop_all": {
+        "name": "Stop massage"
+      },
+      "onlysnore_massage_wave_next": {
+        "name": "Next massage wave"
+      },
+      "onlysnore_massage_timer_next": {
+        "name": "Next massage timer"
+      },
+      "onlysnore_massage_foot_strength_next": {
+        "name": "Next foot massage strength"
+      },
+      "onlysnore_massage_head_strength_next": {
+        "name": "Next head massage strength"
+      },
+      "onlysnore_refresh": {
+        "name": "Refresh BED state"
+      },
+      "onlysnore_demo_1": {
+        "name": "Demonstrate anti-snore level 1"
+      },
+      "onlysnore_demo_3": {
+        "name": "Demonstrate anti-snore level 3"
+      },
+      "onlysnore_demo_6": {
+        "name": "Demonstrate anti-snore level 6"
+      },
+      "onlysnore_stop_intervention": {
+        "name": "Stop anti-snore intervention"
+      },
+      "onlysnore_management": {
+        "name": "Open local BLE management"
+      },
+      "onlysnore_save_reading": {
+        "name": "Save reading"
+      },
+      "onlysnore_save_tv": {
+        "name": "Save TV"
+      },
+      "onlysnore_save_zero_gravity": {
+        "name": "Save zero gravity"
+      },
+      "onlysnore_save_anti_snore_preset": {
+        "name": "Save anti-snore preset"
+      },
       "smart_sleep_refresh": {
         "name": "Refresh bed state"
       },
@@ -5140,6 +5203,63 @@
       "comfy_timer_remaining": {
         "name": "Local app timer remaining"
       },
+      "onlysnore_model": {
+        "name": "App model"
+      },
+      "onlysnore_level": {
+        "name": "Anti-snore level (reported)"
+      },
+      "onlysnore_massage_timer_index": {
+        "name": "Massage timer option (reported)"
+      },
+      "onlysnore_massage_pattern_index": {
+        "name": "Massage pattern option (reported)"
+      },
+      "onlysnore_massage_head_index": {
+        "name": "Head massage strength (reported)"
+      },
+      "onlysnore_massage_foot_index": {
+        "name": "Foot massage strength (reported)"
+      },
+      "onlysnore_massage_shared_index": {
+        "name": "Common massage strength (reported)"
+      },
+      "onlysnore_alarm_count": {
+        "name": "BED alarm count"
+      },
+      "onlysnore_firmware": {
+        "name": "BED firmware"
+      },
+      "onlysnore_hardware": {
+        "name": "BED hardware"
+      },
+      "onlysnore_alarm_1_time": {
+        "name": "BED alarm 1 time"
+      },
+      "onlysnore_alarm_1_week": {
+        "name": "BED alarm 1 week mask"
+      },
+      "onlysnore_alarm_1_action": {
+        "name": "BED alarm 1 action code"
+      },
+      "onlysnore_alarm_2_time": {
+        "name": "BED alarm 2 time"
+      },
+      "onlysnore_alarm_2_week": {
+        "name": "BED alarm 2 week mask"
+      },
+      "onlysnore_alarm_2_action": {
+        "name": "BED alarm 2 action code"
+      },
+      "onlysnore_alarm_3_time": {
+        "name": "BED alarm 3 time"
+      },
+      "onlysnore_alarm_3_week": {
+        "name": "BED alarm 3 week mask"
+      },
+      "onlysnore_alarm_3_action": {
+        "name": "BED alarm 3 action code"
+      },
       "smart_sleep_model": {
         "name": "App model ID"
       },
@@ -5274,6 +5394,24 @@
       },
       "rmcontrol_rgb_motion": {
         "name": "RGB motion"
+      },
+      "onlysnore_alarm_1_enabled": {
+        "name": "BED alarm 1 enabled"
+      },
+      "onlysnore_alarm_1_soft": {
+        "name": "BED alarm 1 soft wake"
+      },
+      "onlysnore_alarm_2_enabled": {
+        "name": "BED alarm 2 enabled"
+      },
+      "onlysnore_alarm_2_soft": {
+        "name": "BED alarm 2 soft wake"
+      },
+      "onlysnore_alarm_3_enabled": {
+        "name": "BED alarm 3 enabled"
+      },
+      "onlysnore_alarm_3_soft": {
+        "name": "BED alarm 3 soft wake"
       },
       "ble_connection": {
         "name": "BLE Connection"
@@ -6630,6 +6768,29 @@
       },
       "smart_sleep_child_mode": {
         "name": "Child mode (Home Assistant)"
+      },
+      "onlysnore_privacy": {
+        "name": "BED privacy",
+        "state": {
+          "off": "Off",
+          "on": "On"
+        }
+      },
+      "onlysnore_detection": {
+        "name": "BED snore detection",
+        "state": {
+          "off": "Off",
+          "on": "On"
+        }
+      },
+      "onlysnore_intervention": {
+        "name": "BED anti-snore intervention",
+        "state": {
+          "1": "Level 1",
+          "3": "Level 3",
+          "6": "Level 6",
+          "off": "Off"
+        }
       },
       "smart_sleep_privacy": {
         "name": "Privacy"

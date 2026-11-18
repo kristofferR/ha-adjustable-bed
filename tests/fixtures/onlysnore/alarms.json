@@ -1,0 +1,860 @@
+[
+  {
+    "id": "A001_tuesday_not_passed_single_raw0",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-17T06:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 04 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 4,
+    "expected_model_week": 4,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_tuesday_not_passed_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-17T06:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 04 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 4,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_tuesday_not_passed_single_raw128",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-17T06:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 04 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 4,
+    "expected_model_week": 4,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_tuesday_not_passed_triple_raw128",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-17T06:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 04 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 4,
+    "expected_model_week": 128,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_tuesday_passed_single_raw0",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-17T12:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 08 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 8,
+    "expected_model_week": 8,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_tuesday_passed_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-17T12:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 08 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 8,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_tuesday_passed_single_raw128",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-17T12:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 08 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 8,
+    "expected_model_week": 8,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_tuesday_passed_triple_raw128",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-17T12:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 08 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 8,
+    "expected_model_week": 128,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_saturday_not_passed_single_raw0",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-21T06:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 40 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 64,
+    "expected_model_week": 64,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_saturday_not_passed_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-21T06:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 40 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 64,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_saturday_not_passed_single_raw128",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-21T06:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 40 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 64,
+    "expected_model_week": 64,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_saturday_not_passed_triple_raw128",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-21T06:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 40 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 64,
+    "expected_model_week": 128,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_saturday_passed_single_raw0",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-21T12:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 01 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 1,
+    "expected_model_week": 1,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_saturday_passed_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-21T12:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 01 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 1,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_saturday_passed_single_raw128",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-21T12:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 01 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 1,
+    "expected_model_week": 1,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_saturday_passed_triple_raw128",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-21T12:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 01 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 1,
+    "expected_model_week": 128,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_sunday_not_passed_single_raw0",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-22T06:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 01 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 1,
+    "expected_model_week": 1,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_sunday_not_passed_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-22T06:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 80 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 128,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_sunday_not_passed_single_raw128",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-22T06:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 01 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 1,
+    "expected_model_week": 1,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_sunday_not_passed_triple_raw128",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-22T06:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 80 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 128,
+    "expected_model_week": 128,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_sunday_passed_single_raw0",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-22T12:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 02 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 2,
+    "expected_model_week": 2,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_sunday_passed_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-22T12:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 00 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 256,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_sunday_passed_single_raw128",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-22T12:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 02 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 2,
+    "expected_model_week": 2,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_sunday_passed_triple_raw128",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-22T12:00:00",
+      "model": {
+        "week": 128,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 00 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 256,
+    "expected_model_week": 128,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_same_minute_seconds_single_raw0",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-17T07:30:45",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 04 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 4,
+    "expected_model_week": 4,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_same_minute_seconds_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-17T07:30:45",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 08 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 8,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_same_minute_subseconds_single_raw0",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-17T07:30:45.000001",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 08 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 8,
+    "expected_model_week": 8,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_same_minute_subseconds_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-17T07:30:45.000001",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 08 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 8,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_exact_target_single_raw0",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-17T07:30:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 04 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 4,
+    "expected_model_week": 4,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_exact_target_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-17T07:30:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 04 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 4,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_repeating_mask_passthrough_single_raw65",
+    "protocol": "P1",
+    "action": "set single alarm",
+    "kind": "alarm_preprocessing",
+    "route": "single",
+    "inputs": {
+      "now_local": "2026-11-22T12:00:00",
+      "model": {
+        "week": 65,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 41 01 07 1e 00 01 01",
+    "expected_week_before_octet_mask": 65,
+    "expected_model_week": 65,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_repeating_mask_passthrough_triple_raw65",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-22T12:00:00",
+      "model": {
+        "week": 65,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 1,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 41 01 07 1e 00 01 00 00",
+    "expected_week_before_octet_mask": 65,
+    "expected_model_week": 65,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  },
+  {
+    "id": "A001_triple_close_still_preprocesses_triple_raw0",
+    "protocol": "P1",
+    "action": "set/close triple alarm slot",
+    "kind": "alarm_preprocessing",
+    "route": "triple",
+    "inputs": {
+      "now_local": "2026-11-17T12:00:00",
+      "model": {
+        "week": 0,
+        "hour": 7,
+        "minute": 30,
+        "type_index": 0,
+        "index": 0,
+        "open": 0,
+        "soft": 0
+      }
+    },
+    "expected_bytes": "07 05 08 01 07 1e 00 00 00 00",
+    "expected_week_before_octet_mask": 8,
+    "expected_model_week": 0,
+    "origin": "Synthetic explicit-clock boundary, derived from shipped ARM64, not hardware/app execution",
+    "evidence": [
+      "E17"
+    ]
+  }
+]

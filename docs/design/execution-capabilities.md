@@ -173,6 +173,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | `bedsense` | S latched | U | U | bedsense | one start write, pause frame on release; hold declared |
 | `motion_bed` | S latched | U | U | blackdianqi | no movement repeat; global STOP; not declared: its covers are not `timed_move` motors and it has no held controls, so no route a lease could renew |
 | **Distinct protocols** | | | | | |
+| `onlysnore` | S stream | U | U | row170 | BED movement/preset refresh every 150 ms, immutable zero/save release after 100 ms. One physical control stream, no composed axes or speed. |
 | `svane` (Svane Remote: `auto` P1 and `svane_remote_jmc` P2) | S stream | S | U | svane, svane-guide | P1 per-role release; P2 mask drops the released axis; global P2 STOP. The app selects P2 when the device name contains `JMC`; hold and concurrent declared on both routes, whose timed moves run on the merged stream |
 | `jensen` | S stream | U | U | jensen, jensen-disp | 300 ms refresh, then one stop frame; combined head and foot is one alternating control; hold declared |
 | `svane` (`jensen_linon`) | S stream | U | U | jensen, jensen-disp | 800 ms refresh; STOP to head then foot; combined motion alternates as one control; hold declared |
@@ -652,6 +653,7 @@ Report workspaces are machine-local under
 | sonicsleep | `com.richmat.sonicsleep` | 1.0.4 (10400) | COMPLETE, accepted | `com.richmat.sonicsleep-1.0.4-2026-11-12-queue001/report/` |
 | paramount | `com.paramount.bedcontrol` | 3.0.4 | COMPLETE | `com.paramount.bedcontrol-3.0.4-2026-11-09-queue002/report/` |
 | row094 | `com.bedding.monitor.sleep_monitor.release` | 2.4.9 (263) | COMPLETE, accepted | `com.bedding.monitor.sleep_monitor.release-2.4.9-2026-11-12-queue001/` |
+| row170 | `com.okin.sleepMonitor.onlySnore` | 2.3.8 (202) | COMPLETE, accepted with A001 correction | `com.okin.sleepMonitor.onlySnore-2.3.8-2026-11-17-queue001/` |
 | smart-comfort-synargy | `com.synargy.okin` | 1.1.0 (12) | COMPLETE, accepted | `com.synargy.okin-1.1.0-2026-11-09-queue002/` |
 | smart-comfort-synergy | `com.synergy.okin` | 2.2.0 (16) | COMPLETE, accepted | `com.synergy.okin-2.2.0-2026-11-09-queue002/` |
 | mlily159 | `com.richmat.mlily2` | 5.0.2 (50200) | COMPLETE, independent audit ACCEPT | `com.richmat.mlily2-5.0.2-2026-11-10-reconciliation002/report/` |

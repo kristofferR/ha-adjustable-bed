@@ -1,5 +1,17 @@
 # Actions and Automations
 
+## Snore Monitor BED alarm
+
+`adjustable_bed.onlysnore_set_alarm` configures a local Snore Monitor 2.3.8 BED
+alarm. Select `device_id`, optional paired `side`, `slot` (1 to 3), `enabled`,
+minute-precision `time`, exact `week_mask`, `action_index` (0 to 4), and
+triple-only `soft_wake`. The BED configuration must report three alarms before
+slots 2 or 3 or soft wake can be used. Disabled triple slots still use their
+complete supplied fields and the source preprocessing; single disable sends
+the single-alarm close command. Every selected physical BED is validated before
+the action executes. See [Snore Monitor BED](beds/onlysnore.md) for the exact
+single/triple one-time weekday differences and hardware limits.
+
 Use **Developer Tools → Actions → Adjustable Bed** to inspect the fields for an
 action. In YAML the action name is `adjustable_bed.<name>`. The examples below
 use `device_id` in `data`; replace each placeholder with the ID of your bed's

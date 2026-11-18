@@ -194,6 +194,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "bedgear": BedTraits(no_angle_feedback=True, connection_scoped_state=True),
     "paramount": BedTraits(position_feedback=True, connection_scoped_state=True, max_angles={"head": 75, "back": 75, "legs": 30, "feet": 30}),
     "smart_sleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "onlysnore": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "smart_comfort_synargy": _NO_ANGLES_SCOPED,
     "smart_comfort_synergy": _NO_ANGLES_SCOPED,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _NO_ANGLES),

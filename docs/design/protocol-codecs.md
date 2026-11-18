@@ -61,6 +61,20 @@ The standalone `svane` bed type builds its JMC400 route and both of its routes'
 lamp frames through `codec/jmc.py`, from the Svane Remote profile; its default
 route writes LinonPI frames, so its controller is not a profile over the codec.
 
+## Snore Monitor BED records
+
+Snore Monitor 2.3.8's accepted row170 literals require `codec/onlysnore.py`.
+Its control declares five while carrying six payload bytes, including a distinct
+save/release flag; triple alarms likewise keep a declared length that differs
+from their payload size. Neither the existing N-frame carrier nor Smart Sleep
+codec reproduces its complete control, intervention, alarm and receive formats.
+The minimal codec reuses N-frame's parameter-record encoder without introducing
+a new carrier or changing existing scenarios. `profiles/onlysnore.py` owns this
+app's command catalog and timing, while its controller owns the BED session and
+distinct single/triple alarm behavior. The frozen proof and actual-path tests
+are app-specific; separate sleep sensing, network and audio remain excluded.
+See the [Snore Monitor BED guide](../beds/onlysnore.md).
+
 ## Smart Comfort seat codec
 
 The accepted cluster-024 SYNARGY and SYNERGY literals are reproduced by

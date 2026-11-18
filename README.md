@@ -125,6 +125,7 @@ Each linked guide has a Status line with the details.
 | [LOGICDATA](docs/beds/logicdata.md) | [SILVERmotion (Logicdata SimplicityFrame)](docs/beds/logicdata.md) 🧪, [MOTIONrelax phone and tablet](docs/beds/jiecang.md#motionrelax-phone-and-tablet) 🧪, [Sleep Smart Air Mattress](docs/beds/jiecang.md#sleep-smart-air-mattress-bed) 🧪, [Sleep Smart air mattress pump](docs/beds/logicdata-sleep-smart.md) 🧪 | LOGICDATA, SILVERmotion, SimplicityFrame, Sleep Smart Vienna / Toronto / Middle Rail |
 | [Malouf / Lucid](docs/beds/malouf.md) | [Malouf Base](docs/beds/malouf.md#malouf-base) 🧪, [Lucid Base](docs/beds/malouf.md#lucid-base) 🧪, [Nordic UART receiver](docs/beds/malouf.md#new_okin) ✅, [FFE5 receiver](docs/beds/malouf.md#legacy-ffe5-route) ✅ | Malouf, Lucid, Structures |
 | [OKIN Smart Sleep](docs/beds/smart-sleep.md) | OKIN Smart Sleep 2.4.9, P1 and P2 🧪 | App-selected models, hardware unverified |
+| [Snore Monitor](docs/beds/onlysnore.md) | Snore Monitor 2.3.8 🧪 | Direct BED controls, hardware unverified |
 | [Smart Comfort seats](docs/beds/smart-comfort.md) | [Smart Comfort by SYNARGY](docs/beds/smart-comfort.md#synargy) 🧪, [Smart Comfort (SYNERGY)](docs/beds/smart-comfort.md#synergy) 🧪 | SYNARGY, Smart Comfort reclining seats |
 | [Bedgear](docs/beds/motomotion.md#bedgear) | [Bedgear app](docs/beds/motomotion.md#bedgear) 🧪 | Name-selected BED layouts |
 | [MotoMotion](docs/beds/motomotion.md) | [MotoMotion app](docs/beds/motomotion.md) 🧪 | MotoMotion |

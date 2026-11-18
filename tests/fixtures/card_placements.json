@@ -4808,5 +4808,153 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "binary_sensor:onlysnore_alarm_1_enabled": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:onlysnore_alarm_1_soft": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:onlysnore_alarm_2_enabled": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:onlysnore_alarm_2_soft": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:onlysnore_alarm_3_enabled": {
+    "card_section": "hidden"
+  },
+  "binary_sensor:onlysnore_alarm_3_soft": {
+    "card_section": "hidden"
+  },
+  "button:onlysnore_anti_snore_preset": {
+    "card_section": "presets"
+  },
+  "button:onlysnore_demo_1": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_demo_3": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_demo_6": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_flat": {
+    "card_section": "presets"
+  },
+  "button:onlysnore_management": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_massage_all": {
+    "card_section": "massage"
+  },
+  "button:onlysnore_massage_foot_strength_next": {
+    "card_section": "massage"
+  },
+  "button:onlysnore_massage_head_strength_next": {
+    "card_section": "massage"
+  },
+  "button:onlysnore_massage_stop_all": {
+    "card_section": "massage"
+  },
+  "button:onlysnore_massage_timer_next": {
+    "card_section": "massage",
+    "card_role": "timer"
+  },
+  "button:onlysnore_massage_wave_next": {
+    "card_section": "massage"
+  },
+  "button:onlysnore_reading": {
+    "card_section": "presets"
+  },
+  "button:onlysnore_refresh": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_save_anti_snore_preset": {
+    "card_section": "presets"
+  },
+  "button:onlysnore_save_reading": {
+    "card_section": "presets"
+  },
+  "button:onlysnore_save_tv": {
+    "card_section": "presets"
+  },
+  "button:onlysnore_save_zero_gravity": {
+    "card_section": "presets"
+  },
+  "button:onlysnore_stop_intervention": {
+    "card_section": "utility"
+  },
+  "button:onlysnore_tv": {
+    "card_section": "presets"
+  },
+  "button:onlysnore_zero_gravity": {
+    "card_section": "presets"
+  },
+  "select:onlysnore_detection": {
+    "card_section": "utility"
+  },
+  "select:onlysnore_intervention": {
+    "card_section": "utility"
+  },
+  "select:onlysnore_privacy": {
+    "card_section": "utility"
+  },
+  "sensor:onlysnore_alarm_1_action": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_1_time": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_1_week": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_2_action": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_2_time": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_2_week": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_3_action": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_3_time": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_3_week": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_alarm_count": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_firmware": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_hardware": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_level": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_massage_foot_index": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_massage_head_index": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_massage_pattern_index": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_massage_shared_index": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_massage_timer_index": {
+    "card_section": "hidden"
+  },
+  "sensor:onlysnore_model": {
+    "card_section": "hidden"
   }
 }

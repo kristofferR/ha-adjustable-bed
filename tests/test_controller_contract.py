@@ -233,6 +233,8 @@ async def _create_controller_for_bed_type(
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "H"
     if bed_type == "smart_sleep":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "0"
+    if bed_type == "onlysnore":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unKnow"
 
     if bed_type == "mline":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"

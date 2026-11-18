@@ -68,6 +68,26 @@ test("OKIN Motion Bed keeps neutral middle holds and raw light actions reachable
   expect(bed.lights.buttons).toEqual(["button.light_0", "button.light_1"]);
 });
 
+test("Snore Monitor keeps presets, massage cycles and BED settings reachable", () => {
+  const hass = hassWith([
+    entry("cover.snore_back", "smart_sleep_head"),
+    entry("button.snore_reading", "onlysnore_reading"),
+    entry("button.snore_save", "onlysnore_save_reading"),
+    entry("button.snore_wave", "onlysnore_massage_wave_next"),
+    entry("button.snore_timer", "onlysnore_massage_timer_next"),
+    entry("select.snore_intervention", "onlysnore_intervention"),
+    entry("button.snore_memory", "preset_memory_1"),
+    entry("button.snore_program", "program_memory_1"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors).toHaveLength(1);
+  expect(bed.presets).toContain("button.snore_reading");
+  expect(bed.presets).toContain("button.snore_save");
+  expect(bed.memory).toEqual([{ slot: 1, goto: "button.snore_memory", save: "button.snore_program" }]);
+  expect(bed.massage.buttons).toContain("button.snore_wave");
+  expect(bed.utilitySelects).toContain("select.snore_intervention");
+});
+
 test("GM product controls and raw session state stay with their physical device", () => {
   const hass = hassWith([
     entry("button.gm_head", "remote_action", "bed"),

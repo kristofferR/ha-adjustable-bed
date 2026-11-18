@@ -353,6 +353,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_RIZE_HOME: _BuilderSpec("rize_home.controller"),
     "smart_sleep": _BuilderSpec("smart_sleep.controller"),
+    "onlysnore": _BuilderSpec("onlysnore.controller"),
     BED_TYPE_COMFORT_ENHANCEMENT3: _BuilderSpec("comfort_enhancement3.controller"),
     BED_TYPE_N32_MOTION_BED: _BuilderSpec("n32_motion_bed.controller"),
     "paramount": _BuilderSpec("paramount.controller"),

@@ -149,6 +149,7 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
+    "onlysnore": SideProfile("Snore Monitor 2.3.8"),
     "smart_sleep": SideProfile("OKIN Smart Sleep", variant_owned=True),
     "bedtech": SideProfile("BedTech model", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     "gmmotor": SideProfile("GM Control product", frozenset({CONF_BLE_DEVICE_NAME})),
