@@ -345,8 +345,6 @@ async def test_massage_switch_shows_the_last_sent_command(runtime):
 async def test_massage_switch_keeps_its_state_when_nothing_was_sent(runtime):
     from bleak.exc import BleakError
 
-    from custom_components.adjustable_bed.command_scheduler import current_command_context
-
     hass, coord, client = runtime
     switch = await _massage_switch(hass, coord)
     try:
@@ -360,14 +358,14 @@ async def test_massage_switch_keeps_its_state_when_nothing_was_sent(runtime):
         assert switch.is_on is True
         client.write_gatt_char.side_effect = None
 
-        # STOP before the frame goes out: the writer returns quietly, nothing is recorded.
-        async def cancelled(*_args):
-            context = current_command_context()
-            assert context is not None
-            context.cancel_event.set()
-
-        with patch.object(type(coord.controller), "massage_off", cancelled), virtual_clock():
-            await switch.async_turn_off()
+        # STOP during the real Off command's pre-write wait: no frame, no new state.
+        client.write_gatt_char.reset_mock()
+        turning_off = asyncio.create_task(switch.async_turn_off())
+        for _ in range(5):
+            await asyncio.sleep(0)
+        await coord.async_stop_command()
+        await asyncio.gather(turning_off, return_exceptions=True)
+        assert "e5fe1610000010e6" not in _written(client)
         assert switch.is_on is True
     finally:
         await switch.async_will_remove_from_hass()
