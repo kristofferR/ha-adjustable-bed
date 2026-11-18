@@ -50,9 +50,10 @@ not both.
 
 ## After you upgrade, check these
 
-1. **Alarm automations.** Every bed alarm now uses one action,
+1. **Alarm automations.** The bed alarm actions of 4.x are now one action,
    [`adjustable_bed.set_alarm`](SERVICES.md#set_alarm). See [Actions](#actions)
-   for the old names and fields.
+   for the old names and fields. A few beds keep their alarm in their own
+   action; the [`set_alarm` table](SERVICES.md#set_alarm) lists them.
 2. **Renamed or removed actions.** `linak_rename`, `logicdata_rename`,
    `jiecang_rename`, `leggett_hold_control`, `malouf_sync_clock` and
    `reverie_test` are gone. See [Actions](#actions).
@@ -117,6 +118,13 @@ actions:
 - Countdown alarms (Leggett & Platt, Linak, Richmat app, RMControl single
   alarms) take a clock `time`, and Home Assistant counts down to it.
   `minutes` and `seconds` are gone.
+- Motion Bed: `hour` and `minute` become one `time`. The numeric `sound` and
+  the `audio` switch become a named `sound`: `none`, `alarm`, or `music_1` to
+  `music_5` on beds with audio.
+- Keeson app layouts (`configure_alarm_schedule`): one `set_alarm` call sets
+  one alarm. With `weekdays` it writes the weekly alarm, without them the
+  one-time alarm. A call that wrote both tables becomes two calls; `weekly`,
+  `one_time` and `dispatch` are gone.
 - Turning an alarm off is `enabled: false`. On an RMControl repeating alarm it
   deletes the alarm; on the Keeson app layouts it clears both alarm tables.
 - No longer offered: Linak snooze repeats (`recurrence_count`,
@@ -148,16 +156,17 @@ records what it changed in diagnostics, under `profile_migration`.
 
 | 4.x setting | v5 |
 |-------------|----|
-| **Position update mode** (`position_mode`) | Removed. Every bed reads its position in the background after a command, as the default "Speed" did |
+| **Position update mode** (`position_mode`) | Removed. Every bed reads its position after a command, as the default "Speed" did: in the background while it keeps the link, and before releasing the link with **Release right after each command**. No read is made when **Read bed position** is off or another command is waiting |
 | **Connection profile** (`connection_profile`) | Removed. Every bed uses the former "Reliable" timing: a 25 s connect timeout, 3 and 6 s backoff and a 1 s pause after connecting |
 | **Disconnect after each command** and **Idle disconnect timeout** (including its `0`, "keep connected") | One **Bluetooth connection** setting: **Release right after each command** (was Disconnect after each command on), **Stay connected for a while** with **Seconds to stay connected** (was off, with its timeout), or **Always stay connected** (was a timeout of `0` with Disconnect after each command off). Hidden for beds that always keep their link |
 | LP Comfort Connect (Leggett & Platt Gen2, and Leggett & Platt on Automatic) kept its link permanently | Follows **Bluetooth connection** and stays connected for a while by default. If a reconnect stalls, it keeps the link until you disconnect it or Home Assistant restarts. Choose **Always stay connected** for the old behavior |
 | **Disable angle sensing** | **Read bed position**, on by default and shown only for beds that report a position. A saved choice equal to the bed's default is dropped, so the bed's default applies |
-| **Motor pulse count** and **Motor pulse delay (ms)** | **Movement per tap** (the pulse count, 1 to 100). The delay is no longer shown; each bed uses its own, and a saved delay still applies |
+| **Motor pulse count** and **Motor pulse delay (ms)** | **Movement per tap** (the pulse count, usually 1 to 100; a few beds allow more). The delay is no longer shown; each bed uses its own, and a saved delay still applies |
 | **Stop discovering new Bluetooth devices**, in each bed's Configure | **Add Integration > Adjustable Bed > Find new beds automatically** |
 | **Bed type** and **Protocol variant** in Configure | **Reconfigure**, for every bed. The protocol variant is now called **Bed model or remote** |
 | **Has massage feature**, maximum angles and a motor count with one choice, shown for beds that ignore them | Hidden |
 | A bed added through **Pick any Bluetooth device** saved the scanner that found it as its adapter | Saves **Automatic**, like a discovered bed |
+| A combined bed's saved pair connection mode (`pair_connection_mode`) | Removed. Combined beds start with both links and switch between the two beds one at a time only when the adapter cannot hold both |
 
 Three layouts with no massage showed massage buttons in 4.x when Massage was
 on. Pressing one raised an error, except FurniMove's **Massage: Off**, which
@@ -271,9 +280,10 @@ on every entity that tells the dashboard card where it belongs.
   next time you edit the card, if every side keeps the same actions.
 - Preset save buttons are never offered as quick actions, and they ask for
   confirmation in the card.
-- New options, all off by default: **Tap to start and stop movement**
-  (`tap_to_move`), percentage and lumbar graphics, graphic labels, and opening
-  the full card in a dialog from a compact card. See the
+- New options, off by default: **Tap to start and stop movement**
+  (`tap_to_move`), percentage and lumbar graphics, and opening the full card
+  in a dialog from a compact card. Labels under the bed graphic
+  (`show_graphic_labels`) are new too and on by default. See the
   [Dashboard Card guide](DASHBOARD_CARD.md).
 - The card names entities the way Home Assistant 2026.11 does, so a renamed
   device updates its labels.

@@ -275,7 +275,7 @@ feedback or change which commands a bed supports.
 | **Refresh positions while idle** | On/Off, Linak only | On | Periodically reconcile positions when idle polling is allowed |
 | **Bluetooth connection** | Release right after each command / Stay connected for a while / Always stay connected | Bed-specific | How long the link stays open after a command |
 | **Seconds to stay connected** | 1-300 | 40 | Shown for "Stay connected for a while" |
-| **Movement per tap** | 1-100 | Bed-specific | How many times a tap repeats its command |
+| **Movement per tap** | Usually 1-100; a few beds allow more | Bed-specific | How many times a tap repeats its command |
 | **Maximum back angle (degrees)** | Greater than 0, up to 180° | 68° | Back/head range for controllers reporting angles |
 | **Maximum legs angle (degrees)** | Greater than 0, up to 180° | 45° | Legs/feet range for controllers reporting angles |
 
@@ -298,8 +298,9 @@ receivers and Sleep Number MCR).
   stores nothing.
 - Releasing the BLE link is separate: use **Bluetooth connection** or the
   Disconnect button to let a remote or app reconnect.
-- After a command, the position is read in the background so the next command
-  is not delayed. An accepted target is never treated as a measured position;
+- After a command, the position is read in the background while the link stays
+  open, or before the link is released with **Release right after each
+  command**. No read is made when another command is waiting. An accepted target is never treated as a measured position;
   missing or stale feedback can prevent a seek, see
   [position troubleshooting](TROUBLESHOOTING.md#position-commands-and-reported-state).
 
@@ -363,7 +364,7 @@ from that list still works either way.
 ## Movement per tap
 
 A tap on a movement control repeats its command a number of times, a fixed
-interval apart. **Movement per tap** (1-100) sets the number of repeats; the
+interval apart. **Movement per tap** (usually 1-100) sets the number of repeats; the
 interval is each bed's own and is not a setting.
 
 ### Default Values by Bed Type

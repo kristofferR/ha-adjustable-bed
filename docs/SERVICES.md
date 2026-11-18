@@ -389,8 +389,8 @@ data:
 ### `sync_clock`
 
 
-Set each targeted controller's clock to Home Assistant's local time. Supported
-by the [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family) app profile on its OKIN
+Set each targeted controller's clock to Home Assistant's local time. Supported,
+for example, by [RMControl](beds/richmat.md#rmcontrol) products with a clock, the [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family) app profile on its OKIN
 transports, [Glideaway Motion / Montion](beds/keeson.md#alarm-and-clock), [SIMMONS](beds/okin-nframe.md#alarms-and-clock), and
 [Customatic Z-Series](beds/okin-nframe.md#customatic-z-series) controllers whose
 manufacturer string enables the alarm page (see
@@ -438,7 +438,7 @@ data:
 | Glideaway Motion | `none`, `memory_1`, `memory_2` | Once |
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
-| L2 Motion | None | Once, `slot` 1, `massage_intensity` 1 or 2 |
+| L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
@@ -454,7 +454,7 @@ data:
 | OrmatekTechnoSmart | New: `massage`, `memory_1`, `flat`. Lite: `zero_g`, `tv` | Daily, one alarm |
 | Richmat app beds | From the model's alarm page | Once (the bed counts down), `slot` 1–3 on three-alarm models, `massage` with zone. `mattress_side` sets the vibrating mattress alarm, once or every day, with intensity 1–3 |
 | Richmat app calendar models | From the model's alarm list | `slot` 1–7, `weekdays`; `mattress_side` for the vibrating mattress |
-| RMControl | From the product's alarm list | Repeating products: `slot` 1–7 with `weekdays`. Others: once, as a countdown |
+| RMControl | From the product's alarm list; required to turn an alarm on | Repeating products: `slot` 1–7 with at least one weekday. Others: once, as a countdown |
 | SIMMONS | `custom_position`, `flat`, `anti_snore` (regular bed) | `slot` 1–2, `weekdays`, `confirm_custom_position`. Both alarms are read from the bed first |
 | Solace | `none`, `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` |
 | Sophie (Solace) | `none`, `zero_g`, `memory_1`; side models `none`, `zero_g_left`, `zero_g_right`, `zero_g` | `weekdays`, `massage` (not QMS2), `sound: alarm` rings. Once the bed reports alarm support |
@@ -464,7 +464,7 @@ data:
 | Ultramatic (ORE) | `none`, `massage`, `memory_1`, `memory_2` on the older bed route; `tv`, `massage`, `zero_g` on the newer | `weekdays` or once. Turning it on needs a `wake_action`; connect once first so the route is known |
 | Ultramatic Smart Bed | `massage`, `zero_g`, `memory_1` (required to turn on) | `weekdays` or once. Left, Right and Both set the A, B and AB alarms; a standalone bed uses its configured side. Turning off without a time keeps the reported alarm's other fields; refresh the alarm first |
 | Yamada | By app version | `slot` 1–2, `weekdays`. Refresh the bed's alarms first |
-| Galaxy Bed Control, Good Vibe Sleep, HJBed, Luuna, MLILY, MLILY Remote, Okimiki, Snore Monitor, SonicSleep | Use the bed's own action | See [Galaxy](#galaxy), [Good Vibe Sleep](#good-vibe-sleep), [HJBed](#hjbed), [Luuna](#luuna), [MLILY](#mlily), [MLILY Remote](#mlily-remote), [Okimiki](#okimiki), [`onlysnore_set_alarm`](#onlysnore_set_alarm) and [SonicSleep](#sonicsleep) |
+| Casper Base, Galaxy Bed Control, GM Control, Good Vibe Sleep, HJBed, Hush Base, Luuna, Luuna Rise and Power Cool, MLILY, MLILY Remote, OKIN SleepEase, Okimiki, Power Bob Base, Snore Monitor, SonicSleep | Use the bed's own action | See [Casper Base](#casper_base), [Galaxy](#galaxy), [GM Control](#gmmotor), [Good Vibe Sleep](#good-vibe-sleep), [HJBed](#hjbed), [Hush Base](#hush_base), [Luuna](#luuna), [Luuna Rise and Power Cool](#richmat_rise), [MLILY](#mlily), [MLILY Remote](#mlily-remote), [OKIN SleepEase](#doublesleep_configure), [Okimiki](#okimiki), [Power Bob Base](#bobpowerbase), [`onlysnore_set_alarm`](#onlysnore_set_alarm) and [SonicSleep](#sonicsleep) |
 
 ### Estimated positions
 

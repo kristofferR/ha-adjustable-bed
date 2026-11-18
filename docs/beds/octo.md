@@ -737,10 +737,10 @@ device.
   same side (Ref #612). Existing automatic pairs adopt the corrected policy on
   reload.
 - Automatic mode falls back to sequential switching if the adapter reports that
-  the second link exhausted its connection slots, and **explicit sequential
-  mode** still visits the two sides in turn. This changes integration
-  scheduling, not controller commands, authentication, or timing.
-- When explicitly configured for sequential switching, the paired coordinator
+  the second link exhausted its connection slots. There is no setting to choose
+  sequential switching. This changes integration scheduling, not controller
+  commands, authentication, or timing.
+- While switching sequentially, the paired coordinator
   follows the stricter control-screen contract: a disconnect error that still
   reports an active physical link is retained and reported, and sequential
   switching stops before connecting the other address.

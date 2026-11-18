@@ -3065,7 +3065,7 @@ products, shared builders and auxiliary shards are listed in
 
 #### Setup
 
-Search for **Lunio Smart+** under Richmat in new setup or Configure. The layout always has head and foot controls and one
+Search for **Lunio Smart+** under Richmat in new setup, or in Reconfigure for an existing bed. The layout always has head and foot controls and one
 memory slot. The catalog supplies discovery aliases, not physical compatibility
 or model capabilities. Names match case-sensitive substrings. HA's indexed scan
 gate recognizes prefixes; manual setup also covers names with a keyword in the
@@ -3206,7 +3206,7 @@ Choose **SonicSleep / 소닉슬립 app**. There are no further questions: the
 product is fixed with two motors, and **Read bed position** is off. On a bed
 with two receivers, each side keeps its own settings.
 
-Search for **SonicSleep** in manual setup or Configure, under Richmat. Setup
+Search for **SonicSleep** in manual setup, or in Reconfigure for an existing bed, under Richmat. Setup
 stores the fixed `one` / IQRM product and two physical motors. Head, foot and
 combined controls are selections of those motors. Names and shared services
 never select another product, remote code or downloaded catalog. Each physical
@@ -8644,7 +8644,7 @@ Based on Luuna Rise 1.0.13 (`com.richmat.luunarise2`) and Power Cool Sleep Syste
 #### Setup
 
 Choose **Richmat**, then the exact app and its four-character layout. All four
-app names are searchable in setup and Configure. A shared Bluetooth name or
+app names are searchable in setup and Reconfigure. A shared Bluetooth name or
 service suggests the family, and does not choose an app or physical layout.
 Each receiver in a two-address pair keeps its own app, layout and saved choices.
 There is no single-address Left/Right selector for these apps.
