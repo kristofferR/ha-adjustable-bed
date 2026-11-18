@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from contextlib import ExitStack
 from datetime import datetime
+from functools import partial
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -291,10 +292,15 @@ async def test_every_massage_button_writes_once_then_three_queries(runtime, acti
             at.append(round(clock.elapsed * 1000))
 
         client.write_gatt_char.side_effect = record
-        spec = next(
-            s for s in coord.controller.controller_button_specs if s.key == f"ultramatic_{action}"
-        )
-        await coord.async_execute_controller_command(spec.press_fn, resource="*")
+        if action == "massageOnOff":  # Sent by the generic massage toggle button.
+            press_fn = type(coord.controller).massage_toggle
+        else:
+            press_fn = next(
+                s
+                for s in coord.controller.controller_button_specs
+                if s.key == f"ultramatic_{action}"
+            ).press_fn
+        await coord.async_execute_controller_command(press_fn, resource="*")
     assert writes(client) == [app.control(action)] + [app.QUERY_MASSAGE] * 3
     assert at == [0, 300, 600, 900]
 
@@ -303,13 +309,17 @@ async def test_every_massage_button_writes_once_then_three_queries(runtime, acti
 async def test_save_buttons_use_same_recall_frame_and_six_second_deadline(runtime, preset):
     _, coord, client = runtime
     with virtual_clock():
-        spec = next(
-            s
-            for s in coord.controller.controller_button_specs
-            if s.key == f"ultramatic_save_{preset.lower()}"
-        )
-        assert spec.requires_confirmation
-        await coord.async_execute_controller_command(spec.press_fn, resource="*")
+        if preset in ("M1", "M2"):  # Saved by the generic "Save to Memory" buttons.
+            press_fn = partial(type(coord.controller).program_memory, memory_num=int(preset[1]))
+        else:
+            spec = next(
+                s
+                for s in coord.controller.controller_button_specs
+                if s.key == f"ultramatic_save_{preset.lower()}"
+            )
+            assert spec.requires_confirmation
+            press_fn = spec.press_fn
+        await coord.async_execute_controller_command(press_fn, resource="*")
     assert writes(client) == [app.control(preset)] * 20 + [app.control("STOP")]
 
 

@@ -4877,9 +4877,6 @@
     "card_role": "up",
     "card_motor": "ultramatic_lumbar"
   },
-  "button:ultramatic_massageonoff": {
-    "card_section": "massage"
-  },
   "button:ultramatic_query_alarm": {
     "card_section": "utility"
   },
@@ -4893,12 +4890,6 @@
     "card_section": "presets"
   },
   "button:ultramatic_save_anti": {
-    "card_section": "presets"
-  },
-  "button:ultramatic_save_m1": {
-    "card_section": "presets"
-  },
-  "button:ultramatic_save_m2": {
     "card_section": "presets"
   },
   "button:ultramatic_save_zg": {

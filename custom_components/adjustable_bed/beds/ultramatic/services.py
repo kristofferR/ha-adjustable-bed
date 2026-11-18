@@ -30,6 +30,8 @@ from ...services import (
 from .state import AlarmSettings
 
 if TYPE_CHECKING:
+    from ...paired_coordinator import BedChild
+    from ...services import BedTarget
     from .controller import AlarmPlan, Link, UltramaticController
 
 
@@ -57,6 +59,14 @@ def _integer(value: object) -> int:
     return value
 
 
+def _alarm_targets(parent: BedTarget, side: str) -> list[BedChild]:
+    """Validate logical owners and the topology's effective dispatch scopes."""
+    children = _command_targets(parent, side)
+    if isinstance(parent, PairedBedCoordinator):
+        children.extend(child for _, child in parent._targets_for(side))
+    return list({id(child): child for child in children}.values())
+
+
 async def handle_alarm(call: ServiceCall) -> None:
     # Every target and generation is captured before the first await. Registration
     # loads only this light action module; target controllers already exist.
@@ -69,12 +79,12 @@ async def handle_alarm(call: ServiceCall) -> None:
     ]
     # Native Both executes once on a combined view, while admission must still
     # validate both logical children. Keep identities: the side views compare equal.
-    combined = [
-        child
-        for child in {id(child): child for group in dispatches for _, child in group}.values()
-        if not any(child is logical for logical in physical)
-    ]
-    runtimes = [*physical, *combined]
+    runtimes = list(
+        {
+            id(child): child for parent, side in targets for child in _alarm_targets(parent, side)
+        }.values()
+    )
+    combined = [child for child in runtimes if not any(child is logical for logical in physical)]
     if not physical or any(
         child.bed_type != BED_TYPE_ULTRAMATIC_SMART_BED or child.capability_controller is None
         for child in runtimes
@@ -98,7 +108,7 @@ async def handle_alarm(call: ServiceCall) -> None:
         for parent, side in targets
         if isinstance(parent, PairedBedCoordinator)
         and parent.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
-        for child in _command_targets(parent, side)
+        for child in _alarm_targets(parent, side)
     }
     for child in runtimes:
         controller = child.capability_controller

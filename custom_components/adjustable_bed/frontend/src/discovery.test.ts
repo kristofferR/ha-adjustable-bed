@@ -41,13 +41,14 @@ test("Ultramatic SmartBed publishes five neutral motors and its app controls", (
   const hass = hassWith([
     ...motors.map((motor) => entry(`cover.${motor}`, `ultramatic_${motor}`)),
     entry("button.light", "ultramatic_light"),
-    entry("button.massage", "ultramatic_massageonoff"),
+    entry("button.massage", "massage_all_toggle"),
     entry("button.timer", "ultramatic_timerswitch"),
     entry("button.save", "ultramatic_save_zg"),
     entry("button.reset", "ultramatic_reset_memory"),
     entry("button.clock", "ultramatic_clock"),
     entry("button.query", "ultramatic_query_alarm"),
-    entry("button.release", "ultramatic_release"),
+    // Release plumbing is hidden by default; held controls still find it.
+    { ...entry("button.release", "ultramatic_release"), hidden: true },
     entry("sensor.alarm", "ultramatic_ab_alarm"),
     entry("sensor.timer", "ultramatic_ab_timer"),
   ]);

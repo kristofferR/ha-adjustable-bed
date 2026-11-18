@@ -1334,6 +1334,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(spec.key)
         self._attr_icon = spec.icon
+        if spec.diagnostic:
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+            self._attr_entity_registry_enabled_default = False
         # Home Assistant prefers any _attr_name, even None, over the translation,
         # so only set it when the name is not translated.
         if spec.translation_key is None or spec.key.startswith(
@@ -1378,6 +1381,11 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         # Home Assistant also reads availability outside state writes.
         with self._side_scope():
             return super().available and controller.controller_button_available(self._spec.key)
+
+    @property
+    def entity_registry_visible_default(self) -> bool:
+        """Hide card release plumbing; the card finds it through the registry."""
+        return not self._spec.release_only
 
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""

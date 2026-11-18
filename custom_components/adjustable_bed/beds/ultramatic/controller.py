@@ -569,6 +569,9 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return ()
 
+    def standard_button_requires_confirmation(self, key: str) -> bool:
+        return key in ("program_memory_1", "program_memory_2")  # The 6 s save gesture.
+
     def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
         action = {
             "preset_flat": "FLAT",
@@ -601,7 +604,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
                     ("footStrengthReduce", "Decrease foot massage"),
                     ("waveAdd", "Increase massage wave"),
                     ("waveReduce", "Decrease massage wave"),
-                    ("massageOnOff", "Toggle massage"),
+                    # massageOnOff is the generic massage toggle (massage_toggle).
                 )
             ),
             ControllerButtonSpec(
@@ -612,21 +615,25 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
                 scheduler_resource="*",
                 card=CARD_LIGHTING,
             ),
+            # M1/M2 saves are the generic "Save to Memory" buttons (program_memory).
             *(
                 ControllerButtonSpec(
                     f"ultramatic_save_{preset.lower()}",
-                    f"Hold to save {preset}",
+                    label,
                     lambda c, p=preset: require_controller(c, UltramaticController).save_preset(p),
                     translation_key=f"ultramatic_save_{preset.lower()}",
                     scheduler_resource="*",
                     requires_confirmation=True,
                     card=CARD_PRESETS,
                 )
-                for preset in SAVE_PRESETS
+                for preset, label in (
+                    ("ZG", "Save zero gravity position"),
+                    ("ANTI", "Save anti-snore position"),
+                )
             ),
             ControllerButtonSpec(
                 "ultramatic_reset_memory",
-                "Hold FLAT + ZG",
+                "Reset saved positions",
                 lambda c: require_controller(c, UltramaticController).reset_memory(),
                 translation_key="ultramatic_reset_memory",
                 scheduler_resource="*",
@@ -640,6 +647,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
                     lambda c, k=kind: require_controller(c, UltramaticController).query(k),
                     translation_key=f"ultramatic_query_{kind}",
                     scheduler_resource="*",
+                    diagnostic=True,
                     card=CARD_UTILITY,
                 )
                 for kind in ("massage", "alarm")

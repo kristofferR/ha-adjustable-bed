@@ -51,7 +51,6 @@ async def test_app_translation_slugs_and_stable_ids(
         "ultramatic_footStrengthReduce",
         "ultramatic_waveAdd",
         "ultramatic_waveReduce",
-        "ultramatic_massageOnOff",
     } <= {spec.key for spec in specs}
     for path in ("strings.json", "translations/en.json"):
         labels = json.loads((ROOT / "custom_components/adjustable_bed" / path).read_text())
