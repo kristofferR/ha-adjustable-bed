@@ -23,6 +23,12 @@ from tests.test_comfy import no_real_timers  # noqa: F401
 from tests.test_coordinator_sleepys_elite import _FakeGattClient, _ready_command_lane
 
 
+def select_side(controller, value: str) -> None:
+    """Change the stored local side record, as a restore from another controller does."""
+    controller._selected_side = {"left": 0, "both": 1, "right": 2}[value]
+    controller._save_local()
+
+
 @pytest.fixture
 async def feature_bed(hass, request):
     app = request.param
@@ -98,7 +104,7 @@ async def test_reconnect_hands_off_offline_countdown(feature_bed):
             assert co.controller_state[TIMER_REMAINING] > 0
 
         await controller.control("timer_stop")
-        await controller.select_side("right")
+        select_side(controller, "right")
         await light.async_turn_on()
         assert controller._countdown is None
         assert co.controller_state[TIMER_REMAINING] == 0
@@ -116,8 +122,7 @@ async def test_reconnect_hands_off_offline_countdown(feature_bed):
 @pytest.mark.parametrize("outcome", ("success", "failed", "cancelled"))
 async def test_pending_feature_keeps_admitted_lane(hass, feature_bed, action, blocked_at, outcome):
     co, c, client, selects, light = feature_bed
-    side = selects["comfy_selected_side"]
-    await side.async_select_option("left")
+    select_side(c, "left")
     c._led = [action == "light_off", action == "light_off", False]
     c._timer_minutes = [20, 40, 50]
     c._timer_started = [
@@ -184,8 +189,8 @@ async def test_pending_feature_keeps_admitted_lane(hass, feature_bed, action, bl
         operation = asyncio.create_task(invoke())
         try:
             await entered.wait()
-            await side.async_select_option("right")
-            assert not operation.done()  # The actual local entity bypasses BLE serialization.
+            select_side(c, "right")
+            assert not operation.done()
             selected_view = dict(co.controller_state)
             if blocked_at == "session":
                 c._session_lock.release()

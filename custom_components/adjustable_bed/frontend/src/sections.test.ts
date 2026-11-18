@@ -8,6 +8,7 @@ const emptyBed = (): BedEntities => ({
   motors: [],
   firmness: [],
   presets: [],
+  presetSaves: [],
   memory: [],
   presence: [],
   lights: {},
@@ -100,6 +101,7 @@ test("utility and motors count every row the card renders", () => {
     (b: BedEntities) => { b.utilityNumbers = ["number.bed_timer"]; },
     (b: BedEntities) => { b.utilitySelects = ["select.bed_mode"]; },
     (b: BedEntities) => { b.utilityStates = ["sensor.bed_status"]; },
+    (b: BedEntities) => { b.utilitySwitches = ["switch.bed_beep"]; },
   ]) {
     const bed = emptyBed();
     fill(bed);

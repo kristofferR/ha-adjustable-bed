@@ -231,6 +231,7 @@ class GmmotorController(BedController, GmmotorActions):
                     INVALID_NOTIFICATIONS,
                 ),
                 card=CARD_UTILITY,
+                entity_registry_enabled_default=False,
             ),
         )
 

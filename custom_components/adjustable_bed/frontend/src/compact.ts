@@ -66,13 +66,12 @@ export interface CompactAction {
   entityId: string;
 }
 
-// Recalls only: a button that overwrites a saved position is never a quick action.
+// Recalls only: preset saves (`presetSaves`) and memory saves are never quick actions.
 export function compactActionOptions(hass: HomeAssistant, bed: BedEntities): CompactAction[] {
   return [...bed.presets, ...bed.memory.flatMap((slot) => slot.goto ? [slot.goto] : [])]
     .flatMap((entityId) => {
       const key = hass.entities[entityId]?.translation_key;
-      const overwrites = hass.states[entityId]?.attributes.requires_confirmation === true;
-      return key && !overwrites ? [{ key, entityId }] : [];
+      return key ? [{ key, entityId }] : [];
     });
 }
 

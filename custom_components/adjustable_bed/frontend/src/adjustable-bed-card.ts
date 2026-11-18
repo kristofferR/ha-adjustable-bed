@@ -4,7 +4,7 @@
 // Assistant theme variables so it inherits the user's theme.
 import { defineElement } from "./registration";
 import { climateEntities, lightingPresent, massagePresent, motorHasControls, motorsPresent,
-  positionOnlyMotors, presentSections, utilityPresent } from "./sections";
+  positionOnlyMotors, presentSections, presetsPresent, utilityPresent } from "./sections";
 import {
   LitElement,
   type PropertyValues,
@@ -1041,6 +1041,29 @@ export class AdjustableBedCard extends LitElement {
         ? "combined.mixed"
         : "combined.off";
     const label = localize(this.hass, "combined.lights");
+    // A light the bed cannot confirm reads unknown as off, so a toggle could
+    // only ever send On: offer both commands instead.
+    const unconfirmed = lights.some((id) => {
+      const st = this._state(id);
+      return st?.attributes.assumed_state === true || (st?.state !== "on" && st?.state !== "off");
+    });
+    if (unconfirmed) {
+      const off = this._t("action.off");
+      const on = this._t("action.on");
+      return html`
+        ${this._heading("section.lighting")}
+        <div class="entity-row combined-entity-row" role="group" aria-label=${label}>
+          <ha-icon class="icon" icon="mdi:lightbulb-group-outline"></ha-icon>
+          <div class="entity-row-text">
+            <span>${label}</span>
+          </div>
+          <button class="dialog-btn" aria-label=${`${label}: ${off}`}
+            @click=${() => this._setEntities(lights, false)}>${off}</button>
+          <button class="dialog-btn" aria-label=${`${label}: ${on}`}
+            @click=${() => this._setEntities(lights, true)}>${on}</button>
+        </div>
+      `;
+    }
     return html`
       ${this._heading("section.lighting")}
       <div class="entity-row combined-entity-row">
@@ -1380,11 +1403,12 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _presets(bed: BedEntities): typeof nothing | TemplateResult {
-    if (bed.presets.length === 0) return nothing;
+    if (!presetsPresent(bed)) return nothing;
     return html`
       ${this._heading("section.presets")}
       <div class="tiles">
         ${bed.presets.map((id) => this._actionTile(id, bed.stop))}
+        ${bed.presetSaves.map((id) => this._actionTile(id))}
       </div>
     `;
   }
@@ -1394,14 +1418,9 @@ export class AdjustableBedCard extends LitElement {
     return html`
       ${this._heading("section.utility")}
       <div class="tiles">
-        ${bed.utility.map((id) =>
-          this._actionTile(id, bed.stop, () =>
-            id.startsWith("switch.")
-              ? this._call("switch", "toggle", id)
-              : this._press(id),
-          ),
-        )}
+        ${bed.utility.map((id) => this._actionTile(id, bed.stop))}
       </div>
+      ${bed.utilitySwitches?.map((id) => this._switchRow(id))}
       ${bed.utilitySelects?.map((id) => this._moreInfoRow(id))}
       ${bed.utilityNumbers?.map((id) => this._moreInfoRow(id))}
       ${bed.utilityStates?.map((id) => this._moreInfoRow(id))}
@@ -1518,7 +1537,8 @@ export class AdjustableBedCard extends LitElement {
     return html`
       ${this._heading("section.lighting")}
       ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
-      ${main ? this._toggleRow(main) : nothing}
+      ${main ? (main === l.switch ? this._switchRow(main) : this._toggleRow(main)) : nothing}
+      ${l.switches?.map((id) => this._switchRow(id))}
       ${l.state ? this._moreInfoRow(l.state) : nothing}
       ${l.states?.map((id) => this._moreInfoRow(id))}
       ${l.level ? this._moreInfoRow(l.level) : nothing}
@@ -1562,6 +1582,7 @@ export class AdjustableBedCard extends LitElement {
             </div>`
           : nothing
       }
+      ${m.switches?.map((id) => this._switchRow(id))}
       ${m.numbers.map((id) => this._moreInfoRow(id))}
       ${m.selects?.map((id) => this._moreInfoRow(id))}
       ${m.states?.map((id) => this._moreInfoRow(id))}
@@ -1631,7 +1652,7 @@ export class AdjustableBedCard extends LitElement {
     // control has its own role and name.
     return html`
       <div class="entity-row" @click=${() => this._moreInfo(entityId)}>
-        <button class="entity-row-main" @click=${(e: Event) => {
+        <button class="entity-row-details" @click=${(e: Event) => {
           e.stopPropagation();
           this._moreInfo(entityId);
         }}>
@@ -1653,6 +1674,32 @@ export class AdjustableBedCard extends LitElement {
         >
           <span class="knob"></span>
         </button>
+      </div>
+    `;
+  }
+
+  // A switch whose state the bed cannot confirm gets separate On and Off
+  // controls: a toggle would read unknown as off and only ever send On.
+  private _switchRow(entityId: string): TemplateResult {
+    const st = this._state(entityId);
+    if (st?.attributes.assumed_state !== true && (st?.state === "on" || st?.state === "off"))
+      return this._toggleRow(entityId);
+    const name = entityLabel(this.hass, entityId);
+    const off = this._t("action.off");
+    const on = this._t("action.on");
+    return html`
+      <div class="entity-row" role="group" aria-label=${name}>
+        <button class="entity-row-details" aria-label=${name} @click=${() => this._moreInfo(entityId)}>
+          ${this._icon(entityId)}
+          <span class="entity-row-text">
+            <span>${name}</span>
+            <span class="secondary">${this._stateText(entityId)}</span>
+          </span>
+        </button>
+        <button class="dialog-btn" aria-label=${`${name}: ${off}`}
+          @click=${() => this._call("switch", "turn_off", entityId)}>${off}</button>
+        <button class="dialog-btn" aria-label=${`${name}: ${on}`}
+          @click=${() => this._call("switch", "turn_on", entityId)}>${on}</button>
       </div>
     `;
   }
@@ -2159,7 +2206,7 @@ export class AdjustableBedCard extends LitElement {
       );
     }
     [bed.estimateRemote, bed.savedPositions].forEach((x) => x && ids.add(x));
-    bed.presets.forEach((x) => ids.add(x));
+    [...bed.presets, ...bed.presetSaves].forEach((x) => ids.add(x));
     for (const s of bed.memory) {
       [s.goto, s.save].forEach((x) => x && ids.add(x));
     }
@@ -2190,6 +2237,8 @@ export class AdjustableBedCard extends LitElement {
     bed.massage.numbers.forEach((x) => ids.add(x));
     bed.massage.selects?.forEach((x) => ids.add(x));
     bed.massage.states?.forEach((x) => ids.add(x));
+    bed.massage.switches?.forEach((x) => ids.add(x));
+    bed.lights.switches?.forEach((x) => ids.add(x));
     bed.lights.mood?.selects.forEach((x) => ids.add(x));
     bed.lights.mood?.numbers.forEach((x) => ids.add(x));
     bed.lights.mood?.buttons?.forEach((x) => ids.add(x));
@@ -2197,6 +2246,7 @@ export class AdjustableBedCard extends LitElement {
     bed.utilityNumbers?.forEach((x) => ids.add(x));
     bed.utilitySelects?.forEach((x) => ids.add(x));
     bed.utilityStates?.forEach((x) => ids.add(x));
+    bed.utilitySwitches?.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));
     bed.climate.selects.forEach((x) => ids.add(x));
     bed.climate.numbers.forEach((x) => ids.add(x));
@@ -3301,20 +3351,6 @@ export class AdjustableBedCard extends LitElement {
       cursor: pointer;
       margin-bottom: var(--ab-gap);
     }
-    .entity-row-main {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 1;
-      min-width: 0;
-      padding: 0;
-      border: 0;
-      background: none;
-      color: inherit;
-      font: inherit;
-      text-align: start;
-      cursor: pointer;
-    }
     .entity-row .icon {
       color: var(--state-icon-color, var(--primary-color));
       --mdc-icon-size: 24px;
@@ -3329,6 +3365,20 @@ export class AdjustableBedCard extends LitElement {
       display: flex;
       flex-direction: column;
       flex: 1;
+    }
+    .entity-row-details {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+      padding: 0;
+      border: none;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: start;
+      cursor: pointer;
     }
     .entity-row-text .secondary,
     .value {

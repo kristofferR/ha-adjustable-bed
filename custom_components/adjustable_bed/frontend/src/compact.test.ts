@@ -3,7 +3,7 @@ import { applyCompactPreset, cardNavigationPath, compactActionChoices, compactAc
   compactActionOptions, compactStopEntities, compactTargets, fullCardDialogConfig } from "./compact";
 import { bedEntitiesForDevice } from "./discovery";
 import type { HomeAssistant } from "./types";
-import { placed } from "./test-placements";
+import { placed, publish } from "./test-placements";
 
 function fixture(): HomeAssistant {
   const hass: HomeAssistant = placed({
@@ -130,7 +130,7 @@ test("presets sharing a translation key stay separate and follow their name to t
 test("buttons that overwrite a saved position are never quick actions", () => {
   const hass = fixture();
   hass.states["button.left_preset_tv"] = { entity_id: "button.left_preset_tv", state: "unknown",
-    attributes: { requires_confirmation: true }, last_changed: "", last_updated: "" };
+    attributes: { card_section: "presets", card_role: "save" }, last_changed: "", last_updated: "" };
   const left = bedEntitiesForDevice(hass, "left");
   expect(compactActionOptions(hass, left).some((a) => a.entityId === "button.left_preset_tv")).toBe(false);
 });
@@ -199,4 +199,17 @@ test("navigation stays on the current Home Assistant origin", () => {
   expect(cardNavigationPath("/dashboard/bed?view=compact#top")).toBe("/dashboard/bed?view=compact#top");
   for (const path of [undefined, "", "https://example.com", "//example.com", "/\\example.com", "/\n/example.com", "javascript:alert(1)"])
     expect(cardNavigationPath(path)).toBeUndefined();
+});
+
+test("a named preset save sits with the presets but is never a quick action", () => {
+  const hass = fixture();
+  const id = "button.left_save_zero_g";
+  hass.entities[id] = { entity_id: id, translation_key: "comfortbase_save_zero_g",
+    device_id: "left", platform: "adjustable_bed" };
+  publish(hass, id, { card_section: "presets", card_role: "save" });
+  const left = bedEntitiesForDevice(hass, "left");
+  expect(left.presetSaves).toEqual([id]);
+  expect(left.presets).not.toContain(id);
+  expect(compactActionOptions(hass, left).some((a) => a.entityId === id)).toBe(false);
+  expect(compactActions(hass, left).some((a) => a.entityId === id)).toBe(false);
 });

@@ -466,6 +466,7 @@ class GlideawayMotionController(ProfileExecution[keeson_profiles.KeesonProfile],
                 lambda c: cast(GlideawayMotionController, c).query_alarm(),
                 "mdi:alarm",
                 translation_key="glideaway_motion_query_alarm",
+                diagnostic=True,
             ),
         )
 
@@ -556,6 +557,7 @@ class GlideawayMotionController(ProfileExecution[keeson_profiles.KeesonProfile],
             STATE_ALARM,
             "mdi:alarm",
             attribute_keys=(STATE_ALARM_HOUR, STATE_ALARM_MINUTE, STATE_ALARM_WAKE),
+            entity_registry_enabled_default=True,
         )
         timer = ControllerStateSensorSpec(
             "glideaway_motion_massage_timer",
@@ -564,6 +566,7 @@ class GlideawayMotionController(ProfileExecution[keeson_profiles.KeesonProfile],
             "mdi:timer-outline",
             "min",
             attribute_keys=(STATE_TIMER_RAW,),
+            entity_registry_enabled_default=True,
             card=CARD_MASSAGE_TIMER,
         )
         return (alarm, timer) if self.supports_massage else (alarm,)

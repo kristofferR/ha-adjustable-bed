@@ -3179,10 +3179,12 @@ to every route.
 
 ##### Entities and diagnostics
 
-- The controller-specific entities include a 10/20/30 timer select, raw 1–6
-  light-level number where reachable, union and light-step buttons, named
-  save/reset actions, wake/query/read actions and selector/raw-state
-  diagnostics.
+- The controller-specific entities include a 10/20/30 timer select, 1–6
+  light-level number where reachable, union and light-step buttons, confirmed
+  save/reset actions, a diagnostic massage-state query, the massage wave and
+  head intensity sensors and a massage binary sensor. Selectors, firmware and
+  the raw app fields stay in diagnostics; each connection sends the wake frame
+  where the transport needs it and reads the firmware.
 - Their semantic keys use `starcode_abm5_4_*` for platform, translation and card
   discovery.
 - Custom controls stay owned by their physical child when using a two-address

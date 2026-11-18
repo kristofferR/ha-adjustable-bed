@@ -215,9 +215,7 @@ async def test_native_entities_expose_literals_raw_records_and_unknown_assumed_l
     assert {c.unique_id for c in covers} == {"bed_back_left", "bed_legs_left"}
     numbers = _number_entities_for(hass, runtime)
     # The established 0-100 light slider stays; levels snap to the app's steps.
-    intensity = next(
-        n for n in numbers if n.entity_description.key == "light_level"
-    )
+    intensity = next(n for n in numbers if n.entity_description.key == "light_level")
     assert (intensity.native_min_value, intensity.native_max_value) == (0, 100)
     assert not any("position" in n.unique_id for n in numbers)
     assert _light_entities_for(hass, runtime) == []
@@ -249,20 +247,20 @@ async def test_real_parser_coordinator_and_diagnostic_freshness_no_angle_inferen
     coordinator._client = controller.client
     controller._coordinator = coordinator
     sensors = {
-        s._spec.key: s
+        s._spec.key
         for s in _sensor_entities_for(hass, coordinator)
         if hasattr(s, "_spec") and s._spec.key.startswith("svane_")
     }
-    assert sensors["svane_head_raw"].native_value is None
+    # Opaque observations are published state for diagnostics, not entities.
+    assert sensors == {"svane_firmware", "svane_hardware", "svane_manufacturer"}
+    state = coordinator.controller_state
+    assert state.get("svane_head_raw") is None
     assert controller.accept_response(HEAD, POSITION, b"\x81\x38\xff")
-    assert sensors["svane_head_raw"].native_value == "8138ff"
-    assert sensors["svane_head_raw"].extra_state_attributes["svane_head_raw_observed_at"]
-    assert sensors["svane_head_raw"].extra_state_attributes["svane_head_raw_service"] == HEAD
-    assert (
-        sensors["svane_head_raw"].extra_state_attributes["svane_head_raw_target_address"]
-        == entry.data[CONF_ADDRESS]
-    )
-    assert sensors["svane_feet_raw"].native_value is None
+    assert state["svane_head_raw"] == "8138ff"
+    assert state["svane_head_raw_observed_at"]
+    assert state["svane_head_raw_service"] == HEAD
+    assert state["svane_head_raw_target_address"] == entry.data[CONF_ADDRESS]
+    assert state.get("svane_feet_raw") is None
     assert not coordinator.position_data
     assert not controller.position_number_specs
 

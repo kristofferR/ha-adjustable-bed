@@ -17,12 +17,15 @@ export const motorsPresent = (bed: BedEntities): boolean =>
 export const lightingPresent = (bed: BedEntities): boolean =>
   hasLightingControls(bed.lights) || !!bed.lights.state;
 
+export const presetsPresent = (bed: BedEntities): boolean =>
+  bed.presets.length + bed.presetSaves.length > 0;
+
 export const massagePresent = ({ massage: m }: BedEntities): boolean =>
   m.buttons.length > 0 || m.numbers.length > 0 || !!m.selects?.length ||
-  !!m.states?.length || !!m.timer;
+  !!m.switches?.length || !!m.states?.length || !!m.timer;
 
 export const utilityPresent = (bed: BedEntities): boolean =>
-  bed.utility.length > 0 || !!bed.utilityNumbers?.length ||
+  bed.utility.length > 0 || !!bed.utilitySwitches?.length || !!bed.utilityNumbers?.length ||
   !!bed.utilitySelects?.length || !!bed.utilityStates?.length;
 
 export const climateEntities = ({ climate: c }: BedEntities): string[] =>
@@ -37,7 +40,7 @@ export function presentSections(
     graphic: bedHasGraphicFeedback(bed, hass, config?.show_percentage_graphic === true),
     motors: motorsPresent(bed),
     firmness: bed.firmness.length > 0,
-    presets: bed.presets.length > 0,
+    presets: presetsPresent(bed),
     saved_positions: !!bed.savedPositions,
     memory: bed.memory.length > 0,
     lighting: lightingPresent(bed),
