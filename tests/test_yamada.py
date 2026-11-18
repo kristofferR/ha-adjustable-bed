@@ -415,15 +415,15 @@ async def test_real_setup_entities_alarm_service_and_card_hold(
         "slot": 1,
         "enabled": True,
         "time": "07:30",
-        "weekday": 129,
-        "preset": "memory_1",
+        "weekdays": ["sunday"],
+        "wake_action": "memory_1",
     }
     if version == "p1":
         with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(DOMAIN, "yamada_set_alarm", data, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         c._alarms[2] = app.Alarm(8, 45, 255, 28, True)
     with virtual_clock():
-        await hass.services.async_call(DOMAIN, "yamada_set_alarm", data, blocking=True)
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         mock_bleak_client.write_gatt_char.reset_mock()
         await hass.services.async_call(
             DOMAIN,

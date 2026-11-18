@@ -11,6 +11,7 @@ from bleak import BleakClient
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_UTILITY
 from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
@@ -84,6 +85,7 @@ class YamadaController(KeesonController):
         self._link: _Link | None = None
         self._notifying: list[BleakGATTCharacteristic] = []
         self._alarms: dict[int, app.Alarm] = {}
+        self._prepared_alarm: tuple[AlarmRequest, AlarmPlan] | None = None
         self._alarm_revision = 0
         self._p1_pending_fields: bytes | None = None
         self._cleanup: tuple[_Link, CommandContext] | None = None
@@ -502,6 +504,37 @@ class YamadaController(KeesonController):
 
     async def query_alarms(self) -> None:
         await self._queries(self._live(), app.PAGE_ROUNDS_MS)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(
+            wake_actions=tuple(app.POSITIONS[self.profile.key]), weekdays=True, slots=2
+        )
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        # The app's week byte numbers Sunday bit 0, with bit 7 for repeating days.
+        weekday = (
+            128 | sum(1 << ((day + 1) % 7) for day in alarm.weekdays) if alarm.weekdays else 0
+        )
+        try:
+            plan = self.prepare_alarm(
+                slot=alarm.slot,
+                enabled=alarm.enabled,
+                hour=alarm.hour,
+                minute=alarm.minute,
+                weekday=weekday,
+                preset=alarm.wake_action,
+            )
+        except ConnectionError as err:
+            raise ValueError("Refresh the bed alarms, then try again") from err
+        self._prepared_alarm = (alarm, plan)
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        prepared = self._prepared_alarm
+        self._prepared_alarm = None
+        if prepared is None or prepared[0] != alarm:
+            raise ValueError("The bed reconnected after checking the alarm; refresh its alarms")
+        await self.set_alarm(prepared[1])
 
     def prepare_alarm(
         self,
