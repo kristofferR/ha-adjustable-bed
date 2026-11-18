@@ -720,7 +720,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                         "richmat_app_save_" + detail,
                         "Save " + label,
                         partial(_press, detail=detail, save=True),
-                        translation_key="richmat_app_action",
+                        translation_key="richmat_app_save",
                         translation_placeholders={"action": "Save " + label},
                         requires_confirmation=True,
                         card=CARD_PRESET_SAVE,

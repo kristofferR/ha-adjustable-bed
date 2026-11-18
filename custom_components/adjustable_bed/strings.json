@@ -3210,6 +3210,30 @@
       },
       "richmat_mh_toggle_smart_set_lock": {
         "name": "Toggle smart set lock"
+      },
+      "hjbed_save": {
+        "name": "{action}"
+      },
+      "richmat_app_save": {
+        "name": "{action}"
+      },
+      "woosa_program_love": {
+        "name": "Save anti-snore position"
+      },
+      "woosa_program_tv": {
+        "name": "Save TV position"
+      },
+      "woosa_program_zero_g": {
+        "name": "Save zero gravity position"
+      },
+      "customatic_save_zg": {
+        "name": "Save zero G"
+      },
+      "customatic_save_incline": {
+        "name": "Save incline"
+      },
+      "malouf_oz_save_memory_2": {
+        "name": "Save memory 2"
       }
     },
     "cover": {

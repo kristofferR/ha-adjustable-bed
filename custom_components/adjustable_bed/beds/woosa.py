@@ -159,6 +159,9 @@ class WoosaController(SolaceController):
                 key=f"woosa_{action.replace('save_', 'program_').replace('mode_', 'massage_mode_')}",
                 name=name,
                 press_fn=partial(_button_action, action=action),
+                translation_key=f"woosa_{action.replace('save_', 'program_')}"
+                if action.startswith("save_")
+                else None,
                 # Saving overwrites the stored position, so the card asks first.
                 requires_confirmation=action.startswith("save_"),
                 card=CARD_PRESET_SAVE if action.startswith("save_") else CARD_UTILITY,

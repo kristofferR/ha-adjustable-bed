@@ -473,6 +473,9 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
                         f"customatic_{name.lower().replace(' ', '_')}",
                         name,
                         _button_callback(action),
+                        translation_key=f"customatic_{name.lower().replace(' ', '_')}"
+                        if action.startswith("program+")
+                        else None,
                         requires_confirmation=saves,
                         card=CARD_PRESET_SAVE if action.startswith("program+") else CARD_UTILITY,
                     )

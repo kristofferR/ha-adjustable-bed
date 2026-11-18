@@ -591,7 +591,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
                         "hjbed_save_" + key,
                         "Save " + action_label(action),
                         partial(_action, detail=detail, save=True),
-                        translation_key="hjbed_action",
+                        translation_key="hjbed_save",
                         translation_placeholders={"action": "Save " + action_label(action)},
                         requires_confirmation=True,
                         card=CARD_PRESET_SAVE,

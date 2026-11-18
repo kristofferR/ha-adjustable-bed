@@ -530,6 +530,7 @@ class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
                     "malouf_oz_save_memory_2",
                     "Save Memory 2",
                     _app_callback("save_oz_memory_2"),
+                    translation_key="malouf_oz_save_memory_2",
                     requires_confirmation=True,
                     card=CARD_PRESET_SAVE,
                 ),
