@@ -18,7 +18,7 @@ goto_preset:
         number:
           min: 0.1
           max: 60
-          step: 0.1
+          step: any
           unit_of_measurement: seconds
           mode: box
     side:
@@ -182,7 +182,7 @@ hold_control:
         number:
           min: 0.1
           max: 60
-          step: 0.1
+          step: any
           unit_of_measurement: seconds
           mode: box
     side:
@@ -804,7 +804,7 @@ customatic_hold_memory:
         number:
           min: 0.1
           max: 60
-          step: 0.1
+          step: any
           unit_of_measurement: seconds
           mode: box
     side:
@@ -831,7 +831,7 @@ customatic_move_simultaneously:
         number:
           min: 0.1
           max: 60
-          step: 0.1
+          step: any
           unit_of_measurement: seconds
           mode: box
     side:
@@ -1022,7 +1022,7 @@ furnimove_action:
         number:
           min: 0.1
           max: 60
-          step: 0.1
+          step: any
           mode: box
           unit_of_measurement: s
 
@@ -1595,7 +1595,7 @@ limoss_remote_calibrate:
         number:
           min: 0.1
           max: 60
-          step: 0.1
+          step: any
           unit_of_measurement: s
           mode: box
 
@@ -1712,7 +1712,7 @@ logicdata_hold_preset:
         number:
           min: 0.2
           max: 60
-          step: 0.1
+          step: any
           unit_of_measurement: seconds
           mode: box
     side:
