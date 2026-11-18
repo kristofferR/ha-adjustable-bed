@@ -93,3 +93,23 @@ async def test_add_integration_turns_discovery_off_and_on(
 
     assert result["reason"] == "discovery_saved"
     assert await async_is_discovery_disabled(hass)
+
+
+async def test_a_picked_device_lets_home_assistant_choose_the_adapter(hass: HomeAssistant) -> None:
+    """The scanner that listed a picked bed is no preference: it warned on every connect."""
+    from homeassistant.config_entries import SOURCE_USER
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from tests.test_detection import _make_service_info
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": SOURCE_USER}
+    info = _make_service_info(name="Bed 1234", address="AA:BB:CC:DD:EE:42")
+    info.source = "esphome_bedroom"
+    flow._all_ble_devices = {info.address: info}
+    flow._selected_bed_type = const.BED_TYPE_LINAK
+
+    result = await flow.async_step_manual({CONF_ADDRESS: info.address})
+
+    assert result["step_id"] == "finish_settings"
+    assert flow._manual_data[const.CONF_PREFERRED_ADAPTER] == const.ADAPTER_AUTO
