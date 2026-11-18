@@ -13,7 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import CARD_UTILITY
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
 from ...profiles import nerum as app
 from ..base import BedController, ProfileExecution
@@ -137,11 +137,13 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                 or deadline is not None
                 and asyncio.get_running_loop().time() >= deadline - 1e-9
             ):
+                note_frame_skipped()
                 return
             self._record_command_trace(
                 link.write.uuid, command, response=link.response, characteristic=link.write
             )
             await settled(link.client.write_gatt_char(link.write, command, response=link.response))
+            note_frame_written()
             self._live(link)
 
     async def write_command(
@@ -155,6 +157,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
         cancel = self._coordinator.cancel_command if cancel_event is None else cancel_event
         for index in range(repeat_count):
             if index and await self._pause(repeat_delay_ms / 1000, cancel):
+                note_frame_skipped()
                 return
             await self._write(link, command, cancel)
 

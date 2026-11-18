@@ -15,6 +15,7 @@ from homeassistant.util import dt as dt_util
 
 from ...card import CARD_HIDDEN, CARD_PRESET_SAVE
 from ...codec import richmat as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
@@ -213,6 +214,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             if self._last_write is not None:
                 await asyncio.sleep(max(0, self._last_write + TICK - monotonic()))
             if cancel is not None and cancel.is_set():
+                note_frame_skipped()
                 return False
             if deadline is not None and monotonic() > deadline + 1e-9:
                 return False
@@ -231,6 +233,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                 controller_class=type(self).__name__,
             )
             await link.client.write_gatt_char(link.tx, data, response=response)
+            note_frame_written()
         return True
 
     async def write_command(

@@ -22,6 +22,7 @@ from ...card import (
     CardSection,
 )
 from ...codec import vibradorm as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import (
     CONF_VMATBASIC_FLOOR_LEVEL,
     CONF_VMATBASIC_FLOOR_MINUTES,
@@ -312,6 +313,7 @@ class VMatBasicController(BedController):
                         controller_class=type(self).__name__,
                     )
                 await client.write_gatt_char(characteristic, packet, response=True)
+                note_frame_written()
 
         async with asyncio.timeout(0.8):
             await _cancellable(operation(), event)
@@ -411,6 +413,7 @@ class VMatBasicController(BedController):
         vmat_profiles.integer(repeat_count, 1, 2000)
         event = cancel_event if cancel_event is not None else self._coordinator.cancel_command
         if event.is_set():
+            note_frame_skipped()
             return
         try:
             for index in range(repeat_count):

@@ -28,6 +28,7 @@ from ...card import (
     motor_card,
 )
 from ...codec import okin_5a
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import CONF_BLE_DEVICE_NAME, CONF_STARCODE_M1X12_PROFILE
 from ...controller_state import StateUpdate
 from ...execution import ExecutionCapabilities
@@ -743,6 +744,7 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
             async with self._sender_lock:
                 for _ in range(max(0, repeat_count)):
                     if cancel.is_set():
+                        note_frame_skipped()
                         return
                     self._require_write_session()
                     loop = asyncio.get_running_loop()
@@ -752,6 +754,7 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                         self._next_tick += skipped * SENDER_INTERVAL
                     await asyncio.sleep(max(0, self._next_tick - now))
                     if cancel.is_set():
+                        note_frame_skipped()
                         return
                     self._require_write_session()
                     await self._write_gatt_with_retry(
@@ -1339,6 +1342,7 @@ class StarElevateM1X12Controller(StarElevateController):
     ) -> None:
         """Write one held frame only to the captured, still-current BLE session."""
         if cancel_event.is_set():
+            note_frame_skipped()
             return
         if (
             generation != self._generation
@@ -1363,6 +1367,7 @@ class StarElevateM1X12Controller(StarElevateController):
 
         async with self._ble_lock:
             if cancel_event.is_set():
+                note_frame_skipped()
                 return
             if (
                 generation != self._generation
@@ -1375,6 +1380,7 @@ class StarElevateM1X12Controller(StarElevateController):
                 command,
                 response=False,
             )
+            note_frame_written()
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)

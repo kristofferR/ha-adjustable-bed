@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 
 from ...card import CARD_MASSAGE, motor_card
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import (
     REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
     REVERIE_NIGHTSTAND_FOOT_WAVE_UUID,
@@ -511,13 +512,16 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
+                note_frame_skipped()
                 return
 
             async with self._ble_lock:
                 try:
                     if effective_cancel is not None and effective_cancel.is_set():
+                        note_frame_skipped()
                         return
                     await self.client.write_gatt_char(char_uuid, command, response=True)
+                    note_frame_written()
                 except BleakError:
                     _LOGGER.exception("Failed to write to %s", char_uuid)
                     raise
@@ -537,13 +541,16 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
             raise ConnectionError("Not connected to bed")
         effective_cancel = cancel_event or self._coordinator.cancel_command
         if effective_cancel is not None and effective_cancel.is_set():
+            note_frame_skipped()
             return
         self._record_command_trace(char_uuid, value, response=True)
         async with self._ble_lock:
             if effective_cancel is not None and effective_cancel.is_set():
+                note_frame_skipped()
                 return
             try:
                 await self.client.write_gatt_char(char_uuid, value, response=True)
+                note_frame_written()
             except BleakError:
                 _LOGGER.exception("Failed to write to %s", char_uuid)
                 raise

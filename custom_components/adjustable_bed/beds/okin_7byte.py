@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 
+from ..command_scheduler import note_frame_skipped, note_frame_written
 from ..profiles.okin_5a import OKIN_7BYTE, Action, Okin5AProfile
 from .base import BedController, ProfileExecution
 
@@ -116,6 +117,7 @@ class Okin7ByteController(ProfileExecution[Okin5AProfile], BedController):
         if not self._initialized:
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.info("Command cancelled before init sequence")
+                note_frame_skipped()
                 return
             _LOGGER.debug("Sending wake frames before first command")
             try:
@@ -131,6 +133,7 @@ class Okin7ByteController(ProfileExecution[Okin5AProfile], BedController):
                             frame,
                             response=profile.wake_with_response,
                         )
+                        note_frame_written()
                     await asyncio.sleep(0.1)
                 self._initialized = True
             except BleakError:

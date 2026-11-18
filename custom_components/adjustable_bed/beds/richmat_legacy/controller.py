@@ -11,7 +11,7 @@ from time import monotonic
 from typing import TYPE_CHECKING, Final
 
 from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
 from ...profiles.richmat_legacy import Action, LegacyProfile, profiles
 from ..base import BedController, ProfileExecution
@@ -412,6 +412,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
             async with self._ble_lock:
                 self._live(link)
                 if cancel.is_set() or deadline is not None and monotonic() >= deadline:
+                    note_frame_skipped()
                     return False
                 data = packet(literal)
                 response = "write" in link.write.properties
@@ -420,6 +421,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                 )
                 async with asyncio.timeout(WRITE_TIMEOUT_S):
                     await link.client.write_gatt_char(link.write, data, response=response)
+                    note_frame_written()
                 return True
 
         # Drain submitted GATT work before cleanup or releasing ownership.

@@ -15,6 +15,7 @@ from homeassistant.util import dt as dt_util
 
 from ...card import CARD_HIDDEN, CARD_PRESET_SAVE
 from ...codec import richmat as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.richmat import HJBED, RichmatProfile
 from ..base import BedController, ProfileExecution, require_controller
@@ -389,6 +390,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
         deadline: float | None = None,
     ) -> bool:
         if cancel is not None and cancel.is_set():
+            note_frame_skipped()
             return False
         if deadline is not None and monotonic() - deadline > 1e-9:
             return False
@@ -396,6 +398,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             await asyncio.sleep(max(0, self._last_write + TICK_S - monotonic()))
         async with self._ble_lock:
             if cancel is not None and cancel.is_set():
+                note_frame_skipped()
                 return False
             if deadline is not None and monotonic() - deadline > 1e-9:
                 return False
@@ -416,6 +419,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             if on_attempt is not None:
                 on_attempt()
             await session.client.write_gatt_char(session.write, frame, response=response)
+            note_frame_written()
         return True
 
     async def write_command(

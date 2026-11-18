@@ -22,6 +22,7 @@ from bleak.exc import BleakError
 from homeassistant.helpers.storage import Store
 
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ...command_scheduler import note_frame_written
 from ...const import CONF_SIDE
 from ...controller_state import StateKey, StateUpdate
 from ...state_keys import (
@@ -196,6 +197,7 @@ class _TracedCentralWriter:
             char_specifier, data, response=bool(response), command_origin="pairlink"
         )
         await self._client.write_gatt_char(char_specifier, data, response=response)
+        note_frame_written()
 
 
 class ReveriePairlinkController(BedController, PairlinkComfortActions):

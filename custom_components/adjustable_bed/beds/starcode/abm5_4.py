@@ -19,7 +19,11 @@ from ...card import (
     CARD_PRESET_SAVE,
     CARD_UTILITY,
 )
-from ...command_scheduler import copy_context_without_command
+from ...command_scheduler import (
+    copy_context_without_command,
+    note_frame_skipped,
+    note_frame_written,
+)
 from ...const import (
     CONF_BLE_DEVICE_NAME,
     CONF_STARCODE_COMMAND_SELECTOR,
@@ -546,6 +550,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             ):
                 raise ConnectionError("Original physical app target changed before write")
             if event is not None and event.is_set():
+                note_frame_skipped()
                 return
             role = self._write_characteristic if target is self._notify_client else None
             role = role or self._role(target, self._transport.write)
@@ -563,6 +568,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                     controller_class=type(self).__name__,
                 )
             await target.write_gatt_char(role, packet, response=write_response)
+            note_frame_written()
 
     async def write_command(
         self,
@@ -574,6 +580,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         event = cancel_event or self._coordinator.cancel_command
         for index in range(repeat_count):
             if event.is_set():
+                note_frame_skipped()
                 return
             await self._send(command, event)
             if index + 1 < repeat_count:

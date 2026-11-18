@@ -10,7 +10,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
 from .card import CARD_ATTRIBUTES, CardPlacement
-from .command_scheduler import command_was_sent
+from .command_scheduler import Delivery, command_delivery
 from .const import TIMED_MOVE_MOTOR_OPTIONS
 from .entity_runtime import controller_side_scope
 from .execution import ExecutionCapabilities
@@ -111,21 +111,22 @@ class AdjustableBedEntity(RenamesInPlace, PlacedInCard):
 
     async def _async_send(
         self, command: Callable[[BedController], Coroutine[Any, Any, None]], **kwargs: Any
-    ) -> bool:
-        """Run ``command`` and return whether it reached the bed.
+    ) -> Delivery:
+        """Run ``command`` and return what of it reached the bed.
 
         STOP or a replacing command settles a cancelled command without an
-        error, and the entity then keeps showing its previous state.
+        error. Nothing sent keeps the previous state; a value sent only in
+        part is unknown.
         """
-        sent = False
+        delivery = Delivery.NONE
 
         async def run(controller: BedController) -> None:
-            nonlocal sent
+            nonlocal delivery
             await command(controller)
-            sent = command_was_sent()
+            delivery = command_delivery()
 
         await self._coordinator.async_execute_controller_command(run, **kwargs)
-        return sent
+        return delivery
 
     def _async_write_ha_state(self) -> None:
         """Read state with a shared controller bound to this entity's side."""

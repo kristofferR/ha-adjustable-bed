@@ -13,6 +13,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from ...codec import jiecang as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import JIECANG_CHAR_UUID
 from ...profiles.jiecang import (
     LEGACY,
@@ -94,13 +95,16 @@ class JiecangProfileController(ProfileExecution[JiecangProfile], BedController):
                 if self.profile.fixed_rate:
                     delay = index * repeat_delay_ms - (loop.time() - started) * 1000
                 if await self._pause(delay, cancel):
+                    note_frame_skipped()
                     return
             elif cancel.is_set():
+                note_frame_skipped()
                 return
             async with self._ble_lock:
                 await self.client.write_gatt_char(
                     self._write_uuid, command, response=self._write_with_response
                 )
+                note_frame_written()
 
     @staticmethod
     async def _pause(milliseconds: float, cancel: asyncio.Event) -> bool:

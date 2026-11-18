@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -42,12 +43,23 @@ class SettingsController(AlarmController):
         return (MASSAGE,)
 
     async def _write(self, name: str) -> None:
+        """Send ``name`` through the shared writer, as many times as the bed repeats."""
         await self.bed.before_write(self)  # type: ignore[attr-defined]
-        context = current_command_context()
-        # Like the real writers: a cancelled command returns without sending.
-        if context is not None and context.cancel_event.is_set():
-            return
-        self.bed.sent.append(name)  # type: ignore[attr-defined]
+        client = self.client
+        assert client is not None
+
+        async def frame(_char: str, data: bytes, **_kwargs: Any) -> None:
+            self.bed.sent.append(data.decode())  # type: ignore[attr-defined]
+            await self.bed.after_frame(self)  # type: ignore[attr-defined]
+
+        client.write_gatt_char = AsyncMock(side_effect=frame)
+        # The shared writer returns without sending once the command is cancelled.
+        await self._write_gatt_with_retry(
+            "0000fff1-0000-1000-8000-00805f9b34fb",
+            name.encode(),
+            repeat_count=self.bed.frames,  # type: ignore[attr-defined]
+            repeat_delay_ms=0,
+        )
 
     async def set_synchro(self, enabled: bool) -> None:
         await self._write(f"synchro {enabled}")
@@ -76,7 +88,8 @@ async def _cancel_while_writing(controller: SettingsController) -> None:
 
 def _settings(bed: Bed) -> None:
     bed.sent = []  # type: ignore[attr-defined]
-    bed.before_write = _nothing  # type: ignore[attr-defined]
+    bed.frames = 1  # type: ignore[attr-defined]
+    bed.before_write = bed.after_frame = _nothing  # type: ignore[attr-defined]
     bed.controller_class = SettingsController
     for name in ("_controller", "_offline_controller"):
         if getattr(bed, name) is not None:
@@ -174,9 +187,71 @@ async def test_controller_publishes_no_setting_after_its_command_was_cancelled()
     ctrl._parse_notification(app.SYNC_ON)
     cancelled = MagicMock()
     cancelled.cancel_event.is_set.return_value = True
+    cancelled.frames_written = 0
     with patch(
         "custom_components.adjustable_bed.command_scheduler.current_command_context",
         return_value=cancelled,
     ):
         await ctrl.set_synchro(False)
     assert ctrl._coordinator.controller_state[SYNCHRO_MODE] is True
+
+
+@pytest.mark.parametrize(
+    ("frames", "switch_state"),
+    # STOP after the only frame: the bed has the new value. STOP between two
+    # frames of one value: it may not, so the switch is unknown.
+    [(1, True), (2, None)],
+)
+async def test_stop_after_a_frame_went_out_shows_what_reached_the_bed(
+    hass, frames, switch_state
+) -> None:
+    async with beds(hass, 1) as made:
+        bed = made.items[0]
+        _settings(bed)
+        bed.frames = frames  # type: ignore[attr-defined]
+        bed.after_frame = _cancel_while_writing  # type: ignore[attr-defined]
+        switch = _entity(AdjustableBedSwitch(bed, SYNCHRO))
+        light = _entity(AdjustableBedAssumedLight(bed))
+        with virtual_clock():
+            await switch.async_turn_on()
+            await light.async_turn_on()
+        assert switch.is_on is switch_state
+        # The toggle's first frame is the toggle, so the light did change.
+        assert light.is_on is True
+        assert bed.sent == ["synchro True", "toggle"]  # type: ignore[attr-defined]
+
+
+async def test_turn_on_without_a_color_follows_a_pending_color_request() -> None:
+    from homeassistant.components.light import ColorMode
+
+    from custom_components.adjustable_bed.command_scheduler import Delivery
+    from tests.test_ergomotion4 import _rgb_entity, ready
+
+    ctrl, coord = await ready("M19")
+    light = _rgb_entity(ctrl, coord)
+    light._attr_supported_color_modes = {ColorMode.RGB, ColorMode.RGBW}
+    light._attr_color_mode = ColorMode.RGBW
+    entered, release = asyncio.Event(), asyncio.Event()
+    sent: list[ColorMode] = []
+
+    async def send(mode: ColorMode) -> Delivery:
+        if not sent and not entered.is_set():
+            entered.set()
+            await release.wait()
+        sent.append(mode)
+        light._attr_color_mode = mode
+        return Delivery.SENT
+
+    with (
+        patch.object(light, "_turn_on_rgb", side_effect=lambda **_: send(ColorMode.RGB)),
+        patch.object(light, "_turn_on_rgbw", side_effect=lambda **_: send(ColorMode.RGBW)),
+    ):
+        first = asyncio.create_task(light.async_turn_on(rgb_color=(10, 20, 30)))
+        await entered.wait()
+        # A plain turn-on while the RGB request still waits for the link.
+        second = asyncio.create_task(light.async_turn_on())
+        await asyncio.sleep(0)
+        release.set()
+        await asyncio.gather(first, second)
+    assert sent == [ColorMode.RGB, ColorMode.RGB]
+    assert light._attr_color_mode == ColorMode.RGB

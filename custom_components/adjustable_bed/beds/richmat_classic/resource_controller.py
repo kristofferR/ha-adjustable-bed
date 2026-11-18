@@ -16,7 +16,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...card import CARD_UTILITY
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_written
 from ...const import CONF_MOTOR_PULSE_COUNT, CONF_RICHMAT_CLASSIC_THIRD_SERVICE
 from ...controller_state import StateKey
 from ...profiles.richmat_resource_apps import APPS, worker_interval
@@ -183,6 +183,7 @@ class ResourceBedController(RichmatClassicController):
             except asyncio.CancelledError:
                 cancelled = True
         task.result()
+        note_frame_written()
         if cancelled:
             raise asyncio.CancelledError
 

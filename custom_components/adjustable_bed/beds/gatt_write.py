@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 from bleak import BleakClient
 from bleak.exc import BleakError
 
+from ..command_scheduler import note_frame_skipped, note_frame_written
 from ..diagnostic_payloads import format_payload
 
 if TYPE_CHECKING:
@@ -176,6 +177,7 @@ class GattWriter(ABC):
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.debug("Command cancelled after %d/%d writes", i, repeat_count)
+                note_frame_skipped()
                 return
 
             write_started: float | None = None
@@ -186,6 +188,7 @@ class GattWriter(ABC):
                     # A read may have held this lane while STOP invalidated the
                     # movement. Do not send a stale write or acknowledge a no-op.
                     if effective_cancel is not None and effective_cancel.is_set():
+                        note_frame_skipped()
                         return
                     client = self.client
                     if expected_client is not None and client is not expected_client:
@@ -213,6 +216,7 @@ class GattWriter(ABC):
                         outbound,
                         response=response,
                     )
+                    note_frame_written()
                     if on_write is not None:
                         on_write()
             except BleakError:

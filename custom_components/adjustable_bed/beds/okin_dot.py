@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 
 from ..codec import okin_nframe as codec
+from ..command_scheduler import note_frame_written
 from ..const import NORDIC_UART_WRITE_CHAR_UUID, VARIANT_AUTO
 from ..profiles.okin_nframe import OKIN_DOT
 from .builder import BuildContext
@@ -111,6 +112,7 @@ class OkinDotController(OkinUuidController):
                 await client.write_gatt_char(
                     NORDIC_UART_WRITE_CHAR_UUID, _AFFIRM_HANDSHAKE, response=False
                 )
+                note_frame_written()
             _LOGGER.debug("Sent DOT affirm handshake to %s", self._coordinator.address)
         except BleakError:
             _LOGGER.debug("DOT affirm handshake failed", exc_info=True)

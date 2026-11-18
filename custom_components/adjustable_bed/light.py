@@ -26,7 +26,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING
-from .command_scheduler import command_was_sent
+from .command_scheduler import Delivery, command_delivery
 from .const import DOMAIN
 from .controller_state import ControllerState, sided
 from .entity import AdjustableBedEntity
@@ -207,8 +207,9 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
         async def set_state(ctrl: BedController) -> None:
             if self._attr_is_on != is_on:
                 await ctrl.lights_toggle()
-                # An unsent toggle must not invert the estimate for good.
-                if command_was_sent():
+                # An unsent toggle must not invert the estimate for good. Its
+                # first frame is the toggle, so a partly sent one counts.
+                if command_delivery() is not Delivery.NONE:
                     self._attr_is_on = is_on
                     self.async_write_ha_state()
 
@@ -219,7 +220,7 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
 
         async def toggle(ctrl: BedController) -> None:
             await ctrl.lights_toggle()
-            if command_was_sent():
+            if command_delivery() is not Delivery.NONE:
                 self._attr_is_on = not self._attr_is_on
                 self.async_write_ha_state()
 
@@ -328,6 +329,9 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         )
         self._light_turn_on_in_progress = False
         self._light_turn_off_in_progress = False
+        # The newest color request still waiting to be sent, and its identity.
+        self._requested_color_mode: ColorMode | None = None
+        self._color_request: object | None = None
         self._last_controller_entity_available = self.available
 
     @property
@@ -520,40 +524,50 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         requested_rgbw = _normalize_rgbw_color(kwargs.get(ATTR_RGBW_COLOR))
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         supported_modes = self._attr_supported_color_modes or set()
-        sent = False
+        if requested_rgbw is not None and ColorMode.RGBW not in supported_modes:
+            raise ValueError("RGBW color is not supported by this light")
+        if requested_rgb is not None and ColorMode.RGB not in supported_modes:
+            raise ValueError("RGB color is not supported by this light")
+        # A requested color mode is shown only once it was sent. A request
+        # without a color follows the newest color request still in flight.
+        explicit = (
+            ColorMode.RGBW
+            if requested_rgbw is not None
+            else ColorMode.RGB
+            if requested_rgb is not None
+            else None
+        )
+        mode = explicit or self._requested_color_mode or self._attr_color_mode
+        request = object()
+        if explicit is not None:
+            self._requested_color_mode, self._color_request = explicit, request
+        delivery = Delivery.NONE
         self._light_turn_on_in_progress = True
         try:
-            # A requested color mode takes effect only once the command was sent.
-            if requested_rgbw is not None:
-                if ColorMode.RGBW not in supported_modes:
-                    raise ValueError("RGBW color is not supported by this light")
-                sent = await self._turn_on_rgbw(**kwargs)
-            elif requested_rgb is not None:
-                if ColorMode.RGB not in supported_modes:
-                    raise ValueError("RGB color is not supported by this light")
-                sent = await self._turn_on_rgb(**kwargs)
-            elif self._attr_color_mode == ColorMode.RGBW:
-                sent = await self._turn_on_rgbw(**kwargs)
-            elif self._attr_color_mode == ColorMode.RGB:
-                sent = await self._turn_on_rgb(**kwargs)
-            elif self._attr_color_mode == ColorMode.ONOFF:
+            if mode == ColorMode.RGBW:
+                delivery = await self._turn_on_rgbw(**kwargs)
+            elif mode == ColorMode.RGB:
+                delivery = await self._turn_on_rgb(**kwargs)
+            elif mode == ColorMode.ONOFF:
 
                 async def _turn_on(ctrl: BedController) -> None:
                     await ctrl.lights_on()
 
-                sent = await self._async_send(_turn_on, cancel_running=False)
-                if sent:
-                    self._attr_is_on = True
+                delivery = await self._async_send(_turn_on, cancel_running=False)
+                if delivery is not Delivery.NONE:
+                    self._attr_is_on = True if delivery is Delivery.SENT else None
                     self.async_write_ha_state()
             else:
                 raise ValueError("This light has no active color mode")
         finally:
             self._light_turn_on_in_progress = False
-        if sent:
+            if self._color_request is request:
+                self._requested_color_mode = self._color_request = None
+        if delivery is Delivery.SENT:
             self._schedule_light_auto_off_timer()
 
-    async def _turn_on_rgb(self, **kwargs: Any) -> bool:
-        """Turn on with RGB color mode; return whether the command was sent."""
+    async def _turn_on_rgb(self, **kwargs: Any) -> Delivery:
+        """Turn on with RGB color mode; return what of it was sent."""
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         target_rgb = requested_rgb or self._attr_rgb_color or self._default_rgb_color
         # Turning on from off resends the known brightness: the bed may not keep
@@ -588,18 +602,22 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             if level is not None:
                 await ctrl.set_light_level(level)
 
-        if not await self._async_send(_turn_on, cancel_running=False):
-            return False
+        delivery = await self._async_send(_turn_on, cancel_running=False)
+        if delivery is Delivery.PARTIAL:
+            self._attr_is_on = None
+            self.async_write_ha_state()
+        if delivery is not Delivery.SENT:
+            return delivery
         self._attr_color_mode = ColorMode.RGB
         self._attr_is_on = True
         self._attr_rgb_color = target_rgb
         if level is not None and self._light_level_max is not None:
             self._attr_brightness = _level_to_brightness(level, self._light_level_max)
         self.async_write_ha_state()
-        return True
+        return delivery
 
-    async def _turn_on_rgbw(self, **kwargs: Any) -> bool:
-        """Turn on with RGBW color mode; return whether the command was sent."""
+    async def _turn_on_rgbw(self, **kwargs: Any) -> Delivery:
+        """Turn on with RGBW color mode; return what of it was sent."""
         requested_rgbw = _normalize_rgbw_color(kwargs.get(ATTR_RGBW_COLOR))
         target_rgbw = requested_rgbw or self._attr_rgbw_color or (255, 255, 255, 255)
         requested_brightness = kwargs.get(ATTR_BRIGHTNESS)
@@ -612,15 +630,19 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 await ctrl.lights_on()
             await ctrl.set_light_color_rgbw(target_rgbw, intensity)
 
-        if not await self._async_send(_turn_on, cancel_running=False):
-            return False
+        delivery = await self._async_send(_turn_on, cancel_running=False)
+        if delivery is Delivery.PARTIAL:
+            self._attr_is_on = None
+            self.async_write_ha_state()
+        if delivery is not Delivery.SENT:
+            return delivery
         self._attr_color_mode = ColorMode.RGBW
         self._attr_is_on = True
         self._attr_rgbw_color = target_rgbw
         if intensity is not None:
             self._attr_brightness = intensity
         self.async_write_ha_state()
-        return True
+        return delivery
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off using the controller's light-off semantics."""
@@ -642,15 +664,17 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 return
             raise NotImplementedError("Light off control not supported on this bed")
 
+        delivery = Delivery.NONE
         self._light_turn_off_in_progress = True
         try:
-            sent = await self._async_send(_turn_off, cancel_running=False)
-            if sent:
-                self._attr_is_on = False
+            delivery = await self._async_send(_turn_off, cancel_running=False)
+            if delivery is not Delivery.NONE:
+                # Partly sent leaves the light unknown.
+                self._attr_is_on = False if delivery is Delivery.SENT else None
                 self.async_write_ha_state()
         finally:
             self._light_turn_off_in_progress = False
-        if sent:
+        if delivery is not Delivery.NONE:
             self._cancel_light_auto_off_timer()
 
     def _current_octo_timer_controller(self) -> OctoController | None:
@@ -803,8 +827,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
         async def _turn_on(ctrl: BedController) -> None:
             await ctrl.lights_on()
-            if not self._feedback_only and command_was_sent():
-                self._attr_is_on = True
+            delivery = command_delivery()
+            if not self._feedback_only and delivery is not Delivery.NONE:
+                self._attr_is_on = True if delivery is Delivery.SENT else None
                 self.async_write_ha_state()
 
         await self._coordinator.async_execute_controller_command(
@@ -818,8 +843,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
         async def _turn_off(ctrl: BedController) -> None:
             await ctrl.lights_off()
-            if not self._feedback_only and command_was_sent():
-                self._attr_is_on = False
+            delivery = command_delivery()
+            if not self._feedback_only and delivery is not Delivery.NONE:
+                self._attr_is_on = False if delivery is Delivery.SENT else None
                 self.async_write_ha_state()
 
         await self._coordinator.async_execute_controller_command(

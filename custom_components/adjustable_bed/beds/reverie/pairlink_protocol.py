@@ -8,6 +8,8 @@ from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Protocol
 
+from ...command_scheduler import note_frame_written
+
 PAIRLINK_SERVICE_UUID = "9e5d1e47-5c13-43a0-8635-82adffc0386f"
 PAIRLINK_WRITE_UUID = "9e5d1e47-5c13-43a0-8635-82adffc1386f"
 PAIRLINK_NOTIFY_UUID = "9e5d1e47-5c13-43a0-8635-82adffc2386f"
@@ -324,6 +326,7 @@ async def send_central_frame(
     fragments = fragment_central_frame(frame, att_mtu=att_mtu)
     for fragment in fragments:
         await writer.write_gatt_char(characteristic, fragment, response=False)
+        note_frame_written()
         if len(fragments) > 1:
             await sleep(0.015)
 

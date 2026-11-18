@@ -18,7 +18,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from ...app_session import app_session
 from ...card import CARD_PRESETS, CARD_UTILITY
 from ...codec import kaidi as codec
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_written
 from ...controller_state import StateKey, sided
 from ...execution import ExecutionCapabilities
 from ...profiles.comfy import (
@@ -398,6 +398,7 @@ class ComfyController(KaidiAppController):
                     raise ConnectionError("App frame belongs to a disconnected session")
                 self._record_command_trace(codec.WRITE_CHAR_UUID, command, response=True)
                 await client.write_gatt_char(codec.WRITE_CHAR_UUID, command, response=True)
+                note_frame_written()
                 self._next_write_at = time.monotonic() + self.profile.write_spacing_s
 
     async def _ensure_session(self) -> None:

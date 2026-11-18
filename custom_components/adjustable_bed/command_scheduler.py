@@ -592,6 +592,10 @@ class CommandContext:
     hold_deadline: float | None = None
     """Event-loop time at which a held command's lease expires, if any."""
     cancel_generation: int = 0
+    # Frames this operation handed to the bed, and frames a cancellation
+    # stopped it from sending; together they say what reached the bed.
+    frames_written: int = 0
+    frames_skipped: int = 0
 
     def request_cancel(self, outcome: CommandOutcome) -> None:
         """Distinguish repeated cancellations of this exact resource admission."""
@@ -694,14 +698,43 @@ def current_command_context() -> CommandContext | None:
     return context if context is None or context.active else None
 
 
-def command_was_sent() -> bool:
-    """Return False inside a command that STOP or a replacing command cancelled.
+class Delivery(StrEnum):
+    """What of a command reached the bed."""
+
+    SENT = "sent"
+    """It ran uncancelled, or was cancelled only after its last frame went out."""
+    PARTIAL = "partial"
+    """Cancelled between frames: some went out, a later one did not."""
+    NONE = "none"
+    """Cancelled before any frame went out."""
+
+
+def note_frame_written() -> None:
+    """Record, inside a command, that a frame was handed to the bed."""
+    context = current_command_context()
+    if context is not None:
+        context.frames_written += 1
+
+
+def note_frame_skipped() -> None:
+    """Record, inside a command, that a cancellation stopped a frame being sent."""
+    context = current_command_context()
+    if context is not None:
+        context.frames_skipped += 1
+
+
+def command_delivery() -> Delivery:
+    """Return what the running command delivered so far.
 
     A cancelled writer returns quietly instead of raising, so an entity checks
     this before it shows the state it asked for.
     """
     context = current_command_context()
-    return context is None or not context.cancel_event.is_set()
+    if context is None or not context.cancel_event.is_set():
+        return Delivery.SENT
+    if not context.frames_written:
+        return Delivery.NONE
+    return Delivery.PARTIAL if context.frames_skipped else Delivery.SENT
 
 
 def copy_context_without_command() -> Context:

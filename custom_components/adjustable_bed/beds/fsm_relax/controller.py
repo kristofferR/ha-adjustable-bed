@@ -11,6 +11,7 @@ from bleak.exc import BleakError
 from homeassistant.config_entries import ConfigEntryState
 
 from ...codec import limoss as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import (
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_HAS_LIGHT,
@@ -317,9 +318,11 @@ class FsmRelaxController(ProfileExecution[LimossProfile], BedController):
         start = loop.time()
         for index in range(repeat_count):
             if event.is_set():
+                note_frame_skipped()
                 return
             await asyncio.sleep(max(0, start + index * repeat_delay_ms / 1000 - loop.time()))
             if event.is_set():
+                note_frame_skipped()
                 return
             async with self._write_lock:
                 role = self._role()
@@ -333,6 +336,7 @@ class FsmRelaxController(ProfileExecution[LimossProfile], BedController):
                 )
                 # Source forces no-response; properties are not a protocol gate.
                 await client.write_gatt_char(role, packet, response=False)
+                note_frame_written()
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self._subscribed:

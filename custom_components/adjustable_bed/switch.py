@@ -18,7 +18,7 @@ from homeassistant.helpers import entity_registry as er
 from .beds.entity_specs import ControllerSwitchSpec
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
-from .command_scheduler import command_was_sent
+from .command_scheduler import Delivery, command_delivery
 from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_SVANE,
@@ -322,8 +322,10 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             # Record it while the link that sent it is still up: a sequential
             # pair releases the side before the command returns, and that
             # release makes the value unknown again.
-            if command_was_sent() and self._spec.state_key is None:
-                self._commanded = on
+            delivery = command_delivery()
+            if delivery is not Delivery.NONE and self._spec.state_key is None:
+                # A value sent only in part is unknown.
+                self._commanded = on if delivery is Delivery.SENT else None
                 self.async_write_ha_state()
 
         await self._coordinator.async_execute_controller_command(apply)
@@ -614,10 +616,10 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
     async def _async_switch(
         self, on: bool, command: Callable[[BedController], Coroutine[Any, Any, None]]
     ) -> bool:
-        """Send one on/off command and show its state; return whether it was sent.
+        """Send one on/off command and show its state; return whether all of it was sent.
 
-        A STOP or a replacing command cancels it quietly, and the switch keeps
-        its previous state.
+        A STOP or a replacing command cancels it quietly: the switch keeps its
+        previous state when nothing was sent, and is unknown when only part was.
         """
         state_generation = self._state_update_generation
 
@@ -628,7 +630,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
 
         try:
             try:
-                sent = await self._async_send(run, cancel_running=False)
+                delivery = await self._async_send(run, cancel_running=False)
             except PairedSideError as err:
                 # A sequential pair wraps the side's own error.
                 errors = list(err.side_errors.values())
@@ -646,8 +648,13 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                     "feature": feature,
                 },
             ) from err
-        if not sent:
+        if delivery is Delivery.NONE:
             _LOGGER.debug("Switch %s command was cancelled", self.entity_description.key)
+            return False
+        if delivery is Delivery.PARTIAL:
+            self._cancel_auto_off_timer()
+            self._attr_is_on = None
+            self.async_write_ha_state()
             return False
         # Preserve state published during the command, including a changed local side.
         if self._supports_discrete_control() and state_generation == self._state_update_generation:

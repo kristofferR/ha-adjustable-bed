@@ -13,7 +13,12 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import CARD_UTILITY
-from ...command_scheduler import CommandContext, current_command_context
+from ...command_scheduler import (
+    CommandContext,
+    current_command_context,
+    note_frame_skipped,
+    note_frame_written,
+)
 from ...controller_state import StateKey
 from ...profiles import yamada as app
 from ...profiles.keeson import Preset
@@ -238,6 +243,7 @@ class YamadaController(KeesonController):
         async with self._ble_lock:
             self._live(link)
             if cancel.is_set():
+                note_frame_skipped()
                 return
             if alarm_revision is not None:
                 if alarm_revision != self._alarm_revision:
@@ -255,6 +261,7 @@ class YamadaController(KeesonController):
                 link.write.uuid, frame, response=link.response, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, frame, response=link.response)
+            note_frame_written()
 
     async def write_command(
         self,
@@ -267,6 +274,7 @@ class YamadaController(KeesonController):
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
         for index in range(repeat_count):
             if cancel.is_set() or index and await _pause(repeat_delay_ms / 1000, cancel):
+                note_frame_skipped()
                 return
             await self._write(link, command, cancel)
 

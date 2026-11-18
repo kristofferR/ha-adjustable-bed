@@ -14,7 +14,7 @@ from bleak.exc import BleakError
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
 from ...codec import okin_nframe as codec
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.comfort_enhancement3 import MASSAGE_KEYS, PROFILES, REMOTES, resolve
 from ..base import BedController
@@ -543,11 +543,13 @@ class ComfortEnhancement3Controller(OkinHandleController):
         async with self._ble_lock:
             self._live(link)
             if cancel.is_set():
+                note_frame_skipped()
                 return False
             self._record_command_trace(
                 link.write.uuid, data, response=True, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, data, response=True)
+            note_frame_written()
             return True
 
     async def write_command(
@@ -564,6 +566,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
         for i in range(repeat_count):
             delay = max(0.0, started + i * repeat_delay_ms / 1000 - loop.time())
             if cancel.is_set() or i and await _pause(delay, cancel):
+                note_frame_skipped()
                 return
             await self._write(link, command, cancel)
 

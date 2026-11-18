@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 from ...card import CARD_UTILITY
 from ...codec import motomotion as codec
 from ...codec.motomotion import Position, ascii_command, binary_command, music_command
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...profiles.motomotion import Profile
@@ -527,6 +528,7 @@ class MotoMotionController(BedController):
                     self
                 )  # Request precedes BLE, durability unconfirmed.
                 await client.write_gatt_char(binding, code, response=True)
+                note_frame_written()
             if delay:
                 await asyncio.sleep(delay)
             await client.start_notify(notify, partial(self._notification, self._generation))
@@ -562,8 +564,10 @@ class MotoMotionController(BedController):
         cancel = cancel_event or self._coordinator.cancel_command
         for i in range(repeat_count):
             if cancel.is_set():
+                note_frame_skipped()
                 return
             if i and not await self._wait(repeat_delay_ms / 1000, cancel):
+                note_frame_skipped()
                 return
             async with self._ble_lock:
                 if (
@@ -574,6 +578,7 @@ class MotoMotionController(BedController):
                 ):
                     raise ConnectionError("MotoMotion BLE session changed")
                 if cancel.is_set():
+                    note_frame_skipped()
                     return
                 self._coordinator.record_command_trace(
                     payload={"hex": command.hex()},
@@ -586,6 +591,7 @@ class MotoMotionController(BedController):
                     controller_class=type(self).__name__,
                 )
                 await session[0].write_gatt_char(session[1], command, response=True)
+                note_frame_written()
 
     async def _wait(self, seconds: float, cancel: asyncio.Event) -> bool:
         try:
@@ -930,6 +936,7 @@ class MotoMotionController(BedController):
                     controller_class=type(self).__name__,
                 )
                 await session[0].write_gatt_char(unpair, codec.UNPAIR, response=False)
+                note_frame_written()
             try:
                 await asyncio.sleep(1)
             finally:

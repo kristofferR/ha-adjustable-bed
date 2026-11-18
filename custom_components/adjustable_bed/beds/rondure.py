@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 
 from ..codec import keeson as codec
+from ..command_scheduler import note_frame_skipped, note_frame_written
 from ..const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
@@ -189,6 +190,7 @@ class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedCont
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
+                note_frame_skipped()
                 return
 
             try:
@@ -196,6 +198,7 @@ class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedCont
                     await self.client.write_gatt_char(
                         RONDURE_WRITE_CHAR_UUID, command, response=False
                     )
+                    note_frame_written()
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

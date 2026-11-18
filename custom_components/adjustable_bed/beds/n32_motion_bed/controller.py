@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_PRESETS, CARD_UTILITY
 from ...codec import okin_nframe as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import (
     NORDIC_UART_READ_CHAR_UUID,
     NORDIC_UART_SERVICE_UUID,
@@ -359,6 +360,7 @@ class N32MotionBedController(Okin64BitController):
         async with self._ble_lock:
             self._live(link)
             if cancel.is_set():
+                note_frame_skipped()
                 return False
             if revision and self._revisions[revision[0]] != revision[1]:
                 raise ValueError("N32 alarm changed while waiting to write; refresh and retry")
@@ -369,6 +371,7 @@ class N32MotionBedController(Okin64BitController):
                 link.write.uuid, frame, response=True, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, frame, response=True)
+            note_frame_written()
         return True
 
     async def write_command(

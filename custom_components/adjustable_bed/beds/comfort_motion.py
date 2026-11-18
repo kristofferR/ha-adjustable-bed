@@ -14,6 +14,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Final, Literal
 
 from ..codec import jiecang as codec
+from ..command_scheduler import note_frame_written
 from ..controller_state import StateKey
 from ..profiles.jiecang import (
     COMFORT_MOTION,
@@ -305,6 +306,7 @@ class ComfortMotionController(JiecangProfileController):
             await self.client.write_gatt_char(
                 self._name_uuid, payload, response=self._name_response
             )
+            note_frame_written()
 
     # Wake routine
 

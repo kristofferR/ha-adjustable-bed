@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.exc import BleakError
 
+from ...command_scheduler import note_frame_written
 from ...const import (
     SLEEP_NUMBER_BAMKEY_CHAR_UUID,
     SLEEP_NUMBER_VARIANT_LEFT,
@@ -2179,6 +2180,7 @@ class SleepNumberController(BedController, SleepNumberActions):
                     await client.write_gatt_char(
                         SLEEP_NUMBER_BAMKEY_CHAR_UUID, chunk, response=False
                     )
+                    note_frame_written()
 
         async def read_response() -> str:
             async with asyncio.timeout(_BAMKEY_RESPONSE_TIMEOUT):

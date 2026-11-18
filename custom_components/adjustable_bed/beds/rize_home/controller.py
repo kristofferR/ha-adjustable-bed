@@ -16,6 +16,7 @@ from bleak import BleakClient
 from bleak.exc import BleakError
 
 from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles import rize_home as p
 from ..base import BedController, ProfileExecution
@@ -477,12 +478,14 @@ class RizeHomeController(ProfileExecution[p.RizeHomeProfile], OkinNFrameControll
         async with self._ble_lock:
             self._live(link)
             if cancel.is_set():
+                note_frame_skipped()
                 return
             self._record_command_trace(
                 p.WRITE_UUID, frame, response=False, characteristic=link.write
             )
             async with asyncio.timeout(15):
                 await link.client.write_gatt_char(link.write, frame, response=False)
+                note_frame_written()
 
     async def _repeat(
         self,

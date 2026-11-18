@@ -17,7 +17,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...card import CARD_UTILITY
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_PRODUCT_TYPE,
@@ -380,14 +380,17 @@ class RichmatClassicController(BedController):
         # Calls are admitted under the coordinator command lock. Never retry an
         # actuator write or carry cached Android objects across connections.
         await session.client.write_gatt_char(session.write, packet, response=session.response)
+        note_frame_written()
 
     async def write_command(self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = TICK_MS, cancel_event: asyncio.Event | None = None) -> None:
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
         for index in range(repeat_count):
             if cancel.is_set():
+                note_frame_skipped()
                 return
             await self._send(command)
             if index + 1 < repeat_count and not await self._wait(repeat_delay_ms, cancel):
+                note_frame_skipped()
                 return
 
     @staticmethod
