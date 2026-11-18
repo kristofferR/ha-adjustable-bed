@@ -103,6 +103,7 @@ Update scripts and automations that call these actions. The
 | `jiecang_rename`, `linak_rename`, `logicdata_rename` | `rename` |
 | `leggett_hold_control` | `hold_control` |
 | `malouf_sync_clock` | `sync_clock` |
+| `motion_bed_clock` | `sync_clock` (sets the motor clock and, where present, the thermal module clock to Home Assistant's time; `timestamp` and `thermal` are gone) |
 | `reverie_test` | Removed (it ran a factory bed test) |
 
 `set_alarm` uses the same fields on every bed. What changed from the old alarm
@@ -143,6 +144,11 @@ actions:
 
 Other action changes:
 
+- `gmmotor` no longer offers `operation: clock_sync`; use `sync_clock`. Its
+  `repeat` and `status` fields are gone (repeating alarms send the app's
+  defaults), and the sleep report's `part` and `report_type` take `left` or
+  `right` and `day` or `month` instead of 1 and 2.
+- `goodvibe` no longer offers `operation: sync`; use `sync_clock`.
 - `furnimove_action` no longer takes `consumer`.
 - `sleep_number_command` no longer accepts service, firmware and diagnostic
   commands such as `reboot_system` and `software_versions`.
@@ -153,6 +159,30 @@ Other action changes:
   (`estimate_save_position`, `estimate_recall_position`,
   `estimate_set_reference`, `lower_to_flat` and others), useful only after you
   enable estimated positions.
+
+### Changes for automations written on v5 betas
+
+These actions are new in v5. Their names, fields and choices changed during
+the beta; older field names are not accepted.
+
+- Setting the clock moved to `sync_clock` for SUTA Smart Home (`action:
+  set_date`), SonicSleep (`operation: sync_clock`), MLILY Remote (`operation:
+  time_sync`), Galaxy, MLILY and Power Bob Base (`operation: sync`), Okimiki
+  (`operation: sync`). OKIN SleepEase, which set its clock only with a button,
+  supports `sync_clock` too. On a bed whose two sides share one receiver,
+  `sync_clock` sets the clock once.
+- `onlysnore_set_alarm`: `week_mask` becomes `weekdays` (`monday` to
+  `sunday`; leave it empty for a one-time alarm). `action` is gone, since what
+  each of its codes does on the bed is unknown; alarms use the app's default.
+- `richmat_mh_control`: `opcode` becomes `control`, the control's name as its
+  button shows it (add `up` or `down` for a motor, such as `Back up`).
+  `action: voice_queue` is gone.
+- Renamed in the action list, with the same action IDs: Aging in Place,
+  CheersSleep, FurniMove, L2 Motion, LOGICDATA, M Line, Motion Bed, Nisco and
+  MLILY Supreme, Okimiki, Personal Comfort, SleepEvolution and W.Silver
+  Products, Sleep Number, Solace, Somos, StarCode and SUTA Smart Home actions
+  now read "Brand: what they do", using "settings", "press button" or "run
+  control" for the general ones.
 
 ## Settings
 
