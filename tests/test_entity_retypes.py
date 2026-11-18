@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.entity_retypes import (
     async_carry_over_retyped_entities,
     async_retyped_entities_built,
 )
+from custom_components.adjustable_bed.entity_sweep import EntityLedger
 
 ADDRESS = "AA:BB:CC:DD:EE:01"
 # What the platforms build: the light and the shared massage timer.
@@ -170,7 +171,7 @@ async def test_repair_names_only_automations_that_use_the_old_entity(hass: HomeA
         },
     )
     async_carry_over_retyped_entities(hass, entry, _runtime())
-    async_retyped_entities_built(hass, entry, BUILT)
+    async_retyped_entities_built(hass, entry, BUILT, frozenset())
     await hass.async_block_till_done()
     issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id)
     assert issue is not None
@@ -189,7 +190,7 @@ async def test_no_repair_without_references(hass: HomeAssistant) -> None:
     _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
     assert await async_setup_component(hass, "automation", {"automation": []})
     async_carry_over_retyped_entities(hass, entry, _runtime())
-    async_retyped_entities_built(hass, entry, BUILT)
+    async_retyped_entities_built(hass, entry, BUILT, frozenset())
     await hass.async_block_till_done()
     assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
 
@@ -264,7 +265,7 @@ async def test_repair_finds_automations_by_registry_id_and_changed_options(
         },
     )
     async_carry_over_retyped_entities(hass, entry, _runtime())
-    async_retyped_entities_built(hass, entry, BUILT)
+    async_retyped_entities_built(hass, entry, BUILT, frozenset())
     await hass.async_block_till_done()
     issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id)
     assert issue is not None
@@ -286,7 +287,7 @@ async def test_repair_waits_until_the_sweep_confirms_the_replacement(
     issues = ir.async_get(hass)
     assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
     # Discovery finishes: the bed builds the light.
-    async_retyped_entities_built(hass, entry, BUILT)
+    async_retyped_entities_built(hass, entry, BUILT, frozenset())
     await hass.async_block_till_done()
     assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is not None
 
@@ -297,6 +298,33 @@ async def test_no_repair_for_a_replacement_the_bed_does_not_provide(hass: HomeAs
     _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
     assert await async_setup_component(hass, "automation", NIGHT_LIGHT)
     async_carry_over_retyped_entities(hass, entry, _runtime())
-    async_retyped_entities_built(hass, entry, frozenset())
+    async_retyped_entities_built(hass, entry, frozenset(), frozenset())
     await hass.async_block_till_done()
     assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
+
+
+async def test_a_replacement_built_after_a_late_reply_is_reported_then(
+    hass: HomeAssistant,
+) -> None:
+    """A light the controller expects but has not built yet stays pending."""
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
+    assert await async_setup_component(hass, "automation", NIGHT_LIGHT)
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    light = ("light", f"{ADDRESS}_under_bed_lights")
+    ledger = EntityLedger(hass, entry, SimpleNamespace())
+    ledger.platforms_forwarded(["light"])
+    ledger.platform_finished("light")
+    issues = ir.async_get(hass)
+    with patch(
+        "custom_components.adjustable_bed.entity_sweep._retained_identities",
+        return_value=frozenset({light}),
+    ):
+        ledger.async_sweep()
+        await hass.async_block_till_done()
+        assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
+        ledger.record("light", [light])
+        ledger.async_sweep()
+        await hass.async_block_till_done()
+    assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is not None

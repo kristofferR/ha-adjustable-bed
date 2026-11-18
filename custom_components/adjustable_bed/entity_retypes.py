@@ -156,22 +156,34 @@ def async_carry_over_retyped_entities(
 
 @callback
 def async_retyped_entities_built(
-    hass: HomeAssistant, entry: ConfigEntry, created: Collection[tuple[str, str]]
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    built: Collection[tuple[str, str]],
+    retained: Collection[tuple[str, str]],
 ) -> None:
     """Report the automations that still name an old entity the bed has replaced.
 
-    Called by the sweep with every (domain, unique ID) the entry's platforms
-    built, once that record is authoritative. A replacement the bed does not
-    build is dropped: the sweep removes it.
+    Called by the sweep with the (domain, unique ID) pairs the entry's platforms
+    built and those a controller says may still appear, once that record is
+    authoritative. A replacement that may still appear stays pending; one that
+    is neither is dropped, as the sweep removes it.
     """
-    moved = hass.data.get(_PENDING, {}).pop(entry.entry_id, [])
-    built = [item for item in moved if (item.new_domain, item.new_unique_id) in created]
-    if not built:
+    pending = hass.data.get(_PENDING, {})
+    moved = pending.pop(entry.entry_id, [])
+    report_now = [item for item in moved if (item.new_domain, item.new_unique_id) in built]
+    waiting = [
+        item
+        for item in moved
+        if (identity := (item.new_domain, item.new_unique_id)) not in built and identity in retained
+    ]
+    if waiting:
+        pending[entry.entry_id] = waiting
+    if not report_now:
         return
 
     @callback
     def report(_hass: HomeAssistant) -> None:
-        _async_report_references(hass, entry, built)
+        _async_report_references(hass, entry, report_now)
 
     # Automations and scripts load after integrations at startup.
     async_at_started(hass, report)
@@ -206,9 +218,7 @@ def _carry_over(
     if retype.old_domain == retype.new_domain:
         # The row itself carries over, with its entity ID and every setting.
         registry.async_update_entity(old_id, new_unique_id=new_unique_id)
-        return Moved(
-            old_id, old.id, old_id, retype.new_domain, new_unique_id, options_changed=True
-        )
+        return Moved(old_id, old.id, old_id, retype.new_domain, new_unique_id, options_changed=True)
     object_id = split_entity_id(old_id)[1]
     taken = registry.async_is_registered(f"{retype.new_domain}.{object_id}")
     user = er.RegistryEntryDisabler.USER

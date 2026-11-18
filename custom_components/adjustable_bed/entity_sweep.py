@@ -120,8 +120,9 @@ class EntityLedger:
         retained = _retained_identities(self._entry, self.coordinator)
         if retained is None:
             return
-        created = retained.union(*self._records.values())
-        async_retyped_entities_built(self.hass, self._entry, created)
+        built = frozenset[EntityIdentity]().union(*self._records.values())
+        async_retyped_entities_built(self.hass, self._entry, built, retained)
+        created = retained | built
         if created == self._swept:
             return
         self._swept = created
