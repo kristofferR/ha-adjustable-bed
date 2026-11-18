@@ -28,6 +28,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..richmat.labels import function_label, screen_label
+from ..richmat.transport import select_app_link
 from . import protocol as p
 from .catalog import (
     ACTIONS,
@@ -71,28 +72,10 @@ class Link:
 
 
 def select_link(client: BleakClient) -> Link:
-    routes = {codec.TRANSPORTS[k].service_uuid: codec.TRANSPORTS[k] for k in RICHMAT_APP.transports}
-    tx = rx = None
-    single = False
-    for service in client.services:
-        route = routes.get(service.uuid.lower())
-        if route is None:
-            continue
-        single = route.single
-        for char in service.characteristics:
-            if (
-                tx is None
-                and char.uuid.lower() == route.write_uuid.lower()
-                and "write" in char.properties
-            ):
-                tx = char
-            if rx is None and "notify" in char.properties:
-                rx = char
-    if tx is None or rx is None:
-        raise ValueError(
-            "Richmat app requires its selected writable and notification characteristics"
-        )
-    return Link(client, tx, rx, single)
+    selected = select_app_link(client, RICHMAT_APP.transports)
+    if selected.rx is None:
+        raise ValueError("Richmat app requires its selected writable and notification characteristics")
+    return Link(client, selected.tx, selected.rx, selected.query_single)
 
 
 def action_name(action: Action) -> str:

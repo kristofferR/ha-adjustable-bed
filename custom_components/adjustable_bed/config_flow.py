@@ -852,6 +852,7 @@ def _bed_type_selector(
             ),
             *RICHMAT_MH_BED_TYPES,
             "luuna",
+            "luniosmart",
             "sonicsleep",
             "suta",
             BED_TYPE_MLILY,

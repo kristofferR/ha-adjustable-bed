@@ -76,6 +76,8 @@
     "ace41e3d": "ace41e3d-1e48-4fac-bcae-43d7e7d202df",
     "b9934c44": "b9934c44-5c91-462b-80a1-30fccc29d758",
     "d44bc439": "d44bc439-abfd-45a2-b575-925416129600",
+    "d44bc439-abfd-45a2-b575-925416129601": "d44bc439-abfd-45a2-b575-925416129601",
+    "d44bc439-abfd-45a2-b575-925416129611": "d44bc439-abfd-45a2-b575-925416129611",
     "d44bc439-abfd-45a2-b575-925416129622": "d44bc439-abfd-45a2-b575-925416129622",
     "db801020": "db801020-f324-29c3-38d1-85c0c2e86885",
     "db801021": "db801021-f324-29c3-38d1-85c0c2e86885",
@@ -279755,6 +279757,3474 @@
               "f1f14e004e7e",
               2,
               7
+            ]
+          ]
+        }
+      }
+    },
+    "luniosmart": {
+      "info": {
+        "bed_type": "luniosmart",
+        "controller": "LunioSmartController",
+        "module": "luniosmart.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129601",
+              "notify",
+              "",
+              1,
+              0
+            ],
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e02010071",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439",
+              false,
+              "6e200d080301380102030405ee",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e010031a0",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e010045b4",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e010046b5",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e01002e9d",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439",
+              false,
+              "6e01002b9a",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_open": {
+          "as": "legs_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_close": {
+          "as": "legs_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_stop": {
+          "as": "legs_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "hold_head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002493",
+              3,
+              107
+            ],
+            [
+              400,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002594",
+              3,
+              107
+            ],
+            [
+              400,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002695",
+              3,
+              107
+            ],
+            [
+              400,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439",
+              false,
+              "6e01002796",
+              3,
+              107
+            ],
+            [
+              400,
+              "d44bc439",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        }
+      }
+    },
+    "luniosmart:S1": {
+      "info": {
+        "bed_type": "luniosmart",
+        "controller": "LunioSmartController",
+        "module": "luniosmart.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400003",
+              "notify",
+              "",
+              1,
+              0
+            ],
+            [
+              100,
+              "6e400002",
+              false,
+              "00",
+              1,
+              0
+            ],
+            [
+              207,
+              "6e400002",
+              false,
+              "6e200d080301380102030405ee",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e010031a0",
+              1,
+              0
+            ],
+            [
+              207,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e010045b4",
+              1,
+              0
+            ],
+            [
+              207,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e010046b5",
+              1,
+              0
+            ],
+            [
+              207,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e01002e9d",
+              1,
+              0
+            ],
+            [
+              207,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "6e400002",
+              false,
+              "6e01002b9a",
+              1,
+              0
+            ],
+            [
+              207,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_open": {
+          "as": "legs_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_close": {
+          "as": "legs_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_stop": {
+          "as": "legs_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "hold_head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "6e400002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002493",
+              3,
+              107
+            ],
+            [
+              400,
+              "6e400002",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002594",
+              3,
+              107
+            ],
+            [
+              400,
+              "6e400002",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002695",
+              3,
+              107
+            ],
+            [
+              400,
+              "6e400002",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "6e400002",
+              false,
+              "6e01002796",
+              3,
+              107
+            ],
+            [
+              400,
+              "6e400002",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        }
+      }
+    },
+    "luniosmart:S3": {
+      "info": {
+        "bed_type": "luniosmart",
+        "controller": "LunioSmartController",
+        "module": "luniosmart.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129611",
+              "notify",
+              "",
+              1,
+              0
+            ],
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e02010071",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e200d080301380102030405ee",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e010031a0",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e010045b4",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e010046b5",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002e9d",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002b9a",
+              1,
+              0
+            ],
+            [
+              207,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_open": {
+          "as": "legs_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_close": {
+          "as": "legs_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_stop": {
+          "as": "legs_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "hold_head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002493",
+              3,
+              107
+            ],
+            [
+              400,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002594",
+              3,
+              107
+            ],
+            [
+              400,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002695",
+              3,
+              107
+            ],
+            [
+              400,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01002796",
+              3,
+              107
+            ],
+            [
+              400,
+              "d44bc439-abfd-45a2-b575-925416129622",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        }
+      }
+    },
+    "luniosmart:S4": {
+      "info": {
+        "bed_type": "luniosmart",
+        "controller": "LunioSmartController",
+        "module": "luniosmart.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe1",
+              "notify",
+              "",
+              1,
+              0
+            ],
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e02010071",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe2",
+              false,
+              "6e200d080301380102030405ee",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e010031a0",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e010045b4",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e010046b5",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e01002e9d",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe2",
+              false,
+              "6e01002b9a",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_open": {
+          "as": "legs_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_close": {
+          "as": "legs_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_stop": {
+          "as": "legs_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "hold_head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002493",
+              3,
+              107
+            ],
+            [
+              400,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002594",
+              3,
+              107
+            ],
+            [
+              400,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002695",
+              3,
+              107
+            ],
+            [
+              400,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe2",
+              false,
+              "6e01002796",
+              3,
+              107
+            ],
+            [
+              400,
+              "0000ffe2",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        }
+      }
+    },
+    "luniosmart:S5": {
+      "info": {
+        "bed_type": "luniosmart",
+        "controller": "LunioSmartController",
+        "module": "luniosmart.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff1",
+              "notify",
+              "",
+              1,
+              0
+            ],
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e02010071",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000fff2",
+              false,
+              "6e200d080301380102030405ee",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e010031a0",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e010045b4",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e010046b5",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e01002e9d",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000fff2",
+              false,
+              "6e01002b9a",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_open": {
+          "as": "legs_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_close": {
+          "as": "legs_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_stop": {
+          "as": "legs_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "hold_head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002493",
+              3,
+              107
+            ],
+            [
+              400,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002594",
+              3,
+              107
+            ],
+            [
+              400,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002695",
+              3,
+              107
+            ],
+            [
+              400,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000fff2",
+              false,
+              "6e01002796",
+              3,
+              107
+            ],
+            [
+              400,
+              "0000fff2",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        }
+      }
+    },
+    "luniosmart:S6": {
+      "info": {
+        "bed_type": "luniosmart",
+        "controller": "LunioSmartController",
+        "module": "luniosmart.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000003",
+              "notify",
+              "",
+              1,
+              0
+            ],
+            [
+              100,
+              "00000002",
+              false,
+              "6e02010071",
+              1,
+              0
+            ],
+            [
+              207,
+              "00000002",
+              false,
+              "6e200d080301380102030405ee",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e010031a0",
+              1,
+              0
+            ],
+            [
+              207,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e010045b4",
+              1,
+              0
+            ],
+            [
+              207,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e010046b5",
+              1,
+              0
+            ],
+            [
+              207,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e01002e9d",
+              1,
+              0
+            ],
+            [
+              207,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "00000002",
+              false,
+              "6e01002b9a",
+              1,
+              0
+            ],
+            [
+              207,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_open": {
+          "as": "legs_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_close": {
+          "as": "legs_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:legs_stop": {
+          "as": "legs_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "hold_head_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002493",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_head_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002594",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002695",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002796",
+              10,
+              107
+            ],
+            [
+              1170,
+              "00000002",
+              false,
+              "6e01006edd",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002493",
+              3,
+              107
+            ],
+            [
+              400,
+              "00000002",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002594",
+              3,
+              107
+            ],
+            [
+              400,
+              "00000002",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002695",
+              3,
+              107
+            ],
+            [
+              400,
+              "00000002",
+              false,
+              "6e01006edd",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:legs_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "00000002",
+              false,
+              "6e01002796",
+              3,
+              107
+            ],
+            [
+              400,
+              "00000002",
+              false,
+              "6e01006edd",
+              2,
+              107
             ]
           ]
         }

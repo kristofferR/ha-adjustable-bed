@@ -124,6 +124,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "L2MotionProfile:l2motion": {"hold": ("l2motion",)},
     "BedgearProfile:bedgear": {"hold": ("bedgear",)},
     **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
+    "LunioSmartProfile:luniosmart": {"hold": ("luniosmart",)},
     "SonicSleepProfile:one": {"hold": ("sonicsleep",)},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
@@ -342,6 +343,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
        for site in ("EXECUTION", "SymphonyProfile", "word_profile")},
     "profiles/l2motion.py:<module>.L2MotionProfile": ("L2MotionProfile:l2motion",),
     "profiles/bedgear.py:<module>.BedgearProfile": ("BedgearProfile:bedgear",),
+    "profiles/luniosmart.py:<module>.LunioSmartProfile": ("LunioSmartProfile:luniosmart",),
     "profiles/sonicsleep.py:<module>.SonicSleepProfile": ("SonicSleepProfile:one",),
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
     **{

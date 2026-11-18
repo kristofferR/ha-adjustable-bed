@@ -282,6 +282,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "luuna": _NO_ANGLES_SCOPED,
     "personal_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "mline": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "luniosmart": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sonicsleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "hush_remote": _NO_ANGLES,
     BED_TYPE_HUSH_SLEEP_MM: _NO_ANGLES,

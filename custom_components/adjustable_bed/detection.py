@@ -584,6 +584,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
     "personal_comfort": "Personal Comfort",
     "mline": "M Line app",
+    "luniosmart": "Lunio Smart+ app",
     "sonicsleep": "SonicSleep / 소닉슬립 app",
     "hush_remote": "Hush Base remote finder",
     "hush_sleep_mm": "Hush Base sleep sensor (MM)",

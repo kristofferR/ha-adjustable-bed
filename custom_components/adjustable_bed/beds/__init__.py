@@ -76,6 +76,7 @@ if TYPE_CHECKING:
     from .logicdata.air_pump import LogicdataAirPumpController as LogicdataAirPumpController
     from .logicdata.app import LogicdataAppController as LogicdataAppController
     from .logicdata.controller import LogicdataController as LogicdataController
+    from .luniosmart.controller import LunioSmartController as LunioSmartController
     from .malouf.app import MaloufAppController as MaloufAppController
     from .motion_bed.controller import MotionBedController as MotionBedController
     from .motomotion.controller import MotoMotionController as MotoMotionController
@@ -148,6 +149,7 @@ _EXPORT_MODULES = {
     "RizeHomeController": "rize_home.controller",
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
     "N32MotionBedController": "n32_motion_bed.controller",
+    "LunioSmartController": "luniosmart.controller",
     "SonicSleepController": "sonicsleep.controller",
     "ResidentController": "resident.controller",
     "NerumController": "nerum.controller",

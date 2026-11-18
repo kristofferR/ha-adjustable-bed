@@ -296,6 +296,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "luuna": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
+    "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hush_sleep_mm": GENERIC_FIELDS,
@@ -2656,6 +2657,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         "luuna",
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("luuna")),),
         derive=_luuna_settings,
+    ),
+    "luniosmart": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 100,
+            CONF_PROTOCOL_VARIANT: "auto",
+        },
+        title=lambda _data: "Lunio Smart+",
+        imports=("profiles.luniosmart",),
     ),
     "sonicsleep": SetupProfile(
         owns={
