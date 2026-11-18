@@ -4820,8 +4820,5 @@
   },
   "button:richmat_legacy_utility": {
     "card_section": "utility"
-  },
-  "sensor:richmat_legacy_profile": {
-    "card_section": "hidden"
   }
 }
