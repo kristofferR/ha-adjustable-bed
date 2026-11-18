@@ -190,3 +190,39 @@ async def test_runtime_mode_and_group_snapshots_persist_on_only_their_physical_s
         assert profile_route(child(entry, "right")[const.CONF_PROFILE_ID]).bed_type == "richmat_mlily_supreme"
     finally:
         await paired.async_shutdown()
+
+
+async def test_disconnected_app_mode_calls_keep_the_offline_controller(hass) -> None:
+    from custom_components.adjustable_bed.beds.richmat_mh import app_services as actions
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.services import async_register_services
+
+    data = {
+        CONF_ADDRESS: "11:22:33:44:55:77",
+        const.CONF_BED_TYPE: "richmat_mlily_supreme",
+        const.CONF_PROTOCOL_VARIANT: "model_3i",
+        "capabilities": {"richmat_mh": {"app": "mlily_supreme", "model": "3i"}},
+    }
+    data[const.CONF_PROFILE_ID] = resolve_profile_id(data)
+    entry = MockConfigEntry(domain=const.DOMAIN, version=5, data=data)
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    await coordinator.async_prime_offline_controller()
+    offline = coordinator.capability_controller
+    assert isinstance(offline, RichmatMHAppController) and coordinator.controller is None
+    await async_register_services(hass)
+    with (
+        patch.object(coordinator, "_schedule_pending_capability_reload"),
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, "both")], []),
+        ),
+    ):
+        for fields in ({"transmit_mode": "1"}, {"motor_group": "group_split"}):
+            await hass.services.async_call(const.DOMAIN, actions.SERVICE, {
+                "device_id": ["bed"], "action": "app_mode", **fields,
+            }, blocking=True)
+    assert coordinator.capability_controller is offline
+    assert offline._transmit_mode == 1 and offline._group_type == "GROUP_SPLIT"
+    assert entry.data["capabilities"]["richmat_mh"]["group_type"] == "GROUP_SPLIT"
+
