@@ -373,6 +373,30 @@ def test_button_names_are_readable_and_unique(key):
         assert not re.search(r"\b(?!TV\b)[A-Z]{2,}\b", name), name
 
 
+@pytest.mark.parametrize("app", APP_NAMES)
+@pytest.mark.parametrize(
+    ("code", "names"),
+    (
+        ("A1", {"Flat"}),
+        ("GV", {"Flat", "TV", "Lounge", "Zero Gravity"}),
+        ("TH", {"Position 1", "Position 2", "Position 3"}),
+        ("LP", {"Memory 1", "Memory 2", "Memory 3"}),
+        ("T3", {"Zero Gravity", "Save Zero Gravity"}),
+    ),
+)
+def test_preset_buttons_have_preset_placement(app, code, names):
+    ctrl, _ = make(app, code)
+    specs = {spec.name: spec for spec in ctrl.controller_button_specs}
+    for name in names:
+        assert specs[name].card == bed.CARD_PRESETS
+        assert specs[name].translation_key == "richmat_legacy_presets"
+    for name, spec in specs.items():
+        if name == "Toggle Light":
+            assert spec.card == bed.CARD_LIGHTING
+        elif name.startswith("Massage"):
+            assert spec.card == bed.CARD_MASSAGE
+
+
 async def test_axis_and_mode_buttons_choose_then_press(clock):
     ctrl, c = make(code="GV")
     await ctrl.start_notify()

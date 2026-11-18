@@ -104,6 +104,10 @@ _VARIANT_NAMES: Final = {
     "pos up": "{} Up", "pos down": "{} Down",
     "selected axis up": "{} Up", "selected axis down": "{} Down",
 }
+_PRESET_NAMES: Final = frozenset({
+    "Flat", "Lounge", "TV", "Read/TV", "Relax", "Zero Gravity", "Anti-Snore",
+    "Memory", "Memory 1", "Memory 2", "Memory 3", "Position 1", "Position 2", "Position 3",
+})
 
 
 def _button_name(action: Action, variant: int | None = None) -> str:
@@ -307,7 +311,7 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                         label = ("Save to " if name.startswith("Memory") else "Save ") + name
                     section = (
                         CARD_PRESETS
-                        if action.programmable
+                        if action.programmable or name in _PRESET_NAMES
                         else CARD_LIGHTING
                         if label == "Toggle Light"
                         else CARD_MASSAGE
