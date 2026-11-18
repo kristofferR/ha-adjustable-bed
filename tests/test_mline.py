@@ -729,12 +729,12 @@ async def test_registered_alarm_and_raw_history_response(hass, monkeypatch, prot
     with virtual_clock():
         await hass.services.async_call(
             DOMAIN,
-            "mline_set_alarm",
+            "set_alarm",
             {
                 "device_id": "bed",
                 "enabled": True,
                 "time": "07:17:00",
-                "wake_mode": "m1",
+                "wake_action": "memory_1",
                 "weekdays": [],
             },
             blocking=True,
@@ -746,7 +746,7 @@ async def test_registered_alarm_and_raw_history_response(hass, monkeypatch, prot
     client.write_gatt_char.reset_mock()
     with virtual_clock():
         await hass.services.async_call(
-            DOMAIN, "mline_set_alarm", {"device_id": "bed", "enabled": False}, blocking=True
+            DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False}, blocking=True
         )
     assert (
         frames(client)[0] == codec.AUXILIARY[f"closeAlarm.{'P2' if protocol == 'okin' else 'P1'}"]
