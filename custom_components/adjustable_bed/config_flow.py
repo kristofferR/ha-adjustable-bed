@@ -102,8 +102,8 @@ from .app_profiles import (
     per_side_profile,
 )
 from .bed_traits import (
-    bed_traits,
     asks_massage,
+    bed_traits,
     bed_type_has_position_feedback,
     connection_mode_is_fixed,
     default_connection_mode,
@@ -219,9 +219,9 @@ from .const import (
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
-    CONF_CONNECTION_MODE,
     CONF_FURNIMOVE_REMOTE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
@@ -245,10 +245,10 @@ from .const import (
     CONF_PAIRLINK_PASSWORD_TEXT,
     CONF_PAIRLINK_ROLE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
-    CONF_READ_POSITIONS,
     CONF_PREFERRED_ADAPTER,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
+    CONF_READ_POSITIONS,
     CONF_REVERSE_MOTORS,
     CONF_RMCONTROL_PRODUCT,
     CONF_STARCODE_LIFT_ENTRIES,
@@ -278,12 +278,12 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
-    MAX_IDLE_DISCONNECT_SECONDS,
     KEESON_LAYOUT_APP_BED_TYPES,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
+    MAX_IDLE_DISCONNECT_SECONDS,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OKIN_BEDDING_APP_BED_TYPES,
@@ -2282,15 +2282,79 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Stage a guided app or layout change without changing the working entry."""
         entry = self._get_reconfigure_entry()
         family = reconfigure_family(entry.data)
-        if family is None:
-            return self.async_abort(reason="reconfigure_not_supported")
         if self._migration is None:
             self._migration = MigrationSnapshot.of(entry)
             self._migration_family = family
             self._manual_data = self._migration.staged(entry.title)
         if is_paired(entry.data):
             return await self.async_step_migration_split(user_input)
+        if family is None:
+            return await self.async_step_reconfigure_bed_type()
         return await getattr(self, f"async_step_{family.step}")(user_input)
+
+    async def async_step_reconfigure_bed_type(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose any bed type or app for an entry no guided family asks about.
+
+        The answer runs the same questions and checks a new bed would, on a
+        staged copy, and the change is saved only after its review.
+        """
+        assert self._manual_data is not None
+        data = self._manual_data
+        saved_variant = data.get(CONF_PROTOCOL_VARIANT)
+        current = bed_type_choice(
+            data[CONF_BED_TYPE], saved_variant if isinstance(saved_variant, str) else None
+        )
+        picker = _bed_type_selector(current, show_saved_id=True)
+        if user_input is not None:
+            bed_type, variant = resolve_bed_type_choice(picker(user_input[CONF_BED_TYPE]))
+            self._select_family_route(bed_type, variant)
+            # A row a guided family asks about runs that family's checks too.
+            self._migration_family = next(
+                (family for family in GUIDED_FAMILIES if bed_type in family.asks), None
+            )
+            if variant is None and len(_setup_routes(bed_type)) >= 2:
+                return await self.async_step_reconfigure_route()
+            return await self._async_reconfigure_continue()
+        return self.async_show_form(
+            step_id="reconfigure_bed_type",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_BED_TYPE, default=picker.shown(current)): picker}
+            ),
+            description_placeholders={"current": self._migration_selection_label(data)},
+        )
+
+    async def async_step_reconfigure_route(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the route of a bed type with several, as new-bed setup offers."""
+        assert self._manual_data is not None
+        data = self._manual_data
+        bed_type: str = data[CONF_BED_TYPE]
+        routes = _setup_routes(bed_type)
+        current = data.get(CONF_PROTOCOL_VARIANT)
+        if current not in routes:
+            current = next(iter(routes))
+        if user_input is not None and user_input.get(CONF_PROTOCOL_VARIANT) in routes:
+            self._select_family_route(bed_type, user_input[CONF_PROTOCOL_VARIANT])
+            return await self._async_reconfigure_continue()
+        return self.async_show_form(
+            step_id="reconfigure_route",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_PROTOCOL_VARIANT, default=current): vol.In(routes)}
+            ),
+            description_placeholders={"bed_type": bed_type_label(bed_type)},
+        )
+
+    async def _async_reconfigure_continue(self) -> ConfigFlowResult:
+        """Ask the staged route's own questions, then pair, check and review it."""
+        assert self._manual_data is not None
+        if app_step := await self._async_app_setup_step(
+            self._manual_data, pairing_step="manual_pairing"
+        ):
+            return app_step
+        return await self._async_finish_family_route()
 
     async def async_step_migration_split(
         self, user_input: dict[str, Any] | None = None
