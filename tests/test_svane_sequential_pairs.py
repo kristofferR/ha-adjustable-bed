@@ -14,7 +14,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
     CONF_CONNECTION_MODE,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -28,6 +27,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 from tests.service_patches import patch_with_family
 from tests.test_svane import make_controller
 

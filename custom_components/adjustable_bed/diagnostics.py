@@ -89,6 +89,7 @@ async def _async_paired_diagnostics(
             ),
             "position_data": getattr(child, "position_data", None),
             "command_timing": child.command_timing,
+            "connection": child.connection_settings,
             "config": dict(child.entry.data),
             # From the side's descriptor: a single-address side's entry is the parent.
             "profile_id": (get_child(entry.data, side) or {}).get(CONF_PROFILE_ID),
@@ -288,6 +289,8 @@ async def async_get_config_entry_diagnostics(
             "kaidi_resolved_variant": entry.data.get(CONF_KAIDI_RESOLVED_VARIANT),
             "kaidi_variant_source": entry.data.get(CONF_KAIDI_VARIANT_SOURCE),
         },
+        # Effective values: 5.6 stores a setting only when it differs from the default.
+        "connection": coordinator.connection_settings,
         "coordinator": {
             "is_connected": is_connected,
             "is_connecting": coordinator.is_connecting,

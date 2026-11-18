@@ -53,6 +53,7 @@ from custom_components.adjustable_bed.number import (
 from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
 from custom_components.adjustable_bed.services import async_register_services
 from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 from .conftest import TEST_ADDRESS, TEST_NAME
 
@@ -692,7 +693,6 @@ async def test_sequential_both_button_is_finite_and_drops_stale_hold_metadata(
 ) -> None:
     from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
     from custom_components.adjustable_bed.const import (
-        CONF_PAIR_CONNECTION_MODE,
         CONF_PAIR_ID,
         PAIR_CONNECTION_MODE_CONCURRENT,
         PAIR_CONNECTION_MODE_SEQUENTIAL,
@@ -856,7 +856,6 @@ async def test_stale_both_hold_preflight_preserves_new_left_hold(
 ) -> None:
     """A STOP during Both-side preflight cannot replace a newer Left hold."""
     from custom_components.adjustable_bed.const import (
-        CONF_PAIR_CONNECTION_MODE,
         CONF_PAIR_ID,
         PAIR_CONNECTION_MODE_CONCURRENT,
         SIDE_BOTH,

@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
 
     from .coordinator import ChildEntryView
+    from .coordinator_connection import ConnectionSettings
 
 type ControllerCommand = Callable[[BedController], Coroutine[object, object, None]]
 
@@ -104,6 +105,15 @@ class EntityRuntime(Protocol):
         preemptible: bool = True,
         run_if: Callable[[], bool] | None = None,
     ) -> T: ...
+
+    async def async_refresh_bed_presence(self) -> None:
+        """Read occupancy over an open link without connecting or renewing it."""
+        ...
+
+    @property
+    def connection_settings(self) -> ConnectionSettings:
+        """Return how the physical link behaves, for diagnostics."""
+        ...
 
     def register_position_callback(
         self, callback_fn: Callable[[dict[str, float]], None]
@@ -293,6 +303,14 @@ class EntityRuntimeView(ABC):
         return await self._entity_source.async_execute_controller_query(
             query_fn, cancel_running, skip_disconnect, preemptible, run_if
         )
+
+    async def async_refresh_bed_presence(self) -> None:
+        # One read refreshes every side, so no side scope is needed.
+        await self._entity_source.async_refresh_bed_presence()
+
+    @property
+    def connection_settings(self) -> ConnectionSettings:
+        return self._entity_source.connection_settings
 
     def register_position_callback(
         self, callback_fn: Callable[[dict[str, float]], None]
