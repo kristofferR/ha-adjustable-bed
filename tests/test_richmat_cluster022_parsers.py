@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from custom_components.adjustable_bed.beds.richmat_mh import protocol
-from custom_components.adjustable_bed.beds.richmat_mh.cluster022 import Cluster022Classifier
+from custom_components.adjustable_bed.beds.richmat_mh.app_controller import RichmatMHAppClassifier
 from tests.test_richmat_cluster022 import FIXTURES, make
 from tests.test_richmat_cluster022_sleep import receiver
 from tests.test_richmat_mh import sleeps as sleeps
@@ -32,7 +32,7 @@ async def test_retained_parser_scenario(row, sleeps) -> None:
             observed = controller._apply_frame.call_args.args[0]
             assert {"type": observed[3], "payload_hex": observed[4:].hex()} == expected
         return
-    events = Cluster022Classifier("mlily_supreme").feed(raw)
+    events = RichmatMHAppClassifier("mlily_supreme").feed(raw)
     if expected is None:
         assert not events
         return
@@ -83,8 +83,8 @@ async def test_retained_parser_scenario(row, sleeps) -> None:
 def test_nisco_and_mlily_combined_waist_forms_are_separate() -> None:
     one = protocol.mattress_frame(3, 1, 2)
     combined = one * 3
-    nisco = Cluster022Classifier("nisco")
-    mlily = Cluster022Classifier("mlily_supreme")
+    nisco = RichmatMHAppClassifier("nisco")
+    mlily = RichmatMHAppClassifier("mlily_supreme")
     assert [event.kind for event in nisco.feed(combined)] == ["waist"] * 3
     assert not mlily.feed(combined)
     assert mlily.buffer == ""
@@ -96,7 +96,7 @@ async def test_nisco_keeps_shared_mattress_effect_without_mlily_cache(sleeps) ->
     for event in controller._classifier.feed(bytes(raw)):
         controller._apply(event)
     state = controller._coordinator.controller_state
-    assert state["richmat_cluster022_mattress_available"] is True
-    assert state["richmat_cluster022_mattress_frame"] == bytes(raw).hex()
+    assert state["richmat_mh_mattress_available"] is True
+    assert state["richmat_mh_mattress_frame"] == bytes(raw).hex()
     assert not controller._normal_ready and not controller._normal_values
     assert not controller._delayed_consumers

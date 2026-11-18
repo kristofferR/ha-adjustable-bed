@@ -4549,7 +4549,7 @@ sonicsleep:
       selector:
         boolean: null
 
-richmat_cluster022_control:
+richmat_mh_control:
   fields:
     device_id:
       required: true
@@ -4592,7 +4592,7 @@ richmat_cluster022_control:
             - massage
             - light_lock
 
-richmat_cluster022_mode_alarm:
+richmat_mh_mode_alarm:
   fields:
     device_id:
       required: true
@@ -4621,7 +4621,7 @@ richmat_cluster022_mode_alarm:
           multiple: true
           options: [head_massage, foot_massage, head_foot_massage, head_foot_massage_intensity, head_massage_intensity_down, heat, sleep_aid]
 
-richmat_cluster022_sleep_mode:
+richmat_mh_sleep_mode:
   fields:
     device_id:
       required: true

@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, Final, Literal
 
 from ...codec import richmat as codec
 from ...command_scheduler import current_command_context
-from ...const import RICHMAT_CLUSTER022_APPS
+from ...const import RICHMAT_MH_APP_CATALOGS
 from ...controller_state import StateKey
 from ...execution import HOLD_CEILING_MS
-from ...profiles.richmat_cluster022 import APPS
+from ...profiles.richmat_mh_apps import APPS
 from ..base import BedController
 from ..builder import BuildContext
 from ..entity_specs import (
@@ -26,7 +26,7 @@ from ..entity_specs import (
 )
 from ..ruf_richmat.controller import RufRichmatController, waist_init
 from . import protocol
-from .cluster022_catalog import catalog, details
+from .app_catalog import catalog, details
 from .controller import (
     ALARM_STATUS_KEY,
     DETECTION_KEY,
@@ -45,14 +45,14 @@ if TYPE_CHECKING:
 
     from ...coordinator import AdjustableBedCoordinator
 
-TX_MODE: Final = StateKey[str | None]("richmat_cluster022_transmit_mode")
-GROUP_TYPE: Final = StateKey[str | None]("richmat_cluster022_group_type")
-DIAGNOSTIC_ROWS: Final = StateKey[list[dict[str, str]]]("richmat_cluster022_diagnostic_rows")
-DIAGNOSTIC_PROGRESS: Final = StateKey[int]("richmat_cluster022_diagnostic_progress")
-MATTRESS_FRAME: Final = StateKey[str]("richmat_cluster022_mattress_frame")
-MATTRESS_AVAILABLE: Final = StateKey[bool]("richmat_cluster022_mattress_available")
-WAIST_AVAILABLE: Final = StateKey[bool]("richmat_cluster022_waist_available")
-LAST_REPLY: Final = StateKey[str]("richmat_cluster022_last_reply")
+TX_MODE: Final = StateKey[str | None]("richmat_mh_transmit_mode")
+GROUP_TYPE: Final = StateKey[str | None]("richmat_mh_group_type")
+DIAGNOSTIC_ROWS: Final = StateKey[list[dict[str, str]]]("richmat_mh_diagnostic_rows")
+DIAGNOSTIC_PROGRESS: Final = StateKey[int]("richmat_mh_diagnostic_progress")
+MATTRESS_FRAME: Final = StateKey[str]("richmat_mh_mattress_frame")
+MATTRESS_AVAILABLE: Final = StateKey[bool]("richmat_mh_mattress_available")
+WAIST_AVAILABLE: Final = StateKey[bool]("richmat_mh_waist_available")
+LAST_REPLY: Final = StateKey[str]("richmat_mh_last_reply")
 _COMPONENTS: Final = {
     ("3", "1"): "motor1", ("3", "2"): "motor2", ("3", "3"): "motor3",
     ("3", "4"): "motor4", ("3", "5"): "motor5",
@@ -81,7 +81,7 @@ _NORMAL_SETTINGS: Final = {
 }
 
 
-class Cluster022Classifier(protocol.Classifier):
+class RichmatMHAppClassifier(protocol.Classifier):
     """Keep the accepted app's coalescing and diagnostic boundaries separate."""
 
     def __init__(self, app: str) -> None:
@@ -110,7 +110,7 @@ class Cluster022Classifier(protocol.Classifier):
         super()._mattress(buf)
 
 
-class Cluster022Controller(RufRichmatController):
+class RichmatMHAppController(RufRichmatController):
     """Reuse family controls and mattress entities with two independent catalogs."""
 
     _app_groups: Mapping[str, protocol.AppGroup] = dict[str, protocol.AppGroup].fromkeys(APPS, "revive")
@@ -122,7 +122,7 @@ class Cluster022Controller(RufRichmatController):
         protocol_variant: str | None = None, device_name: str | None = None,
     ) -> None:
         super().__init__(coordinator, app=app, protocol_variant=protocol_variant, device_name=device_name)
-        self._classifier = Cluster022Classifier(app)
+        self._classifier = RichmatMHAppClassifier(app)
         stored_mode = self._stored_snapshot.get("transmit_mode")
         self._transmit_mode = stored_mode if type(stored_mode) is int and stored_mode in (0, 1, 2) else 0
         self._session_generation = 0
@@ -339,7 +339,7 @@ class Cluster022Controller(RufRichmatController):
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
-        return tuple(dict.fromkeys(f"cluster022_{control.code:02x}" for control in self._controls() if control.keep_ms))
+        return tuple(dict.fromkeys(f"mh_{control.code:02x}" for control in self._controls() if control.keep_ms))
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not 1 <= duration_ms <= HOLD_CEILING_MS:
@@ -347,7 +347,7 @@ class Cluster022Controller(RufRichmatController):
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
-        code = int(control.removeprefix("cluster022_"), 16)
+        code = int(control.removeprefix("mh_"), 16)
         item = next(item for item in self._controls() if item.code == code and item.keep_ms)
         await self._held(item, duration_ms)
 
@@ -356,8 +356,8 @@ class Cluster022Controller(RufRichmatController):
         axes = {axis.key: axis for axis in self._axes()}
         return tuple(
             replace(spec, hold=ControllerMotorHoldSpec(
-                f"cluster022_{axes[spec.key].up.code:02x}",
-                f"cluster022_{axes[spec.key].down.code:02x}",
+                f"mh_{axes[spec.key].up.code:02x}",
+                f"mh_{axes[spec.key].down.code:02x}",
             )) if spec.key in axes else spec
             for spec in super().motor_control_specs
         )
@@ -498,7 +498,7 @@ class Cluster022Controller(RufRichmatController):
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         specs = super().controller_select_specs + (
             ControllerSelectSpec(
-                TX_MODE, "richmat_cluster022_transmit_mode", TX_MODE, ("0", "1", "2"),
+                TX_MODE, "richmat_mh_transmit_mode", TX_MODE, ("0", "1", "2"),
                 lambda ctrl, option: _invoke(ctrl, "select_transmit_mode", option),
                 local_select_fn=self.set_transmit_mode,
             ),
@@ -523,15 +523,15 @@ class Cluster022Controller(RufRichmatController):
         for spec in super().controller_button_specs:
             control = next((c for c in self._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
             if control and control.keep_ms:
-                spec = replace(spec, hold=ControllerHoldSpec(f"cluster022_{control.code:02x}"))
+                spec = replace(spec, hold=ControllerHoldSpec(f"mh_{control.code:02x}"))
             if control and (control.kind == "save" or control.code == 0x62):
                 spec = replace(spec, requires_confirmation=True)
             specs.append(spec)
         if self._smart_light_lock():
             specs.append(ControllerButtonSpec(
-                "richmat_cluster022_smart_light_lock", "Toggle smart light lock",
+                "richmat_mh_toggle_smart_light_lock", "Toggle smart light lock",
                 lambda ctrl: _invoke(ctrl, "toggle_smart_light_lock"),
-                translation_key="richmat_cluster022_smart_light_lock", cancel_movement=False,
+                translation_key="richmat_mh_toggle_smart_light_lock", cancel_movement=False,
             ))
         return tuple(specs)
 
@@ -710,11 +710,11 @@ class _HoldElapsed(Exception):
 
 
 async def build_controller(ctx: BuildContext) -> BedController:
-    app = RICHMAT_CLUSTER022_APPS[ctx.bed_type]
+    app = RICHMAT_MH_APP_CATALOGS[ctx.bed_type]
     if ctx.variant == "sleep":
-        await ctx.preload("richmat_mh.cluster022_sleep")
-        from .cluster022_sleep import Cluster022SleepController
+        await ctx.preload("richmat_mh.app_sleep")
+        from .app_sleep import RichmatMHAppSleepController
 
-        return Cluster022SleepController(ctx.coordinator, app=app)
+        return RichmatMHAppSleepController(ctx.coordinator, app=app)
     await ctx.coordinator.hass.async_add_executor_job(catalog, app)
-    return Cluster022Controller(ctx.coordinator, app=app, protocol_variant=ctx.variant, device_name=ctx.live_device_name)
+    return RichmatMHAppController(ctx.coordinator, app=app, protocol_variant=ctx.variant, device_name=ctx.live_device_name)

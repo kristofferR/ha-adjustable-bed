@@ -10,8 +10,8 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS
 
-from custom_components.adjustable_bed.beds.richmat_mh.cluster022_sleep import (
-    Cluster022SleepController,
+from custom_components.adjustable_bed.beds.richmat_mh.app_sleep import (
+    RichmatMHAppSleepController,
 )
 from custom_components.adjustable_bed.beds.ruf_richmat.protocol import sleep_frame
 from custom_components.adjustable_bed.beds.ruf_richmat.sleep import CHARACTERISTIC
@@ -21,7 +21,7 @@ from tests.test_richmat_mh import sleeps as sleeps
 
 def receiver(app="nisco"):
     coordinator = make(app, entry_data={CONF_ADDRESS: "11:22:33:44:55:66"})._coordinator
-    controller = Cluster022SleepController(coordinator, app=app)
+    controller = RichmatMHAppSleepController(coordinator, app=app)
     controller._char = MagicMock(uuid=CHARACTERISTIC)
     controller._owner = coordinator.client
     return controller
@@ -113,7 +113,7 @@ def test_live_defaults_and_saved_receiver_gate_are_not_borrowed(app, std) -> Non
     controller._notify(None, bytearray(sleep_frame(0x11, payload)))
     state = controller._coordinator.controller_state
     assert state["ruf_richmat_sleep_left_heart_rate"] == 70
-    assert state.get("richmat_cluster022_sleep_left_state") == std
+    assert state.get("richmat_mh_sleep_left_state") == std
     state.clear()
     controller._coordinator.entry.data.pop(CONF_ADDRESS)
     controller._notify(None, bytearray(sleep_frame(0x11, payload)))

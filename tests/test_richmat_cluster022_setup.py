@@ -19,9 +19,9 @@ from custom_components.adjustable_bed import (
     _build_paired_children,
     const,
 )
-from custom_components.adjustable_bed.beds.richmat_mh.cluster022 import Cluster022Controller
-from custom_components.adjustable_bed.beds.richmat_mh.cluster022_sleep import (
-    Cluster022SleepController,
+from custom_components.adjustable_bed.beds.richmat_mh.app_controller import RichmatMHAppController
+from custom_components.adjustable_bed.beds.richmat_mh.app_sleep import (
+    RichmatMHAppSleepController,
 )
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -99,10 +99,10 @@ async def test_imported_serialized_profile_uses_actual_factory(hass, app, _label
     assert restored.app == app
     assert restored.supports_single_address_pairing is False
     if variant == "sleep":
-        assert isinstance(restored, Cluster022SleepController)
+        assert isinstance(restored, RichmatMHAppSleepController)
         assert restored.motor_control_specs == ()
     else:
-        assert isinstance(restored, Cluster022Controller)
+        assert isinstance(restored, RichmatMHAppController)
         assert restored.model.model_id == "cfrm"
         assert restored.route == "C"
         assert restored._transmit_mode == 2

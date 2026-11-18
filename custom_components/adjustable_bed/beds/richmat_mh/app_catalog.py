@@ -7,7 +7,7 @@ from functools import cache
 from pathlib import Path
 
 from ...catalog_json import Node, load
-from ...profiles.richmat_cluster022 import APPS, models
+from ...profiles.richmat_mh_apps import APPS, models
 from .controller import Control, Features, Model
 
 

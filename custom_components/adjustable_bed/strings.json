@@ -2074,7 +2074,7 @@
       "richmat_mh_toggle_smart_set_lock": {
         "name": "Toggle smart set lock"
       },
-      "richmat_cluster022_smart_light_lock": {
+      "richmat_mh_toggle_smart_light_lock": {
         "name": "Toggle smart light lock"
       },
       "richmat_mh_start_detection": {
@@ -5025,13 +5025,13 @@
       "ruf_richmat_sleep_left_heart_rate": {
         "name": "Left heart rate"
       },
-      "richmat_cluster022_sleep_left_state": {
+      "richmat_mh_sleep_left_state": {
         "name": "Left sleep state"
       },
-      "richmat_cluster022_last_reply": {
+      "richmat_mh_last_reply": {
         "name": "Last bed reply"
       },
-      "richmat_cluster022_sleep_right_state": {
+      "richmat_mh_sleep_right_state": {
         "name": "Right sleep state"
       },
       "ruf_richmat_sleep_left_breathing_rate": {
@@ -6057,11 +6057,11 @@
           "anti_snore": "Anti-snore"
         }
       },
-      "richmat_cluster022_transmit_mode": {
+      "richmat_mh_transmit_mode": {
         "name": "Transmit mode",
         "state": {"0": "Mode 0", "1": "Mode 1", "2": "Mode 2"}
       },
-      "richmat_cluster022_group_type": {
+      "richmat_mh_group_type": {
         "name": "Motor group",
         "state": {"single": "Single", "group_sync": "Synchronized group", "group_split": "Split group"}
       },
@@ -8087,7 +8087,7 @@
         }
       }
     },
-    "richmat_cluster022_control": {
+    "richmat_mh_control": {
       "name": "Nisco / MLILY Supreme control",
       "description": "Run a control declared by the selected app/model, or query one physical receiver.",
       "fields": {
@@ -8098,7 +8098,7 @@
         "query": {"name": "Query"}
       }
     },
-    "richmat_cluster022_mode_alarm": {
+    "richmat_mh_mode_alarm": {
       "name": "Nisco mode-page alarm",
       "description": "Set or cancel Nisco's separate mode-page alarm using its 150 ms two-phase caller.",
       "fields": {
@@ -8110,7 +8110,7 @@
         "massage": {"name": "Declared alarm massage choices"}
       }
     },
-    "richmat_cluster022_sleep_mode": {
+    "richmat_mh_sleep_mode": {
       "name": "Nisco direct sleep user mode",
       "description": "Select the separate sleep receiver's user mode through Nisco's direct mode-selection caller.",
       "fields": {

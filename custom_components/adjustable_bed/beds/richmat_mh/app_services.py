@@ -20,9 +20,9 @@ from ...services import (
 from . import protocol
 from .services import ALARM_SCHEMA
 
-SERVICE = "richmat_cluster022_control"
-MODE_ALARM_SERVICE = "richmat_cluster022_mode_alarm"
-SLEEP_MODE_SERVICE = "richmat_cluster022_sleep_mode"
+SERVICE = "richmat_mh_control"
+MODE_ALARM_SERVICE = "richmat_mh_mode_alarm"
+SLEEP_MODE_SERVICE = "richmat_mh_sleep_mode"
 QUERIES = {
     "version": protocol.TX_VERSION,
     "exit_one_minute": protocol.TX_EXIT_ONE_MIN,
@@ -64,10 +64,10 @@ async def handle_control(call: ServiceCall) -> None:
         action != "query" and (opcode is None or query is not None)
     ):
         raise ServiceValidationError("Choose one query or one declared control opcode")
-    await async_import_modules(call.hass, "beds.richmat_mh.cluster022")
-    from .cluster022 import Cluster022Controller
+    await async_import_modules(call.hass, "beds.richmat_mh.app_controller")
+    from .app_controller import RichmatMHAppController
 
-    def validate(controller: Cluster022Controller) -> None:
+    def validate(controller: RichmatMHAppController) -> None:
         if action != "query":
             assert opcode is not None
             if action == "voice_queue":
@@ -75,7 +75,7 @@ async def handle_control(call: ServiceCall) -> None:
             else:
                 controller.validate_control(opcode, remote_long=action == "remote_long")
 
-    async def execute(controller: Cluster022Controller) -> None:
+    async def execute(controller: RichmatMHAppController) -> None:
         if action == "query":
             assert query is not None
             controller._classifier.rx_type = "INIT"
@@ -90,7 +90,7 @@ async def handle_control(call: ServiceCall) -> None:
                 await controller.tap(opcode)
 
     await _preflight_and_execute(
-        targets, Cluster022Controller, "Nisco / MLILY Supreme BED controls", execute,
+        targets, RichmatMHAppController, "Nisco / MLILY Supreme BED controls", execute,
         validate=validate, cancel_running=action != "query", resource=None,
         admit=True, admissions=admissions,
     )
@@ -109,10 +109,10 @@ async def handle_mode_alarm(call: ServiceCall) -> None:
         raise ServiceValidationError("This alarm uses minute precision")
     if call.data.get("slot") is not None:
         raise ServiceValidationError("The ModeFrag caller has no alarm-slot field")
-    await async_import_modules(call.hass, "beds.richmat_mh.cluster022")
-    from .cluster022 import Cluster022Controller
+    await async_import_modules(call.hass, "beds.richmat_mh.app_controller")
+    from .app_controller import RichmatMHAppController
 
-    async def execute(controller: Cluster022Controller) -> None:
+    async def execute(controller: RichmatMHAppController) -> None:
         minutes = 0
         if enabled and when is not None:
             now = dt_util.now()
@@ -120,7 +120,7 @@ async def handle_mode_alarm(call: ServiceCall) -> None:
         await controller.mode_alarm(enabled, minutes, position, massage)
 
     await _preflight_and_execute(
-        targets, Cluster022Controller, "Nisco ModeFrag alarm", execute,
+        targets, RichmatMHAppController, "Nisco ModeFrag alarm", execute,
         validate=lambda ctrl: ctrl.validate_mode_alarm(enabled, position, massage),
         admit=True, admissions=admissions,
     )
@@ -130,11 +130,11 @@ async def handle_sleep_mode(call: ServiceCall) -> None:
     targets = _call_targets(call)
     admissions = [_capture_command_admission(parent, side, ("configuration",)) for parent, side in targets]
     option: str = call.data["mode"]
-    await async_import_modules(call.hass, "beds.richmat_mh.cluster022_sleep")
-    from .cluster022_sleep import Cluster022SleepController
+    await async_import_modules(call.hass, "beds.richmat_mh.app_sleep")
+    from .app_sleep import RichmatMHAppSleepController
 
     await _preflight_and_execute(
-        targets, Cluster022SleepController, "Nisco direct sleep-user-mode caller",
+        targets, RichmatMHAppSleepController, "Nisco direct sleep-user-mode caller",
         lambda ctrl: ctrl.direct_user_mode(option),
         validate=lambda ctrl: ctrl.validate_direct_user_mode(option),
         admit=True, admissions=admissions,

@@ -33,7 +33,7 @@ from ...card import (
 )
 from ...const import (
     CONF_BLE_DEVICE_NAME,
-    RICHMAT_CLUSTER022_APPS,
+    RICHMAT_MH_APP_CATALOGS,
     RICHMAT_MH_APPS,
     RUF_RICHMAT_APPS,
     VARIANT_AUTO,
@@ -239,10 +239,10 @@ class Model:
 
 def load_model(app: str, model_id: str) -> Model | None:
     """Return a catalog model, or None when the app has no such live model."""
-    if app in RICHMAT_CLUSTER022_APPS.values():
-        from .cluster022_catalog import load_model as load_cluster022_model
+    if app in RICHMAT_MH_APP_CATALOGS.values():
+        from .app_catalog import load_model as load_mh_app_model
 
-        return load_cluster022_model(app, model_id)
+        return load_mh_app_model(app, model_id)
     if app in ("ruf", "wsilver2", "americanstar", "bailey2", "tx"):
         from ..ruf_richmat.controller import load_app_model
 
@@ -266,8 +266,8 @@ def selectable_models(app: str) -> tuple[str, ...]:
 
 def _model_is_known(app: str, model: str) -> bool:
     """Validate new app selectors from static IDs without loading a catalog on HA's loop."""
-    if app in RICHMAT_CLUSTER022_APPS.values():
-        from ...profiles.richmat_cluster022 import APPS, models
+    if app in RICHMAT_MH_APP_CATALOGS.values():
+        from ...profiles.richmat_mh_apps import APPS, models
 
         base = model.removesuffix("_mattress")
         return base in models(app) and (base == model or APPS[app].normal_mattress)
@@ -290,7 +290,7 @@ def resolve_model(
     sentinel (Idealbed also asks for names starting with ``Cool Touch``), and a
     prefix without a live model is reported as invalid.
     """
-    if app in RICHMAT_CLUSTER022_APPS.values() and protocol_variant == "sleep":
+    if app in RICHMAT_MH_APP_CATALOGS.values() and protocol_variant == "sleep":
         return "sleep", None
     if app == "ruf":
         return ("bqrm", None) if protocol_variant in (None, VARIANT_AUTO, "model_bqrm") else (None, "unknown_model")
@@ -1778,11 +1778,11 @@ async def build_controller(ctx: BuildContext) -> BedController:
     The app's name rule picks the model unless the variant fixes it; offline
     controllers must not read the display name.
     """
-    if ctx.bed_type in RICHMAT_CLUSTER022_APPS:
-        await ctx.preload("richmat_mh.cluster022")
-        from .cluster022 import build_controller as build_cluster022_controller
+    if ctx.bed_type in RICHMAT_MH_APP_CATALOGS:
+        await ctx.preload("richmat_mh.app_controller")
+        from .app_controller import build_controller as build_mh_app_controller
 
-        return await build_cluster022_controller(ctx)
+        return await build_mh_app_controller(ctx)
     controller_class = RichmatMhController
     if ctx.bed_type in RUF_RICHMAT_APPS:
         await ctx.preload("ruf_richmat.controller")

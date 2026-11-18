@@ -1131,7 +1131,7 @@ before any target's setting changes. See the [SonicSleep reference](beds/richmat
 
 ### Nisco / MLILY Supreme controls
 
-`adjustable_bed.richmat_cluster022_control` accepts `action: press` and a decimal
+`adjustable_bed.richmat_mh_control` accepts `action: press` and a decimal
 `opcode` declared by the selected app/model page, `action: remote_long` for an
 attached fixed-remote save, or `action: query` and one named included query.
 `action: voice_queue` takes a source opcode from this model's own speech map,
@@ -1141,9 +1141,9 @@ The opcode is checked against the current profile; this is not a raw-write API.
 The fixed-remote long action waits three seconds, sends the finalized save and
 releases through that caller's sequence. STOP cancels admission or execution.
 
-`richmat_cluster022_mode_alarm` retains Nisco's separate 150 ms two-phase
+`richmat_mh_mode_alarm` retains Nisco's separate 150 ms two-phase
 mode-page caller. Its ordinary alarm page still uses 300 ms. The separate
-`richmat_cluster022_sleep_mode` action retains Nisco's direct single/double
+`richmat_mh_sleep_mode` action retains Nisco's direct single/double
 user-mode caller. MLILY Supreme does not inherit either Nisco-only caller.
 
 Use standard preset/memory actions, `richmat_mh_alarm`,

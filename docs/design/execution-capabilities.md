@@ -149,6 +149,7 @@ Evidence keys resolve in [Evidence keys](#evidence-keys).
 | **Richmat 6E (R1)** | | | | | |
 | `richmat` (all routes) | S stream | U | U | rmc2 | explicit STOP after the sustain timer; speed rows are massage |
 | `richmat_revive`, `richmat_best_mattress`, `richmat_blvd_home`, `richmat_harmony`, `richmat_idealbed` | S stream | U | U | revive, best, blvd, harmony, ideal, row055 | KEEP rows repeat until removed, STOP after 120 ms; speed rows are massage |
+| `richmat_nisco`, `richmat_mlily_supreme` | S stream | U | U | nisco, mlily-supreme, row081 | Per-app/model held controls refresh at their declared cadence; generic release follows after 120 ms and attached fixed remotes retain their separate 150 ms cadence. Current Nisco generic raw LONG attachment remains NOT_ESTABLISHED and is fenced by HA; native checksummed fixed-remote save is distinct. No concurrent-motor or single-address side inference. Hardware unverified, frozen 2026-07-14. |
 | `ruf_betten`, `wsilver_products`, `richmat_americanstar`, `bailey_bed_control`, `richmat_tx` | S stream | U | U | ruf, wsilver, rmamericanstar, bailey, tx, row061 | KEEP rows repeat at the model's interval until removed; RUF sends STOP at once, the others STOP after 120 ms |
 | `leggett_wilinke`, `leggett_platt` (`mlrm`) | S stream | U | U | lp2 | framed STOP per mode |
 | `richmat_app` | S stream | U | U | row173 | product movement only; 100ms ticks and explicit STOP |
@@ -635,6 +636,10 @@ share the Okin N-frame files.
    no accepted artifact.
 
 ## Evidence keys
+
+| nisco | Accepted Nisco 1.1.1 (3), `com.richmat.nisco`, P1.timing/release_behavior and source-qualified attached callers; `com.richmat.nisco-1.1.1-2026-11-17-queue001/report/`. Hardware UNVERIFIED. |
+| mlily-supreme | Independently accepted MLILY Supreme 1.3.1 (5), `com.richmat.mlily_supreme`, P1.timing/release_behavior and app-owned caller gates; `com.richmat.mlily_supreme-1.3.1-2026-11-17-queue001/report/`. Hardware UNVERIFIED. |
+| row081 | Accepted reconciliation `cluster-022-reconciliation-2026-11-17-queue001/report/`; app capabilities remain separate, raw Nisco LONG UI attachment NOT_ESTABLISHED and implementation-unrun. |
 
 | row133 | Symphony Sleep Sense 2.8.0 (194), `com.okin.ist`, accepted audit002: one motor frame on down, no refresh timer; format-specific STOP on release. Latched motor holds only, finite presets and explicit saves. No composed concurrent motors. |
 

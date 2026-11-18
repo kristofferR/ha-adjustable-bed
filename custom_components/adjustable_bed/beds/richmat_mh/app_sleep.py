@@ -11,7 +11,7 @@ from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS
 
 from ...controller_state import StateKey
-from ...profiles.richmat_cluster022 import APPS
+from ...profiles.richmat_mh_apps import APPS
 from ..entity_specs import ControllerStateSensorSpec
 from ..ruf_richmat.protocol import crc8, sleep_frame
 from ..ruf_richmat.sleep import CHARACTERISTIC, RufRichmatSleepController
@@ -22,12 +22,12 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
 _STD_KEYS: Final = {
-    side: StateKey[int](f"richmat_cluster022_sleep_{side}_state")
+    side: StateKey[int](f"richmat_mh_sleep_{side}_state")
     for side in ("left", "right")
 }
 
 
-class Cluster022SleepController(RufRichmatSleepController):
+class RichmatMHAppSleepController(RufRichmatSleepController):
     """Reuse the family commands and entities with explicit app/session ownership."""
 
     app_labels = {app: profile.label for app, profile in APPS.items()}

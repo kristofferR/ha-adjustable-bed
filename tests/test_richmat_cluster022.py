@@ -11,15 +11,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.adjustable_bed.beds.richmat_mh import protocol
-from custom_components.adjustable_bed.beds.richmat_mh.cluster022 import (
+from custom_components.adjustable_bed.beds.richmat_mh.app_catalog import catalog
+from custom_components.adjustable_bed.beds.richmat_mh.app_controller import (
     DIAGNOSTIC_ROWS,
-    Cluster022Classifier,
-    Cluster022Controller,
+    RichmatMHAppClassifier,
+    RichmatMHAppController,
     _HoldElapsed,
 )
-from custom_components.adjustable_bed.beds.richmat_mh.cluster022_catalog import catalog
 from custom_components.adjustable_bed.beds.richmat_mh.controller import resolve_model
-from custom_components.adjustable_bed.profiles.richmat_cluster022 import (
+from custom_components.adjustable_bed.profiles.richmat_mh_apps import (
     SURFACE_IDS,
     models,
     variants,
@@ -33,7 +33,7 @@ DIAGNOSTICS = json.loads((FIXTURES / "mlily_diagnostic_cases.json").read_text())
 
 def make(
     app: str, model: str = "garm", *, entry_data: dict[str, object] | None = None,
-) -> Cluster022Controller:
+) -> RichmatMHAppController:
     coordinator = MagicMock()
     coordinator.cancel_command = asyncio.Event()
     coordinator.motor_pulse_count = 2
@@ -44,13 +44,13 @@ def make(
     coordinator.client.write_gatt_char = AsyncMock()
     coordinator.handle_controller_state_update.side_effect = coordinator.controller_state.__setitem__
     coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
-    controller = Cluster022Controller(coordinator, app=app, protocol_variant=f"model_{model}")
+    controller = RichmatMHAppController(coordinator, app=app, protocol_variant=f"model_{model}")
     controller._owner_client = coordinator.client
     controller._write_char = MagicMock(uuid=protocol.GATT_MAPS[0][1])
     return controller
 
 
-def frames(controller: Cluster022Controller) -> list[str]:
+def frames(controller: RichmatMHAppController) -> list[str]:
     return [bytes(call.args[1]).hex() for call in controller.client.write_gatt_char.call_args_list]
 
 
@@ -69,7 +69,7 @@ def test_app_catalogs_keep_independent_membership_and_selectors() -> None:
 
 @pytest.mark.parametrize("case", DIAGNOSTICS, ids=lambda case: case["id"])
 def test_mlily_diagnostic_fixture(case) -> None:
-    classifier = Cluster022Classifier("mlily_supreme")
+    classifier = RichmatMHAppClassifier("mlily_supreme")
     classifier.rx_type = case["kwargs"].get("rx_type", "INIT")
     events = classifier.feed(bytes.fromhex(case["frame_hex"]))
     expected = case["expected"]
@@ -118,7 +118,7 @@ def test_diagnostic_rows_append_and_stop_retains_them() -> None:
     assert len(controller._diagnostic_rows) == 2
     controller._apply(protocol.Event("detection_started"))
     assert controller._diagnostic_rows == []
-    nisco = Cluster022Classifier("nisco")
+    nisco = RichmatMHAppClassifier("nisco")
     nisco.rx_type = "INIT"
     assert [event.kind for event in nisco.feed(bytes.fromhex("6e90c311d2"))] == ["init"]
 
@@ -200,7 +200,7 @@ async def test_dispatch_revalidates_the_current_lease_after_ble_wait(renewed) ->
     now = asyncio.get_running_loop().time()
     context = SimpleNamespace(cancel_event=asyncio.Event(), lease=True, hold_deadline=now - 1)
     await controller._ble_lock.acquire()
-    with patch("custom_components.adjustable_bed.beds.richmat_mh.cluster022.current_command_context", return_value=context):
+    with patch("custom_components.adjustable_bed.beds.richmat_mh.app_controller.current_command_context", return_value=context):
         task = asyncio.create_task(controller._dispatch(protocol.control_frame(0x24)))
         await asyncio.sleep(0)
         if renewed:
@@ -266,7 +266,7 @@ async def test_elapsed_hold_does_not_add_a_refresh_after_slow_write(sleeps) -> N
             clock[0] += 0.25
 
     controller.client.write_gatt_char.side_effect = write
-    with patch("custom_components.adjustable_bed.beds.richmat_mh.cluster022.asyncio.get_running_loop") as loop:
+    with patch("custom_components.adjustable_bed.beds.richmat_mh.app_controller.asyncio.get_running_loop") as loop:
         loop.return_value.time.side_effect = lambda: clock[0]
         await controller._held(controller._axes()[0].up, 100)
     assert frames(controller) == ["6e01002493", "6e01006edd"]
@@ -344,7 +344,7 @@ async def test_voice_queue_and_fixed_remote_keep_distinct_cadence(sleeps) -> Non
 def test_aliases_and_entity_metadata_are_owned_by_each_catalog() -> None:
     import gzip
 
-    from custom_components.adjustable_bed.beds.richmat_mh.cluster022_catalog import details
+    from custom_components.adjustable_bed.beds.richmat_mh.app_catalog import details
 
     contract = json.loads(gzip.decompress((FIXTURES / "catalog_contracts.json.gz").read_bytes()))
     strings = json.loads((Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text())["entity"]
@@ -375,5 +375,5 @@ def test_aliases_and_entity_metadata_are_owned_by_each_catalog() -> None:
 @pytest.mark.parametrize("filename", ("strings.json", "translations/en.json"))
 def test_group_type_translations_use_schema_keys(filename: str) -> None:
     path = Path(__file__).parents[1] / "custom_components/adjustable_bed" / filename
-    states = json.loads(path.read_text())["entity"]["select"]["richmat_cluster022_group_type"]["state"]
+    states = json.loads(path.read_text())["entity"]["select"]["richmat_mh_group_type"]["state"]
     assert set(states) == {"single", "group_sync", "group_split"}
