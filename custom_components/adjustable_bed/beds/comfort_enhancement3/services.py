@@ -10,7 +10,13 @@ from ...import_executor import async_import_modules
 
 
 def register_services(hass: HomeAssistant) -> None:
-    from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+    from ...services import (
+        DEVICE_IDS,
+        SIDE_FIELD,
+        _call_targets,
+        _invalid,
+        _preflight_and_execute,
+    )
 
     async def start_massage(call: ServiceCall) -> None:
         await async_import_modules(call.hass, "beds.comfort_enhancement3.controller")
@@ -19,7 +25,12 @@ def register_services(hass: HomeAssistant) -> None:
         def validate(controller: ComfortEnhancement3Controller) -> None:
             validate_massage(call.data["duration"], call.data["intensity"], call.data["kind"])
             if not controller.remote.massage:
-                raise ValueError("This remote has no massage")
+                raise _invalid(
+                    "feature_not_supported",
+                    "This remote has no massage",
+                    device_name="This bed",
+                    feature="massage",
+                )
 
         await _preflight_and_execute(
             _call_targets(call),

@@ -504,7 +504,7 @@ async def test_review_S2_both_lease_is_rejected_before_any_motion_or_claim(
         if action == "timed_move"
         else {"control": "head_up", "duration": 0.1}
     )
-    with pytest.raises(ServiceValidationError, match="simultaneous side execution"):
+    with pytest.raises(ServiceValidationError, match="one side at a time"):
         await hass.services.async_call(DOMAIN, action, data, blocking=True)
     assert packets(client) == []
 

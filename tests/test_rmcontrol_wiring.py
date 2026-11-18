@@ -676,3 +676,17 @@ def test_countdown_picks_the_repeated_hour_after_a_clock_change() -> None:
         reference_time=datetime(2026, 10, 25, 2, 45, tzinfo=oslo),
     )
     assert alarm.minutes_until() == 45
+
+
+def test_occurrence_skips_a_time_the_clock_change_removes() -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    oslo = ZoneInfo("Europe/Oslo")
+    # 02:30 does not exist on 2026-03-29 in Oslo, so the alarm is the next day's.
+    alarm = AlarmRequest(
+        enabled=True, hour=2, minute=30, reference_time=datetime(2026, 3, 29, 0, 30, tzinfo=oslo)
+    )
+    assert alarm.occurrence() == datetime(2026, 3, 30, 2, 30, tzinfo=oslo)

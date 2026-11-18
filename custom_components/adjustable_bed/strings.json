@@ -10929,7 +10929,10 @@
       "options": {
         "none": "None",
         "flat": "Flat",
+        "flat_reset": "Flat (reset)",
+        "all_up": "All motors up",
         "zero_g": "Zero gravity",
+        "zero_g_2": "Zero gravity 2",
         "anti_snore": "Anti-snore",
         "lounge": "Lounge",
         "tv": "TV",

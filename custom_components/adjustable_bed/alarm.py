@@ -19,7 +19,10 @@ WEEKDAYS: Final = ("monday", "tuesday", "wednesday", "thursday", "friday", "satu
 WAKE_ACTIONS: Final = (
     "none",
     "flat",
+    "flat_reset",
+    "all_up",
     "zero_g",
+    "zero_g_2",
     "anti_snore",
     "lounge",
     "tv",
@@ -171,7 +174,14 @@ class AlarmRequest:
             for days in (0, 1)
             for fold in (0, 1)
         ]
-        future = [c for c in candidates if c.timestamp() > start.timestamp()]
+        # A time skipped by a clock change does not exist on that day.
+        real = [
+            c
+            for c in candidates
+            if datetime.fromtimestamp(c.timestamp(), c.tzinfo).replace(tzinfo=None)
+            == c.replace(tzinfo=None, fold=0)
+        ]
+        future = [c for c in real if c.timestamp() > start.timestamp()]
         return min(future, key=lambda candidate: candidate.timestamp())
 
     def seconds_until(self, now: datetime) -> int:

@@ -2230,8 +2230,6 @@ def _with_bed_defaults(
 
 async def handle_set_alarm(call: ServiceCall) -> None:
     """Validate one alarm on every physical target, then write it to each."""
-    from .beds.serenity.services import _execute_zseries_alarm
-
     alarm = _alarm_request(call)
     given = [name for name in ALARM_OPTIONAL_FIELDS if name in call.data]
     targets = _call_targets(call)
@@ -2246,6 +2244,9 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         await set_symphony_alarm(call, alarm, given)
         return
     if route == "zseries":
+        await async_import_modules(call.hass, "beds.serenity.services")
+        from .beds.serenity.services import _execute_zseries_alarm
+
         # Z-Series alarms exist only after a live manufacturer read. The options
         # are checked on every target, connecting where needed, before anything
         # is scheduled.
@@ -2320,14 +2321,15 @@ async def handle_set_alarm(call: ServiceCall) -> None:
 
 async def handle_sync_clock(call: ServiceCall) -> None:
     """Synchronize each targeted device clock to Home Assistant's local time."""
-    from .beds.serenity.services import _execute_zseries_alarm
-
     targets = _call_targets(call)
 
     async def sync(controller: BedController) -> None:
         await controller.sync_clock()
 
     if _profile_route(targets, {BED_TYPE_ZSERIES: "zseries"}, SERVICE_SYNC_CLOCK):
+        await async_import_modules(call.hass, "beds.serenity.services")
+        from .beds.serenity.services import _execute_zseries_alarm
+
         # Z-Series clocks live on the alarm page, gated by a live manufacturer read.
         await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
         return

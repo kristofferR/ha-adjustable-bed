@@ -611,3 +611,26 @@ async def test_set_alarm_mattress_rejects_a_wake_action(hass):
             {"enabled": True, "time": "07:30:00", "mattress_side": "right", "wake_action": "tv"},
         )
     assert not frames(c)
+
+
+async def test_set_alarm_off_keeps_the_reported_calendar_slot(hass):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from tests.alarm_helpers import call_set_alarm
+
+    model = next(
+        m
+        for m, p in profiles("wsilver2").items()
+        if p["fields"].get("hasNewAlarm") and p["fields"].get("alarmList")
+    )
+    c = make("wsilver2", model)
+    c._dev = {}
+    c.ruf_richmat_alarm = AsyncMock()
+    with pytest.raises(ServiceValidationError, match="Refresh"):
+        await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+    c._calendar_alarms[3] = {"bed": 0, "hour": 6, "minute": 45, "mode": 0x45, "week": 0b0100_0001}
+    await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+    request = c.ruf_richmat_alarm.await_args.args[0]
+    assert (request.enabled, request.hour, request.minute, request.mode, request.weekdays) == (
+        False, 6, 45, 0x45, (1,)
+    )

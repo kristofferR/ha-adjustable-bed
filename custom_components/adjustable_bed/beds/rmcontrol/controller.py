@@ -110,7 +110,10 @@ async def detect_rmcontrol_transport(client: BleakClient) -> tuple[bool, str, bo
 # Shared wake actions and the product alarm catalog's action names.
 _ALARM_ACTIONS: Final = {
     "zero_g": "ZeroGravity",
+    "zero_g_2": "ZeroGravity2",
     "flat": "AllMotorDown",
+    "flat_reset": "MotorReset",
+    "all_up": "AllMotorUp",
     "anti_snore": "AntiSnoring",
     "lounge": "LoungePosition",
     "reading": "ReadingPosition",

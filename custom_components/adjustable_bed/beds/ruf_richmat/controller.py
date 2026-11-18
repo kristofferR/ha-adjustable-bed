@@ -861,6 +861,20 @@ class RufRichmatController(RichmatMhController):
             )
         if not self._calendar_page():
             return None
+        if not alarm.enabled:
+            # Turning a slot off keeps its reported time, days and position.
+            observed = self._calendar_alarms.get(alarm.slot)
+            if observed is None:
+                raise AlarmError("alarm_refresh_needed", "Refresh the bed alarms, then try again")
+            return AlarmRequest(
+                family="calendar",
+                enabled=False,
+                hour=observed["hour"],
+                minute=observed["minute"],
+                slot=alarm.slot,
+                mode=observed["mode"],
+                weekdays=tuple(day for day in range(7) if observed["week"] & (1 << (7 - day))),
+            )
         option = _ALARM_POSITIONS.get(alarm.wake_action)
         if option is None:
             raise ValueError("Choose a wake position from this bed's alarm list")

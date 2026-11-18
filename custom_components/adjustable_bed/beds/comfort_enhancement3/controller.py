@@ -773,9 +773,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
 
     def _wake_target(self, alarm: AlarmRequest) -> datetime:
         # The next occurrence of the time: today, or tomorrow once it has passed.
-        now = alarm.reference_time
-        passed = (alarm.hour, alarm.minute) <= (now.hour, now.minute)
-        return selected_time(now, alarm.hour, alarm.minute, passed)
+        return alarm.occurrence()
 
     def _wake_effects(self, alarm: AlarmRequest) -> dict[str, Any]:
         return {
