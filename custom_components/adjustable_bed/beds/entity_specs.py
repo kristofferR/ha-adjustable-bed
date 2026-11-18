@@ -179,6 +179,9 @@ class MotorControlSpec:
     max_angle: float = 68
     scheduler_resource: str | None = None
     hold: ControllerMotorHoldSpec | None = field(default=None, kw_only=True)
+    # What this motor's STOP halts when it has no hold spec: "side" when its
+    # stop is the controller's side-wide STOP. A hold spec states its own scope.
+    stop_scope: Literal["motor", "side"] | None = field(default=None, kw_only=True)
     # Logical sides drive the same physical actuator on a single receiver.
     shared_across_sides: bool = field(default=False, kw_only=True)
 

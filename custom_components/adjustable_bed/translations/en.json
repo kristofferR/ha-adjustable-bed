@@ -6238,7 +6238,7 @@
         }
       },
       "remacro_control_side": {
-        "name": "Control side",
+        "name": "Controlled side",
         "state": {
           "left": "Left",
           "right": "Right"
@@ -6551,7 +6551,7 @@
         }
       },
       "motomotion_side": {
-        "name": "Side",
+        "name": "Controlled side",
         "state": {
           "left": "Left",
           "right": "Right"

@@ -14,6 +14,7 @@ import pytest
 
 from custom_components.adjustable_bed.beds.nerum import controller as runtime
 from custom_components.adjustable_bed.beds.nerum import state
+from custom_components.adjustable_bed.card import CARD_HIDDEN, CARD_LIGHT_STATE, CARD_LIGHTING
 from custom_components.adjustable_bed.controller_state import ControllerState
 from custom_components.adjustable_bed.profiles import nerum as app
 from tests.hold_lease_wire import virtual_clock
@@ -239,3 +240,13 @@ async def test_preset_release_is_not_a_duplicate_motor_release():
     with virtual_clock():
         await ctrl.hold_control("memory_1", 1)
     assert frames(client) == [app.build("p2", 10)] + [app.build("p2", 6)] * 2
+
+
+def test_light_toggle_and_state_sit_together_in_the_card():
+    ctrl = bed("p1")[0]
+    light = next(s for s in ctrl.controller_button_specs if s.key == "nerum_light")
+    assert light.card == CARD_LIGHTING
+    cards = {s.key: s.card for s in ctrl.controller_state_binary_sensor_specs}
+    assert cards == {str(state.MASSAGE): CARD_HIDDEN, str(state.LIGHT): CARD_LIGHT_STATE}
+    enabled = {s.key for s in ctrl.controller_state_binary_sensor_specs if s.entity_registry_enabled_default}
+    assert enabled == {str(state.LIGHT)}

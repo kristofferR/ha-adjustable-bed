@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN
+from ...card import CARD_CONTROLLED_SIDE, CARD_HIDDEN
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
@@ -792,6 +792,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                     options,
                     select,
                     local_select_fn=apply,
+                    card=CARD_CONTROLLED_SIDE,
                 ),
             )
             if len(options) > 1

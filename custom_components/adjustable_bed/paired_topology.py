@@ -111,6 +111,16 @@ class PairAdmission:
         }
         self.active_children: set[BedChild] = set()
         self.active_group_resources: frozenset[str] = frozenset()
+        # Advanced by every STOP on a side and never by an ordinary command, so
+        # a service can tell a STOP from its own preemption. A sequential side
+        # that is already disconnected gets no STOP frame, so this is the only
+        # trace such a STOP leaves.
+        self.stop_count: dict[str, int] = {SIDE_LEFT: 0, SIDE_RIGHT: 0}
+
+    def note_stop(self, side: str, resources: Collection[str]) -> None:
+        """Record a STOP on ``side`` and invalidate its queued overlapping commands."""
+        self.stop_count[side] += 1
+        self.bump(side, resources)
 
     def bump(self, side: str, resources: Collection[str]) -> None:
         """Invalidate queued commands whose resources overlap a newer request."""

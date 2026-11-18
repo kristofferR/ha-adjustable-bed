@@ -126,7 +126,8 @@
   "card_section": "hidden"
  },
  "binary_sensor:nerum_light": {
-  "card_section": "hidden"
+  "card_section": "lighting",
+  "card_role": "state"
  },
  "binary_sensor:nerum_massage": {
   "card_section": "hidden"
@@ -1522,7 +1523,7 @@
   "card_section": "utility"
  },
  "button:nerum_light": {
-  "card_section": "utility"
+  "card_section": "lighting"
  },
  "button:octo_all_down": {
   "card_section": "utility"
@@ -3737,7 +3738,7 @@
   "card_section": "utility"
  },
  "select:motomotion_side": {
-  "card_section": "utility"
+  "card_section": "motors"
  },
  "select:octo_light_sensitivity": {
   "card_section": "hidden"
@@ -3771,10 +3772,10 @@
   "card_section": "massage"
  },
  "select:reverie_stk_side": {
-  "card_section": "utility"
+  "card_section": "motors"
  },
  "select:richmat_app_side": {
-  "card_section": "utility"
+  "card_section": "motors"
  },
  "select:richmat_mh_motor_mode": {
   "card_section": "utility"

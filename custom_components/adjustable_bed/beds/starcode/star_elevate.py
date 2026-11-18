@@ -109,6 +109,7 @@ class StarElevateController(ProfileExecution[Okin5AProfile], BedController, Star
                 open_fn=_move_elevate_both_up,
                 close_fn=_move_elevate_both_down,
                 stop_fn=lambda ctrl: ctrl.stop_all(),
+                stop_scope="side",
             ),
         )
 
