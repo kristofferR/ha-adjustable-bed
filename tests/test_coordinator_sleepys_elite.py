@@ -48,6 +48,7 @@ from custom_components.adjustable_bed.number import (
     AdjustableBedMassageNumber,
 )
 from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
 from custom_components.adjustable_bed.services import async_register_services
 
 from .conftest import TEST_ADDRESS, TEST_NAME
@@ -598,14 +599,6 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         )
         await clock.run_until(asyncio.create_task(level.async_set_native_value(0)))
         await clock.run_until(asyncio.create_task(level.async_set_native_value(6)))
-        brightness_up = next(
-            spec
-            for spec in controller.controller_button_specs
-            if spec.key == "sleepys_app_voice_brightness_up"
-        )
-        await clock.run_until(
-            asyncio.create_task(ControllerActionButton(coordinator, brightness_up).async_press())
-        )
 
         massage = AdjustableBedMassageNumber(
             coordinator,
@@ -620,14 +613,7 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         )
         position = AdjustableBedControllerNumber(coordinator, position_spec)
         await clock.run_until(asyncio.create_task(position.async_set_native_value(100)))
-        voice_target = next(
-            spec
-            for spec in controller.controller_button_specs
-            if spec.key == "sleepys_app_voice_axis_1_0"
-        )
-        await clock.run_until(
-            asyncio.create_task(ControllerActionButton(coordinator, voice_target).async_press())
-        )
+        await clock.run_until(asyncio.create_task(position.async_set_native_value(0)))
 
     stop = controller._route("stop").payload
     memory = ROUTES[("m1", "BOX25")].payload
@@ -640,18 +626,17 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
     voice_position = controller._value_route("position_axis_1", 0).payload
     assert [payload for _, payload in trace[:4]] == [memory, memory, memory, stop]
     assert sum(payload == stop for _, payload in trace) == 2
-    assert len(trace) == 16
+    assert len(trace) == 15
     assert trace[8][1] == palette
     assert trace[9][1] == timer
     assert trace[10][1] == light_off
     assert trace[11][1] == light_level
-    assert trace[12][1] == light_level
-    assert trace[13][1] == intensity
-    assert trace[14][1] == position_target
-    assert trace[15][1] == voice_position
+    assert trace[12][1] == intensity
+    assert trace[13][1] == position_target
+    assert trace[14][1] == voice_position
     assert sum(payload == palette for _, payload in trace) == 1
     assert sum(payload == timer for _, payload in trace) == 1
-    assert sum(payload == light_level for _, payload in trace) == 2
+    assert sum(payload == light_level for _, payload in trace) == 1
     assert sum(payload == intensity for _, payload in trace) == 1
     assert sum(payload == position_target for _, payload in trace) == 1
     assert sum(payload == voice_position for _, payload in trace) == 1
@@ -676,11 +661,12 @@ async def test_motion_sensor_refresh_is_bounded_and_has_no_stop(
     ):
         spec = next(
             spec
-            for spec in controller.controller_button_specs
-            if spec.key == "sleepys_app_motion_sensor_on"
+            for spec in controller.controller_switch_specs
+            if spec.key == "sleepys_app_motion_sensor"
         )
-        button = ControllerActionButton(coordinator, spec)
-        await clock.run_until(asyncio.create_task(button.async_press()))
+        switch = AdjustableBedControllerSwitch(coordinator, spec)
+        with patch.object(switch, "async_write_ha_state"):
+            await clock.run_until(asyncio.create_task(switch.async_turn_on()))
 
     route = controller._route("motionSensorOn")
     assert len(trace) == 50, trace[-3:]

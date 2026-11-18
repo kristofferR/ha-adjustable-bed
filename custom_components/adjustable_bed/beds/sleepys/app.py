@@ -1206,16 +1206,6 @@ class SleepysEliteAppController(BedController):
             return
         await self.set_light_level(level)
 
-    async def adjust_light_level(self, delta: int) -> None:
-        """Provide the source's one-step brightness caller as an HA button."""
-        if delta not in (-1, 1):
-            raise ValueError("Sleepy's brightness adjustment must be one step")
-        if not self._light_level_known:
-            return
-        candidate = self._light_level + delta
-        level = candidate if 0 <= candidate <= self.light_level_max else self._light_level
-        await self.set_light_level(level)
-
     async def set_light_color_code(self, code: int) -> None:
         route = self._value_route("light_color_code", float(code))
         if not self._light_ui_enabled():
