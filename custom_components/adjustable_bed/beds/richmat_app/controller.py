@@ -23,6 +23,7 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
+    ControllerSelectSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
@@ -505,8 +506,10 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
         return deepcopy(self.local)
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
-        # The side is the product's default; single-address side controls split it.
-        self.local = {**deepcopy(dict(state)), "side": self.product["side"]}
+        self.local = deepcopy(dict(state))
+        side = state.get("side", self.product["side"])
+        if type(side) is int and side in range(3):
+            self._side_selection = side
 
     def _detail_label(self, detail: str, selector: str) -> str:
         expression = self.product["labels"].get(
@@ -774,6 +777,44 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                 attribute_keys=(EVENTS, CAPABILITIES, ALARMS, BLANKET, LOCAL, REJECTION),
                 entity_registry_enabled_default=False,
             ),
+        )
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        # This app has no single-address pairing, so the select is the only
+        # way to reach the other side of a split bed.
+        sides = cast(list[str], self.product["selectors"]["0x11eaf"])
+        options = tuple(
+            name
+            for ref, name in (("cdcb51", "left"), ("cdcb71", "right"), ("cdcb91", "both"))
+            if "DeviceSideOfBedType@" + ref in sides
+        )
+
+        def apply(option: str) -> None:
+            if option not in options:
+                raise ValueError("Unavailable product side")
+            side = ("left", "right", "both").index(option)
+            self._side_selection = 1 - side if self.product["swap"] and side != 2 else side
+            self.local["side"] = self._side_selection
+            self._publish()
+
+        async def select(controller: BedController, option: str) -> None:
+            require_controller(controller, RichmatAppController)._select_side(option)
+
+        self._select_side = apply
+        return (
+            (
+                ControllerSelectSpec(
+                    "richmat_app_side",
+                    "richmat_app_side",
+                    SIDE,
+                    options,
+                    select,
+                    local_select_fn=apply,
+                ),
+            )
+            if len(options) > 1
+            else ()
         )
 
     @property

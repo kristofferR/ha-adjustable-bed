@@ -190,11 +190,6 @@ only mirrored the phone app's internals. What to know:
   default where the bed reports the value itself.
 - **Preset save buttons ask for confirmation** in the dashboard card, and the
   card never offers them as a compact quick action.
-- **Good Vibe and Richmat app side pickers are gone** (`select.goodvibe_side`,
-  `select.richmat_app_side`). A standalone entry now always controls the
-  product's default side; the saved app side is ignored. To control both sides
-  of a single-address bed, use [single-address side controls](CONFIGURATION.md#single-address-left--right-controls)
-  or the `side` field of the actions.
 
 Removed and replaced entities by bed:
 
@@ -230,7 +225,6 @@ Removed and replaced entities by bed:
 | Richmat resource apps | 13 disabled "App ..." request buttons (the `richmat_resource_bed` action still sends every command) | |
 | BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons | |
 | V-MAT Basic | ED motor status binary sensor | |
-| Good Vibe, Richmat app | Side select (see above) | |
 
 ## New Entities, Attributes and Actions
 

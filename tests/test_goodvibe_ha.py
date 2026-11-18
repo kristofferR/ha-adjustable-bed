@@ -328,8 +328,12 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
     c._client.write_gatt_char = AsyncMock()
     service.async_register_goodvibe_services(hass)
     paired = runtime(hass, next(k for k, v in PRODUCTS.items() if len(v.sides) > 1))
-    # Sides are split with single-address side controls, not an app side picker.
-    assert all(s.key != "goodvibe_side" for s in paired._controller.controller_select_specs)
+    side = AdjustableBedControllerSelect(
+        paired,
+        next(s for s in paired._controller.controller_select_specs if s.key == "goodvibe_side"),
+    )
+    await side.async_select_option("1")
+    assert side.current_option == "1"
     paired._client.is_connected = False
     await paired.async_shutdown()
     c._client.write_gatt_char.assert_not_awaited()

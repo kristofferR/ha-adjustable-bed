@@ -5865,6 +5865,22 @@
       },
       "smart_sleep_timer": {
         "name": "Massage timer"
+      },
+      "goodvibe_side": {
+        "name": "Controlled side",
+        "state": {
+          "0": "Left",
+          "1": "Right",
+          "2": "Both"
+        }
+      },
+      "richmat_app_side": {
+        "name": "Controlled side",
+        "state": {
+          "left": "Left",
+          "right": "Right",
+          "both": "Both"
+        }
       }
     },
     "climate": {

@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
-from ...card import CARD_HIDDEN, CARD_UTILITY
+from ...card import CARD_HIDDEN, CARD_UTILITY, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
@@ -1154,6 +1154,24 @@ class GoodVibeController(BedController):
                     massage_timer,
                 )
             )
+        if len(self.product.sides) > 1:
+            # Good Vibe has no single-address pairing, so the select is the
+            # only way to reach the other side of a split bed.
+
+            async def set_side(_controller: BedController, value: str) -> None:
+                self._select_side(value)
+
+            specs.append(
+                ControllerSelectSpec(
+                    "goodvibe_side",
+                    "goodvibe_side",
+                    SIDE,
+                    tuple(map(str, self.product.sides)),
+                    set_side,
+                    local_select_fn=self._select_side,
+                    card=CardPlacement(CardSection.MOTORS),
+                )
+            )
         if self.product.light:
 
             async def duration(controller: BedController, value: str) -> None:
@@ -1213,6 +1231,13 @@ class GoodVibeController(BedController):
                 "goodvibe_snore_time", "goodvibe_snore_time", SNORE_TIME, 5, 30, 5, time
             ),
         )
+
+    def _select_side(self, value: str) -> None:
+        side = int(value)
+        if self.product is None or side not in self.product.sides:
+            raise ValueError("Unsupported side")
+        self.choices.side = side
+        self._publish()
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
+from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
 
 
 @pytest.fixture
@@ -91,18 +92,38 @@ async def invoke(hass, operation, **fields):
     )
 
 
-async def test_standalone_side_is_the_product_default_not_a_stored_app_choice(hass, runtime):
-    """Sides are split with single-address side controls, not an app side picker."""
-    target, _client = runtime
+@pytest.mark.parametrize("side", ["right", "both"])
+async def test_real_connect_and_idle_reconnect_preserve_selected_side_and_stop(hass, runtime, side):
+    target, client = runtime
     offline = target.capability_controller
-    assert offline.controller_select_specs == ()
-    default = offline.product["side"]
-    await target.async_write_app_state(offline, {**offline.persisted_app_state, "side": (default + 1) % 3})
-    assert await target.async_connect()
-    live = target.controller
-    assert live._side() == default
-    assert live.local["side"] == default
-    await target.async_disconnect("idle_timeout")
+    selector = AdjustableBedControllerSelect(target, offline.controller_select_specs[0])
+    await selector.async_select_option(side)
+    await target.async_write_app_state(offline, offline.persisted_app_state)
+    expected = 1 if side == "right" else 2
+    for _ in range(2):
+        assert await target.async_connect()
+        live = target.controller
+        assert live._side() == expected
+        assert target.controller_state[bed.SIDE] == side
+        assert live.local["side"] == expected
+        client.write_gatt_char.reset_mock()
+        selector = AdjustableBedControllerSelect(target, live.controller_select_specs[0])
+
+        async def change_selection(*args, select=selector, **kwargs):
+            await select.async_select_option("left")
+
+        client.write_gatt_char.side_effect = change_selection
+        await target.async_execute_controller_command(
+            lambda c: c.hold_control("richmat_app_cb18d1", 200), resource="motor:*"
+        )
+        frames = written(client)
+        assert len(frames) == 3
+        assert all(bytes.fromhex(frame)[2] == expected for frame in frames)
+        assert bytes.fromhex(frames[-1])[3] == 110
+        client.write_gatt_char.side_effect = None
+        await selector.async_select_option(side)
+        await target.async_disconnect("idle_timeout")
+        assert not target.is_connected
 
 
 async def test_registered_cycling_demo_is_cancelled_by_real_cover_stop_before_wire_lock(
