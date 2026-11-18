@@ -71,7 +71,9 @@ test("Ultramatic SmartBed publishes five neutral motors and its app controls", (
     expect(motor.heldControls?.up?.releaseDelayMs).toBe(0);
   }
   expect(bed.lights.buttons).toEqual(["button.light"]);
-  expect(bed.presets).toEqual(["button.reset", "button.save"]);
+  expect(bed.presets).toEqual([]);
+  // Saves are never quick presets; they sit in the save role.
+  expect(bed.presetSaves).toEqual(["button.reset", "button.save"]);
   expect(bed.utility).toEqual(["button.clock", "button.query"]);
   expect(bed.utilityStates).toEqual(["sensor.alarm"]);
   expect(bed.massage.buttons).toEqual(["button.massage", "button.timer"]);
