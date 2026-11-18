@@ -329,7 +329,7 @@ Some beds stop a motor as soon as a held frame arrives late. Prodigy CE
 an ESPHome proxy, every frame crosses the proxy's WiFi as a TCP packet. If one
 packet is lost, all later frames wait until TCP resends it, which typically
 takes 200 ms or more, so the motor stops and starts again when the frames catch
-up. Motor pulse settings cannot bridge that gap.
+up. **Movement per tap** cannot bridge that gap.
 
 **Solutions:**
 1. **Use an Ethernet proxy near the bed:** It removes the WiFi hop, and its

@@ -546,7 +546,7 @@ secondary-head actions fail before any receiver is commanded.
 
 Target the paired parent for shared-foot operation. A child target or optional
 `side` restricts the request; conflicting app sleeper routing is rejected.
-An unpaired FH receiver can also select its bank with `sleeper`.
+A standalone FH receiver can also select its bank with `sleeper`.
 
 ```yaml
 action: adjustable_bed.bedtech_app_command
