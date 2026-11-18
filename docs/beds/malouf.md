@@ -450,7 +450,7 @@ massage-remaining sensor in minutes.
 
 #### Services
 
-Use `adjustable_bed.malouf_set_alarm` to set or clear an alarm. The selected
+Use `adjustable_bed.set_alarm` to set or clear an alarm. The selected
 model must expose the app's alarm UI, and the connected transport must be OKIN.
 The choices are the alarm types above, subject to the model's memory capacity.
 An alarm choice can be available even when the same manual preset is absent.
@@ -459,13 +459,13 @@ An alarm choice can be available even when the same manual preset is absent.
 - Selected weekdays create a repeating alarm. An empty weekday list selects the
   next occurrence of that local time, using the app's one-shot weekday encoding.
 - Clock synchronization runs immediately before programming an enabled alarm.
-  `adjustable_bed.sync_clock` (or the older `malouf_sync_clock`) also permits
+  `adjustable_bed.sync_clock` (or the older `sync_clock`) also permits
   explicit clock synchronization. Connecting alone never writes the clock.
 - Both actions validate every selected physical bed before any write and use
   the coordinator's serialized configuration path. An active movement is not
   cancelled to change an alarm.
 
-See [action examples](../SERVICES.md#malouf-base--lucid-base-clock-and-alarm).
+See [action examples](../SERVICES.md#set_alarm).
 
 #### Evidence
 

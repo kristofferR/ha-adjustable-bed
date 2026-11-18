@@ -11,6 +11,7 @@ from bleak import BleakClient
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import CARD_UTILITY
 from ...command_scheduler import CommandContext, current_command_context
 from ...controller_state import StateKey
@@ -505,6 +506,38 @@ class YamadaController(KeesonController):
 
     async def query_alarms(self) -> None:
         await self._queries(self._live(), app.PAGE_ROUNDS_MS)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(
+            wake_actions=tuple(app.POSITIONS[self.profile.key]), weekdays=True, slots=2
+        )
+
+    def _alarm_plan(self, alarm: AlarmRequest) -> AlarmPlan:
+        # The app's week byte numbers Sunday bit 0, with bit 7 for repeating days.
+        weekday = (
+            128 | sum(1 << ((day + 1) % 7) for day in alarm.weekdays) if alarm.weekdays else 0
+        )
+        try:
+            return self.prepare_alarm(
+                slot=alarm.slot,
+                enabled=alarm.enabled,
+                hour=alarm.hour,
+                minute=alarm.minute,
+                weekday=weekday,
+                preset=alarm.wake_action,
+            )
+        except ConnectionError as err:
+            raise AlarmError(
+                "alarm_refresh_needed", "Refresh the bed alarms, then try again"
+            ) from err
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self._alarm_plan(alarm)
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        # Plan again on the live link, so the other slot's latest report is kept.
+        await self.set_alarm(self._alarm_plan(alarm))
 
     def prepare_alarm(
         self,

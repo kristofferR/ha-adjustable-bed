@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -486,6 +487,18 @@ class EshineOkinController(BedController):
         if control == "light" and not await self._pause(0.1, self._coordinator.cancel_command):
             self._live(session)
             await self.write_command(COMMANDS["query_state"])
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(
+            wake_actions=self.clock_alarm_preset_options, cancel_running=True, resource=None
+        )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        # The app sets the bed clock before an alarm it turns on.
+        if alarm.enabled:
+            await self.sync_clock()
+        await super().configure_alarm(alarm)
 
     async def configure_clock_alarm(
         self,

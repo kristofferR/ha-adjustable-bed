@@ -6,12 +6,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.keeson.yamada_services import (
-    async_register_yamada_services,
-)
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH, SIDE_LEFT
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profiles import yamada as app
+from custom_components.adjustable_bed.services import async_register_services
 from tests.hold_lease_wire import virtual_clock
 from tests.test_bedtech_services import pair
 from tests.test_yamada import bed
@@ -37,21 +35,22 @@ async def target(version):
 
 
 async def call(hass, targets):
-    async_register_yamada_services(hass)
+    if not hass.services.has_service(DOMAIN, "set_alarm"):
+        await async_register_services(hass)
     with patch(
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         return_value=(targets, []),
     ):
         await hass.services.async_call(
             DOMAIN,
-            "yamada_set_alarm",
+            "set_alarm",
             {
                 "device_id": ["bed"],
                 "slot": 1,
                 "enabled": True,
                 "time": "07:30",
-                "weekday": 129,
-                "preset": "memory_1",
+                "weekdays": ["sunday"],
+                "wake_action": "memory_1",
             },
             blocking=True,
         )

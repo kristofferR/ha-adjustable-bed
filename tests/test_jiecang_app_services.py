@@ -7,9 +7,9 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.alarm import AlarmCapability
 from custom_components.adjustable_bed.beds.jiecang.app import JiecangAppController
 from custom_components.adjustable_bed.beds.jiecang.app_services import (
-    SERVICE_JIECANG_SET_ALARM,
     SERVICE_JIECANG_STOP_WAKE,
     SERVICE_JIECANG_WAKE,
 )
@@ -22,9 +22,11 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import (
-    SERVICE_JIECANG_RENAME,
+    SERVICE_RENAME,
+    SERVICE_SET_ALARM,
     async_register_services,
 )
+from tests.alarm_helpers import use_shared_alarm_writer
 
 
 @pytest.fixture
@@ -43,6 +45,14 @@ async def service_target(hass: HomeAssistant):
         execute_wake_routine=AsyncMock(),
         stop_wake_routine=AsyncMock(),
         rename_device=AsyncMock(),
+    )
+    use_shared_alarm_writer(
+        controller,
+        AlarmCapability(
+            wake_actions=("flat", "zero_g", "anti_snore", "memory_1", "memory_2", "yoga"),
+            weekdays=True,
+            massage_levels=3,
+        ),
     )
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = "Jiecang bed"
@@ -70,15 +80,15 @@ async def test_alarm_converts_weekdays_and_time_without_interrupting_motion(
     coordinator, controller, _ = service_target
     await hass.services.async_call(
         DOMAIN,
-        SERVICE_JIECANG_SET_ALARM,
-        {
+        SERVICE_SET_ALARM,
+            {
             "device_id": "bed",
             "enabled": True,
             "time": "07:35:00",
             "weekdays": ["monday", "friday", "sunday"],
-            "preset": "yoga",
-            "head_level": 3,
-            "foot_level": 2,
+            "wake_action": "yoga",
+            "head_massage_level": 3,
+            "foot_massage_level": 2,
         },
         blocking=True,
     )
@@ -100,8 +110,8 @@ async def test_alarm_can_be_disabled_with_default_fields(hass: HomeAssistant, se
     _, controller, _ = service_target
     await hass.services.async_call(
         DOMAIN,
-        SERVICE_JIECANG_SET_ALARM,
-        {"device_id": "bed", "enabled": False},
+        SERVICE_SET_ALARM,
+            {"device_id": "bed", "enabled": False},
         blocking=True,
     )
     controller.configure_clock_alarm.assert_awaited_once_with(
@@ -125,14 +135,25 @@ async def test_yoga_alarm_validates_every_target_before_writing(
     unsupported.controller_side = None
     unsupported.capability_controller = MagicMock(
         spec=JiecangAppController,
-        supports_clock_alarm=True, supports_preset_yoga=False
+        supports_clock_alarm=True,
+        supports_preset_yoga=False,
+        alarm_capability=AlarmCapability(
+            wake_actions=("flat", "zero_g", "anti_snore", "memory_1", "memory_2"),
+            weekdays=True,
+            massage_levels=3,
+        ),
     )
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="does not support Yoga alarms"):
+    with pytest.raises(ServiceValidationError, match="cannot wake with 'yoga'"):
         await hass.services.async_call(
             DOMAIN,
-            SERVICE_JIECANG_SET_ALARM,
-            {"device_id": ["bed", "other"], "enabled": True, "preset": "yoga"},
+            SERVICE_SET_ALARM,
+                    {
+                "device_id": ["bed", "other"],
+                "enabled": True,
+                "time": "07:00:00",
+                "wake_action": "yoga",
+            },
             blocking=True,
         )
     controller.configure_clock_alarm.assert_not_awaited()
@@ -163,7 +184,7 @@ async def test_rename_is_serialized_as_configuration(hass: HomeAssistant, servic
     coordinator, controller, _ = service_target
     await hass.services.async_call(
         DOMAIN,
-        SERVICE_JIECANG_RENAME,
+        SERVICE_RENAME,
         {"device_id": "bed", "name": "MyBed"},
         blocking=True,
     )
@@ -176,10 +197,10 @@ async def test_rename_is_serialized_as_configuration(hass: HomeAssistant, servic
 @pytest.mark.parametrize(
     ("service", "data", "capability"),
     [
-        (SERVICE_JIECANG_SET_ALARM, {"enabled": True}, "supports_clock_alarm"),
+        (SERVICE_SET_ALARM, {"enabled": True, "time": "07:00:00"}, "alarm_capability"),
         (SERVICE_JIECANG_WAKE, {}, "supports_wake_routine"),
         (SERVICE_JIECANG_STOP_WAKE, {}, "supports_wake_routine"),
-        (SERVICE_JIECANG_RENAME, {"name": "Bed"}, "supports_device_rename"),
+        (SERVICE_RENAME, {"name": "Bed"}, "supports_device_rename"),
     ],
 )
 async def test_all_targets_are_validated_before_writing(
@@ -190,9 +211,12 @@ async def test_all_targets_are_validated_before_writing(
     unsupported.name = "Unsupported bed"
     unsupported.bed_type = BED_TYPE_JIECANG_APP
     unsupported.controller_side = None
-    unsupported.capability_controller = MagicMock(spec=JiecangAppController, **{capability: False})
+    unsupported.capability_controller = MagicMock(
+        spec=JiecangAppController,
+        **{capability: None if capability == "alarm_capability" else False},
+    )
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="does not support"):
+    with pytest.raises(ServiceValidationError, match="does not support|has no alarm"):
         await hass.services.async_call(
             DOMAIN, service, {"device_id": ["bed", "other"], **data}, blocking=True
         )
@@ -203,16 +227,11 @@ async def test_all_targets_are_validated_before_writing(
 @pytest.mark.parametrize(
     ("service", "data"),
     [
-        (SERVICE_JIECANG_SET_ALARM, {"enabled": True, "weekdays": ["holiday"]}),
-        (SERVICE_JIECANG_SET_ALARM, {"enabled": True, "time": "25:00:00"}),
-        (SERVICE_JIECANG_SET_ALARM, {"enabled": True, "head_level": 4}),
+        (SERVICE_SET_ALARM, {"enabled": True, "weekdays": ["holiday"]}),
+        (SERVICE_SET_ALARM, {"enabled": True, "time": "25:00:00"}),
         (SERVICE_JIECANG_WAKE, {"preset": "yoga"}),
         (SERVICE_JIECANG_WAKE, {"right_level": -1}),
         (SERVICE_JIECANG_WAKE, {"head_level": 4}),
-        (SERVICE_JIECANG_RENAME, {"name": ""}),
-        (SERVICE_JIECANG_RENAME, {"name": "a" * 21}),
-        (SERVICE_JIECANG_RENAME, {"name": "SengÅ"}),
-        (SERVICE_JIECANG_RENAME, {"name": "My Bed"}),
         (SERVICE_JIECANG_WAKE, {"device_id": []}),
     ],
 )

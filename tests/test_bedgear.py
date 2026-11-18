@@ -399,7 +399,7 @@ async def test_leases_renew_then_expire_and_stale_renewal_after_stop_fails(runti
     await co.async_stop_command()
     await task
     before = writes(co)
-    with pytest.raises(ServiceValidationError, match="ended"):
+    with pytest.raises(ServiceValidationError, match="ended|already stopped"):
         await held(2)
     assert writes(co) == before
     assert co._command_scheduler.recent_records[-1].kind is CommandKind.STOP

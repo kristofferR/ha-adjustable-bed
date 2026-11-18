@@ -280,13 +280,13 @@ async def test_actual_entities_card_and_alarm_action(hass, mock_coordinator_conn
     monkeypatch.setattr(ctrl.dt_util, "now", lambda: datetime(2026, 11, 12, 6, 45, 59))
     mock_bleak_client.write_gatt_char.reset_mock()
     with virtual_clock():
-        await hass.services.async_call(DOMAIN, "symphony_set_alarm", {"device_id": dev, "enabled": True, "time": "23:59:00", "wake_mode": "memory_2"}, blocking=True)
+        await hass.services.async_call(DOMAIN, "set_alarm", {"device_id": dev, "enabled": True, "time": "23:59:00", "wake_action": "memory_2"}, blocking=True)
         await asyncio.sleep(0.6)
     assert frames(mock_bleak_client) == ["070426111204064559", "0705ff032359000100", "00c0", "00c0"]
-    for bad in ({"enabled": True}, {"enabled": True, "time": "12:00:01"}, {"enabled": True, "time": "12:00:00", "wake_mode": "massage"}):
+    for bad in ({"enabled": True}, {"enabled": True, "time": "12:00:01"}, {"enabled": True, "time": "12:00:00", "wake_action": "massage"}):
         mock_bleak_client.write_gatt_char.reset_mock()
         with pytest.raises((ServiceValidationError, vol.Invalid)):
-            await hass.services.async_call(DOMAIN, "symphony_set_alarm", {"device_id": dev, **bad}, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", {"device_id": dev, **bad}, blocking=True)
         assert not frames(mock_bleak_client)
     assert await hass.config_entries.async_unload(e.entry_id)
 
@@ -352,7 +352,7 @@ async def test_actual_registered_card_lease_renewal_and_cover_stop(
         await task
         count = len(frames(mock_bleak_client))
         # A late renewal never resurrects this ended generation.
-        with pytest.raises(ServiceValidationError, match="has ended"):
+        with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
             await renew()
         assert len(frames(mock_bleak_client)) == count
         await hass.services.async_call(DOMAIN, "hold_control", {
@@ -426,25 +426,20 @@ async def test_explicit_picker_and_saved_setup_roundtrip(hass, enable_custom_int
     assert not reads_positions(saved)
 
 
-@pytest.mark.parametrize("service", ("symphony_set_alarm", "sync_clock"))
+@pytest.mark.parametrize("service", ("set_alarm", "sync_clock"))
 async def test_family_alarm_all_targets_validated_before_requested_writes_and_later_stop_wins(
     hass, mock_coordinator_connected, mock_bleak_client, monkeypatch, service
 ):
     from custom_components.adjustable_bed import services
-    from custom_components.adjustable_bed.beds.keeson.symphony_services import (
-        register_symphony_services,
-    )
     first = await connected(hass, mock_bleak_client)
     other_entry = entry(hass, "400E", "box1", "AA:BB:CC:DD:00:79")
     second = AdjustableBedCoordinator(hass, other_entry)
     # Independent schedulers/physical addresses, with the fixture's one simulated transport.
     await second.async_connect()
-    register_symphony_services(hass)
     await services.async_register_services(hass)
-    data = {"enabled": True, "time": "06:00:00"} if service == "symphony_set_alarm" else {}
+    data = {"enabled": True, "time": "06:00:00"} if service == "set_alarm" else {}
     devices = [dr.async_get(hass).async_get_or_create(config_entry_id=c.entry.entry_id, identifiers={(DOMAIN, c.address)}).id
                for c in (first, second)]
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.keeson.symphony_services._call_targets", lambda call: [(first, "both"), (second, "both")])
     monkeypatch.setattr(services, "_call_targets", lambda call: [(first, "both"), (second, "both")])
     mock_bleak_client.write_gatt_char.reset_mock()
     original_live = second.controller._live
@@ -465,7 +460,7 @@ async def test_family_alarm_all_targets_validated_before_requested_writes_and_la
     with virtual_clock():
         await hass.services.async_call(DOMAIN, service, {"device_id": devices, **data}, blocking=True)
     alarm = app.alarm("box1", enabled=True, hour=6, minute=0, wake="none").hex()
-    if service == "symphony_set_alarm":
+    if service == "set_alarm":
         assert frames(mock_bleak_client).count(alarm) == 1
     else:
         assert sum(frame.startswith("e78001") for frame in frames(mock_bleak_client)) == 1

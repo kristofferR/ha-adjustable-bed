@@ -369,13 +369,13 @@ async def test_alarm_action_uses_scheduler_and_validates_before_writes(hass):
         "device_id": [device.id],
         "enabled": True,
         "time": "06:30:00",
-        "weekdays": ["mon", "sun"],
-        "wake_mode": "memory_1",
+        "weekdays": ["monday", "sunday"],
+        "wake_action": "memory_1",
     }
-    await hass.services.async_call(DOMAIN, "jalon_set_alarm", data, blocking=True)
+    await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_awaited_once()
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    bed = MagicMock(spec=controller.JalonController)
+    bed = coordinator.controller
     bed.configure_clock_alarm = AsyncMock()
     await command(bed)
     bed.configure_clock_alarm.assert_awaited_once_with(
@@ -384,10 +384,10 @@ async def test_alarm_action_uses_scheduler_and_validates_before_writes(hass):
     coordinator.async_execute_controller_command.reset_mock()
     for invalid in ({**data, "time": "06:30:01"}, {"device_id": [device.id], "enabled": True}):
         with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(DOMAIN, "jalon_set_alarm", invalid, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", invalid, blocking=True)
     coordinator._controller = controller.JalonController(coordinator, protocol="P1", layout="0")
     with pytest.raises(ServiceValidationError):
-        await hass.services.async_call(DOMAIN, "jalon_set_alarm", data, blocking=True)
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 
 

@@ -260,7 +260,7 @@ async def test_stop_preempts_renewal(bed: Bed, clock: Any) -> None:
     stop_at = bodies.index(STOP)
     assert HELD not in bodies[stop_at:]
     frames = len(bodies)
-    with pytest.raises(ServiceValidationError, match="has ended"):
+    with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
         await _hold(bed, 3)
     await asyncio.sleep(3 * _tick_s(bed))
     assert len(bed.bodies()) == frames

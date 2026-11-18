@@ -109,7 +109,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | Massage | ✅ | ✅ Model-specific zone, mode, off or 20-minute timer actions | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off, 10/20/30-minute buttons | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
 | Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Model-specific toggle; legacy also off | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings | ✅ (toggle) | ✅ Product-gated actions, RGB settings and duration choices | ⚠️ Only as the selected layout's named app buttons; no RGB | ✅ Light buttons; ordinary light or RGB page where the product and its reply allow | ✅ RGB strip for lighting-flag products, colour and timer otherwise |
 | Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ Sync buttons where selected | ✅ Where the layout has it | ❌ | ✅ Sync on/off actions where the product has them | ❌ | ❌ (one-address Left/Right on stored L400SH and L300SH) | ❌ (one-address Left/Right on side-flag products) |
-| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.rmcontrol_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating only on restored products with that capability |
+| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.set_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating only on restored products with that capability |
 | Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button | ⚠️ Eleven read-only diagnostic sensors | ✅ Snore settings where the normal product's settings menu admits them; independent type 1/type 2 sleep sensors with live values and direct BLE reports; only the product's listed sides. ❌ Firmware, Wi-Fi and cloud are outside the direct BLE bed boundary | ⚠️ Disabled-by-default app-response diagnostic; Stop cancels and releases the active action only (no emergency-stop command) | ✅ Music page, external snore trigger, sensor-name query; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
 
 ## Choosing a profile
@@ -1012,23 +1012,14 @@ a partial frame after 500 ms without new data, as the app's timer does.
 
 ##### Alarm service
 
-Use `adjustable_bed.rmcontrol_alarm`, selecting the device and operation. It
-requires an explicitly selected RMControl profile and the appropriate supported
-alarm capability. Action names must come from that device's diagnostics
-`alarm_actions` list, not raw bytes or another product's catalog. Ambiguous or
-absent actions are rejected before writing.
+Use [`adjustable_bed.set_alarm`](../SERVICES.md#set_alarm). It requires an
+explicitly selected RMControl profile with an alarm. `wake_action` must be one
+of the actions in that product's alarm list; others are rejected before
+writing. Products with repeating alarms take `slot` (1..7), `time` and at least
+one weekday; `enabled: false` deletes that slot. Other products run one
+countdown alarm to `time`; `enabled: false` cancels it. `sync_clock` sends the
+current Home Assistant time to the alarm subsystem.
 
-| Operation | Additional fields | Effect |
-| --- | --- | --- |
-| `single` | `minutes` (1..65535), `action` | Run the selected action after a countdown measured in minutes. |
-| `cancel_single` | None | Cancel the countdown alarm. |
-| `repeat` | `alarm_id` (1..7), `time`, `weekdays`, `action` | Create or replace the selected repeating-alarm slot at local time, with minute precision. |
-| `delete` | `alarm_id` (1..7) | Delete that repeating-alarm slot. |
-| `query` | None | Request repeating-alarm records; received records appear in state/diagnostics. |
-| `sync` | None | Send current Home Assistant time, timezone and local calendar values to the supported alarm subsystem. |
-
-- `weekdays` uses `monday` through `sunday`; it is not a raw bit mask.
-- An optional `side` accepts `left`, `right` or `both` for paired-bed targeting.
 - Replacing a slot changes the alarm stored on the bed, not merely a Home
   Assistant automation.
 - A **single alarm is a countdown**, not a wall-clock alarm or time-sync
@@ -1311,16 +1302,17 @@ the catalog.
 
 #### Services
 
-- `adjustable_bed.richmat_mh_alarm`: `enabled`, `time` (local, minute
-  precision), `position` and `massage` choices from the model's alarm page,
-  `slot` (1–3) for three-slot models. The bed receives the minutes until the
+- [`adjustable_bed.set_alarm`](../SERVICES.md#set_alarm): `enabled`, `time`
+  (local, minute precision), `wake_action` and `massage` with `massage_zone` from
+  the model's alarm page, `slot` (1–3) for three-slot models. The bed receives the minutes until the
   next occurrence. A position with a massage uses the app's combined opcode;
   two massages become head-and-foot; a pair the app cannot express is rejected.
   Three-slot models recall M1/M2/M3 per slot.
 - `adjustable_bed.richmat_mh_aroma`: mode 2 startup (1–60 min), mode 3 startup
   (1–60 min) and mode 3 pause (1–12 h), sent as the app's three frames.
-- `adjustable_bed.richmat_mh_waist_alarm`: `waist_side`, `enabled`, `time`,
-  `repeat` (once/daily), `intensity` (1–3). Saving includes Home Assistant's
+- Waist mattress alarm: `adjustable_bed.set_alarm` with `mattress_side`,
+  `enabled`, `time`, `weekdays` (none for once, all seven for daily) and
+  `massage_intensity` (1–3). Saving includes Home Assistant's
   current local time, as the app does.
 - `adjustable_bed.richmat_mh_light_color`: `rgb_color`, written as the light
   page's 10-byte colour frame. Available when the LED or button-light page is
@@ -3207,7 +3199,7 @@ creation too. A changed cache or released/replaced connection invalidates a
 prepared all-target settings operation. Choose an individual side if a
 sequential pair cannot retain both live alarm caches.
 
-For forms, `hour`, `minute`, `mode`, `weekdays` (Monday 0 through Sunday 6) and
+For forms, `hour`, `minute`, `mode`, `weekdays` (`monday` through `sunday`) and
 `enabled` supply explicit values; `alarm_id` identifies a received record for
 edit, toggle or delete. Toggle ignores form defaults and preserves raw fields.
 Clock synchronization preserves whole-hour timezone truncation and year minus

@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability
 from ...card import CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...const import (
@@ -694,6 +695,13 @@ class ZSeriesController(OkinBeddingAppController):
     @property
     def clock_alarm_preset_options(self) -> tuple[str, ...]:
         return tuple(_ALARM_WAKE) if self.alarm_state is True else ()
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if not self.alarm_not_ruled_out:
+            return None
+        # The app will not turn an alarm on until a wake action is chosen.
+        return AlarmCapability(wake_actions=tuple(_ALARM_WAKE), requires_wake_action=True)
 
     async def resolve_alarm_state(self) -> bool | None:
         """Read the manufacturer again while the state is unknown; never downgrade on failure."""

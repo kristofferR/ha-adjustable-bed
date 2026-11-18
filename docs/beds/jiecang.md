@@ -57,7 +57,7 @@ so a service UUID cannot say which app's layout or release behavior applies
 | Memory Presets | ✅ (3 slots, recall and program) | ✅ (two recalls, two saves) | ✅ (2 slots, separate recall and save) | ✅ (2 slots, different payload) |
 | Massage | ✅ (back/leg, 0-10 levels) | ✅ (independent back and foot levels 0-3, mode cycling, stop; no massage mode number) | ✅ (Off and levels 1-3 per layout zone, mode, stop) | ✅ (same) |
 | Lights | ✅ (toggle) | ✅ (toggle, with reported light state) | ✅ (toggle; RGB, brightness, timeout and automatic under-bed lighting when reported) | ✅ (same, with its own capability gates) |
-| Alarm | ❌ | ❌ (no BLE alarm programming) | ✅ (`adjustable_bed.jiecang_set_alarm`) | ✅ |
+| Alarm | ❌ | ❌ (no BLE alarm programming) | ✅ (`adjustable_bed.set_alarm`) | ✅ |
 | Wake Routine | ❌ | ✅ (`adjustable_bed.jiecang_wake`) | ✅ (`adjustable_bed.jiecang_wake`) | ✅ |
 | Clock | ❌ | ❌ (no clock-setting command) | ✅ (answered on the bed's clock request) | ✅ |
 | Bluetooth Rename | ❌ | ✅ (G1 only) | ✅ (G1 or G3) | ✅ (G1 or G3) |
@@ -783,7 +783,7 @@ light controls; HA answers clock requests with the clock frame.
 
 #### Services
 
-- `adjustable_bed.jiecang_set_alarm` writes the app's weekly alarm configuration.
+- `adjustable_bed.set_alarm` writes the app's weekly alarm configuration.
   It accepts a time, weekdays, wake preset and massage levels. Storing that
   configuration is separate from executing the Android app's local wake routine.
 - `adjustable_bed.jiecang_wake` executes the proven wake packet sequence. Use a
@@ -793,7 +793,7 @@ light controls; HA answers clock requests with the clock frame.
 - `adjustable_bed.jiecang_stop_wake` stops active wake massage without changing
   the saved alarm schedule. It sends the standard massage stop, even on bilateral
   layouts.
-- `adjustable_bed.rename` (or the older `jiecang_rename`) writes a Bluetooth name
+- `adjustable_bed.rename` (or the older `rename`) writes a Bluetooth name
   that matches the profile's name rule (see the
   [profile summary](#profile-summary)). This changes the advertised device name,
   separately from its friendly name in Home Assistant.
@@ -975,7 +975,7 @@ queries, without a light-status query.
   wake massage on cancellation or failure, including a failed release write.
 - `adjustable_bed.rename` accepts printable ASCII names, including spaces. G1
   writes the bare name; G3 prefixes the name's byte length, correct for every
-  length. Non-ASCII names are rejected. The older `jiecang_rename` alias keeps its
+  length. Non-ASCII names are rejected. The older `rename` alias keeps its
   narrower released schema.
 
 #### Evidence
@@ -1240,14 +1240,14 @@ being answered. The tablet decodes neither clock nor alarm replies.
 #### Services
 
 - The phone profile synchronizes the clock and supports weekly native alarm
-  configuration through `adjustable_bed.logicdata_set_alarm` when the standard
+  configuration through `adjustable_bed.set_alarm` when the standard
   family is selected: weekdays, time, a supported preset (wake codes flat `0`,
   anti-snore `1`, zero-g `2`, memory 1 `3`, memory 2 `4`) and back/leg massage
   levels. The alarm state is exposed as the `logicdata_app_alarm` sensor. The
   tablet profile has no clock or alarm BLE implementation.
 - `adjustable_bed.rename` changes the Bluetooth device name when the chosen
   transport provides a name characteristic (T1 bare, T3 wrapped). This is
-  separate from the Home Assistant friendly name; the older `logicdata_rename`
+  separate from the Home Assistant friendly name; the older `rename`
   name still works. The controller accepts 1–255 printable ASCII characters, a
   deliberate input policy that avoids the tablet app's malformed Unicode name
   encoding.

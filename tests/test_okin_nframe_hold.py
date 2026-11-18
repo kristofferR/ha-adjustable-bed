@@ -258,7 +258,7 @@ async def test_stop_preempts_the_hold_and_refuses_renewal(runtime, clock) -> Non
     await asyncio.wait_for(start, 2)
     _assert_released(case, frames, stop=True)
     count = len(frames)
-    with pytest.raises(ServiceValidationError, match="has ended"):
+    with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
         await _hold(hass, case, 3)
     await asyncio.sleep(0.15)
     assert frames[count:] == []

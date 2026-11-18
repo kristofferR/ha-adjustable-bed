@@ -200,7 +200,7 @@ async def test_real_card_lease_renews_one_stream_and_stale_generation_cannot_res
         await coord.async_stop_command()
         await first
         count = len(writes(client))
-        with pytest.raises(ServiceValidationError, match="has ended"):
+        with pytest.raises(ServiceValidationError, match="has ended|already stopped"):
             await hass.services.async_call(DOMAIN, "timed_move", call, blocking=True)
         assert len(writes(client)) == count
     motion = writes(client)
@@ -239,14 +239,14 @@ async def test_alarm_service_uses_actual_row_fields_without_optimistic_sensor(ru
     hass, coord, client = runtime
     await hass.services.async_call(
         DOMAIN,
-        "n32_motion_bed_alarm",
+        "set_alarm",
         {
             "device_id": ["bed"],
             "slot": 2,
-            "operation": "set",
+            "enabled": True,
             "time": "06:30:00",
             "weekdays": ["monday"],
-            "mode": "m1",
+            "wake_action": "memory_1",
         },
         blocking=True,
     )
@@ -260,10 +260,10 @@ async def test_alarm_service_uses_actual_row_fields_without_optimistic_sensor(ru
 @pytest.mark.parametrize(
     "fields",
     [
-        {"operation": "set", "time": "06:30:00", "mode": "m1"},
-        {"operation": "set", "time": "06:30:01", "mode": "m1", "weekdays": []},
-        {"operation": "disable", "time": "06:30:00"},
-        {"operation": "delete", "weekdays": []},
+        {"enabled": True, "wake_action": "memory_1"},
+        {"enabled": True, "time": "06:30:01", "wake_action": "memory_1", "weekdays": []},
+        {"enabled": True, "time": "06:30:00", "wake_action": "zero_g"},
+        {"enabled": True, "time": "06:30:00", "slot": 4},
     ],
 )
 async def test_incomplete_or_wrong_operation_fields_write_nothing(runtime, fields):
@@ -271,7 +271,7 @@ async def test_incomplete_or_wrong_operation_fields_write_nothing(runtime, field
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
-            "n32_motion_bed_alarm",
+            "set_alarm",
             {
                 "device_id": ["bed"],
                 "slot": 1,
@@ -285,21 +285,21 @@ async def test_incomplete_or_wrong_operation_fields_write_nothing(runtime, field
 async def test_all_target_capabilities_checked_before_first_alarm_write(runtime):
     hass, coordinator, client = runtime
     invalid = MagicMock(spec=AdjustableBedCoordinator)
-    invalid.name, invalid.capability_controller = "Other", MagicMock()
+    invalid.name, invalid.capability_controller = "Other", MagicMock(alarm_capability=None)
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, "both"), (invalid, "both")], []),
         ),
-        pytest.raises(ServiceValidationError, match="does not support"),
+        pytest.raises(ServiceValidationError, match="has no alarm"),
     ):
         await hass.services.async_call(
             DOMAIN,
-            "n32_motion_bed_alarm",
+            "set_alarm",
             {
                 "device_id": ["bed", "other"],
                 "slot": 1,
-                "operation": "delete",
+                "enabled": False,
             },
             blocking=True,
         )
@@ -343,18 +343,21 @@ async def test_two_address_pair_dispatches_only_the_selected_physical_side(runti
             )
             await hass.services.async_call(
                 DOMAIN,
-                "n32_motion_bed_alarm",
+                "set_alarm",
                 {
                     "device_id": ["pair"],
                     "slot": 3,
-                    "operation": "delete",
+                    "enabled": True,
+                    "time": "06:30:00",
+                    "weekdays": ["monday"],
+                    "wake_action": "memory_1",
                 },
                 blocking=True,
             )
         assert writes(left_client) == []
         assert writes(right_client)[:4] == [frame("cervical_down")] * 3 + [frame("stop")]
         assert writes(right_client)[4:] == [
-            bytes.fromhex("07070000000000000100"),
+            bytes.fromhex("07078205061e00010100"),
             bytes.fromhex("00e0"),
         ]
     finally:

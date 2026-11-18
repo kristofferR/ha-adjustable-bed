@@ -19,6 +19,7 @@ what each beta ships.
 - [Before You Upgrade](#before-you-upgrade)
 - [Config Entry Migration (Schema 5.5)](#config-entry-migration-schema-55)
 - [Removed or Renamed Options, Bed Types and Entities](#removed-or-renamed-options-bed-types-and-entities)
+- [Removed or Renamed Actions](#removed-or-renamed-actions)
 - [Entity Cleanup](#entity-cleanup)
 - [New Entities, Attributes and Actions](#new-entities-attributes-and-actions)
 - [Behavior Changes](#behavior-changes)
@@ -100,8 +101,9 @@ The migration record appears in two places:
 
 **Two removals: the massage buttons of three layouts without massage** (see
 below) **and the [entity cleanup](#entity-cleanup)** of app-derived entities. No
-bed type, option, action or action field is removed or renamed in v5, and no
-saved config key a setting reads is removed. The classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks,
+bed type or option is removed or renamed in v5. Actions and action fields changed:
+see [Removed or Renamed Actions](#removed-or-renamed-actions). No saved config key a
+setting reads is removed. The classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks,
 Milemont and Superior) shipped in 4.4 with an internal audit name in their
 unique IDs, translation keys, status sensor attributes and the
 `cluster018_third_service` key. The 5.4 step renames them to
@@ -192,6 +194,68 @@ lists what it changed where.
 | App suggestions in Repairs switched the app through Configure | They open **Reconfigure** with the suggested app preselected, which reviews the change before saving. Suggestions without one app to switch to, such as checking a Richmat remote, still open Configure |
 | Connection log lines at warning: "NOT FOUND" on every attempt, each failed attempt, an idle drop, and a final error | Debug, except one warning when the bed stays unreachable (once per outage) and a drop during a command |
 
+## Removed or Renamed Actions
+
+Update scripts and automations that call these actions. See
+[Actions and Automations](SERVICES.md).
+
+**One alarm action.** Every bed alarm now uses
+[`adjustable_bed.set_alarm`](SERVICES.md#set_alarm), with weekday names, a
+time, a named `wake_action` and the options the bed offers. It replaces
+`configure_alarm_schedule`, `bf_cherish_set_alarm`, `comfort_enhancements_set_alarm`,
+`comfort_enhancement3_set_wakeup`, `comfort_enhancement3_delete_wakeup`,
+`comfortbase_set_alarm`, `eshine_set_alarm`, `glideaway_set_alarm`,
+`jalon_bed_set_alarm`, `jalon_set_alarm`, `jiecang_set_alarm`, `leggett_alarm_timer`,
+`linak_set_alarm`, `logicdata_set_alarm`, `malouf_set_alarm`, `mline_set_alarm`,
+`motion_bed_alarm`, `n32_motion_bed_alarm`, `richmat_app_alarm`, `richmat_mh_alarm`,
+`richmat_mh_waist_alarm`, `rmcontrol_alarm`, `simmons_set_alarm`, `smart_sleep_set_alarm`,
+`solace_set_alarm`, `symphony_sense_set_alarm`, `symphony_set_alarm`, `yamada_set_alarm`
+and `zseries_set_alarm`. Field changes:
+
+- `weekdays` takes `monday` … `sunday` everywhere (no numbers, abbreviations or bitmasks).
+- `wake_mode`, `preset`, `memory`, `mode` and `position` become `wake_action`, with
+  shared names such as `zero_g`, `memory_1` and `none`.
+- `head_level` and `foot_level` become `head_massage_level` and `foot_massage_level`;
+  `intensity` becomes `massage_intensity`; `duration` (Comfort Enhancement 3) becomes
+  `massage_duration`; `kind` becomes `massage_zone`; `alarm_id` becomes `slot`.
+- Countdown alarms (Leggett & Platt, Linak, Richmat app, RMControl single alarms)
+  take a clock `time`; Home Assistant counts down to it. `minutes` and `seconds` are gone.
+- Waist and normal-mattress alarms use `mattress_side` (Richmat app beds); "once or
+  daily" is an empty or full `weekdays` list.
+- Turning an alarm off is `enabled: false`. It disables an N32 slot, deletes a
+  Comfort Enhancement 3 program or an RMControl repeating alarm, and clears both
+  Keeson app alarm tables.
+- No longer offered: Linak snooze repeats (`recurrence_count`, `recurrence_minutes`) and
+  per-step `actions` with `lifetime` and `pause` (a Linak alarm now runs, in order, the
+  wake memory, a massage toggle and a light toggle, each with the default timing),
+  N32 delete and query, RMControl query, Smart Sleep `week_mask`, `flexible_wake` and the
+  `app_*` action labels (`app_zero_g` is now `zero_g`; `app_memory_1`, `app_memory_2` and
+  `app_vibration` send the same values as `lounge`, `tv` and `anti_snore`; `app_flat` has no
+  replacement),
+  Motion Bed split zero-gravity modes, the raw `switch` value and the `confirmed`
+  flag (a Motion Bed alarm without a `wake_action` now rings without moving the bed), Keeson app tables
+  with more than one weekly or one-time alarm, Comfort Enhancement 3
+  `next_day` (a Comfort Enhancement 3 wake-up now runs at the next occurrence of the time,
+  so it cannot be set for tomorrow while that time is still ahead today), Richmat
+  app calendar alarm deletion (`enabled: false` disables the slot instead) and calendar
+  positions without a shared wake action name. RMControl clock setting moved to `sync_clock`.
+
+**Removed aliases.** `linak_rename`, `logicdata_rename` and `jiecang_rename` →
+`rename`; `leggett_hold_control` → `hold_control`; `malouf_sync_clock` → `sync_clock`.
+Each bed still applies its own name and control rules.
+
+**Renamed estimated-position actions.** `save_position`, `rename_position`,
+`update_position`, `delete_position`, `recall_position`, `set_position_reference`,
+`confirm_position_unchanged` and `mark_position_unknown` are now
+`estimate_save_position`, `estimate_rename_position`, `estimate_update_position`,
+`estimate_delete_position`, `estimate_recall_position`, `estimate_set_reference`,
+`estimate_confirm_unchanged` and `estimate_mark_unknown`.
+
+**Removed actions and fields.** `reverie_test` (a factory bed test) is removed.
+`furnimove_action` no longer takes `consumer`. `sleep_number_command` no longer
+accepts service, firmware and diagnostic commands such as `reboot_system`,
+`software_versions` or the internal heating and cooling mode commands.
+
 ## Entity Cleanup
 
 v5 gives every entity a name a person understands and removes entities that
@@ -262,7 +326,7 @@ These are additions. Existing entities keep their names, states and attributes.
 | `hold_owner` and `hold_generation` fields | `timed_move` and `hold_control` | Always listed. Beds that declare no renewable hold reject them before anything moves; calls without them behave as before. See [Renewable holds](SERVICES.md#renewable-holds) |
 | **Estimated positions** menu | **Configure**, one entry per side on a paired bed with two addresses | Only on beds whose protocol supports [estimated positions](ESTIMATED_POSITIONS.md). Not on single-address paired beds yet |
 | Estimated position, set-reference, "I used the remote", saved-position and "Saved positions" entities | `number`, `button` and `sensor` | Only after you enable estimated positions for a motor |
-| Saved-position actions (`save_position`, `recall_position`, `set_position_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
+| Saved-position actions (`estimate_save_position`, `estimate_recall_position`, `estimate_set_reference`, `lower_to_flat` and five more) | `adjustable_bed.*` | Always listed, and useful only once estimated positions are enabled. [Actions](ESTIMATED_POSITIONS.md#actions) gives each action's requirements |
 | **Tap to start and stop movement** card option (`tap_to_move`) | Dashboard card editor, **Motors** | Off by default. With it on, a tap on a motor arrow starts the motor and the next tap stops it ([#609](https://github.com/kristofferR/ha-adjustable-bed/issues/609)). See [Tap to move](DASHBOARD_CARD.md#tap-to-move) |
 | Percentage graphic, lumbar graphic and full-card dialog card options (`show_percentage_graphic`, `show_lumbar_graphic`, `show_graphic_labels`, `open_dialog`, `dialog_config`) | Dashboard card editor | Off by default, so existing cards are unchanged. They draw percentage feedback and every estimate state as a schematic pose, add a lumbar section, and open the full card in a dialog from a compact card ([#713](https://github.com/kristofferR/ha-adjustable-bed/pull/713)). See [Dashboard Card Graphics and Dialog](CONFIGURATION.md#dashboard-card-graphics-and-dialog) |
 | Beta feedback notification | Home Assistant notifications | 24 hours after Home Assistant first loads a beta of a major version. For v5 it links the feedback issue [#914](https://github.com/kristofferR/ha-adjustable-bed/issues/914). It shows again after each restart until you dismiss it; after that, later betas of the same major do not ask again. Stable versions never ask |

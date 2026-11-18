@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE_TIMER, CARD_PRESET_SAVE
 from ...codec import keeson as codec
 from ...const import KEESON_BASE_NOTIFY_CHAR_UUID, KEESON_BASE_WRITE_CHAR_UUID
@@ -256,17 +257,23 @@ class ComfortBaseController(KeesonController):
         for _ in range(2):
             await self.write_command(codec.clock(dt_util.now()))
 
-    def validate_alarm(self, *, enabled: bool, hour: int, minute: int, memory: int) -> None:
-        if not 0 <= hour <= 23 or not 0 <= minute <= 59 or memory not in app.MEMORY:
-            raise ValueError("Choose a valid alarm time and Memory A (1) or B (2)")
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(wake_actions=("memory_1", "memory_2"))
 
-    async def set_alarm(self, *, enabled: bool, hour: int, minute: int, memory: int) -> None:
-        self.validate_alarm(enabled=enabled, hour=hour, minute=minute, memory=memory)
-        if enabled:
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if not 0 <= alarm.hour <= 23 or not 0 <= alarm.minute <= 59:
+            raise ValueError("Choose a valid alarm time and memory position")
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_alarm(alarm)
+        if alarm.enabled:
             await self.sync_clock()
             await asyncio.sleep(app.ALARM_DELAY_SECONDS)
-            # parameter3 is opaque. The app writes FF, no weekday semantics proven.
-            fields = bytes((hour, minute, 0xFF, 0x0E if memory == 1 else 0x0F))
+            # The app always writes FF in the third field.
+            fields = bytes(
+                (alarm.hour, alarm.minute, 0xFF, 0x0E if alarm.wake_action == "memory_1" else 0x0F)
+            )
         else:
             fields = bytes(4)
         await self.write_command(codec.alarm_table(3, fields))

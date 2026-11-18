@@ -22,7 +22,6 @@ from homeassistant.helpers.typing import ConfigType
 
 from .bed_traits import bed_type_has_position_feedback, default_connection_mode
 from .beds.furnimove.repair import async_refresh_furnimove_layout_issues
-from .beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS, SERVICE_LINAK_SET_ALARM
 from .beds.remacro.discovery import (
     async_refresh_remacro_issues,
     async_watch_remacro_fallback,
@@ -37,7 +36,6 @@ from .beds.reverie.pairlink_local_setup import (
     release_pairlink_local_profile_lease,
     release_pairlink_local_reservations,
 )
-from .beds.solace.services import SERVICE_SOLACE_AUDIO, SERVICE_SOLACE_SET_ALARM
 from .beta_feedback import async_setup_beta_feedback
 from .combine_suggestion import async_load_dismissal
 from .const import (
@@ -137,18 +135,13 @@ from .services import (
     ATTR_FIRST_DIRECTION,
     ATTR_FIRST_MOTOR,
     ATTR_INCLUDE_LOGS,
-    ATTR_LIFETIME,
     ATTR_MOTOR,
     ATTR_NAME,
-    ATTR_PAUSE,
     ATTR_POSITION,
     ATTR_POSITIONS,
     ATTR_PRESET,
-    ATTR_RECURRENCE_COUNT,
-    ATTR_RECURRENCE_MINUTES,
     ATTR_SECOND_DIRECTION,
     ATTR_SECOND_MOTOR,
-    ATTR_SECONDS,
     ATTR_SIDE,
     ATTR_TARGET_ADDRESS,
     DEFAULT_CAPTURE_DURATION,
@@ -158,7 +151,6 @@ from .services import (
     MIN_TIMED_MOVE_DURATION_MS,
     SERVICE_GENERATE_SUPPORT_BUNDLE,
     SERVICE_GOTO_PRESET,
-    SERVICE_LINAK_RENAME,
     SERVICE_SAVE_PRESET,
     SERVICE_SET_POSITION,
     SERVICE_SET_POSITIONS,
@@ -183,18 +175,13 @@ __all__ = [
     "ATTR_FIRST_MOTOR",
     "ATTR_ACTION",
     "ATTR_ACTIONS",
-    "ATTR_LIFETIME",
     "ATTR_MOTOR",
     "ATTR_NAME",
-    "ATTR_PAUSE",
     "ATTR_POSITION",
     "ATTR_POSITIONS",
     "ATTR_PRESET",
-    "ATTR_RECURRENCE_COUNT",
-    "ATTR_RECURRENCE_MINUTES",
     "ATTR_SECOND_DIRECTION",
     "ATTR_SECOND_MOTOR",
-    "ATTR_SECONDS",
     "ATTR_SIDE",
     "ATTR_TARGET_ADDRESS",
     "DEFAULT_CAPTURE_DURATION",
@@ -204,11 +191,6 @@ __all__ = [
     "MIN_TIMED_MOVE_DURATION_MS",
     "SERVICE_GENERATE_SUPPORT_BUNDLE",
     "SERVICE_GOTO_PRESET",
-    "SERVICE_LINAK_MOVE_SIMULTANEOUS",
-    "SERVICE_LINAK_RENAME",
-    "SERVICE_LINAK_SET_ALARM",
-    "SERVICE_SOLACE_AUDIO",
-    "SERVICE_SOLACE_SET_ALARM",
     "SERVICE_SAVE_PRESET",
     "SERVICE_SET_POSITION",
     "SERVICE_SET_POSITIONS",

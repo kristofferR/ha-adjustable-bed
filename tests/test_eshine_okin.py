@@ -446,13 +446,14 @@ async def test_alarm_service_validation_and_serialized_execution(hass, ha_target
     from custom_components.adjustable_bed.const import DOMAIN
 
     coordinator, device_id = ha_target
-    data = {"device_id": [device_id], "enabled": True, "time": "06:30:00", "wake_mode": "massage"}
-    await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
+    data = {"device_id": [device_id], "enabled": True, "time": "06:30:00", "wake_action": "massage"}
+    await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_awaited_once()
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    controller = MagicMock(
-        spec=EshineOkinController, sync_clock=AsyncMock(), configure_clock_alarm=AsyncMock()
-    )
+    assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"]
+    controller = coordinator.controller
+    controller.sync_clock = AsyncMock()
+    controller.configure_clock_alarm = AsyncMock()
     await command(controller)
     controller.sync_clock.assert_awaited_once()
     controller.configure_clock_alarm.assert_awaited_once_with(
@@ -461,18 +462,22 @@ async def test_alarm_service_validation_and_serialized_execution(hass, ha_target
         hour=6,
         minute=30,
         preset="massage",
+        head_level=0,
+        foot_level=0,
     )
     coordinator.async_execute_controller_command.reset_mock()
     for invalid in ({**data, "time": "06:30:01"}, {"device_id": [device_id], "enabled": True}):
         with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(DOMAIN, "eshine_set_alarm", invalid, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", invalid, blocking=True)
     coordinator._controller = EshineOkinController(coordinator, profile="eshine_e2000")
-    with pytest.raises(ServiceValidationError, match="does not expose"):
-        await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
+    with pytest.raises(ServiceValidationError, match="cannot wake with 'massage'"):
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator._bed_type = "eshine"  # E6000 is a different app, despite shared branding.
-    coordinator._controller = MagicMock(spec=BedController, requires_disconnected_transport=False)
-    with pytest.raises(ServiceValidationError, match="does not support eShine alarms"):
-        await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
+    coordinator._controller = MagicMock(
+        spec=BedController, requires_disconnected_transport=False, alarm_capability=None
+    )
+    with pytest.raises(ServiceValidationError, match="has no alarm"):
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 
 
@@ -535,7 +540,7 @@ def test_discovery_candidate_never_selects_a_product(name):
 async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, monkeypatch):
     from homeassistant.exceptions import ServiceValidationError
 
-    from custom_components.adjustable_bed.beds.eshine_okin import services as eshine_okin_services
+    from custom_components.adjustable_bed import services as eshine_okin_services
     from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 
     coordinator, device_id = ha_target
@@ -569,15 +574,15 @@ async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, 
         "_call_targets",
         lambda call: [(coordinator, SIDE_BOTH), (other, SIDE_BOTH)],
     )
-    with pytest.raises(ServiceValidationError, match="does not expose"):
+    with pytest.raises(ServiceValidationError, match="cannot wake with 'massage'"):
         await hass.services.async_call(
             DOMAIN,
-            "eshine_set_alarm",
+            "set_alarm",
             {
                 "device_id": [device_id],
                 "enabled": True,
                 "time": "06:30:00",
-                "wake_mode": "massage",
+                "wake_action": "massage",
             },
             blocking=True,
         )

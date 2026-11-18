@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ...codec import keeson as codec
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE
@@ -251,6 +252,25 @@ class JalonController(KeesonController):
             packet,
             repeat_count=count,
             repeat_delay_ms=app.ALARM_FOLLOWUP_MS if after_set else app.REFRESH_MS,
+        )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        modes = app.WAKE_TYPES.get(self.profile.key)
+        if modes is None:
+            return None
+        return AlarmCapability(
+            wake_actions=tuple(modes), weekdays=True, cancel_running=True, resource=None
+        )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        # This app numbers Monday 1 through Sunday 7.
+        await self.configure_clock_alarm(
+            enabled=alarm.enabled,
+            weekdays=tuple(day + 1 for day in alarm.weekdays),
+            hour=alarm.hour,
+            minute=alarm.minute,
+            preset=alarm.wake_action,
         )
 
     async def configure_clock_alarm(

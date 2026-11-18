@@ -14,12 +14,13 @@ import asyncio
 import logging
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_PRESETS
 from ...const import (
     CONF_BLE_DEVICE_NAME,
@@ -188,6 +189,15 @@ def _action(name: str) -> MotorCommandCallable:
         await target.execute_simmons_action(name)
 
     return invoke
+
+
+# This app's alarm modes and the shared wake actions they appear as.
+_WAKE_ACTION: Final[dict[AlarmMode, str]] = {
+    "custom_mode": "custom_position",
+    "flat": "flat",
+    "anti_snore": "anti_snore",
+}
+_ALARM_MODE: Final = {action: mode for mode, action in _WAKE_ACTION.items()}
 
 
 class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
@@ -652,6 +662,43 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
         for offset in PAGE_QUERY_OFFSETS_S:
             await asyncio.sleep(max(0, started + offset - loop.time()))
             await self._query_once()
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(
+            wake_actions=tuple(_WAKE_ACTION[mode] for mode in self.alarm_mode_options),
+            weekdays=True,
+            slots=2,
+            requires_wake_action=True,
+            confirm_actions=frozenset({"custom_position"}),
+            live_check=True,
+        )
+
+    def _alarm_fields(self, alarm: AlarmRequest) -> dict[str, Any]:
+        return {
+            "slot": alarm.slot,
+            "enabled": alarm.enabled,
+            "hour": alarm.hour,
+            "minute": alarm.minute,
+            "weekdays": alarm.weekdays,
+            "mode": _ALARM_MODE[alarm.wake_action] if alarm.enabled else None,
+            "confirm_custom_mode": alarm.confirm_custom_position,
+        }
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        fields = self._alarm_fields(alarm)
+        self.validate_simmons_alarm(
+            slot=fields["slot"],
+            enabled=fields["enabled"],
+            mode=fields["mode"],
+            confirm_custom_mode=fields["confirm_custom_mode"],
+        )
+
+    async def check_alarm(self, alarm: AlarmRequest) -> None:
+        await self.check_simmons_alarm(**self._alarm_fields(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.configure_simmons_alarm(**self._alarm_fields(alarm))
 
     def validate_simmons_alarm(
         self, *, slot: int, enabled: bool, mode: str | None, confirm_custom_mode: bool

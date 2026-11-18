@@ -562,7 +562,7 @@ See [Timing](#timing). Presets are single writes without STOP.
 
 - `adjustable_bed.solace_audio` (MotionFlex) selects or previews tracks 1-5,
   queries the volume and sets volume 1-5.
-- `adjustable_bed.solace_set_alarm` (MotionFlex) programs enabled state, time,
+- `adjustable_bed.set_alarm` (MotionFlex) programs enabled state, time,
   weekdays, bed action, massage and sound ([Clock and alarm](#clock-and-alarm)).
 
 #### Evidence
@@ -628,18 +628,18 @@ Flat sends its frame alone; every other preset uses the STOP preamble.
 
 #### Services
 
-`adjustable_bed.solace_set_alarm` programs the controller alarm, then sends the
+`adjustable_bed.set_alarm` programs the controller alarm, then sends the
 alarm query. Modes are `memory_1` (Favourite), `zero_g` and `no_action`; sound
 is `none` or `alarm`. Save the Favourite position before choosing `memory_1`.
 
 ```yaml
-action: adjustable_bed.solace_set_alarm
+action: adjustable_bed.set_alarm
 data:
   device_id: YOUR_BED_DEVICE_ID
   enabled: true
   time: "07:30:00"
   weekdays: [monday, tuesday, wednesday, thursday, friday]
-  mode: zero_g
+  wake_action: zero_g
   massage: false
   sound: alarm
 ```
@@ -1008,7 +1008,7 @@ before any write; persistent changes need `confirmed: true`.
 | Action | Main fields |
 |---|---|
 | `motion_bed_action` | `action` from diagnostics; `branch` app/save/clear; movement `duration` in seconds |
-| `motion_bed_alarm` | `enabled`, `hour`, `minute`, weekdays 1-7, `repeat`, modes 1-6, `massage`, `sound`, the target's `audio`; modular initial `switch` 00/01/A1 |
+| [`set_alarm`](../SERVICES.md#set_alarm) | `enabled`, `time`, `weekdays`, `wake_action` (`zero_g`, `memory_1`, `none`), `massage`, `sound` (music only on targets with audio). No `confirmed` needed |
 | `motion_bed_clock` | ISO `timestamp`, `thermal` for the thermal clock |
 | `motion_bed_sleep_angles` | page 2/3/4, four `flat` and four `side_positions` raw values |
 | `motion_bed_calibration` | integer `flat`, `side_position`; odd-width encodings are rejected before I/O |

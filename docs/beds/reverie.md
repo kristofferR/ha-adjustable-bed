@@ -503,11 +503,7 @@ schedule `reverie_set_comfort`, `reverie_run_routine`, `goto_preset`, or
 `save_preset` at the desired time. Phone-local alarm storage, Android
 notifications, and its scheduler are outside this integration's scope.
 
-`reverie_test` sends the accepted Protocol 108 or 110 direct diagnostic and
-its matching stop writes. Pairlink diagnostics use the current central or local
-session and the same authentication, sign, target, and readiness checks as
-ordinary actions. The diagnostic retains the command connection until its timed
-cleanup completes, including with Disconnect After Command enabled. Pairlink's
+The app's factory bed test is not offered as an action. Pairlink's
 massage mode select and rhythm switch display receiver feedback; the
 controller state keeps the numeric mode for diagnostics. Pairlink RGB light color follows
 receiver feedback once all three channels are known for the current peer.

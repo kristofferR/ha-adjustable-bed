@@ -54,7 +54,6 @@ if TYPE_CHECKING:
 SERVICE_REVERIE_SET_COMFORT = "reverie_set_comfort"
 SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT = "reverie_pairlink_alarm_comfort"
 SERVICE_REVERIE_RUN_ROUTINE = "reverie_run_routine"
-SERVICE_REVERIE_TEST = "reverie_test"
 
 
 @dataclass(frozen=True, slots=True)
@@ -654,57 +653,6 @@ async def handle_reverie_run_routine(call: ServiceCall) -> None:
         raise
 
 
-async def handle_reverie_test(call: ServiceCall) -> None:
-    """Validate every selected target before starting its timed direct test."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data.get(CONF_DEVICE_ID, []), call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    admissions = {
-        (id(coordinator), side): _capture_command_admission(
-            coordinator, side, ("reverie:diagnostic",)
-        )
-        for coordinator, side in targets
-    }
-    preflighted: PreflightedSides = []
-    try:
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                controller = await _validation_controller(coordinator, target, preflighted)
-                _validate_reverie_deferred_target(coordinator, controller)
-                reverie = _reverie_comfort_controller(target, controller)
-                try:
-                    reverie.validate_diagnostic()
-                except ValueError as err:
-                    raise ServiceValidationError(str(err)) from err
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-    try:
-        for coordinator, side in targets:
-            async def start_diagnostic(
-                controller: BedController, parent: BedTarget = coordinator
-            ) -> None:
-                _validate_reverie_deferred_target(parent, controller)
-                await require_controller(
-                    controller, ReverieComfortActions
-                ).async_start_diagnostic()
-
-            await _execute_sided(
-                coordinator,
-                side,
-                start_diagnostic,
-                resource="reverie:diagnostic",
-                admission=admissions[(id(coordinator), side)],
-            )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-
 def async_register_reverie_services(hass: HomeAssistant) -> None:
     """Register the Reverie comfort, routine and test actions."""
     hass.services.async_register(
@@ -746,17 +694,6 @@ def async_register_reverie_services(hass: HomeAssistant) -> None:
                         vol.Optional("comfort"): vol.Any(None, _REVERIE_COMFORT_SCHEMA),
                     }
                 ],
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_REVERIE_TEST,
-        handle_reverie_test,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
                 **SIDE_FIELD,
             }
         ),

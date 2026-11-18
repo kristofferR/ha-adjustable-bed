@@ -402,8 +402,8 @@ async def test_ha_entities_and_alarm_service(
     mock_bleak_client.write_gatt_char.reset_mock()
     await hass.services.async_call(
         DOMAIN,
-        "comfort_enhancements_set_alarm",
-        {"device_id": dev, "enabled": True, "time": "06:45:00", "memory": 1, "massage": True},
+        "set_alarm",
+        {"device_id": dev, "enabled": True, "time": "06:45:00", "wake_action": "memory_1", "massage": True},
         blocking=True,
     )
     expected = (
@@ -416,18 +416,18 @@ async def test_ha_entities_and_alarm_service(
     assert written(mock_bleak_client)[-1] == clock_frame(datetime(2026, 11, 3, 20, 15, 30)).hex()
     await hass.services.async_call(
         DOMAIN,
-        "comfort_enhancements_set_alarm",
+        "set_alarm",
         {"device_id": dev, "enabled": False},
         blocking=True,
     )
     assert written(mock_bleak_client)[-1] == "ebfe161e0f14ffff02ffffffffc3"
     for bad in [{"enabled": True}, {"enabled": True, "time": "06:00:01"}] + (
-        [{"enabled": True, "time": "06:00:00", "memory": 2}] if layout in ("mc4", "mc5") else []
+        [{"enabled": True, "time": "06:00:00", "wake_action": "memory_2"}] if layout in ("mc4", "mc5") else []
     ):
         mock_bleak_client.write_gatt_char.reset_mock()
         with pytest.raises(ServiceValidationError):
             await hass.services.async_call(
-                DOMAIN, "comfort_enhancements_set_alarm", {"device_id": dev, **bad}, blocking=True
+                DOMAIN, "set_alarm", {"device_id": dev, **bad}, blocking=True
             )
         assert not written(mock_bleak_client)
     assert await hass.config_entries.async_unload(e.entry_id)

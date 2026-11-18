@@ -17,6 +17,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE_TIMER
 from ...codec import keeson as codec
 from ...const import GLIDEAWAY_MOTION_MODELS
@@ -429,6 +430,17 @@ class GlideawayMotionController(ProfileExecution[keeson_profiles.KeesonProfile],
     @property
     def clock_alarm_preset_options(self) -> tuple[str, ...]:
         return tuple(WAKE_MODES)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(
+            wake_actions=tuple(WAKE_MODES), cancel_running=True, resource=None
+        )
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        alarm_frame(
+            alarm.enabled, alarm.hour, alarm.minute, alarm.wake_action, alarm.reference_time
+        )
 
     async def sync_clock(self) -> None:
         await self.write_command(rtc_frame(dt_util.now()))
