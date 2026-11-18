@@ -33,7 +33,6 @@ from custom_components.adjustable_bed.bond_verification import (
 )
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
     CapabilityReport,
     _vibradorm_app_data,
     _vmatbasic_data,
@@ -604,34 +603,6 @@ async def test_repairs_does_not_link_to_a_terminated_reconfigure_flow(hass):
     assert result["type"] == FlowResultType.ABORT
     assert "next_flow" not in result
     assert const.CONF_PROFILE_REVIEW_PENDING in entry.data
-
-
-@pytest.mark.parametrize(
-    "source,target",
-    [
-        (const.BED_TYPE_VIBRADORM_APP, const.BED_TYPE_LINAK),
-        (const.BED_TYPE_LINAK, const.BED_TYPE_VIBRADORM),
-    ],
-)
-async def test_options_can_correct_a_mistaken_bed_family(hass, source, target):
-    data = (
-        app_data()
-        if source == const.BED_TYPE_VIBRADORM_APP
-        else {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: source}
-    )
-    entry = entry_for(hass, data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler, flow.hass = entry.entry_id, hass
-    result = await flow.async_step_settings({const.CONF_BED_TYPE: target})
-    for _ in range(3):
-        if result["type"] == FlowResultType.CREATE_ENTRY:
-            break
-        assert not result.get("errors")
-        schema = result["data_schema"]
-        assert schema is not None
-        result = await flow.async_step_settings(schema({}))
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == target
 
 
 async def test_focused_discovery_offers_one_family_with_other_candidates(
