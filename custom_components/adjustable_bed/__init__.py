@@ -20,6 +20,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
+from .bed_traits import bed_type_has_position_feedback
 from .beds.furnimove.repair import async_refresh_furnimove_layout_issues
 from .beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS, SERVICE_LINAK_SET_ALARM
 from .beds.remacro.discovery import (
@@ -49,13 +50,16 @@ from .const import (
     BED_TYPE_VIBRADORM,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
+    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
     CONF_PROFILE_MIGRATION,
@@ -63,8 +67,12 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_SIDE,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     KEESON_VARIANT_SINO,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SINGLE_ADDRESS,
@@ -543,6 +551,124 @@ def migrate_v5_5_data(
     return new_data
 
 
+# Settings 5.6 removed (#v5 settings simplification). Their behaviour is now
+# one value for every bed, or the per-bed default.
+V5_6_REMOVED_KEYS: Final = frozenset(
+    {"position_mode", "connection_profile", CONF_PAIR_CONNECTION_MODE}
+)
+_LEGACY_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
+
+
+_V5_6_INHERITED_KEYS: Final = (
+    _LEGACY_DISCONNECT_AFTER_COMMAND,
+    CONF_IDLE_DISCONNECT_SECONDS,
+    CONF_DISABLE_ANGLE_SENSING,
+)
+
+
+def _v5_6_settings(
+    settings: Mapping[str, Any],
+    route: Mapping[str, Any],
+    location: str,
+    changed: dict[str, list[str]],
+) -> dict[str, Any]:
+    """Return one stored settings mapping in the 5.6 shape.
+
+    ``route`` holds the bed type and variant the mapping runs with, so a saved
+    "Disable angle sensing" equal to that route's default is dropped. Paired
+    sides first take the shared values they inherited, then each side and each
+    original entry is rewritten against its own route.
+    """
+    new = {key: value for key, value in settings.items() if key not in V5_6_REMOVED_KEYS}
+    notes = sorted(V5_6_REMOVED_KEYS.intersection(settings))
+    if isinstance(children := new.get(CONF_PAIR_CHILDREN), list):
+        shared = {key: new[key] for key in _V5_6_INHERITED_KEYS if key in new}
+        new[CONF_PAIR_CHILDREN] = [
+            _v5_6_settings(
+                {**shared, **child},
+                {**route, **_route_of(child)},
+                f"{location}.{child.get(CONF_SIDE, index)}",
+                changed,
+            )
+            if isinstance(child, Mapping)
+            else child
+            for index, child in enumerate(children)
+        ]
+    after = new.pop(_LEGACY_DISCONNECT_AFTER_COMMAND, None)
+    seconds = new.get(CONF_IDLE_DISCONNECT_SECONDS)
+    mode: str | None = None
+    if after is True:
+        mode = CONNECTION_MODE_RELEASE
+    elif seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
+        # Issue #700's "0 keeps the bed connected" becomes its own choice.
+        mode = CONNECTION_MODE_ALWAYS
+    elif after is False:
+        mode = CONNECTION_MODE_IDLE
+    if seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
+        new.pop(CONF_IDLE_DISCONNECT_SECONDS)
+    if mode is not None:
+        new[CONF_CONNECTION_MODE] = mode
+        notes.append(f"{CONF_CONNECTION_MODE}={mode}")
+    elif after is not None:
+        notes.append(_LEGACY_DISCONNECT_AFTER_COMMAND)
+    disabled = new.get(CONF_DISABLE_ANGLE_SENSING)
+    if isinstance(disabled, bool):
+        view = {**route, **_route_of(new)}
+        if disabled is not bed_type_has_position_feedback(
+            view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
+        ):
+            # Equal to the route's own default: the route decides it now.
+            del new[CONF_DISABLE_ANGLE_SENSING]
+            notes.append(CONF_DISABLE_ANGLE_SENSING)
+    for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
+        if isinstance(nested := new.get(key), Mapping):
+            origin = new.get(KEY_ORIGIN_DATA)
+            new[key] = _v5_6_settings(
+                nested,
+                _route_of(origin if isinstance(origin, Mapping) else nested),
+                f"{location}.{key}",
+                changed,
+            )
+    if notes:
+        changed[location] = notes
+    return new
+
+
+def _route_of(settings: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the bed type and variant a settings mapping stores."""
+    return {
+        key: settings[key] for key in (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT) if key in settings
+    }
+
+
+def migrate_v5_6_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with the 5.6 settings shape.
+
+    Removed settings are dropped; "Disconnect after each command" and the idle
+    timeout's 0 become the connection mode; a saved angle-sensing choice equal
+    to its route's default is dropped, since the route now decides it. The
+    migration record lists each change by where it was stored.
+    """
+    changed: dict[str, list[str]] = {}
+    route = _route_of(data)
+    new_data = _v5_6_settings(data, route, "data", changed)
+    new_options = _v5_6_settings(options, {**route, **_route_of(options)}, "options", changed)
+    if changed:
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            settings_5_6=changed,
+        )
+    return new_data, new_options
+
+
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
     """Return the unique ids of the massage buttons Massage on gave these runtimes."""
     from .button import BUTTON_DESCRIPTIONS
@@ -753,6 +879,20 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             from_minor_version=original_version[1],
         )
         hass.config_entries.async_update_entry(entry, data=data, minor_version=5)
+
+    if entry.version == 5 and entry.minor_version < 6:
+        # v5.5 -> v5.6: the settings simplification. Position update mode,
+        # connection profile and the stored pair connection mode go; the
+        # disconnect settings become one connection mode.
+        data, options = migrate_v5_6_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=6
+        )
 
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",

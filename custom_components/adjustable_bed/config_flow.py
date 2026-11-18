@@ -2168,7 +2168,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # whose profile has no massage; minor version 5 stores each Octo setup's
     # motor layout as its override.
     VERSION = 5
-    MINOR_VERSION = 5
+    MINOR_VERSION = 6
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
