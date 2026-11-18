@@ -798,21 +798,25 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     step_id="processor",
                     description_placeholders=watch.placeholders(),
                 )
+            candidates = (
+                (recommendation.suggested,)
+                if recommendation.suggested
+                else recommendation.choices
+            )
             if guided or (
-                recommendation.suggested is not None
-                and not recommendation.suggested.startswith(_REMOTE_PREFIX)
-                and not is_paired(watch.entry.data)
+                not is_paired(watch.entry.data)
+                and any(not choice.startswith(_REMOTE_PREFIX) for choice in candidates)
             ):
-                # A different app or bed type is chosen, checked and reviewed in
-                # Reconfigure, with the suggestion preselected.
+                # An app, bed type or route is chosen, checked and reviewed in
+                # Reconfigure, with a single suggestion preselected.
                 return await self._async_start_guided_change(watch, recommendation)
             if is_paired(watch.entry.data):
                 # Existing per-side profile restrictions require an explicit split.
                 # Open the menu; never split or change either side from this repair.
                 result = await self.hass.config_entries.options.async_init(watch.entry.entry_id)
             else:
-                # Without one app to switch to, Configure shows the settings to
-                # check, such as the remote; saving them answers the review.
+                # A remote setting, or nothing to choose, is checked in
+                # Configure; saving it answers the review.
                 manager = self.hass.config_entries.options
                 original_data, original_options = watch.entry.data, watch.entry.options
                 result = await manager.async_init(watch.entry.entry_id)
@@ -884,7 +888,14 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
         The notice stays until Reconfigure saves a change or keeps the profile.
         """
         result = await self.hass.config_entries.flow.async_init(
-            DOMAIN, context=reconfigure_context(watch.entry, recommendation.suggested)
+            DOMAIN,
+            context=reconfigure_context(
+                watch.entry,
+                recommendation.suggested
+                if recommendation.suggested
+                and not recommendation.suggested.startswith(_REMOTE_PREFIX)
+                else None,
+            ),
         )
         if result.get("type") is not FlowResultType.FORM:
             return self.async_abort(reason="recommendation_changed")

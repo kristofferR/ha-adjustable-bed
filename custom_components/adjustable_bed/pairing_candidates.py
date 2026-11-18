@@ -104,7 +104,7 @@ def decode_pair_selection(value: object) -> tuple[str, str] | None:
 
 
 def ordered_pair_options(entries: list[ConfigEntry]) -> list[SelectOptionDict]:
-    """Build every valid Left/Right assignment without same-bed choices."""
+    """Build every Left/Right assignment of two beds of one protocol."""
     return [
         SelectOptionDict(
             value=encode_pair_selection(left.entry_id, right.entry_id),
@@ -115,7 +115,7 @@ def ordered_pair_options(entries: list[ConfigEntry]) -> list[SelectOptionDict]:
         )
         for left in entries
         for right in entries
-        if left.entry_id != right.entry_id
+        if left.entry_id != right.entry_id and _protocol(left) == _protocol(right)
     ]
 
 

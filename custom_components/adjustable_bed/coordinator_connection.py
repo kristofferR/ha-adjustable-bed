@@ -1685,7 +1685,12 @@ class CoordinatorConnectionMixin:
             )
         reason = connection_reachability(self.hass, self._address)
         if reason:
-            _LOGGER.warning("Bluetooth reachability for %s: %s", self._address, reason)
+            _LOGGER.log(
+                logging.DEBUG if self._connect_failure_logged else logging.WARNING,
+                "Bluetooth reachability for %s: %s",
+                self._address,
+                reason,
+            )
             if self._connection_attempt_details:
                 self._connection_attempt_details[-1]["reachability"] = reason
         total_elapsed = time.monotonic() - overall_start

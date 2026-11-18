@@ -1863,14 +1863,16 @@ _IDLE_SECONDS_SELECTOR: Final = NumberSelector(
         unit_of_measurement="s",
     )
 )
-_PULSE_COUNT_SELECTOR: Final = NumberSelector(
-    NumberSelectorConfig(
-        min=_PULSE_COUNT_RANGE[0],
-        max=_PULSE_COUNT_RANGE[1],
-        step=1,
-        mode=NumberSelectorMode.BOX,
+
+
+def _pulse_count_selector(saved: object) -> NumberSelector:
+    """Return Movement per tap's field, keeping room for a larger count saved earlier."""
+    high = _PULSE_COUNT_RANGE[1]
+    if isinstance(saved, int) and saved > high:
+        high = saved
+    return NumberSelector(
+        NumberSelectorConfig(min=_PULSE_COUNT_RANGE[0], max=high, step=1, mode=NumberSelectorMode.BOX)
     )
-)
 
 
 def _connection_fields(
@@ -1953,7 +1955,7 @@ def _settings_fields(
         CONF_NAME: str,
         CONF_MOTOR_COUNT: vol.All(vol.Coerce(int), vol.In(_motor_count_options(bed_type, variant))),
         CONF_PREFERRED_ADAPTER: vol.In(adapters),
-        CONF_MOTOR_PULSE_COUNT: _PULSE_COUNT_SELECTOR,
+        CONF_MOTOR_PULSE_COUNT: _pulse_count_selector(data.get(CONF_MOTOR_PULSE_COUNT)),
         **dict.fromkeys(_ANGLE_LIMITS, _TEXT),
     }
     fields: dict[vol.Marker, Any] = {}
@@ -2000,7 +2002,8 @@ def _parse_settings(
             if _invalid_pulse_count(bed_type, count):
                 # The profile's own range names the limits.
                 errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
-            elif not _PULSE_COUNT_RANGE[0] <= count <= _PULSE_COUNT_RANGE[1]:
+            elif count < _PULSE_COUNT_RANGE[0]:
+                # The field bounds the rest; a larger count saved earlier stays valid.
                 errors[CONF_MOTOR_PULSE_COUNT] = "invalid_movement_per_tap"
     elif _invalid_pulse_count(bed_type, pulse_defaults[0]):
         errors[CONF_MOTOR_PULSE_COUNT] = "invalid_pulse_count_range"
@@ -2400,12 +2403,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         Choosing the current setup again answers a suggestion as Keep would.
         """
+        from .const import CONF_PROFILE_REVIEW_PENDING
         from .profile_recommendations import (
             async_complete_profile_review,
             async_confirm_profile_review,
         )
+        from .profile_review import async_keep_current_profile
 
         entry = self._get_reconfigure_entry()
+        if CONF_PROFILE_REVIEW_PENDING in entry.data and self._migration_unchanged():
+            # The upgrade review that opened this is answered too.
+            async_keep_current_profile(self.hass, entry)
         await async_confirm_profile_review(
             self.hass, entry, self.flow_id, {**entry.data, **entry.options}
         )
@@ -7648,10 +7656,9 @@ class AdjustableBedOptionsFlow(
             if marker.schema in hidden_generic_fields(bed_type, form_variant)
         }
         # A two-address pair's shared form never shows one side's app settings.
-        if not separate_address_pair:
-            if _is_leggett_app_type(bed_type, form_variant):
-                _add_leggett_app_schema_field(schema_dict, current_data)
-            elif (
+        # The Leggett app is chosen in Reconfigure's guided change.
+        if not separate_address_pair and not _is_leggett_app_type(bed_type, form_variant):
+            if (
                 questions := _configure_questions(
                     {**current_data, CONF_BED_TYPE: bed_type},
                     self.config_entry.data.get(CONF_BED_TYPE),
@@ -7668,7 +7675,7 @@ class AdjustableBedOptionsFlow(
             {marker: validator for marker, validator in held.items() if marker.schema not in asked}
         )
         _show_profile_fields(schema_dict, bed_type, form_variant, keep=asked)
-        if CONF_PROTOCOL_VARIANT not in asked:
+        if bed_type == BED_TYPE_SVANE:
             # Svane's app profile is a route too, chosen in Reconfigure.
             for marker in tuple(schema_dict):
                 if marker.schema == CONF_PROTOCOL_VARIANT:
