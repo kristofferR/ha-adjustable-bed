@@ -42,6 +42,10 @@ async def runtime(hass, monkeypatch):
     ctrl = bed.RichmatLegacyController(coordinator)
     coordinator._controller = coordinator._offline_controller = ctrl
     await async_register_services(hass)
+    # hold_control's lazy import would run on a real executor thread inside virtual time.
+    from custom_components.adjustable_bed.import_executor import async_import_modules
+
+    await async_import_modules(hass, "beds.vmatbasic.services")
     with (
         virtual_clock() as clock,
         patch.object(coordinator, "async_ensure_connected", AsyncMock(return_value=True)),
