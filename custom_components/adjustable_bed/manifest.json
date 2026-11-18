@@ -7168,6 +7168,9 @@
       "local_name": "P5RM*"
     },
     {
+      "local_name": "P5RN*"
+    },
+    {
       "local_name": "P5Rm*"
     },
     {
@@ -7177,10 +7180,10 @@
       "local_name": "P5rm*"
     },
     {
-      "local_name": "P5RN*"
+      "local_name": "P6RM*"
     },
     {
-      "local_name": "P6RM*"
+      "local_name": "P6RN*"
     },
     {
       "local_name": "P6Rm*"
@@ -7190,9 +7193,6 @@
     },
     {
       "local_name": "P6rm*"
-    },
-    {
-      "local_name": "P6RN*"
     },
     {
       "local_name": "P7RN*"
