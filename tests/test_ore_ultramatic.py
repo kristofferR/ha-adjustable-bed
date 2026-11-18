@@ -131,14 +131,14 @@ async def test_p1_presets_save_massage_and_native_entities(hass, target):
     ]
     buttons = _button_entities_for(hass, coordinator)
     assert any(e.unique_id.endswith("ore_comfort_program_flat") for e in buttons)
-    assert not any(e.unique_id.endswith("ultramatic_massage_toggle") for e in buttons)
+    assert not any(e.unique_id.endswith("_ore_ultramatic_massage_toggle") for e in buttons)
 
 
 async def test_p2_native_buttons_and_held_preset(hass, target):
     coordinator, client = await target("P2")
     ctrl = coordinator.controller
     buttons = _button_entities_for(hass, coordinator)
-    assert any(e.unique_id.endswith("ultramatic_massage_head") for e in buttons)
+    assert any(e.unique_id.endswith("_ore_ultramatic_massage_head") for e in buttons)
     assert not any(e.unique_id.endswith("ore_comfort_program_flat") for e in buttons)
     with virtual_clock():
         await coordinator.async_execute_controller_command(lambda c: c.hold_preset("tv", 201))
