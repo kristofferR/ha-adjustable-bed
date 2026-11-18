@@ -14,7 +14,7 @@ from bleak.exc import BleakError
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
 from ...codec import okin_nframe as codec
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, record_command_write
 from ...controller_state import StateKey
 from ...profiles.comfort_enhancement3 import MASSAGE_KEYS, PROFILES, REMOTES, resolve
 from ..base import BedController
@@ -548,6 +548,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
                 link.write.uuid, data, response=True, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, data, response=True)
+            record_command_write(cancel)
             return True
 
     async def write_command(

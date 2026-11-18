@@ -13,7 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import CARD_UTILITY
-from ...command_scheduler import CommandContext, current_command_context
+from ...command_scheduler import CommandContext, current_command_context, record_command_write
 from ...controller_state import StateKey
 from ...profiles import yamada as app
 from ...profiles.keeson import Preset
@@ -255,6 +255,7 @@ class YamadaController(KeesonController):
                 link.write.uuid, frame, response=link.response, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, frame, response=link.response)
+            record_command_write(cancel)
 
     async def write_command(
         self,

@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING
 from bleak.exc import BleakError
 
 from ..codec import keeson as codec
+from ..command_scheduler import record_command_write
 from ..const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
@@ -196,6 +197,7 @@ class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedCont
                     await self.client.write_gatt_char(
                         RONDURE_WRITE_CHAR_UUID, command, response=False
                     )
+                    record_command_write(effective_cancel)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

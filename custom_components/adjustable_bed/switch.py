@@ -18,7 +18,7 @@ from homeassistant.helpers import entity_registry as er
 from .beds.entity_specs import ControllerSwitchSpec
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
-from .command_scheduler import command_was_sent
+from .command_scheduler import command_was_sent, command_write_count
 from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_SVANE,
@@ -318,11 +318,12 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             )
             if live is None:
                 raise ServiceValidationError("Controller no longer supports this setting")
+            before = command_write_count()
             await live.set_fn(ctrl, on)
             # Record it while the link that sent it is still up: a sequential
             # pair releases the side before the command returns, and that
             # release makes the value unknown again.
-            if command_was_sent() and self._spec.state_key is None:
+            if command_was_sent(before) and self._spec.state_key is None:
                 self._commanded = on
                 self.async_write_ha_state()
 

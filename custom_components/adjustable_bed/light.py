@@ -26,7 +26,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING
-from .command_scheduler import command_was_sent
+from .command_scheduler import command_was_sent, command_write_count, current_command_context
 from .const import DOMAIN
 from .controller_state import ControllerState, sided
 from .entity import AdjustableBedEntity
@@ -206,11 +206,7 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
 
         async def set_state(ctrl: BedController) -> None:
             if self._attr_is_on != is_on:
-                await ctrl.lights_toggle()
-                # An unsent toggle must not invert the estimate for good.
-                if command_was_sent():
-                    self._attr_is_on = is_on
-                    self.async_write_ha_state()
+                await self._async_toggle_to(ctrl, is_on)
 
         await self._coordinator.async_execute_controller_command(set_state, cancel_running=False)
 
@@ -218,12 +214,21 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
         """Always send one native toggle, then invert the estimate."""
 
         async def toggle(ctrl: BedController) -> None:
-            await ctrl.lights_toggle()
-            if command_was_sent():
-                self._attr_is_on = not self._attr_is_on
-                self.async_write_ha_state()
+            await self._async_toggle_to(ctrl, not self._attr_is_on)
 
         await self._coordinator.async_execute_controller_command(toggle, cancel_running=False)
+
+    async def _async_toggle_to(self, ctrl: BedController, is_on: bool) -> None:
+        """Keep a sent toggle even if cancellation interrupts its release."""
+        before = command_write_count()
+        sent = False
+        try:
+            await ctrl.lights_toggle()
+            sent = command_was_sent(before)
+        finally:
+            if sent or command_write_count() > before:
+                self._attr_is_on = is_on
+                self.async_write_ha_state()
 
 
 class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
@@ -520,40 +525,42 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         requested_rgbw = _normalize_rgbw_color(kwargs.get(ATTR_RGBW_COLOR))
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         supported_modes = self._attr_supported_color_modes or set()
-        sent = False
-        self._light_turn_on_in_progress = True
-        try:
+
+        async def _turn_on(ctrl: BedController) -> None:
             # A requested color mode takes effect only once the command was sent.
             if requested_rgbw is not None:
                 if ColorMode.RGBW not in supported_modes:
                     raise ValueError("RGBW color is not supported by this light")
-                sent = await self._turn_on_rgbw(**kwargs)
+                await self._turn_on_rgbw(ctrl, **kwargs)
             elif requested_rgb is not None:
                 if ColorMode.RGB not in supported_modes:
                     raise ValueError("RGB color is not supported by this light")
-                sent = await self._turn_on_rgb(**kwargs)
+                await self._turn_on_rgb(ctrl, **kwargs)
             elif self._attr_color_mode == ColorMode.RGBW:
-                sent = await self._turn_on_rgbw(**kwargs)
+                await self._turn_on_rgbw(ctrl, **kwargs)
             elif self._attr_color_mode == ColorMode.RGB:
-                sent = await self._turn_on_rgb(**kwargs)
+                await self._turn_on_rgb(ctrl, **kwargs)
             elif self._attr_color_mode == ColorMode.ONOFF:
 
-                async def _turn_on(ctrl: BedController) -> None:
-                    await ctrl.lights_on()
-
-                sent = await self._async_send(_turn_on, cancel_running=False)
-                if sent:
+                before = command_write_count()
+                await ctrl.lights_on()
+                if command_was_sent(before):
                     self._attr_is_on = True
                     self.async_write_ha_state()
             else:
                 raise ValueError("This light has no active color mode")
+
+        self._light_turn_on_in_progress = True
+        try:
+            sent = await self._async_send(_turn_on, cancel_running=False)
         finally:
             self._light_turn_on_in_progress = False
         if sent:
             self._schedule_light_auto_off_timer()
 
-    async def _turn_on_rgb(self, **kwargs: Any) -> bool:
-        """Turn on with RGB color mode; return whether the command was sent."""
+    async def _turn_on_rgb(self, ctrl: BedController, **kwargs: Any) -> None:
+        """Turn on with RGB color mode inside the serialized operation."""
+        context = current_command_context()
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         target_rgb = requested_rgb or self._attr_rgb_color or self._default_rgb_color
         # Turning on from off resends the known brightness: the bed may not keep
@@ -573,33 +580,44 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             and self._attr_is_on
         )
 
-        async def _turn_on(ctrl: BedController) -> None:
-            if not brightness_only:
-                if ctrl.supports_explicit_light_on_control:
-                    await ctrl.lights_on()
-                elif target_rgb is None:
-                    if ctrl.supports_light_toggle_control:
-                        if not self._attr_is_on:
-                            await ctrl.lights_toggle()
-                    else:
-                        raise ValueError("No RGB color available for this light")
-                if target_rgb is not None:
-                    await ctrl.set_light_color(target_rgb)
-            if level is not None:
-                await ctrl.set_light_level(level)
+        sent = False
+        if not brightness_only:
+            if ctrl.supports_explicit_light_on_control:
+                before = command_write_count()
+                await ctrl.lights_on()
+                if command_was_sent(before):
+                    self._attr_is_on = True
+                    sent = True
+            elif target_rgb is None:
+                if ctrl.supports_light_toggle_control:
+                    if not self._attr_is_on:
+                        before = command_write_count()
+                        await ctrl.lights_toggle()
+                        if command_was_sent(before):
+                            self._attr_is_on = True
+                            sent = True
+                else:
+                    raise ValueError("No RGB color available for this light")
+            if target_rgb is not None and (context is None or not context.cancel_event.is_set()):
+                before = command_write_count()
+                await ctrl.set_light_color(target_rgb)
+                if command_was_sent(before):
+                    self._attr_color_mode = ColorMode.RGB
+                    self._attr_is_on = True
+                    self._attr_rgb_color = target_rgb
+                    sent = True
+        if level is not None and (context is None or not context.cancel_event.is_set()):
+            before = command_write_count()
+            await ctrl.set_light_level(level)
+            if command_was_sent(before) and self._light_level_max is not None:
+                self._attr_brightness = _level_to_brightness(level, self._light_level_max)
+                sent = True
+        if sent:
+            self.async_write_ha_state()
 
-        if not await self._async_send(_turn_on, cancel_running=False):
-            return False
-        self._attr_color_mode = ColorMode.RGB
-        self._attr_is_on = True
-        self._attr_rgb_color = target_rgb
-        if level is not None and self._light_level_max is not None:
-            self._attr_brightness = _level_to_brightness(level, self._light_level_max)
-        self.async_write_ha_state()
-        return True
-
-    async def _turn_on_rgbw(self, **kwargs: Any) -> bool:
-        """Turn on with RGBW color mode; return whether the command was sent."""
+    async def _turn_on_rgbw(self, ctrl: BedController, **kwargs: Any) -> None:
+        """Turn on with RGBW color mode inside the serialized operation."""
+        context = current_command_context()
         requested_rgbw = _normalize_rgbw_color(kwargs.get(ATTR_RGBW_COLOR))
         target_rgbw = requested_rgbw or self._attr_rgbw_color or (255, 255, 255, 255)
         requested_brightness = kwargs.get(ATTR_BRIGHTNESS)
@@ -607,20 +625,25 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             max(0, min(255, requested_brightness)) if type(requested_brightness) is int else None
         )
 
-        async def _turn_on(ctrl: BedController) -> None:
-            if ctrl.supports_explicit_light_on_control:
-                await ctrl.lights_on()
+        sent = False
+        if ctrl.supports_explicit_light_on_control:
+            before = command_write_count()
+            await ctrl.lights_on()
+            if command_was_sent(before):
+                self._attr_is_on = True
+                sent = True
+        if context is None or not context.cancel_event.is_set():
+            before = command_write_count()
             await ctrl.set_light_color_rgbw(target_rgbw, intensity)
-
-        if not await self._async_send(_turn_on, cancel_running=False):
-            return False
-        self._attr_color_mode = ColorMode.RGBW
-        self._attr_is_on = True
-        self._attr_rgbw_color = target_rgbw
-        if intensity is not None:
-            self._attr_brightness = intensity
-        self.async_write_ha_state()
-        return True
+            if command_was_sent(before):
+                self._attr_color_mode = ColorMode.RGBW
+                self._attr_is_on = True
+                self._attr_rgbw_color = target_rgbw
+                if intensity is not None:
+                    self._attr_brightness = intensity
+                sent = True
+        if sent:
+            self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off using the controller's light-off semantics."""
@@ -802,8 +825,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         del kwargs
 
         async def _turn_on(ctrl: BedController) -> None:
+            before = command_write_count()
             await ctrl.lights_on()
-            if not self._feedback_only and command_was_sent():
+            if not self._feedback_only and command_was_sent(before):
                 self._attr_is_on = True
                 self.async_write_ha_state()
 
@@ -817,8 +841,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         del kwargs
 
         async def _turn_off(ctrl: BedController) -> None:
+            before = command_write_count()
             await ctrl.lights_off()
-            if not self._feedback_only and command_was_sent():
+            if not self._feedback_only and command_was_sent(before):
                 self._attr_is_on = False
                 self.async_write_ha_state()
 

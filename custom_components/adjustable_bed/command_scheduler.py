@@ -592,6 +592,7 @@ class CommandContext:
     hold_deadline: float | None = None
     """Event-loop time at which a held command's lease expires, if any."""
     cancel_generation: int = 0
+    successful_writes: int = 0
 
     def request_cancel(self, outcome: CommandOutcome) -> None:
         """Distinguish repeated cancellations of this exact resource admission."""
@@ -694,14 +695,30 @@ def current_command_context() -> CommandContext | None:
     return context if context is None or context.active else None
 
 
-def command_was_sent() -> bool:
-    """Return False inside a command that STOP or a replacing command cancelled.
+def command_write_count() -> int:
+    """Snapshot successful writes before a controller operation."""
+    context = current_command_context()
+    return context.successful_writes if context is not None else 0
 
-    A cancelled writer returns quietly instead of raising, so an entity checks
-    this before it shows the state it asked for.
+
+def record_command_write(cancel_event: asyncio.Event | None) -> None:
+    """Acknowledge a successful command write, excluding independent cleanup."""
+    context = current_command_context()
+    if context is not None and cancel_event is context.cancel_event:
+        context.successful_writes += 1
+
+
+def command_was_sent(since: int = 0) -> bool:
+    """Keep successful writes even when cancellation arrived during transmission.
+
+    Writers without acknowledgements retain the completion-based fallback.
     """
     context = current_command_context()
-    return context is None or not context.cancel_event.is_set()
+    return (
+        context is None
+        or context.successful_writes > since
+        or not context.cancel_event.is_set()
+    )
 
 
 def copy_context_without_command() -> Context:

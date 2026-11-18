@@ -10,7 +10,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
 from .card import CARD_ATTRIBUTES, CardPlacement
-from .command_scheduler import command_was_sent
+from .command_scheduler import command_was_sent, command_write_count
 from .const import TIMED_MOVE_MOTOR_OPTIONS
 from .entity_runtime import controller_side_scope
 from .execution import ExecutionCapabilities
@@ -114,15 +114,20 @@ class AdjustableBedEntity(RenamesInPlace, PlacedInCard):
     ) -> bool:
         """Run ``command`` and return whether it reached the bed.
 
-        STOP or a replacing command settles a cancelled command without an
-        error, and the entity then keeps showing its previous state.
+        A command cancelled before transmission keeps the previous state.
+        Cancellation during a successful write does not undo that write.
         """
         sent = False
 
         async def run(controller: BedController) -> None:
             nonlocal sent
-            await command(controller)
-            sent = command_was_sent()
+            before = command_write_count()
+            try:
+                await command(controller)
+            finally:
+                # A sent command may be cancelled during its release cleanup.
+                sent = command_write_count() > before
+            sent = command_was_sent(before)
 
         await self._coordinator.async_execute_controller_command(run, **kwargs)
         return sent

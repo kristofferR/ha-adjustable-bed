@@ -15,7 +15,12 @@ from homeassistant.util import dt as dt_util
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_PRESET_SAVE
 from ...codec import ff_frame as codec
-from ...command_scheduler import command_was_sent, current_command_context
+from ...command_scheduler import (
+    command_was_sent,
+    command_write_count,
+    current_command_context,
+    record_command_write,
+)
 from ...controller_state import StateUpdate
 from ...profiles import sophie as app
 from ...profiles.ff_frame import SOLACE_PROFILES, SolaceProfile
@@ -238,6 +243,7 @@ class SophieController(SolaceController):
             self._record_command_trace(char.uuid, command, response=response, characteristic=char)
             # No app repeat, retry or fixed write type is proven.
             await client.write_gatt_char(char, command, response=response)
+            record_command_write(cancel_event)
 
     async def write_command(
         self,
@@ -322,9 +328,9 @@ class SophieController(SolaceController):
     async def set_synchro(self, enabled: bool) -> None:
         if not self._coordinator.controller_state.get(SYNC_SUPPORTED, False):
             raise ValueError("Sophie synchronization support has not been reported")
+        before = command_write_count()
         await self.write_command(app.SYNC_ON if enabled else app.SYNC_OFF)
-        # A cancelled write returns without sending, so nothing changed.
-        if command_was_sent():
+        if command_was_sent(before):
             self.forward_controller_state_updates(SYNCHRO_MODE(enabled))
 
     @property

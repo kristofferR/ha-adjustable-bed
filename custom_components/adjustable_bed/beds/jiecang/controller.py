@@ -13,6 +13,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from ...codec import jiecang as codec
+from ...command_scheduler import record_command_write
 from ...const import JIECANG_CHAR_UUID
 from ...profiles.jiecang import (
     LEGACY,
@@ -101,6 +102,7 @@ class JiecangProfileController(ProfileExecution[JiecangProfile], BedController):
                 await self.client.write_gatt_char(
                     self._write_uuid, command, response=self._write_with_response
                 )
+                record_command_write(cancel)
 
     @staticmethod
     async def _pause(milliseconds: float, cancel: asyncio.Event) -> bool:

@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from bleak.exc import BleakError
 
+from ...command_scheduler import record_command_write
 from ...const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -414,6 +415,7 @@ class ReverieController(BedController, ReverieComfortActions):
                     if effective_cancel is not None and effective_cancel.is_set():
                         return
                     await self.client.write_gatt_char(REVERIE_CHAR_UUID, command, response=True)
+                    record_command_write(effective_cancel)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

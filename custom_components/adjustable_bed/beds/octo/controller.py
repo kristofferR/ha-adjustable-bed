@@ -28,7 +28,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ...card import CARD_HIDDEN, memory_card
-from ...command_scheduler import command_was_sent
+from ...command_scheduler import command_was_sent, command_write_count
 from ...const import (
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_OCTO_PIN,
@@ -1427,11 +1427,11 @@ class OctoController(BedController, OctoPacketCodec):
                 f"OCTO capability {feature_id:06x} requires {len(record.value)} value bytes"
             )
         updated = record.with_value(value)
+        before = command_write_count()
         await self._write_octo_command(
             [0x20, OCTO_SYSTEM_SET_CAPS], _encode_capability_value(updated, value)
         )
-        # A cancelled write returns without sending: keep the bed's record.
-        if not command_was_sent():
+        if not command_was_sent(before):
             return
         self._capability_records[feature_id] = updated
         self._apply_capability_records(

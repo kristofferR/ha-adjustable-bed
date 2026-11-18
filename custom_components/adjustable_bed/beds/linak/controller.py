@@ -17,7 +17,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
-from ...command_scheduler import command_was_sent
+from ...command_scheduler import command_was_sent, command_write_count
 from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
@@ -1394,6 +1394,7 @@ class LinakController(BedController):
                     cancel_event=cancel_event,
                     log_errors=False,
                     on_write=mark_ready,
+                    track_command_write=False,
                 )
             except BleakError as err:
                 if not self._is_authentication_window_error(err):
@@ -2084,12 +2085,12 @@ class LinakController(BedController):
         """Write modern Bed Control's automatic-drive configuration."""
         if not self.supports_automatic_drive:
             raise NotImplementedError("Automatic drive is not exposed by this profile")
+        before = command_write_count()
         await self._write_protected_characteristic(
             LINAK_CONFIG_CHAR_UUID,
             build_automatic_drive(enabled),
         )
-        # A cancelled write returns without sending, so nothing changed.
-        if command_was_sent():
+        if command_was_sent(before):
             self.forward_controller_state_updates(LINAK_AUTOMATIC_DRIVE(enabled))
 
     async def rename_device(self, name: str) -> None:
