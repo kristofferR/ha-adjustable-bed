@@ -1732,7 +1732,7 @@ def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | No
         if question is not None and callable(question.default):
             staged = {key: value for key, value in data.items() if key != CONF_PROTOCOL_VARIANT}
             suggested = question.default(staged)
-            variant = suggested if suggested in variants else None
+            variant = suggested if isinstance(suggested, str) and suggested in variants else None
             if variant is None:
                 data.pop(CONF_PROTOCOL_VARIANT, None)
                 variants = {}
