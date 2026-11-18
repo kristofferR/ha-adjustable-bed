@@ -366,6 +366,16 @@ def _resolve_sided_targets(
     return targets, missing
 
 
+def _invalid(key: str, message: str, **placeholders: object) -> ServiceValidationError:
+    """Build a translated validation error; ``message`` is the English fallback."""
+    return ServiceValidationError(
+        message,
+        translation_domain=DOMAIN,
+        translation_key=key,
+        translation_placeholders={name: str(value) for name, value in placeholders.items()},
+    )
+
+
 def _missing_device_error(device_id: str) -> ServiceValidationError:
     """Build the error for a service target that resolved to no bed."""
     return ServiceValidationError(
@@ -431,7 +441,11 @@ def _get_support_bundle_target_from_device(
 def _require_disconnected_transport_ready(target: BedChild, controller: BedController) -> None:
     """Refuse a controller whose selected non-central transport cannot take commands."""
     if controller.requires_disconnected_transport and not controller.disconnected_transport_ready:
-        raise ServiceValidationError(f"Device '{target.name}' local Pairlink session is not ready")
+        raise _invalid(
+            "pairlink_not_ready",
+            f"Device '{target.name}' is not ready over Pairlink yet; wait, then try again",
+            device_name=target.name,
+        )
 
 
 async def _get_controller_for_service(
@@ -454,8 +468,10 @@ async def _get_controller_for_service(
         return capability_controller
 
     if coordinator.pairlink_peripheral:
-        raise ServiceValidationError(
-            f"Device '{coordinator.name}' local Pairlink controller is unavailable"
+        raise _invalid(
+            "pairlink_not_ready",
+            f"Device '{coordinator.name}' is not ready over Pairlink yet; wait, then try again",
+            device_name=coordinator.name,
         )
 
     _LOGGER.debug(
@@ -465,8 +481,10 @@ async def _get_controller_for_service(
     connected = await coordinator.async_ensure_connected(reset_timer=False)
     controller = coordinator.controller
     if not connected or controller is None:
-        raise ServiceValidationError(
+        raise _invalid(
+            "bed_unavailable",
             f"Device '{coordinator.name}' is currently unavailable (unable to connect)",
+            device_name=coordinator.name,
         )
     return controller
 
@@ -868,13 +886,10 @@ async def _set_position_plan(
             and not supports_direct_position_control
         ):
             raise ServiceValidationError(
-                f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
+                f"Device '{coordinator.name}' does not report motor positions",
                 translation_domain=DOMAIN,
                 translation_key="position_feedback_not_supported",
-                translation_placeholders={
-                    "device_name": coordinator.name,
-                    "bed_type": bed_type or "unknown",
-                },
+                translation_placeholders={"device_name": coordinator.name},
             )
 
         # Validate angle sensing is enabled
@@ -1051,8 +1066,8 @@ async def handle_set_positions(call: ServiceCall) -> None:
     ]
     motors = [motor for motor, _ in requests]
     if len(motors) != len(set(motors)):
-        raise ServiceValidationError(
-            "Each motor may appear only once in a set_positions call",
+        raise _invalid(
+            "duplicate_motor_positions", "Each motor may appear only once; remove the duplicate"
         )
     _LOGGER.info(
         "Service set_positions called: motors=%s (side=%s)",
@@ -1341,8 +1356,11 @@ def _hold_lease(call: ServiceCall, action: str, duration_ms: int) -> HoldLease |
     if owner is None:
         return None
     if not MIN_HOLD_LEASE_MS <= duration_ms <= MAX_HOLD_LEASE_MS:
-        raise ServiceValidationError(
-            f"A renewable hold lasts {MIN_HOLD_LEASE_MS} to {MAX_HOLD_LEASE_MS} ms per call"
+        raise _invalid(
+            "hold_lease_duration",
+            f"A held move lasts {MIN_HOLD_LEASE_MS} to {MAX_HOLD_LEASE_MS} ms per call",
+            min=MIN_HOLD_LEASE_MS,
+            max=MAX_HOLD_LEASE_MS,
         )
     return HoldLease(
         owner=owner,
@@ -1368,8 +1386,10 @@ def _require_hold_execution(
     scoped to some controls refuses the others exactly as an undeclared one.
     """
     if controller.execution.hold_for(control) is None:
-        raise ServiceValidationError(
-            f"Device '{target.name}' does not support renewable holds"
+        raise _invalid(
+            "hold_renewal_not_supported",
+            f"Device '{target.name}' does not support renewable holds; use a fixed duration",
+            device_name=target.name,
         )
 
 
@@ -1387,12 +1407,15 @@ async def _async_with_hold_lease(
     extend the reservation and a STOP before admission ends it.
     """
     if len(targets) != 1:
-        raise ServiceValidationError("A renewable hold targets one bed at a time")
+        raise _invalid("hold_one_bed", "A held move can control one bed at a time")
     _require_hold_topology(targets)
     coordinator, side = targets[0]
     if (isinstance(coordinator, PairedBedCoordinator) and side == SIDE_BOTH
             and coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL):
-        raise ServiceValidationError("A renewable Both hold requires concurrent physical links")
+        raise _invalid(
+            "hold_needs_concurrent",
+            "Holding both sides needs both beds connected at once; select one side",
+        )
     # Key every claim by the target that executes the command: a native
     # single-address Both runs once on its combined side view.
     executing = (
@@ -1401,8 +1424,8 @@ async def _async_with_hold_lease(
         else _command_targets(coordinator, side)
     )
     if len(executing) > 1 and isinstance(coordinator, PairedBedCoordinator) and not coordinator.supports_simultaneous_side_holds:
-        raise ServiceValidationError(
-            "Renewable holds require simultaneous side execution; select Left or Right"
+        raise _invalid(
+            "hold_select_side", "This bed holds one side at a time; select Left or Right"
         )
     physical = [(target, resource_for(target)) for target in executing]
     if (
@@ -1411,7 +1434,10 @@ async def _async_with_hold_lease(
         and len(executing) > 1
         and coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
     ):
-        raise ServiceValidationError("Renewable Both holds require concurrent physical connections")
+        raise _invalid(
+            "hold_needs_concurrent",
+            "Holding both sides needs both beds connected at once; select one side",
+        )
     claims = [
         target.claim_hold_lease(lease, resource=resource, reserve=False)
         for target, resource in physical
@@ -1422,16 +1448,16 @@ async def _async_with_hold_lease(
                 target.claim_hold_lease(lease, resource=resource)
         return
     if HoldClaim.STALE in claims:
-        raise ServiceValidationError(
-            f"Hold generation {lease.generation} has ended; start a new generation"
-        )
+        raise _invalid("hold_ended", "This held move has already stopped; start a new one")
     modes = {
         controller.execution.hold
         for target, _resource in physical
         if (controller := target.capability_controller) is not None
     }
     if len(modes) > 1:
-        raise ServiceValidationError("Both sides must declare the same hold mode")
+        raise _invalid(
+            "hold_modes_differ", "The two sides hold moves differently; hold one side at a time"
+        )
     for target, resource in physical:
         target.claim_hold_lease(lease, resource=resource)
     try:
@@ -1549,8 +1575,8 @@ async def _async_timed_move(
                 for target in _command_targets(coordinator, side)
             }
             if actual_resources != set(admission.resources):
-                raise ServiceValidationError(
-                    "The selected motor resource changed during timed-move preflight"
+                raise _invalid(
+                    "bed_changed", "The bed's motors changed while checking the move; try again"
                 )
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
@@ -1685,7 +1711,12 @@ async def _preflight_capability[T](
     def check(target: BedChild, controller: BedController) -> None:
         family = controller_as(controller, interface)
         if family is None or (supported is not None and not supported(family)):
-            raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
+            raise _invalid(
+                "feature_not_supported",
+                f"Device '{target.name}' does not support {label}",
+                device_name=target.name,
+                feature=label,
+            )
         if validate is not None:
             validate(family)
 
@@ -1700,7 +1731,12 @@ def _family_command[T](
     async def execute(controller: BedController) -> None:
         family = controller_as(controller, interface)
         if family is None:
-            raise ServiceValidationError(f"This bed does not support {label}")
+            raise _invalid(
+                "feature_not_supported",
+                f"This bed does not support {label}",
+                device_name="This bed",
+                feature=label,
+            )
         try:
             await command(family)
         except ValueError as err:
@@ -1917,7 +1953,10 @@ async def handle_hold_control(call: ServiceCall) -> None:
     lease = _hold_lease(call, control, duration_ms)
     if lease is not None:
         if route == "svane" or control == "floor_hold":
-            raise ServiceValidationError("This control does not support renewable holds")
+            raise _invalid(
+                "control_hold_renewal_not_supported",
+                "This control does not support renewable holds; use a fixed duration",
+            )
         held = lease
         await _async_with_hold_lease(
             targets,
@@ -1981,7 +2020,10 @@ def _require_hold_topology(targets: list[tuple[BedTarget, str]]) -> None:
         and coordinator.connection_mode == "sequential"
         for coordinator, side in targets
     ):
-        raise ServiceValidationError("Hold one side at a time with a sequential Bluetooth connection")
+        raise _invalid(
+            "hold_needs_concurrent",
+            "Hold one side at a time with a sequential Bluetooth connection",
+        )
 
 
 async def _hold_targets(
