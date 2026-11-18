@@ -9,11 +9,17 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final, Literal, cast
 
 from homeassistant.util import dt as dt_util
 
-from ...alarm_table import AlarmTableSchedule, AlarmTableScheduleSpec
+from ...alarm import AlarmCapability, AlarmRequest
+from ...alarm_table import (
+    AlarmTableSchedule,
+    AlarmTableScheduleSpec,
+    OneTimeAlarmRecord,
+    WeeklyAlarmRecord,
+)
 from ...card import CARD_MASSAGE_TIMER
 from ...codec import keeson as codec
 from ...controller_state import StateKey
@@ -521,6 +527,37 @@ class AppController(ProfileExecution[AppProfile], BedController):
             raise ValueError("This app has no clock writer")
         await self.write_command(codec.clock(dt_util.now()))
         await self._wait(500)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if self.alarm_table_schedule_spec is None:
+            return None
+        # One weekly and one one-time alarm; the wake vibration is the massage flag.
+        return AlarmCapability(weekdays=True, massage=True)
+
+    @staticmethod
+    def _alarm_schedule(alarm: AlarmRequest) -> AlarmTableSchedule:
+        """Turning the alarm off clears both tables; otherwise write the alarm's table."""
+        weekly: tuple[WeeklyAlarmRecord, ...] = ()
+        one_time: tuple[OneTimeAlarmRecord, ...] = ()
+        dispatch: Literal["both", "weekly", "one_time"] = "both"
+        fields = {"enabled": True, "wake": alarm.massage, "hour": alarm.hour, "minute": alarm.minute}
+        if alarm.enabled and alarm.weekdays:
+            weekly, dispatch = (WeeklyAlarmRecord(**fields, weekdays=alarm.weekdays),), "weekly"
+        elif alarm.enabled:
+            one_time, dispatch = (OneTimeAlarmRecord(**fields),), "one_time"
+        return AlarmTableSchedule(
+            weekly=weekly, one_time=one_time, dispatch=dispatch, reference_time=alarm.reference_time
+        )
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        spec = self.alarm_table_schedule_spec
+        if spec is None:
+            raise ValueError("This app has no alarm")
+        spec.validate(self._alarm_schedule(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.configure_alarm_table_schedule(self._alarm_schedule(alarm))
 
     async def configure_alarm_table_schedule(self, schedule: AlarmTableSchedule) -> None:
         spec = self.alarm_table_schedule_spec
