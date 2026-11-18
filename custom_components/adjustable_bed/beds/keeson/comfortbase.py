@@ -212,6 +212,7 @@ class ComfortBaseController(KeesonController):
             key="massage_timer", translation_key="massage_timer",
             state_key=MASSAGE_TIMER_MINUTES, icon="mdi:timer-outline",
             native_unit_of_measurement="min", card=CARD_MASSAGE_TIMER,
+            entity_registry_enabled_default=True,
         ),)
 
     @property

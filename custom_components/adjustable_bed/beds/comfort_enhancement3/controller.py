@@ -329,7 +329,13 @@ class ComfortEnhancement3Controller(OkinHandleController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        firmware = ControllerStateSensorSpec("apex_firmware", "apex_firmware", FIRMWARE, "mdi:chip")
+        firmware = ControllerStateSensorSpec(
+            "apex_firmware",
+            "apex_firmware",
+            FIRMWARE,
+            "mdi:chip",
+            entity_registry_enabled_default=False,
+        )
         massage = (
             (
                 ControllerStateSensorSpec(
@@ -338,6 +344,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
                     MASSAGE_END,
                     "mdi:timer",
                     card=CARD_MASSAGE,
+                    entity_registry_enabled_default=True,
                 ),
             )
             if self.remote.massage

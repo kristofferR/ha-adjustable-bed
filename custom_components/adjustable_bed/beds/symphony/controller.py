@@ -832,10 +832,18 @@ class SymphonyController(KeesonController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         specs = [
             ControllerStateSensorSpec(
-                "symphony_firmware", "symphony_firmware", k.FIRMWARE, "mdi:chip"
+                "symphony_firmware",
+                "symphony_firmware",
+                k.FIRMWARE,
+                "mdi:chip",
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
-                "symphony_protocol", "symphony_protocol", k.PROTOCOL, "mdi:bluetooth"
+                "symphony_protocol",
+                "symphony_protocol",
+                k.PROTOCOL,
+                "mdi:bluetooth",
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 "symphony_alarm",
@@ -849,6 +857,7 @@ class SymphonyController(KeesonController):
                     self._key(k.MODE),
                     self._key(k.ALARM),
                 ),
+                entity_registry_enabled_default=True,
             ),
         ]
         if self.supports_massage:
@@ -867,6 +876,7 @@ class SymphonyController(KeesonController):
                         self._key(k.PREMIER),
                     ),
                     card=CARD_MASSAGE_TIMER,
+                    entity_registry_enabled_default=True,
                 )
             )
         return tuple(specs)
@@ -875,7 +885,11 @@ class SymphonyController(KeesonController):
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         specs = (
             ControllerStateBinarySensorSpec(
-                "symphony_privacy", "symphony_privacy", k.PRIVACY, "mdi:shield-lock"
+                "symphony_privacy",
+                "symphony_privacy",
+                k.PRIVACY,
+                "mdi:shield-lock",
+                entity_registry_enabled_default=True,
             ),
             ControllerStateBinarySensorSpec(
                 "symphony_anti_snore",
@@ -883,6 +897,7 @@ class SymphonyController(KeesonController):
                 k.SNORE,
                 "mdi:sleep",
                 attribute_keys=(k.STRENGTH,),
+                entity_registry_enabled_default=True,
             ),
         )
         if self.app.product.page == "soundwave":
@@ -894,6 +909,7 @@ class SymphonyController(KeesonController):
                     "mdi:lightbulb",
                     attribute_keys=(k.COLOR, k.BRIGHTNESS),
                     card=CARD_LIGHTING,
+                    entity_registry_enabled_default=True,
                 ),
             )
         return specs

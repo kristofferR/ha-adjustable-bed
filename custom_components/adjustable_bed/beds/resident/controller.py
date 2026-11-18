@@ -174,6 +174,7 @@ class ResidentController(Okin64BitController):
                 "mdi:timer",
                 native_unit_of_measurement="min",
                 card=CARD_MASSAGE,
+                entity_registry_enabled_default=True,
             ),
         )
 
