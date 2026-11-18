@@ -91,6 +91,8 @@ class AlarmCapability:
     requires_wake_action: bool = False
     # Wake actions that move to a user-saved position need explicit consent.
     confirm_actions: frozenset[str] = field(default_factory=frozenset)
+    # Run ``check_alarm`` on every target over Bluetooth before the first write.
+    live_check: bool = False
     cancel_running: bool = False
     resource: str | None = "configuration"
 

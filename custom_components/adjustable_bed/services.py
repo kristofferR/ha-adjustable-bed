@@ -2151,7 +2151,8 @@ def _check_alarm(
         and not resolved.confirm_custom_position
     ):
         raise ServiceValidationError(
-            f"Check the saved position of '{device_name}', then turn on the confirmation to use it",
+            f"Waking '{device_name}' at its saved position can be unsafe at extreme angles. "
+            "Check the saved position, then turn on the confirmation",
             translation_domain=DOMAIN,
             translation_key="alarm_confirmation_required",
             translation_placeholders={"device_name": device_name},
@@ -2208,23 +2209,33 @@ async def handle_set_alarm(call: ServiceCall) -> None:
     admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     preflighted = await _preflight_each(targets, check)
 
-    async def write(controller: BedController) -> None:
-        capability = controller.alarm_capability
-        if capability is None:
-            raise ValueError("This bed no longer reports an alarm; reload it and try again")
-        await controller.configure_alarm(_with_bed_defaults(alarm, capability, given))
+    def step(
+        run: Callable[[BedController, AlarmRequest], Awaitable[None]],
+    ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
+        async def execute(controller: BedController) -> None:
+            capability = controller.alarm_capability
+            if capability is None:
+                raise ValueError("This bed no longer reports an alarm; reload it and try again")
+            await run(controller, _with_bed_defaults(alarm, capability, given))
 
+        return _family_command(BedController, "alarms", execute)
+
+    # Beds that must read their stored alarms check every target before any write.
+    steps = [step(lambda controller, request: controller.configure_alarm(request))]
+    if any(capability.live_check for capability in scheduling.values()):
+        steps.insert(0, step(lambda controller, request: controller.check_alarm(request)))
     try:
-        for (coordinator, side), admission in zip(targets, admissions, strict=True):
-            capability = scheduling[_command_targets(coordinator, side)[0].operation_identity]
-            await _execute_sided(
-                coordinator,
-                side,
-                _family_command(BedController, "alarms", write),
-                cancel_running=capability.cancel_running,
-                resource=capability.resource,
-                admission=admission,
-            )
+        for command in steps:
+            for (coordinator, side), admission in zip(targets, admissions, strict=True):
+                capability = scheduling[_command_targets(coordinator, side)[0].operation_identity]
+                await _execute_sided(
+                    coordinator,
+                    side,
+                    command,
+                    cancel_running=capability.cancel_running,
+                    resource=capability.resource,
+                    admission=admission,
+                )
     except BaseException:
         await _release_preflighted(preflighted)
         raise
@@ -2564,7 +2575,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.richmat_mh.services import async_register_richmat_mh_services
     from .beds.rmcontrol.services import async_register_rmcontrol_services
     from .beds.ruf_richmat.services import async_register_ruf_richmat_services
-    from .beds.simmons.services import async_register_simmons_services
     from .beds.sleep_number.services import async_register_sleep_number_services
     from .beds.sleeptracker.services import async_register_sleeptracker_services
     from .beds.solace.services import async_register_solace_services
@@ -2611,7 +2621,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_fsm_relax_services,
         async_register_limoss_remote_services,
         register_apex_services,
-        async_register_simmons_services,
         async_register_logicdata_app_services,
         async_register_jiecang_app_services,
         async_register_svane_services,
