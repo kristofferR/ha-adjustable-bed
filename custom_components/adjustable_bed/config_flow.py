@@ -2629,7 +2629,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             options.pop(key, None)
         # The staged copy carries the saved route's profile id; derive the new one.
         data = with_profile_ids(data, options)
-        if {**data, **options} == {**self._migration.data, **self._migration.options}:
+        if {**data, **options} == {
+            **self._migration.data,
+            **self._migration.options,
+        } and self._migration.runs_route_of(data):
             # The answer resolves to the saved route: nothing to migrate.
             return await self._async_abort_unchanged()
         kept = _limoss_remote_features_left(

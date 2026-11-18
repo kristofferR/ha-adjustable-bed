@@ -339,3 +339,30 @@ def test_a_route_saved_in_options_counts_as_the_saved_route(hass: HomeAssistant)
 
     assert flow._manual_data[const.CONF_MOTOR_PULSE_COUNT] == 37
     assert flow._manual_data[const.CONF_PROTOCOL_VARIANT] == "performance_legacy"
+
+
+async def test_a_route_saved_only_in_options_is_written_where_the_bed_reads_it(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    """A standalone bed runs its data's route, so choosing the options' one applies it."""
+    del enable_custom_integrations
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        title="Bed",
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:51", CONF_NAME: "Bed", const.CONF_BED_TYPE: const.BED_TYPE_LINAK},
+        options={const.CONF_PROTOCOL_VARIANT: "performance_legacy"},
+        unique_id="AA:BB:CC:DD:EE:51",
+    )
+    entry.add_to_hass(hass)
+    manager = hass.config_entries.flow
+    result = await manager.async_init(const.DOMAIN, context=reconfigure_context(entry))
+    for _ in range(3):
+        if result.get("step_id") == "migration_confirm":
+            break
+        result = await manager.async_configure(result["flow_id"], _schema(result)({}))
+    assert result.get("step_id") == "migration_confirm", result
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+
+    assert result["reason"] == "migration_applied"
+    assert entry.data[const.CONF_PROTOCOL_VARIANT] == "performance_legacy"
