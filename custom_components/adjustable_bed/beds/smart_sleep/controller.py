@@ -7,11 +7,12 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from time import monotonic
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...app_session import app_session
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
 from ...codec import smart_sleep as codec
@@ -40,6 +41,23 @@ if TYPE_CHECKING:
 @dataclass
 class AppState:
     child: bool = False
+
+
+# Shared wake actions, mapped to the newer format's app keys. Zero gravity is
+# reachable only through the app's own label ordinal.
+_P2_WAKE: Final = {
+    "memory_1": "memory_1",
+    "memory_2": "memory_2",
+    "zero_g": "app_zero_g",
+    "flat": "flat",
+    "lounge": "lounge",
+    "tv": "tv",
+    "anti_snore": "anti_snore",
+    "massage": "massage",
+    "light": "light",
+}
+# Default first, matching the earlier action's default.
+_ALARM_WAKE_ACTIONS: Final = tuple(_P2_WAKE)
 
 
 class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedController):
@@ -688,6 +706,42 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
             app.LEGACY_ALARM_ACTIONS
             if self.profile.key == "p1"
             else {**app.ALARM_ACTIONS, **app.APP_ALARM_LABELS}
+        )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        # Legacy weekly schedules need a raw app mask, so only the newer format repeats.
+        return AlarmCapability(
+            wake_actions=tuple(
+                name
+                for name in _ALARM_WAKE_ACTIONS
+                if name in (app.LEGACY_ALARM_ACTIONS if self.profile.key == "p1" else _P2_WAKE)
+            ),
+            weekdays=self.profile.key == "p2",
+            cancel_running=True,
+            resource=None,
+        )
+
+    def _alarm_preset(self, wake_action: str) -> str:
+        return wake_action if self.profile.key == "p1" else _P2_WAKE[wake_action]
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.alarm_frame(
+            enabled=alarm.enabled,
+            weekdays=alarm.weekdays,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            preset=self._alarm_preset(alarm.wake_action),
+            now=alarm.reference_time,
+        )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.configure_clock_alarm(
+            enabled=alarm.enabled,
+            weekdays=alarm.weekdays,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            preset=self._alarm_preset(alarm.wake_action),
         )
 
     def alarm_frame(
