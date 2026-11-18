@@ -2519,21 +2519,17 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.comfort_enhancements.services import async_register_comfort_enhancements_services
     from .beds.customatic.services import async_register_customatic_services
     from .beds.doublesleep.services import async_register_doublesleep_services
-    from .beds.eshine_okin.services import async_register_eshine_okin_services
     from .beds.fsm_relax.services import async_register_fsm_relax_services
     from .beds.furnimove.services import async_register_furnimove_services
-    from .beds.glideaway_motion.services import async_register_glideaway_motion_services
     from .beds.gmmotor.services import async_register_gmmotor_services
     from .beds.goodvibe.services import async_register_goodvibe_services
     from .beds.hjbed.services import async_register_hjbed_services
-    from .beds.jalon_bed.services import register_services as register_jalon_services
     from .beds.jiecang.app_services import async_register_jiecang_app_services
     from .beds.kaidi.comfy_services import async_register_comfy_services
     from .beds.kaidi.floyd_services import async_register_floyd_services
     from .beds.kaidi.rize_services import async_register_rize_services
     from .beds.keeson.comfortbase_services import async_register_comfortbase_services
     from .beds.keeson.jalon_services import async_register_jalon_services
-    from .beds.keeson.symphony_services import register_symphony_services
     from .beds.keeson.yamada_services import async_register_yamada_services
     from .beds.leggett.okin_services import async_register_leggett_okin_services
     from .beds.limoss.remote_services import async_register_limoss_remote_services
@@ -2571,8 +2567,6 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_bedtech_services,
         register_n32_services,
         register_smart_sleep_services,
-        register_jalon_services,
-        register_symphony_services,
         register_symphony_sense_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,
@@ -2605,10 +2599,8 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_fsm_relax_services,
         async_register_limoss_remote_services,
         async_register_serenity_services,
-        async_register_eshine_okin_services,
         register_apex_services,
         async_register_jalon_services,
-        async_register_glideaway_motion_services,
         async_register_simmons_services,
         async_register_comfort_enhancements_services,
         async_register_comfortbase_services,

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Final, cast
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ...codec import keeson as codec
 from ...const import CONF_PRODUCT_TYPE
@@ -436,6 +437,22 @@ class JalonBedController(ProfileExecution[KeesonProfile], BedController):
     @property
     def clock_alarm_preset_options(self) -> tuple[str, ...]:
         return tuple(app.WAKE_MODES)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(
+            wake_actions=tuple(app.WAKE_MODES), weekdays=True, cancel_running=True, resource=None
+        )
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        alarm_frame(
+            enabled=alarm.enabled,
+            weekdays=alarm.weekdays,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            preset=alarm.wake_action,
+            now=alarm.reference_time,
+        )
 
     async def sync_clock(self) -> None:
         await self.write_command(codec.clock(dt_util.now()))
