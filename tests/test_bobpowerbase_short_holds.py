@@ -21,8 +21,8 @@ from custom_components.adjustable_bed.command_scheduler import (
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.profiles.bobpowerbase import CATALOG
 from tests.hold_lease_wire import virtual_clock
-from tests.test_bobpowerbase_review import domain_bootstrap as domain_bootstrap
-from tests.test_bobpowerbase_review import register, runtime
+from tests.test_bobpowerbase_services import domain_bootstrap as domain_bootstrap
+from tests.test_bobpowerbase_services import register, runtime
 
 MOVE = codec.function(CATALOG.actions["head_up"].short)
 STOP = codec.function(0x6E)

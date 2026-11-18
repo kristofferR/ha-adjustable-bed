@@ -207,8 +207,10 @@ def _massage_key(name: str) -> str | None:
     if text in ("massage timer", "cycle massage timer"):
         return "massage_timer_step"
     match = _MASSAGE_ZONE.fullmatch(text)
-    op = match and (match["op"] or match["lead"])
-    if not op or "massage" not in text and "intensity" not in text:
+    if match is None or "massage" not in text and "intensity" not in text:
+        return None
+    op = match["op"] or match["lead"]
+    if op is None:
         return None
     zone = {"feet": "foot", "leg": "foot", None: "all"}.get(match["zone"], match["zone"])
     return f"massage_{zone}_{'up' if op in ('up', '+', 'add', 'increase', 'strengthen') else 'down'}"
@@ -228,8 +230,9 @@ def classify(label: str, *, kind: Kind | None = None) -> CatalogControl | None:
     if is_placeholder(label):
         return None
     name = display_label(label)
-    if kind is Kind.SAVE or kind is None and (save := _SAVE.fullmatch(name)):
-        rest = display_label(save["rest"]) if kind is None else re.sub(r"^Save\s+", "", name)
+    save = _SAVE.fullmatch(name) if kind is None else None
+    if kind is Kind.SAVE or save is not None:
+        rest = display_label(save["rest"]) if save is not None else re.sub(r"^Save\s+", "", name)
         if memory := _MEMORY.fullmatch(rest):
             slot = int(memory["slot"])
             return CatalogControl(
