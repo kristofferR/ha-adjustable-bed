@@ -199,7 +199,9 @@ and `zseries_set_alarm`. Field changes:
 - Turning an alarm off is `enabled: false`. It disables an N32 slot, deletes a
   Comfort Enhancement 3 program or an RMControl repeating alarm, and clears both
   Keeson app alarm tables.
-- No longer offered: Linak snooze repeats (`recurrence_count`, `recurrence_minutes`),
+- No longer offered: Linak snooze repeats (`recurrence_count`, `recurrence_minutes`) and
+  per-step `actions` with `lifetime` and `pause` (a Linak alarm now runs, in order, the
+  wake memory, a massage toggle and a light toggle, each with the default timing),
   N32 delete and query, RMControl query, Smart Sleep `week_mask`, `flexible_wake` and the
   `app_*` action labels (`app_zero_g` is now `zero_g`; `app_memory_1`, `app_memory_2` and
   `app_vibration` send the same values as `lounge`, `tv` and `anti_snore`; `app_flat` has no
