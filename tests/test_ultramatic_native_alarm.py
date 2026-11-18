@@ -24,7 +24,7 @@ from tests.hold_lease_wire import virtual_clock
 from tests.test_ultramatic_runtime import ALARM_REPORT, connected, make_client, writes
 
 MATCHING = bytes.fromhex("ed8003017f0106300001027f0106300001")
-SET = {"time": "21:09:00", "days": 2, "wake": "zero_g", "enabled": False}
+SET = {"time": "21:09:00", "weekdays": ["monday"], "wake_action": "zero_g", "enabled": False}
 
 
 @pytest.fixture
@@ -84,10 +84,11 @@ def clocked(hass):
 
 
 async def alarm(hass, device_ids, operation):
+    """Set the whole alarm, or turn off the reported one (no time), through set_alarm."""
     await hass.services.async_call(
         DOMAIN,
-        "ultramatic_alarm",
-        {"device_id": device_ids, "operation": operation, **(SET if operation == "set" else {})},
+        "set_alarm",
+        {"device_id": device_ids, **(SET if operation == "set" else {"enabled": False})},
         blocking=True,
     )
 
@@ -97,8 +98,6 @@ def report(client, data=MATCHING):
 
 
 def expected(operation, selector=0):
-    if operation == "query":
-        return [app.QUERY_ALARM] * 2
     frame = bytes.fromhex("0705020221090000" if operation == "set" else "07057f0106300000")
     return [frame + bytes([selector])] * 2 + [app.QUERY_ALARM] * 3
 
@@ -132,7 +131,7 @@ async def wait_at_boundary(task, event):
         await asyncio.gather(waiting, return_exceptions=True)
 
 
-@pytest.mark.parametrize("operation", ["set", "toggle", "query"])
+@pytest.mark.parametrize("operation", ["set", "disable"])
 async def test_registered_native_parent_both_uses_one_combined_sequence(native_alarm, operation):
     hass, pair, inner, client, standalone, other_client, devices = native_alarm
     report(client)
@@ -159,8 +158,8 @@ async def test_registered_native_child_keeps_its_single_side_plan(native_alarm, 
     hass, _pair, inner, client, _standalone, other_client, devices = native_alarm
     report(client)
     with clocked(hass):
-        await alarm(hass, [devices[side]], "toggle")
-    assert writes(client) == expected("toggle", selector)
+        await alarm(hass, [devices[side]], "disable")
+    assert writes(client) == expected("disable", selector)
     assert writes(other_client) == []
     check_restored(inner)
 
@@ -190,30 +189,36 @@ async def test_registered_native_both_and_standalone_use_distinct_current_plans(
     client.write_gatt_char.side_effect = observe_native
     other_client.write_gatt_char.side_effect = observe_standalone
     with clocked(hass):
-        await alarm(hass, [devices["standalone"], devices["parent"]], "toggle")
-    assert writes(client) == writes(other_client) == expected("toggle")
+        await alarm(hass, [devices["standalone"], devices["parent"]], "disable")
+    assert writes(client) == writes(other_client) == expected("disable")
     check_restored(inner, standalone)
 
 
+REFRESH = "Refresh alarms on this connection before turning the alarm off"
+
+
 @pytest.mark.parametrize(
-    "bad_report",
+    "bad_report,refusal",
     [
-        ALARM_REPORT,
-        bytes.fromhex("ed8003027f0106300001027f0106300001"),
-        bytes.fromhex("ed8003017f011a2f0001027f011a2f0001"),
+        # Its B record is off, so turning B off is refused before AB is checked.
+        (ALARM_REPORT, "The alarm is already off, so nothing was sent"),
+        # Both sides on but unequal: the new report revokes AB permission.
+        (bytes.fromhex("ed8003017f0106300001027f0106450001"), REFRESH),
+        (bytes.fromhex("ed8003027f0106300001027f0106300001"), REFRESH),
+        (bytes.fromhex("ed8003017f011a2f0001027f011a2f0001"), REFRESH),
     ],
-    ids=["unequal", "missing-A", "invalid-BCD"],
+    ids=["unequal", "unequal-both-on", "missing-A", "invalid-BCD"],
 )
-async def test_registered_native_both_invalid_toggle_blocks_earlier_standalone(
-    native_alarm, bad_report
+async def test_registered_native_both_invalid_disable_blocks_earlier_standalone(
+    native_alarm, bad_report, refusal
 ):
     hass, _pair, inner, client, standalone, other_client, devices = native_alarm
     report(other_client)
     report(client)  # A new invalid report must revoke previously valid AB permission.
     report(client, bad_report)
     with clocked(hass), pytest.raises((HomeAssistantError, ValueError)) as caught:
-        await alarm(hass, [devices["standalone"], devices["parent"]], "toggle")
-    assert "Refresh alarms on this connection before toggling" in error_text(caught.value)
+        await alarm(hass, [devices["standalone"], devices["parent"]], "disable")
+    assert refusal in error_text(caught.value)
     assert writes(client) == writes(other_client) == []
     inner.async_ensure_connected.assert_not_awaited()
     standalone.async_ensure_connected.assert_not_awaited()
@@ -319,3 +324,28 @@ async def test_registered_native_alarm_rechecks_queued_wire_route_and_client(nat
             pair._topology.native_both = True
             inner._client = client
             controller._ble_lock = original_lock
+
+
+async def test_refresh_alarm_button_sends_the_alarm_query(native_alarm):
+    # Reading the alarm is the Refresh alarm button; set_alarm only writes.
+    hass, _pair, inner, client, _standalone, other_client, _devices = native_alarm
+    spec = next(
+        s for s in inner.controller.controller_button_specs if s.key == "ultramatic_query_alarm"
+    )
+    generation = inner.controller.operation_generation
+    with clocked(hass):
+        await inner.async_execute_controller_command(spec.press_fn, resource="*")
+    assert writes(client) == [app.QUERY_ALARM] * 2
+    assert inner.controller.operation_generation == generation + 1
+    assert writes(other_client) == []
+
+
+async def test_turning_off_an_alarm_that_is_already_off_sends_nothing(native_alarm):
+    hass, _pair, inner, client, _standalone, other_client, devices = native_alarm
+    report(client, bytes.fromhex("ed8003017f0106300000027f0106300000"))
+    with clocked(hass), pytest.raises(HomeAssistantError) as caught:
+        await alarm(hass, [devices["parent"]], "disable")
+    assert "already off" in error_text(caught.value)
+    assert writes(client) == writes(other_client) == []
+    inner.async_ensure_connected.assert_not_awaited()
+    assert inner._command_connection_holds == 0

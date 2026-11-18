@@ -39,7 +39,7 @@ from tests.test_ultramatic_runtime import (
 )
 
 MATCHING = bytes.fromhex("ed8003017f0106300001027f0106300001")
-SET = {"operation": "set", "time": "21:09:00", "days": 2, "wake": "zero_g", "enabled": False}
+SET = {"time": "21:09:00", "weekdays": ["monday"], "wake_action": "zero_g", "enabled": False}
 
 
 def native_pair(hass, inner):
@@ -50,10 +50,11 @@ def native_pair(hass, inner):
 
 
 async def alarm(hass, operation, **fields):
+    """Set the whole alarm, or turn off the reported one (no time), through set_alarm."""
     await hass.services.async_call(
         DOMAIN,
-        "ultramatic_alarm",
-        {"device_id": ["bed"], "operation": operation, **fields},
+        "set_alarm",
+        {"device_id": ["bed"], **(fields if operation == "set" else {"enabled": False})},
         blocking=True,
     )
 
@@ -79,7 +80,7 @@ async def alarm(hass, operation, **fields):
         "standalone-display",
     ],
 )
-async def test_toggle_never_turns_display_fallback_or_invalid_records_into_writes(
+async def test_disable_never_turns_display_fallback_or_invalid_records_into_writes(
     runtime,  # noqa: F811 - pytest fixture
     report,
     side,
@@ -102,13 +103,13 @@ async def test_toggle_never_turns_display_fallback_or_invalid_records_into_write
         callback(None, bytearray(report))
         assert sensor.native_value == display
         with pytest.raises((ServiceValidationError, ValueError)):
-            await alarm(hass, "toggle")
+            await alarm(hass, "disable")
     assert writes(client) == []
     assert sensor.native_value == display
 
 
 @pytest.mark.parametrize("side,selector", [("both", 0), ("left", 1), ("right", 2)])
-async def test_valid_matching_report_toggle_uses_exact_current_physical_side(
+async def test_valid_matching_report_disable_uses_exact_current_physical_side(
     runtime,  # noqa: F811 - pytest fixture
     side,
     selector,
@@ -123,19 +124,19 @@ async def test_valid_matching_report_toggle_uses_exact_current_physical_side(
         ),
         virtual_clock(),
     ):
-        await alarm(hass, "toggle")
+        await alarm(hass, "disable")
     frame = bytes.fromhex("07057f0106300000") + bytes([selector])
     assert writes(client) == [frame] * 2 + [app.QUERY_ALARM] * 3
 
 
-@pytest.mark.parametrize("operation", ["set", "toggle", "query"])
+@pytest.mark.parametrize("operation", ["set", "disable"])
 async def test_native_parent_both_alarm_dispatches_one_combined_plan(
     runtime,  # noqa: F811 - pytest fixture
     operation,
 ):
     hass, coord, client = runtime
     parent = native_pair(hass, coord)
-    if operation == "toggle":
+    if operation == "disable":
         client.start_notify.await_args.args[1](None, bytearray(MATCHING))
     with (
         patch(
@@ -155,14 +156,17 @@ async def test_native_parent_both_alarm_dispatches_one_combined_plan(
         )
     frame = bytes.fromhex("070502022109000000" if operation == "set" else "07057f010630000000")
     assert writes(client) == (
-        [app.QUERY_ALARM] * 2 if operation == "query" else [frame] * 2 + [app.QUERY_ALARM] * 3
+        [frame] * 2 + [app.QUERY_ALARM] * 3
     )
 
 
-async def test_native_parent_both_toggle_rejects_unequal_reports_before_preflight(runtime):  # noqa: F811 - pytest fixture
+async def test_native_parent_both_disable_rejects_unequal_reports_before_preflight(runtime):  # noqa: F811 - pytest fixture
     hass, coord, client = runtime
     parent = native_pair(hass, coord)
-    client.start_notify.await_args.args[1](None, bytearray(ALARM_REPORT))
+    # Both sides on but unequal (ALARM_REPORT's B is off, which is refused earlier).
+    client.start_notify.await_args.args[1](
+        None, bytearray.fromhex("ed8003017f0106300001027f0106450001")
+    )
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -170,26 +174,26 @@ async def test_native_parent_both_toggle_rejects_unequal_reports_before_prefligh
         ),
         pytest.raises((ServiceValidationError, ValueError), match="Refresh alarms"),
     ):
-        await alarm(hass, "toggle")
+        await alarm(hass, "disable")
     assert writes(client) == []
     coord.async_ensure_connected.assert_not_awaited()
 
 
-async def test_disconnect_and_stale_report_cannot_authorize_registered_toggle(runtime):  # noqa: F811 - pytest fixture
+async def test_disconnect_and_stale_report_cannot_authorize_registered_disable(runtime):  # noqa: F811 - pytest fixture
     hass, coord, client = runtime
     callback = client.start_notify.await_args.args[1]
     callback(None, bytearray(MATCHING))
     coord.controller.on_disconnect()
     callback(None, bytearray(MATCHING))
     with pytest.raises((ConnectionError, ServiceValidationError, ValueError)):
-        await alarm(hass, "toggle")
+        await alarm(hass, "disable")
     assert writes(client) == []
 
 
 @pytest.mark.usefixtures("mock_coordinator_connected")
 @pytest.mark.parametrize("native", [False, True], ids=["standalone", "native-right"])
-@pytest.mark.parametrize("operation", ["set", "query"])
-async def test_idle_registered_set_and_query_connect_actual_owner(
+@pytest.mark.parametrize("operation", ["set"])
+async def test_idle_registered_set_connects_actual_owner(
     hass, mock_bleak_client, native, operation
 ):
     roles = make_client().services
@@ -234,7 +238,7 @@ async def test_idle_registered_set_and_query_connect_actual_owner(
         await coord.async_shutdown()
 
 
-@pytest.mark.parametrize("reason", ["unknown", "offline-toggle", "stop", "replacement", "route"])
+@pytest.mark.parametrize("reason", ["unknown", "offline-disable", "stop", "replacement", "route"])
 async def test_registered_alarm_rejects_unknown_offline_and_changed_owner_before_command_writes(
     runtime,  # noqa: F811 - pytest fixture
     reason,
@@ -260,7 +264,7 @@ async def test_registered_alarm_rejects_unknown_offline_and_changed_owner_before
                     return_value=([(coord, "both")], ["unknown"]),
                 )
             )
-        if reason == "offline-toggle":
+        if reason == "offline-disable":
             coord.controller.on_disconnect()
             coord._offline_controller, coord._controller = coord.controller, None
         stack.enter_context(
@@ -269,10 +273,10 @@ async def test_registered_alarm_rejects_unknown_offline_and_changed_owner_before
         with pytest.raises((ServiceValidationError, ConnectionError, ValueError)):
             await alarm(
                 hass,
-                "toggle" if reason == "offline-toggle" else "set",
+                "disable" if reason == "offline-disable" else "set",
                 **(
                     {key: value for key, value in SET.items() if key != "operation"}
-                    if reason != "offline-toggle"
+                    if reason != "offline-disable"
                     else {}
                 ),
             )
@@ -303,7 +307,7 @@ async def paired_runtime(runtime):  # noqa: F811 - pytest fixture
         await right.async_shutdown()
 
 
-@pytest.mark.parametrize("operation", ["set", "toggle", "query"])
+@pytest.mark.parametrize("operation", ["set", "disable"])
 async def test_concurrent_parent_both_alarm_owns_only_its_sibling_generation_advances(
     paired_runtime, operation
 ):
@@ -327,7 +331,7 @@ async def test_concurrent_parent_both_alarm_owns_only_its_sibling_generation_adv
             else bytes.fromhex("07057f0106300000")
         ) + bytes([selector])
         assert writes(client) == (
-            [app.QUERY_ALARM] * 2 if operation == "query" else [frame] * 2 + [app.QUERY_ALARM] * 3
+            [frame] * 2 + [app.QUERY_ALARM] * 3
         )
 
 
@@ -416,7 +420,7 @@ async def test_alarm_queued_at_gatt_lock_rechecks_all_targets_before_delivery(pa
     )
 
 
-@pytest.mark.parametrize("action", ["memory", "light", "set", "query"])
+@pytest.mark.parametrize("action", ["memory", "light", "set"])
 async def test_sequential_finite_both_connects_operates_and_releases_one_receiver_at_a_time(
     paired_runtime, action
 ):
@@ -483,7 +487,7 @@ async def test_sequential_finite_both_connects_operates_and_releases_one_receive
         else:
             frame = bytes.fromhex("0705020221090000") + bytes([selector])
             assert writes(client) == (
-                [app.QUERY_ALARM] * 2 if action == "query" else [frame] * 2 + [app.QUERY_ALARM] * 3
+                [frame] * 2 + [app.QUERY_ALARM] * 3
             )
 
 

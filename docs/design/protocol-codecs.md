@@ -81,7 +81,7 @@ See the [Smart Comfort guide](../beds/smart-comfort.md).
 
 ## Ultramatic Smart Bed
 
-Ultramatic Smart Bed 1.1.2 (5), row176, reproduces every accepted send through
+Ultramatic Smart Bed 1.1.2 reproduces every app send through
 Okin N-frame's `frame40`, `request`, `clock` and `alarm` encoders, including
 unequal alarm type/side cases. `SideRecordParser` adds bounded extraction of
 the app's two seven-byte replies. Its typed app profile owns BCD, side selection

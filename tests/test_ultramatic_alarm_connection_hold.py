@@ -17,7 +17,7 @@ from tests.hold_lease_wire import virtual_clock
 from tests.test_ultramatic_review_changes import native_pair
 from tests.test_ultramatic_runtime import connected, runtime, writes  # noqa: F401 - pytest fixture
 
-SET = {"operation": "set", "time": "21:09:00", "days": 2, "wake": "zero_g", "enabled": False}
+SET = {"time": "21:09:00", "weekdays": ["monday"], "wake_action": "zero_g", "enabled": False}
 
 
 @asynccontextmanager
@@ -61,7 +61,7 @@ def concurrent_pair(hass, left, right, suffix):
 
 async def set_alarm(hass):
     await hass.services.async_call(
-        DOMAIN, "ultramatic_alarm", {"device_id": ["selected"], **SET}, blocking=True
+        DOMAIN, "set_alarm", {"device_id": ["selected"], **SET}, blocking=True
     )
 
 

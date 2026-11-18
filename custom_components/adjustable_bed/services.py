@@ -71,6 +71,7 @@ from .const import (
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SVANE,
     BED_TYPE_SYMPHONY,
+    BED_TYPE_ULTRAMATIC_SMART_BED,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
@@ -2249,8 +2250,20 @@ async def handle_set_alarm(call: ServiceCall) -> None:
     targets = _call_targets(call)
 
     route = _profile_route(
-        targets, {BED_TYPE_ZSERIES: "zseries", BED_TYPE_SYMPHONY: "symphony"}, SERVICE_SET_ALARM
+        targets,
+        {
+            BED_TYPE_ZSERIES: "zseries",
+            BED_TYPE_SYMPHONY: "symphony",
+            BED_TYPE_ULTRAMATIC_SMART_BED: "ultramatic",
+        },
+        SERVICE_SET_ALARM,
     )
+    if route == "ultramatic":
+        # Its fenced A/AB/B plans capture every target before their first await.
+        from .beds.ultramatic.services import set_ultramatic_alarm
+
+        await set_ultramatic_alarm(call, alarm, given)
+        return
     if route == "symphony":
         # Symphony reads the current alarm table live before rewriting one side.
         from .beds.symphony.services import set_symphony_alarm
@@ -2705,6 +2718,9 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.starcode.accessory_group import register_group_services
     from .beds.svane.services import async_register_svane_services
     from .beds.symphony.services import register_services as register_symphony_sense_services
+
+    # Ultramatic registers no action of its own; set_alarm uses this module.
+    from .beds.ultramatic import services as _ultramatic_alarm  # noqa: F401
     from .position_estimate_services import async_register_position_estimate_services
 
     return (

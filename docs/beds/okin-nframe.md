@@ -5549,7 +5549,7 @@ This profile's own startup and controls have not yet run on that hardware.
 
 #### Setup
 
-Select **Ultramatic Smart Bed app (Nordic UART)** during setup or Configure.
+Select **Ultramatic Smart Bed app** during setup or Reconfigure.
 This is independent of the legacy Ultramatic ORE controls. The app admits a
 platform name beginning with `smartbed`, ignoring case, and the first
 manufacturer-data value beginning with `44 4F 54 01 05`. It checks no company
@@ -5557,7 +5557,7 @@ identifier or advertised service. HA offers an app choice for this shared name;
 the exact UART roles below are required on connection. Both notify and
 indicate-only receivers are accepted. No PIN or mandatory bond is declared.
 
-The stored selector is A, AB (both, default), or B. Optional single-address
+The stored selector is Left (A), Both (AB, the default) or Right (B). Optional single-address
 Left/Right child devices route to A/B on the same connection. Each physical
 bed of a two-address pair retains its own selector. These names establish
 addressing only. The compatibility motor-count setting does not limit the
@@ -5675,12 +5675,16 @@ each connection; its retained prefix does not establish another protocol.
 
 #### Services
 
-`ultramatic_alarm` accepts Set, Toggle or Query. Set requires local time to the
-minute, a Sunday-bit-0 weekday mask, enabled, and Vibrate, ZG or M1. Mask 128
-chooses today only if the selected minute is strictly after local now,
-otherwise tomorrow; 255 preserves the app default. Toggle requires a valid
-report on the current connection and preserves its other fields. Every target
-is validated before mutation. **Refresh massage** and **Refresh alarm** are
+The bed alarm uses [`set_alarm`](../SERVICES.md#set_alarm). Left is the A
+alarm, Right is B, and Both or a standalone bed is AB. With `enabled` and a
+`time`, it writes the whole alarm: `wake_action` is `massage` (Vibrate),
+`zero_g` (ZG) or `memory_1` (M1), and `weekdays` sets the Sunday-bit-0 day mask.
+No weekdays sends the app's mask 128, which chooses today only if the selected
+minute is strictly after local now, otherwise tomorrow. `enabled: false`
+without a time turns off the alarm reported on this connection and keeps its
+other fields; it needs a current report (press **Refresh alarm** first) and
+sends nothing when that alarm is already off. Every target is validated before
+mutation. **Refresh massage** and **Refresh alarm** are
 diagnostic buttons, disabled by default, and use the same scheduler as the
 **Sync bed clock** button and all other controls. The card's hidden **Release
 held control** button ends a held control without an extra STOP. Bed alarms already written can run while
@@ -5688,10 +5692,9 @@ HA is disconnected.
 
 #### Evidence
 
-Accepted row176 app literals and receive cases reproduce through the shared
-N-frame codec, including the corrected unequal wake-type/side alarm cases.
-Hardware qualification belongs to external beta users. The frozen July 2026
-artifact does not establish current store recency.
+Based on Ultramatic Smart Bed 1.1.2 (`com.okin.ultramaticSmartBed`). The app's
+literals and receive cases reproduce through the shared N-frame codec, including
+the corrected unequal wake-type/side alarm cases. Hardware is unverified.
 
 ## Notes
 

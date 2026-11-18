@@ -1,4 +1,4 @@
-"""Frozen row176 send literals, read by codec contract and documentation checks."""
+"""Ultramatic Smart Bed 1.1.2 send literals, read by codec contract and documentation checks."""
 
 import json
 from pathlib import Path

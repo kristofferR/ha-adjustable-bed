@@ -33,13 +33,14 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_CB24_BED_SELECTION,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_PROFILE_ID,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -111,7 +112,7 @@ def entry(hass, address=ADDRESS, selector=0):
             CONF_BED_TYPE: BED,
             CONF_CB24_BED_SELECTION: selector,
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE,
             CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: True,
             CONF_MOTOR_PULSE_COUNT: 3,
@@ -190,7 +191,7 @@ async def test_restore_factory_and_configure_keep_profile_and_app_owned_side_fie
     assert questions.staged(item.data, {CONF_CB24_BED_SELECTION: 2})[CONF_CB24_BED_SELECTION] == 2
     assert CONF_CB24_BED_SELECTION in per_side_profile(BED, None).keys
     options = [row for row in get_bed_type_options() if row["value"] == BED]
-    assert len(options) == 1 and "com.okin.ultramaticSmartBed" in options[0]["label"]
+    assert len(options) == 1 and options[0]["label"] == "Ultramatic Smart Bed app"
 
 
 def test_scan_requires_platform_name_and_first_manufacturer_value():
@@ -275,7 +276,7 @@ async def test_card_lease_renews_stream_and_stop_ends_generation(runtime):
         await coord.async_stop_command()
         await task
         count = len(writes(client))
-        with pytest.raises(ServiceValidationError, match="has ended"):
+        with pytest.raises(ServiceValidationError, match="already stopped"):
             await hass.services.async_call(DOMAIN, "hold_control", call, blocking=True)
         assert len(writes(client)) == count
     first_stop = writes(client).index(app.control("STOP"))
@@ -336,13 +337,12 @@ async def test_alarm_service_correct_byte_order_and_mutable_buffer_schedule(runt
     with virtual_clock():
         await hass.services.async_call(
             DOMAIN,
-            "ultramatic_alarm",
+            "set_alarm",
             {
                 "device_id": ["bed"],
-                "operation": "set",
                 "time": "21:09:00",
-                "days": 2,
-                "wake": "zero_g",
+                "weekdays": ["monday"],
+                "wake_action": "zero_g",
                 "enabled": False,
             },
             blocking=True,
@@ -355,17 +355,17 @@ async def test_alarm_service_correct_byte_order_and_mutable_buffer_schedule(runt
 @pytest.mark.parametrize(
     "fields",
     [
-        {"operation": "set", "time": "06:30:00"},
-        {"operation": "set", "time": "06:30:01", "days": 127, "wake": "vibrate", "enabled": True},
-        {"operation": "query", "days": 127},
-        {"operation": "toggle"},
+        {"enabled": True, "time": "06:30:00"},  # No wake action.
+        {"enabled": True, "time": "06:30:01", "weekdays": ["monday"], "wake_action": "massage"},
+        {"enabled": True, "time": "06:30:00", "wake_action": "flat"},
+        {"enabled": False},  # No current report to turn off.
     ],
 )
 async def test_alarm_invalid_fields_or_missing_current_report_write_nothing(runtime, fields):
     hass, _, client = runtime
     with pytest.raises((ServiceValidationError, ValueError, ConnectionError)):
         await hass.services.async_call(
-            DOMAIN, "ultramatic_alarm", {"device_id": ["bed"], **fields}, blocking=True
+            DOMAIN, "set_alarm", {"device_id": ["bed"], **fields}, blocking=True
         )
     assert writes(client) == []
 
@@ -379,17 +379,17 @@ async def test_all_target_capability_and_alarm_state_before_any_writes(runtime):
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coord, "both"), (invalid, "both")], []),
         ),
-        pytest.raises(ServiceValidationError, match="Every target"),
+        # set_alarm refuses the mixed profiles before Ultramatic's own all-target check.
+        pytest.raises(ServiceValidationError, match="different app profiles"),
     ):
         await hass.services.async_call(
             DOMAIN,
-            "ultramatic_alarm",
+            "set_alarm",
             {
                 "device_id": ["bed", "other"],
-                "operation": "set",
                 "time": "06:30:00",
-                "days": 127,
-                "wake": "memory_1",
+                "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+                "wake_action": "memory_1",
                 "enabled": True,
             },
             blocking=True,
@@ -397,7 +397,7 @@ async def test_all_target_capability_and_alarm_state_before_any_writes(runtime):
     assert not writes(client)
 
 
-async def test_reported_sensor_and_toggle_are_fenced_on_disconnect(runtime):
+async def test_reported_sensor_and_disable_are_fenced_on_disconnect(runtime):
     hass, coord, client = runtime
     c = coord.controller
     callback = client.start_notify.await_args.args[1]
@@ -408,7 +408,7 @@ async def test_reported_sensor_and_toggle_are_fenced_on_disconnect(runtime):
     assert sensor.native_value == 10
     assert sensor.extra_state_attributes[SIDES["A"].head] == 2
     with c.side_scope("left"), virtual_clock():
-        plan = c.prepare_alarm(None, toggle=True)
+        plan = c.prepare_alarm(None, disable=True)
         assert plan.frame == bytes.fromhex("07057f010630000001")
         await c.set_alarm(plan)
     client.write_gatt_char.reset_mock()
@@ -417,7 +417,7 @@ async def test_reported_sensor_and_toggle_are_fenced_on_disconnect(runtime):
     assert coord.controller_state[SIDES["A"].alarm] is None
     assert sensor.native_value is None
     with pytest.raises(ConnectionError):
-        c.prepare_alarm(None, toggle=True)
+        c.prepare_alarm(None, disable=True)
     assert writes(client) == []
 
 
@@ -582,13 +582,12 @@ async def test_two_address_pair_preserves_physical_selectors_and_rejects_sequent
         ):
             await hass.services.async_call(
                 DOMAIN,
-                "ultramatic_alarm",
+                "set_alarm",
                 {
                     "device_id": ["right"],
-                    "operation": "set",
                     "time": "23:59:00",
-                    "days": 255,
-                    "wake": "memory_1",
+                    "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+                    "wake_action": "memory_1",
                     "enabled": True,
                 },
                 blocking=True,
@@ -596,7 +595,7 @@ async def test_two_address_pair_preserves_physical_selectors_and_rejects_sequent
         assert not writes(left_client)
         assert (
             writes(right_client)
-            == [bytes.fromhex("0705ff032359000102")] * 2 + [app.QUERY_ALARM] * 3
+            == [bytes.fromhex("07057f032359000102")] * 2 + [app.QUERY_ALARM] * 3
         )
     finally:
         await right.async_shutdown()
@@ -657,13 +656,12 @@ async def test_alarm_admission_rejects_changes_during_live_preflight(runtime, ch
         try:
             await hass.services.async_call(
                 DOMAIN,
-                "ultramatic_alarm",
+                "set_alarm",
                 {
                     "device_id": ["bed"],
-                    "operation": "set",
                     "time": "06:30:00",
-                    "days": 127,
-                    "wake": "vibrate",
+                    "weekdays": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+                    "wake_action": "massage",
                     "enabled": True,
                 },
                 blocking=True,
@@ -679,7 +677,7 @@ async def test_invalid_report_is_visible_but_not_writable(runtime):
     callback(None, bytearray.fromhex("a50c0e0001021a2f00010000000000000000"))
     assert coord.controller_state[SIDES["AB"].alarm] == "20:35"
     with pytest.raises(ValueError, match="Refresh alarms"):
-        coord.controller.prepare_alarm(None, toggle=True)
+        coord.controller.prepare_alarm(None, disable=True)
     assert writes(client) == []
 
 

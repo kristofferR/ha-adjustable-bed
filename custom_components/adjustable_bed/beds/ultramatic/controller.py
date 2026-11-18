@@ -12,6 +12,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmError
 from ...card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
 from ...codec.okin_nframe import SideRecordParser
 from ...const import CONF_CB24_BED_SELECTION, SIDE_BOTH, SIDE_LEFT, SIDE_RIGHT
@@ -29,6 +30,15 @@ from ..entity_specs import (
 )
 from ..okin_nframe import OkinNFrameController
 from .state import SIDES, AlarmSettings
+
+# The app's wake choices: Vibrate, ZG and M1 (types 1 to 3). Days are a weekday mask.
+ALARM_CAPABILITY = AlarmCapability(
+    wake_actions=tuple(app.WAKE_TYPES),
+    weekdays=True,
+    requires_wake_action=True,
+    cancel_running=True,
+    resource="*",
+)
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -495,15 +505,25 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
     async def reset_memory(self) -> None:
         await self._hold("reset_memory", app.SAVE_HOLD_MS)
 
-    def prepare_alarm(self, settings: AlarmSettings | None, *, toggle: bool = False) -> AlarmPlan:
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return ALARM_CAPABILITY
+
+    def prepare_alarm(self, settings: AlarmSettings | None, *, disable: bool = False) -> AlarmPlan:
         link, side = self._live(), self._side()
-        if toggle:
+        if disable:
+            # Only the alarm reported on this connection is known; it keeps its fields.
             cached = self._alarms.get(side)
             if cached is None:
-                raise ValueError("Refresh alarms on this connection before toggling")
-            settings = AlarmSettings(
-                cached.hour, cached.minute, cached.days, cached.type_code, not cached.enabled
-            )
+                raise AlarmError(
+                    "alarm_refresh_needed",
+                    "Refresh alarms on this connection before turning the alarm off",
+                )
+            if not cached.enabled:
+                raise AlarmError(
+                    "alarm_already_off", "The alarm is already off, so nothing was sent"
+                )
+            settings = AlarmSettings(cached.hour, cached.minute, cached.days, cached.type_code, False)
         if settings is None:
             raise ValueError("Alarm settings are required")
         return AlarmPlan(

@@ -1,31 +1,37 @@
-"""Ultramatic's one bed alarm, with all-target admission and session fences."""
+"""Ultramatic's one bed alarm, with all-target admission and session fences.
+
+The shared ``set_alarm`` action routes Ultramatic targets here. Left is A,
+Right is B, and Both or a standalone bed is AB.
+"""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
-import voluptuous as vol
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.const import ATTR_TIME
+from homeassistant.core import ServiceCall
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from ...const import BED_TYPE_ULTRAMATIC_SMART_BED, DOMAIN, PAIR_CONNECTION_MODE_SEQUENTIAL
+from ...alarm import AlarmRequest
+from ...const import BED_TYPE_ULTRAMATIC_SMART_BED, PAIR_CONNECTION_MODE_SEQUENTIAL
 from ...entity_runtime import controller_side_scope
 from ...paired_coordinator import PairedBedCoordinator
 from ...profiles import ultramatic as app
 from ...services import (
-    DEVICE_IDS,
-    SIDE_FIELD,
     _call_targets,
     _capture_command_admission,
+    _check_alarm,
     _command_targets,
     _execute_preflighted,
     _family_command,
     _preflight_capability,
     _release_preflighted,
+    _validation_error,
+    _with_bed_defaults,
 )
 from .state import AlarmSettings
 
@@ -53,12 +59,6 @@ class _Fence:
             self.controller._live(self.link)
 
 
-def _integer(value: object) -> int:
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise vol.Invalid("Expected a whole number")
-    return value
-
-
 def _alarm_targets(parent: BedTarget, side: str) -> list[BedChild]:
     """Validate logical owners and the topology's effective dispatch scopes."""
     children = _command_targets(parent, side)
@@ -67,7 +67,42 @@ def _alarm_targets(parent: BedTarget, side: str) -> list[BedChild]:
     return list({id(child): child for child in children}.values())
 
 
-async def handle_alarm(call: ServiceCall) -> None:
+async def set_ultramatic_alarm(call: ServiceCall, alarm: AlarmRequest, given: list[str]) -> None:
+    """Write a ``set_alarm`` request through the fenced A/AB/B plans below.
+
+    Turning the alarm off without a time turns off the alarm reported on this
+    connection and keeps its fields; any other request sets the whole alarm.
+    """
+    # Runs synchronously into _run_alarm, which captures targets before any await.
+    from .controller import ALARM_CAPABILITY
+
+    def check(child: BedChild, controller: UltramaticController) -> None:
+        _check_alarm(child.name, controller, alarm, given)
+
+    try:
+        if not alarm.enabled and ATTR_TIME not in call.data:
+            await _run_alarm(call, "disable", None, check)
+            return
+        resolved = _with_bed_defaults(alarm, ALARM_CAPABILITY, given)
+        settings = AlarmSettings(
+            alarm.hour,
+            alarm.minute,
+            app.alarm_days(alarm.weekdays),
+            # An unknown wake action is refused by the per-target check first.
+            app.WAKE_TYPES.get(resolved.wake_action, 0),
+            alarm.enabled,
+        )
+        await _run_alarm(call, "set", settings, check)
+    except ValueError as error:
+        raise _validation_error(error) from error
+
+
+async def _run_alarm(
+    call: ServiceCall,
+    operation: Literal["set", "disable"],
+    settings: AlarmSettings | None,
+    check: Callable[[BedChild, UltramaticController], None],
+) -> None:
     # Every target and generation is captured before the first await. Registration
     # loads only this light action module; target controllers already exist.
     targets = _call_targets(call)
@@ -116,6 +151,7 @@ async def handle_alarm(call: ServiceCall) -> None:
             raise ServiceValidationError(
                 "Every target must use the Ultramatic Smart Bed app profile"
             )
+        check(child, controller)
         initial.append(
             _Fence(controller, controller.session_token, controller.operation_generation)
         )
@@ -179,22 +215,7 @@ async def handle_alarm(call: ServiceCall) -> None:
         for fence in ready.values():
             fence.check()
 
-    operation = call.data["operation"]
-    settings = None
-    fields = ("time", "days", "wake", "enabled")
-    if operation == "set":
-        if any(key not in call.data for key in fields):
-            raise ServiceValidationError("Set requires time, days, wake and enabled")
-        time = call.data["time"]
-        if time.second or time.microsecond:
-            raise ServiceValidationError("Ultramatic alarms use minute precision")
-        settings = AlarmSettings(
-            time.hour,
-            time.minute,
-            call.data["days"],
-            {"vibrate": 1, "zero_g": 2, "memory_1": 3}[call.data["wake"]],
-            call.data["enabled"],
-        )
+    if settings is not None:
         # Validate the complete parameter domain even when every target is offline.
         app.alarm(
             settings.hour,
@@ -204,26 +225,23 @@ async def handle_alarm(call: ServiceCall) -> None:
             settings.enabled,
             now=dt_util.now(),
         )
-    elif any(key in call.data for key in fields):
-        raise ServiceValidationError("Alarm fields apply only to set")
     check_initial()
-    # Toggle needs an existing current report. Refuse it on every offline target
+    # Turning off needs an existing current report. Refuse it on every offline target
     # before a preflight can open another connection and emit startup writes.
-    if operation == "toggle":
+    if operation == "disable":
         if len({child.operation_identity for child in physical if id(child) in sequential}) > 1:
             raise ServiceValidationError(
-                "Toggle requires current reports on concurrently live receivers"
+                "Turning the alarm off requires current reports on concurrently live receivers"
             )
         for child in runtimes:
             controller = child.capability_controller
             assert isinstance(controller, UltramaticController)
             with controller_side_scope(child):
-                controller.prepare_alarm(None, toggle=True)
+                controller.prepare_alarm(None, disable=True)
 
     def prepare(controller: UltramaticController) -> None:
-        if operation != "query":
-            plan = controller.prepare_alarm(settings, toggle=operation == "toggle")
-            plans[controller, plan.side] = plan
+        plan = controller.prepare_alarm(settings, disable=operation == "disable")
+        plans[controller, plan.side] = plan
         ready[controller] = _Fence(
             controller, controller.session_token, controller.operation_generation
         )
@@ -288,14 +306,13 @@ async def handle_alarm(call: ServiceCall) -> None:
                         "Ultramatic controller was replaced after validation"
                     )
                 ready[controller].check()
-                if operation != "query":
-                    with controller_side_scope(child):
-                        plan = plans.get((controller, controller._side()))
-                        if plan is None:
-                            raise ServiceValidationError(
-                                "Ultramatic target side changed after validation"
-                            )
-                        controller.validate_plan(plan)
+                with controller_side_scope(child):
+                    plan = plans.get((controller, controller._side()))
+                    if plan is None:
+                        raise ServiceValidationError(
+                            "Ultramatic target side changed after validation"
+                        )
+                    controller.validate_plan(plan)
 
         async def apply(controller: UltramaticController) -> None:
             check_all()
@@ -315,15 +332,10 @@ async def handle_alarm(call: ServiceCall) -> None:
             fence = ready[controller]
             fence.check()
             ready[controller] = _Fence(controller, fence.link, fence.generation + 1)
-            if operation == "query":
-                await controller.query("alarm", validate=check_all)
-            else:
-                plan = plans.get((controller, controller._side()))
-                if plan is None:
-                    raise ServiceValidationError(
-                        "Ultramatic alarm plan no longer matches the target"
-                    )
-                await controller.set_alarm(plan, validate=check_all)
+            plan = plans.get((controller, controller._side()))
+            if plan is None:
+                raise ServiceValidationError("Ultramatic alarm plan no longer matches the target")
+            await controller.set_alarm(plan, validate=check_all)
             ready[controller].check()
 
         try:
@@ -342,21 +354,3 @@ async def handle_alarm(call: ServiceCall) -> None:
                 admissions=[admission],
             )
 
-
-def register_services(hass: HomeAssistant) -> None:
-    hass.services.async_register(
-        DOMAIN,
-        "ultramatic_alarm",
-        handle_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required("device_id"): DEVICE_IDS,
-                vol.Required("operation"): vol.In(("set", "toggle", "query")),
-                vol.Optional("time"): cv.time,
-                vol.Optional("days"): vol.All(_integer, vol.Range(min=0, max=255)),
-                vol.Optional("wake"): vol.In(("vibrate", "zero_g", "memory_1")),
-                vol.Optional("enabled"): cv.boolean,
-                **SIDE_FIELD,
-            }
-        ),
-    )

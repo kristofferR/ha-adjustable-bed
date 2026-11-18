@@ -85,11 +85,13 @@ def test_wire_app_scenarios_schema_aliases_and_exact_gatt():
         assert not data["scenarios"][key]["info"].get("gaps"), key
         assert data["scenarios"][key]["commands"]["connect"]["status"] == "ok"
         assert data["scenarios"][key]["info"]["bed_type"] == BED
-        toggle = data["scenarios"][key]["commands"]["ultramatic_alarm_toggle"]
-        if key == BED or key.startswith(BED + ":AB:"):
-            assert toggle == {"status": "no_writes"}
+        disable = data["scenarios"][key]["commands"]["ultramatic_alarm_disable"]
+        # The frozen replies hold unequal records (no AB permission) and an off B alarm,
+        # so only A has an alarm to turn off.
+        if key == BED or key.startswith((BED + ":AB:", BED + ":B:")):
+            assert disable == {"status": "no_writes"}
         else:
-            assert toggle["status"] == "ok"
+            assert disable["status"] == "ok"
     layouts = json.loads((ROOT / "tests/fixtures/wire_snapshot_layouts.json").read_text())
     for key, notify in ((BED, "notify"), (BED + ":indicate", "indicate")):
         assert layouts[key] == {
@@ -98,7 +100,7 @@ def test_wire_app_scenarios_schema_aliases_and_exact_gatt():
         }
 
 
-async def test_app_wire_plan_records_unequal_combined_toggle_as_safe_no_writes(
+async def test_app_wire_plan_records_unequal_combined_disable_as_safe_no_writes(
     runtime,  # noqa: F811 - pytest fixture
 ):
     from scripts.wire_snapshot import plan_commands
@@ -106,21 +108,21 @@ async def test_app_wire_plan_records_unequal_combined_toggle_as_safe_no_writes(
     _, coordinator, client = runtime
     client.start_notify.await_args.args[1](None, bytearray(ALARM_REPORT))
     command = next(
-        c for c in plan_commands(coordinator.controller) if c.name == "ultramatic_alarm_toggle"
+        c for c in plan_commands(coordinator.controller) if c.name == "ultramatic_alarm_disable"
     )
     await command.call(coordinator.controller)
     assert command.declared and not command.is_gap("no_writes")
     assert writes(client) == []
 
 
-async def test_app_wire_plan_does_not_mask_an_unsafe_combined_toggle_regression(
+async def test_app_wire_plan_does_not_mask_an_unsafe_combined_disable_regression(
     runtime,  # noqa: F811 - pytest fixture
 ):
     from scripts.wire_snapshot import plan_commands
 
     _, coordinator, client = runtime
     command = next(
-        c for c in plan_commands(coordinator.controller) if c.name == "ultramatic_alarm_toggle"
+        c for c in plan_commands(coordinator.controller) if c.name == "ultramatic_alarm_disable"
     )
     with (
         patch.object(coordinator.controller, "prepare_alarm", return_value=object()),

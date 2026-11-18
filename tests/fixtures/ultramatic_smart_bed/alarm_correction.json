@@ -1,6 +1,4 @@
 {
-  "finding": "UMS-A001",
-  "scope": "ONLY four changed alarm fixtures plus three new unequal type/side cases; all seven unequal wake-type/selector pairs. Receive records unchanged.",
   "cases": [
     {
       "id": "alarm-ZG-AB",
@@ -15,10 +13,6 @@
         "type_code": 2
       },
       "expected_bytes": "07 05 02 02 21 09 00 00 00",
-      "evidence": [
-        "getAlarmTypeValue 0x351efc; setAlarmCommand 0x351c18",
-        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
-      ],
       "case_kind": "changed_fixture"
     },
     {
@@ -34,10 +28,6 @@
         "type_code": 3
       },
       "expected_bytes": "07 05 ff 03 23 59 00 01 02",
-      "evidence": [
-        "LayoutLogic mapping 0x33d5d8; setAlarmCommand 0x351c18",
-        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
-      ],
       "case_kind": "changed_fixture"
     },
     {
@@ -54,10 +44,6 @@
         "now": "2026-11-17T06:30:00"
       },
       "expected_bytes": "07 05 04 01 07 30 00 01 00",
-      "evidence": [
-        "compareTime 0x351f70; sendAlarmCommand 0x3517e8",
-        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
-      ],
       "case_kind": "changed_fixture"
     },
     {
@@ -74,10 +60,6 @@
         "now": "2026-11-21T20:00:00"
       },
       "expected_bytes": "07 05 01 03 06 30 00 01 01",
-      "evidence": [
-        "compareTime Saturday->Sunday 0x352344",
-        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
-      ],
       "case_kind": "changed_fixture"
     },
     {
@@ -93,12 +75,7 @@
         "type_code": 1
       },
       "expected_bytes": "07 05 40 01 05 07 00 01 02",
-      "case_kind": "new_unequal_type_side",
-      "evidence": [
-        "UMS-A001 / E25",
-        "LayoutLogic.sendAlarmCommand0x3519d4-0x3519e4,0x351ac8-0x351aec",
-        "BleManager.setAlarmCommand0x351c3c,0x351ccc-0x351ce8,0x351db8-0x351dd4"
-      ]
+      "case_kind": "new_unequal_type_side"
     },
     {
       "id": "audit001-ZG-A",
@@ -113,12 +90,7 @@
         "type_code": 2
       },
       "expected_bytes": "07 05 20 02 22 45 00 00 01",
-      "case_kind": "new_unequal_type_side",
-      "evidence": [
-        "UMS-A001 / E25",
-        "LayoutLogic.sendAlarmCommand0x3519d4-0x3519e4,0x351ac8-0x351aec",
-        "BleManager.setAlarmCommand0x351c3c,0x351ccc-0x351ce8,0x351db8-0x351dd4"
-      ]
+      "case_kind": "new_unequal_type_side"
     },
     {
       "id": "audit001-M1-AB",
@@ -133,12 +105,7 @@
         "type_code": 3
       },
       "expected_bytes": "07 05 01 03 00 01 00 01 00",
-      "case_kind": "new_unequal_type_side",
-      "evidence": [
-        "UMS-A001 / E25",
-        "LayoutLogic.sendAlarmCommand0x3519d4-0x3519e4,0x351ac8-0x351aec",
-        "BleManager.setAlarmCommand0x351c3c,0x351ccc-0x351ce8,0x351db8-0x351dd4"
-      ]
+      "case_kind": "new_unequal_type_side"
     }
   ]
 }

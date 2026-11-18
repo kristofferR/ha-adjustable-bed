@@ -2735,7 +2735,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto",
               CONF_MOTOR_PULSE_DELAY_MS: 300},
-        questions=(Question(CONF_CB24_BED_SELECTION, {1: "A", 0: "AB (both)", 2: "B"}, 0),),
+        questions=(Question(CONF_CB24_BED_SELECTION, {0: "Both", 1: "Left", 2: "Right"}, 0),),
         title=lambda _data: "Ultramatic Smart Bed",
     ),
     # AdjustableM5X4's saved command selector and transport. A shared UART is

@@ -1,5 +1,4 @@
 {
-  "origin": "Static app literal/branch-derived vectors. Not hardware traffic or runtime app execution.",
   "commands": [
     {
       "id": "timerSwitch-A",
@@ -8,11 +7,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 02 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x356ca0 object 49d911",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 02 00 01"
     },
     {
       "id": "timerSwitch-AB",
@@ -21,11 +16,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 02 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x356ca0 object 49d911",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 02 00 00"
     },
     {
       "id": "timerSwitch-B",
@@ -34,11 +25,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 02 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x356ca0 object 49d911",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 02 00 02"
     },
     {
       "id": "headStrengthAdd-A",
@@ -47,11 +34,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 08 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x356d30 object 49d8f1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 08 00 01"
     },
     {
       "id": "headStrengthAdd-AB",
@@ -60,11 +43,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 08 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x356d30 object 49d8f1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 08 00 00"
     },
     {
       "id": "headStrengthAdd-B",
@@ -73,11 +52,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 08 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x356d30 object 49d8f1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 08 00 02"
     },
     {
       "id": "headStrengthReduce-A",
@@ -86,11 +61,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 80 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x356dc0 object 49d8d1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 80 00 00 01"
     },
     {
       "id": "headStrengthReduce-AB",
@@ -99,11 +70,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 80 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x356dc0 object 49d8d1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 80 00 00 00"
     },
     {
       "id": "headStrengthReduce-B",
@@ -112,11 +79,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 80 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x356dc0 object 49d8d1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 80 00 00 02"
     },
     {
       "id": "footStrengthAdd-A",
@@ -125,11 +88,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 04 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x356e50 object 49d8b1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 04 00 01"
     },
     {
       "id": "footStrengthAdd-AB",
@@ -138,11 +97,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 04 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x356e50 object 49d8b1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 04 00 00"
     },
     {
       "id": "footStrengthAdd-B",
@@ -151,11 +106,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 04 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x356e50 object 49d8b1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 04 00 02"
     },
     {
       "id": "footStrengthReduce-A",
@@ -164,11 +115,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 01 00 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x356ee0 object 49d891",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 01 00 00 00 01"
     },
     {
       "id": "footStrengthReduce-AB",
@@ -177,11 +124,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 01 00 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x356ee0 object 49d891",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 01 00 00 00 00"
     },
     {
       "id": "footStrengthReduce-B",
@@ -190,11 +133,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 01 00 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x356ee0 object 49d891",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 01 00 00 00 02"
     },
     {
       "id": "waveAdd-A",
@@ -203,11 +142,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 10 00 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x356f70 object 49d871",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 10 00 00 00 01"
     },
     {
       "id": "waveAdd-AB",
@@ -216,11 +151,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 10 00 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x356f70 object 49d871",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 10 00 00 00 00"
     },
     {
       "id": "waveAdd-B",
@@ -229,11 +160,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 10 00 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x356f70 object 49d871",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 10 00 00 00 02"
     },
     {
       "id": "waveReduce-A",
@@ -242,11 +169,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 04 00 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x357000 object 49d851",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 04 00 00 00 01"
     },
     {
       "id": "waveReduce-AB",
@@ -255,11 +178,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 04 00 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x357000 object 49d851",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 04 00 00 00 00"
     },
     {
       "id": "waveReduce-B",
@@ -268,11 +187,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 04 00 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x357000 object 49d851",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 04 00 00 00 02"
     },
     {
       "id": "massageOnOff-A",
@@ -281,11 +196,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 01 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x357090 object 49d831",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 01 00 01"
     },
     {
       "id": "massageOnOff-AB",
@@ -294,11 +205,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 01 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x357090 object 49d831",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 01 00 00"
     },
     {
       "id": "massageOnOff-B",
@@ -307,11 +214,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 01 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x357090 object 49d831",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 01 00 02"
     },
     {
       "id": "HEADUP-A",
@@ -320,11 +223,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 00 01 01",
-      "evidence": [
-        "commons/mapList.dart:0x358d84 object 49db91",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 01 01"
     },
     {
       "id": "HEADUP-AB",
@@ -333,11 +232,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 00 01 00",
-      "evidence": [
-        "commons/mapList.dart:0x358d84 object 49db91",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 01 00"
     },
     {
       "id": "HEADUP-B",
@@ -346,11 +241,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 00 01 02",
-      "evidence": [
-        "commons/mapList.dart:0x358d84 object 49db91",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 01 02"
     },
     {
       "id": "HEADDOWN-A",
@@ -359,11 +250,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 00 02 01",
-      "evidence": [
-        "commons/mapList.dart:0x358e14 object 49db71",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 02 01"
     },
     {
       "id": "HEADDOWN-AB",
@@ -372,11 +259,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 00 02 00",
-      "evidence": [
-        "commons/mapList.dart:0x358e14 object 49db71",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 02 00"
     },
     {
       "id": "HEADDOWN-B",
@@ -385,11 +268,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 00 02 02",
-      "evidence": [
-        "commons/mapList.dart:0x358e14 object 49db71",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 02 02"
     },
     {
       "id": "FOOTUP-A",
@@ -398,11 +277,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 00 04 01",
-      "evidence": [
-        "commons/mapList.dart:0x358ea4 object 49db51",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 04 01"
     },
     {
       "id": "FOOTUP-AB",
@@ -411,11 +286,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 00 04 00",
-      "evidence": [
-        "commons/mapList.dart:0x358ea4 object 49db51",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 04 00"
     },
     {
       "id": "FOOTUP-B",
@@ -424,11 +295,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 00 04 02",
-      "evidence": [
-        "commons/mapList.dart:0x358ea4 object 49db51",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 04 02"
     },
     {
       "id": "FOOTDOWN-A",
@@ -437,11 +304,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 00 08 01",
-      "evidence": [
-        "commons/mapList.dart:0x358f34 object 49db31",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 08 01"
     },
     {
       "id": "FOOTDOWN-AB",
@@ -450,11 +313,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 00 08 00",
-      "evidence": [
-        "commons/mapList.dart:0x358f34 object 49db31",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 08 00"
     },
     {
       "id": "FOOTDOWN-B",
@@ -463,11 +322,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 00 08 02",
-      "evidence": [
-        "commons/mapList.dart:0x358f34 object 49db31",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 08 02"
     },
     {
       "id": "LUMBARUP-A",
@@ -476,11 +331,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 00 40 01",
-      "evidence": [
-        "commons/mapList.dart:0x358fc4 object 49db11",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 40 01"
     },
     {
       "id": "LUMBARUP-AB",
@@ -489,11 +340,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 00 40 00",
-      "evidence": [
-        "commons/mapList.dart:0x358fc4 object 49db11",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 40 00"
     },
     {
       "id": "LUMBARUP-B",
@@ -502,11 +349,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 00 40 02",
-      "evidence": [
-        "commons/mapList.dart:0x358fc4 object 49db11",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 40 02"
     },
     {
       "id": "LUMBARDOWN-A",
@@ -515,11 +358,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 00 80 01",
-      "evidence": [
-        "commons/mapList.dart:0x359054 object 49daf1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 80 01"
     },
     {
       "id": "LUMBARDOWN-AB",
@@ -528,11 +367,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 00 80 00",
-      "evidence": [
-        "commons/mapList.dart:0x359054 object 49daf1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 80 00"
     },
     {
       "id": "LUMBARDOWN-B",
@@ -541,11 +376,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 00 80 02",
-      "evidence": [
-        "commons/mapList.dart:0x359054 object 49daf1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 80 02"
     },
     {
       "id": "HEADTILTUP-A",
@@ -554,11 +385,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 00 10 01",
-      "evidence": [
-        "commons/mapList.dart:0x3590e4 object 49dad1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 10 01"
     },
     {
       "id": "HEADTILTUP-AB",
@@ -567,11 +394,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 00 10 00",
-      "evidence": [
-        "commons/mapList.dart:0x3590e4 object 49dad1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 10 00"
     },
     {
       "id": "HEADTILTUP-B",
@@ -580,11 +403,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 00 10 02",
-      "evidence": [
-        "commons/mapList.dart:0x3590e4 object 49dad1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 10 02"
     },
     {
       "id": "HEADTILTDOWN-A",
@@ -593,11 +412,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 00 20 01",
-      "evidence": [
-        "commons/mapList.dart:0x359174 object 49dab1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 20 01"
     },
     {
       "id": "HEADTILTDOWN-AB",
@@ -606,11 +421,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 00 20 00",
-      "evidence": [
-        "commons/mapList.dart:0x359174 object 49dab1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 20 00"
     },
     {
       "id": "HEADTILTDOWN-B",
@@ -619,11 +430,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 00 20 02",
-      "evidence": [
-        "commons/mapList.dart:0x359174 object 49dab1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 00 20 02"
     },
     {
       "id": "HIPSUP-A",
@@ -632,11 +439,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 40 00 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x359204 object 49da91",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 40 00 00 00 01"
     },
     {
       "id": "HIPSUP-AB",
@@ -645,11 +448,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 40 00 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x359204 object 49da91",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 40 00 00 00 00"
     },
     {
       "id": "HIPSUP-B",
@@ -658,11 +457,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 40 00 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x359204 object 49da91",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 40 00 00 00 02"
     },
     {
       "id": "HIPSDOWN-A",
@@ -671,11 +466,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 80 00 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x359294 object 49da71",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 80 00 00 00 01"
     },
     {
       "id": "HIPSDOWN-AB",
@@ -684,11 +475,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 80 00 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x359294 object 49da71",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 80 00 00 00 00"
     },
     {
       "id": "HIPSDOWN-B",
@@ -697,11 +484,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 80 00 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x359294 object 49da71",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 80 00 00 00 02"
     },
     {
       "id": "ZG-A",
@@ -710,11 +493,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 10 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x359324 object 49da11",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 10 00 01"
     },
     {
       "id": "ZG-AB",
@@ -723,11 +502,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 10 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x359324 object 49da11",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 10 00 00"
     },
     {
       "id": "ZG-B",
@@ -736,11 +511,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 10 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x359324 object 49da11",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 10 00 02"
     },
     {
       "id": "ANTI-A",
@@ -749,11 +520,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 00 80 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x3593b4 object 49dbb1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 80 00 01"
     },
     {
       "id": "ANTI-AB",
@@ -762,11 +529,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 00 80 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x3593b4 object 49dbb1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 80 00 00"
     },
     {
       "id": "ANTI-B",
@@ -775,11 +538,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 00 80 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x3593b4 object 49dbb1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 00 80 00 02"
     },
     {
       "id": "FLAT-A",
@@ -788,11 +547,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 08 00 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x359444 object 49da51",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 08 00 00 00 01"
     },
     {
       "id": "FLAT-AB",
@@ -801,11 +556,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 08 00 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x359444 object 49da51",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 08 00 00 00 00"
     },
     {
       "id": "FLAT-B",
@@ -814,11 +565,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 08 00 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x359444 object 49da51",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 08 00 00 00 02"
     },
     {
       "id": "M1-A",
@@ -827,11 +574,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 01 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x3594d4 object 49dbf1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 01 00 00 01"
     },
     {
       "id": "M1-AB",
@@ -840,11 +583,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 01 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x3594d4 object 49dbf1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 01 00 00 00"
     },
     {
       "id": "M1-B",
@@ -853,11 +592,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 01 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x3594d4 object 49dbf1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 01 00 00 02"
     },
     {
       "id": "M2-A",
@@ -866,11 +601,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 04 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x359564 object 49dbd1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 04 00 00 01"
     },
     {
       "id": "M2-AB",
@@ -879,11 +610,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 04 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x359564 object 49dbd1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 04 00 00 00"
     },
     {
       "id": "M2-B",
@@ -892,11 +619,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 04 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x359564 object 49dbd1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 04 00 00 02"
     },
     {
       "id": "LIGHT-A",
@@ -905,11 +628,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 00 02 00 00 01",
-      "evidence": [
-        "commons/mapList.dart:0x3595f4 object 49d9d1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 02 00 00 01"
     },
     {
       "id": "LIGHT-AB",
@@ -918,11 +637,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 00 02 00 00 00",
-      "evidence": [
-        "commons/mapList.dart:0x3595f4 object 49d9d1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 02 00 00 00"
     },
     {
       "id": "LIGHT-B",
@@ -931,11 +646,7 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 00 02 00 00 02",
-      "evidence": [
-        "commons/mapList.dart:0x3595f4 object 49d9d1",
-        "tools/ble_manager.dart:0x356a98/0x358b7c; side map 0x352c0c"
-      ]
+      "expected_bytes": "05 02 00 02 00 00 02"
     },
     {
       "id": "reset-A",
@@ -944,10 +655,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_bytes": "05 02 08 00 10 00 01",
-      "evidence": [
-        "BleManager.resetMemoryPosition 0x3587d4 -> writeData 0x3589d4"
-      ]
+      "expected_bytes": "05 02 08 00 10 00 01"
     },
     {
       "id": "reset-AB",
@@ -956,10 +664,7 @@
       "inputs": {
         "side": "AB"
       },
-      "expected_bytes": "05 02 08 00 10 00 00",
-      "evidence": [
-        "BleManager.resetMemoryPosition 0x3587d4 -> writeData 0x3589d4"
-      ]
+      "expected_bytes": "05 02 08 00 10 00 00"
     },
     {
       "id": "reset-B",
@@ -968,40 +673,28 @@
       "inputs": {
         "side": "B"
       },
-      "expected_bytes": "05 02 08 00 10 00 02",
-      "evidence": [
-        "BleManager.resetMemoryPosition 0x3587d4 -> writeData 0x3589d4"
-      ]
+      "expected_bytes": "05 02 08 00 10 00 02"
     },
     {
       "id": "STOP",
       "protocol": "P1",
       "action": "STOP",
       "inputs": {},
-      "expected_bytes": "05 02 00 00 00 00 00",
-      "evidence": [
-        "BleManager 0x358318 -> delayed 0x2e47e8"
-      ]
+      "expected_bytes": "05 02 00 00 00 00 00"
     },
     {
       "id": "query_massage",
       "protocol": "P1",
       "action": "query_massage",
       "inputs": {},
-      "expected_bytes": "00 b0",
-      "evidence": [
-        "BleManager 0x2e5364"
-      ]
+      "expected_bytes": "00 b0"
     },
     {
       "id": "query_alarm",
       "protocol": "P1",
       "action": "query_alarm",
       "inputs": {},
-      "expected_bytes": "00 c0",
-      "evidence": [
-        "BleManager 0x2e6268/0x2dcd58"
-      ]
+      "expected_bytes": "00 c0"
     },
     {
       "id": "clock-tuesday",
@@ -1010,10 +703,7 @@
       "inputs": {
         "local_time": "2026-11-17T06:05:09"
       },
-      "expected_bytes": "07 04 26 11 17 02 06 05 09",
-      "evidence": [
-        "calibrationTime 0x34fbc0, convertToBCD 0x35010c"
-      ]
+      "expected_bytes": "07 04 26 11 17 02 06 05 09"
     },
     {
       "id": "clock-sunday",
@@ -1022,10 +712,7 @@
       "inputs": {
         "local_time": "2025-12-07T23:59:58"
       },
-      "expected_bytes": "07 04 25 12 07 00 23 59 58",
-      "evidence": [
-        "calibrationTime 0x34fbc0, weekday Sunday->0"
-      ]
+      "expected_bytes": "07 04 25 12 07 00 23 59 58"
     },
     {
       "id": "alarm-vibrate-A",
@@ -1039,10 +726,7 @@
         "enabled": true,
         "type_code": 1
       },
-      "expected_bytes": "07 05 7f 01 06 30 00 01 01",
-      "evidence": [
-        "setAlarmCommand 0x351c18"
-      ]
+      "expected_bytes": "07 05 7f 01 06 30 00 01 01"
     },
     {
       "id": "alarm-ZG-AB",
@@ -1056,11 +740,7 @@
         "enabled": false,
         "type_code": 2
       },
-      "expected_bytes": "07 05 02 02 21 09 00 00 00",
-      "evidence": [
-        "getAlarmTypeValue 0x351efc; setAlarmCommand 0x351c18",
-        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
-      ]
+      "expected_bytes": "07 05 02 02 21 09 00 00 00"
     },
     {
       "id": "alarm-M1-B",
@@ -1074,11 +754,7 @@
         "enabled": true,
         "type_code": 3
       },
-      "expected_bytes": "07 05 ff 03 23 59 00 01 02",
-      "evidence": [
-        "LayoutLogic mapping 0x33d5d8; setAlarmCommand 0x351c18",
-        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
-      ]
+      "expected_bytes": "07 05 ff 03 23 59 00 01 02"
     },
     {
       "id": "alarm-once-today",
@@ -1093,11 +769,7 @@
         "type_code": 1,
         "now": "2026-11-17T06:30:00"
       },
-      "expected_bytes": "07 05 04 01 07 30 00 01 00",
-      "evidence": [
-        "compareTime 0x351f70; sendAlarmCommand 0x3517e8",
-        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
-      ]
+      "expected_bytes": "07 05 04 01 07 30 00 01 00"
     },
     {
       "id": "alarm-once-equal-nextday",
@@ -1112,10 +784,7 @@
         "type_code": 2,
         "now": "2026-11-17T06:30:00"
       },
-      "expected_bytes": "07 05 08 02 06 30 00 01 02",
-      "evidence": [
-        "compareTime strict isAfter 0x352150"
-      ]
+      "expected_bytes": "07 05 08 02 06 30 00 01 02"
     },
     {
       "id": "alarm-once-Saturday-wrap",
@@ -1130,11 +799,7 @@
         "type_code": 3,
         "now": "2026-11-21T20:00:00"
       },
-      "expected_bytes": "07 05 01 03 06 30 00 01 01",
-      "evidence": [
-        "compareTime Saturday->Sunday 0x352344",
-        "UMS-A001 / E25: caller x6 wake type -> byte3; final stack argument side -> byte8"
-      ]
+      "expected_bytes": "07 05 01 03 06 30 00 01 01"
     }
   ],
   "parsers": [
@@ -1153,11 +818,7 @@
         "wave": 3,
         "head": 2,
         "foot": 1
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "massage-B-BE1200",
@@ -1174,11 +835,7 @@
         "wave": 1,
         "head": 3,
         "foot": 2
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "massage-AB-different-fallback",
@@ -1195,11 +852,7 @@
         "wave": 0,
         "head": 0,
         "foot": 0
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "massage-AB-same-bucket",
@@ -1216,11 +869,7 @@
         "wave": 3,
         "head": 2,
         "foot": 1
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "massage-second-zero-select-first",
@@ -1237,11 +886,7 @@
         "wave": 3,
         "head": 2,
         "foot": 1
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "alarm-A",
@@ -1259,11 +904,7 @@
         "hour": 6,
         "minute": 30,
         "enabled": true
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "alarm-B",
@@ -1282,11 +923,7 @@
         "hour": 22,
         "minute": 45,
         "enabled": false
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "alarm-AB-different-default",
@@ -1305,11 +942,7 @@
         "hour": 8,
         "minute": 41,
         "enabled": false
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "alarm-zero-days-default",
@@ -1327,11 +960,7 @@
         "hour": 8,
         "minute": 41,
         "enabled": false
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "alarm-invalid-BCD-nibble",
@@ -1348,11 +977,7 @@
         "hour": 20,
         "minute": 35,
         "enabled": true
-      },
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      }
     },
     {
       "id": "truncated-recognized",
@@ -1361,10 +986,6 @@
       ],
       "inputs": {},
       "expected_parsed": null,
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ],
       "expected_error": "IndexError"
     },
     {
@@ -1373,11 +994,7 @@
         "11 22 33"
       ],
       "inputs": {},
-      "expected_parsed": null,
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      "expected_parsed": null
     },
     {
       "id": "too-short",
@@ -1385,11 +1002,7 @@
         "a5 0b"
       ],
       "inputs": {},
-      "expected_parsed": null,
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      "expected_parsed": null
     },
     {
       "id": "FE16-buffer-retains-prefix",
@@ -1400,11 +1013,7 @@
       "inputs": {
         "side": "A"
       },
-      "expected_parsed": null,
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      "expected_parsed": null
     },
     {
       "id": "disconnected-ignore",
@@ -1414,11 +1023,7 @@
       "inputs": {
         "connected": false
       },
-      "expected_parsed": null,
-      "evidence": [
-        "BleManager._handleData 0x2ed184",
-        "LayoutLogic callbacks 0x3c2838/0x3c357c; parsers 0x3c3224/0x3c3b88"
-      ]
+      "expected_parsed": null
     }
   ],
   "timer_buckets": [

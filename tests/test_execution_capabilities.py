@@ -158,7 +158,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:okin_motionbed": {"hold": ("row150",)},
     "OkinNFrameProfile:n32_motion_bed": {"hold": ("n32",)},
     "OkinNFrameProfile:resident": {"hold": ("resident-base",)},
-    "OkinNFrameProfile:ultramatic_smart_bed": {"hold": ("row176",)},
+    "OkinNFrameProfile:ultramatic_smart_bed": {"hold": ("ultramatic-smart-bed",)},
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
     # Customatic: held motor keys OR into one shared mask; a release clears one bit (#516).

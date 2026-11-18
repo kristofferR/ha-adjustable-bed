@@ -438,6 +438,7 @@ data:
 | SIMMONS | `custom_position`, `flat`, `anti_snore` (regular bed) | `slot` 1–2, `weekdays`, `confirm_custom_position`. Both alarms are read from the bed first |
 | Solace | `none`, `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` |
 | Symphony Sleep | `none`, `memory_1`, `memory_2` | Once |
+| Ultramatic Smart Bed | `massage`, `zero_g`, `memory_1` (required to turn on) | `weekdays` or once. Left, Right and Both set the A, B and AB alarms. Turning off without a time keeps the reported alarm's other fields; refresh the alarm first |
 | Symphony Sleep Sense | By product | `weekdays` |
 | Yamada | By app version | `slot` 1–2, `weekdays`. Refresh the bed's alarms first |
 | Customatic Z-Series | `massage`, `memory_1` (required to turn on) | Once. Needs a Z-Series controller with an alarm page |

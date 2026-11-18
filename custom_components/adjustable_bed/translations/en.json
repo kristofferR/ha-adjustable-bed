@@ -8713,6 +8713,9 @@
     "alarm_refresh_needed": {
       "message": "Refresh the bed's alarms, then try again."
     },
+    "alarm_already_off": {
+      "message": "The bed's alarm is already off, so nothing was sent."
+    },
     "bed_release_failed": {
       "message": "Could not disconnect {device_name} before checking the next bed. Try again."
     },

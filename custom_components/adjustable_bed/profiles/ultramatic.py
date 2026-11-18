@@ -1,4 +1,4 @@
-"""Ultramatic Smart Bed 1.1.2, independently accepted row176 app data.
+"""Ultramatic Smart Bed 1.1.2 app data.
 
 This is the Nordic UART app, separate from the Ultramatic ORE route.
 Source labels POSTURE/LUMBAR disagree with LUMBAR/HIPS enum identifiers;
@@ -103,6 +103,15 @@ def clock(now: datetime) -> bytes:
             )
         )
     )
+
+
+# set_alarm wake actions to the app's alarm types (Vibrate, ZG, M1).
+WAKE_TYPES: Final = MappingProxyType({"massage": 1, "zero_g": 2, "memory_1": 3})
+
+
+def alarm_days(weekdays: tuple[int, ...]) -> int:
+    """Return the app's Sunday-bit-0 day mask; no weekdays is its once mask, 128."""
+    return sum(1 << ((day + 1) % 7) for day in weekdays) if weekdays else 128
 
 
 def alarm(
