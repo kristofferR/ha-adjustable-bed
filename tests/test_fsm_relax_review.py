@@ -297,7 +297,7 @@ async def test_registered_save_disconnect_cached_preflight_reconnects_new_memory
     address = "AA:BB:CC:DD:EE:FF"
     entry = MockConfigEntry(domain=const.DOMAIN, data={
         CONF_ADDRESS: address, const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
-        const.CONF_MOTOR_PULSE_COUNT: 1, const.CONF_DISCONNECT_AFTER_COMMAND: True,
+        const.CONF_MOTOR_PULSE_COUNT: 1, const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_RELEASE,
         "capabilities": {"fsm_relax": "0208000008"},
     })
     entry.add_to_hass(hass)
@@ -346,7 +346,7 @@ async def test_paired_save_replacement_keeps_asymmetric_target_memories(
     hass: HomeAssistant, service: str, side: str,
 ) -> None:
     left_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", const.CONF_BED_TYPE: const.BED_TYPE_FSM_RELAX,
-                 const.CONF_DISCONNECT_AFTER_COMMAND: True,
+                 const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_RELEASE,
                  "capabilities": {"fsm_relax": "0208000008"}}
     right_data = {**left_data, CONF_ADDRESS: "AA:BB:CC:DD:EE:02"}
     entry = MockConfigEntry(domain=const.DOMAIN, data=build_pair_entry_data(left_data, right_data, name="Pair"))

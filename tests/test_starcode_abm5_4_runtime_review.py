@@ -102,7 +102,7 @@ async def test_cold_public_coordinator_classification_and_pending_query_do_not_d
             const.CONF_STARCODE_UI_SELECTOR: "BOX15",
             const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX25",
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)
@@ -246,7 +246,7 @@ async def test_actual_HA_adoption_rebuilds_catalog_once_preserves_side_identity_
         const.CONF_MOTOR_COUNT: 2,
         const.CONF_HAS_MASSAGE: True,
         const.CONF_DISABLE_ANGLE_SENSING: True,
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_STARCODE_COMMAND_SELECTOR: "none",
         const.CONF_STARCODE_UI_SELECTOR: "BOX25",
         const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220",
@@ -366,8 +366,15 @@ async def test_actual_HA_adoption_rebuilds_catalog_once_preserves_side_identity_
             }
             removed_light = coordinator.entity_unique_id("under_bed_lights")
             assert removed_light not in current
+            # The select and number now show the timer and light level.
+            replaced = {
+                coordinator.entity_unique_id(f"starcode_abm5_4_{key}")
+                for key in ("massage_timer", "light_level")
+            }
             assert all(
-                current.get(key) == value for key, value in original.items() if key != removed_light
+                current.get(key) == value
+                for key, value in original.items()
+                if key != removed_light and key not in replaced
             )
             assert any(
                 left in row.unique_id and row.translation_key == "toggle_light"

@@ -145,7 +145,7 @@ async def test_cancelled_hold_still_releases(
 
 async def test_app_is_findable_and_owns_each_receivers_screen(hass: HomeAssistant) -> None:
     choice = bed_type_choice(BED_TYPE_KEESON, APP)
-    assert {o["value"]: o["label"] for o in get_bed_type_options()}[choice] == "OKIN Comfort Bed app (Keeson)"
+    assert {o["value"]: o["label"] for o in get_bed_type_options()}[choice] == "OKIN Comfort Bed app"
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}

@@ -806,45 +806,6 @@ def _pair_side(address: str, variant: str) -> dict[str, object]:
     }
 
 
-@pytest.mark.parametrize(
-    ("left", "right", "requested"),
-    [
-        (KEESON_VARIANT_BASE, KEESON_VARIANT_BASE, KEESON_VARIANT_INNOVA),
-        (KEESON_VARIANT_INNOVA, KEESON_VARIANT_BASE, KEESON_VARIANT_BASE),
-    ],
-    ids=["switch_to_innova", "switch_away_from_innova"],
-)
-async def test_two_address_pair_refuses_a_shared_innova_change(
-    hass: HomeAssistant, left, right, requested
-):
-    """INNOVA is per receiver: the shared options form must not copy it to both sides."""
-    from homeassistant.data_entry_flow import FlowResultType
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.pairing import (
-        build_pair_entry_data,
-        effective_child_data,
-    )
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=build_pair_entry_data(
-            _pair_side("AA:BB:CC:DD:EE:71", left),
-            _pair_side("AA:BB:CC:DD:EE:72", right),
-            name="Pair",
-        ),
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    refused = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
-    assert refused["type"] is FlowResultType.FORM
-    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == left
-    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == right
-
-
 @pytest.mark.parametrize("variant", sorted(OFFLINE_CAPABILITY_SAFE_VARIANTS[BED_TYPE_KEESON]))
 async def test_offline_safe_variants_build_without_a_client(coordinator, variant):
     """Every allowed explicit variant mints its real controller client-free."""

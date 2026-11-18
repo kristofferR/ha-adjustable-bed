@@ -136,8 +136,8 @@ async def test_every_reachable_command_through_control(row):
         elif symbol == "MCU_POWER_SUPPLY":
             await c.async_refresh_diagnostics()
         elif symbol.startswith("SEAT_HOT_SENSOR_"):
-            spec = next(s for s in c.controller_button_specs if s.key == f"rize_motion_{symbol.rsplit('_', 1)[1].lower()}")
-            await spec.press_fn(c)
+            spec = next(s for s in c.controller_switch_specs if s.key == "rize_motion")
+            await spec.set_fn(c, symbol.endswith("_ON"))
         else:
             action = ALIASES[suffix]
             if action in ("flat", "zero_g", "anti_snore"):

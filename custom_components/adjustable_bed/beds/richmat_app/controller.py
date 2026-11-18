@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN
+from ...card import CARD_HIDDEN, CARD_PRESET_SAVE
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
@@ -28,6 +28,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from ..richmat.transport import select_app_link
+from ..richmat.labels import function_label, screen_label
 from . import protocol as p
 from .catalog import (
     ACTIONS,
@@ -78,11 +79,7 @@ def select_link(client: BleakClient) -> Link:
 
 
 def action_name(action: Action) -> str:
-    return re.sub(
-        r"(?<!^)(?=[A-Z])",
-        " ",
-        action["enum"].removeprefix("deviceFunctionItem").removeprefix("deviceFunction"),
-    ).replace("Lumber", "Lumbar")
+    return function_label(action["enum"])
 
 
 async def _press(controller: BedController, *, detail: str, save: bool = False) -> None:
@@ -505,7 +502,9 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
             r"key:([a-z_]+\d+)", lambda match: LABELS.get(match[1], match[0]), expression
         )
         return (
-            expression if expression and "key:" not in expression else action_name(ACTIONS[detail])
+            screen_label(expression)
+            if expression and "key:" not in expression
+            else action_name(ACTIONS[detail])
         )
 
     def _allowed(self) -> set[str]:
@@ -704,8 +703,10 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                         "richmat_app_save_" + detail,
                         "Save " + label,
                         partial(_press, detail=detail, save=True),
-                        translation_key="richmat_app_action",
+                        translation_key="richmat_app_save",
                         translation_placeholders={"action": "Save " + label},
+                        requires_confirmation=True,
+                        card=CARD_PRESET_SAVE,
                     )
                 )
         rows.append(
@@ -759,11 +760,14 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                 STATUS,
                 "mdi:bed",
                 attribute_keys=(EVENTS, CAPABILITIES, ALARMS, BLANKET, LOCAL, REJECTION),
+                entity_registry_enabled_default=False,
             ),
         )
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        # This app has no single-address pairing, so the select is the only
+        # way to reach the other side of a split bed.
         sides = cast(list[str], self.product["selectors"]["0x11eaf"])
         options = tuple(
             name

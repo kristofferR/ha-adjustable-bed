@@ -1,4 +1,4 @@
-"""MLILY Control 5.0.2/code50200, accepted APK Protocol Audit row159.
+"""MLILY Control 5.0.2/code50200.
 
 The compact app catalog comes from the frozen reconciliation002 inputs. It
 retains product identities and ordered control occurrences, not presumed

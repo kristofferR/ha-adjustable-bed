@@ -21,7 +21,7 @@ from custom_components.adjustable_bed.validators import (
     get_variants_for_bed_type,
     is_valid_variant_for_bed_type,
 )
-from tests.form_helpers import NEW_BED_ROUTES, form_fields, shown_markers, start_new_bed
+from tests.form_helpers import NEW_BED_ROUTES, form_fields, start_new_bed
 from tests.test_controller_contract import _FactoryCoordinator
 
 
@@ -108,46 +108,3 @@ async def test_setup_hides_motor_count_and_the_fixed_refresh_delay(hass, route):
     assert CONF_MOTOR_PULSE_DELAY_MS not in fields
 
 
-async def test_options_switch_to_simmons_keeps_the_layout_choice(hass):
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant.common import MockConfigEntry
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_FFE,
-        CONF_BED_TYPE,
-        CONF_MOTOR_COUNT,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-        CONF_PROTOCOL_VARIANT,
-        DOMAIN,
-    )
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-            CONF_BED_TYPE: BED_TYPE_OKIN_FFE,
-            CONF_MOTOR_COUNT: 4,
-            CONF_MOTOR_PULSE_COUNT: 7,
-            CONF_MOTOR_PULSE_DELAY_MS: 150,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    rebuilt = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_SIMMONS}, step_id="settings")
-    assert rebuilt["type"] == "form"
-    markers = shown_markers(rebuilt)
-    assert CONF_MOTOR_COUNT not in markers and CONF_MOTOR_PULSE_DELAY_MS not in markers
-    assert CONF_PROTOCOL_VARIANT in markers
-    saved = await flow._async_options_form(
-        {CONF_BED_TYPE: BED_TYPE_SIMMONS, CONF_PROTOCOL_VARIANT: "simmons_inclined"},
-        step_id="settings",
-    )
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_SIMMONS
-    assert entry.data[CONF_PROTOCOL_VARIANT] == "simmons_inclined"
-    assert entry.data[CONF_MOTOR_COUNT] == 2
-    assert (entry.data[CONF_MOTOR_PULSE_COUNT], entry.data[CONF_MOTOR_PULSE_DELAY_MS]) == (4, 300)

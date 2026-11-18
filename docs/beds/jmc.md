@@ -250,15 +250,14 @@ byte of 16 means `0x16`); the integration does the same.
 | `0x40` | Under-bed light |
 
 Byte 4 is the box type. Box type 4 has device memory; box type 2 also offers the
-app's scripted comfort mode (see the ledger).
+app's scripted comfort mode.
 
 The PIN reply's byte 1 is read as hex text; only `1` means unlocked. A
 rejection is logged as a warning.
 
 #### Evidence
 
-- The clean-room APK Protocol Audits of Adjustable Sleep 2.0.29 (98) and 2.0.37
-  (106): the profile sends only its frozen frames.
+- Adjustable Sleep 2.0.29 (98) and 2.0.37 (106): the profile sends only its frozen frames.
 - The JMC400 support bundle and capture in
   [#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631): the
   position byte order, the anchors, and the go-to and massage frames.
@@ -309,13 +308,11 @@ are kept as the opaque position a memory save stores; byte 1 is ignored.
 
 #### Evidence
 
-- APK Protocol Audit row130 of Svane Remote Version 1.8 (8): the JMC400 route
+- Svane Remote 1.8 (8): the JMC400 route
   sends only its frozen frames.
 
 ## Notes
 
 ### Analysis provenance
 
-- Adjustable Sleep: the APK Protocol Audits of 2.0.29 (98) and 2.0.37 (106).
-- Svane Remote: APK Protocol Audit row130 records all 663 disposition rows and
-  every exclusion.
+Based on Adjustable Sleep 2.0.29 and 2.0.37, and Svane Remote 1.8.

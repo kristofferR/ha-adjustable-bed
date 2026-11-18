@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ..card import CARD_PRESET_SAVE, CARD_UTILITY
 from ..controller_state import StateKey, StateUpdate
 from ..profiles.ff_frame import (
     SOLACE_PROFILES,
@@ -158,6 +159,12 @@ class WoosaController(SolaceController):
                 key=f"woosa_{action.replace('save_', 'program_').replace('mode_', 'massage_mode_')}",
                 name=name,
                 press_fn=partial(_button_action, action=action),
+                translation_key=f"woosa_{action.replace('save_', 'program_')}"
+                if action.startswith("save_")
+                else None,
+                # Saving overwrites the stored position, so the card asks first.
+                requires_confirmation=action.startswith("save_"),
+                card=CARD_PRESET_SAVE if action.startswith("save_") else CARD_UTILITY,
             )
             for action, name in actions
         )

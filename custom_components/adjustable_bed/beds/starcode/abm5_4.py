@@ -11,7 +11,14 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
-from ...card import CARD_LIGHT_LEVEL, CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ...card import (
+    CARD_LIGHT_LEVEL,
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_MASSAGE_TIMER,
+    CARD_PRESET_SAVE,
+    CARD_UTILITY,
+)
 from ...command_scheduler import copy_context_without_command
 from ...const import (
     CONF_BLE_DEVICE_NAME,
@@ -34,6 +41,7 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
+    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
@@ -41,7 +49,6 @@ from ..entity_specs import (
 from .abm5_4_profiles import (
     FIRMWARE_UUID,
     MANUFACTURER_UUID,
-    STATE_KEYS,
     TRANSPORTS,
     RetainedAppState,
     build_frame,
@@ -385,12 +392,11 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # Connecting wakes the controller and reads the firmware. The bed reports
+        # massage state itself, so its query is a diagnostic fallback.
         actions = (
-            "wake",
             "refresh",
-            "firmware",
             "use_detected_profile",
-            "massage_release",
             "union_up",
             "union_down",
             "light_plus",
@@ -414,9 +420,12 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 else None,
                 card=CARD_LIGHTING
                 if action in ("light_plus", "light_minus", "light_on", "light_off")
-                else CARD_MASSAGE
-                if action == "massage_release"
+                else CARD_PRESET_SAVE
+                if action.startswith("save_")
                 else CARD_UTILITY,
+                # Saving or resetting overwrites stored positions, so the card asks first.
+                requires_confirmation=action.startswith("save_") or action == "reset",
+                diagnostic=action == "refresh",
             )
             for action in actions
         )
@@ -455,15 +464,39 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        # Raw fields and selectors stay in diagnostics; the select and number
+        # show the timer and light level where the bed accepts them.
+        positive = self.command_selector in _POSITIVE_SELECTORS
+        keys: tuple[tuple[str, bool], ...] = (
+            ("manufacturer", False),
+            ("firmware", False),
+            ("wave", True),
+            ("head_intensity", True),
+        )
+        if not positive:
+            keys += (("massage_timer", True), ("light_level", True))
         return tuple(
             ControllerStateSensorSpec(
                 "starcode_abm5_4_" + key,
                 "starcode_abm5_4_" + key,
                 _state_key(key),
                 "mdi:information-outline",
-                entity_registry_enabled_default=not key.startswith("raw_"),
+                entity_registry_enabled_default=enabled,
             )
-            for key in STATE_KEYS
+            for key, enabled in keys
+        )
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        return (
+            ControllerStateBinarySensorSpec(
+                "starcode_abm5_4_massage_active",
+                "starcode_abm5_4_massage_active",
+                _field_key("massage_on"),
+                "mdi:vibrate",
+                entity_registry_enabled_default=True,
+                card=CARD_MASSAGE,
+            ),
         )
 
     def _role(self, client: BleakClient, uuid: str) -> BleakGATTCharacteristic:

@@ -1,4 +1,4 @@
-"""KomfyD 1.0.9 and ComfyDS 1.0.0, accepted row084 / cluster-016.
+"""KomfyD 1.0.9 and ComfyDS 1.0.0.
 
 Hand-kept from each accepted report and the accepted reconciliation command
 rows C01–C32. Every literal is independently checked in test_comfy_vectors.

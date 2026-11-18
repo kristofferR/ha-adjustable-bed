@@ -73,11 +73,12 @@ continues until the lease runs out, then the selector STOP follows.
 
 The profile exposes proven head, feet, lumbar, and selector-supported neck
 movement, the app's preset and memory actions, position refresh, and eligible
-light/massage actions. Position target values and unlabelled state fields keep
-the app's raw axis/field identities; the integration does not guess physical
-axis labels or semantics. Nine proven UI selectors expose axis `0`, `1`, and
-`2` target numbers over the logical `0..100` range. BOX25 and BOX25_STAR also
-retain separate one-shot voice endpoints at `0` and `100`. Stable BOX3633
+light/massage actions. The app's position axes `0`, `1` and `2` belong to its
+head, foot and lumbar controllers, so they appear as head, foot and lumbar
+target numbers over the logical `0..100` range on nine proven UI selectors.
+Unlabelled app state fields stay in diagnostics. The app's voice shortcuts
+(STOP, one-step brightness and position targets `0` and `100`) repeat existing
+controls and are not separate entities. Stable BOX3633
 continues to expose its direction controls before target-event creation; its
 conditional navigation-race target slider remains excluded.
 
@@ -102,10 +103,7 @@ physical side's explicit selector. No physical axis meaning is inferred.
 On `BOX25` and `BOX25_STAR`, lights and massage follow the app's actual callers.
 The brightness number spans `0..6`: positive values send one brightness
 frame, while zero uses the separate light-off route. The controller brightness
-setter still supports the distinct source value-zero brightness frame. Two
-one-step HA buttons adapt the source's relative voice brightness calls; they
-retain the current `0..6` level at either endpoint and wait for a known level
-before sending. Slider and palette commits require the parsed under-bed-light
+setter still supports the distinct source value-zero brightness frame. Slider and palette commits require the parsed under-bed-light
 enabled state. HA commits require the active BLE controller session but do
 not reproduce the app's UI-only debounce or local preview. Combined massage
 intensity spans `0..7` and maps to builder
@@ -132,10 +130,6 @@ exposed. The two empty BOX15 writer calls are retained as exact empty-value
 attempts in the internal route table; no payload bytes or platform acceptance
 are inferred for them, and they do not create public massage controls.
 
-Current caller policy, its accepted addendum/audit hashes, and the selector
-classification correction are indexed additively in the row003 disposition
-ledger. They leave the
-canonical route table and original dynamic-vector provenance intact.
 
 Raw RX state is parsed atomically: malformed or bounds-faulting packets, and
 callbacks without a current BLE notification session, leave the prior state
@@ -166,7 +160,7 @@ both BOX15 and BOX25 have lumbar. The question has nothing to keep when you
 chose the row yourself, because no route was detected.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
 **Keep** leaves the entry as it is. A change first checks the link: the app's
 control box needs its setup and response characteristics, and each receiver
 route needs the one characteristic it writes. A review then lists the added and

@@ -531,48 +531,6 @@ async def test_reconnected_session_does_not_receive_old_queries():
     assert packets(coord) == []
 
 
-def test_discovery_ledger_has_complete_coverage_and_resolvable_proofs():
-    import ast
-    from collections import Counter
-
-    root = Path(__file__).parents[1]
-    ledger = json.loads((FIXTURES / "ledger.json").read_text())
-    items = ledger["items"]
-    assert len(items) == ledger["counts"]["total_items"] == 892
-    assert len({i["id"] for i in items}) == len(items)
-    assert dict(Counter(i["disposition"] for i in items)) == ledger["counts"]["dispositions"]
-    live_commands = {i["source_command_id"] for i in items if i["id"].startswith("command:")}
-    assert len(live_commands) == 385
-    assert {c["command"].split("_")[0] for c in CASES} == {
-        cid for cid in live_commands if cid < "C376"
-    }
-    assert len([i for i in items if i["id"].startswith("candidate:")]) == 423
-    assert len([i for i in items if i["id"].startswith("catalog:")]) == 21
-    assert len([i for i in items if i["id"].startswith("route:")]) == 27
-    for item in items:
-        assert item["evidence"]
-        if item["disposition"] == "EXCLUDED":
-            assert item["reason_ref"] in ledger["reasons"]
-            assert item["id"] in ledger["exclusion_inventory"][item["reason_ref"]]
-        else:
-            assert item["proof_ref"] in ledger["proofs"]
-    for proof in ledger["proofs"].values():
-        for reference in proof["code"] + proof["tests"]:
-            if "::" not in reference:
-                path, line = reference.rsplit(":", 1)
-                assert 0 < int(line) <= len((root / path).read_text().splitlines())
-                continue
-            path, symbol = reference.split("::")
-            tree = ast.parse((root / path).read_text())
-            names = {
-                n.name
-                for n in ast.walk(tree)
-                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
-            }
-            names.update(n.id for n in ast.walk(tree) if isinstance(n, ast.Name))
-            assert symbol.split(".")[-1] in names, reference
-
-
 async def test_native_paired_runtime_routes_left_right_and_both_on_one_connection(hass, hold_clock):
     from pytest_homeassistant.common import MockConfigEntry
 
@@ -674,9 +632,9 @@ async def test_legacy_split_suppresses_unscoped_positions(hass, bed_type, varian
         await inner.async_start_notify()
         notify.assert_not_awaited()
 
-    # Restoring standalone controls keeps the user's feedback preference.
+    # Restored standalone, the bed reads its position: saved, or as its route does.
     standalone = AdjustableBedCoordinator(hass, MockConfigEntry(domain=DOMAIN, data=original))
-    assert standalone.disable_angle_sensing is (stored_preference is None)
+    assert standalone.disable_angle_sensing is False
 
 
 def _reported_light(ctrl, enabled):

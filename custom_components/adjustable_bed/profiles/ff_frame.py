@@ -4,7 +4,7 @@
 HomeKobo 1.4, Sealy MotionFlex 1.0.3 and Sweet Night 1.0.6 routes, the explicit
 Woosa Sleep 1.1.9 variant, and two routes without a report (the user-confirmed
 S4-Y layout and unidentified manual entries). ``BEDSENSE`` is BedSense 1.8
-(row108) and ``MOTION_BED`` is Motion Bed 1.24 (row032), whose callsite table
+and ``MOTION_BED`` is Motion Bed 1.24, whose callsite table
 and typed builders live in ``beds/motion_bed/protocol.py``.
 """
 
@@ -355,7 +355,7 @@ def _actions(*rows: tuple[str, str, str, bytes, str]) -> dict[str, BedSenseActio
 
 _ALL = "123456789"
 _DEFAULT = "1234579"
-# Accepted row108 report C001-C079, in report order. Shared frames are literal app
+# BedSense 1.8 commands C001-C079, in app order. Shared frames are literal app
 # reuse: one byte sequence can drive different axes on different layouts.
 BEDSENSE_ACTIONS: Final = _actions(
     ("back_up", "C001", "back up", control(0x03), _ALL),
