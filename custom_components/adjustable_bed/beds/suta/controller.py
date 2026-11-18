@@ -393,7 +393,7 @@ class SutaController(BedController):
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
         # Decoded notifications stay out of entities; diagnostics and the support bundle keep them.
-        return {"name": self.name, "layout": self.profile.key, "observations": dict(self.observations)}
+        return {"device_name": self.name, "layout": self.profile.key, "observations": dict(self.observations)}
 
     @property
     def commands(self) -> dict[str, Command]:
