@@ -571,13 +571,17 @@ def _v5_6_settings(
     route: Mapping[str, Any],
     location: str,
     changed: dict[str, list[str]],
+    *,
+    paired: bool = False,
 ) -> dict[str, Any]:
     """Return one stored settings mapping in the 5.6 shape.
 
     ``route`` holds the bed type and variant the mapping runs with, so a saved
     "Disable angle sensing" equal to that route's default is dropped. Paired
     sides first take the shared values they inherited, then each side and each
-    original entry is rewritten against its own route.
+    original entry is rewritten against its own route. A pair's parent and
+    sides (``paired``) keep their angle-sensing values as they are, since a
+    side without one would inherit the parent's.
     """
     new = {key: value for key, value in settings.items() if key not in V5_6_REMOVED_KEYS}
     notes = sorted(V5_6_REMOVED_KEYS.intersection(settings))
@@ -589,6 +593,7 @@ def _v5_6_settings(
                 {**route, **_route_of(child)},
                 f"{location}.{child.get(CONF_SIDE, index)}",
                 changed,
+                paired=True,
             )
             if isinstance(child, Mapping)
             else child
@@ -615,15 +620,20 @@ def _v5_6_settings(
     feedback = bed_type_has_position_feedback(
         view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
     )
-    if CONF_DISABLE_ANGLE_SENSING not in new and feedback and not location.endswith(
-        ("options", KEY_ORIGIN_OPTIONS)
+    parent = isinstance(children, list)
+    paired = paired or parent
+    if (
+        CONF_DISABLE_ANGLE_SENSING not in new
+        and feedback
+        and not parent
+        and not location.endswith(("options", KEY_ORIGIN_OPTIONS))
     ):
         # Before 5.6 an entry without the key did not read positions; the route
         # decides only for entries created since.
         new[CONF_DISABLE_ANGLE_SENSING] = True
         notes.append(f"{CONF_DISABLE_ANGLE_SENSING}=True (kept off)")
     disabled = new.get(CONF_DISABLE_ANGLE_SENSING)
-    if isinstance(disabled, bool):
+    if isinstance(disabled, bool) and not paired:
         if disabled is not feedback:
             # Equal to the route's own default: the route decides it now.
             del new[CONF_DISABLE_ANGLE_SENSING]

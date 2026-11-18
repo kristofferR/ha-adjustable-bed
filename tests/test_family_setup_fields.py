@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.app_families import APP_FAMILIES, GUIDED_F
 from custom_components.adjustable_bed.bed_traits import (
     bed_type_has_position_feedback,
     default_connection_mode,
+    reads_positions,
 )
 from custom_components.adjustable_bed.config_flow import (
     _APP_SETUP_STEPS,
@@ -71,7 +72,13 @@ def _route_field(flow: AdjustableBedConfigFlow, step: str) -> str | None:
         asked = {question.key for question in flow._asking[0].questions}
         return const.CONF_PROTOCOL_VARIANT if const.CONF_PROTOCOL_VARIANT in asked else None
     return _ROUTE_STEPS.get(step)
-_FIELDS = (const.CONF_MOTOR_COUNT, const.CONF_HAS_MASSAGE, const.CONF_DISABLE_ANGLE_SENSING)
+_FIELDS = (
+    const.CONF_MOTOR_COUNT,
+    const.CONF_HAS_MASSAGE,
+    const.CONF_DISABLE_ANGLE_SENSING,
+    # The final settings ask angle sensing as Read bed position.
+    const.CONF_READ_POSITIONS,
+)
 
 
 def _starting_rows() -> list[str]:
@@ -230,6 +237,8 @@ async def _missing(data: dict[str, Any], reached: set[str]) -> set[str]:
         const.CONF_MOTOR_COUNT: len(_motor_count_options(bed_type, variant)) > 1,
         const.CONF_DISABLE_ANGLE_SENSING: bed_type_has_position_feedback(bed_type, variant),
     }
+    if const.CONF_READ_POSITIONS in reached:
+        reached = reached | {const.CONF_DISABLE_ANGLE_SENSING}
     missing = {key for key, matters in choices.items() if matters} - owned - reached
     if const.CONF_HAS_MASSAGE not in owned | reached and await _massage_is_a_choice(data):
         missing.add(const.CONF_HAS_MASSAGE)
@@ -476,14 +485,14 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
     form = await flow.async_step_manual_entry({CONF_ADDRESS: ADDRESS})
     assert form["step_id"] == "finish_settings"
     markers = {m.schema: m for m in _fields(form["data_schema"])}
-    shown = const.CONF_DISABLE_ANGLE_SENSING in markers
+    shown = const.CONF_READ_POSITIONS in markers
     bed_type, variant = resolve_bed_type_choice(row)
     routes = (variant or const.VARIANT_AUTO, *(get_variants_for_bed_type(bed_type) or {}))
     # Shown exactly where a route of the row reports positions.
     assert shown == any(bed_type_has_position_feedback(bed_type, r) for r in routes)
     answers = _answers(form, 0)
     if shown and disable:
-        answers[const.CONF_DISABLE_ANGLE_SENSING] = True
+        answers[const.CONF_READ_POSITIONS] = False
     with _finishing(flow), pytest.raises(_Finished) as finished:
         result = await flow.async_step_finish_settings(answers)
         for attempt in range(4):
@@ -494,8 +503,9 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
     reports = bed_type_has_position_feedback(
         saved[const.CONF_BED_TYPE], saved.get(const.CONF_PROTOCOL_VARIANT)
     )
-    expected = True if disable and shown else not reports
-    assert saved[const.CONF_DISABLE_ANGLE_SENSING] is expected
+    assert reads_positions(saved) is (reports and not (disable and shown))
+    # Only a choice against the route's own default is stored.
+    assert (const.CONF_DISABLE_ANGLE_SENSING in saved) is bool(reports and disable and shown)
 
 
 # Bed types whose controller reads positions, on routes the integration does not
@@ -562,7 +572,7 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
 
 @pytest.mark.parametrize(("bed_type", "variant"), _quiet_routes())
 async def test_an_untouched_setup_leaves_a_quiet_route_unread(hass, bed_type, variant):
-    """Left as drawn, every setup of the route saves angle sensing disabled."""
+    """Left as drawn, no setup of the route reads a position."""
     saved = []
     paths: list[list[Any]] = [[]]
     while paths:
@@ -608,4 +618,4 @@ async def test_an_untouched_setup_leaves_a_quiet_route_unread(hass, bed_type, va
         and (s.get(const.CONF_PROTOCOL_VARIANT) or const.VARIANT_AUTO) == variant
     ]
     assert routes, f"no untouched setup reached {bed_type}:{variant}"
-    assert all(s[const.CONF_DISABLE_ANGLE_SENSING] is True for s in routes), routes
+    assert not any(reads_positions(s) for s in routes), routes

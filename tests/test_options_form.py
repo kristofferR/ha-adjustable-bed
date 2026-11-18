@@ -4,6 +4,7 @@ from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
+import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -23,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     CONF_BED_TYPE,
     CONF_CB24_BED_SELECTION,
     CONF_CONNECTION_MODE,
+    CONF_DISABLE_ANGLE_SENSING,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -72,10 +74,8 @@ async def test_cst_options_only_offer_the_selected_profiles_motor_count(
         menu["flow_id"], user_input={"next_step_id": "settings"}
     )
     fields = {marker.schema: marker for marker in form["data_schema"].schema}
-    marker = fields[CONF_MOTOR_COUNT]
-    assert marker.default() == expected_count
-    validator = form["data_schema"].schema[marker]
-    assert validator.validators[-1].container == [expected_count]
+    # A count with one choice is not asked; the profile's own is saved.
+    assert CONF_MOTOR_COUNT not in fields
 
     saved = await hass.config_entries.options.async_configure(
         form["flow_id"], user_input={}
@@ -119,16 +119,17 @@ async def test_configure_shows_the_beds_own_connection_mode_default(
 @pytest.mark.parametrize(
     ("field", "value", "error"),
     [
-        (CONF_MOTOR_PULSE_COUNT, "many", "invalid_number"),
-        (CONF_MOTOR_PULSE_DELAY_MS, "0", "invalid_number"),
         (CONF_BACK_MAX_ANGLE, "200", "invalid_angle"),
+        (CONF_BACK_MAX_ANGLE, "steep", "invalid_angle"),
     ],
 )
-async def test_configure_reports_a_bad_number_on_its_field(
+async def test_configure_reports_a_bad_angle_on_its_field(
     hass: HomeAssistant, enable_custom_integrations, field: str, value: str, error: str
 ) -> None:
     del enable_custom_integrations
-    entry, form = await _settings_form(hass, {CONF_BED_TYPE: BED_TYPE_LINAK})
+    entry, form = await _settings_form(
+        hass, {CONF_BED_TYPE: BED_TYPE_LINAK, CONF_DISABLE_ANGLE_SENSING: False}
+    )
 
     result = await hass.config_entries.options.async_configure(
         form["flow_id"], user_input={field: value}
@@ -136,6 +137,48 @@ async def test_configure_reports_a_bad_number_on_its_field(
 
     assert result["errors"] == {field: error}
     assert field not in entry.data
+
+
+async def test_configure_saves_movement_per_tap_within_its_range(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    """Movement per tap is the only timing shown, and its range is enforced (#510)."""
+    del enable_custom_integrations
+    entry, form = await _settings_form(hass, {CONF_BED_TYPE: BED_TYPE_LINAK})
+    fields = {marker.schema for marker in form["data_schema"].schema}
+    assert CONF_MOTOR_PULSE_COUNT in fields
+    assert CONF_MOTOR_PULSE_DELAY_MS not in fields
+    with pytest.raises(vol.Invalid):
+        form["data_schema"]({CONF_MOTOR_PULSE_COUNT: 101})
+
+    saved = await hass.config_entries.options.async_configure(
+        form["flow_id"], user_input={CONF_MOTOR_PULSE_COUNT: 4}
+    )
+
+    assert saved["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_MOTOR_PULSE_COUNT] == 4
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "hidden"),
+    [
+        # No massage commands.
+        ("customatic_clarity", "has_massage"),
+        ("sleepys_box24", "has_massage"),
+        # Fixed travel replaces both maximum angles.
+        ("serta_mp_remote", CONF_BACK_MAX_ANGLE),
+        ("sbi", CONF_BACK_MAX_ANGLE),
+    ],
+)
+async def test_configure_hides_settings_the_bed_ignores(
+    hass: HomeAssistant, enable_custom_integrations, bed_type: str, hidden: str
+) -> None:
+    del enable_custom_integrations
+    _entry, form = await _settings_form(
+        hass, {CONF_BED_TYPE: bed_type, CONF_DISABLE_ANGLE_SENSING: False}
+    )
+
+    assert hidden not in {marker.schema for marker in form["data_schema"].schema}
 
 
 async def test_cb24_side_is_a_declared_question(
