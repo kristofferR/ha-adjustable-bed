@@ -39,14 +39,7 @@ async def test_status_sensors_follow_the_profile(hass, retain):
     runtime = configure_entity_runtime(
         hass, controller, BED_TYPE_SERENITY if retain else BED_TYPE_DIAGNOSTIC
     )
-    keys = {
-        "serenity_manufacturer",
-        "serenity_status_code",
-        "serenity_massage_timer_code",
-        "serenity_massage_timer_minutes",
-        "serenity_save_event_code",
-        "serenity_alarm_type",
-    }
+    keys = {"serenity_manufacturer", "serenity_massage_timer_minutes", "serenity_alarm_type"}
     entities = _sensor_entities_for(hass, runtime)
     # The entry's stale sweep retires whatever the builder no longer creates.
     assert {entity.unique_id for entity in entities if "serenity_" in entity.unique_id} == (
@@ -208,12 +201,14 @@ async def test_parser_publishes_native_diagnostic_values_and_signed_alarm_attrib
     await controller.refresh_manufacturer()
     assert sensors["serenity_manufacturer"].native_value == "CST13"
     controller._handle_notification(None, status(2))
-    assert sensors["serenity_status_code"].native_value == 2
+    # Raw codes stay in published state, without their own entities.
+    raw = coordinator.controller_state
+    assert raw.get(controller._state_key("status_code")) == 2
     assert sensors["serenity_massage_timer_minutes"].native_value == 20
     await controller.hold_control("save_memory_1", 100)
     controller._handle_notification(None, status(3))
-    assert sensors["serenity_save_event_code"].native_value == 4
-    assert sensors["serenity_massage_timer_code"].native_value == 2
+    assert raw.get(controller._state_key("save_event_code")) == 4
+    assert raw.get(controller._state_key("massage_timer_code")) == 2
     assert sensors["serenity_massage_timer_minutes"].native_value == 20
     payload = status(128, alarm=True)
     payload[4:8] = bytes([128, 6, 129, 255])
@@ -227,5 +222,5 @@ async def test_parser_publishes_native_diagnostic_values_and_signed_alarm_attrib
         "serenity_alarm_on": True,
     }
     controller._handle_notification(None, status(128))
-    assert sensors["serenity_status_code"].native_value == -128
+    assert raw.get(controller._state_key("status_code")) == -128
     assert sensors["serenity_massage_timer_minutes"].native_value is None

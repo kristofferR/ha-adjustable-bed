@@ -442,14 +442,8 @@ class OkinBeddingAppController(OkinCstController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        keys = (
-            "manufacturer",
-            "status_code",
-            "massage_timer_code",
-            "massage_timer_minutes",
-            "save_event_code",
-            "alarm_type",
-        )
+        # Raw status, timer and save codes stay in published state for diagnostics.
+        keys = ("manufacturer", "massage_timer_minutes", "alarm_type")
         return tuple(
             ControllerStateSensorSpec(
                 key=self._key(key),
@@ -458,6 +452,7 @@ class OkinBeddingAppController(OkinCstController):
                 state_key=self._state_key(key),
                 icon="mdi:information-outline",
                 native_unit_of_measurement="min" if key == "massage_timer_minutes" else None,
+                entity_registry_enabled_default=key == "massage_timer_minutes",
                 attribute_keys=tuple(
                     self._state_key(name)
                     for name in ("alarm_repeat", "alarm_hour", "alarm_minute", "alarm_on")
