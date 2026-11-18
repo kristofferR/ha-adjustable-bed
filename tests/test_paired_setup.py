@@ -69,7 +69,6 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
@@ -129,6 +128,7 @@ from custom_components.adjustable_bed.pairing_candidates import (
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profile_recommendations import _watches
 from tests.coordinator_patches import patch_coordinator_global
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 LEFT_ADDR = "AA:BB:CC:DD:EE:01"
 RIGHT_ADDR = "AA:BB:CC:DD:EE:02"
@@ -1011,6 +1011,12 @@ class TestPairedSetup:
         diag = await async_get_config_entry_diagnostics(hass, entry)
         assert diag["paired"] is True
         assert set(diag["sides"]) == {SIDE_LEFT, SIDE_RIGHT}
+        for side in (SIDE_LEFT, SIDE_RIGHT):
+            assert set(diag["sides"][side]["connection"]) == {
+                "mode",
+                "idle_seconds",
+                "reads_positions",
+            }
         from custom_components.adjustable_bed.app_state_store import app_state_store
 
         child = hass.data[DOMAIN][entry.entry_id].children[SIDE_LEFT]
@@ -3860,16 +3866,18 @@ class TestPairedReceiverSettings:
     async def test_unchanged_receiver_form_preserves_defaults_and_other_options(
         self, hass, enable_custom_integrations
     ):
-        from custom_components.adjustable_bed.const import CONF_IDLE_DISCONNECT_SECONDS
+        from custom_components.adjustable_bed.const import (
+            CONF_IDLE_DISCONNECT_SECONDS,
+            CONF_PROFILE_REVIEW_KEPT,
+        )
         from custom_components.adjustable_bed.pairing import effective_child_data, get_child
 
         entry = _paired_entry(hass)
+        # An entry-level key that neither side inherits.
+        unrelated = {CONF_PROFILE_REVIEW_KEPT: {"route": "unrelated"}}
         hass.config_entries.async_update_entry(
             entry,
-            options={
-                CONF_IDLE_DISCONNECT_SECONDS: 95,
-                CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT,
-            },
+            options={CONF_IDLE_DISCONNECT_SECONDS: 95, **unrelated},
         )
         expected = {
             side: effective_child_data(entry.data, side, entry.options) for side in PAIR_SIDES
@@ -3879,7 +3887,7 @@ class TestPairedReceiverSettings:
             menu["flow_id"], {"next_step_id": "right_settings"}
         )
         await hass.config_entries.options.async_configure(form["flow_id"], {})
-        assert entry.options == {CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT}
+        assert entry.options == unrelated
         for side in PAIR_SIDES:
             actual = effective_child_data(entry.data, side, entry.options)
             assert actual == expected[side]

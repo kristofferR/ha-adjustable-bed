@@ -1,7 +1,9 @@
 """S1/S2: actual registered actions through reconnecting physical pair targets."""
 
 import asyncio
+from contextlib import AsyncExitStack
 from copy import copy
+from functools import partial
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -20,6 +22,7 @@ from custom_components.adjustable_bed.beds.majestichome import controller as bed
 from custom_components.adjustable_bed.beds.majestichome import services
 from custom_components.adjustable_bed.beds.majestichome.protocol import Alarm
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.paired_topology import PairedSideError
 from custom_components.adjustable_bed.profile_id import with_profile_ids
@@ -29,6 +32,7 @@ from custom_components.adjustable_bed.services import (
 from custom_components.adjustable_bed.services import (
     async_register_services,
 )
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 from tests.test_majestichome import GATT, notify, written
 from tests.test_majestichome import clock as clock
 from tests.test_majestichome_runtime import runtime as runtime
@@ -61,7 +65,7 @@ async def live_pair(hass, mock_coordinator_connected, clock):
     async def build(mode, *, delayed_clock=False):
         data = _paired_entry_data()
         data[const.CONF_BED_TYPE] = "majestichome"
-        data[const.CONF_PAIR_CONNECTION_MODE] = mode
+        data[CONF_PAIR_CONNECTION_MODE] = mode
         for row, product in zip(data[const.CONF_PAIR_CHILDREN], ("FARM", "JLRM"), strict=True):
             row.update(
                 {
@@ -274,12 +278,17 @@ async def test_list_holds_link_for_bounded_observations(
     hass, runtime, live_pair, protocol_time, route, records, slow
 ):
     timers, submitted, targets, observed_controllers = [], [], [], []
+    generations = {}
     if route == "standalone":
         target, client, _ = runtime
         timers, submitted = standalone_replies(target, client, records=records)
         base_write = client.write_gatt_char.side_effect
 
         async def write(*args, **kwargs):
+            if args[1] == bed.LIST_ALARMS:
+                generations[target] = target._command_link_generation
+                assert not target.controller.requests_connection_recovery
+                assert not target.controller.requires_persistent_connection
             await base_write(*args, **kwargs)
             if slow and args[1] == bed.LIST_ALARMS:
                 await asyncio.sleep(1)
@@ -298,6 +307,9 @@ async def test_list_holds_link_for_bounded_observations(
 
         def delayed(side, child, generation):
             ctrl, link = child.controller, child.controller._link
+            generations[child] = child._command_link_generation
+            assert not ctrl.requests_connection_recovery
+            assert not ctrl.requires_persistent_connection
             observed_controllers.append(ctrl)
             rx = link.rx
             loop = asyncio.get_running_loop()
@@ -332,6 +344,8 @@ async def test_list_holds_link_for_bounded_observations(
         # Slow GATT completion and later records do not restart the five-second window.
         assert protocol_time.time() < max(submitted) + 5.01
         assert all(child._command_connection_holds == 0 for child in targets)
+        assert all(child._command_demand == 0 for child in targets)
+        assert all(child._command_link_generation == generations[child] for child in targets)
         if route.startswith("sequential"):
             assert not targets[0].is_connected and targets[0].controller is None
             assert observed_controllers and all(not ctrl.alarms for ctrl in observed_controllers)
@@ -617,43 +631,59 @@ async def test_preflight_retains_links_until_all_targets_finish(
 ):
     live = await live_pair("concurrent")
     original = bed.MajesticHomeController.prepare_live
-    if not paired:
-        monkeypatch.setattr(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
-            lambda *args: ([(child, "both") for child in live.children.values()], []),
-        )
-    for child in live.children.values():
-        child._disconnect_after_command = True
-        # Make the handoff expire as soon as the next target yields.
-        monkeypatch.setattr(child, "_idle_disconnect_delay", lambda: 0)
+    targets = live.children
+    async with AsyncExitStack() as cleanup:
+        if not paired:
+            targets = {}
+            for side, child in live.children.items():
+                entry = MockConfigEntry(domain=const.DOMAIN, data=dict(child.entry.data), version=5)
+                entry.add_to_hass(hass)
+                standalone = AdjustableBedCoordinator(hass, entry)
+                await standalone.async_prime_offline_controller()
+                monkeypatch.setitem(hass.data[const.DOMAIN], entry.entry_id, standalone)
+                monkeypatch.setattr(
+                    standalone,
+                    "_async_connect_locked",
+                    partial(child._async_connect_locked, child=standalone),
+                )
+                cleanup.push_async_callback(standalone.async_shutdown)
+                targets[side] = standalone
+            monkeypatch.setattr(
+                "custom_components.adjustable_bed.services._resolve_sided_targets",
+                lambda *args: ([(child, "both") for child in targets.values()], []),
+            )
+        for child in targets.values():
+            child._disconnect_after_command = True
+            # Make the handoff expire as soon as the next target yields.
+            monkeypatch.setattr(child, "_idle_disconnect_delay", lambda: 0)
 
-    async def prepare(controller, request, **kwargs):
-        if controller.layout.key == "JLRM":
-            for _ in range(5):
-                await asyncio.sleep(0)
-            assert live.children["left"].is_connected
+        async def prepare(controller, request, **kwargs):
+            if controller.layout.key == "JLRM":
+                for _ in range(5):
+                    await asyncio.sleep(0)
+                assert targets["left"].is_connected
+                if fail:
+                    raise ValueError("Right preflight failed")
+            return await original(controller, request, **kwargs)
+
+        with patch.object(bed.MajesticHomeController, "prepare_live", prepare):
+            call = hass.services.async_call(
+                const.DOMAIN,
+                "majestichome",
+                {"device_id": live.parent, "operation": "sync_clock"},
+                blocking=True,
+            )
             if fail:
-                raise ValueError("Right preflight failed")
-        return await original(controller, request, **kwargs)
-
-    with patch.object(bed.MajesticHomeController, "prepare_live", prepare):
-        call = hass.services.async_call(
-            const.DOMAIN,
-            "majestichome",
-            {"device_id": live.parent, "operation": "sync_clock"},
-            blocking=True,
-        )
-        if fail:
-            with pytest.raises(ServiceValidationError, match="Right preflight failed"):
+                with pytest.raises(ServiceValidationError, match="Right preflight failed"):
+                    await call
+            else:
                 await call
-        else:
-            await call
-            for side in live.children:
-                assert len([packet for owner, packet in live.events if owner == side]) == 2
-    assert live.connections == {"left": 1, "right": 1}
-    for child in live.children.values():
-        assert child._command_connection_holds == 0
-        assert not child.is_connected or child._disconnect_timer is not None
+                for side in targets:
+                    assert len([packet for owner, packet in live.events if owner == side]) == 2
+        assert live.connections == {"left": 1, "right": 1}
+        for child in targets.values():
+            assert child._command_connection_holds == 0
+            assert not child.is_connected or child._disconnect_timer is not None
 
 
 @pytest.mark.parametrize("mode", ("concurrent", "sequential"))
@@ -956,7 +986,8 @@ async def test_pair_registration_rechecked_at_submission(
 ):
     live = await live_pair(mode)
     original_execute, original_pace = (
-        services._execute_preflighted, bed.MajesticHomeController._pace
+        services._execute_preflighted,
+        bed.MajesticHomeController._pace,
     )
     armed, changed, replacements = False, [], []
 
@@ -988,7 +1019,8 @@ async def test_pair_registration_rechecked_at_submission(
             pytest.raises(ServiceValidationError) as raised,
         ):
             await hass.services.async_call(
-                const.DOMAIN, "majestichome",
+                const.DOMAIN,
+                "majestichome",
                 {"device_id": getattr(live, target), "operation": "set", "alarm_id": 1},
                 blocking=True,
             )
@@ -1007,7 +1039,8 @@ async def test_registration_error_preserves_real_cleanup_failures(
 ):
     live = await live_pair(mode)
     original_execute, original_pace = (
-        services._execute_preflighted, bed.MajesticHomeController._pace
+        services._execute_preflighted,
+        bed.MajesticHomeController._pace,
     )
     disconnect = live.children["left"].async_disconnect
     stop = live.children["right"].async_stop_command
@@ -1045,7 +1078,8 @@ async def test_registration_error_preserves_real_cleanup_failures(
             pytest.raises(PairedSideError) as raised,
         ):
             await hass.services.async_call(
-                const.DOMAIN, "majestichome",
+                const.DOMAIN,
+                "majestichome",
                 {"device_id": live.parent, "operation": "set", "alarm_id": 1},
                 blocking=True,
             )
@@ -1081,9 +1115,11 @@ async def test_disconnected_sequential_side_stop_quietly_drops_the_whole_call(
 
     with patch.object(services, "_execute_preflighted", execute):
         response = await hass.services.async_call(
-            const.DOMAIN, "majestichome",
+            const.DOMAIN,
+            "majestichome",
             {"device_id": live.parent, "operation": "set", "alarm_id": 1},
-            blocking=True, return_response=True,
+            blocking=True,
+            return_response=True,
         )
     assert response == {} and stopped == ["right"]
     assert not mutations(live.events)

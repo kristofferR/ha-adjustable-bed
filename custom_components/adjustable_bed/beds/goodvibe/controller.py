@@ -935,7 +935,8 @@ class GoodVibeController(BedController):
         self._report_context = None
 
     def on_connection_release(self, reason: str) -> None:
-        if reason not in ("idle_timeout", "command_complete", "disconnect_after_command"):
+        # Releasing after a command and the idle timeout both report "idle_timeout".
+        if reason != "idle_timeout":
             self.choices.monitoring = False
         self._publish()
 

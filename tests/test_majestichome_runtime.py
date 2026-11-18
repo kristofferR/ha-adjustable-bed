@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_co
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.profile_id import with_profile_ids
 from custom_components.adjustable_bed.services import async_register_services
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 from tests.test_majestichome import GATT, notify, written
 from tests.test_majestichome import clock as clock
 from tests.test_paired_setup import _paired_entry_data
@@ -246,7 +247,7 @@ async def test_real_native_pair_parent_and_child_devices_route_settings(
 ):
     data = _paired_entry_data()
     data[const.CONF_BED_TYPE] = "majestichome"
-    data[const.CONF_PAIR_CONNECTION_MODE] = const.PAIR_CONNECTION_MODE_CONCURRENT
+    data[CONF_PAIR_CONNECTION_MODE] = const.PAIR_CONNECTION_MODE_CONCURRENT
     for row, product in zip(data[const.CONF_PAIR_CHILDREN], ("FARM", "JLRM"), strict=True):
         row.update(
             {

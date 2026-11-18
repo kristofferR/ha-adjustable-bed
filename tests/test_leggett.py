@@ -28,6 +28,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OKIMAT,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
@@ -777,13 +778,15 @@ class TestLeggettGen2Connection:
         """Only LP Gen2 connects and discovers GATT before requesting a bond."""
         assert requires_pairing_after_service_discovery(bed_type, variant) is expected
 
+    @pytest.mark.parametrize("mode", ["always", "idle"])
     async def test_gen2_unexpected_disconnect_schedules_auto_reconnect(
         self,
         hass: HomeAssistant,
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
+        mode: str,
     ):
-        """A persistent Gen2 bed should promptly repair an unexpected drop."""
+        """A Gen2 bed promptly repairs a drop of a held link or inside the idle window."""
         del mock_coordinator_connected
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -796,6 +799,7 @@ class TestLeggettGen2Connection:
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: True,
                 CONF_PREFERRED_ADAPTER: "auto",
+                CONF_CONNECTION_MODE: mode,
             },
             unique_id="AA:BB:CC:DD:EE:85",
             entry_id="leggett_gen2_auto_reconnect_test",
@@ -803,8 +807,8 @@ class TestLeggettGen2Connection:
         entry.add_to_hass(hass)
 
         coordinator = AdjustableBedCoordinator(hass, entry)
-        assert coordinator._auto_reconnect_enabled() is True
         await coordinator.async_connect()
+        assert coordinator._auto_reconnect_enabled() is True
         mock_bleak_client.is_connected = False
 
         coordinator._on_disconnect(mock_bleak_client)
