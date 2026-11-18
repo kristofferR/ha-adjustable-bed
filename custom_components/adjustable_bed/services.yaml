@@ -613,10 +613,7 @@ bedtech_app_command:
       required: true
       selector:
         select:
-          options: [headUp, headDown, footUp, footDown, pillowUp, pillowDown, lumbarUp, lumbarDown, presetFlat,
-            presetZeroG, presetAntiSnore, presetTV, lightToggle, massageOn, massageOff, headMassageUp,
-            footMassageUp, massageMode, massageTimer20, memory1, memory1Save, memory2, memory2Save, stop,
-            connectionTest]
+          options: [head_up, head_down, foot_up, foot_down, pillow_up, pillow_down, lumbar_up, lumbar_down, preset_flat, preset_zero_g, preset_anti_snore, preset_tv, light_toggle, massage_on, massage_off, head_massage_up, foot_massage_up, massage_mode, massage_timer20, memory1, memory1_save, memory2, memory2_save, stop, connection_test]
           translation_key: bedtech_app_command_action
     sleeper:
       default: 3
@@ -2877,7 +2874,7 @@ sleeptracker_massage:
       required: true
       selector:
         select:
-          options: [head, foot, pattern, 28Hz, 40Hz, 'off']
+          options: [head, foot, pattern, 28hz, 40hz, 'off']
           translation_key: sleeptracker_massage_action
 
 sleeptracker_preset:

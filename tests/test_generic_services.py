@@ -455,3 +455,17 @@ async def test_set_alarm_rejects_a_slot_that_is_not_a_whole_number(
         )
     assert raised.value.translation_key == "whole_number_required"
     resolve.assert_not_called()
+
+
+def test_selector_option_keys_are_valid_translation_keys() -> None:
+    import re
+
+    selectors = json.loads((ROOT / "strings.json").read_text())["selector"]
+    pattern = re.compile(r"[a-z0-9]([a-z0-9_-]*[a-z0-9])?")
+    bad = {
+        key: option
+        for key, spec in selectors.items()
+        for option in spec.get("options", {})
+        if not pattern.fullmatch(option)
+    }
+    assert not bad
