@@ -19,7 +19,6 @@ from homeassistant.core import HomeAssistant, callback, split_entity_id
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.start import async_at_started
-from homeassistant.util.hass_dict import HassKey
 
 from .const import BED_TYPE_OCTO, DOMAIN
 from .paired_coordinator import entity_runtimes
@@ -119,7 +118,6 @@ NOW_ENABLED: Final[tuple[tuple[str, str], ...]] = (
 )
 
 ISSUE_PREFIX: Final = "retyped_entities_"
-_PENDING: HassKey[dict[str, list[Moved]]] = HassKey(f"{DOMAIN}_retyped_entities")
 
 
 @callback
@@ -150,8 +148,13 @@ def async_carry_over_retyped_entities(
             if row is not None and row.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
                 registry.async_update_entity(row.entity_id, disabled_by=None)
     if moved:
-        # Reported once the entity sweep confirms which replacements the bed builds.
-        hass.data.setdefault(_PENDING, {}).setdefault(entry.entry_id, []).extend(moved)
+
+        @callback
+        def report(_hass: HomeAssistant) -> None:
+            _async_report_references(hass, entry, moved)
+
+        # Automations and scripts load after integrations at startup.
+        async_at_started(hass, report)
 
 
 @callback
@@ -161,32 +164,48 @@ def async_retyped_entities_built(
     built: Collection[tuple[str, str]],
     retained: Collection[tuple[str, str]],
 ) -> None:
-    """Report the automations that still name an old entity the bed has replaced.
+    """Withdraw repair lines for replacements the bed turned out not to provide.
 
     Called by the sweep with the (domain, unique ID) pairs the entry's platforms
     built and those a controller says may still appear, once that record is
-    authoritative. A replacement that may still appear stays pending; one that
-    is neither is dropped, as the sweep removes it.
+    authoritative. The sweep removes any other replacement row.
     """
-    pending = hass.data.get(_PENDING, {})
-    moved = pending.pop(entry.entry_id, [])
-    report_now = [item for item in moved if (item.new_domain, item.new_unique_id) in built]
-    waiting = [
-        item
-        for item in moved
-        if (identity := (item.new_domain, item.new_unique_id)) not in built and identity in retained
-    ]
-    if waiting:
-        pending[entry.entry_id] = waiting
-    if not report_now:
+    moves = _reported_moves(hass, entry)
+    kept = [move for move in moves if (move["domain"], move["unique_id"]) in {*built, *retained}]
+    if kept != moves:
+        _async_update_issue(hass, entry, kept)
+
+
+def _reported_moves(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, str]]:
+    """The repair's lines, with the replacement each one names; stored with the issue."""
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id)
+    moves = (issue.data or {}).get("moves") if issue is not None else None
+    return [dict(move) for move in moves] if isinstance(moves, list) else []
+
+
+@callback
+def _async_update_issue(
+    hass: HomeAssistant, entry: ConfigEntry, moves: list[dict[str, str]]
+) -> None:
+    issue_id = ISSUE_PREFIX + entry.entry_id
+    if not moves:
+        ir.async_delete_issue(hass, DOMAIN, issue_id)
         return
-
-    @callback
-    def report(_hass: HomeAssistant) -> None:
-        _async_report_references(hass, entry, report_now)
-
-    # Automations and scripts load after integrations at startup.
-    async_at_started(hass, report)
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        config_entry_id=entry.entry_id,
+        is_fixable=False,
+        is_persistent=True,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key="retyped_entities",
+        translation_placeholders={
+            "bed": entry.title,
+            "entities": "\n".join(move["line"] for move in moves),
+        },
+        data={"moves": moves},
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -265,8 +284,12 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry, moved: lis
     from homeassistant.components.automation import automations_with_entity  # noqa: PLC0415
     from homeassistant.components.script import scripts_with_entity  # noqa: PLC0415
 
-    lines: list[str] = []
+    registry = er.async_get(hass)
+    moves = _reported_moves(hass, entry)
     for item in moved:
+        # A replacement the bed does not provide was already swept.
+        if registry.async_get_entity_id(item.new_domain, DOMAIN, item.new_unique_id) is None:
+            continue
         users = {
             user
             for reference in (item.old_entity_id, item.old_registry_id)
@@ -282,17 +305,8 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry, moved: lis
             if item.options_changed
             else f"{item.old_entity_id} → {item.new_entity_id}"
         )
-        lines.append(f"- {change}: {', '.join(sorted(users))}")
-    if not lines:
-        return
-    ir.async_create_issue(
-        hass,
-        DOMAIN,
-        ISSUE_PREFIX + entry.entry_id,
-        config_entry_id=entry.entry_id,
-        is_fixable=False,
-        is_persistent=True,
-        severity=ir.IssueSeverity.WARNING,
-        translation_key="retyped_entities",
-        translation_placeholders={"bed": entry.title, "entities": "\n".join(lines)},
-    )
+        line = f"- {change}: {', '.join(sorted(users))}"
+        if all(move["line"] != line for move in moves):
+            moves.append({"line": line, "domain": item.new_domain, "unique_id": item.new_unique_id})
+    if moves != _reported_moves(hass, entry):
+        _async_update_issue(hass, entry, moves)

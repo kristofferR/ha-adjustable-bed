@@ -274,22 +274,44 @@ async def test_repair_finds_automations_by_registry_id_and_changed_options(
     assert "select.bed_timer (its options changed): automation.timer" in entities
 
 
-async def test_repair_waits_until_the_sweep_confirms_the_replacement(
-    hass: HomeAssistant,
-) -> None:
-    """A reload or a bed still discovering capabilities reports nothing yet."""
+async def test_repair_keeps_earlier_lines_and_withdraws_unbuilt_ones(hass: HomeAssistant) -> None:
+    """Replacements carried over at different times share one repair, stored with it."""
     registry = er.async_get(hass)
     entry = _entry(hass)
     _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
-    assert await async_setup_component(hass, "automation", NIGHT_LIGHT)
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": [
+                NIGHT_LIGHT["automation"],
+                {
+                    "alias": "Timer",
+                    "trigger": {"platform": "event", "event_type": "test"},
+                    "action": {
+                        "action": "select.select_option",
+                        "target": {"entity_id": "select.bed_timer"},
+                        "data": {"option": "20"},
+                    },
+                },
+            ]
+        },
+    )
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    _row(registry, entry, "select", "controller_select_ore_comfort_massage_timer", "bed_timer")
     async_carry_over_retyped_entities(hass, entry, _runtime())
     await hass.async_block_till_done()
     issues = ir.async_get(hass)
-    assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
-    # Discovery finishes: the bed builds the light.
-    async_retyped_entities_built(hass, entry, BUILT, frozenset())
-    await hass.async_block_till_done()
-    assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is not None
+    issue_id = ISSUE_PREFIX + entry.entry_id
+    entities = issues.async_get_issue(DOMAIN, issue_id).translation_placeholders["entities"]
+    assert "light.bed_under_bed_lights" in entities and "select.bed_timer" in entities
+
+    # The bed builds the timer but not the light: only the timer's line remains.
+    async_retyped_entities_built(
+        hass, entry, frozenset({("select", f"{ADDRESS}_massage_timer")}), frozenset()
+    )
+    entities = issues.async_get_issue(DOMAIN, issue_id).translation_placeholders["entities"]
+    assert "light.bed_under_bed_lights" not in entities and "select.bed_timer" in entities
 
 
 async def test_no_repair_for_a_replacement_the_bed_does_not_provide(hass: HomeAssistant) -> None:
@@ -303,28 +325,31 @@ async def test_no_repair_for_a_replacement_the_bed_does_not_provide(hass: HomeAs
     assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
 
 
-async def test_a_replacement_built_after_a_late_reply_is_reported_then(
+async def test_a_replacement_the_controller_still_expects_keeps_its_line(
     hass: HomeAssistant,
 ) -> None:
-    """A light the controller expects but has not built yet stays pending."""
+    """A light not built yet but still expected is kept; one neither built nor expected goes."""
     registry = er.async_get(hass)
     entry = _entry(hass)
     _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
     assert await async_setup_component(hass, "automation", NIGHT_LIGHT)
     async_carry_over_retyped_entities(hass, entry, _runtime())
+    await hass.async_block_till_done()
     light = ("light", f"{ADDRESS}_under_bed_lights")
     ledger = EntityLedger(hass, entry, SimpleNamespace())
     ledger.platforms_forwarded(["light"])
     ledger.platform_finished("light")
     issues = ir.async_get(hass)
+    issue_id = ISSUE_PREFIX + entry.entry_id
     with patch(
         "custom_components.adjustable_bed.entity_sweep._retained_identities",
         return_value=frozenset({light}),
     ):
         ledger.async_sweep()
-        await hass.async_block_till_done()
-        assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
-        ledger.record("light", [light])
+    assert issues.async_get_issue(DOMAIN, issue_id) is not None
+    with patch(
+        "custom_components.adjustable_bed.entity_sweep._retained_identities",
+        return_value=frozenset(),
+    ):
         ledger.async_sweep()
-        await hass.async_block_till_done()
-    assert issues.async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is not None
+    assert issues.async_get_issue(DOMAIN, issue_id) is None
