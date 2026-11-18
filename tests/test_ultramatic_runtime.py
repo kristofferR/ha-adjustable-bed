@@ -416,7 +416,8 @@ async def test_reported_sensor_and_disable_are_fenced_on_disconnect(runtime):
     callback(None, bytearray(ALARM_REPORT))
     assert coord.controller_state[SIDES["A"].alarm] is None
     assert sensor.native_value is None
-    with pytest.raises(ConnectionError):
+    # Disconnected, there is no reported alarm to turn off: refused, no plan.
+    with pytest.raises(ValueError, match="Refresh alarms on this connection"):
         c.prepare_alarm(None, disable=True)
     assert writes(client) == []
 

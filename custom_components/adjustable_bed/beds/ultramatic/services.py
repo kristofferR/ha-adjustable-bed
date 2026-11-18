@@ -1,7 +1,8 @@
 """Ultramatic's one bed alarm, with all-target admission and session fences.
 
 The shared ``set_alarm`` action routes Ultramatic targets here. Left is A,
-Right is B, and Both or a standalone bed is AB.
+Right is B and Both is AB; a standalone bed uses its configured side (Both,
+AB, by default).
 """
 
 from __future__ import annotations

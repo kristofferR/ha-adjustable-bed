@@ -5676,7 +5676,8 @@ each connection; its retained prefix does not establish another protocol.
 #### Services
 
 The bed alarm uses [`set_alarm`](../SERVICES.md#set_alarm). Left is the A
-alarm, Right is B, and Both or a standalone bed is AB. With `enabled` and a
+alarm, Right is B and Both is AB; a standalone bed uses its configured side
+(Both by default). With `enabled` and a
 `time`, it writes the whole alarm: `wake_action` is `massage` (Vibrate),
 `zero_g` (ZG) or `memory_1` (M1), and `weekdays` sets the Sunday-bit-0 day mask.
 No weekdays sends the app's mask 128, which chooses today only if the selected

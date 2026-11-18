@@ -13,7 +13,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError
-from ...card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec.okin_nframe import SideRecordParser
 from ...const import CONF_CB24_BED_SELECTION, SIDE_BOTH, SIDE_LEFT, SIDE_RIGHT
 from ...profiles import ultramatic as app
@@ -510,6 +510,12 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
         return ALARM_CAPABILITY
 
     def prepare_alarm(self, settings: AlarmSettings | None, *, disable: bool = False) -> AlarmPlan:
+        if disable and self._link is None:
+            # Offline there is no reported alarm to turn off.
+            raise AlarmError(
+                "alarm_refresh_needed",
+                "Refresh alarms on this connection before turning the alarm off",
+            )
         link, side = self._live(), self._side()
         if disable:
             # Only the alarm reported on this connection is known; it keeps its fields.
@@ -644,7 +650,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
                     translation_key=f"ultramatic_save_{preset.lower()}",
                     scheduler_resource="*",
                     requires_confirmation=True,
-                    card=CARD_PRESETS,
+                    card=CARD_PRESET_SAVE,
                 )
                 for preset, label in (
                     ("ZG", "Save zero gravity position"),
@@ -658,7 +664,7 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
                 translation_key="ultramatic_reset_memory",
                 scheduler_resource="*",
                 requires_confirmation=True,
-                card=CARD_PRESETS,
+                card=CARD_PRESET_SAVE,
             ),
             *(
                 ControllerButtonSpec(
