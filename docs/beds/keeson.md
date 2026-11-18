@@ -1436,14 +1436,16 @@ A second recall of the same selected preset sends preset stop, and so does Stop
 while a preset started in the same BLE session runs; Stop preset sends it at any
 time. Saves send once, without
 an automatic recall. Reset keeps the app's label and asks for confirmation in the
-native card; its physical effect is unknown and no factory-reset or calibration
-meaning is claimed.
+native card. Its physical effect is unknown, so it is a diagnostic entity,
+disabled by default: enable it before it appears. No factory-reset or
+calibration meaning is claimed.
 
 Massage wave and intensity are levels 1 to 3, one per bin of the app's 0-29
 slider; the app's raw progress is still kept. Their physical strengths and
-patterns are unknown. Level 1 is not massage off. Start sends the initial
-command, then current wave, then current intensity; stop sends its own word and
-clears the timer selection. The timer select offers the app's three durations
+patterns are unknown. Level 1 is not massage off. The Massage switch's on sends
+the initial command, then current wave, then current intensity; off sends its
+own word and clears the timer selection. The bed never reports massage and the
+timer ends it unseen, so the switch state stays unknown. The timer select offers the app's three durations
 directly, so the app's timer-cycle key is not a separate button.
 Light on/off is assumed from local commands, without peripheral feedback.
 

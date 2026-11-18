@@ -26,6 +26,7 @@ from ..entity_specs import (
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
+    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
@@ -37,6 +38,8 @@ if TYPE_CHECKING:
 # The app's sliders send three bins (progress 0-9, 10-19, 20-29); entities show bins 1-3.
 LEVEL: Final = {s: StateKey[int | None](f"comfortfurniture_{s}_level") for s in PROFILE.slider_bases}
 TIMER: Final = StateKey[str | None]("comfortfurniture_massage_timer")
+# The bed never reports massage, and its timer ends it unseen, so this stays unknown.
+MASSAGE: Final = StateKey[bool | None]("comfortfurniture_massage")
 SAVE_LABELS: Final = {
     "zero_g": "Save zero-gravity position",
     "flat": "Save flat position",
@@ -228,7 +231,7 @@ class ComfortFurnitureController(OreComfortBedController):
         self._held_cancel = None
         self._notify_char = self._notify_client = self._write_char = None
         self._selected_preset = None
-        self.forward_controller_state_updates(TIMER(None))
+        self.forward_controller_state_updates(TIMER(None), MASSAGE(None))
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -383,6 +386,23 @@ class ComfortFurnitureController(OreComfortBedController):
         )
 
     @property
+    def supports_massage_off_control(self) -> bool:
+        return False  # The massage switch sends start and off.
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        return (
+            ControllerSwitchSpec(
+                "comfortfurniture_massage",
+                "comfortfurniture_massage",
+                _set_massage,
+                state_key=MASSAGE,
+                icon="mdi:vibrate",
+                card=CARD_MASSAGE,
+            ),
+        )
+
+    @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         return (
             ControllerSelectSpec(
@@ -436,14 +456,6 @@ class ComfortFurnitureController(OreComfortBedController):
                 diagnostic=True,
                 card=CARD_UTILITY,
             ),
-            ControllerButtonSpec(
-                "comfortfurniture_massage_start",
-                "Start massage",
-                lambda ctrl: cast(ComfortFurnitureController, ctrl).massage_start(),
-                icon="mdi:play",
-                translation_key="comfortfurniture_massage_start",
-                card=CARD_MASSAGE,
-            ),
         )
 
     @property
@@ -464,6 +476,11 @@ def _level_setter(slider: str) -> Callable[[BedController, float], Awaitable[Non
         await cast(ComfortFurnitureController, ctrl).set_massage_level(slider, int(value) - 1)
 
     return set_level
+
+
+async def _set_massage(ctrl: BedController, on: bool) -> None:
+    controller = cast(ComfortFurnitureController, ctrl)
+    await (controller.massage_start() if on else controller.massage_off())
 
 
 def _save_named(name: str) -> MotorCommandCallable:

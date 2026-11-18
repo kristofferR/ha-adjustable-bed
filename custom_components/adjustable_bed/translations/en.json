@@ -3256,9 +3256,6 @@
       "comfortfurniture_save": {
         "name": "{action}"
       },
-      "comfortfurniture_massage_start": {
-        "name": "Start massage"
-      },
       "comfortfurniture_reset": {
         "name": "Reset"
       },
@@ -4772,6 +4769,9 @@
       },
       "symphony_sonic": {
         "name": "Sonic massage"
+      },
+      "comfortfurniture_massage": {
+        "name": "Massage"
       }
     },
     "binary_sensor": {

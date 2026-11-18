@@ -281,7 +281,6 @@ async def test_entities_use_readable_names_without_duplicate_controls(
         "comfortfurniture_save_reading": "Save reading position",
         "comfortfurniture_preset_stop": "Stop preset",
         "comfortfurniture_reset": "Reset",
-        "comfortfurniture_massage_start": "Start massage",
     }
     wave = next(s for s in c.controller_number_specs if s.key == "comfortfurniture_wave_level")
     assert (wave.native_min_value, wave.native_max_value) == (1, 3)
@@ -301,3 +300,18 @@ async def test_rejected_recall_keeps_the_previous_selection(
         await c.recall_named("flat")
     # A retry recalls again instead of sending preset stop.
     assert c._selected_preset is None
+
+
+async def test_massage_switch_starts_and_stops_with_unknown_state(
+    hass, mock_coordinator_connected, mock_bleak_client
+):
+    c = await make_bed(hass, mock_bleak_client)
+    assert not c.supports_massage_off_control  # the switch replaces the generic off button
+    (massage,) = c.controller_switch_specs
+    with virtual_clock():
+        await massage.set_fn(c, True)
+        await massage.set_fn(c, False)
+    assert _written(mock_bleak_client)[-4:] == [
+        "e5fe1610000011e5", "e5fe1610000022d4", "e5fe1610000012e4", "e5fe1610000010e6",
+    ]
+    assert c._coordinator.controller_state.get(massage.state_key) is None
