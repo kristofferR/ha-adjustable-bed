@@ -12,8 +12,9 @@ keys, unique IDs and the bytes a press sends stay with the caller.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any, Final
 
@@ -25,6 +26,7 @@ from ..card import (
     CARD_UTILITY,
     CardPlacement,
     CardRole,
+    CardSection,
     memory_card,
     motor_card,
 )
@@ -86,7 +88,30 @@ _MOTORS: Final[dict[str, str]] = {
     "all motor": "all_motors",
     "all motors": "all_motors",
     "whole bed": "all_motors",
+    "bed": "all_motors",
     "bed height": "bed_height",
+    "head tilt": "head_tilt",
+    "headrest": "headrest",
+    "head rest": "headrest",
+    "mid-body": "mid_body",
+    "t-flat": "t_flat",
+    "m3 and m4": "motors_3_4",
+    "main motor": "main_motor",
+    "storage lift": "storage_lift",
+    "extra": "extra",
+    "upper section": "upper_section",
+    "lower section": "lower_section",
+    "lounge": "lounge",
+    "zero gravity": "zero_gravity",
+    "zero gravity motor": "zero_gravity",
+    "lumbar and pillow": "lumbar_pillow",
+    "pillow and lumbar tilt": "pillow_lumbar_tilt",
+    "pillow 2": "pillow_2",
+    **{f"motor {n}": f"motor_{n}" for n in range(1, 8)},
+    **{f"control {n}": f"control_{n}" for n in range(1, 6)},
+    "motor 1+2": "motors_1_2",
+    "motor 2+3": "motors_2_3",
+    "motor 3+4": "motors_3_4",
 }
 _MOTOR: Final = re.compile(r"(?P<part>.+?)\s+(?P<dir>up|down)", re.IGNORECASE)
 
@@ -99,7 +124,7 @@ _PRESETS: Final[tuple[tuple[re.Pattern[str], str], ...]] = tuple(
         (r"tv(?: position)?", "preset_tv"),
         (r"lounge(?: position)?", "preset_lounge"),
         (r"anti-snore(?: position)?", "preset_anti_snore"),
-        (r"reading(?: position)?", "preset_reading"),
+        (r"read(?:ing)?(?: position)?", "preset_reading"),
         (r"yoga", "preset_yoga"),
         (r"incline", "preset_incline"),
     )
@@ -130,7 +155,7 @@ _MASSAGE_WORDS: Final = re.compile(
 # Controls that are none of the shared kinds even when they name one.
 _EXTRA_WORDS: Final = re.compile(
     r"\b(?:fan|fans|music|heat|heating|bluetooth|volume|aromatherapy|lock|sync|reset|usb|"
-    r"refresh|calibrate|clear|demonstration|beep|clock)\b",
+    r"refresh|calibrate|clear|demonstration|beep|clock|smart sleep|adjustment)\b",
     re.IGNORECASE,
 )
 # Both ends moving in opposite directions: a one-touch position, not a motor row.
@@ -168,8 +193,8 @@ def _preset(name: str) -> CatalogControl:
 
 def _massage_key(name: str) -> str | None:
     """Return the shared massage description a label names, if any."""
-    text = name.lower()
-    if text in ("massage on/off", "massage toggle"):
+    text = name.lower().replace("massage: ", "massage ")
+    if text in ("massage on/off", "massage toggle", "toggle massage"):
         return "massage_all_toggle"
     if text in ("massage off", "massage mode all off", "stop massage", "massage all off"):
         return "massage_all_off"
@@ -231,7 +256,8 @@ def classify(label: str, *, kind: Kind | None = None) -> CatalogControl | None:
             return CatalogControl(Kind.MASSAGE, key, CARD_MASSAGE, name, None)
         return _shaped(Kind.MASSAGE, MASSAGE_KEY, name)
     if kind in (None, Kind.LIGHT) and (kind is Kind.LIGHT or _LIGHT_WORDS.search(name)):
-        return _shaped(Kind.LIGHT, LIGHT_KEY, name)
+        # One Light button turns the light on or off.
+        return _shaped(Kind.LIGHT, LIGHT_KEY, "Toggle light" if name == "Light" else name)
     if kind in (None, Kind.PRESET) and (kind is Kind.PRESET or _PRESET_WORDS.search(name)):
         return _preset(name)
     return _shaped(Kind.EXTRA, EXTRA_KEY, name)
@@ -270,9 +296,10 @@ def catalog_button(
         translation_key=control.translation_key,
         translation_placeholders=control.placeholders,
         card=control.card,
+        # The card's Set mode guards a memory save; a preset save asks first.
         requires_confirmation=kwargs.pop("requires_confirmation", False)
-        or control.kind is Kind.SAVE,
-        entity_registry_enabled_default=control.enabled,
+        or control.card == CARD_PRESET_SAVE,
+        entity_registry_enabled_default=kwargs.pop("enabled", True) and control.enabled,
         **kwargs,
     )
 
@@ -280,15 +307,16 @@ def catalog_button(
 def unique_buttons(
     specs: Iterable[ControllerButtonSpec | None],
 ) -> tuple[ControllerButtonSpec, ...]:
-    """Drop placeholders, repeated keys, and repeats of a shared description.
+    """Drop placeholders and repeated keys; tell same-named controls apart.
 
     A catalog can list one action twice, or two actions the shared description
-    names the same way. The first keeps the shared shape; a later one with a
-    different label keeps its own label in its kind's ``{action}`` shape.
+    names the same way. The first keeps the shared shape; a later one keeps its
+    own label in its kind's ``{action}`` shape, numbered when that name is taken.
     """
     result: list[ControllerButtonSpec] = []
     keys: set[str] = set()
     shared: set[str] = set()
+    names: Counter[str] = Counter()
     for spec in specs:
         if spec is None or spec.key in keys:
             continue
@@ -298,24 +326,43 @@ def unique_buttons(
                 spec = _own_label(spec)
             else:
                 shared.add(translation_key)
+        name = _shown_name(spec).casefold()
+        names[name] += 1
+        if names[name] > 1:
+            spec = _numbered(spec, names[name])
         keys.add(spec.key)
         result.append(spec)
     return tuple(result)
 
 
-def _own_label(spec: ControllerButtonSpec) -> ControllerButtonSpec:
-    from dataclasses import replace
+def _shown_name(spec: ControllerButtonSpec) -> str:
+    placeholders = spec.translation_placeholders or {}
+    if "preset" in placeholders:
+        return "Save " + display_label(placeholders["preset"])
+    return display_label(placeholders.get("action", spec.name))
 
+
+def _numbered(spec: ControllerButtonSpec, number: int) -> ControllerButtonSpec:
+    if spec.translation_placeholders is None:
+        spec = _own_label(spec)
+    placeholders = dict(spec.translation_placeholders or {})
+    field = "preset" if "preset" in placeholders else "action"
+    placeholders[field] = f"{display_label(placeholders[field])} {number}"
+    return replace(spec, translation_placeholders=placeholders)
+
+
+def _own_label(spec: ControllerButtonSpec) -> ControllerButtonSpec:
     name = display_label(spec.name)
     key = {
-        CARD_PRESETS: PRESET_KEY,
-        CARD_MASSAGE: MASSAGE_KEY,
-        CARD_PRESET_SAVE: SAVE_KEY,
-    }.get(spec.card, EXTRA_KEY)
-    if key == SAVE_KEY:
+        CardSection.PRESETS: PRESET_KEY,
+        CardSection.MEMORY: PRESET_KEY,
+        CardSection.MASSAGE: MASSAGE_KEY,
+        CardSection.LIGHTING: LIGHT_KEY,
+    }.get(spec.card.section, EXTRA_KEY)
+    if spec.card.role is CardRole.SAVE:
         return replace(
             spec,
-            translation_key=key,
+            translation_key=SAVE_KEY,
             translation_placeholders={"preset": re.sub(r"^Save\s+", "", name)},
             card=CARD_PRESET_SAVE,
         )
@@ -323,3 +370,36 @@ def _own_label(spec: ControllerButtonSpec) -> ControllerButtonSpec:
         spec, translation_key=key, translation_placeholders={"action": name}, card=_CARDS[key]
     )
 
+
+def kind_of(spec: ControllerButtonSpec) -> Kind | None:
+    """The kind a catalog spec was placed as, from its card placement."""
+    card = spec.card
+    if card == CARD_PRESET_SAVE or card.role is CardRole.SAVE:
+        return Kind.SAVE
+    return {
+        CardSection.PRESETS: Kind.PRESET,
+        CardSection.MEMORY: Kind.MEMORY,
+        CardSection.MASSAGE: Kind.MASSAGE,
+        CardSection.LIGHTING: Kind.LIGHT,
+        CardSection.MOTORS: Kind.MOTOR,
+    }.get(card.section)
+
+
+def relabel(
+    spec: ControllerButtonSpec, label: str, *, kind: Kind | None = None
+) -> ControllerButtonSpec | None:
+    """Give a catalog spec another label, reshaping it for what the label names."""
+    if kind is None and _SAVE.fullmatch(display_label(label)):
+        kind = Kind.SAVE
+    control = classify(label, kind=kind if kind is not None else kind_of(spec))
+    if control is None:
+        return None
+    return replace(
+        spec,
+        name=label,
+        translation_key=control.translation_key,
+        translation_placeholders=control.placeholders,
+        card=control.card,
+        requires_confirmation=spec.requires_confirmation or control.card == CARD_PRESET_SAVE,
+        entity_registry_enabled_default=spec.entity_registry_enabled_default and control.enabled,
+    )

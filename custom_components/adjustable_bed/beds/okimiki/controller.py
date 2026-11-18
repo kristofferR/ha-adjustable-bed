@@ -148,9 +148,6 @@ class OkimikiController(GoodVibeController):
     def supports_memory_programming(self) -> bool:
         return self.model.memory_slots > 0
 
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key.startswith("program_memory_") and self.supports_memory_programming
-
     @property
     def has_dynamic_controller_entities(self) -> bool:
         return True

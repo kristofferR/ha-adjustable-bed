@@ -185,9 +185,6 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
             for action in PRESETS if not action.startswith("memory_") for save in (False, True)
         )
 
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key in ("program_memory_1", "program_memory_2")
-
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (ControllerStateSensorSpec("sonicsleep", "sonicsleep", MODEL, "mdi:bed", attribute_keys=(OBSERVATIONS, ALARMS, LINK_NAME_STATE), entity_registry_enabled_default=False),)

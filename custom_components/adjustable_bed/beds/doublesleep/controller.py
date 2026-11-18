@@ -18,6 +18,7 @@ from ...controller_state import StateKey
 from ...profiles.okin_nframe import DOUBLESLEEP, OkinNFrameProfile
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -1071,23 +1072,24 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                 )
             }
         return tuple(
-            ControllerButtonSpec(
-                f"doublesleep_{i}",
-                name,
-                action(i),
-                translation_key=f"doublesleep_{kind}action",
-                translation_placeholders={"action": name},
-                diagnostic=i in _MAINTENANCE_ACTIONS,
-                card=card,
-            )
+            spec
             for i, name in items.items()
-            for kind, card in (
-                ("massage_", CARD_MASSAGE)
-                if i in (28, 29, 31, 32, 35, 36, 37, 38, 40, 41, 50, 51, *range(79, 91))
-                else ("light_", CARD_LIGHTING)
-                if i in (54, 58)
-                else ("", CARD_UTILITY),
+            if (
+                spec := catalog_button(
+                    f"doublesleep_{i}",
+                    name,
+                    action(i),
+                    kind=None
+                    if i in _MAINTENANCE_ACTIONS
+                    else Kind.MASSAGE
+                    if i in (28, 29, 31, 32, 35, 36, 37, 38, 40, 41, *range(79, 91))
+                    else Kind.LIGHT
+                    if i == 58
+                    else None,
+                    diagnostic=i in _MAINTENANCE_ACTIONS,
+                )
             )
+            is not None
         )
 
     def controller_button_available(self, key: str) -> bool:

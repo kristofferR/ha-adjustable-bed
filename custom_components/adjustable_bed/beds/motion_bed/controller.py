@@ -25,6 +25,7 @@ from ...controller_state import StateKey
 from ...profiles.ff_frame import MOTION_BED, MotionBedProfile
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerSelectSpec,
@@ -192,6 +193,9 @@ _BUTTON_NAMES: Mapping[str, str] = {
     "motion_bed_yujia": "Yoga",
     "motion_bed_zero_gravity": "Zero pressure",
 }
+
+
+_FIXED_TIMER: Final = re.compile(r"_\d+time$|_tv_\d+")
 
 
 def motion_bed_button_name(key: str, action: MotionBedAction) -> str:
@@ -495,12 +499,13 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        return tuple(
-            ControllerButtonSpec(
-                key=key,
-                name=motion_bed_button_name(key, action),
-                press_fn=_action_callback(action.key),
-                translation_key=None,
+        return unique_buttons(
+            catalog_button(
+                key,
+                motion_bed_button_name(key, action),
+                _action_callback(action.key),
+                # One button per brightness step or timer length: off by default.
+                enabled="_brightness_" not in key and not _FIXED_TIMER.search(key),
             )
             for key, action in button_actions_for(self._active_owners()).items()
         )

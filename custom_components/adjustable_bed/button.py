@@ -1263,8 +1263,6 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         controller = self._coordinator.capability_controller
         hold = controller.standard_button_hold_spec(self.entity_description.key) if controller else None
-        if controller and controller.standard_button_requires_confirmation(self.entity_description.key):
-            attributes["requires_confirmation"] = True
         if hold is not None:
             attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
                               hold_release_delay_ms=hold.release_delay_ms)
@@ -1344,6 +1342,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         self._attr_icon = spec.icon
         if spec.diagnostic:
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        elif spec.card.role is CardRole.SAVE:
+            # Like the shared memory saves: it changes the bed's settings.
+            self._attr_entity_category = EntityCategory.CONFIG
         if spec.diagnostic or not spec.entity_registry_enabled_default:
             self._attr_entity_registry_enabled_default = False
         if spec.release_only or spec.key == "hjbed_release":
@@ -1587,12 +1588,6 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
         """Expose a bounded Both timed move when both sides own that motor."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         action = self.entity_description.key
-        if any(
-            child.capability_controller is not None
-            and child.capability_controller.standard_button_requires_confirmation(action)
-            for child in self._coordinator.children.values()
-        ):
-            attributes["requires_confirmation"] = True
         motor = next(
             (candidate for candidate in ("head", "legs") if action.startswith(f"{candidate}_")),
             None,

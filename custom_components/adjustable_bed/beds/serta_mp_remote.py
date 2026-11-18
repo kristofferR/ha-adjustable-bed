@@ -23,6 +23,7 @@ from ..controller_state import StateKey
 from ..profiles.keeson import app_profile
 from .base import BedController
 from .builder import BuildContext
+from .catalog_buttons import EXTRA_KEY
 from .entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -245,14 +246,23 @@ class SertaMPRemoteController(AppController):
 
             return adjust
 
+        # Step a motor toward a position target; the covers already move these motors.
         return super().controller_button_specs + tuple(
             ControllerButtonSpec(
                 key,
-                key.replace("_", " ").title(),
+                name,
                 press(key),
+                translation_key=EXTRA_KEY,
+                translation_placeholders={"action": name},
                 hold=ControllerHoldSpec(key, 0, 0),
+                entity_registry_enabled_default=False,
             )
-            for key in ("head_target_up", "head_target_down", "foot_target_up", "foot_target_down")
+            for key, name in (
+                ("head_target_up", "Step head up"),
+                ("head_target_down", "Step head down"),
+                ("foot_target_up", "Step foot up"),
+                ("foot_target_down", "Step foot down"),
+            )
         )
 
     async def hold_control(self, control: str, duration_ms: int) -> None:

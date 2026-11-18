@@ -493,9 +493,6 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
     async def preset_anti_snore(self) -> None:
         await self._preset("anti_snore")
 
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key.startswith("program_memory_")
-
     async def lights_toggle(self) -> None:
         if not self.model.light:
             raise NotImplementedError("This model has no light controls")

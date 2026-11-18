@@ -300,9 +300,6 @@ class MlilyRemoteController(CasperBaseController):
             )
         )
 
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key.startswith("program_memory_")
-
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         # Flat and the memory slots are the shared preset_flat/preset_memory/

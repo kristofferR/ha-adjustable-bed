@@ -971,11 +971,14 @@ class GoodVibeController(BedController):
             for detail in self.product.actions
             for child in self.catalog.expansions.get(detail, (detail,))
         )
-        return tuple(
-            detail
-            for detail in dict.fromkeys(details)
-            if not is_placeholder(label(self.actions[detail]))
-        )
+        unique: dict[tuple[object, ...], str] = {}
+        for detail in details:
+            action = self.actions[detail]
+            # Some products list one control twice under different descriptors.
+            same = (action.label, action.gesture, action.short, action.long, action.legacy_short)
+            if not is_placeholder(label(action)):
+                unique.setdefault(same, detail)
+        return tuple(unique.values())
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
@@ -1003,7 +1006,12 @@ class GoodVibeController(BedController):
             )
         buttons: list[ControllerButtonSpec | None] = []
         labels = self.catalog.labels
-        if self.product.light and (self.catalog.bed is None or self.menu_available("light")):
+        # The product's light-off request, unless a control already turns the light off.
+        if (
+            self.product.light
+            and (self.catalog.bed is None or self.menu_available("light"))
+            and not any(label(self.actions[d]) == "Light off" for d in self.control_actions)
+        ):
 
             async def light_off(controller: BedController) -> None:
                 from .services import Request
@@ -1335,7 +1343,12 @@ class GoodVibeController(BedController):
                     card=CardPlacement(CardSection.MOTORS),
                 )
             )
-        if self.product.light and (self.catalog.bed is None or self.menu_available("light")):
+        # The product's light-off request, unless a control already turns the light off.
+        if (
+            self.product.light
+            and (self.catalog.bed is None or self.menu_available("light"))
+            and not any(label(self.actions[d]) == "Light off" for d in self.control_actions)
+        ):
 
             async def duration(controller: BedController, value: str) -> None:
                 from .services import Request

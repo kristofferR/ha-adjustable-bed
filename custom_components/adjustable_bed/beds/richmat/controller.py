@@ -22,7 +22,6 @@ from typing import TYPE_CHECKING, cast
 from bleak import BleakClient
 from bleak.exc import BleakError
 
-from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import richmat as codec
 from ...const import (
     CONF_RICHMAT_REMOTE,
@@ -49,6 +48,7 @@ from ...position_estimate import notify_release_failed
 from ...profiles.richmat import GGRM_ACTIONS, RICHMAT, Button, RichmatProfile
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import ControllerButtonSpec, MotorControlSpec
 from .features import get_richmat_features
 
@@ -476,22 +476,23 @@ class RichmatController(RichmatProfileController):
         # Reuse the MH action identities, translations and card sections: these
         # are the same catalog commands, explicitly selected for a QRRM receiver.
         return tuple(
-            ControllerButtonSpec(
-                key=f"richmat_mh_{command:02x}",
-                name=label,
-                press_fn=partial(_ggrm_button_action, command=command),
-                icon="mdi:content-save" if kind == "richmat_mh_save" else "mdi:timer-outline",
-                translation_key=kind,
-                translation_placeholders={"action": label},
-                requires_confirmation=kind == "richmat_mh_save",
-                card=CARD_MASSAGE
-                if kind == "richmat_mh_massage"
-                else CARD_PRESET_SAVE
-                if kind == "richmat_mh_save"
-                else CARD_UTILITY,
-            )
+            spec
             for command, (label, kind) in GGRM_ACTIONS.items()
             if kind != "richmat_mh_massage" or self._coordinator.has_massage
+            if (
+                spec := catalog_button(
+                    f"richmat_mh_{command:02x}",
+                    label,
+                    partial(_ggrm_button_action, command=command),
+                    kind=Kind.MASSAGE
+                    if kind == "richmat_mh_massage"
+                    else Kind.SAVE
+                    if kind == "richmat_mh_save"
+                    else None,
+                    icon="mdi:content-save" if kind == "richmat_mh_save" else "mdi:timer-outline",
+                )
+            )
+            is not None
         )
 
     async def tap_ggrm_action(self, command: int) -> None:

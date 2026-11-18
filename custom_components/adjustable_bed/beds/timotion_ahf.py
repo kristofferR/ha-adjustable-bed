@@ -27,6 +27,7 @@ from ..const import (
 from ..controller_state import StateKey
 from ..execution import ExecutionCapabilities
 from .base import BedController
+from .catalog_buttons import Kind, catalog_button
 from .entity_specs import ControllerButtonSpec, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
@@ -103,6 +104,8 @@ _CONTROL_ACTIONS: Final = (
     _ControlAction("light", "Light", group2=0x20, icon="mdi:lightbulb-outline"),
     _ControlAction("chair", "Chair", group2=0x40, lock_bit=6, icon="mdi:chair-rolling"),
 )
+# The legacy cover each app control drives (#615, #669, #670).
+_COVER_CONTROLS: Final = {"back": 1, "legs": 2, "head": 3, "feet": 4, "pillow": 5}
 _CONTROL_ACTION_BY_KEY: Final = {action.key: action for action in _CONTROL_ACTIONS}
 _BUTTON_PREFIX: Final = "timotion_ahf_"
 _STATUS_NOT_READY_MESSAGE: Final = (
@@ -191,15 +194,29 @@ class TiMOTIONAhfController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        """Expose the app's thirteen literal controls as stable named actions."""
+        """Expose the app's literal controls that no cover or light entity already sends."""
+        covered = {
+            f"control_{_COVER_CONTROLS[spec.key]}_{direction}"
+            for spec in self.motor_control_specs
+            if spec.key in _COVER_CONTROLS
+            for direction in ("up", "down")
+        }
         return tuple(
-            ControllerButtonSpec(
-                key=f"{_BUTTON_PREFIX}{action.key}",
-                name=action.label,
-                press_fn=_press_action(action.key),
-                icon=action.icon,
-            )
+            spec
             for action in _CONTROL_ACTIONS
+            # The light toggle and assumed light send the Light action.
+            if action.key not in covered and action.key != "light"
+            if (
+                spec := catalog_button(
+                    f"{_BUTTON_PREFIX}{action.key}",
+                    action.label,
+                    _press_action(action.key),
+                    # Night and Chair recall positions the app names.
+                    kind=Kind.PRESET if action.key in ("night", "chair") else Kind.MOTOR,
+                    icon=action.icon,
+                )
+            )
+            is not None
         )
 
     @property

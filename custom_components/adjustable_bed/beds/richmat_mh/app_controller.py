@@ -15,6 +15,7 @@ from ...execution import HOLD_CEILING_MS
 from ...profiles.richmat_mh_apps import APPS
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, relabel
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -482,11 +483,14 @@ class RichmatMHAppController(RufRichmatController):
         specs = []
         for spec in super().controller_button_specs:
             control = next((c for c in self._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
-            if control and spec.translation_placeholders and "action" in spec.translation_placeholders:
+            if control:
                 # These catalogs label controls with command names ("Massage Head
                 # Intensity Inc", "Zg2 Set"); show them in the MH buttons' wording.
                 name = command_label(control.label, save=control.kind == "save")
-                spec = replace(spec, name=name, translation_placeholders={"action": name})
+                relabelled = relabel(spec, name, kind=Kind.SAVE if control.kind == "save" else None)
+                if relabelled is None:
+                    continue
+                spec = relabelled
             if control and control.keep_ms:
                 spec = replace(spec, hold=ControllerHoldSpec(f"mh_{control.code:02x}"))
             if control and (control.kind == "save" or control.code == 0x62):

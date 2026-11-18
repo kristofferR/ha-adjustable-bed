@@ -170,9 +170,6 @@ class SutaController(BedController):
     def commands_share_timer(self) -> bool:
         return True
 
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key.startswith("program_memory_")
-
     def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
         action = {"preset_tv": "both_set_tv", "preset_anti_snore": "both_set_snore",
                   "preset_zero_g": "set_mode_zerog"}.get(key)
@@ -288,7 +285,7 @@ class SutaController(BedController):
             # TWO drives back and foot together; alone it is the panel's only motion.
             direction = "up" if key.endswith("_up") else "down"
             both = all(f"ctrl_{axis}_up" in self.profile.commands for axis in ("back", "foot"))
-            return f"Back and foot {direction}" if both else direction.capitalize()
+            return f"{'Back and foot' if both else 'Bed'} {direction}"
         return _TEXT_LABELS.get(key)
 
     @staticmethod

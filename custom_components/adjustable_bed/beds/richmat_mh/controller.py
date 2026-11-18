@@ -26,9 +26,6 @@ from homeassistant.util import dt as dt_util
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import (
     CARD_MASSAGE,
-    CARD_PRESET_SAVE,
-    CARD_PRESETS,
-    CARD_UTILITY,
     CardPlacement,
     CardRole,
     CardSection,
@@ -46,6 +43,7 @@ from ...detection import is_mac_like_name
 from ...profiles.richmat import RICHMAT_MH, RichmatProfile
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
@@ -189,7 +187,11 @@ def _waist_setting_key(side: str, field: str) -> StateKey[str | None]:
 
 
 # Tap kinds the card shows outside its utility section.
-_TAP_CARDS: Final = {"richmat_mh_preset": CARD_PRESETS, "richmat_mh_massage": CARD_MASSAGE}
+_TAP_KINDS: Final = {
+    "richmat_mh_preset": Kind.PRESET,
+    "richmat_mh_massage": Kind.MASSAGE,
+    "richmat_mh_save": Kind.SAVE,
+}
 # Angle targets sit with the cover of the motor each angle number names.
 _ANGLE_MOTORS: Final = {"back": "back", "foot": "feet", "pillow": "pillow"}
 
@@ -884,35 +886,29 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        specs: list[ControllerButtonSpec] = []
+        specs: list[ControllerButtonSpec | None] = []
         for _name, (recall, save) in self._presets().items():
             if save is not None:
                 label = f"Save {_display_label(recall.label)}"
                 specs.append(
-                    ControllerButtonSpec(
+                    catalog_button(
                         f"richmat_mh_{save.code:02x}",
                         label,
                         _tap_action(save.code),
+                        kind=Kind.SAVE,
                         icon="mdi:content-save",
-                        translation_key="richmat_mh_save",
-                        translation_placeholders={"action": label},
-                        requires_confirmation=True,
-                        card=CARD_PRESET_SAVE,
                     )
                 )
         for tap in self._taps():
             specs.append(
-                ControllerButtonSpec(
+                catalog_button(
                     tap.key,
                     tap.name,
                     _tap_action(tap.code),
+                    kind=_TAP_KINDS.get(tap.translation_key),
                     icon="mdi:content-save" if tap.translation_key == "richmat_mh_save" else "mdi:gesture-tap",
-                    translation_key=tap.translation_key,
-                    translation_placeholders={"action": tap.name},
-                    requires_confirmation=tap.translation_key == "richmat_mh_save",
-                    card=CARD_PRESET_SAVE
-                    if tap.translation_key == "richmat_mh_save"
-                    else _TAP_CARDS.get(tap.translation_key, CARD_UTILITY),
+                    # A factory reset forgets every saved position.
+                    requires_confirmation=tap.name == "Factory Reset",
                 )
             )
         if self._smart_set_lock():
@@ -942,7 +938,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                         cancel_movement=False,
                     )
                 )
-        return tuple(specs)
+        return tuple(spec for spec in specs if spec is not None)
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:

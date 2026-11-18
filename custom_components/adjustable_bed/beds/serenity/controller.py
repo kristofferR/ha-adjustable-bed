@@ -22,7 +22,6 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability
-from ...card import CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...const import (
     CONF_BLE_BOND_ESTABLISHED,
@@ -46,6 +45,7 @@ from ...profiles.okin_nframe import (
 )
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
@@ -590,19 +590,24 @@ class OkinBeddingAppController(OkinCstController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
-            ControllerButtonSpec(
-                self._key(action),
-                name,
-                _callback(action),
-                # Saving overwrites a stored preset, so the card asks first.
-                requires_confirmation=action.startswith("save_"),
-                # Saves get their own translation key: the card places them apart.
-                translation_key="okin_bedding_app_save" if action.startswith("save_") else None,
-                translation_placeholders={"action": name} if action.startswith("save_") else None,
-                diagnostic=action == "refresh_manufacturer",
-                card=CARD_PRESET_SAVE if action.startswith("save_") else CARD_UTILITY,
-            )
+            spec
             for action, name in self._app.buttons
+            # The shared light toggle sends the same light frame.
+            if not (action == "light_toggle" and self.supports_light_toggle_control)
+            if (
+                spec := catalog_button(
+                    self._key(action),
+                    name,
+                    _callback(action),
+                    kind=Kind.SAVE
+                    if action.startswith("save_")
+                    else Kind.MOTOR
+                    if action.startswith("selector_")
+                    else None,
+                    diagnostic=action == "refresh_manufacturer",
+                )
+            )
+            is not None
         )
 
     async def execute_app_control(self, action: str) -> None:
