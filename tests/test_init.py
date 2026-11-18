@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
@@ -20,18 +21,15 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import (
     SERVICE_GENERATE_SUPPORT_BUNDLE,
     SERVICE_GOTO_PRESET,
-    SERVICE_LINAK_MOVE_SIMULTANEOUS,
-    SERVICE_LINAK_RENAME,
-    SERVICE_LINAK_SET_ALARM,
     SERVICE_SAVE_PRESET,
     SERVICE_SET_POSITION,
     SERVICE_SET_POSITIONS,
-    SERVICE_SOLACE_AUDIO,
-    SERVICE_SOLACE_SET_ALARM,
     SERVICE_STOP_ALL,
     SERVICE_TIMED_MOVE,
     async_migrate_entry,
 )
+from custom_components.adjustable_bed.beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS
+from custom_components.adjustable_bed.beds.solace.services import SERVICE_SOLACE_AUDIO
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_DIAGNOSTIC,
@@ -87,6 +85,7 @@ from custom_components.adjustable_bed.const import (
     PAIR_MODE_SINGLE_ADDRESS,
 )
 from custom_components.adjustable_bed.pairing import is_paired
+from custom_components.adjustable_bed.services import SERVICE_RENAME, SERVICE_SET_ALARM
 
 
 def _configure_linak_advanced(
@@ -159,10 +158,9 @@ class TestIntegrationSetup:
         assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
         assert hass.services.has_service(DOMAIN, SERVICE_SET_POSITIONS)
         assert hass.services.has_service(DOMAIN, SERVICE_LINAK_MOVE_SIMULTANEOUS)
-        assert hass.services.has_service(DOMAIN, SERVICE_LINAK_RENAME)
-        assert hass.services.has_service(DOMAIN, SERVICE_LINAK_SET_ALARM)
+        assert hass.services.has_service(DOMAIN, SERVICE_RENAME)
+        assert hass.services.has_service(DOMAIN, SERVICE_SET_ALARM)
         assert hass.services.has_service(DOMAIN, SERVICE_SOLACE_AUDIO)
-        assert hass.services.has_service(DOMAIN, SERVICE_SOLACE_SET_ALARM)
 
     async def test_setup_entry_connection_timeout(
         self,
@@ -1535,7 +1533,7 @@ class TestServices:
 
         await hass.services.async_call(
             DOMAIN,
-            SERVICE_LINAK_RENAME,
+            SERVICE_RENAME,
             {"device_id": [device_id], "name": "Seng Å"},
             blocking=True,
         )
@@ -1731,18 +1729,16 @@ class TestServices:
         ].id
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        await hass.services.async_call(
-            DOMAIN,
-            SERVICE_LINAK_SET_ALARM,
-            {
-                "device_id": [device_id],
-                "seconds": 3600,
-                "actions": [{"action": "memory_1"}],
-                "recurrence_count": 31,
-                "recurrence_minutes": 1440,
-            },
-            blocking=True,
-        )
+        with patch(
+            "custom_components.adjustable_bed.services.dt_util.now",
+            return_value=datetime(2026, 11, 18, 6, 0, tzinfo=UTC),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_SET_ALARM,
+                {"device_id": [device_id], "enabled": True, "time": "07:00:00", "wake_action": "memory_1"},
+                blocking=True,
+            )
 
         assert mock_bleak_client.write_gatt_char.await_args_list == [
             call(LINAK_CONFIG_CHAR_UUID, bytes.fromhex("89 3B 80 00 01"), response=True),
@@ -1751,7 +1747,7 @@ class TestServices:
                 bytes.fromhex("00 10 0E 01 0E 00 01 00"),
                 response=True,
             ),
-            call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("10 A0 FD"), response=True),
+            call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("10 00 00"), response=True),
             call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("20"), response=True),
         ]
 

@@ -10,11 +10,13 @@ import contextlib
 import logging
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import timedelta
 from time import monotonic
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
@@ -53,6 +55,7 @@ from ..entity_specs import (
 from ..lifecycle import CapabilitySnapshotPolicy
 from .protocol import (
     LINAK_AXIS_MASKS,
+    LinakAlarmAction,
     LinakAlarmStep,
     LinakCapabilitySnapshot,
     LinakModelVariant,
@@ -2090,6 +2093,47 @@ class LinakController(BedController):
         if not name or len(name) > 17 or len(encoded) > 17:
             raise ValueError("Linak device names must contain 1 to 17 bytes")
         await self._write_protected_characteristic(LINAK_DEVICE_NAME_UUID, encoded)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if not self.supports_alarm:
+            return None
+        return AlarmCapability(
+            wake_actions=("none", "memory_1", "memory_2", "memory_3", "memory_4"),
+            massage=True,
+            light=True,
+        )
+
+    @staticmethod
+    def _alarm_steps(alarm: AlarmRequest) -> tuple[LinakAlarmStep, ...]:
+        actions = [
+            *(() if alarm.wake_action == "none" else (LinakAlarmAction(alarm.wake_action),)),
+            *((LinakAlarmAction.MASSAGE_TOGGLE,) if alarm.massage else ()),
+            *((LinakAlarmAction.LIGHT_TOGGLE,) if alarm.light else ()),
+        ]
+        if not actions:
+            if alarm.enabled:
+                raise ValueError("Choose a wake position, massage or light for the alarm")
+            # Turning the timer off still carries one action record.
+            actions = [LinakAlarmAction.MEMORY_1]
+        return tuple(LinakAlarmStep(action) for action in actions)
+
+    @staticmethod
+    def _alarm_seconds(alarm: AlarmRequest) -> int:
+        """Seconds until the next occurrence; zero turns the timer off."""
+        if not alarm.enabled:
+            return 0
+        now = alarm.reference_time
+        target = now.replace(hour=alarm.hour, minute=alarm.minute, second=0, microsecond=0)
+        if target <= now:
+            target += timedelta(days=1)
+        return int((target - now).total_seconds())
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        build_timer_event(self._alarm_seconds(alarm), self._alarm_steps(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.program_alarm(self._alarm_seconds(alarm), self._alarm_steps(alarm), 0, 0)
 
     async def program_alarm(
         self,
