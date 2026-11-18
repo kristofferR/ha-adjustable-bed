@@ -204,3 +204,59 @@ def resource_label(name: str) -> str:
     if save and not label.startswith(("M", "TV", "Zero Gravity", "Anti-snore")):
         label = label[:1].lower() + label[1:]
     return f"Save {label}" if save else label
+
+
+# Command-name catalog labels (Nisco, MLILY Supreme) for controls the Richmat MH
+# apps also show, in the MH buttons' wording.
+_COMMAND_NAMES: Final[dict[str, str]] = {
+    "Massage Head On Off": "Head On/Off",
+    "Massage Foot On Off": "Foot On/Off",
+    "Massage Off": "All Off",
+    "All massage off": "All Off",
+    "Massage Head Foot Both Off": "All Off",
+    "Massage Head Foot Both On": "All On",
+    "Massage Pulse": "Pulse",
+    "Massage Wave": "Wave",
+    "Massage Wave3": "Wave 3",
+    "Massage Constant": "Constant",
+    "Massage Mode": "Massage mode",
+    "Massage Intensity1": "Intensity 1",
+    "Massage Intensity2": "Intensity 2",
+    "Massage Intensity3": "Intensity 3",
+    "Massage Off Reset": "Massage off and flat",
+    "Massage Head Foot Intensity Inc": "Massage: Intensity Up",
+    "Massage Head Foot Intensity Dec": "Massage: Intensity Down",
+    "Massage Head Foot Speed Inc": "Massage: Speed Up",
+    "Massage Head Foot Speed Dec": "Massage: Speed Down",
+    "Music Vibration Mode": "Vibration mode",
+    "Head Up Only": "One-click Head Up",
+    "Foot Up Only": "One-click Foot Up",
+    "Head Foot Both": "Head and foot up",
+    "Head Foot On Off": "Head and foot on/off",
+    "Pillow": "Pillow up",
+    "Pillow Lumbar Both Tilt Up": "Pillow and lumbar tilt up",
+    "Pillow Lumbar Both Tilt Down": "Pillow and lumbar tilt down",
+    "Ubl Off": "Underbed light off",
+    "Ubl On Off": "Underbed light on/off",
+    "Flat2": "Flat 2",
+    "Zg2 Back": "Zero Gravity 2",
+    "Memory1": "Memory 1",
+    "Anti Snore3": "Anti-snore 3",
+}
+# The second head/foot step buttons never share a model with the first.
+_COMMAND_ZONE: Final = re.compile(r"Massage (Head|Foot|Lumbar) Intensity (Inc|Dec)\d?")
+_COMMAND_MINUTES: Final = re.compile(r"Massage (\d+)Min")
+
+
+def command_label(label: str, *, save: bool = False) -> str:
+    """Name a command-name catalog label (``Massage Head Intensity Inc``)."""
+    if label == "Zg2 Set":
+        return "Save Zero Gravity 2"
+    if zone := _COMMAND_ZONE.fullmatch(label):
+        name = f"Massage: {zone[1]} {'Up' if zone[2] == 'Inc' else 'Down'}"
+    elif minutes := _COMMAND_MINUTES.fullmatch(label):
+        name = f"Massage: Timer {minutes[1]} Minutes"
+    else:
+        name = _COMMAND_NAMES.get(label, label)
+    return f"Save {name}" if save else name
+

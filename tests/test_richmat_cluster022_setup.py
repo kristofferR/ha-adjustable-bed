@@ -211,7 +211,7 @@ async def test_disconnected_app_mode_calls_keep_the_offline_controller(hass) -> 
             return_value=([(coordinator, "both")], []),
         ),
     ):
-        for fields in ({"transmit_mode": "1"}, {"motor_group": "group_split"}):
+        for fields in ({"transmit_mode": "mode_1"}, {"motor_group": "group_split"}):
             await hass.services.async_call(const.DOMAIN, actions.SERVICE, {
                 "device_id": ["bed"], "action": "app_mode", **fields,
             }, blocking=True)

@@ -92,7 +92,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Write the three aroma timing sliders of a Richmat MH app profile. |
 | [`richmat_mh_light_color`](#richmat_mh_light_color) | Richmat app: light color | Write the LED or button-light page colour of a Richmat MH app profile. |
 | [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run app control | Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands. |
-| [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
+| [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: Set sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
 | [`rize_program_preset`](#rize_program_preset) | Rize: set default preset | Store the current position as a default preset on one physical Rize bed. Select a single paired side and explicitly confirm. |
 | [`sleep_number_command`](#sleep_number_command) | Sleep Number: run command | Runs a Sleep Number control or reading. Readings return their results. See the actions guide for each command's options. |
 | [`sleeptracker_climate`](#sleeptracker_climate) | Sleeptracker: climate | Set local left/right/both fan modes and levels. Level 0 stops the selected fans. Heat sends a 3600 second timer; cool sends a 36000 second timer. Timers and curve are commanded settings, not reported remaining time. |
@@ -1360,7 +1360,7 @@ not enable microphone, recognition or phone infrastructure.
 The opcode is checked against the current profile; this is not a raw-write API.
 The fixed-remote long action waits three seconds, sends the finalized save and
 releases through that caller's sequence. STOP cancels admission or execution.
-`action: app_mode` sets the app's local `transmit_mode` (`0`, `1` or `2`) and/or
+`action: app_mode` sets the app's local `transmit_mode` (`mode_0`, `mode_1` or `mode_2`) and/or
 `motor_group` (`single`, `group_sync` or `group_split`, as the model declares)
 for later commands on that physical side. It neither connects nor waits for a
 running command, and sends nothing itself. The motor group decides which Motor

@@ -8694,11 +8694,11 @@ frames. Snore intervention samples the current mode at the final dispatch
 boundary, including a mode changed while its write waited for the BLE lane.
 The dedicated `13`-family setting is separate from normal anti-snore recall/save.
 
-Button names come from the catalog's command names through a presentation map
-that matches the shared preset and massage buttons; the catalog labels stay as
-recorded. For example `M1` is Memory 1, `Massage 10Min` is Massage: Timer 10
-Minutes, `Zg2 Back`/`Zg2 Set` are Zero Gravity 2 and Save Zero Gravity 2, and
-`Ubl Off` is Under-Bed Light Off.
+Button names come from the catalog's command names, shown in the Richmat MH
+buttons' wording; the catalog labels stay as recorded. For example `Massage Head
+Intensity Inc` is Massage: Head Up, `Massage 10Min` is Massage: Timer 10 Minutes,
+`Zg2 Back`/`Zg2 Set` are Zero Gravity 2 and Save Zero Gravity 2, and `Ubl Off` is
+Underbed light off.
 
 Nisco's light timer preserves the high and low duration bytes. Normal and
 waist mattress controls are dormant, even though startup probes and shared

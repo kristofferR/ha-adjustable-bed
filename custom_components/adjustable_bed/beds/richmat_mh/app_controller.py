@@ -23,7 +23,7 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
-from ..richmat.labels import resource_label
+from ..richmat.labels import command_label
 from ..ruf_richmat.controller import RufRichmatController, waist_init
 from . import protocol
 from .app_catalog import catalog, details
@@ -484,9 +484,8 @@ class RichmatMHAppController(RufRichmatController):
             control = next((c for c in self._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
             if control and spec.translation_placeholders and "action" in spec.translation_placeholders:
                 # These catalogs label controls with command names ("Massage Head
-                # Intensity Inc", "Zg2 Set"); the shared resource wording reads them.
-                words = control.label.lower().split() + (["set"] if control.kind == "save" else [])
-                name = resource_label("_".join(words))
+                # Intensity Inc", "Zg2 Set"); show them in the MH buttons' wording.
+                name = command_label(control.label, save=control.kind == "save")
                 spec = replace(spec, name=name, translation_placeholders={"action": name})
             if control and control.keep_ms:
                 spec = replace(spec, hold=ControllerHoldSpec(f"mh_{control.code:02x}"))

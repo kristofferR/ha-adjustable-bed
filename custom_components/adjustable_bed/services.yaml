@@ -3205,7 +3205,7 @@ richmat_mh_control:
     transmit_mode:
       selector:
         select:
-          options: ["0", "1", "2"]
+          options: [mode_0, mode_1, mode_2]
           translation_key: richmat_mh_transmit_mode
     motor_group:
       selector:

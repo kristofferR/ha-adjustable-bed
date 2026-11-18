@@ -42,7 +42,7 @@ _FIELDS: dict[vol.Marker, object] = {
     vol.Optional("opcode"): cv.byte,
     vol.Optional("query"): vol.In(tuple(QUERIES)),
     # The app's local pickers, applied by later commands; "app_mode" sends nothing itself.
-    vol.Optional("transmit_mode"): vol.In(("0", "1", "2")),
+    vol.Optional("transmit_mode"): vol.In(("mode_0", "mode_1", "mode_2")),
     vol.Optional("motor_group"): vol.In(("single", "group_sync", "group_split")),
 }
 _FIELDS.update(SIDE_FIELD.items())
@@ -62,7 +62,8 @@ async def handle_control(call: ServiceCall) -> None:
     action = str(call.data["action"])
     opcode = int(call.data["opcode"]) if "opcode" in call.data else None
     query = str(call.data["query"]) if "query" in call.data else None
-    transmit_mode: str | None = call.data.get("transmit_mode")
+    mode = call.data.get("transmit_mode")
+    transmit_mode = str(mode).removeprefix("mode_") if mode is not None else None
     group = call.data.get("motor_group")
     motor_group = str(group).upper() if group is not None else None
     if action == "app_mode":

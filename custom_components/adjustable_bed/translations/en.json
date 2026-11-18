@@ -8422,7 +8422,7 @@
       }
     },
     "richmat_mh_sleep_mode": {
-      "name": "Nisco: sleep sensor mode",
+      "name": "Nisco: Set sleep sensor mode",
       "description": "Set the separate sleep sensor for one or two sleepers.",
       "fields": {
         "device_id": {
@@ -10476,9 +10476,9 @@
     },
     "richmat_mh_transmit_mode": {
       "options": {
-        "0": "Mode 0",
-        "1": "Mode 1",
-        "2": "Mode 2"
+        "mode_0": "Mode 0",
+        "mode_1": "Mode 1",
+        "mode_2": "Mode 2"
       }
     },
     "richmat_mh_motor_group": {

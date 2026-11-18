@@ -129,19 +129,19 @@ async def test_app_mode_action_sets_local_pickers_without_the_scheduler(hass, ta
     for coordinator, controller in zip(coordinators, controllers, strict=True):
         coordinator.capability_controller = controller
     await hass.services.async_call(DOMAIN, actions.SERVICE, {
-        "device_id": ["left", "right"], "action": "app_mode", "transmit_mode": "2",
+        "device_id": ["left", "right"], "action": "app_mode", "transmit_mode": "mode_2",
     }, blocking=True)
     for coordinator, controller in zip(coordinators, controllers, strict=True):
         assert controller._transmit_mode == 2 and not frames(controller)
         coordinator.async_execute_controller_command.assert_not_awaited()
     with pytest.raises(ServiceValidationError, match="app_mode"):
         await hass.services.async_call(DOMAIN, actions.SERVICE, {
-            "device_id": ["left"], "action": "press", "opcode": 1, "transmit_mode": "1",
+            "device_id": ["left"], "action": "press", "opcode": 1, "transmit_mode": "mode_1",
         }, blocking=True)
     # cfrm declares no motor groups, so a group is refused before any target changes.
     with pytest.raises(ServiceValidationError, match="motor group"):
         await hass.services.async_call(DOMAIN, actions.SERVICE, {
-            "device_id": ["left", "right"], "action": "app_mode", "transmit_mode": "1",
+            "device_id": ["left", "right"], "action": "app_mode", "transmit_mode": "mode_1",
             "motor_group": "group_sync",
         }, blocking=True)
     assert all(controller._transmit_mode == 2 for controller in controllers)
