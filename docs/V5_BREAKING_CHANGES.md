@@ -180,14 +180,16 @@ lists what it changed where.
 | **Connection profile** (`connection_profile`) | Removed. Every bed uses the former "Reliable" timing: a 25 s connect timeout, 3 and 6 s backoff and a 1 s settle after connecting |
 | **Disconnect after each command** (`disconnect_after_command`), **Idle disconnect timeout** (`idle_disconnect_seconds`) and its hidden `0` | One **Bluetooth connection** select (`connection_mode`): release right after each command (was Disconnect after each command on), stay connected for a while with **Seconds to stay connected** (was off, with its timeout), or always stay connected (was a timeout of `0`). It is hidden for beds that always hold their link |
 | LP Comfort Connect (Leggett & Platt Gen2, and Leggett & Platt on Auto) held its link permanently | Follows **Bluetooth connection**, staying connected for a while by default, and holds the link for the session once a reconnect stalls. "Always stay connected" restores the old behavior |
-| **Disable angle sensing** (`disable_angle_sensing`) | **Read bed position**, on by default and shown only for beds that report a position. A saved value equal to the bed's default is dropped |
-| **Motor pulse count** and **Motor pulse delay (ms)** | **Movement per tap** (the pulse count, 1-100, now enforced). The delay is no longer shown; a saved delay still applies |
+| **Disable angle sensing** (`disable_angle_sensing`) | **Read bed position**, on by default and shown only for beds that report a position. A saved value equal to the bed's default is dropped. A standalone bed saved with no value at all, which only very old entries are, now reads its position where its bed type reports one |
+| **Motor pulse count** and **Motor pulse delay (ms)** | **Movement per tap** (the pulse count, 1-100, now enforced). The delay is no longer shown; a saved delay still applies. Saving Configure no longer marks the timing as yours unless Movement per tap changed |
 | **Stop discovering new Bluetooth devices**, in every bed's Configure | **Add Integration → Adjustable Bed → Find new beds automatically** |
 | **Bed type** and **Protocol variant** in Configure, and **Change app or layout** | **Reconfigure**, which now works for every bed type |
 | Explicit pair connection modes (`pair_connection_mode`) | Removed; nothing could set them. Pairs start concurrent and fall back to one link at a time when the adapter cannot hold both |
 | **Has massage feature**, maximum angles and a one-choice motor count shown for beds that ignore them | Hidden |
 | A bed added from **Pick any Bluetooth device** saved the scanner that listed it as its adapter | Saves **Automatic**, like a discovered bed |
-| **Combine two beds** suggested in Repairs for any two beds | Suggested only for beds of one protocol |
+| **Combine two beds** suggested in Repairs for any two beds | Suggested, and offered in Add Integration, only for beds of one protocol |
+| App suggestions in Repairs switched the app through Configure | They open **Reconfigure** with the suggested app preselected, which reviews the change before saving. Suggestions without one app to switch to, such as checking a Richmat remote, still open Configure |
+| Connection log lines at warning: "NOT FOUND" on every attempt, each failed attempt, an idle drop, and a final error | Debug, except one warning when the bed stays unreachable (once per outage) and a drop during a command |
 
 ## New Entities, Attributes and Actions
 
