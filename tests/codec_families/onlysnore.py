@@ -1,4 +1,4 @@
-"""Accepted row170 BED format, including the corrected alarm preprocessing."""
+"""Snore Monitor 2.3.8 BED format, including the alarm preprocessing."""
 
 import json
 from pathlib import Path

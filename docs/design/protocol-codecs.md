@@ -69,7 +69,7 @@ route writes LinonPI frames, so its controller is not a profile over the codec.
 
 ## Snore Monitor BED records
 
-Snore Monitor 2.3.8's accepted row170 literals require `codec/onlysnore.py`.
+Snore Monitor 2.3.8's literals require `codec/onlysnore.py`.
 Its control declares five while carrying six payload bytes, including a distinct
 save/release flag; triple alarms likewise keep a declared length that differs
 from their payload size. Neither the existing N-frame carrier nor Smart Sleep

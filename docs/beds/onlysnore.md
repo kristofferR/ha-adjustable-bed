@@ -237,7 +237,4 @@ MTU; these BED commands fit the default ATT payload. No mandatory bonding is add
 
 ### Analysis provenance
 
-Accepted APK Protocol Audit: `com.okin.sleepMonitor.onlySnore` 2.3.8 (202), artifact
-SHA-256 `026cd80481a0d3274b56b661ef3fcea0e6ea03eea01c17a0f767c35f4c7990db`, including
-the accepted alarm preprocessing correction. The artifact was frozen in July;
-this is not a latest-version or hardware verification claim.
+Based on Snore Monitor 2.3.8 (202) (`com.okin.sleepMonitor.onlySnore`).

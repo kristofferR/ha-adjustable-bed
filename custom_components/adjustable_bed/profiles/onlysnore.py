@@ -1,4 +1,4 @@
-"""Snore Monitor 2.3.8 (202), accepted row170, no hardware confirmation.
+"""Snore Monitor 2.3.8 (202), no hardware confirmation.
 
 Hand-transcribed app catalog from the accepted immutable report. No generator.
 """

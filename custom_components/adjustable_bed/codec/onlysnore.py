@@ -1,4 +1,4 @@
-"""Snore Monitor 2.3.8's BED records, from accepted row170.
+"""Snore Monitor 2.3.8's BED records.
 
 The eight-byte control declares 05 despite carrying six payload octets. It
 cannot use the seven-byte N-frame or Smart Sleep carrier. Parameter records
