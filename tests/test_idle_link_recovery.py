@@ -440,7 +440,7 @@ async def test_spent_window_is_not_recovered_after_the_command_left(
     coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
     assert await coordinator.async_connect()
     coordinator._idle_deadline = hass.loop.time() + 30
-    coordinator._recovered_idle_deadline = coordinator._idle_deadline
+    coordinator._link_from_recovery = True
     async with coordinator._command_lock:
         _drop(coordinator, mock_bleak_client)
     assert _take_reconnect_timer(coordinator)
@@ -641,3 +641,51 @@ async def test_command_hold_lifts_an_inflight_recovery(
 
     assert connects == 1
     assert coordinator.is_connected
+
+
+async def test_startup_commands_on_a_recovered_link_do_not_earn_another_recovery(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A controller's own connect-time command opens a window, not a recovery budget.
+
+    Several controllers send a command of their own after connecting. On a
+    recovered link that must not let the next drop be recovered again.
+    """
+    coordinator = await _dropped_inside_window(hass, mock_bleak_client)
+    mock_bleak_client.is_connected = True
+    await coordinator._async_auto_reconnect()
+    assert coordinator.is_connected
+
+    async def _startup_query(controller: object) -> None:
+        del controller
+
+    await coordinator.async_execute_controller_command(_startup_query, cancel_running=False)
+    _drop(coordinator, mock_bleak_client)
+
+    assert not _take_reconnect_timer(coordinator)
+
+
+async def test_inline_group_is_demand(hass: HomeAssistant) -> None:
+    """A group run inside an existing scheduler reservation also needs the link."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    reservation = MagicMock(
+        scheduler_token=coordinator._command_scheduler.token, defer_disconnect=False
+    )
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def _live_check() -> None:
+        started.set()
+        await release.wait()
+
+    with patch(
+        "custom_components.adjustable_bed.coordinator.current_command_context",
+        return_value=reservation,
+    ):
+        group = hass.async_create_task(
+            coordinator.async_execute_command_group([_live_check], resources=("*",))
+        )
+        await started.wait()
+        assert coordinator._command_needs_link()
+        release.set()
+        await group

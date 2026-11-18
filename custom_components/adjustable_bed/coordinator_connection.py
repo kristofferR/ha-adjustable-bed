@@ -401,10 +401,12 @@ class CoordinatorConnectionMixin:
         # command. Recovering every drop with a fresh window would hold it
         # forever and lock out the remote and app, and storms receivers that
         # drop idle links (#369). Recover only for pending work, or once within
-        # the window the last command opened.
+        # the window the last command opened: a link a recovery opened is not
+        # recovered again, even if the controller's own startup commands opened
+        # a new window on it.
         return self._command_needs_link() or (
             self._idle_window_allows_recovery(_AUTO_RECONNECT_DELAY_SECONDS)
-            and self._recovered_idle_deadline != self._idle_deadline
+            and not self._link_from_recovery
         )
 
     def _persistent_link_recovers_on_timer(self: AdjustableBedCoordinator) -> bool:
@@ -1623,6 +1625,8 @@ class CoordinatorConnectionMixin:
                 # Store connection metadata for binary sensor
                 self._connecting = False
                 self._last_connected = datetime.now(UTC)
+                # A bounded recovery marks its own link after this returns.
+                self._link_from_recovery = False
                 self._connection_source = actual_adapter
                 self._connection_path = async_path_for_source(
                     self.hass, actual_adapter, rssi=adapter_result.rssi
@@ -2021,7 +2025,7 @@ class CoordinatorConnectionMixin:
         if bounded and (
             not self._idle_window_allows_recovery()
             # A drop under a command scheduled this; the command is gone now.
-            or self._recovered_idle_deadline == self._idle_deadline
+            or self._link_from_recovery
         ):
             _LOGGER.debug(
                 "Skipping auto-reconnect for %s: the idle window has ended or "
@@ -2036,9 +2040,6 @@ class CoordinatorConnectionMixin:
         deadline = self._idle_deadline
         generation = self._command_link_generation
         self._recovered_link_window = bounded
-        if bounded:
-            # One recovery per window: a link that drops again waits for a command.
-            self._recovered_idle_deadline = deadline
         try:
             if bounded:
                 connected = await self._async_connect_within_window(deadline, generation)
@@ -2048,6 +2049,10 @@ class CoordinatorConnectionMixin:
                 connected = await self.async_connect()
             if connected:
                 _LOGGER.debug("Auto-reconnection successful for %s", self._address)
+                if bounded:
+                    # One recovery per window: if this link drops too, the
+                    # next command reconnects.
+                    self._link_from_recovery = True
                 if bounded and generation == self._command_link_generation:
                     # Retries or a drop during startup may have re-armed the
                     # timer. Unless a command took the link meanwhile, the
