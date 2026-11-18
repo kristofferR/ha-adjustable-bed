@@ -1332,7 +1332,7 @@ REVERIE_FAMILY: Final = AppFamily(
     step="reverie_family",
     row=BED_TYPE_REVERIE_NIGHTSTAND,
     name="Reverie",
-    apps="Nightstand app, Protocol 110 and Protocol 108 receivers",
+    apps="Reverie Nightstand and Reverie apps",
     answers={
         "protocol_110": Answer(BED_TYPE_REVERIE_NIGHTSTAND),
         "protocol_108": Answer(BED_TYPE_REVERIE),
@@ -1526,7 +1526,7 @@ MALOUF_FAMILY: Final = AppFamily(
     step="malouf_family",
     row=BED_TYPE_MALOUF_APP,
     name="Malouf / Lucid",
-    apps="Malouf Base and Lucid Base apps, Nordic UART and FFE5 receivers",
+    apps="Malouf Base and Lucid Base apps, Malouf and Lucid remotes",
     answers={
         "malouf": Answer(BED_TYPE_MALOUF_APP, data={CONF_MALOUF_APP_PROFILE: "malouf"}),
         "lucid": Answer(BED_TYPE_MALOUF_APP, data={CONF_MALOUF_APP_PROFILE: "lucid"}),

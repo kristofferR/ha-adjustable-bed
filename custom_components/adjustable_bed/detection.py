@@ -598,7 +598,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app",
     BED_TYPE_ADJUSTABLE_BED: "Adjustable bed app",
-    BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed Lumbar app",
+    BED_TYPE_ADJUSTABLE_LUMBAR: "Adjustable bed (Lumbar) app",
     BED_TYPE_RIZE_HOME: "Rize Home app",
     BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app",
     BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 app",

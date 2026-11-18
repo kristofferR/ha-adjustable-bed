@@ -81,28 +81,16 @@ async def answer(flow, choice: str):
     return result, finish
 
 
-def test_one_row_names_every_app_and_the_remotes():
+def test_every_app_has_a_searchable_row_and_the_family_row_stays_short():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
-    for app in (
-        "RMControl",
-        "Revive Control",
-        "Best Mattress",
-        "Blvd Home",
-        "HARMONY",
-        "Idealbed",
-        "Avocado Eco Base",
-        "CoasterSleep",
-        "Forty Winks",
-        "Milemont",
-        "Superior",
-        "SleepFunction",
-        "SVEN & SON",
-        "Richmat remotes",
-    ):
+    for app in ("RMControl", "SleepFunction", "SVEN & SON", "Richmat remotes"):
         assert app in rows[const.BED_TYPE_RICHMAT]
-    assert not set(rows) & {*const.RICHMAT_MH_BED_TYPES, "richmat_classic_apps:fortywinks"}
-    # A saved entry keeps its own label.
-    assert bed_type_label(const.BED_TYPE_RICHMAT_REVIVE) == "Revive Control app (Richmat)"
+    assert len(rows[const.BED_TYPE_RICHMAT]) < 100
+    # Each other app is found by its own name and selects its own route.
+    assert rows[const.BED_TYPE_RICHMAT_REVIVE] == "Revive Control app"
+    assert rows["richmat_classic_apps:fortywinks"] == "Forty Winks app"
+    assert rows[const.BED_TYPE_MLILY] == "MLILY Control app"
+    assert bed_type_label(const.BED_TYPE_RICHMAT_REVIVE) == "Revive Control app"
 
 
 def test_configure_accepts_the_hidden_apps_by_id():
@@ -379,7 +367,7 @@ async def test_configure_switches_a_remote_entry_to_a_classic_app(hass):
     form = await flow.async_step_settings()
     selector = form["data_schema"].schema[fields(form)[const.CONF_BED_TYPE]]
     # Each classic app keeps its own label in Configure's list, with its family.
-    choice = selector("Forty Winks · Richmat")
+    choice = selector("Forty Winks app · Richmat")
     assert choice == "richmat_classic_apps:fortywinks"
     form = await flow.async_step_settings({const.CONF_BED_TYPE: choice})
     assert const.CONF_PRODUCT_TYPE in fields(form)

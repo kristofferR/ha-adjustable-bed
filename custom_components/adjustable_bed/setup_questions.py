@@ -33,7 +33,6 @@ from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
 from .beds.leggett.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from .beds.richmat_app.catalog import ALL_CHOICES as RICHMAT_APP_PRODUCTS
 from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
-from .beds.sleeptracker.protocol import FOUNDATIONS as SLEEPTRACKER_FOUNDATIONS
 from .beds.sleeptracker.protocol import MODELS as SLEEPTRACKER_MODELS
 from .beds.starcode.m1x12_protocol import profile_from_name as m1x12_profile_from_name
 from .const import (
@@ -169,7 +168,6 @@ from .const import (
     CONF_RICHMAT_REMOTE,
     CONF_RMCONTROL_PRODUCT,
     CONF_RMCONTROL_SIDE,
-    CONF_SLEEPTRACKER_FOUNDATION,
     CONF_SLEEPTRACKER_PROCESSOR_TYPE,
     CONF_SLEEPTRACKER_RESTRICTED,
     CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
@@ -1278,10 +1276,6 @@ def _sleeptracker_models(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     return {key: model.label for key, model in SLEEPTRACKER_MODELS.items()}
 
 
-def _sleeptracker_foundations(_data: Mapping[str, Any]) -> Mapping[Any, str]:
-    return {foundation: foundation for foundation in SLEEPTRACKER_FOUNDATIONS}
-
-
 # A signed 32-bit value, as the apps store their mesh and processor identities.
 _INT32_RANGE: Final = vol.Range(min=-(2**31), max=2**31 - 1)
 _INT32: Final = vol.All(int, _INT32_RANGE)
@@ -1303,8 +1297,6 @@ def _sleeptracker_errors(data: Mapping[str, Any]) -> dict[str, str]:
         return {CONF_SLEEPTRACKER_UNIT: "sleeptracker_profile"}
     if data.get(CONF_SLEEPTRACKER_RESTRICTED, False) and unit != 0:
         return {CONF_SLEEPTRACKER_UNIT: "sleeptracker_restricted_unit"}
-    if data.get(CONF_SLEEPTRACKER_FOUNDATION, "Unspecified") not in SLEEPTRACKER_FOUNDATIONS:
-        return {CONF_SLEEPTRACKER_FOUNDATION: "sleeptracker_profile"}
     if not isinstance(data.get(CONF_SLEEPTRACKER_RESTRICTED, False), bool):
         return {CONF_SLEEPTRACKER_RESTRICTED: "sleeptracker_profile"}
     return {}

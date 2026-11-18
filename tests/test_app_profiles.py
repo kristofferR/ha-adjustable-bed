@@ -211,7 +211,7 @@ async def test_options_show_the_fields_a_chosen_variant_needs(hass: HomeAssistan
 def test_apps_chosen_by_a_variant_are_listed_by_name() -> None:
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
     innova = bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
-    assert options[innova] == "INNOVA app (Keeson)"
+    assert options[innova] == "INNOVA app"
     assert resolve_bed_type_choice(innova) == (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
     assert resolve_bed_type_choice(BED_TYPE_KEESON) == (BED_TYPE_KEESON, None)
     # Z-Series has no automatic page; the Customatic row names it and its
