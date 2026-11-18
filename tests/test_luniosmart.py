@@ -277,3 +277,11 @@ async def test_single_address_side_selector_is_rejected(clock):
     with ctrl.side_scope("left"), pytest.raises(ValueError, match="side selector"):
         await ctrl.action("flat")
     assert not frames(c)
+
+
+def test_startup_writes_have_no_buttons_and_status_is_opt_in():
+    ctrl, _ = make()
+    # Query and clock sync run on every connect.
+    assert ctrl.controller_button_specs == ()
+    (status,) = ctrl.controller_state_sensor_specs
+    assert not status.entity_registry_enabled_default

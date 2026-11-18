@@ -3346,9 +3346,6 @@
       "bedgear_combined_down": {
         "name": "Head and foot down"
       },
-      "luniosmart_action": {
-        "name": "Lunio Smart+ {action}"
-      },
       "sonicsleep_action": {
         "name": "{action}"
       }
@@ -5240,7 +5237,7 @@
         "name": "Alarm wake mode"
       },
       "luniosmart": {
-        "name": "Lunio Smart+ observations"
+        "name": "Status"
       },
       "sonicsleep": {
         "name": "SonicSleep state"

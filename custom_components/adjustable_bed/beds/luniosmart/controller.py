@@ -16,7 +16,6 @@ from ...controller_state import StateKey
 from ...profiles.luniosmart import DIRECTIONS, PRESETS, PROFILE, RELEASE, LunioSmartProfile
 from ..base import BedController, ProfileExecution, require_controller
 from ..entity_specs import (
-    ControllerButtonSpec,
     ControllerMotorHoldSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
@@ -124,24 +123,17 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
         )
 
     @property
-    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        return tuple(
-            ControllerButtonSpec(
-                "luniosmart_" + action,
-                action.replace("_", " ").title(),
-                partial(_action, action=action),
-                icon="mdi:clock-sync" if action == "sync_clock" else "mdi:information-outline",
-                translation_key="luniosmart_action",
-                translation_placeholders={"action": action.replace("_", " ").title()},
-            )
-            for action in ("query", "sync_clock")
-        )
-
-    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
+            # The state mirrors the connection; the decoded events are the
+            # attributes, so the sensor is off by default.
             ControllerStateSensorSpec(
-                "luniosmart", "luniosmart", STATUS, "mdi:bed", attribute_keys=(OBSERVATIONS,)
+                "luniosmart",
+                "luniosmart",
+                STATUS,
+                "mdi:bed",
+                attribute_keys=(OBSERVATIONS,),
+                entity_registry_enabled_default=False,
             ),
         )
 
@@ -264,16 +256,7 @@ class LunioSmartController(ProfileExecution[LunioSmartProfile], BedController):
             await self.hold_control(action, self._coordinator.motor_pulse_count * 100)
             return
         session = self._live()  # Capture ownership before the first await.
-        if action == "query":
-            await self._send(
-                session,
-                codec.function(
-                    0, action="deviceFunctionItemExitLimit", single=session.link.query_single
-                ),
-            )
-        elif action == "sync_clock":
-            await self._send(session, codec.calendar(dt_util.now(), build=codec.record_20_len))
-        elif action in PRESETS:
+        if action in PRESETS:
             try:
                 await self._send(session, codec.command(PRESETS[action]))
             finally:

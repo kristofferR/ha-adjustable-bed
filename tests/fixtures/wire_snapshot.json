@@ -16990,9 +16990,7 @@
 "stop:back_open": {"status":"ok","writes":[[0,"d44bc439",false,"6e01002493",3,107],[400,"d44bc439",false,"6e01006edd",2,107]]},
 "stop:back_close": {"status":"ok","writes":[[0,"d44bc439",false,"6e01002594",3,107],[400,"d44bc439",false,"6e01006edd",2,107]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"d44bc439",false,"6e01002695",3,107],[400,"d44bc439",false,"6e01006edd",2,107]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"d44bc439",false,"6e01002796",3,107],[400,"d44bc439",false,"6e01006edd",2,107]]},
-"button:luniosmart_query": {"status":"ok","writes":[[100,"d44bc439",false,"6e02010071",1,0]]},
-"button:luniosmart_sync_clock": {"status":"ok","writes":[[100,"d44bc439",false,"6e200d08030138010203041c05",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"d44bc439",false,"6e01002796",3,107],[400,"d44bc439",false,"6e01006edd",2,107]]}
 }},
 "luniosmart:S1": {
 "info": {"bed_type": "luniosmart", "controller": "LunioSmartController", "module": "luniosmart.controller", "pulse": [10, 100]},
@@ -17029,9 +17027,7 @@
 "stop:back_open": {"status":"ok","writes":[[0,"6e400002",false,"6e01002493",3,107],[400,"6e400002",false,"6e01006edd",2,107]]},
 "stop:back_close": {"status":"ok","writes":[[0,"6e400002",false,"6e01002594",3,107],[400,"6e400002",false,"6e01006edd",2,107]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"6e400002",false,"6e01002695",3,107],[400,"6e400002",false,"6e01006edd",2,107]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"6e01002796",3,107],[400,"6e400002",false,"6e01006edd",2,107]]},
-"button:luniosmart_query": {"status":"ok","writes":[[100,"6e400002",false,"00",1,0]]},
-"button:luniosmart_sync_clock": {"status":"ok","writes":[[100,"6e400002",false,"6e200d08030138010203041c05",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"6e01002796",3,107],[400,"6e400002",false,"6e01006edd",2,107]]}
 }},
 "luniosmart:S3": {
 "info": {"bed_type": "luniosmart", "controller": "LunioSmartController", "module": "luniosmart.controller", "pulse": [10, 100]},
@@ -17068,9 +17064,7 @@
 "stop:back_open": {"status":"ok","writes":[[0,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002493",3,107],[400,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,107]]},
 "stop:back_close": {"status":"ok","writes":[[0,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002594",3,107],[400,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,107]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002695",3,107],[400,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,107]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002796",3,107],[400,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,107]]},
-"button:luniosmart_query": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e02010071",1,0]]},
-"button:luniosmart_sync_clock": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e200d08030138010203041c05",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002796",3,107],[400,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,107]]}
 }},
 "luniosmart:S4": {
 "info": {"bed_type": "luniosmart", "controller": "LunioSmartController", "module": "luniosmart.controller", "pulse": [10, 100]},
@@ -17107,9 +17101,7 @@
 "stop:back_open": {"status":"ok","writes":[[0,"0000ffe2",false,"6e01002493",3,107],[400,"0000ffe2",false,"6e01006edd",2,107]]},
 "stop:back_close": {"status":"ok","writes":[[0,"0000ffe2",false,"6e01002594",3,107],[400,"0000ffe2",false,"6e01006edd",2,107]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000ffe2",false,"6e01002695",3,107],[400,"0000ffe2",false,"6e01006edd",2,107]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"0000ffe2",false,"6e01002796",3,107],[400,"0000ffe2",false,"6e01006edd",2,107]]},
-"button:luniosmart_query": {"status":"ok","writes":[[100,"0000ffe2",false,"6e02010071",1,0]]},
-"button:luniosmart_sync_clock": {"status":"ok","writes":[[100,"0000ffe2",false,"6e200d08030138010203041c05",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"0000ffe2",false,"6e01002796",3,107],[400,"0000ffe2",false,"6e01006edd",2,107]]}
 }},
 "luniosmart:S5": {
 "info": {"bed_type": "luniosmart", "controller": "LunioSmartController", "module": "luniosmart.controller", "pulse": [10, 100]},
@@ -17146,9 +17138,7 @@
 "stop:back_open": {"status":"ok","writes":[[0,"0000fff2",false,"6e01002493",3,107],[400,"0000fff2",false,"6e01006edd",2,107]]},
 "stop:back_close": {"status":"ok","writes":[[0,"0000fff2",false,"6e01002594",3,107],[400,"0000fff2",false,"6e01006edd",2,107]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"0000fff2",false,"6e01002695",3,107],[400,"0000fff2",false,"6e01006edd",2,107]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"0000fff2",false,"6e01002796",3,107],[400,"0000fff2",false,"6e01006edd",2,107]]},
-"button:luniosmart_query": {"status":"ok","writes":[[100,"0000fff2",false,"6e02010071",1,0]]},
-"button:luniosmart_sync_clock": {"status":"ok","writes":[[100,"0000fff2",false,"6e200d08030138010203041c05",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"0000fff2",false,"6e01002796",3,107],[400,"0000fff2",false,"6e01006edd",2,107]]}
 }},
 "luniosmart:S6": {
 "info": {"bed_type": "luniosmart", "controller": "LunioSmartController", "module": "luniosmart.controller", "pulse": [10, 100]},
@@ -17185,9 +17175,7 @@
 "stop:back_open": {"status":"ok","writes":[[0,"00000002",false,"6e01002493",3,107],[400,"00000002",false,"6e01006edd",2,107]]},
 "stop:back_close": {"status":"ok","writes":[[0,"00000002",false,"6e01002594",3,107],[400,"00000002",false,"6e01006edd",2,107]]},
 "stop:legs_open": {"status":"ok","writes":[[0,"00000002",false,"6e01002695",3,107],[400,"00000002",false,"6e01006edd",2,107]]},
-"stop:legs_close": {"status":"ok","writes":[[0,"00000002",false,"6e01002796",3,107],[400,"00000002",false,"6e01006edd",2,107]]},
-"button:luniosmart_query": {"status":"ok","writes":[[100,"00000002",false,"6e02010071",1,0]]},
-"button:luniosmart_sync_clock": {"status":"ok","writes":[[100,"00000002",false,"6e200d08030138010203041c05",1,0]]}
+"stop:legs_close": {"status":"ok","writes":[[0,"00000002",false,"6e01002796",3,107],[400,"00000002",false,"6e01006edd",2,107]]}
 }},
 "luuna": {
 "info": {"bed_type": "luuna", "controller": "LuunaController", "module": "luuna.controller", "pulse": [10, 100]},

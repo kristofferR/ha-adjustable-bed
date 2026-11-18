@@ -3176,8 +3176,8 @@ keeps no app-style motion FIFO and does not replay stale movement after reconnec
 
 #### Notifications
 
-The observations sensor retains the latest BED event payloads under the artifact's
-names. Common protocol version, mode, unsigned angle fields, packed massage fields,
+The Status sensor (disabled by default) retains the latest BED event payloads as
+attributes under the artifact's names. Common protocol version, mode, unsigned angle fields, packed massage fields,
 diagnostic status and the empty diagnostic-detail object remain read-only. Extended
 BED records retain motor height/type/angle/monitorHeight, head and foot strengths,
 massage mode/frequency/power, white LED, normalized RGB, raw base-60 light timer,
@@ -3204,9 +3204,10 @@ is synthesized to repair a malformed packet.
 
 #### Services
 
-Use standard `timed_move`, `goto_preset` and `save_preset` actions. Utility
-buttons query capabilities or synchronize the bed's local calendar. They append
-no release. Clock encoding uses local year minus 1970 and an additive checksum.
+Use standard `timed_move`, `goto_preset` and `save_preset` actions. Every
+connection queries capabilities and synchronizes the bed's local calendar, so
+neither has its own button. Neither appends a release. Clock encoding uses local
+year minus 1970 and an additive checksum.
 
 #### Evidence
 
