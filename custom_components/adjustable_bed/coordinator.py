@@ -210,11 +210,6 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
 _CONTROLLER_OPERATION_RECOVERY_EXCEPTIONS = (ConnectionError, RuntimeError)
-# Controller operations that only read state. They neither start a new idle
-# window on a recovered link nor count as a command needing the link.
-_LINK_READ_OPERATIONS = frozenset(
-    {"query", "initial position read", "background position read"}
-)
 _READABLE_LIGHT_STATE_TIMEOUT = 2.0
 _READABLE_LIGHT_STATE_RETRY_DELAY = 1.0
 _READABLE_LIGHT_STATE_MAX_RETRIES = 3
@@ -2235,8 +2230,8 @@ class AdjustableBedCoordinator(
             self._cancel_counter += 1
             self._cancel_command.set()
 
-        # Reads keep the idle window and do not count as a command needing the link.
-        link_read = preserve_idle_deadline or operation_name in _LINK_READ_OPERATIONS
+        # Queries keep a recovered link's idle window and are not command demand.
+        link_read = preserve_idle_deadline or operation_name == "query"
         entry_cancel_count = self._cancel_counter
         async with self._command_lock, self._link_read_scope(link_read):
             # Background reads can inherit a command context while it is active,

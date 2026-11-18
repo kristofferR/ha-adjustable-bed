@@ -491,7 +491,7 @@ class CoordinatorPositionsMixin:
         Use this for fire-and-forget position reads (speed mode) to avoid
         "operation in progress" errors from overlapping BLE operations.
         """
-        async with self._command_lock:
+        async with self._command_lock, self._link_read_scope(True):
             if (
                 self._cancel_counter != entry_cancel_count
                 or self._command_scheduler.has_pending

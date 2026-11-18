@@ -1911,13 +1911,15 @@ class CoordinatorConnectionMixin:
         self._controller = None
         # Keep _position_data for last known state; entity availability handles offline
         self._cancel_disconnect_timer()
-        # The idle deadline survives the drop; a recovery re-applies it.
-        self._recovered_link_window = False
         self._notify_connection_state_change(False)
         _LOGGER.debug("Disconnect cleanup complete for %s", self._address)
         self._schedule_pending_capability_reload()
 
         if not self._auto_reconnect_enabled():
+            task = self._reconnect_task
+            if task is None or task.done():
+                # No recovery owns the link: the next connect opens a full window.
+                self._recovered_link_window = False
             _LOGGER.debug(
                 "Skipping auto-reconnect timer for %s (persistent connection, "
                 "release after each command, or idle window ended); "
@@ -2000,7 +2002,20 @@ class CoordinatorConnectionMixin:
         generation = self._command_link_generation
         self._recovered_link_window = bounded
         try:
-            connected = await self.async_connect()
+            # Recovery may not outlast the window; commands connect on demand.
+            window = asyncio.timeout_at(deadline if bounded else None)
+            try:
+                async with window:
+                    connected = await self.async_connect()
+            except TimeoutError:
+                if not window.expired():
+                    raise
+                # The cancelled connect released whatever link it had opened.
+                _LOGGER.debug(
+                    "Auto-reconnect for %s outlasted the idle window", self._address
+                )
+                self._recovered_link_window = False
+                return
             if connected:
                 _LOGGER.debug("Auto-reconnection successful for %s", self._address)
                 if bounded and generation == self._command_link_generation:

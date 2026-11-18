@@ -7,6 +7,7 @@ bed that drops idle links cannot be held connected forever.
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -197,20 +198,6 @@ async def test_recovery_keeps_the_deadline_when_startup_re_arms(
     assert timer.when() == pytest.approx(deadline, abs=1.0)
 
 
-async def test_a_read_holding_the_lock_is_not_command_demand(
-    hass: HomeAssistant, mock_bleak_client: MagicMock
-) -> None:
-    """A drop under a read after the window does not schedule recovery."""
-    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
-    assert await coordinator.async_connect()
-    coordinator._idle_deadline = hass.loop.time() - 1
-
-    async with coordinator._command_lock, coordinator._link_read_scope(True):
-        _drop(coordinator, mock_bleak_client)
-
-    assert not _take_reconnect_timer(coordinator)
-
-
 async def test_recovered_link_skips_position_hydration(
     hass: HomeAssistant,
 ) -> None:
@@ -224,3 +211,58 @@ async def test_recovered_link_skips_position_hydration(
         coordinator._schedule_position_hydration()
 
     assert coordinator._position_hydration_task is None
+
+
+async def test_recovery_connect_cannot_outlast_the_window(
+    hass: HomeAssistant,
+) -> None:
+    """A slow recovery connect is abandoned when the window ends."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    # The window ends before the connect can finish.
+    coordinator._idle_deadline = hass.loop.time()
+    hang = asyncio.Event()
+
+    async def _slow_connect() -> bool:
+        await hang.wait()
+        return True
+
+    coordinator.async_connect = _slow_connect
+    with patch.object(coordinator, "_idle_window_allows_recovery", return_value=True):
+        await coordinator._async_auto_reconnect()
+
+    assert not coordinator._recovered_link_window
+
+
+async def test_drop_during_recovery_keeps_its_window(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A late drop while recovery connects must not let the retry open a full window."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    coordinator._idle_deadline = hass.loop.time() - 1
+    coordinator._recovered_link_window = True
+    in_flight = hass.loop.create_future()
+    coordinator._reconnect_task = in_flight  # type: ignore[assignment]
+
+    _drop(coordinator, mock_bleak_client)
+
+    assert coordinator._recovered_link_window
+    in_flight.cancel()
+    coordinator._reconnect_task = None
+
+
+async def test_drop_during_a_background_position_read_is_not_command_demand(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """The background read holds the command lock as a read, not a command."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    coordinator._idle_deadline = hass.loop.time() - 1
+
+    async def _read_and_drop() -> None:
+        _drop(coordinator, mock_bleak_client)
+
+    with patch.object(coordinator, "_async_read_positions", _read_and_drop):
+        await coordinator._async_read_positions_background(coordinator._cancel_counter)
+
+    assert not _take_reconnect_timer(coordinator)
