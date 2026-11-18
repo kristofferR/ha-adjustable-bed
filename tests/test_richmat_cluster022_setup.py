@@ -225,4 +225,3 @@ async def test_disconnected_app_mode_calls_keep_the_offline_controller(hass) -> 
     assert coordinator.capability_controller is offline
     assert offline._transmit_mode == 1 and offline._group_type == "GROUP_SPLIT"
     assert entry.data["capabilities"]["richmat_mh"]["group_type"] == "GROUP_SPLIT"
-
