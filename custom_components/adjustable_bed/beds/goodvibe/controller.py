@@ -157,7 +157,7 @@ def label(action: Action) -> str:
 
 def select_link(
     client: BleakClient, kind: int, profile: RichmatProfile = GOODVIBE, *,
-    strict_sleep: bool = False, bind_framing: bool = False,
+    strict_sleep: bool = False, bind_framing: bool = False, coherent_service: bool = False,
 ) -> Link:
     tx = rx = None
     legacy = False
@@ -169,6 +169,8 @@ def select_link(
             if pair is None:
                 continue
             target, candidate_legacy = pair
+            if coherent_service:
+                tx = rx = None
             if not bind_framing:
                 legacy = candidate_legacy
         else:
@@ -199,7 +201,7 @@ def select_link(
                 and (kind != 3 or char.uuid.lower() == "00000003-3c17-d293-8e48-14fe2e4da212")
             ):
                 rx = char
-        if strict_sleep and kind != 1 and tx is not None and rx is not None:
+        if (coherent_service or strict_sleep and kind != 1) and tx is not None and rx is not None:
             break
     if tx is None or rx is None:
         raise ValueError("Good Vibe Sleep requires its selected write and notify characteristics")

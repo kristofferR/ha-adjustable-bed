@@ -28,6 +28,7 @@ APPS = [
     "sonicsleep",
     "mlily",
     "okimiki",
+    "mlily_remote",
     "revive",
     "best_mattress",
     "blvd_home",
@@ -373,6 +374,7 @@ async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
         ("Revive Control app · Richmat", const.BED_TYPE_RICHMAT_REVIVE),
         ("Forty Winks app · Richmat", const.BED_TYPE_RICHMAT_CLASSIC_APPS),
         ("MLILY Control app · Richmat", const.BED_TYPE_MLILY),
+        ("MLILY Remote app · Richmat", const.BED_TYPE_MLILY_REMOTE),
     ],
 )
 async def test_an_app_found_by_its_own_row_skips_the_richmat_question(hass, label, route):

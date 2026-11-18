@@ -1126,3 +1126,8 @@ refresh schedule and release behavior; generic pulse settings do not replace
 that schedule. Angle feedback is disabled, and neither physical motor count nor
 remote light/massage state is inferred. See the
 [fixed ASCII app guide](beds/richmat.md#sleepevolution--wsilver-products-3x).
+
+MLILY Remote 1.0.1 has five explicit product choices and single/double layouts.
+It owns motor layout, massage availability, disabled angle sensing and its
+100 ms movement cadence. PowerCool uses fan/cooling labels. Product and layout
+are stored per side of a two-address pair. See [MLILY Remote](beds/richmat.md#mlily-remote).

@@ -46,6 +46,7 @@ from .const import (
     BED_TYPE_KOMFYD,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CB24,
@@ -112,6 +113,7 @@ from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
+from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
 # config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
@@ -128,6 +130,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
     BED_TYPE_OKIMIKI: frozenset(OKIMIKI_PROFILES),
     "bobpowerbase": frozenset(BOB_PROFILES),
+    BED_TYPE_MLILY_REMOTE: frozenset(MLILY_REMOTE_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
     BED_TYPE_RICHMAT_APP: frozenset(RICHMAT_APP_PRODUCTS),
     BED_TYPE_RICHMAT_APP_SLEEP: frozenset(RICHMAT_SLEEP_CHOICES),
@@ -205,6 +208,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         "ultramatic_smart_bed",
         "bobpowerbase",
         "bedtech",
+        BED_TYPE_MLILY_REMOTE,
         BED_TYPE_ERGOMOTION,
         BED_TYPE_ERGOMOTION_4,
         BED_TYPE_KEESON,
@@ -241,6 +245,8 @@ def supports_single_address_pairing(
         return False
     if bed_type == "cheerssleep":
         return str(product_type) in {"51", "52", "140", "141", "172"}
+    if bed_type == BED_TYPE_MLILY_REMOTE:
+        return product_type == "double"
     if bed_type == BED_TYPE_SYMPHONY:
         return str(product_type) in {"10", "15"}
     if bed_type in (BED_TYPE_KOMFYD, BED_TYPE_COMFYDS):

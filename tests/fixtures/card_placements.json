@@ -1170,6 +1170,82 @@
  "button:massage_wave_previous": {
   "card_section": "massage"
  },
+ "button:mlily_remote_antisnoring": {
+  "card_section": "presets"
+ },
+ "button:mlily_remote_antisnoring_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:mlily_remote_bedlight": {
+  "card_section": "lighting"
+ },
+ "button:mlily_remote_cooling_massage10minutetimer": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massage20minutetimer": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massage30minutetimer": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massagefootinstensitystrengthen": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massageheadinstensitystrengthen": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massagemodealloff": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_cooling_massagemodechange": {
+  "card_section": "climate"
+ },
+ "button:mlily_remote_loungeposition": {
+  "card_section": "presets"
+ },
+ "button:mlily_remote_loungeposition_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:mlily_remote_massage10minutetimer": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massage20minutetimer": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massage30minutetimer": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massagefootinstensitystrengthen": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massageheadinstensitystrengthen": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massagelumbarinstensitystrengthen": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massagemodealloff": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_massagemodechange": {
+  "card_section": "massage"
+ },
+ "button:mlily_remote_tvposition": {
+  "card_section": "presets"
+ },
+ "button:mlily_remote_tvposition_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:mlily_remote_zerogravity": {
+  "card_section": "presets"
+ },
+ "button:mlily_remote_zerogravity_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:motion_bed_back_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -4332,6 +4408,9 @@
   "card_role": "timer"
  },
  "sensor:massage_timer_mode": {
+  "card_section": "hidden"
+ },
+ "sensor:mlily_remote": {
   "card_section": "hidden"
  },
  "sensor:mline_alarm": {

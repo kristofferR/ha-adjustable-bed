@@ -102,6 +102,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run app control | Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands. |
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: Set sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
 | [`richmat_legacy`](#richmat_legacy) | SleepEvolution and W.Silver Products 3.x: run app control | Run a control from the selected app and name prefix, as a press or a save. |
+| [`mlily_remote`](#mlily_remote) | MLILY Remote: settings | Set the bed clock and the MS600 countdown alarm, or run the MS300-SH anti-snore intervention on the left side. |
 | [`rize_program_preset`](#rize_program_preset) | Rize: set default preset | Store the current position as a default preset on one physical Rize bed. Select a single paired side and explicitly confirm. |
 | [`sleep_number_command`](#sleep_number_command) | Sleep Number: run command | Runs a Sleep Number control or reading. Readings return their results. See the actions guide for each command's options. |
 | [`sleeptracker_climate`](#sleeptracker_climate) | Sleeptracker: climate | Set local left/right/both fan modes and levels. Level 0 stops the selected fans. Heat sends a 3600 second timer; cool sends a 36000 second timer. Timers and curve are commanded settings, not reported remaining time. |
@@ -1293,6 +1294,28 @@ so the integration cannot safely choose an unused ID from cached records.
 Save/delete refresh the observed list. See the
 [MLILY Control guide](beds/richmat.md#mlily-control) for all profile gates,
 gestures, notifications and sleep operations.
+
+## MLILY Remote
+
+<a id="mlily_remote"></a>
+**`mlily_remote`**: Set the bed clock and the MS600 countdown alarm, or run the MS300-SH anti-snore intervention on the left side.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `operation` | Operation |  |
+| `hour` | Alarm hour | Alarm hour in 24-hour time. |
+| `minute` | Alarm minute | Minute within the selected alarm hour. |
+| `mode` | Alarm position | Position the bed moves to when the alarm goes off. |
+
+### MLILY Remote settings
+
+`adjustable_bed.mlily_remote` controls the local clock (`time_sync`), MS600
+countdown alarms (`alarm`, `alarm_cancel`) and the direct default-left
+`anti_snore` action. Alarm mode choices and connection gates are documented in
+the [MLILY Remote guide](beds/richmat.md#mlily-remote). All selected targets are
+validated before commands run. Two separate receivers keep their own side. When
+both sides share one receiver, select the bed for the clock and alarm, which run
+once; the anti-snore intervention runs on the left.
 
 ## Motion Bed
 

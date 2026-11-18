@@ -109,6 +109,7 @@ from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
+from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
@@ -170,6 +171,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "hush_base": HUSH_BASE_VARIANTS,
     "luuna": LUUNA_VARIANTS,
     "personal_comfort": PERSONAL_COMFORT_ROUTES,
+    "mlily_remote": MLILY_REMOTE_PROFILES,
     "mline": {"auto": AUTOMATIC_LABEL, **{key: key.title() for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")}},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     BED_TYPE_OKIN_CB24: OKIN_CB24_VARIANTS,

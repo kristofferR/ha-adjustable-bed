@@ -1,0 +1,62 @@
+[
+  {
+    "id": "51d711",
+    "name": "bleServiceUUIDNordic",
+    "ordinal": 0,
+    "service": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+    "write": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "declared_notify": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+    "actual_notify_selection": "first characteristic with notify property in accepted services; declared notify UUID is not checked",
+    "evidence": "work/blutter/objs.txt:21116; work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:1871-2536"
+  },
+  {
+    "id": "51d6e1",
+    "name": "bleServiceUUIDW1",
+    "ordinal": 1,
+    "service": "0000FEE9-0000-1000-8000-00805F9B34FB",
+    "write": "D44BC439-ABFD-45A2-B575-925416129600",
+    "declared_notify": "D44BC439-ABFD-45A2-B575-925416129601",
+    "actual_notify_selection": "first characteristic with notify property in accepted services; declared notify UUID is not checked",
+    "evidence": "work/blutter/objs.txt:21105; work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:1871-2536"
+  },
+  {
+    "id": "51d7d1",
+    "name": "bleServiceUUIDW2",
+    "ordinal": 2,
+    "service": "0000FEE9-0000-1000-8000-00805F9B34BB",
+    "write": "D44BC439-ABFD-45A2-B575-925416129622",
+    "declared_notify": "D44BC439-ABFD-45A2-B575-925416129611",
+    "actual_notify_selection": "first characteristic with notify property in accepted services; declared notify UUID is not checked",
+    "evidence": "work/blutter/objs.txt:21160; work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:1871-2536"
+  },
+  {
+    "id": "51d7a1",
+    "name": "bleServiceUUIDW3",
+    "ordinal": 3,
+    "service": "0000FFE0-0000-1000-8000-00805F9B34FB",
+    "write": "0000FFE2-0000-1000-8000-00805F9B34FB",
+    "declared_notify": "0000FFE1-0000-1000-8000-00805F9B34FB",
+    "actual_notify_selection": "first characteristic with notify property in accepted services; declared notify UUID is not checked",
+    "evidence": "work/blutter/objs.txt:21149; work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:1871-2536"
+  },
+  {
+    "id": "51d771",
+    "name": "bleServiceUUIDW4",
+    "ordinal": 4,
+    "service": "0000FFF0-0000-1000-8000-00805F9B34FB",
+    "write": "0000FFF2-0000-1000-8000-00805F9B34FB",
+    "declared_notify": "0000FFF1-0000-1000-8000-00805F9B34FB",
+    "actual_notify_selection": "first characteristic with notify property in accepted services; declared notify UUID is not checked",
+    "evidence": "work/blutter/objs.txt:21138; work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:1871-2536"
+  },
+  {
+    "id": "51d741",
+    "name": "bleServiceUUIDW5",
+    "ordinal": 5,
+    "service": "0000e0ff-3c17-d293-8e48-14fe2e4da212",
+    "write": "00000002-3c17-d293-8e48-14fe2e4da212",
+    "declared_notify": "00000003-3c17-d293-8e48-14fe2e4da212",
+    "actual_notify_selection": "first characteristic with notify property in accepted services; declared notify UUID is not checked",
+    "evidence": "work/blutter/objs.txt:21127; work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:1871-2536"
+  }
+]

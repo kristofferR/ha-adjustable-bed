@@ -44,6 +44,7 @@ from custom_components.adjustable_bed.profiles import casper as casper_profiles
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luniosmart as lunio
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
+from custom_components.adjustable_bed.profiles import mlily_remote as remote162
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
@@ -58,6 +59,7 @@ _LIBRARY_APPS = {
     "Casper Base": (casper_profiles.PROFILES, _const.BED_TYPE_CASPER_BASE),
     "Hush Base": (hush_profiles.PROFILES, _const.BED_TYPE_HUSH_BASE),
     "Luuna +": (luuna_profiles.PROFILES, _const.BED_TYPE_LUUNA),
+    "MLILY Remote": (remote162.PROFILES, _const.BED_TYPE_MLILY_REMOTE),
 }
 
 _RICHMAT_NAMES = {
@@ -79,6 +81,7 @@ _RICHMAT_NAMES = {
     "mlily": "MLILY Control",
     "okimiki": "Okimiki",
     "bobpowerbase": "Power Bob Base",
+    "mlily_remote": "MLILY Remote",
     "leggett_lp_legacy": "L&P legacy app",
     **{
         profile.key: f"Richmat MH {name}"
@@ -190,6 +193,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
             for profile in richmat_profiles.RICHMAT_CLASSIC.values()
         },
         **dict.fromkeys(luuna_profiles.PROFILES, (_const.BED_TYPE_LUUNA,)),
+        **dict.fromkeys(remote162.PROFILES, (_const.BED_TYPE_MLILY_REMOTE,)),
         "galaxy": (_const.BED_TYPE_GALAXY,),
         "goodvibe": (_const.BED_TYPE_GOODVIBE,),
         "mlily": (_const.BED_TYPE_MLILY,),
@@ -1631,3 +1635,33 @@ BLOCKS.append((GUIDE, "bobpowerbase", render_bobpowerbase))
 
 
 BLOCKS += _richmat_legacy.BLOCKS
+
+
+def render_mlily_remote() -> str:
+    return _block(
+        _table(("Product", "Catalog code", "Motors", "Massage/cooling", "Alarm modes"), (
+            (p.row[0], p.code, "4" if p.key == "ms600" else "2",
+             "cooling, 2/3/5 hours" if p.cooling else "massage, 10/20/30 minutes" if p.row[2] else "none",
+             ", ".join(remote162.ACTIONS[i][0] for i in p.row[4]) or "none")
+            for p in remote162.PROFILES.values()
+        )),
+        _table(("Action", "Recall/action", "Save", "Framed left", "Products"), (
+            (name, f"`{short:02X}`", f"`{long:02X}`" if long is not None else "none",
+             _hex(codec.function(short)),
+             ", ".join(p.row[0] for p in remote162.PROFILES.values() if any(i in group for group in p.row[1:5])))
+            for i, (name, short, long) in enumerate(remote162.ACTIONS)
+        )),
+        _table(("Alarm/time/release", "Write"), (
+            ("STOP left", _hex(codec.function(codec.STOP))),
+            ("STOP right", _hex(codec.function(codec.STOP, 1))),
+            ("Cancel countdown, low then high", " / ".join(_hex(b) for b in codec.countdown(0, 0))),
+            ("300 minutes, memory 1, low then high", " / ".join(_hex(b) for b in codec.countdown(300, 0x2E))),
+            ("Calendar, 2026-11-16 12:34:56", _hex(codec.calendar(datetime(2026, 11, 16, 12, 34, 56), build=codec.record_20_len))),
+        )),
+        _table(("Startup", "Framed", "Nordic"), (
+            (name.removeprefix("deviceFunctionItem"), _hex(codec.function(code, action=name)), _hex(codec.function(code, single=True)))
+            for name, code in remote162.STARTUP
+        )),
+    )
+
+BLOCKS.append((GUIDE, "mlily-remote-commands", render_mlily_remote))

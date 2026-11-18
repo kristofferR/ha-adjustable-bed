@@ -9,6 +9,8 @@ from custom_components.adjustable_bed.profiles.casper import CasperProfile
 from custom_components.adjustable_bed.profiles.hush import HushProfile
 from custom_components.adjustable_bed.profiles.luniosmart import LunioSmartProfile
 from custom_components.adjustable_bed.profiles.luuna import LuunaProfile
+from custom_components.adjustable_bed.profiles.mlily_remote import PROFILES as MLILY_REMOTE_PROFILES
+from custom_components.adjustable_bed.profiles.mlily_remote import MlilyRemoteProfile
 from custom_components.adjustable_bed.profiles.richmat import RICHMAT_CLASSIC, RichmatProfile
 from custom_components.adjustable_bed.profiles.richmat_legacy import LegacyProfile
 from custom_components.adjustable_bed.profiles.richmat_legacy import choices as legacy_choices
@@ -18,6 +20,7 @@ from tests import (
     hush_vectors,
     luniosmart_vectors,
     luuna_vectors,
+    mlily_remote_vectors,
     sonicsleep_vectors,
 )
 from tests.codec_families import CodecFamily, CodecGuide
@@ -42,11 +45,12 @@ _VARIANTS = {
     **{f"richmat_classic_{app}": app for app in RICHMAT_CLASSIC},
 }
 # The Casper Base and Hush Base products are their bed type's protocol variant.
-_PRODUCT_VARIANTS = frozenset({const.BED_TYPE_CASPER_BASE, const.BED_TYPE_HUSH_BASE, const.BED_TYPE_LUUNA})
+_PRODUCT_VARIANTS = frozenset({const.BED_TYPE_CASPER_BASE, const.BED_TYPE_HUSH_BASE, const.BED_TYPE_LUUNA, const.BED_TYPE_MLILY_REMOTE})
 _FROZEN = frozenset().union(
     *LEGACY_FRAMES.values(),
     *FROZEN_FRAMES.values(),
     *luniosmart_vectors.FROZEN_FRAMES.values(),
+    mlily_remote_vectors.FROZEN_FRAMES,
     *(frozenset(r["expected_bytes"] for r in sonicsleep_vectors.VECTORS["commands"] + sonicsleep_vectors.VECTORS["alarm_repair"]),),
     *(
         vectors.SHARED_FRAMES.union(*vectors.FROZEN_FRAMES.values())
@@ -79,6 +83,7 @@ FAMILY = CodecFamily(
         RichmatProfile: FROZEN_FRAMES,
         LunioSmartProfile: luniosmart_vectors.FROZEN_FRAMES,
         LegacyProfile: LEGACY_FRAMES,
+        MlilyRemoteProfile: dict.fromkeys(MLILY_REMOTE_PROFILES, mlily_remote_vectors.FROZEN_FRAMES),
         CasperProfile: casper_base_vectors.FROZEN_FRAMES,
         HushProfile: hush_vectors.FROZEN_FRAMES,
         LuunaProfile: luuna_vectors.FROZEN_FRAMES,
@@ -95,6 +100,7 @@ FAMILY = CodecFamily(
             "mlily",
             "okimiki",
             "bobpowerbase",
+            "mlily_remote",
             "hjbed",
             "richmat_app",
             "hush_base",
@@ -130,6 +136,7 @@ FAMILY = CodecFamily(
             "bobpowerbase": {const.CONF_PRODUCT_TYPE: "standard"},
             "sonicsleep": {const.CONF_PRODUCT_TYPE: "one"},
             **{app: {const.CONF_BED_TYPE: app, const.CONF_PROTOCOL_VARIANT: "A1"} for app in ("sleep_evolution", "wsilver_legacy")},
+            "mlily_remote": {const.CONF_PRODUCT_TYPE: "single"},
             # A layout every classic app ships.
             "richmat_classic_apps": {const.CONF_PRODUCT_TYPE: "6BRM"},
             "leggett_lp_legacy": {

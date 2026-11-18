@@ -3734,3 +3734,43 @@ richmat_legacy:
         select:
           options: [both, left, right]
           translation_key: side
+
+mlily_remote:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [alarm, alarm_cancel, time_sync, anti_snore]
+          translation_key: mlily_remote_operation
+    hour:
+      default: 6
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    mode:
+      default: zero_g
+      selector:
+        select:
+          options: [zero_g, anti_snore, tv, memory_1, memory_2, memory_3]
+          translation_key: casper_base_mode
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side

@@ -3282,6 +3282,78 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "mlily_remote_bedlight": {
+        "name": "{action}"
+      },
+      "mlily_remote_cooling_massageheadinstensitystrengthen": {
+        "name": "{action}"
+      },
+      "mlily_remote_cooling_massagefootinstensitystrengthen": {
+        "name": "{action}"
+      },
+      "mlily_remote_cooling_massagemodechange": {
+        "name": "{action}"
+      },
+      "mlily_remote_cooling_massagemodealloff": {
+        "name": "{action}"
+      },
+      "mlily_remote_cooling_massage10minutetimer": {
+        "name": "{action}"
+      },
+      "mlily_remote_cooling_massage20minutetimer": {
+        "name": "{action}"
+      },
+      "mlily_remote_cooling_massage30minutetimer": {
+        "name": "{action}"
+      },
+      "mlily_remote_zerogravity": {
+        "name": "{action}"
+      },
+      "mlily_remote_zerogravity_save": {
+        "name": "{action}"
+      },
+      "mlily_remote_antisnoring": {
+        "name": "{action}"
+      },
+      "mlily_remote_antisnoring_save": {
+        "name": "{action}"
+      },
+      "mlily_remote_massageheadinstensitystrengthen": {
+        "name": "{action}"
+      },
+      "mlily_remote_massagefootinstensitystrengthen": {
+        "name": "{action}"
+      },
+      "mlily_remote_massagemodechange": {
+        "name": "{action}"
+      },
+      "mlily_remote_massagemodealloff": {
+        "name": "{action}"
+      },
+      "mlily_remote_massage10minutetimer": {
+        "name": "{action}"
+      },
+      "mlily_remote_massage20minutetimer": {
+        "name": "{action}"
+      },
+      "mlily_remote_massage30minutetimer": {
+        "name": "{action}"
+      },
+      "mlily_remote_massagelumbarinstensitystrengthen": {
+        "name": "{action}"
+      },
+      "mlily_remote_tvposition": {
+        "name": "{action}"
+      },
+      "mlily_remote_tvposition_save": {
+        "name": "{action}"
+      },
+      "mlily_remote_loungeposition": {
+        "name": "{action}"
+      },
+      "mlily_remote_loungeposition_save": {
+        "name": "{action}"
+      },
       "richmat_legacy_lighting": {
         "name": "{action}"
       },
@@ -5078,6 +5150,9 @@
         "name": "Alarm wake mode"
       },
       "sonicsleep": {
+        "name": "Model"
+      },
+      "mlily_remote": {
         "name": "Model"
       },
       "richmat_mh_last_reply": {
@@ -9134,6 +9209,34 @@
         }
       }
     },
+    "mlily_remote": {
+      "name": "MLILY Remote: settings",
+      "description": "Set the bed clock and the MS600 countdown alarm, or run the MS300-SH anti-snore intervention on the left side.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "hour": {
+          "name": "Alarm hour",
+          "description": "Alarm hour in 24-hour time."
+        },
+        "minute": {
+          "name": "Alarm minute",
+          "description": "Minute within the selected alarm hour."
+        },
+        "mode": {
+          "name": "Alarm position",
+          "description": "Position the bed moves to when the alarm goes off."
+        },
+        "side": {
+          "name": "Side",
+          "description": "For two separate receivers, the side to set. When both sides share one receiver, select the bed: its clock and alarm are shared and the anti-snore intervention runs on the left."
+        }
+      }
+    },
     "richmat_legacy": {
       "name": "SleepEvolution and W.Silver Products 3.x: run app control",
       "description": "Run a control from the selected app and name prefix, as a press or a save.",
@@ -10501,6 +10604,7 @@
         "acaa": "ACAA app",
         "sta2": "STA Homecare app",
         "zerogravity": "Zero Gravity app",
+        "mlily_remote": "MLILY Remote app",
         "sleep_evolution": "SleepEvolution app",
         "wsilver_legacy": "W.Silver Products 3.x app",
         "nisco": "Nisco app",
@@ -11576,6 +11680,14 @@
       "options": {
         "left": "Left",
         "right": "Right"
+      }
+    },
+    "mlily_remote_operation": {
+      "options": {
+        "alarm": "Set alarm",
+        "alarm_cancel": "Cancel alarm",
+        "time_sync": "Set bed clock",
+        "anti_snore": "Anti-snore intervention"
       }
     },
     "richmat_legacy_operation": {
