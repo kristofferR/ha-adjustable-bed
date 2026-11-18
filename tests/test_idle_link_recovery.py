@@ -426,6 +426,9 @@ async def test_stop_during_a_recovery_uses_its_connect(
     assert connects == 1
     assert sent_on == [mock_bleak_client]
     assert coordinator.is_connected
+    # The link served the STOP, so its window may recover one drop.
+    _drop(coordinator, mock_bleak_client)
+    assert _take_reconnect_timer(coordinator)
 
 
 async def test_spent_window_is_not_recovered_after_the_command_left(
@@ -689,3 +692,25 @@ async def test_inline_group_is_demand(hass: HomeAssistant) -> None:
         assert coordinator._command_needs_link()
         release.set()
         await group
+
+
+async def test_recovery_leaves_a_link_another_connect_opened_alone(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """If an explicit connect wins the lock, the recovery does not claim its link."""
+    coordinator = await _dropped_inside_window(hass, mock_bleak_client)
+    deadline = coordinator._idle_deadline
+    attempts = coordinator.connection_attempt_count
+
+    async with coordinator._lock:
+        recovery = hass.async_create_task(coordinator._async_auto_reconnect())
+        await asyncio.sleep(0)
+        # As if the Connect button opened the link meanwhile.
+        mock_bleak_client.is_connected = True
+        coordinator._client = mock_bleak_client
+    await recovery
+
+    assert coordinator.connection_attempt_count == attempts
+    assert not coordinator._link_from_recovery
+    assert not coordinator._recovered_link_window
+    assert coordinator._idle_deadline == deadline

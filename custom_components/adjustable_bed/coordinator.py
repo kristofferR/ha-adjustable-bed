@@ -463,6 +463,8 @@ class AdjustableBedCoordinator(
         self._link_read_active = False
         # The current link was opened by a bounded recovery: not recovered again.
         self._link_from_recovery = False
+        # Command generation a bounded recovery connect started with.
+        self._recovery_generation: int | None = None
         # Deadline of a bounded recovery connect in flight; a command lifts it.
         self._recovery_connect_window: asyncio.Timeout | None = None
         self._reconnect_timer: asyncio.TimerHandle | None = None

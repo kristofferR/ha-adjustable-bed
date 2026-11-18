@@ -1532,6 +1532,15 @@ class CoordinatorConnectionMixin:
                         sorted(manufacturer_data),
                     )
 
+                # Decided before the new controller exists, so its own startup
+                # commands cannot make a recovery's link look like a command's.
+                # One recovery per window: if this link drops too, the next
+                # command reconnects.
+                self._link_from_recovery = (
+                    self._recovery_generation is not None
+                    and self._recovery_generation == self._command_link_generation
+                )
+
                 # Create the controller
                 _LOGGER.debug("Creating %s controller...", self._bed_type)
                 self._controller = await create_controller(
@@ -1625,8 +1634,6 @@ class CoordinatorConnectionMixin:
                 # Store connection metadata for binary sensor
                 self._connecting = False
                 self._last_connected = datetime.now(UTC)
-                # A bounded recovery marks its own link after this returns.
-                self._link_from_recovery = False
                 self._connection_source = actual_adapter
                 self._connection_path = async_path_for_source(
                     self.hass, actual_adapter, rssi=adapter_result.rssi
@@ -2039,20 +2046,16 @@ class CoordinatorConnectionMixin:
         # window the last command opened, never a new one.
         deadline = self._idle_deadline
         generation = self._command_link_generation
-        self._recovered_link_window = bounded
         try:
             if bounded:
                 connected = await self._async_connect_within_window(deadline, generation)
                 if connected is None:
                     return
             else:
+                self._recovered_link_window = False
                 connected = await self.async_connect()
             if connected:
                 _LOGGER.debug("Auto-reconnection successful for %s", self._address)
-                if bounded:
-                    # One recovery per window: if this link drops too, the
-                    # next command reconnects.
-                    self._link_from_recovery = True
                 if bounded and generation == self._command_link_generation:
                     # Retries or a drop during startup may have re-armed the
                     # timer. Unless a command took the link meanwhile, the
@@ -2091,18 +2094,24 @@ class CoordinatorConnectionMixin:
     async def _async_connect_within_window(
         self: AdjustableBedCoordinator, deadline: float | None, generation: int
     ) -> bool | None:
-        """Connect for a bounded recovery; return None when the window ran out.
+        """Connect for a bounded recovery; return None when there was nothing to do.
 
-        A command that takes the link meanwhile lifts the deadline, so the
+        That is when another connect won the lock or the window ran out. A
+        command that takes the link meanwhile lifts the deadline, so the
         connect finishes for it. Otherwise cleanup runs under the same
         connection lock as the attempt, so a command queued on it never sees
         the abandoned link and connects on demand afterwards.
         """
         async with self._lock:
+            if self._client is not None and self._client.is_connected:
+                # An explicit connect or a command got there first.
+                return None
             # A command that arrived while this waited for the lock owns the link.
             command_arrived = generation != self._command_link_generation
+            self._recovered_link_window = not command_arrived
             window = asyncio.timeout_at(None if command_arrived else deadline)
             self._recovery_connect_window = window
+            self._recovery_generation = generation
             try:
                 async with window:
                     return await self._async_connect_locked()
@@ -2111,6 +2120,7 @@ class CoordinatorConnectionMixin:
                     raise
             finally:
                 self._recovery_connect_window = None
+                self._recovery_generation = None
             _LOGGER.debug("Auto-reconnect for %s outlasted the idle window", self._address)
             self._recovered_link_window = False
             # A cancelled startup error handler can leave a half-open link.
