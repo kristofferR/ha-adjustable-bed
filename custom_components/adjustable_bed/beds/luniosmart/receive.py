@@ -43,7 +43,7 @@ def decode(packet: bytes) -> list[Event]:
 
 
 def _fields(b: bytes) -> list[Event]:
-    """Exact accepted BED masks, including checksum aliases in weak guards."""
+    """Exact app BED masks, including checksum aliases in weak guards."""
     n = len(b)
     if n == 5 and b[:2] == b"\x6e\x90":
         tag, value = b[2], b[3]

@@ -1,4 +1,4 @@
-"""Unit141 accepted literals, encoded by the existing Richmat codec."""
+"""Lunio Smart+ 1.0.4 literals, encoded by the existing Richmat codec."""
 
 import json
 from datetime import datetime

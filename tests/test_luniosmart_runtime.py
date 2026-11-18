@@ -33,7 +33,7 @@ async def runtime(hass, request, mock_coordinator_connected, mock_bleak_client, 
             CONF_NAME: "Lunio Smart+",
             const.CONF_BED_TYPE: "luniosmart",
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)

@@ -3182,11 +3182,10 @@ year minus 1970 and an additive checksum.
 
 #### Evidence
 
-APK Protocol Audit unit141, accepted Lunio Smart+ 1.0.4 (10400), artifact-set
-SHA-256 `a28166ebaa35703484c58c0c84816476fbf45211a98eda87cae99d7603f6ae88`.
-The frozen July delivery supplies no new latest-version attestation. Static
-literals prove the shared codec; physical routing, axes, release and memory
-behavior remain unverified for external beta/release qualification.
+The app's literals prove the shared codec; physical routing, axes, release and
+memory behavior still need testing on real beds.
+
+Based on Lunio Smart+ 1.0.4 (`com.richmat.luniosmart`).
 
 ### SonicSleep
 
