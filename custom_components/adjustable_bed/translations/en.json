@@ -3349,9 +3349,6 @@
       "sonicsleep_action": {
         "name": "{action}"
       },
-      "mlily_remote_motorreset": {
-        "name": "{action}"
-      },
       "mlily_remote_bedlight": {
         "name": "{action}"
       },
@@ -3388,18 +3385,6 @@
       "mlily_remote_antisnoring_save": {
         "name": "{action}"
       },
-      "mlily_remote_memoryposition1": {
-        "name": "{action}"
-      },
-      "mlily_remote_memoryposition1_save": {
-        "name": "{action}"
-      },
-      "mlily_remote_memoryposition2": {
-        "name": "{action}"
-      },
-      "mlily_remote_memoryposition2_save": {
-        "name": "{action}"
-      },
       "mlily_remote_massageheadinstensitystrengthen": {
         "name": "{action}"
       },
@@ -3428,12 +3413,6 @@
         "name": "{action}"
       },
       "mlily_remote_tvposition_save": {
-        "name": "{action}"
-      },
-      "mlily_remote_memoryposition3": {
-        "name": "{action}"
-      },
-      "mlily_remote_memoryposition3_save": {
         "name": "{action}"
       },
       "mlily_remote_loungeposition": {
@@ -5333,7 +5312,7 @@
         "name": "SonicSleep state"
       },
       "mlily_remote": {
-        "name": "MLILY Remote"
+        "name": "Model"
       }
     },
     "light": {

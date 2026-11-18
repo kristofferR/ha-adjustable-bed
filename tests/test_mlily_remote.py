@@ -56,6 +56,30 @@ def test_complete_product_gates(row):
     assert profile.phone_snore == row["flag_2c"]
 
 
+def test_buttons_add_only_what_shared_presets_lack():
+    controller, _ = make("ms600")
+    # Flat and memory recall/save are the shared preset_flat/preset_memory/program_memory.
+    assert controller.supports_preset_flat and controller.memory_slot_count == 3
+    assert controller.standard_button_requires_confirmation("program_memory_3")
+    assert [s.name for s in controller.controller_button_specs] == [
+        "Toggle Light",
+        "Massage: Head Intensity Up",
+        "Massage: Lumbar Intensity Up",
+        "Massage: Foot Intensity Up",
+        "Massage: Mode",
+        "Massage: Off",
+        "Massage: Timer 10 Minutes",
+        "Massage: Timer 20 Minutes",
+        "Massage: Timer 30 Minutes",
+        "Zero Gravity",
+        "Save Zero Gravity",
+        "Anti-Snore",
+        "Save Anti-Snore",
+        "TV",
+        "Save TV",
+    ]
+
+
 def expected_events(row):
     """Compare source result values with the shared parser's event schema."""
     x, name = row["expected_state"], row["id"]
@@ -169,13 +193,13 @@ async def test_powercool_labels_and_no_massage_release():
     controller, c = make("powercool")
     await controller.start_notify()
     specs = controller.controller_button_specs
-    assert {s.name for s in specs if "timer" in s.name} == {
-        "Cooling timer 2 hours",
-        "Cooling timer 3 hours",
-        "Cooling timer 5 hours",
+    assert {s.name for s in specs if "Timer" in s.name} == {
+        "Fan: Timer 2 Hours",
+        "Fan: Timer 3 Hours",
+        "Fan: Timer 5 Hours",
     }
     assert all("Massage" not in s.name for s in specs)
-    spec = next(s for s in specs if s.name == "Head fan intensity")
+    spec = next(s for s in specs if s.name == "Fan: Head Intensity Up")
     c.client.write_gatt_char.reset_mock()
     await spec.press_fn(controller)
     assert frames(c) == ["6e01004cbb"]

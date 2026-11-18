@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, memory_card
+from ...card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.mlily_remote import ACTIONS, PROFILES, SAVE_MS, STARTUP, TICK_S
 from ..base import BedController, require_controller
 from ..builder import BuildContext
-from ..casper_base.controller import CasperBaseController, action_label
+from ..casper_base.controller import CasperBaseController
 from ..casper_base.protocol import Request, alarm_countdown
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -38,6 +38,35 @@ MODEL: Final = StateKey[str]("mlily_remote_model")
 EVENTS: Final = StateKey[dict[str, object]]("mlily_remote_events")
 ALARM: Final = StateKey[dict[str, object]]("mlily_remote_alarm")
 ERROR: Final = StateKey[str | None]("mlily_remote_error")
+
+# Button names for the product's discrete actions, matching the shared preset and
+# massage names. Flat, memory recall/save and movement have their own entities.
+LABELS: Final = {
+    "BedLight": "Toggle Light",
+    "ZeroGravity": "Zero Gravity",
+    "AntiSnoring": "Anti-Snore",
+    "TVPosition": "TV",
+    "LoungePosition": "Lounge",
+    "MassageHeadInstensityStrengthen": "Massage: Head Intensity Up",
+    "MassageFootInstensityStrengthen": "Massage: Foot Intensity Up",
+    "MassageLumbarInstensityStrengthen": "Massage: Lumbar Intensity Up",
+    "MassageModeChange": "Massage: Mode",
+    "MassageModeAllOff": "Massage: Off",
+    "Massage10MinuteTimer": "Massage: Timer 10 Minutes",
+    "Massage20MinuteTimer": "Massage: Timer 20 Minutes",
+    "Massage30MinuteTimer": "Massage: Timer 30 Minutes",
+}
+# PowerCool sends the same codes to its fans, with 2/3/5-hour timers.
+COOLING_LABELS: Final = {
+    **LABELS,
+    "MassageHeadInstensityStrengthen": "Fan: Head Intensity Up",
+    "MassageFootInstensityStrengthen": "Fan: Foot Intensity Up",
+    "MassageModeChange": "Fan: Mode",
+    "MassageModeAllOff": "Fan: Off",
+    "Massage10MinuteTimer": "Fan: Timer 2 Hours",
+    "Massage20MinuteTimer": "Fan: Timer 3 Hours",
+    "Massage30MinuteTimer": "Fan: Timer 5 Hours",
+}
 
 
 async def invoke(controller: BedController, action: str, *, save: bool = False) -> None:
@@ -271,48 +300,32 @@ class MlilyRemoteController(CasperBaseController):
             )
         )
 
+    def standard_button_requires_confirmation(self, key: str) -> bool:
+        return key.startswith("program_memory_")
+
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # Flat and the memory slots are the shared preset_flat/preset_memory/
+        # program_memory buttons; this adds only the product's other actions.
+        cooling = PROFILES[self.model].cooling
         specs = []
-        profile = PROFILES[self.model]
         for name, (_, long) in self.actions.items():
-            if name.endswith(("Up", "Down")):
+            label = (COOLING_LABELS if cooling else LABELS).get(name)
+            if label is None:
                 continue
-            label = action_label(name)
             card = (
-                CARD_MASSAGE
+                (CARD_CLIMATE if cooling else CARD_MASSAGE)
                 if name.startswith("Massage")
                 else CARD_LIGHTING
                 if name == "BedLight"
                 else CARD_PRESETS
             )
-            if profile.cooling and name.startswith("Massage"):
-                label = {
-                    "MassageHeadInstensityStrengthen": "Head fan intensity",
-                    "MassageFootInstensityStrengthen": "Foot fan intensity",
-                    "MassageModeChange": "Fan mode",
-                    "MassageModeAllOff": "Cooling off",
-                    "Massage10MinuteTimer": "Cooling timer 2 hours",
-                    "Massage20MinuteTimer": "Cooling timer 3 hours",
-                    "Massage30MinuteTimer": "Cooling timer 5 hours",
-                }[name]
-                card = CARD_CLIMATE
             for save in (False, True) if long is not None else (False,):
                 title = ("Save " if save else "") + label
-                placement = (
-                    memory_card(int(name[-1]), save=save)
-                    if name.startswith("MemoryPosition")
-                    else card
-                )
-                key = (
-                    (
-                        "mlily_remote_cooling_"
-                        if profile.cooling and name.startswith("Massage")
-                        else "mlily_remote_"
-                    )
-                    + name.lower()
-                    + ("_save" if save else "")
-                )
+                prefix = "mlily_remote_"
+                if cooling and name.startswith("Massage"):
+                    prefix += "cooling_"
+                key = prefix + name.lower() + ("_save" if save else "")
                 specs.append(
                     ControllerButtonSpec(
                         key,
@@ -321,7 +334,7 @@ class MlilyRemoteController(CasperBaseController):
                         translation_key=key,
                         translation_placeholders={"action": title},
                         requires_confirmation=save,
-                        card=placement,
+                        card=card,
                     )
                 )
         return tuple(specs)
@@ -334,7 +347,10 @@ class MlilyRemoteController(CasperBaseController):
                 "mlily_remote",
                 MODEL,
                 "mdi:bed",
+                # The product model, carrying received events, the saved alarm and the
+                # last rejected reply as diagnostic attributes.
                 attribute_keys=(EVENTS, ALARM, ERROR),
+                entity_registry_enabled_default=False,
             ),
         )
 

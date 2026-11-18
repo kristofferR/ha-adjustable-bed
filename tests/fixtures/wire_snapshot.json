@@ -17587,17 +17587,12 @@
 "stop:back_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002594",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002695",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002796",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]},
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"d44bc439",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms200:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -17635,17 +17630,12 @@
 "stop:back_close": {"status":"ok","writes":[[100,"6e400002",false,"25",2,100],[300,"6e400002",false,"6e",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"6e400002",false,"26",2,100],[300,"6e400002",false,"6e",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"6e400002",false,"27",2,100],[300,"6e400002",false,"6e",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"6e400002",false,"45",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"6e400002",false,"66",1,0]]},
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"6e400002",false,"59",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"6e400002",false,"65",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"6e400002",false,"2b",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"6e400002",false,"2f",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"6e400002",false,"2c",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]}
 }},
 "mlily_remote:ms200:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -17683,17 +17673,12 @@
 "stop:back_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002594",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002695",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002796",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]},
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"d44bc439",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms200:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -17731,17 +17716,12 @@
 "stop:back_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002594",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002695",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002796",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010066d5",1,0]]},
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms200:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -17779,17 +17759,12 @@
 "stop:back_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002594",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002695",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002796",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms200:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -17827,17 +17802,12 @@
 "stop:back_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002594",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002695",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002796",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000fff2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"0000fff2",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms200:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -17875,17 +17845,12 @@
 "stop:back_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002594",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"00000002",false,"6e01002695",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002796",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"00000002",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010066d5",1,0]]},
 "button:mlily_remote_loungeposition": {"status":"ok","writes":[[93,"00000002",false,"6e010059c8",1,0]]},
 "button:mlily_remote_loungeposition_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010065d4",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"00000002",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms300:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -17931,7 +17896,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"6e400002",false,"29",2,100],[300,"6e400002",false,"6e",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"6e400002",false,"2a",2,100],[300,"6e400002",false,"6e",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"6e400002",false,"3c",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"6e400002",false,"4c",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"6e400002",false,"4e",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"6e400002",false,"48",1,0]]},
@@ -17942,11 +17906,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"6e400002",false,"45",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"6e400002",false,"66",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"6e400002",false,"2b",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"6e400002",false,"2f",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"6e400002",false,"2c",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"6e400002",false,"66",1,0]]}
 }},
 "mlily_remote:ms300:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -17992,7 +17952,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002998",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002a99",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"d44bc439",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"d44bc439",false,"6e010048b7",1,0]]},
@@ -18003,11 +17962,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]}
 }},
 "mlily_remote:ms300:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18053,7 +18008,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002998",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002a99",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010048b7",1,0]]},
@@ -18064,11 +18018,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010066d5",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010066d5",1,0]]}
 }},
 "mlily_remote:ms300:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18114,7 +18064,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002998",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002a99",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010048b7",1,0]]},
@@ -18125,11 +18074,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010066d5",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010066d5",1,0]]}
 }},
 "mlily_remote:ms300:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18175,7 +18120,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002998",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002a99",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"0000fff2",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"0000fff2",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"0000fff2",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"0000fff2",false,"6e010048b7",1,0]]},
@@ -18186,11 +18130,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000fff2",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010066d5",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010066d5",1,0]]}
 }},
 "mlily_remote:ms300:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18236,7 +18176,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"00000002",false,"6e01002998",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002a99",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"00000002",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"00000002",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"00000002",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"00000002",false,"6e010048b7",1,0]]},
@@ -18247,11 +18186,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"00000002",false,"6e010045b4",1,0]]},
-"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010066d5",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"00000002",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010066d5",1,0]]}
 }},
 "mlily_remote:ms300_sh:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18297,7 +18232,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"6e400002",false,"29",2,100],[300,"6e400002",false,"6e",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"6e400002",false,"2a",2,100],[300,"6e400002",false,"6e",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"6e400002",false,"3c",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"6e400002",false,"4c",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"6e400002",false,"4e",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"6e400002",false,"48",1,0]]},
@@ -18308,11 +18242,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"6e400002",false,"45",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"6e400002",false,"66",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"6e400002",false,"2b",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"6e400002",false,"2f",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"6e400002",false,"2c",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]}
 }},
 "mlily_remote:ms300_sh:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18358,7 +18288,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002998",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002a99",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"d44bc439",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"d44bc439",false,"6e010048b7",1,0]]},
@@ -18369,11 +18298,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms300_sh:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18419,7 +18344,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002998",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002a99",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010048b7",1,0]]},
@@ -18430,11 +18354,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms300_sh:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18480,7 +18400,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002998",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002a99",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010048b7",1,0]]},
@@ -18491,11 +18410,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms300_sh:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18541,7 +18456,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002998",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002a99",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"0000fff2",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"0000fff2",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"0000fff2",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"0000fff2",false,"6e010048b7",1,0]]},
@@ -18552,11 +18466,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000fff2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms300_sh:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18602,7 +18512,6 @@
 "stop:head_feet_open": {"status":"ok","writes":[[100,"00000002",false,"6e01002998",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "stop:head_feet_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002a99",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"00000002",false,"6e01003cab",1,0]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"00000002",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"00000002",false,"6e01004ebd",1,0]]},
 "button:mlily_remote_massagemodechange": {"status":"ok","writes":[[93,"00000002",false,"6e010048b7",1,0]]},
@@ -18613,11 +18522,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"00000002",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"00000002",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:ms600:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18671,7 +18576,6 @@
 "stop:head_close": {"status":"ok","writes":[[100,"6e400002",false,"42",2,100],[300,"6e400002",false,"6e",2,100]]},
 "stop:lumbar_open": {"status":"ok","writes":[[100,"6e400002",false,"3f",2,100],[300,"6e400002",false,"6e",2,100]]},
 "stop:lumbar_close": {"status":"ok","writes":[[100,"6e400002",false,"40",2,100],[300,"6e400002",false,"6e",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"6e400002",false,"3c",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"6e400002",false,"4c",1,0]]},
 "button:mlily_remote_massagelumbarinstensitystrengthen": {"status":"ok","writes":[[93,"6e400002",false,"e0",1,0]]},
@@ -18686,13 +18590,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"6e400002",false,"58",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"6e400002",false,"64",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"6e400002",false,"2b",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"6e400002",false,"2f",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"6e400002",false,"2c",1,0]]},
-"button:mlily_remote_memoryposition3": {"status":"ok","writes":[[93,"6e400002",false,"30",1,0]]},
-"button:mlily_remote_memoryposition3_save": {"status":"ok","writes":[[3000,"6e400002",false,"2d",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"6e400002",false,"64",1,0]]}
 }},
 "mlily_remote:ms600:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18746,7 +18644,6 @@
 "stop:head_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e010042b1",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:lumbar_open": {"status":"ok","writes":[[100,"d44bc439",false,"6e01003fae",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:lumbar_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e010040af",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"d44bc439",false,"6e01003cab",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagelumbarinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439",false,"6e0100e04f",1,0]]},
@@ -18761,13 +18658,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"d44bc439",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010064d3",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002c9b",1,0]]},
-"button:mlily_remote_memoryposition3": {"status":"ok","writes":[[93,"d44bc439",false,"6e0100309f",1,0]]},
-"button:mlily_remote_memoryposition3_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002d9c",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010064d3",1,0]]}
 }},
 "mlily_remote:ms600:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18821,7 +18712,6 @@
 "stop:head_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010042b1",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:lumbar_open": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01003fae",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:lumbar_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010040af",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01003cab",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagelumbarinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0100e04f",1,0]]},
@@ -18836,13 +18726,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010064d3",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]},
-"button:mlily_remote_memoryposition3": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0100309f",1,0]]},
-"button:mlily_remote_memoryposition3_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002d9c",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010064d3",1,0]]}
 }},
 "mlily_remote:ms600:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18896,7 +18780,6 @@
 "stop:head_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e010042b1",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:lumbar_open": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01003fae",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:lumbar_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e010040af",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01003cab",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagelumbarinstensitystrengthen": {"status":"ok","writes":[[93,"0000ffe2",false,"6e0100e04f",1,0]]},
@@ -18911,13 +18794,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010064d3",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002c9b",1,0]]},
-"button:mlily_remote_memoryposition3": {"status":"ok","writes":[[93,"0000ffe2",false,"6e0100309f",1,0]]},
-"button:mlily_remote_memoryposition3_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002d9c",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010064d3",1,0]]}
 }},
 "mlily_remote:ms600:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -18971,7 +18848,6 @@
 "stop:head_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e010042b1",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:lumbar_open": {"status":"ok","writes":[[100,"0000fff2",false,"6e01003fae",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:lumbar_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e010040af",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"0000fff2",false,"6e01003cab",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"0000fff2",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagelumbarinstensitystrengthen": {"status":"ok","writes":[[93,"0000fff2",false,"6e0100e04f",1,0]]},
@@ -18986,13 +18862,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"0000fff2",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010064d3",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002c9b",1,0]]},
-"button:mlily_remote_memoryposition3": {"status":"ok","writes":[[93,"0000fff2",false,"6e0100309f",1,0]]},
-"button:mlily_remote_memoryposition3_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002d9c",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010064d3",1,0]]}
 }},
 "mlily_remote:ms600:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -19046,7 +18916,6 @@
 "stop:head_close": {"status":"ok","writes":[[100,"00000002",false,"6e010042b1",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "stop:lumbar_open": {"status":"ok","writes":[[100,"00000002",false,"6e01003fae",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "stop:lumbar_close": {"status":"ok","writes":[[100,"00000002",false,"6e010040af",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"00000002",false,"6e01003cab",1,0]]},
 "button:mlily_remote_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"00000002",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_massagelumbarinstensitystrengthen": {"status":"ok","writes":[[93,"00000002",false,"6e0100e04f",1,0]]},
@@ -19061,13 +18930,7 @@
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
 "button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
 "button:mlily_remote_tvposition": {"status":"ok","writes":[[93,"00000002",false,"6e010058c7",1,0]]},
-"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010064d3",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"00000002",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002c9b",1,0]]},
-"button:mlily_remote_memoryposition3": {"status":"ok","writes":[[93,"00000002",false,"6e0100309f",1,0]]},
-"button:mlily_remote_memoryposition3_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002d9c",1,0]]}
+"button:mlily_remote_tvposition_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010064d3",1,0]]}
 }},
 "mlily_remote:powercool:n1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -19105,7 +18968,6 @@
 "stop:back_close": {"status":"ok","writes":[[100,"6e400002",false,"25",2,100],[300,"6e400002",false,"6e",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"6e400002",false,"26",2,100],[300,"6e400002",false,"6e",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"6e400002",false,"27",2,100],[300,"6e400002",false,"6e",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"6e400002",false,"3c",1,0]]},
 "button:mlily_remote_cooling_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"6e400002",false,"4c",1,0]]},
 "button:mlily_remote_cooling_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"6e400002",false,"4e",1,0]]},
@@ -19117,11 +18979,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"6e400002",false,"45",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"6e400002",false,"66",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"6e400002",false,"46",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"6e400002",false,"2b",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"6e400002",false,"2f",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"6e400002",false,"2c",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"6e400002",false,"69",1,0]]}
 }},
 "mlily_remote:powercool:w1": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -19159,7 +19017,6 @@
 "stop:back_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002594",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002695",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002796",2,100],[300,"d44bc439",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"d44bc439",false,"6e01003cab",1,0]]},
 "button:mlily_remote_cooling_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_cooling_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439",false,"6e01004ebd",1,0]]},
@@ -19171,11 +19028,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:powercool:w2": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -19213,7 +19066,6 @@
 "stop:back_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002594",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002695",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002796",2,100],[300,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01003cab",1,0]]},
 "button:mlily_remote_cooling_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_cooling_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01004ebd",1,0]]},
@@ -19225,11 +19077,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:powercool:w3": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -19267,7 +19115,6 @@
 "stop:back_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002594",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002695",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002796",2,100],[300,"0000ffe2",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01003cab",1,0]]},
 "button:mlily_remote_cooling_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_cooling_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01004ebd",1,0]]},
@@ -19279,11 +19126,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000ffe2",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:powercool:w4": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -19321,7 +19164,6 @@
 "stop:back_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002594",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002695",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002796",2,100],[300,"0000fff2",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"0000fff2",false,"6e01003cab",1,0]]},
 "button:mlily_remote_cooling_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"0000fff2",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_cooling_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"0000fff2",false,"6e01004ebd",1,0]]},
@@ -19333,11 +19175,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"0000fff2",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"0000fff2",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"0000fff2",false,"6e010069d8",1,0]]}
 }},
 "mlily_remote:powercool:w5": {
 "info": {"bed_type": "mlily_remote", "controller": "MlilyRemoteController", "module": "mlily_remote.controller", "pulse": [10, 100]},
@@ -19375,7 +19213,6 @@
 "stop:back_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002594",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"00000002",false,"6e01002695",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002796",2,100],[300,"00000002",false,"6e01006edd",2,100]]},
-"button:mlily_remote_motorreset": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]},
 "button:mlily_remote_bedlight": {"status":"ok","writes":[[93,"00000002",false,"6e01003cab",1,0]]},
 "button:mlily_remote_cooling_massageheadinstensitystrengthen": {"status":"ok","writes":[[93,"00000002",false,"6e01004cbb",1,0]]},
 "button:mlily_remote_cooling_massagefootinstensitystrengthen": {"status":"ok","writes":[[93,"00000002",false,"6e01004ebd",1,0]]},
@@ -19387,11 +19224,7 @@
 "button:mlily_remote_zerogravity": {"status":"ok","writes":[[93,"00000002",false,"6e010045b4",1,0]]},
 "button:mlily_remote_zerogravity_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010066d5",1,0]]},
 "button:mlily_remote_antisnoring": {"status":"ok","writes":[[93,"00000002",false,"6e010046b5",1,0]]},
-"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]},
-"button:mlily_remote_memoryposition1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
-"button:mlily_remote_memoryposition1_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002b9a",1,0]]},
-"button:mlily_remote_memoryposition2": {"status":"ok","writes":[[93,"00000002",false,"6e01002f9e",1,0]]},
-"button:mlily_remote_memoryposition2_save": {"status":"ok","writes":[[3000,"00000002",false,"6e01002c9b",1,0]]}
+"button:mlily_remote_antisnoring_save": {"status":"ok","writes":[[3000,"00000002",false,"6e010069d8",1,0]]}
 }},
 "mline": {
 "info": {"bed_type": "mline", "controller": "MLineController", "module": "mline.controller", "pulse": [10, 100]},

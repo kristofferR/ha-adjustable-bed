@@ -4869,39 +4869,6 @@
   "button:mlily_remote_massagemodechange": {
     "card_section": "massage"
   },
-  "button:mlily_remote_memoryposition1": {
-    "card_section": "memory",
-    "card_role": "recall",
-    "card_slot": 1
-  },
-  "button:mlily_remote_memoryposition1_save": {
-    "card_section": "memory",
-    "card_role": "save",
-    "card_slot": 1
-  },
-  "button:mlily_remote_memoryposition2": {
-    "card_section": "memory",
-    "card_role": "recall",
-    "card_slot": 2
-  },
-  "button:mlily_remote_memoryposition2_save": {
-    "card_section": "memory",
-    "card_role": "save",
-    "card_slot": 2
-  },
-  "button:mlily_remote_memoryposition3": {
-    "card_section": "memory",
-    "card_role": "recall",
-    "card_slot": 3
-  },
-  "button:mlily_remote_memoryposition3_save": {
-    "card_section": "memory",
-    "card_role": "save",
-    "card_slot": 3
-  },
-  "button:mlily_remote_motorreset": {
-    "card_section": "presets"
-  },
   "button:mlily_remote_tvposition": {
     "card_section": "presets"
   },
