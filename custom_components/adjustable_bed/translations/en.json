@@ -2123,16 +2123,13 @@
         "name": "Identify local safety light"
       },
       "sleepys_app_program": {
-        "name": "Program"
+        "name": "Program memory"
       },
       "sleepys_app_reset_memory": {
         "name": "Reset memory"
       },
-      "sleepys_app_voice_stop": {
-        "name": "Voice stop"
-      },
       "sleepys_app_query_position": {
-        "name": "Refresh position state"
+        "name": "Refresh position"
       },
       "sleepys_app_memory_1": {
         "name": "Memory 1"
@@ -2164,35 +2161,17 @@
       "sleepys_app_preset_tv": {
         "name": "TV"
       },
-      "sleepys_app_motion_sensor_on": {
-        "name": "Motion sensor on"
-      },
-      "sleepys_app_motion_sensor_off": {
-        "name": "Motion sensor off"
-      },
-      "sleepys_app_light_on": {
-        "name": "Light on"
-      },
-      "sleepys_app_light_off": {
-        "name": "Light off"
-      },
       "sleepys_app_light_mode": {
-        "name": "Light mode"
+        "name": "Toggle light"
       },
       "sleepys_app_light_brightness_down": {
-        "name": "Reduce light"
+        "name": "Decrease light brightness"
       },
       "sleepys_app_light_brightness_up": {
-        "name": "Increase light"
-      },
-      "sleepys_app_voice_brightness_down": {
-        "name": "Decrease brightness by one"
-      },
-      "sleepys_app_voice_brightness_up": {
-        "name": "Increase brightness by one"
+        "name": "Increase light brightness"
       },
       "sleepys_app_rgb_action": {
-        "name": "RGB action"
+        "name": "RGB light mode"
       },
       "sleepys_app_massage_mode_1": {
         "name": "Massage mode 1"
@@ -2207,7 +2186,7 @@
         "name": "Refresh massage state"
       },
       "sleepys_app_massage_timer": {
-        "name": "Massage timer"
+        "name": "Cycle massage timer"
       },
       "sleepys_app_massage_wave_down": {
         "name": "Previous massage wave"
@@ -2234,31 +2213,13 @@
         "name": "Increase lumbar massage"
       },
       "sleepys_app_massage_toggle": {
-        "name": "Massage mode"
+        "name": "Cycle massage mode"
       },
       "sleepys_app_massage_off": {
         "name": "Massage off"
       },
       "sleepys_app_massage_on": {
         "name": "Massage on"
-      },
-      "sleepys_app_voice_axis_0_0": {
-        "name": "Position axis 0 target 0"
-      },
-      "sleepys_app_voice_axis_0_100": {
-        "name": "Position axis 0 target 100"
-      },
-      "sleepys_app_voice_axis_1_0": {
-        "name": "Position axis 1 target 0"
-      },
-      "sleepys_app_voice_axis_1_100": {
-        "name": "Position axis 1 target 100"
-      },
-      "sleepys_app_voice_axis_2_0": {
-        "name": "Position axis 2 target 0"
-      },
-      "sleepys_app_voice_axis_2_100": {
-        "name": "Position axis 2 target 100"
       },
       "eshine_save_zero_g": {
         "name": "Save Zero Gravity"
@@ -4329,55 +4290,13 @@
         "name": "App memory request"
       },
       "sleepys_app_position_axis_0": {
-        "name": "App position axis 0"
+        "name": "Head position"
       },
       "sleepys_app_position_axis_1": {
-        "name": "App position axis 1"
+        "name": "Foot position"
       },
       "sleepys_app_position_axis_2": {
-        "name": "App position axis 2"
-      },
-      "sleepys_app_field_0x0b": {
-        "name": "App state field 0x0B"
-      },
-      "sleepys_app_field_0x13": {
-        "name": "App state field 0x13"
-      },
-      "sleepys_app_field_0x1b": {
-        "name": "App state field 0x1B"
-      },
-      "sleepys_app_field_0x23": {
-        "name": "App state field 0x23"
-      },
-      "sleepys_app_field_0x43": {
-        "name": "App state field 0x43"
-      },
-      "sleepys_app_field_0x47": {
-        "name": "App state field 0x47"
-      },
-      "sleepys_app_field_0x4b": {
-        "name": "App state field 0x4B"
-      },
-      "sleepys_app_field_0x53": {
-        "name": "App state field 0x53"
-      },
-      "sleepys_app_field_0x5f": {
-        "name": "App state field 0x5F"
-      },
-      "sleepys_app_field_0x67": {
-        "name": "App state field 0x67"
-      },
-      "sleepys_app_field_0x6b": {
-        "name": "App state field 0x6B"
-      },
-      "sleepys_app_field_0x73": {
-        "name": "App state field 0x73"
-      },
-      "sleepys_app_field_0x7b": {
-        "name": "App state field 0x7B"
-      },
-      "sleepys_app_field_0x83": {
-        "name": "App state field 0x83"
+        "name": "Lumbar position"
       },
       "eshine_capabilities": {
         "name": "Capabilities"
@@ -4936,6 +4855,9 @@
       },
       "automatic_light": {
         "name": "Automatic under-bed light"
+      },
+      "sleepys_app_motion_sensor": {
+        "name": "Motion sensor"
       }
     },
     "binary_sensor": {
@@ -5320,16 +5242,16 @@
         "name": "Light brightness"
       },
       "sleepys_app_target_axis_0": {
-        "name": "App target axis 0"
+        "name": "Head target position"
       },
       "sleepys_app_target_axis_1": {
-        "name": "App target axis 1"
+        "name": "Foot target position"
       },
       "sleepys_app_target_axis_2": {
-        "name": "App target axis 2"
+        "name": "Lumbar target position"
       },
       "sleepys_app_color_code": {
-        "name": "App color code"
+        "name": "Light color"
       },
       "adjustamattress_alarm_draft_hour": {
         "name": "Alarm hour (draft)"
@@ -5817,7 +5739,12 @@
         }
       },
       "sleepys_app_massage_timer_code": {
-        "name": "Massage time code"
+        "name": "Massage timer",
+        "state": {
+          "1": "10 minutes",
+          "2": "20 minutes",
+          "3": "30 minutes"
+        }
       },
       "doublesleep_child_lock": {
         "name": "Child lock",
