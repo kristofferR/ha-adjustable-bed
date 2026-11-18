@@ -37,8 +37,8 @@ from custom_components.adjustable_bed.execution import (
 )
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from custom_components.adjustable_bed.profiles import vibradorm as vibradorm_profiles
-from custom_components.adjustable_bed.profiles.suta import PROFILES as SUTA_PROFILES
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
+from custom_components.adjustable_bed.profiles.suta import PROFILES as SUTA_PROFILES
 from tests.codec_families import families
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,

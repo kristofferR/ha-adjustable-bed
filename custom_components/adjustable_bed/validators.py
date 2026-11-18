@@ -110,9 +110,9 @@ from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
 from .profiles.richmat import BEDTECH_VARIANTS
-from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
+from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 
 _LOGGER = logging.getLogger(__name__)
