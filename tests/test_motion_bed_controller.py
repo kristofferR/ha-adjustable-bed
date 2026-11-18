@@ -707,10 +707,16 @@ async def test_value_buttons_become_one_control_sending_the_same_frames() -> Non
     await _same_frames(rig, lambda: ctrl.set_light_timer("8 hours"), "motion_bed_tv_8xiaoshi")
     # A timer set here shows without a report, as the home screen may send none.
     assert ctrl._shown_massage_timer == 20
+    # Without a report, Off presses the chosen timer's key as the app's screen shows it.
+    rig.client.write_gatt_char.reset_mock()
+    await ctrl.set_massage_timer(0)
+    home_off = list(rig.writes)
+    assert ctrl._shown_massage_timer is None
     # Off presses the reported timer's key, which the app turns into its deselect frame.
     ctrl._state = replace(ctrl._state, massage_timer=20)
     ctrl._publish()
     off = await _same_frames(rig, lambda: ctrl.set_massage_timer(0), "motion_bed_20time")
+    assert off == home_off
     assert ctrl._shown_massage_timer is None
     assert off != await _same_frames(rig, lambda: ctrl.set_massage_timer(10), "motion_bed_10time")
     # Choosing the reported, shown timer keeps it instead of toggling it off.

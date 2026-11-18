@@ -413,6 +413,8 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         # keys are not always reported back.
         self._reported_massage_timer: int | None = None
         self._shown_massage_timer: int | None = None
+        # The screen state a timer key's frame is chosen from, while one is pressed.
+        self._selection_state: MotionBedState | None = None
         self._audio_preference = False
         self._held_session: _HeldSession | None = None
         self._module_generation = 0
@@ -645,24 +647,30 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
     async def set_massage_timer(self, minutes: int) -> None:
         """Each timer key starts its duration, or turns off the timer it shows.
 
-        The app picks the frame from the reported timer, so choosing the shown
-        timer is kept as is, and Off presses the shown timer's key.
+        The app picks a key's frame from the timer its screen shows: the
+        reported one, or, on screens the bed never reports to, the one chosen
+        last. Pressing the shown timer's key turns it off.
         """
-        # The key's frame follows the reported timer, so Off needs a report.
         reported = self._state.massage_timer
+        shown = reported if reported is not None else self._shown_massage_timer
         if minutes == 0:
-            if reported not in _MASSAGE_TIMERS:
-                raise ValueError("The bed has not reported a massage timer to turn off")
-            await self.async_execute_motion_bed_action(self._function_action(_MASSAGE_TIMERS[reported]))
+            if shown not in _MASSAGE_TIMERS:
+                raise ValueError("No massage timer is running to turn off")
+            key = _MASSAGE_TIMERS[shown]
         elif minutes not in _MASSAGE_TIMERS:
             raise ValueError("Choose 10, 20 or 30 minutes")
-        elif reported == minutes:
+        elif shown == minutes:
             if self._shown_massage_timer == minutes:
                 return
             # Pressing the reported timer's key would turn it off.
             raise ValueError("The bed has not reported the last timer change yet; try again shortly")
         else:
-            await self.async_execute_motion_bed_action(self._function_action(_MASSAGE_TIMERS[minutes]))
+            key = _MASSAGE_TIMERS[minutes]
+        self._selection_state = replace(self._state, massage_timer=shown)
+        try:
+            await self.async_execute_motion_bed_action(self._function_action(key))
+        finally:
+            self._selection_state = None
         # A STOP or replacing command ends the write without sending it.
         if not self._coordinator.cancel_command.is_set():
             self._shown_massage_timer = minutes or None
@@ -681,7 +689,8 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             raise ValueError("Choose 10 minutes, 8 hours or 10 hours")
         await self.async_execute_motion_bed_action(self._function_action(_LIGHT_TIMERS[timer_option]))
         # The reported light timer's values have no proven option mapping.
-        self.forward_controller_state_updates(LIGHT_TIMER_OPTION(timer_option))
+        if not self._coordinator.cancel_command.is_set():
+            self.forward_controller_state_updates(LIGHT_TIMER_OPTION(timer_option))
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -1187,7 +1196,9 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             module = _MODULE_OWNERS.get(action.owner)
             if module is not None:
                 await self.set_motion_bed_surface(module)
-        source_ids = action.select(self._state, self.selection.alternate_identity, branch=branch)
+        source_ids = action.select(
+            self._selection_state or self._state, self.selection.alternate_identity, branch=branch
+        )
         commands = tuple(dict.fromkeys(SOURCE_COMMANDS[source_id] for source_id in source_ids))
         if action.kind == "held":
             client, characteristic = self._current_session()
