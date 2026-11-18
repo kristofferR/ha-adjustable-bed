@@ -272,33 +272,36 @@ def test_every_listed_app_is_searchable_by_name(name):
 _FLOYD = bed_type_choice(const.BED_TYPE_KAIDI, const.KAIDI_VARIANT_FLOYD)
 
 
+def _cst(variant: str) -> str:
+    return bed_type_choice(const.BED_TYPE_OKIN_CST, variant)
+
+
 @pytest.mark.parametrize(
     ("name", "choices"),
     [
         # Okin apps also carry the Rize brand; only Kaidi's app is "Rize Beds".
-        ("Rize Beds", {const.BED_TYPE_KAIDI, const.BED_TYPE_RIZE}),
-        ("Rize Beds app (Kaidi, 1.4.2)", {const.BED_TYPE_RIZE}),
-        ("Floyd Home", {const.BED_TYPE_KAIDI, _FLOYD}),
-        ("ISleep", {const.BED_TYPE_KAIDI, const.BED_TYPE_ISLEEP}),
-        ("Kaidi", {const.BED_TYPE_KAIDI, _FLOYD, const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE, const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS}),
+        ("Rize Beds", {const.BED_TYPE_RIZE}),
+        ("Rize Beds app", {const.BED_TYPE_RIZE}),
+        ("Floyd Home", {_FLOYD}),
+        ("ISleep", {const.BED_TYPE_ISLEEP}),
         ("KomfyD", {const.BED_TYPE_KOMFYD}),
         ("ComfyDS", {const.BED_TYPE_COMFYDS}),
         ("Bed Connect", {const.BED_TYPE_LINAK}),
         # POWER BOB ULTRA-O is the app of the Rize Bob product on Okin CST.
-        ("Power Bob", {const.BED_TYPE_MOTOSLEEP, const.BED_TYPE_OKIN_CST}),
+        ("Power Bob", {const.BED_TYPE_MOTOSLEEP, _cst(const.OKIN_CST_VARIANT_BOB)}),
         *(
-            (name, {const.BED_TYPE_OKIN_CST})
+            (name, {_cst(variant)})
             # The full app names of their accepted reports.
-            for name in (
-                "MFirm 900 - O",
-                "Jordan's Sanctuary - O",
-                "Resident Adjustable Bed",
-                "Rize Aviada - O",
-                "POWER BOB ULTRA-O",
-                "Rize Contemporary III - O",
-                "Carefree",
-                "Rize Clarity II - O",
-                "Support 挺你 科技調整床",
+            for name, variant in (
+                ("MFirm 900 - O", const.OKIN_CST_VARIANT_MF900),
+                ("Jordan's Sanctuary - O", const.OKIN_CST_VARIANT_SANCTUARY),
+                ("Resident Adjustable Bed", const.OKIN_CST_VARIANT_RESIDENT),
+                ("Rize Aviada - O", const.OKIN_CST_VARIANT_AVIADA),
+                ("POWER BOB ULTRA-O", const.OKIN_CST_VARIANT_BOB),
+                ("Rize Contemporary III - O", const.OKIN_CST_VARIANT_CONTEMPO),
+                ("Carefree", const.OKIN_CST_VARIANT_CAREFREE),
+                ("Rize Clarity II - O", const.OKIN_CST_VARIANT_CLARITY),
+                ("Support 挺你 科技調整床", const.OKIN_CST_VARIANT_SUPPORT),
             )
         ),
     ],

@@ -68,7 +68,7 @@ def test_explicit_choices_have_no_guessed_defaults() -> None:
         CONF_LP_LEGACY_READ_UUID,
     ]
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
-    assert options[BED_TYPE_LEGGETT_LP_LEGACY] == "L&P Adjustable Base (legacy app)"
+    assert options[BED_TYPE_LEGGETT_LP_LEGACY] == "L&P Adjustable Base app"
     assert BED_TYPE_RICHMAT in options
 
 
