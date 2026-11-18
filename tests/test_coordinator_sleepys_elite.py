@@ -128,9 +128,15 @@ class _VirtualClock:
             self._sleepers.remove(sleeper)
 
     async def run_until(self, task: asyncio.Task[_T]) -> _T:
+        loop = asyncio.get_running_loop()
         for _ in range(1_000):
-            for _ in range(12):
+            # Virtual time may only pass once nothing else can run: a fixed
+            # number of yields raced on-demand imports finishing in the
+            # executor, which let a write's deadline fire before the write.
+            for _ in range(10_000):
                 await asyncio.sleep(0)
+                if not loop._ready:  # type: ignore[attr-defined]
+                    break
             if task.done():
                 return task.result()
             pending = [deadline for deadline, future in self._sleepers if not future.done()]
