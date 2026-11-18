@@ -1584,9 +1584,6 @@
       "comfort_enhancements_foot_cycle": {
         "name": "Cycle foot massage intensity"
       },
-      "comfort_enhancements_timer_cycle": {
-        "name": "Cycle massage timer"
-      },
       "product_action": {
         "name": "{action}"
       },
@@ -2226,9 +2223,6 @@
       "sleepys_app_massage_query": {
         "name": "Refresh massage state"
       },
-      "sleepys_app_massage_timer": {
-        "name": "Cycle massage timer"
-      },
       "sleepys_app_massage_wave_down": {
         "name": "Previous massage wave"
       },
@@ -2273,15 +2267,6 @@
       },
       "eshine_massage_foot_strength": {
         "name": "Cycle foot massage strength"
-      },
-      "eshine_massage_10_minutes": {
-        "name": "Massage 10 minutes"
-      },
-      "eshine_massage_20_minutes": {
-        "name": "Massage 20 minutes"
-      },
-      "eshine_massage_30_minutes": {
-        "name": "Massage 30 minutes"
       },
       "glideaway_motion_query_alarm": {
         "name": "Refresh alarm"
@@ -2339,15 +2324,6 @@
       },
       "adjustamattress_m1": {
         "name": "M1"
-      },
-      "adjustamattress_timer10": {
-        "name": "Massage timer 10 minutes"
-      },
-      "adjustamattress_timer20": {
-        "name": "Massage timer 20 minutes"
-      },
-      "adjustamattress_timer30": {
-        "name": "Massage timer 30 minutes"
       },
       "adjustamattress_demonstration": {
         "name": "Demonstrate anti-snore"
@@ -2894,9 +2870,6 @@
       },
       "rize_enroll": {
         "name": "Add bed to room"
-      },
-      "bedtech_massage_timer_20": {
-        "name": "Massage 20 minutes"
       },
       "resident_check_massage": {
         "name": "Refresh massage timer"
@@ -4332,9 +4305,6 @@
       "motion_bed_air_lower_gear": {
         "name": "Lower air massage level"
       },
-      "motion_bed_brightness": {
-        "name": "Light brightness"
-      },
       "motion_bed_lower_massage": {
         "name": "Leg massage level"
       },
@@ -4364,9 +4334,6 @@
       },
       "motion_bed_day_total": {
         "name": "Daily sleep report"
-      },
-      "motion_bed_massage_timer": {
-        "name": "Massage timer"
       },
       "motion_bed_thermal_gear": {
         "name": "Climate level"
@@ -4700,12 +4667,6 @@
       "bedsense_circulation": {
         "name": "Circulation mode"
       },
-      "bedsense_massage_timer": {
-        "name": "Massage timer"
-      },
-      "bedsense_light_duration": {
-        "name": "Light duration"
-      },
       "bedsense_head_steps": {
         "name": "Head massage level"
       },
@@ -4781,9 +4742,6 @@
       "doublesleep_massage_time": {
         "name": "Massage timer"
       },
-      "doublesleep_massage_running": {
-        "name": "Massage running"
-      },
       "doublesleep_massage_source": {
         "name": "Massage source"
       },
@@ -4801,9 +4759,6 @@
       },
       "doublesleep_sonic_time": {
         "name": "Sonic massage timer"
-      },
-      "doublesleep_sonic_running": {
-        "name": "Sonic massage running"
       },
       "doublesleep_sonic_source": {
         "name": "Sonic massage source"
@@ -5384,6 +5339,30 @@
       },
       "okin_app_actuator_2": {
         "name": "Reverse actuator 2"
+      },
+      "motion_bed_night_light_enabled": {
+        "name": "Night light"
+      },
+      "motion_bed_sleep_enabled": {
+        "name": "Smart sleep"
+      },
+      "motion_bed_motor_light_enabled": {
+        "name": "Light"
+      },
+      "motion_bed_motor_massage_enabled": {
+        "name": "Massage"
+      },
+      "motion_bed_thermal_timer_enabled": {
+        "name": "Climate timer"
+      },
+      "motion_bed_air_adaptive": {
+        "name": "Adaptive air massage"
+      },
+      "doublesleep_massage": {
+        "name": "Massage"
+      },
+      "doublesleep_sonic": {
+        "name": "Sonic massage"
       }
     },
     "binary_sensor": {
@@ -5456,26 +5435,11 @@
       "motion_bed_air_module_present": {
         "name": "Air massage module"
       },
-      "motion_bed_motor_light_enabled": {
-        "name": "Light"
-      },
-      "motion_bed_air_adaptive": {
-        "name": "Adaptive air massage"
-      },
-      "motion_bed_motor_massage_enabled": {
-        "name": "Massage"
-      },
-      "motion_bed_sleep_enabled": {
-        "name": "Smart sleep"
-      },
       "motion_bed_motor_module_present": {
         "name": "Motor module"
       },
       "motion_bed_thermal_module_present": {
         "name": "Climate module"
-      },
-      "motion_bed_night_light_enabled": {
-        "name": "Night light"
       },
       "motion_bed_thermal_low_water": {
         "name": "Low water"
@@ -5964,6 +5928,9 @@
       },
       "l2motion_light_timer": {
         "name": "Light timer"
+      },
+      "motion_bed_brightness": {
+        "name": "Light brightness"
       }
     },
     "select": {
@@ -6069,14 +6036,6 @@
           "e1": "Effect 1",
           "e2": "Effect 2",
           "e3": "Effect 3"
-        }
-      },
-      "starcode_abm5_4_massage_timer": {
-        "name": "Massage timer",
-        "state": {
-          "10": "10 minutes",
-          "20": "20 minutes",
-          "30": "30 minutes"
         }
       },
       "motion_bed_active_module": {
@@ -6221,14 +6180,6 @@
           "off": "Off"
         }
       },
-      "ore_comfort_massage_timer": {
-        "name": "Massage timer",
-        "state": {
-          "10": "10 minutes",
-          "20": "20 minutes",
-          "30": "30 minutes"
-        }
-      },
       "sleeptracker_wave_frequency": {
         "name": "Relaxation frequency",
         "state": {
@@ -6296,14 +6247,6 @@
           "curve": "Curve"
         }
       },
-      "sleepys_app_massage_timer_code": {
-        "name": "Massage timer",
-        "state": {
-          "1": "10 minutes",
-          "2": "20 minutes",
-          "3": "30 minutes"
-        }
-      },
       "adjustamattress_alarm_draft_type": {
         "name": "Alarm action",
         "state": {
@@ -6311,33 +6254,6 @@
           "9": "Massage",
           "17": "Action 17",
           "19": "Position"
-        }
-      },
-      "adjustamattress_head_selector": {
-        "name": "Head massage",
-        "state": {
-          "0": "Level 1",
-          "1": "Level 2",
-          "2": "Level 3",
-          "3": "Level 4"
-        }
-      },
-      "adjustamattress_foot_selector": {
-        "name": "Foot massage",
-        "state": {
-          "0": "Level 1",
-          "1": "Level 2",
-          "2": "Level 3",
-          "3": "Level 4"
-        }
-      },
-      "adjustamattress_wave_selector": {
-        "name": "Wave massage",
-        "state": {
-          "0": "Level 1",
-          "1": "Level 2",
-          "2": "Level 3",
-          "3": "Level 4"
         }
       },
       "adjustamattress_strength_setting": {
