@@ -18,6 +18,7 @@ from homeassistant.util import dt as dt_util
 
 from ...card import CARD_PRESET_SAVE, CardPlacement, CardSection, memory_card
 from ...codec import richmat as codec
+from ...command_scheduler import CommandOutcome, current_command_context
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
 from ...profiles.majestichome import LAYOUTS, STOP, TICK_MS, catalog, resolve_layout
@@ -43,6 +44,9 @@ OBSERVATIONS: Final = StateKey[dict[str, object]]("majestichome_observations")
 ALARMS: Final = StateKey[list[dict[str, object]]]("majestichome_alarms")
 WRITE_TIMEOUT_S: Final = 5.0  # HA transport bound, not a firmware motion timeout.
 FIRST_WRITE_MS: Final = 100
+ALARM_OBSERVATION_S: Final = 5.0  # HA observation window; no list-completeness proof.
+READ_GUARD_S: Final = 0.1  # Recheck local ownership while waiting, without polling the bed.
+MIN_FINITE_HOLD_MS: Final = 200
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +79,7 @@ class MajesticHomeController(GoodVibeController):
         self._stale: set[int] = set()
         self._movement_deadline: float | None = None
         self._reply_event = asyncio.Event()
+        self._alarm_observer: Callable[[Alarm], None] | None = None
 
     @property
     def auto_stops_on_idle(self) -> bool:
@@ -122,7 +127,22 @@ class MajesticHomeController(GoodVibeController):
         return link
 
     async def _pace(self, cleanup: bool) -> bool:
-        return cleanup or self._movement_deadline is None or monotonic() <= self._movement_deadline
+        return cleanup or self._movement_allowed()
+
+    def _movement_allowed(self) -> bool:
+        if self._movement_deadline is None:
+            return True
+        context = current_command_context()
+        if context is not None and context.lease is not None:
+            if not context.active or context.cancel_event is not self._coordinator.cancel_command:
+                return False
+            if (
+                context.hold_deadline is None
+                or asyncio.get_running_loop().time() >= context.hold_deadline
+            ):
+                context.request_cancel(CommandOutcome.EXPIRED)
+                return False
+        return monotonic() < self._movement_deadline
 
     async def _send(
         self,
@@ -176,6 +196,8 @@ class MajesticHomeController(GoodVibeController):
                 if state["event"] == "list" or alarm.number in self.alarms:
                     self.alarms[alarm.number] = alarm
                     self._stale.discard(alarm.number)
+                    if self._alarm_observer is not None:
+                        self._alarm_observer(alarm)
         self._publish()
         self._reply_event.set()
 
@@ -234,32 +256,43 @@ class MajesticHomeController(GoodVibeController):
         if (
             control not in self.held_control_options
             or type(duration_ms) is not int
-            or not 1 <= duration_ms <= 60000
+            or not MIN_FINITE_HOLD_MS <= duration_ms <= 60000
         ):
             raise ValueError(
-                "Choose an available Majestic Home movement and a duration from 1 to 60000 ms"
+                "Choose an available Majestic Home movement and a duration from 200 to 60000 ms"
             )
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
+        submitted = await self._run_hold_window(control, duration_ms)
+        if not submitted and not self._coordinator.cancel_command.is_set():
+            raise TimeoutError("No Majestic Home movement was sent within the elapsed budget")
+
+    async def _run_hold_window(self, control: str, duration_ms: int) -> bool:
+        """App cadence, independent of the public finite-input minimum."""
         link = self._current_link()
         packet = codec.function(self.layout.control(control).code, single=link.legacy)
-        deadline = monotonic() + self.leased_hold_ms(duration_ms) / 1000
+        started = monotonic()
+        deadline = started + self.leased_hold_ms(duration_ms) / 1000
         self._movement_deadline = deadline
         submitted = False
 
         def mark_submitted() -> None:
             nonlocal submitted
+            if not self._movement_allowed():
+                if self._coordinator.cancel_command.is_set():
+                    raise asyncio.CancelledError
+                raise TimeoutError("The Majestic Home movement expired before submission")
             submitted = True
 
         try:
             # The first tick is delayed. Slow writes consume the elapsed budget,
             # rather than extending it or backfilling missed refreshes.
-            due = monotonic() + TICK_MS / 1000
+            due = started + TICK_MS / 1000
             while due <= deadline and not self._coordinator.cancel_command.is_set():
                 if not await self._delay(max(0, round((due - monotonic()) * 1000))):
                     break
-                if monotonic() > deadline:
+                if not self._movement_allowed():
                     break
                 await self._send(packet, link=link, on_submit=mark_submitted)
                 due = max(due + TICK_MS / 1000, monotonic() + TICK_MS / 1000)
@@ -276,12 +309,13 @@ class MajesticHomeController(GoodVibeController):
                 and link.client.is_connected
             ):
                 await self._send(codec.function(STOP, single=link.legacy), cleanup=True, link=link)
+        return submitted
 
     async def action(self, key: str, *, save: bool = False) -> None:
         control = self.layout.control(key)
         if control.held and not save:
             await self.hold_control(
-                key, self.leased_hold_ms(self._coordinator.motor_pulse_count * TICK_MS)
+                key, max(MIN_FINITE_HOLD_MS, self._coordinator.motor_pulse_count * TICK_MS)
             )
             return
         if save and control.save is None:
@@ -454,18 +488,54 @@ class MajesticHomeController(GoodVibeController):
                     packets = (alarm.toggle(request.enabled).packet(),)
         return Plan(request, link, packets, tuple(self.alarms.values()), frozenset(self._stale))
 
-    async def _await_reply(self, link: Link, available: Callable[[], bool]) -> None:
-        # HA reply bound, not an app timer or proof of alarm-list completeness.
-        async with asyncio.timeout(WRITE_TIMEOUT_S):
-            while not available():
+    async def _wait_for_settings(
+        self,
+        link: Link,
+        *,
+        deadline: float,
+        available: Callable[[], bool] | None = None,
+        validate_admission: Callable[[], None] | None = None,
+    ) -> None:
+        """Bound one live read; a window ending never proves list completeness."""
+        cancel = self._coordinator.cancel_command
+        cancelled = asyncio.create_task(cancel.wait())
+        reply: asyncio.Task[bool] | None = None
+        try:
+            while True:
                 self._reply_event.clear()
                 if self._current_link() is not link:
                     raise ConnectionError("Majestic Home session changed while reading settings")
-                await self._reply_event.wait()
-            if self._current_link() is not link:
-                raise ConnectionError("Majestic Home settings reply belongs to an old session")
+                if validate_admission is not None:
+                    validate_admission()
+                if cancel.is_set():
+                    raise asyncio.CancelledError
+                if available is not None and available():
+                    return
+                remaining = deadline - asyncio.get_running_loop().time()
+                if remaining <= 0:
+                    if available is not None:
+                        raise TimeoutError("The requested Majestic Home settings were not received")
+                    return
+                reply = asyncio.create_task(self._reply_event.wait())
+                await asyncio.wait(
+                    (reply, cancelled),
+                    timeout=min(READ_GUARD_S, remaining),
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                reply.cancel()
+                await asyncio.gather(reply, return_exceptions=True)
+                reply = None
+        finally:
+            cancelled.cancel()
+            if reply is not None:
+                reply.cancel()
+            await asyncio.gather(
+                cancelled, *(() if reply is None else (reply,)), return_exceptions=True
+            )
 
-    async def prepare_live(self, request: Request, *, refresh_alarm: bool = True) -> Plan:
+    async def prepare_live(
+        self, request: Request, *, validate_admission: Callable[[], None] | None = None
+    ) -> Plan:
         """Read required fields on the current link before building bytes."""
         self.validate_request(request)
         link = self._current_link()
@@ -473,20 +543,31 @@ class MajesticHomeController(GoodVibeController):
             await self._send(
                 codec.function(1, action="deviceFunctionItemCheckClock", single=link.legacy),
                 link=link,
+                on_submit=validate_admission,
             )
-            await self._await_reply(link, lambda: bool(self.observations.get("clock_available")))
-        if refresh_alarm and request.operation == "toggle":
+            await self._wait_for_settings(
+                link,
+                deadline=asyncio.get_running_loop().time() + WRITE_TIMEOUT_S,
+                available=lambda: bool(self.observations.get("clock_available")),
+                validate_admission=validate_admission,
+            )
+        if request.operation == "toggle":
             number = request.number
             assert number is not None
 
             def invalidate() -> None:
+                if validate_admission is not None:
+                    validate_admission()
                 self.alarms.pop(number, None)
                 self._stale.add(number)
                 self._publish()
 
             await self._send(LIST_ALARMS, link=link, on_submit=invalidate)
-            await self._await_reply(
-                link, lambda: number in self.alarms and number not in self._stale
+            await self._wait_for_settings(
+                link,
+                deadline=asyncio.get_running_loop().time() + WRITE_TIMEOUT_S,
+                available=lambda: number in self.alarms and number not in self._stale,
+                validate_admission=validate_admission,
             )
         return self.prepare(request)
 
@@ -502,10 +583,12 @@ class MajesticHomeController(GoodVibeController):
             else None,
         )
 
-    async def prepare_intent(self, intent: Intent) -> Plan:
+    async def prepare_intent(
+        self, intent: Intent, *, validate_admission: Callable[[], None] | None = None
+    ) -> Plan:
         if self._physical_owner is not intent.owner or self.layout.key != intent.product:
             raise ValueError("Majestic Home physical owner or product changed after preflight")
-        plan = await self.prepare_live(intent.request)
+        plan = await self.prepare_live(intent.request, validate_admission=validate_admission)
         if intent.request.operation == "toggle":
             assert intent.request.number is not None
             if self.alarms.get(intent.request.number) != intent.alarm:
@@ -521,9 +604,43 @@ class MajesticHomeController(GoodVibeController):
             raise ValueError("The Majestic Home session or alarm list changed during admission")
 
     async def execute_prepared(
-        self, plan: Plan, *, validate_admission: Callable[[], None] | None = None
-    ) -> None:
+        self,
+        plan: Plan,
+        *,
+        validate_admission: Callable[[], None] | None = None,
+        on_submit: Callable[[], None] | None = None,
+    ) -> tuple[Alarm, ...] | None:
         self.validate_plan(plan)
+        if plan.request.operation == "list":
+            observed: dict[int, Alarm] = {}
+            deadline = 0.0
+
+            def observe(alarm: Alarm) -> None:
+                if asyncio.get_running_loop().time() < deadline:
+                    observed[alarm.number] = alarm
+
+            def begin() -> None:
+                nonlocal deadline
+                self.validate_plan(plan)
+                if validate_admission is not None:
+                    validate_admission()
+                if on_submit is not None:
+                    on_submit()
+                deadline = asyncio.get_running_loop().time() + ALARM_OBSERVATION_S
+                self.alarms.clear()
+                self._stale.clear()
+                self._publish()
+                self._alarm_observer = observe
+
+            try:
+                if not await self._send(LIST_ALARMS, link=plan.link, on_submit=begin):
+                    raise asyncio.CancelledError
+                await self._wait_for_settings(
+                    plan.link, deadline=deadline, validate_admission=validate_admission
+                )
+                return tuple(observed.values())
+            finally:
+                self._alarm_observer = None
         for packet in plan.packets:
             self.validate_plan(plan)
 
@@ -532,14 +649,13 @@ class MajesticHomeController(GoodVibeController):
                 self.validate_plan(plan)
                 if validate_admission is not None:
                     validate_admission()
+                if on_submit is not None:
+                    on_submit()
                 if plan.request.operation in ("new", "set", "toggle", "delete"):
                     self._stale.add(packet[6])
-                elif plan.request.operation == "list":
-                    self.alarms.clear()
-                    self._stale.clear()
-                    self._publish()
 
             await self._send(packet, link=plan.link, on_submit=submitted)
+        return None
 
 
 async def _action(controller: BedController, key: str, *, save: bool = False) -> None:

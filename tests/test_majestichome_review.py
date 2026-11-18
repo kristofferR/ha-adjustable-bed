@@ -22,7 +22,12 @@ from custom_components.adjustable_bed.beds.majestichome.protocol import Alarm
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.profile_id import with_profile_ids
-from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.services import (
+    _resolve_sided_targets as resolve_native_targets,
+)
+from custom_components.adjustable_bed.services import (
+    async_register_services,
+)
 from tests.test_majestichome import GATT, notify, written
 from tests.test_majestichome import clock as clock
 from tests.test_majestichome_runtime import runtime as runtime
@@ -116,7 +121,8 @@ async def live_pair(hass, mock_coordinator_connected, clock):
                             )
                     elif packet == bed.LIST_ALARMS:
                         if hook := hooks.get("query"):
-                            hook(side, child, connections[side])
+                            if hook(side, child, connections[side]):
+                                return
                         child.controller._notification(
                             child.controller._link, rx, bytearray(alarm_reply(records[side]))
                         )
@@ -162,6 +168,415 @@ def mutations(events):
         for side, packet in events
         if len(packet) > 6 and packet[3] == 5 and packet[5] == 1
     ]
+
+
+@pytest.fixture
+async def protocol_time(clock, monkeypatch):
+    """Run real startup, FIFO pacing and reply bounds on one virtual loop clock."""
+    from tests.hold_lease_wire import virtual_clock
+
+    with virtual_clock() as fake:
+        monkeypatch.setattr(bed, "monotonic", fake.time)
+        monkeypatch.setattr(bed, "FIRST_WRITE_MS", 100)
+        monkeypatch.setattr(
+            "custom_components.adjustable_bed.beds.goodvibe.controller.QUEUE_MS", 100
+        )
+        monkeypatch.setattr(bed.MajesticHomeController, "_delay", bed.GoodVibeController._delay)
+        yield fake
+
+
+def standalone_replies(target, client, *, records=True, hook=None):
+    timers = []
+    submissions = []
+
+    async def write(_char, packet, **kwargs):
+        ctrl = target.controller
+        link = ctrl._link
+        rx = client.start_notify.call_args.args[0]
+        loop = asyncio.get_running_loop()
+        if packet.hex() == "6e08010178":
+            timers.append(
+                loop.call_later(0.01, ctrl._notification, link, rx, bytearray.fromhex("6e09010078"))
+            )
+        if packet == bed.LIST_ALARMS:
+            submissions.append(loop.time())
+            if hook:
+                hook(ctrl, link, rx)
+            if records:
+                for delay, alarm in (
+                    (0.2, Alarm(1, 99, 22, 45, 250, 131)),
+                    (0.7, Alarm(2, 0, 6, 0, 46, 129)),
+                ):
+                    timers.append(
+                        loop.call_later(
+                            delay, ctrl._notification, link, rx, bytearray(alarm_reply(alarm))
+                        )
+                    )
+
+    client.write_gatt_char.side_effect = write
+    return timers, submissions
+
+
+@pytest.mark.parametrize(
+    "route",
+    ("standalone", "concurrent-parent", "concurrent-left", "sequential-parent", "sequential-left"),
+)
+async def test_toggle_reads_record_after_reconnect(hass, runtime, live_pair, protocol_time, route):
+    if route == "standalone":
+        target, client, _ = runtime
+        timers, _ = standalone_replies(target, client)
+        # Exercise an actual closed old session, not an injected cache on a live link.
+        assert await target.async_connect()
+        await target.async_disconnect("idle_timeout")
+        try:
+            await settings(hass, "toggle", alarm_id=1, enabled=False)
+        finally:
+            for timer in timers:
+                timer.cancel()
+        assert written(target)[-1] == "6e0d200501010163162dfa82c5"
+        assert bed.LIST_ALARMS.hex() in written(target)
+    else:
+        runtime[2].side_effect = resolve_native_targets
+        mode, destination = route.split("-")
+        live = await live_pair(mode)
+        for side in live.records:
+            live.records[side] = Alarm(1, 99, 22, 45, 250, 131)
+        await hass.services.async_call(
+            const.DOMAIN,
+            "majestichome",
+            {
+                "device_id": getattr(live, destination),
+                "operation": "toggle",
+                "alarm_id": 1,
+                "enabled": False,
+            },
+            blocking=True,
+        )
+        sides = {"left", "right"} if destination == "parent" else {"left"}
+        assert sorted(mutations(live.events)) == sorted(
+            (side, "6e0d200501010163162dfa82c5") for side in sides
+        )
+        assert {side for side, packet in live.events if packet == bed.LIST_ALARMS} == sides
+
+
+@pytest.mark.parametrize(
+    "route,records,slow",
+    (
+        ("standalone", True, False),
+        ("concurrent-parent", True, False),
+        ("sequential-left", True, False),
+        ("sequential-left", False, False),
+        ("standalone", True, True),
+    ),
+)
+async def test_list_holds_link_for_bounded_observations(
+    hass, runtime, live_pair, protocol_time, route, records, slow
+):
+    timers, submitted, targets, observed_controllers = [], [], [], []
+    if route == "standalone":
+        target, client, _ = runtime
+        timers, submitted = standalone_replies(target, client, records=records)
+        base_write = client.write_gatt_char.side_effect
+
+        async def write(*args, **kwargs):
+            await base_write(*args, **kwargs)
+            if slow and args[1] == bed.LIST_ALARMS:
+                await asyncio.sleep(1)
+
+        client.write_gatt_char.side_effect = write
+        device = "bed"
+        targets = [target]
+    else:
+        runtime[2].side_effect = resolve_native_targets
+        mode, destination = route.split("-")
+        live = await live_pair(mode)
+        device = getattr(live, destination)
+        targets = (
+            list(live.children.values()) if destination == "parent" else [live.children["left"]]
+        )
+
+        def delayed(side, child, generation):
+            ctrl, link = child.controller, child.controller._link
+            observed_controllers.append(ctrl)
+            rx = link.rx
+            loop = asyncio.get_running_loop()
+            submitted.append(loop.time())
+            if records:
+                for delay, alarm in ((0.2, live.records[side]), (0.7, Alarm(2, 0, 6, 0, 46, 129))):
+
+                    def reply(alarm=alarm):
+                        assert child.is_connected
+                        ctrl._notification(link, rx, bytearray(alarm_reply(alarm)))
+
+                    timers.append(loop.call_later(delay, reply))
+            return True
+
+        live.hooks["query"] = delayed
+    try:
+        response = await hass.services.async_call(
+            const.DOMAIN,
+            "majestichome",
+            {
+                "device_id": device,
+                "operation": "list",
+            },
+            blocking=True,
+            return_response=True,
+        )
+        assert len(response["targets"]) == len(targets)
+        for item in response["targets"]:
+            assert item["complete"] is False
+            assert [row["number"] for row in item["alarms"]] == ([1, 2] if records else [])
+        assert protocol_time.time() >= max(submitted) + 5
+        # Slow GATT completion and later records do not restart the five-second window.
+        assert protocol_time.time() < max(submitted) + 5.01
+        assert all(child._command_connection_holds == 0 for child in targets)
+        if route.startswith("sequential"):
+            assert not targets[0].is_connected and targets[0].controller is None
+            assert observed_controllers and all(not ctrl.alarms for ctrl in observed_controllers)
+        else:
+            for child in targets:
+                child.controller.alarms.clear()
+        assert all(len(item["alarms"]) == (2 if records else 0) for item in response["targets"])
+        assert {item["side"] for item in response["targets"]} == (
+            {"left", "right"}
+            if route == "concurrent-parent"
+            else {"left"}
+            if route == "sequential-left"
+            else {"both"}
+        )
+    finally:
+        for timer in timers:
+            timer.cancel()
+
+
+@pytest.mark.parametrize("race", ("stop", "session", "owner", "route"))
+async def test_alarm_read_abort_never_mutates(hass, runtime, protocol_time, race):
+    target, client, _ = runtime
+    pending = []
+    invalidated = asyncio.Event()
+
+    def hook(ctrl, link, rx):
+        async def invalidate():
+            await asyncio.sleep(0.2)
+            if race == "stop":
+                invalidated.set()
+                await target.async_stop_command()
+            elif race == "session":
+                ctrl.on_disconnect()
+                ctrl._link = None
+            elif race == "owner":
+                ctrl._physical_owner = copy(target)
+            else:
+                hass.config_entries.async_update_entry(
+                    target.entry, data={**target.entry.data, const.CONF_PROTOCOL_VARIANT: "JHRN"}
+                )
+            invalidated.set()
+
+        pending.append(asyncio.create_task(invalidate()))
+
+    timers, submitted = standalone_replies(target, client, records=False, hook=hook)
+    try:
+        try:
+            await settings(hass, "list")
+        except HomeAssistantError, ConnectionError, asyncio.CancelledError:
+            pass
+        assert invalidated.is_set()
+        assert submitted and protocol_time.time() < submitted[0] + 1
+        assert target._command_connection_holds == 0
+        assert not any(
+            len(bytes.fromhex(p)) > 6 and bytes.fromhex(p)[3:6] == bytes((5, 1, 1))
+            for p in written(target)
+        )
+    finally:
+        await asyncio.gather(*pending)
+        for timer in timers:
+            timer.cancel()
+
+
+@pytest.mark.parametrize("failure", ("missing", "changed"))
+async def test_toggle_all_target_read_barrier(hass, live_pair, protocol_time, failure):
+    live = await live_pair("concurrent" if failure == "missing" else "sequential")
+
+    def query(side, child, generation):
+        if side == "right" and failure == "missing":
+            return True
+        if side == "left" and generation == 2 and failure == "changed":
+            live.records[side] = Alarm(1, 99, 22, 45, 250, 131)
+        return False
+
+    live.hooks["query"] = query
+    with pytest.raises((HomeAssistantError, TimeoutError)):
+        await hass.services.async_call(
+            const.DOMAIN,
+            "majestichome",
+            {
+                "device_id": live.parent,
+                "operation": "toggle",
+                "alarm_id": 1,
+            },
+            blocking=True,
+        )
+    assert not mutations(live.events)
+    assert all(child._command_connection_holds == 0 for child in live.children.values())
+
+
+@pytest.mark.parametrize("service", ("timed_move", "hold_control"))
+async def test_finite_public_rejects_short_duration(hass, runtime, protocol_time, service):
+    target, client, _ = runtime
+    assert await target.async_connect()
+    client.write_gatt_char.reset_mock()
+    data = (
+        {"motor": "back", "direction": "up", "duration_ms": 100}
+        if service == "timed_move"
+        else {"control": "head_up", "duration": 0.1}
+    )
+    with pytest.raises(ServiceValidationError, match="200"):
+        await hass.services.async_call(
+            const.DOMAIN, service, {"device_id": "bed", **data}, blocking=True
+        )
+    assert not written(target)
+
+
+@pytest.mark.parametrize("route", ("timed_move", "hold_control", "implicit"))
+async def test_public_minimum_after_real_startup(hass, runtime, protocol_time, monkeypatch, route):
+    target, client, _ = runtime
+    trace = []
+
+    async def write(_char, packet, **kwargs):
+        trace.append((protocol_time.time(), packet.hex()))
+        await asyncio.sleep(0.002)  # Positive radio completion overhead, including startup.
+
+    client.write_gatt_char.side_effect = write
+    real_delay = bed.GoodVibeController._delay
+
+    async def waking(ctrl, ms):
+        result = await real_delay(ctrl, ms)
+        await asyncio.sleep(0.002)  # A wake happens after, not exactly at, its due time.
+        return result
+
+    monkeypatch.setattr(bed.MajesticHomeController, "_delay", waking)
+    assert await target.async_connect()
+    assert trace[0][0] >= 0.1 and target.controller._next_write_at > 0
+    assert trace[0][1] == "6e02010071" and trace[-1][1] == "6e08010178"
+    trace.clear()
+    started = protocol_time.time()
+    if route == "implicit":
+        target._motor_pulse_count = 1  # The persisted value read by the real coordinator.
+        await target.async_execute_controller_command(lambda ctrl: ctrl.move_head_up())
+    else:
+        data = (
+            {"motor": "back", "direction": "up", "duration_ms": 200}
+            if route == "timed_move"
+            else {"control": "head_up", "duration": 0.2}
+        )
+        await hass.services.async_call(
+            const.DOMAIN, route, {"device_id": "bed", **data}, blocking=True
+        )
+    assert [p for _, p in trace] == ["6e01002493", "6e01006edd"]
+    assert 0.1 <= trace[0][0] - started < 0.2
+    assert trace[1][0] >= trace[0][0] + 0.1
+
+
+async def test_finite_public_expiry_is_not_success(hass, runtime, protocol_time, monkeypatch):
+    target, client, _ = runtime
+    assert await target.async_connect()
+    client.write_gatt_char.reset_mock()
+
+    async def late(ctrl, ms):
+        await asyncio.sleep(0.3)
+        return True
+
+    monkeypatch.setattr(bed.MajesticHomeController, "_delay", late)
+    with pytest.raises((HomeAssistantError, ValueError, TimeoutError)):
+        await hass.services.async_call(
+            const.DOMAIN,
+            "timed_move",
+            {
+                "device_id": "bed",
+                "motor": "back",
+                "direction": "up",
+                "duration_ms": 200,
+            },
+            blocking=True,
+        )
+    assert not written(target)
+
+
+@pytest.mark.parametrize("renew", (False, True))
+async def test_native_expiry_gate_after_pacing(hass, runtime, protocol_time, monkeypatch, renew):
+    from custom_components.adjustable_bed.command_scheduler import current_command_context
+
+    target, client, _ = runtime
+    assert await target.async_connect()
+    client.write_gatt_char.reset_mock()
+    observed = []
+    movement_times = []
+
+    async def write(_char, packet, **kwargs):
+        if packet.hex() == "6e01002493":
+            movement_times.append(protocol_time.time())
+
+    client.write_gatt_char.side_effect = write
+    original = bed.MajesticHomeController._pace
+
+    async def paced(ctrl, cleanup):
+        context = current_command_context()
+        if not cleanup and not observed:
+            observed.append(context)
+            assert context is not None and context.hold_deadline is not None
+            # Preserve a live admitted context but hold back its timer signal: the
+            # actual-submit guard must honor the absolute clock independently.
+            record = next(iter(target._command_scheduler._leases.values()))
+            record.timer.cancel()
+            original_deadline = context.hold_deadline
+            if renew:
+                await asyncio.sleep(0.2)
+                await hass.services.async_call(
+                    const.DOMAIN,
+                    "timed_move",
+                    {
+                        "device_id": "bed",
+                        "motor": "back",
+                        "direction": "up",
+                        "duration_ms": 500,
+                        "hold_owner": "safety",
+                        "hold_generation": 1,
+                    },
+                    blocking=True,
+                )
+                record.timer.cancel()
+                assert context.hold_deadline > original_deadline
+                await asyncio.sleep(original_deadline - protocol_time.time() + 0.01)
+                assert protocol_time.time() < context.hold_deadline
+            else:
+                await asyncio.sleep(original_deadline - protocol_time.time())
+            assert not context.cancel_event.is_set()
+        return await original(ctrl, cleanup)
+
+    monkeypatch.setattr(bed.MajesticHomeController, "_pace", paced)
+    async with asyncio.timeout(2):
+        await hass.services.async_call(
+            const.DOMAIN,
+            "timed_move",
+            {
+                "device_id": "bed",
+                "motor": "back",
+                "direction": "up",
+                "duration_ms": 500,
+                "hold_owner": "safety",
+                "hold_generation": 1,
+            },
+            blocking=True,
+        )
+    assert observed
+    assert all(at < observed[0].hold_deadline for at in movement_times)
+    packets = written(target)
+    if renew:
+        assert packets and packets[-1] == "6e01006edd"
+        assert set(packets[:-1]) == {"6e01002493"}
+    else:
+        assert not packets
 
 
 @pytest.mark.parametrize("operation", ("list", "new", "set", "delete"))
@@ -436,3 +851,173 @@ async def test_new_requires_explicit_id_before_import_even_with_partial_records(
     assert written(target) == []
     await settings(hass, "new", alarm_id=2)
     assert written(target) == ["6e0d200501010200071e2e01f8"]
+
+
+@pytest.mark.parametrize("mode", ("concurrent", "sequential"))
+@pytest.mark.parametrize("operation", ("list", "toggle"))
+async def test_fresh_settings_after_native_cover_stop(
+    hass, live_pair, protocol_time, mode, operation
+):
+    from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
+    from custom_components.adjustable_bed.paired_coordinator import PairedSideProxy
+
+    live = await live_pair(mode)
+    left = live.children["left"]
+    assert await left.async_connect()
+    cover = AdjustableBedCover(
+        PairedSideProxy(live.pair, left, "left"),
+        _build_cover_description(left.controller.motor_control_specs[0]),
+    )
+    cover.async_write_ha_state = MagicMock()
+    await cover.async_stop_cover()
+    assert live.pair._pair_cancel_generation("left", ("*",)) != (0,)
+    assert ("left", bytes.fromhex("6e01006edd")) in live.events
+    live.events.clear()
+    response = await hass.services.async_call(
+        const.DOMAIN,
+        "majestichome",
+        {
+            "device_id": live.left,
+            "operation": operation,
+            "alarm_id": 1,
+            "enabled": False,
+        },
+        blocking=True,
+        return_response=True,
+    )
+    assert {side for side, _ in live.events} == {"left"}
+    assert any(packet == bed.LIST_ALARMS for _, packet in live.events)
+    if operation == "list":
+        assert response["targets"][0]["side"] == "left"
+        assert response["targets"][0]["alarms"][0]["number"] == 1
+    else:
+        assert response == {}
+        assert mutations(live.events) == [("left", "6e0d200501010100071e2ef8ee")]
+
+
+@pytest.mark.parametrize("race", ("session", "records"))
+async def test_all_pending_live_plans_rechecked_at_submission(hass, live_pair, protocol_time, race):
+    live = await live_pair("concurrent")
+    original_execute, original_pace = (
+        services._execute_preflighted,
+        bed.MajesticHomeController._pace,
+    )
+    armed = False
+    invalidated = []
+
+    async def execute(*args, **kwargs):
+        nonlocal armed
+        armed = True
+        await original_execute(*args, **kwargs)
+
+    async def pace(ctrl, cleanup):
+        nonlocal armed
+        result = await original_pace(ctrl, cleanup)
+        if armed and not cleanup:
+            armed = False
+            peer = next(child for child in live.children.values() if child.controller is not ctrl)
+            invalidated.append(peer)
+            if race == "session":
+                peer.controller.on_disconnect()
+            else:
+                peer.controller.alarms[1] = Alarm(1, 99, 22, 45, 250, 131)
+        return result
+
+    with (
+        patch.object(services, "_execute_preflighted", execute),
+        patch.object(bed.MajesticHomeController, "_pace", pace),
+        pytest.raises(HomeAssistantError),
+    ):
+        await hass.services.async_call(
+            const.DOMAIN,
+            "majestichome",
+            {
+                "device_id": live.parent,
+                "operation": "set",
+                "alarm_id": 1,
+            },
+            blocking=True,
+        )
+    assert invalidated and not mutations(live.events)
+
+
+@pytest.mark.parametrize("phase", ("before-first", "between-windows"))
+async def test_interrupted_list_refuses_incomplete_response(hass, live_pair, protocol_time, phase):
+    live = await live_pair("sequential")
+    original_execute = services._execute_preflighted
+    original_observe = bed.MajesticHomeController.execute_prepared
+    interrupted = []
+
+    async def execute(*args, **kwargs):
+        if phase == "before-first":
+            await live.pair.async_stop_command()
+            interrupted.append("before-first")
+        await original_execute(*args, **kwargs)
+
+    async def observe(ctrl, plan, **kwargs):
+        observed = await original_observe(ctrl, plan, **kwargs)
+        if phase == "between-windows" and ctrl is live.children["left"].controller:
+            await live.pair.async_stop_command(side="right")
+            interrupted.append("between-windows")
+        return observed
+
+    with (
+        patch.object(services, "_execute_preflighted", execute),
+        patch.object(bed.MajesticHomeController, "execute_prepared", observe),
+        pytest.raises(HomeAssistantError),
+    ):
+        await hass.services.async_call(
+            const.DOMAIN,
+            "majestichome",
+            {
+                "device_id": live.parent,
+                "operation": "list",
+            },
+            blocking=True,
+            return_response=True,
+        )
+    assert interrupted == [phase]
+    assert not mutations(live.events)
+    lists = [(side, packet) for side, packet in live.events if packet == bed.LIST_ALARMS]
+    assert [side for side, _ in lists] == ([] if phase == "before-first" else ["left"])
+    assert all(child._command_connection_holds == 0 for child in live.children.values())
+
+
+@pytest.mark.parametrize("operation", ("sync_clock", "new", "set", "toggle", "delete"))
+async def test_non_list_optional_response_is_an_empty_mapping(
+    hass, runtime, protocol_time, operation
+):
+    target, client, _ = runtime
+    timers, _ = standalone_replies(target, client)
+    assert await target.async_connect()
+    client.write_gatt_char.reset_mock()
+    try:
+        response = await hass.services.async_call(
+            const.DOMAIN,
+            "majestichome",
+            {
+                "device_id": "bed",
+                "operation": operation,
+                "alarm_id": 1,
+                "enabled": False,
+            },
+            blocking=True,
+            return_response=True,
+        )
+        assert response == {}
+        if operation == "sync_clock":
+            assert [bytes.fromhex(packet)[3:6] for packet in written(target)] == [
+                bytes((8, 2, 1)),
+                bytes((8, 3, 1)),
+            ]
+        else:
+            expected = {
+                "new": "6e0d200501010100071e2e00f6",
+                "set": "6e0d200501010100071e2e00f6",
+                "toggle": "6e0d200501010163162dfa82c5",
+                "delete": "6e0820050201019f",
+            }
+            assert written(target)[-1] == expected[operation]
+    finally:
+        for timer in timers:
+            timer.cancel()

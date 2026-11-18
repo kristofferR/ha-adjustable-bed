@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 from contextlib import ExitStack
+from dataclasses import asdict
 from typing import TYPE_CHECKING, cast
 
 import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_DEVICE_ID
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.util.json import JsonValueType
 
 from ...const import (
     CONF_BED_TYPE,
@@ -46,10 +48,11 @@ def selected(controller: BedController | None) -> MajesticHomeController:
     return cast("MajesticHomeController", controller)
 
 
-async def handle_request(call: ServiceCall) -> None:
+async def handle_request(call: ServiceCall) -> ServiceResponse:
     targets = _call_targets(call)
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
     physical = [(parent, side, tuple(_command_targets(parent, side))) for parent, side in targets]
+    expected_physical = {id(child) for _parent, _side, children in physical for child in children}
     request = Request(
         call.data["operation"],
         call.data.get("alarm_id"),
@@ -95,6 +98,8 @@ async def handle_request(call: ServiceCall) -> None:
     intents: list[Intent] = []
     preflighted = []
     connections = ExitStack()
+    results: list[JsonValueType] = []
+    completed: set[int] = set()
 
     def validate_owners() -> None:
         for parent, side, children in physical:
@@ -112,12 +117,17 @@ async def handle_request(call: ServiceCall) -> None:
                 ):
                     raise ServiceValidationError("Majestic Home product changed after admission")
 
+    def validate_read() -> None:
+        validate_owners()
+        for (parent, side), original in zip(targets, admissions, strict=True):
+            if _capture_command_admission(parent, side) != original:
+                raise ServiceValidationError("Majestic Home settings read was stopped")
+
     try:
         validate_owners()
         for parent, _side, children in physical:
             if not (
-                isinstance(parent, PairedBedCoordinator)
-                and parent.connection_mode == "sequential"
+                isinstance(parent, PairedBedCoordinator) and parent.connection_mode == "sequential"
             ):
                 for child in children:
                     connections.enter_context(child.hold_command_connection())
@@ -131,7 +141,7 @@ async def handle_request(call: ServiceCall) -> None:
                             isinstance(parent, PairedBedCoordinator)
                             and parent.connection_mode == "sequential"
                         )
-                        plan = await target.prepare_live(request, refresh_alarm=sequential)
+                        plan = await target.prepare_live(request, validate_admission=validate_read)
                         if sequential:
                             intents.append(target.capture_intent(plan))
                         else:
@@ -157,6 +167,7 @@ async def handle_request(call: ServiceCall) -> None:
         validate_owners()
         for controller, plan in plans.items():
             controller.validate_plan(plan)
+        pending = dict(plans)
 
         async def execute(controller: MajesticHomeController) -> None:
             validate_owners()
@@ -164,27 +175,62 @@ async def handle_request(call: ServiceCall) -> None:
             if intent is not None:
                 # Sequential preflight deliberately closed its link. Re-read
                 # the required live fields and build fresh bytes on this link.
-                plan = await controller.prepare_intent(intent)
+                plan = await controller.prepare_intent(intent, validate_admission=validate_read)
                 validate_owners()
-                await controller.execute_prepared(plan, validate_admission=validate_owners)
             elif controller in plans:
-                await controller.execute_prepared(
-                    plans[controller], validate_admission=validate_owners
-                )
+                plan = plans[controller]
             else:
                 raise ServiceValidationError("Majestic Home controller changed after preflight")
+
+            def submitted() -> None:
+                # A peer may change during another side's FIFO wait. Validate
+                # every still-pending live plan before submitting any write.
+                for live, snapshot in pending.items():
+                    live.validate_plan(snapshot)
+                pending.pop(controller, None)
+
+            observed = await controller.execute_prepared(
+                plan, validate_admission=validate_read, on_submit=submitted
+            )
+            if observed is not None:
+                for parent, _side, children in physical:
+                    for child in children:
+                        if child.controller is controller:
+                            side = (
+                                next(
+                                    key for key, value in parent.children.items() if value is child
+                                )
+                                if isinstance(parent, PairedBedCoordinator)
+                                else "both"
+                            )
+                            results.append(
+                                {
+                                    "address": child.address,
+                                    "side": side,
+                                    "alarms": [asdict(alarm) for alarm in observed],
+                                    "complete": False,
+                                }
+                            )
+                            completed.add(id(child))
 
         await _execute_preflighted(
             targets,
             preflighted,
             _family_command(MajesticHomeController, "Majestic Home", execute),
             admissions=admissions,
+            resource=None,  # Match the all-resource scope captured before preflight.
         )
     finally:
         try:
             await _release_preflighted(preflighted)
         finally:
             connections.close()
+    if request.operation == "list":
+        validate_read()
+        if completed != expected_physical:
+            raise ServiceValidationError("Majestic Home alarm observation was interrupted")
+        return {"targets": results}
+    return {} if call.return_response else None
 
 
 def async_register_majestichome_services(hass: HomeAssistant) -> None:
@@ -213,4 +259,5 @@ def async_register_majestichome_services(hass: HomeAssistant) -> None:
                 **SIDE_FIELD,
             }
         ),
+        supports_response=SupportsResponse.OPTIONAL,
     )

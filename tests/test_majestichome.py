@@ -156,7 +156,9 @@ async def test_actual_lifecycle_callers_match_all_five_fixtures(clock, v):
     await obj.start_notify()
     c.client.write_gatt_char.reset_mock()
     if v["kind"] == "sustain":
-        await obj.hold_control("head_up", v["release_ms"])
+        # These immutable fixtures describe app enqueue gestures, including a
+        # sub-100 ms release, independently of the finite HA action minimum.
+        await obj._run_hold_window("head_up", v["release_ms"])
         actual = ["stop" if p == "6e01006edd" else "move" for p in written(c)]
     else:
         await obj.action("memory_1", save=v["kind"] == "save")
@@ -257,4 +259,6 @@ def test_preset_saves_use_the_save_placement():
     for spec in saves:
         assert spec.requires_confirmation
         if not spec.key.startswith("majestichome_memory_"):
-            assert spec.card == CARD_PRESET_SAVE and spec.translation_key == "majestichome_save_action"
+            assert (
+                spec.card == CARD_PRESET_SAVE and spec.translation_key == "majestichome_save_action"
+            )

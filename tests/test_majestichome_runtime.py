@@ -100,8 +100,15 @@ async def test_real_factory_native_entities_services_and_timed_move(hass, runtim
     notify(target, "6e09010078")
     notify(target, "6e200d0501020100071e2ef9f0")
     client.write_gatt_char.reset_mock()
+
+    async def alarm_write(_char, packet, **kwargs):
+        if packet == bed.LIST_ALARMS:
+            notify(target, "6e200d0501020100071e2ef9f0")
+
+    client.write_gatt_char.side_effect = alarm_write
     await settings(hass, "toggle", alarm_id=1, enabled=False)
-    assert written(target) == ["6e0d200501010100071e2ef8ee"]
+    assert written(target) == [bed.LIST_ALARMS.hex(), "6e0d200501010100071e2ef8ee"]
+    client.write_gatt_char.side_effect = None
     client.write_gatt_char.reset_mock()
     await hass.services.async_call(
         const.DOMAIN,

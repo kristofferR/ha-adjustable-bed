@@ -1191,8 +1191,14 @@ through Sunday 6) and `enabled`. An empty weekday list means once.
 
 Supply `alarm_id` explicitly for `new`, `set`, `toggle` or `delete`.
 Neither an empty nor a nonempty cache proves which IDs are free.
-Query `list` again after a mutation before
-using `toggle`; it preserves the received tuple and changes only the enable bit.
+Every `toggle` reads the requested ID on the current connection before changing
+only its enable bit. Missing or changed fields refuse the write.
+`list` keeps each physical connection open for a fixed five-second observation
+window from query submission. It optionally returns `targets`, one result per
+physical address and `side`, containing copied `alarms` and `complete: false`.
+These are partial observations, including when the array is empty; neither
+silence nor elapsed time proves the bed has no other alarms. Sequential sides
+disconnect after their window, and returned snapshots cannot authorize mutations.
 The received records are attributes of the diagnostic Model sensor, which is
 disabled by default: enable it to read them. See the
 [Majestic Home profile](beds/richmat.md#majestic-home).
