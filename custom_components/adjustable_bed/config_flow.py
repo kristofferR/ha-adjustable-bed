@@ -2368,6 +2368,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """
         assert self._manual_data is not None
         bed_type = self._manual_data[CONF_BED_TYPE]
+        if self._migration is not None and bed_type != self._migration.data.get(CONF_BED_TYPE):
+            # The previous bed type's own settings must not steer the new one,
+            # such as a VMAT app's connection timeout.
+            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
+                self._manual_data, bed_type
+            )
         # The destination's own family checks its link before the review.
         self._migration_family = next(
             (family for family in GUIDED_FAMILIES if bed_type in family.managed | family.asks),

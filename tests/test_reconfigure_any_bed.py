@@ -139,3 +139,33 @@ async def test_reconfigure_to_a_checked_route_checks_its_link_first(
     assert result.get("step_id") == "migration_check", result
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LINAK
     manager.async_abort(result["flow_id"])
+
+
+async def test_reconfigure_drops_the_previous_apps_own_settings(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    """A VMAT app's settings must not follow the bed to another bed type."""
+    del enable_custom_integrations
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        title="Bed",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:45",
+            CONF_NAME: "Bed",
+            const.CONF_BED_TYPE: const.BED_TYPE_LINAK,
+            const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+        },
+        unique_id="AA:BB:CC:DD:EE:45",
+    )
+    entry.add_to_hass(hass)
+    manager = hass.config_entries.flow
+    result = await manager.async_init(const.DOMAIN, context=reconfigure_context(entry))
+    result = await manager.async_configure(
+        result["flow_id"], {const.CONF_BED_TYPE: const.BED_TYPE_SERTA}
+    )
+    assert result["step_id"] == "migration_confirm"
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        await manager.async_configure(result["flow_id"], {"action": "apply"})
+
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_SERTA
+    assert const.CONF_VIBRADORM_APP_PROFILE not in entry.data
