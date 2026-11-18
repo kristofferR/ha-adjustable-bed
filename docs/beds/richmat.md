@@ -6182,8 +6182,9 @@ Physical validation is for real beta/release users and is not implied here.
 #### Setup
 
 Choose **Majestic Home**, then the exact FARM, JLRM, JGRN or JHRN identifier
-shown in the app. Setup and Configure retain that choice independently on each
-physical side of a two-address pair. Imports and restored entries use the same
+shown in the app. Change it later in Reconfigure. Each physical side of a
+two-address pair keeps its own choice; separate a combined bed before changing
+either side's product. Imports and restored entries use the same
 profile id. The empty product sentinel has no controls and is not a setup choice.
 
 The app scans without filters. A Bluetooth name or shared service cannot choose

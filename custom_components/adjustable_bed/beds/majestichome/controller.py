@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CardPlacement, CardSection, memory_card
+from ...card import CARD_PRESET_SAVE, CardPlacement, CardSection, memory_card
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -363,11 +363,15 @@ class MajesticHomeController(GoodVibeController):
                 placement = (
                     memory_card(int(control.key[-1]), save=save)
                     if control.key.startswith("memory_")
+                    else CARD_PRESET_SAVE
+                    if save
                     else CardPlacement(section)
                 )
                 translation = "majestichome_" + (
                     control.key + ("_save" if save else "")
                     if control.key.startswith("memory_")
+                    else "save_action"
+                    if save
                     else control.group + "_action"
                 )
                 buttons.append(

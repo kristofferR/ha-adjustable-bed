@@ -246,3 +246,15 @@ async def test_alarm_modes_allocator_and_unknown_received_toggle_fields(clock):
 def test_no_factory_reset_or_unproven_writer_exposure():
     for layout in LAYOUTS.values():
         assert all("factory" not in control.key for control in layout.controls)
+
+
+def test_preset_saves_use_the_save_placement():
+    from custom_components.adjustable_bed.card import CARD_PRESET_SAVE
+
+    controller, _ = make("FARM")
+    saves = [spec for spec in controller.controller_button_specs if spec.name.startswith("Save ")]
+    assert {spec.name for spec in saves} >= {"Save Zero Gravity", "Save Anti-Snore"}
+    for spec in saves:
+        assert spec.requires_confirmation
+        if not spec.key.startswith("majestichome_memory_"):
+            assert spec.card == CARD_PRESET_SAVE and spec.translation_key == "majestichome_save_action"

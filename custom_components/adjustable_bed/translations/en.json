@@ -3273,6 +3273,9 @@
       },
       "majestichome_memory_2_save": {
         "name": "{action}"
+      },
+      "majestichome_save_action": {
+        "name": "{action}"
       }
     },
     "cover": {
