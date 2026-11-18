@@ -2010,7 +2010,7 @@ class TestBluetoothDiscoveryFlow:
         mock_bluetooth_service_info: BluetoothServiceInfoBleak,
         enable_custom_integrations,
     ):
-        """Selecting "Diagnostic (unknown bed)" on the confirm step must create
+        """Selecting the diagnostics-only row on the confirm step must create
         an entry so users can capture a support bundle (#385)."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
@@ -4568,7 +4568,7 @@ async def test_verify_connection_failure_still_creates_entry(
         )
         verify = await _advance_progress(hass, verify)
         assert verify["step_id"] == "verify_connection"
-        assert "Could not connect" in verify["description_placeholders"]["capabilities"]
+        assert "Couldn't connect" in verify["description_placeholders"]["capabilities"]
 
         created = await hass.config_entries.flow.async_configure(verify["flow_id"], user_input={})
 

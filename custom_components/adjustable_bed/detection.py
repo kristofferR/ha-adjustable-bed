@@ -604,7 +604,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app",
-    BED_TYPE_COMFORTBASE: "ComfortBase app",
+    BED_TYPE_COMFORTBASE: "ComfortBase app (ComfortBaseForBluetooth)",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app",
     BED_TYPE_ESHINE_OKIN: "eShine app (E2000 to E5000)",
     BED_TYPE_ESHINE: "eShine app (E6000)",
@@ -631,9 +631,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
     BED_TYPE_MOTOMOTION: "MotoMotion app",
     BED_TYPE_HJBED: "HJBed app",
-    BED_TYPE_JALON: "OkinComfortBed II N app",
+    BED_TYPE_JALON: "OkinComfortBed II N app (Jalon)",
     BED_TYPE_SYMPHONY_SLEEP: "Symphony Sleep app",
-    BED_TYPE_JALON_BED: "OkinComfortBed II app",
+    BED_TYPE_JALON_BED: "OkinComfortBed II app (Jalon)",
     BED_TYPE_SYMPHONY: "Symphony Sleep Sense app",
     BED_TYPE_RICHMAT_APP: "Richmat app",
     BED_TYPE_RICHMAT_APP_SLEEP: "Richmat app sleep sensor",
@@ -715,7 +715,9 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_DOUBLESLEEP: "OKIN SleepEase (DoubleSleep / XiaoBao)",
     BED_TYPE_SLEEPTRACKER: "Tempur Sleeptracker-AI (ProSmart, ActiveBreeze)",
     # Diagnostic
-    BED_TYPE_DIAGNOSTIC: "Diagnostic (unknown bed)",
+    # Kept in the list: a discovered bed nothing supports can still be added to
+    # capture a support bundle (#385).
+    BED_TYPE_DIAGNOSTIC: "Unsupported bed (diagnostics only)",
 }
 
 
@@ -890,8 +892,6 @@ def get_bed_type_options() -> list[SelectOptionDict]:
         if (bed_type not in VARIANT_REQUIRED_BED_TYPES or bed_type in PRODUCT_QUESTION_BED_TYPES)
         and bed_type not in FAMILY_STEP_ROUTES
         and bed_type not in PROTOCOL_ROUTES
-        # The start menu offers diagnostics; it is not an app.
-        and bed_type != BED_TYPE_DIAGNOSTIC
     }
     choices.update(
         {

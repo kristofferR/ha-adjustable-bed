@@ -70,9 +70,8 @@ def test_automatic_choices_read_the_same() -> None:
     assert not odd
 
 
-def test_app_list_has_no_diagnostic_or_walls_of_text() -> None:
+def test_app_list_has_no_walls_of_text() -> None:
     labels = [option["label"] for option in get_bed_type_options()]
-    assert not any("Diagnostic" in label for label in labels)
     assert max(map(len, labels)) <= 110
 
 

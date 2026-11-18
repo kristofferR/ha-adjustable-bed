@@ -305,7 +305,7 @@ async def test_app_picker_manual_setup_and_configure_keep_fixed_profile(
         )
         picker = result["data_schema"].schema[const.CONF_BED_TYPE]
         choice = next(row for row in picker.rows() if "OKIN Motion Bed" in row)
-        assert "com.okin.motionbed" in choice
+        assert choice == "OKIN Motion Bed app"
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {const.CONF_BED_TYPE: choice}
         )
