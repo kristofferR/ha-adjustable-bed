@@ -91,7 +91,7 @@ async def test_control_changes_compare_entity_sets_and_name_automations(
 
     assert changes.known
     assert "Memory 1" in changes.removed and "Under Bed Lights" in changes.removed
-    assert "Hold all controls down" in changes.added
+    assert "All motors down" in changes.added
     # Kept controls (address-based IDs) are neither added nor removed.
     assert "Back" not in changes.added + changes.removed
     assert changes.unchanged == 6

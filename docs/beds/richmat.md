@@ -1801,11 +1801,11 @@ buttons in its existing sections.
 | Flat | `31` | `6E 01 00 31 A0` | once |
 | Zero-G | `45` | `6E 01 00 45 B4` | once |
 | Anti-Snore | `46` | `6E 01 00 46 B5` | once |
-| Save Zero Gravity | `66` | `6E 01 00 66 D5` | once |
-| Save Anti-Snore | `69` | `6E 01 00 69 D8` | once |
+| Save zero gravity | `66` | `6E 01 00 66 D5` | once |
+| Save anti-snore | `69` | `6E 01 00 69 D8` | once |
 | Light toggle | `3C` | `6E 01 00 3C AB` | once |
-| Head massage strength | `4C` | `6E 01 00 4C BB` | once |
-| Foot massage strength | `4E` | `6E 01 00 4E BD` | once |
+| Cycle head massage strength | `4C` | `6E 01 00 4C BB` | once |
+| Cycle foot massage strength | `4E` | `6E 01 00 4E BD` | once |
 | Massage mode step | `48` | `6E 01 00 48 B7` | once |
 | Massage off | `5E` | `6E 01 00 5E CD` | once |
 | Massage 10 minutes | `5F` | `6E 01 00 5F CE` | once |
