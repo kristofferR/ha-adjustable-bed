@@ -96,10 +96,10 @@ STATE_GROUPS: Final = {
 }
 # Entity key -> (label, the profile button it sends).
 EXTRA_BUTTONS: Final[dict[str, tuple[str, Button]]] = {
-    "save_zero_g": ("Save Zero Gravity", "save_zero_g"),
-    "save_anti_snore": ("Save Anti-Snore", "save_anti_snore"),
-    "massage_head_strength": ("Head massage strength", "massage_head"),
-    "massage_foot_strength": ("Foot massage strength", "massage_foot"),
+    "save_zero_g": ("Save zero gravity", "save_zero_g"),
+    "save_anti_snore": ("Save anti-snore", "save_anti_snore"),
+    "massage_head_strength": ("Cycle head massage strength", "massage_head"),
+    "massage_foot_strength": ("Cycle foot massage strength", "massage_foot"),
     "massage_10_minutes": ("Massage 10 minutes", "massage_timer_10"),
     "massage_20_minutes": ("Massage 20 minutes", "massage_timer_20"),
     "massage_30_minutes": ("Massage 30 minutes", "massage_timer_30"),
@@ -232,6 +232,8 @@ class EshineController(ProfileExecution[RichmatProfile], BedController):
                 _group_key(group),
                 "mdi:bluetooth",
                 attribute_keys=(_group_data_key(group),),
+                # Raw report groups for troubleshooting, not dashboard values.
+                entity_registry_enabled_default=False,
             )
             for group in STATE_GROUPS
         )

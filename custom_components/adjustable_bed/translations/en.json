@@ -2279,16 +2279,16 @@
         "name": "Position axis 2 target 100"
       },
       "eshine_save_zero_g": {
-        "name": "Save Zero Gravity"
+        "name": "Save zero gravity"
       },
       "eshine_save_anti_snore": {
-        "name": "Save Anti-Snore"
+        "name": "Save anti-snore"
       },
       "eshine_massage_head_strength": {
-        "name": "Head massage strength"
+        "name": "Cycle head massage strength"
       },
       "eshine_massage_foot_strength": {
-        "name": "Foot massage strength"
+        "name": "Cycle foot massage strength"
       },
       "eshine_massage_10_minutes": {
         "name": "Massage 10 minutes"
@@ -2420,28 +2420,25 @@
         "name": "Release held control"
       },
       "eshine_okin_flat_zero_g": {
-        "name": "Flat + Zero Gravity"
+        "name": "Flat and zero gravity"
       },
       "eshine_okin_query_state": {
         "name": "Refresh bed state"
       },
-      "eshine_okin_query_alarm": {
-        "name": "Refresh alarm"
-      },
       "eshine_okin_sync_clock": {
-        "name": "Synchronize bed clock"
+        "name": "Sync clock"
       },
       "eshine_okin_massage_on": {
         "name": "Massage on"
       },
       "eshine_okin_massage_head_strength": {
-        "name": "Head massage strength"
+        "name": "Cycle head massage strength"
       },
       "eshine_okin_massage_foot_strength": {
-        "name": "Foot massage strength"
+        "name": "Cycle foot massage strength"
       },
       "eshine_okin_massage_timer": {
-        "name": "Massage timer"
+        "name": "Cycle massage timer"
       },
       "richmat_classic_action": {
         "name": "{action}"
@@ -3795,34 +3792,35 @@
         "name": "App alarm state"
       },
       "furnimove_model": {
-        "name": "FurniMove model"
+        "name": "Model"
       },
       "furnimove_hardware": {
-        "name": "FurniMove hardware version"
+        "name": "Hardware version"
       },
       "furnimove_software": {
-        "name": "FurniMove software version"
+        "name": "Software version"
       },
       "furnimove_firmware": {
-        "name": "FurniMove firmware version"
+        "name": "Firmware version"
       },
       "furnimove_control_mode": {
-        "name": "FurniMove local control mode"
+        "name": "Control mode",
+        "state": {
+          "press_and_hold": "Press and hold",
+          "press_and_release": "Press and release"
+        }
       },
       "furnimove_massage_type": {
-        "name": "FurniMove local massage zone"
+        "name": "Massage zone"
       },
       "furnimove_massage_intensity": {
-        "name": "FurniMove local massage intensity"
+        "name": "Massage intensity"
       },
       "furnimove_massage_program": {
-        "name": "FurniMove local massage program"
+        "name": "Massage program"
       },
       "furnimove_massage_timer_minutes": {
-        "name": "FurniMove advisory massage duration"
-      },
-      "furnimove_function_result": {
-        "name": "FurniMove function feedback result"
+        "name": "Massage timer"
       },
       "vibradorm_app_model": {
         "name": "App model metadata"
@@ -4623,7 +4621,7 @@
         "name": "App state field 0x83"
       },
       "eshine_capabilities": {
-        "name": "Capabilities"
+        "name": "Capability reports"
       },
       "eshine_motors": {
         "name": "Motor reports"
@@ -4635,7 +4633,7 @@
         "name": "Light reports"
       },
       "eshine_rgb": {
-        "name": "RGB reports"
+        "name": "RGB light reports"
       },
       "eshine_alarm": {
         "name": "Alarm reports"
@@ -4887,10 +4885,10 @@
         "name": "Left occupancy"
       },
       "eshine_okin_massage": {
-        "name": "Massage state"
+        "name": "Massage"
       },
       "eshine_okin_alarm": {
-        "name": "Alarm state"
+        "name": "Alarm"
       },
       "richmat_classic_status": {
         "name": "App connection and state"
@@ -5237,13 +5235,13 @@
         "name": "Under Bed Lights"
       },
       "furnimove_sync": {
-        "name": "FurniMove synchronization"
+        "name": "Synchronized"
       },
       "furnimove_child_lock": {
-        "name": "FurniMove child lock"
+        "name": "Child lock"
       },
       "furnimove_massage_running": {
-        "name": "FurniMove local massage session"
+        "name": "Massage"
       },
       "vmatbasic_ed": {
         "name": "ED motor status"

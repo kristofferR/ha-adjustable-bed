@@ -351,7 +351,9 @@ async def test_reconstructed_controller_retains_only_the_app_specific_source(has
     await second.async_after_connect(MagicMock())
     own = 0x11223344 if app == "comfyds" else 0x55667788
     assert packets(client) == [
-        codec.join(second.profile.room), codec.ping(own), codec.control(0, own, 70)
+        codec.join(second.profile.room),
+        codec.ping(own),
+        codec.control(0, own, 70),
     ]
     assert "own" not in second.persisted_app_state
 
