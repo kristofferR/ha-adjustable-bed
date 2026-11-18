@@ -165,7 +165,10 @@ async def test_all_target_preflight_rejects_before_first_settings_write(
     other, ctrl = fake_target(family=bed.OkimikiController)
     ctrl.product_key = "IPRM"
     ctrl._address = "AA:BB:CC:DD:EE:70"
+    other.address = ctrl._address
+    ctrl._coordinator = other
     ctrl._link = None
+    ctrl._menus_changed = asyncio.Event()
     ctrl.validate_request = MagicMock()
     ctrl._alarms = []
     ctrl.menu_available = lambda _: False
@@ -234,8 +237,9 @@ async def test_skipped_target_validation_prevents_all_settings_writes(hass, runt
     target, client, resolve = runtime
     assert await target.async_connect()
     notify(target, "6e0e00037f")
-    other, _ = fake_target(family=bed.OkimikiController)
+    other, ctrl = fake_target(family=bed.OkimikiController)
     other.address = "AA:BB:CC:DD:EE:70"
+    ctrl._alarms = []
     # A scheduler can return without calling the operation after STOP admission.
     other.async_execute_controller_command = AsyncMock()
     resolve.return_value = ([(target, "both"), (other, "both")], [])
