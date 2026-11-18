@@ -459,6 +459,10 @@ class AdjustableBedCoordinator(
         self._command_link_generation = 0
         # A read, not a command, holds _command_lock.
         self._link_read_active = False
+        # The idle window whose one recovery has been used.
+        self._recovered_idle_deadline: float | None = None
+        # Deadline of a bounded recovery connect in flight; a command lifts it.
+        self._recovery_connect_window: asyncio.Timeout | None = None
         self._reconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_task: asyncio.Task[None] | None = None
         self._lock = asyncio.Lock()

@@ -1,19 +1,21 @@
 """Recovering a dropped link under "Stay connected for a while".
 
 The idle window belongs to the last command. A link the bed or adapter drops
-is recovered only inside that window, and recovery never opens a new one, so a
+is recovered once inside that window, and recovery never opens a new one, so a
 bed that drops idle links cannot be held connected forever.
 """
 
 from __future__ import annotations
 
 import asyncio
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
@@ -312,3 +314,114 @@ async def test_drop_during_a_background_position_read_is_not_command_demand(
         await coordinator._async_read_positions_background(coordinator._cancel_counter)
 
     assert not _take_reconnect_timer(coordinator)
+
+
+async def test_one_recovery_per_idle_window(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A recovered link that drops again inside the same window waits for a command.
+
+    Receivers that drop idle links every few seconds (#369) would otherwise be
+    reconnected repeatedly after every command.
+    """
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    coordinator._idle_deadline = hass.loop.time() + 30
+    _drop(coordinator, mock_bleak_client)
+    assert _take_reconnect_timer(coordinator)
+    mock_bleak_client.is_connected = True
+    await coordinator._async_auto_reconnect()
+    assert coordinator.is_connected
+
+    _drop(coordinator, mock_bleak_client)
+
+    assert not _take_reconnect_timer(coordinator)
+
+
+def _record_stop(coordinator: AdjustableBedCoordinator, sent_on: list[object]):
+    """Patch the controller class so STOP records the client it went out on.
+
+    Call while connected; the reconnect builds a new instance of that class.
+    """
+    controller = coordinator.controller
+    assert controller is not None
+
+    async def _stop_all(self: object) -> None:
+        del self
+        sent_on.append(coordinator._client)
+
+    return patch.object(type(controller), "stop_all", _stop_all)
+
+
+async def test_stop_after_the_window_reconnects_and_sends(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A bed still moving from a latched command gets its STOP after an idle drop.
+
+    The window ended, so the drop is not recovered, but STOP is a command and
+    connects on demand.
+    """
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    coordinator._idle_deadline = hass.loop.time() - 1
+    sent_on: list[object] = []
+    record_stop = _record_stop(coordinator, sent_on)
+    _drop(coordinator, mock_bleak_client)
+    assert not _take_reconnect_timer(coordinator)
+    attempts = coordinator.connection_attempt_count
+    mock_bleak_client.is_connected = True
+
+    with record_stop:
+        await coordinator.async_stop_command()
+
+    assert coordinator.connection_attempt_count == attempts + 1
+    assert sent_on == [mock_bleak_client]
+
+
+async def test_stop_during_a_recovery_uses_its_connect(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A STOP queued behind a recovery lifts the window and uses that connect.
+
+    Without that, the window ending mid-connect would cancel the connect, tear
+    the link down and make the STOP connect again from scratch.
+    """
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    coordinator._idle_deadline = hass.loop.time() + 20
+    sent_on: list[object] = []
+    record_stop = _record_stop(coordinator, sent_on)
+    _drop(coordinator, mock_bleak_client)
+    assert _take_reconnect_timer(coordinator)
+
+    gate = asyncio.Event()
+    connect = coordinator._async_connect_locked
+    connects = 0
+
+    async def _gated_connect(reset_timer: bool = True) -> bool:
+        nonlocal connects
+        connects += 1
+        await gate.wait()
+        mock_bleak_client.is_connected = True
+        return await connect(reset_timer)
+
+    coordinator._async_connect_locked = _gated_connect
+    with record_stop:
+        recovery = hass.async_create_task(coordinator._async_auto_reconnect())
+        while connects == 0:
+            await asyncio.sleep(0)
+        stop = hass.async_create_task(coordinator.async_stop_command())
+        # The STOP holds the command lock and waits on the connection lock.
+        while not coordinator._command_lock.locked():
+            await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        # Past the window's end: an unlifted window would cancel the connect now.
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=60))
+        await asyncio.sleep(0)
+        gate.set()
+        await recovery
+        await stop
+
+    assert connects == 1
+    assert sent_on == [mock_bleak_client]
+    assert coordinator.is_connected

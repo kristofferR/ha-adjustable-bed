@@ -399,10 +399,11 @@ class CoordinatorConnectionMixin:
         # "Stay connected for a while" holds the link for a while after a
         # command. Recovering every drop with a fresh window would hold it
         # forever and lock out the remote and app, and storms receivers that
-        # drop idle links (#369). Recover only for pending work or within the
-        # window the last command opened.
-        return self._command_needs_link() or self._idle_window_allows_recovery(
-            _AUTO_RECONNECT_DELAY_SECONDS
+        # drop idle links (#369). Recover only for pending work, or once within
+        # the window the last command opened.
+        return self._command_needs_link() or (
+            self._idle_window_allows_recovery(_AUTO_RECONNECT_DELAY_SECONDS)
+            and self._recovered_idle_deadline != self._idle_deadline
         )
 
     def _persistent_link_recovers_on_timer(self: AdjustableBedCoordinator) -> bool:
@@ -479,6 +480,11 @@ class CoordinatorConnectionMixin:
         self._recovered_link_window = False
         self._command_link_generation += 1
         self._cancel_disconnect_timer()
+        # A recovery still connecting finishes for this command instead of
+        # being cancelled at the window's end and connected again from scratch.
+        window = self._recovery_connect_window
+        if window is not None and not window.expired():
+            window.reschedule(None)
 
     def _record_dropped_connection(
         self: AdjustableBedCoordinator, stage: str, attempt_details: dict[str, Any], attempt_start: float
@@ -2001,6 +2007,9 @@ class CoordinatorConnectionMixin:
         deadline = self._idle_deadline
         generation = self._command_link_generation
         self._recovered_link_window = bounded
+        if bounded:
+            # One recovery per window: a link that drops again waits for a command.
+            self._recovered_idle_deadline = deadline
         try:
             if bounded:
                 connected = await self._async_connect_within_window(deadline, generation)
@@ -2050,18 +2059,24 @@ class CoordinatorConnectionMixin:
     ) -> bool | None:
         """Connect for a bounded recovery; return None when the window ran out.
 
-        Cleanup runs under the same connection lock as the attempt, so a
-        command queued on it never sees the abandoned link and connects on
-        demand afterwards.
+        A command that takes the link meanwhile lifts the deadline, so the
+        connect finishes for it. Otherwise cleanup runs under the same
+        connection lock as the attempt, so a command queued on it never sees
+        the abandoned link and connects on demand afterwards.
         """
         async with self._lock:
-            window = asyncio.timeout_at(deadline)
+            # A command that arrived while this waited for the lock owns the link.
+            command_arrived = generation != self._command_link_generation
+            window = asyncio.timeout_at(None if command_arrived else deadline)
+            self._recovery_connect_window = window
             try:
                 async with window:
                     return await self._async_connect_locked()
             except TimeoutError:
                 if not window.expired():
                     raise
+            finally:
+                self._recovery_connect_window = None
             _LOGGER.debug("Auto-reconnect for %s outlasted the idle window", self._address)
             self._recovered_link_window = False
             # A cancelled startup error handler can leave a half-open link.
