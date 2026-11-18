@@ -2222,7 +2222,7 @@ pair with fresh cancel events and keeps the command lane until it finishes.
 #### Alarm and clock
 
 `adjustable_bed.set_alarm` takes `device_id`, `enabled`, optional
-`side`, `time` (required when enabling) and `wake_mode` (`none`, `memory_1`,
+`side`, `time` (required when enabling) and `wake_action` (`none`, `memory_1`,
 `memory_2`). Disabling needs no time, and every target must be this profile.
 `adjustable_bed.sync_clock` sends only the clock.
 
@@ -2232,7 +2232,7 @@ data:
   device_id: YOUR_DEVICE_ID
   enabled: true
   time: "06:30:00"
-  wake_mode: memory_1
+  wake_action: memory_1
 ```
 
 The app's calendar encoding is kept as shipped:
@@ -2986,10 +2986,10 @@ data:
   device_id: YOUR_DEVICE_ID
   enabled: true
   time: "08:30:00"
-  memory: memory_1
+  wake_action: memory_1
 ```
 
-- `memory` is `none`, `memory_1` (A), or `memory_2` (B), never a bed side.
+- `wake_action` is `none`, `memory_1` (A), or `memory_2` (B), never a bed side.
 - Use `enabled: false` to disable; the previous selected schedule remains in
   local intent.
 - Enabling always supplies a complete, valid time and explicit memory.
@@ -4970,7 +4970,7 @@ The app does not validate reply checksums or prove ACK correlation.
 #### Services
 
 `adjustable_bed.set_alarm` accepts `enabled`, minute-precision `time`,
-`weekdays` (Monday 0 through Sunday 6) and `wake_mode` (`none`, `memory_1`,
+`weekdays` (`monday` through `sunday`) and `wake_action` (`none`, `memory_1`,
 `memory_2`, `massage`), plus the standard device/side target. Empty weekdays
 chooses today if the selected hour/minute is later, otherwise tomorrow.
 Repeating days set bit 7; Sunday is bit 0. Weekdays and all days yield BE and FF.

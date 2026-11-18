@@ -3541,7 +3541,7 @@ correction.
 | Alarm action | `01` / `09` / `08` | Zero Gravity / Flat / Massage; Massage unavailable on E2000 |
 
 `adjustable_bed.set_alarm` accepts `enabled`, minute-precision `time` and
-`wake_mode` (`zero_g`, `flat`, `massage`). A time at or before now selects tomorrow.
+`wake_action` (`zero_g`, `flat`, `massage`). A time at or before now selects tomorrow.
 An enabled alarm synchronizes the local clock first. Setting writes the same
 snapshot twice with a query between them and after them, spaced 200 ms. Disabling
 writes the nine-byte zero form and queries after 200 ms. No arbitrary weekday
@@ -3553,7 +3553,7 @@ data:
   device_id: YOUR_DEVICE_ID
   enabled: true
   time: "07:00:00"
-  wake_mode: zero_g
+  wake_action: zero_g
 ```
 
 #### Evidence

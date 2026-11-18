@@ -640,7 +640,7 @@ data:
   enabled: true
   time: "07:30:00"
   weekdays: [monday, tuesday, wednesday, thursday, friday]
-  mode: zero_g
+  wake_action: zero_g
   massage: false
   sound: alarm
 ```

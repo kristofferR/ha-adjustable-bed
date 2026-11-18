@@ -1015,23 +1015,14 @@ a partial frame after 500 ms without new data, as the app's timer does.
 
 ##### Alarm service
 
-Use `adjustable_bed.set_alarm`, selecting the device and operation. It
-requires an explicitly selected RMControl profile and the appropriate supported
-alarm capability. Action names must come from that device's diagnostics
-`alarm_actions` list, not raw bytes or another product's catalog. Ambiguous or
-absent actions are rejected before writing.
+Use [`adjustable_bed.set_alarm`](../SERVICES.md#set_alarm). It requires an
+explicitly selected RMControl profile with an alarm. `wake_action` must be one
+of the actions in that product's alarm list; others are rejected before
+writing. Products with repeating alarms take `slot` (1..7), `time` and at least
+one weekday; `enabled: false` deletes that slot. Other products run one
+countdown alarm to `time`; `enabled: false` cancels it. `sync_clock` sends the
+current Home Assistant time to the alarm subsystem.
 
-| Operation | Additional fields | Effect |
-| --- | --- | --- |
-| `single` | `minutes` (1..65535), `action` | Run the selected action after a countdown measured in minutes. |
-| `cancel_single` | None | Cancel the countdown alarm. |
-| `repeat` | `alarm_id` (1..7), `time`, `weekdays`, `action` | Create or replace the selected repeating-alarm slot at local time, with minute precision. |
-| `delete` | `alarm_id` (1..7) | Delete that repeating-alarm slot. |
-| `query` | None | Request repeating-alarm records; received records appear in state/diagnostics. |
-| `sync` | None | Send current Home Assistant time, timezone and local calendar values to the supported alarm subsystem. |
-
-- `weekdays` uses `monday` through `sunday`; it is not a raw bit mask.
-- An optional `side` accepts `left`, `right` or `both` for paired-bed targeting.
 - Replacing a slot changes the alarm stored on the bed, not merely a Home
   Assistant automation.
 - A **single alarm is a countdown**, not a wall-clock alarm or time-sync
@@ -1315,16 +1306,17 @@ the catalog.
 
 #### Services
 
-- `adjustable_bed.set_alarm`: `enabled`, `time` (local, minute
-  precision), `position` and `massage` choices from the model's alarm page,
-  `slot` (1–3) for three-slot models. The bed receives the minutes until the
+- [`adjustable_bed.set_alarm`](../SERVICES.md#set_alarm): `enabled`, `time`
+  (local, minute precision), `wake_action` and `massage` with `massage_zone` from
+  the model's alarm page, `slot` (1–3) for three-slot models. The bed receives the minutes until the
   next occurrence. A position with a massage uses the app's combined opcode;
   two massages become head-and-foot; a pair the app cannot express is rejected.
   Three-slot models recall M1/M2/M3 per slot.
 - `adjustable_bed.richmat_mh_aroma`: mode 2 startup (1–60 min), mode 3 startup
   (1–60 min) and mode 3 pause (1–12 h), sent as the app's three frames.
-- `adjustable_bed.set_alarm`: `waist_side`, `enabled`, `time`,
-  `repeat` (once/daily), `intensity` (1–3). Saving includes Home Assistant's
+- Waist mattress alarm: `adjustable_bed.set_alarm` with `mattress_side`,
+  `enabled`, `time`, `weekdays` (none for once, all seven for daily) and
+  `massage_intensity` (1–3). Saving includes Home Assistant's
   current local time, as the app does.
 - `adjustable_bed.richmat_mh_light_color`: `rgb_color`, written as the light
   page's 10-byte colour frame. Available when the LED or button-light page is
@@ -3228,7 +3220,7 @@ creation too. A changed cache or released/replaced connection invalidates a
 prepared all-target settings operation. Choose an individual side if a
 sequential pair cannot retain both live alarm caches.
 
-For forms, `hour`, `minute`, `mode`, `weekdays` (Monday 0 through Sunday 6) and
+For forms, `hour`, `minute`, `mode`, `weekdays` (`monday` through `sunday`) and
 `enabled` supply explicit values; `alarm_id` identifies a received record for
 edit, toggle or delete. Toggle ignores form defaults and preserves raw fields.
 Clock synchronization preserves whole-hour timezone truncation and year minus
