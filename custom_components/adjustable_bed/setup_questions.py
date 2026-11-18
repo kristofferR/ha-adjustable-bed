@@ -2743,7 +2743,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     ),
     "majestichome": _asking(
         "majestichome",
-        questions=(Question(CONF_PROTOCOL_VARIANT, MAJESTICHOME_PROFILES),),
+        # A shared Richmat route cannot suggest this app's product.
+        questions=(Question(CONF_PROTOCOL_VARIANT, MAJESTICHOME_PROFILES, lambda _data: REQUIRED),),
         derive=lambda data: {
             CONF_MOTOR_COUNT: 3 if data.get(CONF_PROTOCOL_VARIANT) == "JLRM" else 2,
             CONF_HAS_MASSAGE: data.get(CONF_PROTOCOL_VARIANT) in ("FARM", "JLRM"),

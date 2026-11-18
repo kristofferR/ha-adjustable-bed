@@ -941,6 +941,87 @@ async def test_all_pending_live_plans_rechecked_at_submission(hass, live_pair, p
     assert invalidated and not mutations(live.events)
 
 
+@pytest.mark.parametrize("mode", ("sequential", "concurrent"))
+@pytest.mark.parametrize("target", ("parent", "left"))
+@pytest.mark.parametrize("drift", ("removed", "replaced"))
+async def test_pair_registration_rechecked_at_submission(
+    hass, live_pair, protocol_time, mode, target, drift
+):
+    live = await live_pair(mode)
+    original_execute, original_pace = (
+        services._execute_preflighted, bed.MajesticHomeController._pace
+    )
+    armed, changed, replacements = False, [], []
+
+    async def execute(*args, **kwargs):
+        nonlocal armed
+        armed = True
+        await original_execute(*args, **kwargs)
+
+    async def pace(ctrl, cleanup):
+        nonlocal armed
+        result = await original_pace(ctrl, cleanup)
+        if armed and not cleanup:
+            armed = False
+            entry = live.pair.entry
+            assert ctrl._current_link().client.is_connected
+            old = hass.data[const.DOMAIN].pop(entry.entry_id)
+            assert old is live.pair
+            changed.append(old)
+            if drift == "replaced":
+                replacement = PairedBedCoordinator(hass, entry, _build_paired_children(hass, entry))
+                replacements.append(replacement)
+                hass.data[const.DOMAIN][entry.entry_id] = replacement
+        return result
+
+    try:
+        with (
+            patch.object(services, "_execute_preflighted", execute),
+            patch.object(bed.MajesticHomeController, "_pace", pace),
+            pytest.raises(HomeAssistantError),
+        ):
+            await hass.services.async_call(
+                const.DOMAIN, "majestichome",
+                {"device_id": getattr(live, target), "operation": "set", "alarm_id": 1},
+                blocking=True,
+            )
+        assert changed and not mutations(live.events)
+        assert all(child._command_connection_holds == 0 for child in live.children.values())
+    finally:
+        hass.data[const.DOMAIN][live.pair.entry.entry_id] = live.pair
+        for replacement in replacements:
+            await replacement.async_shutdown()
+
+
+async def test_disconnected_sequential_side_stop_quietly_drops_the_whole_call(
+    hass, live_pair, protocol_time
+):
+    live = await live_pair("sequential")
+    original_execute = services._execute_preflighted
+    stopped = []
+
+    async def execute(*args, **kwargs):
+        assert not any(child.is_connected for child in live.children.values())
+        child = live.children["right"]
+        before_epoch, before_count = child.stop_epoch, live.pair.stop_count("right")
+        await live.pair.async_stop_command(side="right")
+        assert child.stop_epoch == before_epoch
+        assert live.pair.stop_count("right") == before_count + 1
+        stopped.append("right")
+        await original_execute(*args, **kwargs)
+
+    with patch.object(services, "_execute_preflighted", execute):
+        response = await hass.services.async_call(
+            const.DOMAIN, "majestichome",
+            {"device_id": live.parent, "operation": "set", "alarm_id": 1},
+            blocking=True, return_response=True,
+        )
+    assert response == {} and stopped == ["right"]
+    assert not mutations(live.events)
+    assert not any(packet == bytes.fromhex("6e01006edd") for _side, packet in live.events)
+    assert not any(child.is_connected for child in live.children.values())
+
+
 @pytest.mark.parametrize("phase", ("before-first", "between-windows"))
 async def test_interrupted_list_refuses_incomplete_response(hass, live_pair, protocol_time, phase):
     live = await live_pair("sequential")

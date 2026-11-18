@@ -11,7 +11,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -332,7 +332,8 @@ async def test_idle_disconnected_hold_reconnects_then_checks_current_status(
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         if lock_mask:
-            with pytest.raises(ValueError, match="disabled by status lock bit 0"):
+            # The live check rejects it the way preflight would have.
+            with pytest.raises(ServiceValidationError, match="disabled by status lock bit 0"):
                 await hass.services.async_call(DOMAIN, "hold_control", call_data, blocking=True)
         else:
             await hass.services.async_call(DOMAIN, "hold_control", call_data, blocking=True)

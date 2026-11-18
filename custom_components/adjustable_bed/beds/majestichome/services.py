@@ -24,6 +24,7 @@ from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
     SIDE_FIELD,
+    _bed_changed,
     _call_targets,
     _capture_command_admission,
     _command_targets,
@@ -103,6 +104,8 @@ async def handle_request(call: ServiceCall) -> ServiceResponse:
 
     def validate_owners() -> None:
         for parent, side, children in physical:
+            if call.hass.data.get(DOMAIN, {}).get(parent.entry.entry_id) is not parent:
+                raise _bed_changed()
             current = _command_targets(parent, side)
             if len(current) != len(children) or any(
                 a is not b for a, b in zip(current, children, strict=True)

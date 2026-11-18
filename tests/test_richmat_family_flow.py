@@ -89,6 +89,25 @@ async def answer(flow, choice: str):
     return result, finish
 
 
+async def test_generic_richmat_switch_requires_a_majestic_product(hass):
+    flow = setup_flow(hass)
+    flow._discovery_info = None
+    with patch.object(flow, "_verification_possible", return_value=False):
+        result = await flow.async_step_richmat_family({"choice": "majestichome"})
+        assert result["step_id"] == "profile_questions"
+        assert const.CONF_PROTOCOL_VARIANT not in flow._manual_data
+        schema = result["data_schema"]
+        assert schema is not None
+        with pytest.raises(vol.Invalid):
+            schema({})
+        answer = schema({const.CONF_PROTOCOL_VARIANT: "JGRN"})
+        chosen = await flow.async_step_profile_questions(answer)
+    assert chosen["type"] is FlowResultType.CREATE_ENTRY
+    assert chosen["data"][const.CONF_BED_TYPE] == "majestichome"
+    assert chosen["data"][const.CONF_PROTOCOL_VARIANT] == "JGRN"
+    assert flow._manual_data[const.CONF_PROTOCOL_VARIANT] == "JGRN"
+
+
 def test_every_app_has_a_searchable_row_and_the_family_row_stays_short():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
     for app in ("RMControl", "SleepFunction", "SVEN & SON", "Richmat remotes"):

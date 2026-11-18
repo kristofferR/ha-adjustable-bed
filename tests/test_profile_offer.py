@@ -8,9 +8,11 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import InvalidData
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -285,6 +287,10 @@ async def test_majestic_review_requires_explicit_product_before_applying(
             answer = {}
             if result["step_id"] == "profile_questions":
                 assert CONF_PROTOCOL_VARIANT in schema.schema
+                with pytest.raises(vol.Invalid):
+                    schema({})
+                with pytest.raises(InvalidData):
+                    await manager.async_configure(flow_id, {})
                 answer[CONF_PROTOCOL_VARIANT] = "JLRM"
                 chose_product = True
             result = await manager.async_configure(flow_id, schema(answer))
