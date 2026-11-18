@@ -417,3 +417,17 @@ class SymphonyParser:
             if code is not None:
                 return SymphonyTimer(0 if code == 255 else code * 10 if current_minutes != code else current_minutes)
         return alarm if alarm is not None and 0 <= alarm.hour <= 23 and 0 <= alarm.minute <= 59 else None
+
+
+def comfortfurniture_cancels_hold(data: bytes) -> bool:
+    """ComfortFurniture 2.3 BED branch: length nine only, accessory dispatch takes precedence.
+
+    No header/checksum/terminator validation or position meaning is established.
+    Accessory replies are ignored rather than reproducing the app's wrong-view
+    casts. Only the remaining 07/06/0A byte7 cases cancel a held BED refresh.
+    """
+    if len(data) != 9 or data[3] == 0x30:
+        return False
+    if data[3] == 0xF0 and (data[7] & 3 == 3 or data[7] & 12 == 12):
+        return False
+    return data[7] in (7, 6, 10)

@@ -539,6 +539,16 @@
     "card_section": "presets",
     "card_role": "save"
   },
+  "button:comfortfurniture_preset_stop": {
+    "card_section": "presets"
+  },
+  "button:comfortfurniture_reset": {
+    "card_section": "utility"
+  },
+  "button:comfortfurniture_save": {
+    "card_section": "presets",
+    "card_role": "save"
+  },
   "button:comfy_f_decrease": {
     "card_section": "utility"
   },
@@ -2864,6 +2874,12 @@
   "number:bf_cherish_wave": {
     "card_section": "massage"
   },
+  "number:comfortfurniture_intensity_level": {
+    "card_section": "massage"
+  },
+  "number:comfortfurniture_wave_level": {
+    "card_section": "massage"
+  },
   "number:fan_level": {
     "card_section": "climate"
   },
@@ -4347,6 +4363,9 @@
   },
   "switch:automatic_light": {
     "card_section": "utility"
+  },
+  "switch:comfortfurniture_massage": {
+    "card_section": "massage"
   },
   "switch:comfy_control_lock": {
     "card_section": "utility"

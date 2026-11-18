@@ -3256,6 +3256,15 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "comfortfurniture_save": {
+        "name": "{action}"
+      },
+      "comfortfurniture_reset": {
+        "name": "Reset"
+      },
+      "comfortfurniture_preset_stop": {
+        "name": "Stop preset"
+      },
       "suta_action": {
         "name": "{action}"
       },
@@ -4960,6 +4969,9 @@
       "symphony_sonic": {
         "name": "Sonic massage"
       },
+      "comfortfurniture_massage": {
+        "name": "Massage"
+      },
       "suta_lock": {
         "name": "Lock"
       },
@@ -5488,6 +5500,12 @@
       },
       "richmat_resource_massage_timer": {
         "name": "Massage timer"
+      },
+      "comfortfurniture_wave_level": {
+        "name": "Massage wave"
+      },
+      "comfortfurniture_intensity_level": {
+        "name": "Massage intensity"
       },
       "suta_1_setpoint": {
         "name": "Left target temperature"
@@ -9552,7 +9570,7 @@
         "sleep_harmony": "Sleep Harmony app",
         "restonic": "Restonic BT app",
         "ergomotion_apps": "Ergomotion, Ergomotion 4.0 or Serta MP Remote app",
-        "ore_apps": "Avanti, AMERICANSTAR, Bedsense Bases, INNOVA, MaxCoil Una or Dynasty app",
+        "ore_apps": "Avanti, AMERICANSTAR, Bedsense Bases, ComfortFurniture, INNOVA, MaxCoil Una or Dynasty app",
         "okin_seating_apps": "Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app",
         "purple_base_json": "Purple Smart Base, Member's Mark or Linx / Juna Sleep",
         "coolbase": "Cool Base app (with fan)",

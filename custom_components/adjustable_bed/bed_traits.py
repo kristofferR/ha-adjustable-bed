@@ -126,6 +126,7 @@ from .const import (
     CONNECTION_MODE_IDLE,
     CONNECTION_MODE_RELEASE,
     KEESON_LAYOUT_APP_BED_TYPES,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_SINO,
     ORE_COMFORT_BED_VARIANTS,
@@ -415,7 +416,8 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
             traits,
             position_feedback=protocol_variant == KEESON_VARIANT_ERGOMOTION,
             percentage_positions=protocol_variant not in ORE_COMFORT_BED_VARIANTS,
-            connection_scoped_state=protocol_variant in _KEESON_SCOPED_VARIANTS,
+            connection_scoped_state=protocol_variant in _KEESON_SCOPED_VARIANTS or protocol_variant == KEESON_VARIANT_COMFORTFURNITURE,
+            no_angle_feedback=traits.no_angle_feedback or protocol_variant == KEESON_VARIANT_COMFORTFURNITURE,
         )
     if resolved in (BED_TYPE_GOODVIBE, BED_TYPE_MLILY):
         return replace(traits, connection_scoped_state=protocol_variant in _GOODVIBE_SLEEP_SENSORS)
