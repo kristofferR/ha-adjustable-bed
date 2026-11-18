@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
@@ -27,6 +27,7 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
@@ -78,6 +79,11 @@ def _number_key(field: str) -> StateKey[int | None]:
     return StateKey[int | None](NS + field)
 
 
+def _flag_key(field: str) -> StateKey[bool | None]:
+    """A parsed boolean status field that a switch reads."""
+    return StateKey[bool | None](NS + field)
+
+
 BUTTON_KEYS = {
     "headStrengthAdd": "head_strength_add",
     "footStrengthAdd": "foot_strength_add",
@@ -88,6 +94,21 @@ BUTTON_KEYS = {
     "liftFoot": "lift_foot",
 }
 _MASSAGE_FIELDS = frozenset({"massage_time", "head_intensity", "foot_intensity", "wave"})
+# Fields a setting entity already shows (alarm, anti-snore and sleep switches,
+# alarm time and anti-snore strength), or with no known meaning.
+_SETTING_FIELDS = frozenset(
+    {
+        "alarm_hour",
+        "alarm_minute",
+        "alarm_type",
+        "alarm_repeat",
+        "alarm_on",
+        "snore_enabled",
+        "sleeping",
+        "strength_index",
+        "auxiliary_status_bit_1",
+    }
+)
 _MASSAGE_BUTTONS = frozenset(
     {"head_strength_add", "foot_strength_add", "wave_add", "massage_timer"}
 )
@@ -102,12 +123,14 @@ def _button_card(key: str) -> CardPlacement:
     if key in _MASSAGE_BUTTONS or key.startswith(("timer", "query_massage")):
         return CARD_MASSAGE
     return CARD_UTILITY
+
+
 MAX_HOLD_MS = 60000  # Integration bound, also used by the card's hold service.
 
 
 @dataclass
 class Preferences:
-    """Local app choices survive BLE controller replacement, not HA restarts."""
+    """Alarm and anti-snore settings survive BLE controller replacement, not HA restarts."""
 
     alarm_hour: int = 0
     alarm_minute: int = 0
@@ -115,7 +138,6 @@ class Preferences:
     alarm_edited: bool = False
     strength_index: int = 0
     strength_edited: bool = False
-    privacy: bool = False
 
 
 def _action(name: str) -> MotorCommandCallable:
@@ -125,7 +147,9 @@ def _action(name: str) -> MotorCommandCallable:
     return invoke
 
 
-class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile | None], BedController):
+class AdjustaMattressController(
+    ProfileExecution[keeson_profiles.KeesonProfile | None], BedController
+):
     """One physical receiver with explicit model/layout and serialized lifecycles."""
 
     def __init__(
@@ -370,7 +394,7 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
             self.state.demonstration = True
             await self._send_snore()
         elif action == "sleep" and self._snore:
-            await self._toggle_sleep()
+            await self._set_sleeping(None)
         else:
             raise ValueError(f"This model/layout does not expose {action}")
 
@@ -404,8 +428,11 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
         if self._coordinator.cancel_command.is_set():
             raise asyncio.CancelledError
 
-    async def _toggle_sleep(self) -> None:
+    async def _set_sleeping(self, sleeping: bool | None) -> None:
+        """Toggle sleep mode from fresh status; ``sleeping`` skips a toggle already done."""
         await self._refresh_sleep_state()
+        if sleeping is not None and self.state.sleeping == sleeping:
+            return
         started = asyncio.get_running_loop().time()
         start = not self.state.sleeping
         prelude = start and not self.state.snore_enabled
@@ -483,14 +510,6 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
             if self.state.alarm_type in (0, 9, 17, 19):
                 self._preferences.alarm_type = self.state.alarm_type
             self._publish_drafts()
-        if "alarm_on" in fields:
-            self.forward_controller_state_update(
-                _option_key("alarm_commit"), "on" if self.state.alarm_on else "off"
-            )
-        if "snore_enabled" in fields:
-            self.forward_controller_state_update(
-                _option_key("snore_control"), "on" if self.state.snore_enabled else "off"
-            )
         if "strength_index" in fields and not self._preferences.strength_edited:
             self._preferences.strength_index = self.state.strength_index
             self.forward_controller_state_update(
@@ -509,13 +528,13 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
         self.state.busy = False
         self.forward_controller_state_update(_field_key("busy"), False)
 
-    # Settings are local drafts until the explicit alarm commit control is used.
+    # The alarm time/action and anti-snore strength are what the alarm switch
+    # and the next anti-snore command send; they hydrate from the bed until edited.
     def _publish_drafts(self) -> None:
         self.forward_controller_state_updates(
             _number_key("alarm_draft_hour")(self._preferences.alarm_hour),
             _number_key("alarm_draft_minute")(self._preferences.alarm_minute),
             _option_key("alarm_draft_type")(str(self._preferences.alarm_type)),
-            _option_key("privacy")("accepted" if self._preferences.privacy else "not_accepted"),
             _option_key("strength_setting")(str(self._preferences.strength_index)),
         )
 
@@ -530,10 +549,7 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
         target.local_setting(key, option)
 
     def local_setting(self, key: str, option: str) -> None:
-        if key == "privacy" and option in ("accepted", "not_accepted") and self._snore:
-            self._preferences.privacy = option == "accepted"
-            self._coordinator.save_app_state(self)
-        elif key == "strength_setting" and option in ("0", "1", "2") and self._snore:
+        if key == "strength_setting" and option in ("0", "1", "2") and self._snore:
             self._preferences.strength_index = int(option)
             self._preferences.strength_edited = True
         elif key == "alarm_draft_type" and option in ("0", "9", "17", "19"):
@@ -590,28 +606,14 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
             await self._at(started, 0.4)  # Query builder at +400 ms, submission +600 ms.
             await self._send_delayed("queryAlarm")
         elif key == "snore_control" and self._snore and option in ("on", "off"):
-            if option == "on" and not self._preferences.privacy:
-                raise ValueError("Accept the anti-snore privacy notice before enabling it")
+            # Turning anti-snore on in Home Assistant is the user's consent; the
+            # app's privacy notice is a screen, not a bed setting.
             self.state.snore_enabled = option == "on"
             if self.state.snore_enabled:
                 self.state.demonstration = False
             await self._send_snore()
         else:
             self.local_setting(key, option)
-
-    @property
-    def persisted_app_state_key(self) -> str:
-        return "com.okin.adjustamattress"
-
-    @property
-    def persisted_app_state(self) -> Mapping[str, object]:
-        return {"privacy": self._preferences.privacy}
-
-    def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
-        privacy = state.get("privacy", False)
-        if not isinstance(privacy, bool):
-            raise ValueError("Invalid AdjustaMattress privacy preference")
-        self._preferences.privacy = privacy
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -639,13 +641,11 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        actions = {"sync_clock": "Synchronize clock", "query_alarm": "Refresh alarm"}
-        if self.model == "P2":
-            actions.pop("sync_clock")
-        else:
+        # The clock syncs and the alarm is read on connect. Massage and
+        # anti-snore status only arrive when queried, so those refreshes stay.
+        actions: dict[str, str] = {}
+        if self.model != "P2":
             actions["query_massage"] = "Refresh massage"
-        if self.model in ("P3", "P4"):
-            actions["query_massage_once"] = "Query massage once"
         if self._dedicated:
             actions.update(
                 {a: f"Massage timer {10 * (i + 1)} minutes" for i, a in enumerate(TIMERS)}
@@ -666,7 +666,6 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
             actions.update(liftHead="Lift head", liftFoot="Lift foot")
         if self._snore:
             actions.update(
-                sleep="Sleep",
                 demonstration="Demonstrate anti-snore",
                 query_status="Refresh anti-snore status",
             )
@@ -679,22 +678,48 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
                 card=_button_card(BUTTON_KEYS.get(key, key)),
                 scheduler_resource="*",
                 hold=ControllerHoldSpec(key, 0, 0) if key in self.held_control_options else None,
+                diagnostic=key.startswith("query_"),
             )
             for key, label in actions.items()
         )
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        definitions = [
-            ("alarm_draft_type", ("0", "9", "17", "19"), True),
-            ("alarm_commit", ("off", "on"), False),
-        ]
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        async def alarm(ctrl: BedController, on: bool) -> None:
+            await cast(AdjustaMattressController, ctrl).set_setting(
+                "alarm_commit", "on" if on else "off"
+            )
+
+        specs = [ControllerSwitchSpec(NS + "alarm", NS + "alarm", alarm, _flag_key("alarm_on"))]
         if self._snore:
-            definitions += [
-                ("privacy", ("not_accepted", "accepted"), True),
-                ("strength_setting", ("0", "1", "2"), True),
-                ("snore_control", ("off", "on"), False),
+
+            async def snore(ctrl: BedController, on: bool) -> None:
+                await cast(AdjustaMattressController, ctrl).set_setting(
+                    "snore_control", "on" if on else "off"
+                )
+
+            async def sleep(ctrl: BedController, on: bool) -> None:
+                await cast(AdjustaMattressController, ctrl)._set_sleeping(on)
+
+            specs += [
+                ControllerSwitchSpec(
+                    NS + "snore_control",
+                    NS + "snore_control",
+                    snore,
+                    _flag_key("snore_enabled"),
+                    icon="mdi:sleep-off",
+                ),
+                ControllerSwitchSpec(
+                    NS + "sleep", NS + "sleep", sleep, _flag_key("sleeping"), icon="mdi:sleep"
+                ),
             ]
+        return tuple(specs)
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        definitions = [("alarm_draft_type", ("0", "9", "17", "19"), True)]
+        if self._snore:
+            definitions += [("strength_setting", ("0", "1", "2"), True)]
         if self._dedicated:
             definitions += [
                 (zone + "_selector", ("0", "1", "2", "3"), False)
@@ -778,18 +803,26 @@ class AdjustaMattressController(ProfileExecution[keeson_profiles.KeesonProfile |
                 _field_key(key),
                 "mdi:information-outline",
                 native_unit_of_measurement="min" if key == "massage_time" else None,
+                entity_registry_enabled_default=key in _MASSAGE_FIELDS,
                 card=CARD_MASSAGE if key in _MASSAGE_FIELDS else CARD_UTILITY,
             )
             for key in self._sensor_fields
+            if key not in _SETTING_FIELDS
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return tuple(
             ControllerStateBinarySensorSpec(
-                NS + key, NS + key, _field_key(key), "mdi:information-outline", card=CARD_UTILITY
+                NS + key,
+                NS + key,
+                _field_key(key),
+                "mdi:information-outline",
+                entity_registry_enabled_default=False,
+                card=CARD_UTILITY,
             )
             for key in self._binary_fields
+            if key not in _SETTING_FIELDS
         )
 
     def motor_pulse_settings(self) -> tuple[int, int]:
