@@ -1,4 +1,4 @@
-"""Accepted Sophie unit124 vectors, safe sessions and production HA routes."""
+"""Sophie 1.0.6 vectors, safe sessions and production HA routes."""
 
 from __future__ import annotations
 
@@ -479,26 +479,25 @@ async def test_real_setup_entities_and_alarm_service(hass, connected_sophie):
         blocking=True,
     )
     assert written(ctrl)[-2:] == [VECTORS[53]["expected_bytes"], VECTORS[61]["expected_bytes"]]
-    assert (
-        hass.states.get(entity("button", "sophie_program_tv")).attributes["card_section"]
-        == "presets"
-    )
+    tv = hass.states.get(entity("button", "sophie_program_tv")).attributes
+    assert tv["card_section"] == "presets" and tv["card_role"] == "save"
     ctrl._parse_notification(bytes.fromhex("FFFFFFFF010004130F0730008A01020101"))
     await hass.async_block_till_done()
-    state = hass.states.get(entity("binary_sensor", "sophie_alarm_enabled"))
-    assert state.state == "on" and state.attributes["sophie_alarm_time"] == "07:30"
+    # Controller-state sensors are disabled by default; the published state is what they show.
+    assert coordinator.controller_state[ALARM_ENABLED]
+    assert coordinator.controller_state[ALARM_TIME] == "07:30"
     device_id = (
         er.async_get(hass).async_get(entity("binary_sensor", "sophie_alarm_enabled")).device_id
     )
     await hass.services.async_call(
         DOMAIN,
-        "sophie_set_alarm",
+        "set_alarm",
         {
             "device_id": device_id,
             "enabled": True,
             "time": "07:30:00",
             "weekdays": ["monday", "wednesday", "sunday"],
-            "mode": "memory_1",
+            "wake_action": "memory_1",
             "massage": True,
         },
         blocking=True,
@@ -536,60 +535,43 @@ async def test_real_timed_move_short_native_hold(hass, connected_sophie):
     ]
 
 
-async def test_alarm_admission_snapshot_precedes_import_and_all_targets_validate(hass, controller):
-    from datetime import time
+@pytest.mark.parametrize(
+    ("name", "actions", "massage"),
+    [
+        ("QMS-MQ-1520", ("none", "zero_g", "memory_1"), True),
+        ("QMS2-1520", ("none", "zero_g", "memory_1"), False),
+        ("QMS-430-1520", ("none", "zero_g_left", "zero_g_right", "zero_g"), True),
+    ],
+)
+async def test_alarm_capability_follows_the_model_name(controller, name, actions, massage):
+    from custom_components.adjustable_bed.alarm import AlarmRequest
 
-    from homeassistant.core import ServiceCall
-
-    from custom_components.adjustable_bed.beds.solace.sophie_services import handle_sophie_set_alarm
-    from custom_components.adjustable_bed.const import DOMAIN
-
-    service = "custom_components.adjustable_bed.services."
-    second = SophieController(controller._coordinator)
-    second.validate_alarm = MagicMock(side_effect=ValueError("second target gate"))
-    controller._coordinator.controller_state[ALARM_SUPPORTED] = True
-    parents = [MagicMock(stop_epoch=0), MagicMock(stop_epoch=0)]
-    events = []
-
-    async def imported(*_):
-        events.append("import")
-
-    def capture(*_):
-        events.append("capture")
-        return object()
-
-    async def preflight(targets, interface, label, supported=None, validate=None):
-        assert validate is not None
-        validate(controller)
-        validate(second)
-
-    call = ServiceCall(
-        hass,
-        DOMAIN,
-        "sophie_set_alarm",
-        {
-            "device_id": ["one", "two"],
-            "enabled": True,
-            "time": time(7, 30),
-            "weekdays": [],
-            "mode": "memory_1",
-            "massage": False,
-            "ring": False,
-        },
+    controller._coordinator.ble_device_name = name
+    assert controller.alarm_capability is None
+    controller._parse_notification(bytes.fromhex("FFFFFFFF0100030B00"))
+    capability = controller.alarm_capability
+    assert capability is not None
+    assert capability.wake_actions == actions and capability.massage == massage
+    request = AlarmRequest(
+        enabled=True, hour=7, minute=30, wake_action="zero_g", reference_time=datetime.now()
     )
-    with (
-        patch(service + "_call_targets", return_value=[(p, "both") for p in parents]),
-        patch(service + "_capture_command_admission", side_effect=capture),
-        patch(
-            "custom_components.adjustable_bed.beds.solace.sophie_services.async_import_modules",
-            side_effect=imported,
-        ),
-        patch(service + "_preflight_capability", side_effect=preflight),
-        pytest.raises(ValueError, match="second target gate"),
-    ):
-        await handle_sophie_set_alarm(call)
-    assert events == ["capture", "capture", "import"]
-    controller.client.write_gatt_char.assert_not_awaited()
+    await controller.configure_alarm(request)
+    mode = "zero_g_both" if "zero_g_left" in actions else "zero_g"
+    assert (
+        written(controller)[-1]
+        == codec.alarm(
+            switch=1,
+            hour=7,
+            minute=30,
+            weekday_mask=0,
+            repeat=False,
+            mode=app.ALARM_MODES[mode],
+            massage=False,
+            sound=0,
+        )
+        .hex()
+        .upper()
+    )
 
 
 async def test_app_picker_and_import_executor_load_actual_profile(hass):
@@ -641,9 +623,9 @@ async def test_real_paired_alarm_side_ownership_and_all_target_gate(hass):
     from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed import const
-    from custom_components.adjustable_bed.beds.solace.sophie_services import handle_sophie_set_alarm
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+    from custom_components.adjustable_bed.services import handle_set_alarm
 
     children = {}
     for side, address, name in (
@@ -677,19 +659,16 @@ async def test_real_paired_alarm_side_ownership_and_all_target_gate(hass):
     entry.add_to_hass(hass)
     pair = PairedBedCoordinator(hass, entry, children, connection_mode="concurrent")
 
-    def call(mode):
+    def call(wake_action):
         return ServiceCall(
             hass,
             const.DOMAIN,
-            "sophie_set_alarm",
+            "set_alarm",
             {
                 "device_id": ["pair"],
                 "enabled": True,
                 "time": time(7, 30),
-                "weekdays": [],
-                "mode": mode,
-                "massage": False,
-                "ring": False,
+                "wake_action": wake_action,
             },
         )
 
@@ -697,18 +676,18 @@ async def test_real_paired_alarm_side_ownership_and_all_target_gate(hass):
         with patch(
             "custom_components.adjustable_bed.services._call_targets", return_value=[(pair, "both")]
         ):
-            with pytest.raises(ServiceValidationError, match="mode"):
-                await handle_sophie_set_alarm(call("memory_1"))
+            with pytest.raises(ServiceValidationError):
+                await handle_set_alarm(call("memory_1"))
             for child in children.values():
                 child.client.write_gatt_char.assert_not_awaited()
-            await handle_sophie_set_alarm(call("no_action"))
+            await handle_set_alarm(call("none"))
         left, right = (children[side] for side in ("left", "right"))
         assert len(written(left.controller)) == len(written(right.controller)) == 1
         # A left-only target retains the left model and never touches the right.
         with patch(
             "custom_components.adjustable_bed.services._call_targets", return_value=[(pair, "left")]
         ):
-            await handle_sophie_set_alarm(call("memory_1"))
+            await handle_set_alarm(call("memory_1"))
         assert len(written(left.controller)) == 2 and len(written(right.controller)) == 1
     finally:
         for child in children.values():
@@ -769,13 +748,13 @@ async def test_proven_support_survives_idle_disconnect_and_reconnect_without_new
         if action == "alarm":
             await hass.services.async_call(
                 DOMAIN,
-                "sophie_set_alarm",
+                "set_alarm",
                 {
                     "device_id": device_id,
                     "enabled": True,
                     "time": "07:30:00",
                     "weekdays": ["monday", "wednesday", "sunday"],
-                    "mode": "memory_1",
+                    "wake_action": "memory_1",
                     "massage": True,
                 },
                 blocking=True,

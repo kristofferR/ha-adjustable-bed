@@ -22,7 +22,7 @@
 |----------|-----|------------|
 | ✅ | [Svane Remote](https://play.google.com/store/apps/details?id=com.svane.svaneremote) **Version 1.8 (8)** | `com.svane.svaneremote` |
 
-The app has two explicit BLE profiles. Earlier pre-audit analysis of this protocol
+The app has two explicit BLE profiles. Earlier analysis of this protocol
 used the package `com.produktide.svane.svaneremote`.
 
 ## Features
@@ -379,4 +379,4 @@ position, save position, recall position and flatten.
 
 ### Analysis provenance
 
-APK Protocol Audit row130 records all 663 disposition rows and every exclusion.
+Based on Svane Remote 1.8.

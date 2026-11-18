@@ -9,17 +9,16 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.bed_traits import bed_traits, reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
@@ -49,7 +48,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: True,
         CONF_DISABLE_ANGLE_SENSING: False,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: "idle",
         CONF_PREFERRED_ADAPTER: "auto",
     }
     result = await start_new_bed(flow, route, BED_TYPE_LOGICDATA_APP)
@@ -72,7 +71,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     assert saved[CONF_LOGICDATA_APP_LAYOUT] == "standard_3_split_upper"
     assert saved[CONF_LOGICDATA_APP_TRANSPORT] == "auto"
     assert saved[CONF_HAS_LIGHT] is True
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(saved)
     assert saved[CONF_HAS_MASSAGE] is True
 
 
@@ -100,55 +99,6 @@ async def test_transport_selection_preserves_explicit_family(hass):
         )
     saved = finish.call_args.args[0]
     assert (saved[CONF_LOGICDATA_APP_FAMILY], saved[CONF_LOGICDATA_APP_TRANSPORT]) == ("p1", "t2")
-
-
-async def test_configure_leaves_the_app_and_layout_to_the_guided_change(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "11:22:33:44:55:66",
-            CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP,
-            CONF_MOTOR_COUNT: 2,
-            CONF_LOGICDATA_APP_PROFILE: "tablet",
-            CONF_LOGICDATA_APP_FAMILY: "p1",
-            CONF_LOGICDATA_APP_LAYOUT: "standard_4",
-            CONF_LOGICDATA_APP_TRANSPORT: "t3",
-            CONF_HAS_LIGHT: False,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings()
-    defaults = {marker.schema: marker.default() for marker in result["data_schema"].schema}
-    assert defaults[CONF_HAS_LIGHT] is False
-    assert not {
-        CONF_LOGICDATA_APP_PROFILE,
-        CONF_LOGICDATA_APP_FAMILY,
-        CONF_LOGICDATA_APP_LAYOUT,
-        CONF_LOGICDATA_APP_TRANSPORT,
-    } & set(defaults)
-    result = await flow.async_step_settings({CONF_LOGICDATA_APP_LAYOUT: "standard_3_hi_low"})
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[CONF_LOGICDATA_APP_LAYOUT] == "standard_4"
-    result = await flow.async_step_settings({CONF_HAS_LIGHT: True})
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_HAS_LIGHT] is True
-    assert entry.data[CONF_LOGICDATA_APP_TRANSPORT] == "t3"
-
-
-async def test_configure_sends_simplicityframe_to_the_app_through_the_guided_change(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_LOGICDATA, CONF_MOTOR_COUNT: 2}
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP})
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LOGICDATA
 
 
 async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
@@ -247,20 +197,3 @@ async def test_paired_options_preserve_distinct_app_packet_selectors(hass):
     assert not app_keys.intersection(entry.data)
 
 
-async def test_paired_options_require_unpair_before_selecting_app_type(hass):
-    left = {
-        CONF_ADDRESS: "11:22:33:44:55:66",
-        CONF_BED_TYPE: BED_TYPE_LOGICDATA,
-        CONF_MOTOR_COUNT: 2,
-    }
-    right = {**left, CONF_ADDRESS: "11:22:33:44:55:77"}
-    entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
-    entry.add_to_hass(hass)
-    original = dict(entry.data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP})
-    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert entry.data == original
-    assert flow._pending_data == {}

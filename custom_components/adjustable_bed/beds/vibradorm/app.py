@@ -1,4 +1,4 @@
-"""Explicit Caresse/Werkmeister app paths from the accepted row031 artifacts.
+"""Explicit Caresse/Werkmeister app paths.
 
 Published feature state is local intent, never a device acknowledgment. The
 legacy Vibradorm controller remains independent of these app-selected layouts.
@@ -673,6 +673,7 @@ class VibradormAppController(BedController):
                 _button(action),
                 translation_key=f"vibradorm_app_{action}",
                 card=_BUTTON_CARDS.get(action, CARD_UTILITY),
+                diagnostic=action == "refresh_info",
             )
             for action, name in actions
         )
@@ -772,6 +773,7 @@ class VibradormAppController(BedController):
                 f"vibradorm_app_{field}",
                 vibradorm_app_metadata_key(field),
                 "mdi:information-outline",
+                entity_registry_enabled_default=False,
             )
             for field in fields
         )

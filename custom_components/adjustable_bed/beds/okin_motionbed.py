@@ -22,7 +22,12 @@ from ..codec import okin_nframe as codec
 from ..const import KEESON_BASE_NOTIFY_CHAR_UUID, KEESON_BASE_WRITE_CHAR_UUID
 from ..profiles.okin_nframe import OKIN_MOTIONBED, OkinNFrameProfile
 from .base import CONTROLLER_GESTURE_RELEASE, ProfileExecution
-from .entity_specs import ControllerButtonSpec, ControllerMotorHoldSpec, MotorControlSpec
+from .entity_specs import (
+    ControllerButtonSpec,
+    ControllerMotorHoldSpec,
+    ControllerSwitchSpec,
+    MotorControlSpec,
+)
 from .lifecycle import ControllerSession
 from .okin_nframe import OkinNFrameController
 
@@ -326,6 +331,23 @@ class OkinMotionBedController(ProfileExecution[OkinNFrameProfile], OkinNFrameCon
         return self.profile.memory_slots
 
     @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        # The app names parameter 0 its light-on frame and 1 light-off; the
+        # physical polarity is unverified. The bed reports no light state, so
+        # the switch shows the last command.
+        return (
+            ControllerSwitchSpec(
+                "motionbed_light",
+                "motionbed_light",
+                lambda ctrl, on: cast(OkinMotionBedController, ctrl)._action(
+                    f"light_parameter_{int(not on)}"
+                ),
+                icon="mdi:lightbulb-outline",
+                card=CARD_LIGHTING,
+            ),
+        )
+
+    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return (
             ControllerButtonSpec(
@@ -336,20 +358,6 @@ class OkinMotionBedController(ProfileExecution[OkinNFrameProfile], OkinNFrameCon
                 icon="mdi:stop",
                 scheduler_resource="*",
                 card=CARD_PRESETS,
-            ),
-            *(
-                ControllerButtonSpec(
-                    key=f"motionbed_light_parameter_{parameter}",
-                    name=f"Bed light parameter {parameter}",
-                    translation_key=f"motionbed_light_parameter_{parameter}",
-                    press_fn=lambda ctrl, p=parameter: cast(OkinMotionBedController, ctrl)._action(
-                        f"light_parameter_{p}"
-                    ),
-                    icon="mdi:lightbulb-outline",
-                    scheduler_resource="*",
-                    card=CARD_LIGHTING,
-                )
-                for parameter in (0, 1)
             ),
             ControllerButtonSpec(
                 key="motionbed_release",

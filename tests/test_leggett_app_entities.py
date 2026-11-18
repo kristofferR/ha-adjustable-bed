@@ -11,7 +11,11 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.leggett.okin import (
+    LED_MASK,
+    STATUS,
+    LeggettOkinController,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
@@ -183,13 +187,15 @@ async def test_raw_status_is_published_without_guessing_light_or_position_state(
     entry = _entry(hass, "useries")
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    mask_id = _entity_id(hass, "sensor", "leggett_led_mask")
-    status_id = _entity_id(hass, "sensor", "leggett_status")
-    assert int(hass.states.get(mask_id).state) == 0x077F0003
-    assert int(hass.states.get(status_id).state) == 127
+    # The raw words are disabled diagnostic sensors; read their published state.
+    state = hass.data[DOMAIN][entry.entry_id].controller_state
+    assert state[LED_MASK] == 0x077F0003
+    assert state[STATUS] == 127
     assert _keys(hass, entry, "light") == {"under_bed_lights_assumed"}
     light_id = _entity_id(hass, "light", "under_bed_lights_assumed")
-    assert er.async_get(hass).async_get(light_id).disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert (
+        er.async_get(hass).async_get(light_id).disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    )
     assert hass.states.get(light_id) is None
     assert "under_bed_lights" not in _keys(hass, entry, "switch")
 
@@ -199,8 +205,8 @@ async def test_raw_status_is_published_without_guessing_light_or_position_state(
         bytearray.fromhex("060055aa0000fe0000"),
     )
     await hass.async_block_till_done()
-    assert int(hass.states.get(mask_id).state) == 0x55AA0000
-    assert int(hass.states.get(status_id).state) == -2
+    assert state[LED_MASK] == 0x55AA0000
+    assert state[STATUS] == -2
     assert hass.states.get(light_id) is None
 
 
@@ -254,7 +260,7 @@ async def test_indicator_readback_applies_only_useries_low_byte_suppression(
     entry = _entry(hass, profile)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    mask_id = _entity_id(hass, "sensor", "leggett_led_mask")
+    state = hass.data[DOMAIN][entry.entry_id].controller_state
     alarm_id = _entity_id(hass, "binary_sensor", "leggett_alarm_indicator")
     timer_id = _entity_id(hass, "binary_sensor", "leggett_sleep_timer_indicator")
     callback = app_ble.start_notify.await_args_list[0].args[1]
@@ -262,14 +268,14 @@ async def test_indicator_readback_applies_only_useries_low_byte_suppression(
 
     callback(sender, bytearray.fromhex("0400c001000000"))
     await hass.async_block_till_done()
-    assert int(hass.states.get(mask_id).state) == 0xC001
+    assert state[LED_MASK] == 0xC001
     expected = "off" if profile == "useries" else "on"
     assert hass.states.get(alarm_id).state == expected
     assert hass.states.get(timer_id).state == expected
 
     callback(sender, bytearray.fromhex("0400c000000000"))
     await hass.async_block_till_done()
-    assert int(hass.states.get(mask_id).state) == 0xC000
+    assert state[LED_MASK] == 0xC000
     assert hass.states.get(alarm_id).state == "on"
     assert hass.states.get(timer_id).state == "on"
 

@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.smart_sleep import state_keys as state
 from custom_components.adjustable_bed.beds.smart_sleep.controller import SmartSleepController
@@ -341,9 +342,10 @@ async def test_all_real_entity_specs_build_and_actions_reach_wire(fmt, no_delays
             await entity.async_press()
         runtime.async_execute_controller_command.assert_awaited_once()
     for spec in ctrl.controller_select_specs:
-        if spec.key == "smart_sleep_child_mode":
-            continue
         await spec.select_fn(ctrl, spec.options[-1])
+    for switch in ctrl.controller_switch_specs:
+        if switch.local_set_fn is None:
+            await switch.set_fn(ctrl, True)
     frames = {c.args[1] for c in ctrl.client.write_gatt_char.call_args_list}
     assert all(
         codec.motion(fmt, axis, up) in frames for axis in range(1, 6) for up in (True, False)
@@ -372,11 +374,11 @@ async def test_light_gesture_and_exact_save_exposure(fmt, no_delays):
     assert frames[:2] == [codec.stop(fmt), codec.light(fmt, True)]
 
 
-async def test_alarm_real_service_preflights_all_targets_before_any_write(hass):
-    from custom_components.adjustable_bed.beds.smart_sleep.services import register_services
+async def test_set_alarm_preflights_all_targets_before_any_write(hass):
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.services import async_register_services
 
-    register_services(hass)
+    await async_register_services(hass)
     first, second = controller("p1", 67), controller("p2")
     targets = []
     for ctrl in (first, second):
@@ -385,6 +387,7 @@ async def test_alarm_real_service_preflights_all_targets_before_any_write(hass):
         target.controller_side = None
         target.bed_type = "smart_sleep"
         target.capability_controller = ctrl
+        target.operation_identity = id(ctrl)
 
         async def execute(command, ctrl=ctrl, **kwargs):
             await command(ctrl)
@@ -397,26 +400,56 @@ async def test_alarm_real_service_preflights_all_targets_before_any_write(hass):
         "device_id": ["one", "two"],
         "enabled": True,
         "time": "06:30:00",
-        "action": "memory_1",
-        "flexible_wake": True,
+        "wake_action": "lounge",
     }
     with patch(
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         return_value=(targets, []),
     ):
-        with pytest.raises(Exception, match="Flexible wake"):
-            await hass.services.async_call(DOMAIN, "smart_sleep_set_alarm", data, blocking=True)
+        # The legacy format has no lounge position, so neither bed is written.
+        with pytest.raises(ServiceValidationError, match="cannot wake with 'lounge'"):
+            await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         first.configure_clock_alarm.assert_not_awaited()
         second.configure_clock_alarm.assert_not_awaited()
-        data["flexible_wake"] = False
-        await hass.services.async_call(DOMAIN, "smart_sleep_set_alarm", data, blocking=True)
+        data["wake_action"] = "memory_1"
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         assert (
             first.configure_clock_alarm.await_count == second.configure_clock_alarm.await_count == 1
         )
         second.select_child("on")
         with pytest.raises(Exception, match="child"):
-            await hass.services.async_call(DOMAIN, "smart_sleep_set_alarm", data, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         assert first.configure_clock_alarm.await_count == 1
+
+
+@pytest.mark.parametrize(
+    ("wake_action", "value"),
+    [
+        ("memory_1", 5),
+        ("memory_2", 6),
+        ("zero_g", 0),
+        ("flat", 9),
+        ("lounge", 2),
+        ("tv", 3),
+        ("anti_snore", 4),
+        ("massage", 8),
+        ("light", 7),
+    ],
+)
+async def test_set_alarm_newer_format_wake_vectors(hass, wake_action, value):
+    from tests.alarm_helpers import call_set_alarm
+
+    ctrl = controller("p2")
+    written = []
+
+    async def configure(**kwargs):
+        written.append(ctrl.alarm_frame(**kwargs, now=datetime(2026, 11, 12, 12)))
+
+    ctrl.configure_clock_alarm = configure
+    await call_set_alarm(
+        hass, ctrl, {"enabled": True, "time": "06:30:00", "wake_action": wake_action}
+    )
+    assert written[0][8] == codec.wrap(value, 1, 9)
 
 
 @pytest.mark.parametrize("fmt", ["p1", "p2"])
@@ -509,7 +542,7 @@ async def test_coordinator_owns_startup_reconnect_and_retained_entities(
             CONF_PRODUCT_TYPE: "67" if fmt == "p1" else "80",
             "disable_angle_sensing": True,
             "motor_pulse_count": 1,
-            "idle_disconnect_seconds": 0,
+            "connection_mode": "always",
         },
     )
     # Give the mocked transport the real stable test address.
@@ -735,7 +768,7 @@ async def test_real_memory_and_preset_entities_publish_card_routes(hass, fmt, no
             await command(ctrl)
 
         runtime.async_execute_controller_command = AsyncMock(side_effect=execute)
-        entity = by_key["smart_sleep_read"]
+        entity = by_key["preset_lounge"]
         entity.hass = hass
         with patch(
             "custom_components.adjustable_bed.button.invalidate_on_command",
@@ -747,3 +780,11 @@ async def test_real_memory_and_preset_entities_publish_card_routes(hass, fmt, no
             codec.preset("p2", "read"),
         ]
         assert {"smart_sleep_save_read", "program_memory_1", "program_memory_2"} <= by_key.keys()
+
+
+def test_preset_saves_are_confirmed_save_buttons():
+    from custom_components.adjustable_bed.card import CARD_PRESET_SAVE
+
+    saves = [s for s in controller("p2").controller_button_specs if "_save_" in s.key]
+    assert saves
+    assert all(s.requires_confirmation and s.card == CARD_PRESET_SAVE for s in saves)

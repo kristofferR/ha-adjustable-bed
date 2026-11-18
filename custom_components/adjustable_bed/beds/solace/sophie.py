@@ -12,7 +12,8 @@ from bleak import BleakClient
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_PRESETS
+from ...alarm import AlarmCapability, AlarmRequest
+from ...card import CARD_PRESET_SAVE
 from ...codec import ff_frame as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateUpdate
@@ -59,6 +60,21 @@ _LOGGER = logging.getLogger(__name__)
 
 
 _PRESET_LABELS = {"tv": "TV", "zero_g": "zero gravity", "anti_snore": "anti-snore"}
+# The app's alarm modes as shared wake actions; side models' "both" is zero gravity.
+_WAKE_ACTIONS = {
+    "no_action": "none",
+    "zero_g": "zero_g",
+    "memory_1": "memory_1",
+    "zero_g_both": "zero_g",
+    "zero_g_left": "zero_g_left",
+    "zero_g_right": "zero_g_right",
+}
+
+
+def _alarm_modes(name: str) -> tuple[str, ...]:
+    """Return the model's alarm modes with no action first, the default."""
+    modes = app.alarm_modes(name)
+    return ("no_action", *(mode for mode in modes if mode != "no_action"))
 
 
 class SophieController(SolaceController):
@@ -137,7 +153,7 @@ class SophieController(SolaceController):
                 lambda c, key=key: require_controller(c, SophieController).save_preset(key),
                 translation_key=f"sophie_program_{key}",
                 requires_confirmation=True,
-                card=CARD_PRESETS,
+                card=CARD_PRESET_SAVE,
             )
             for key, label in _PRESET_LABELS.items()
         )
@@ -309,7 +325,35 @@ class SophieController(SolaceController):
         await self.write_command(app.SYNC_ON if enabled else app.SYNC_OFF)
         self.forward_controller_state_updates(SYNCHRO_MODE(enabled))
 
-    def validate_alarm(self, mode: str, massage: bool) -> None:
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        # Offered only once this bed has reported alarm support.
+        if not self._coordinator.controller_state.get(ALARM_SUPPORTED, False):
+            return None
+        name = self._coordinator.ble_device_name
+        return AlarmCapability(
+            wake_actions=tuple(_WAKE_ACTIONS[mode] for mode in _alarm_modes(name)),
+            weekdays=True,
+            massage=app.alarm_massage_allowed(name),
+            sounds=("none", "alarm"),
+        )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        modes = {
+            _WAKE_ACTIONS[mode]: mode for mode in app.alarm_modes(self._coordinator.ble_device_name)
+        }
+        # The app numbers Monday 1 through Sunday 7.
+        await self.set_alarm(
+            enabled=alarm.enabled,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            weekdays=tuple(day + 1 for day in alarm.weekdays),
+            mode=modes[alarm.wake_action],
+            massage=alarm.massage,
+            ring=alarm.sound == "alarm",
+        )
+
+    def _validate_alarm_mode(self, mode: str, massage: bool) -> None:
         if not self._coordinator.controller_state.get(ALARM_SUPPORTED, False):
             raise ValueError("Sophie alarm support has not been reported")
         name = self._coordinator.ble_device_name
@@ -329,7 +373,7 @@ class SophieController(SolaceController):
         massage: bool,
         ring: bool,
     ) -> None:
-        self.validate_alarm(mode, massage)
+        self._validate_alarm_mode(mode, massage)
         await self.write_command(
             codec.alarm(
                 switch=1 if enabled else 0xA1,

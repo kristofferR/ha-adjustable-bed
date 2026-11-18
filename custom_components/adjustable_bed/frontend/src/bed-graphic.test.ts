@@ -181,3 +181,9 @@ test("stacked labels put each motor name above its value, unknown drawn flat", (
   expect(template.values).toContain("rotate(0 178 70)");
   expect(texts(template)).toEqual(expect.arrayContaining(["is-estimated", "is-unknown"]));
 });
+
+test("an out-of-range angle is drawn clamped but labeled as reported", () => {
+  const side = {upper: {angle: 80, label: "Back"}, lower: {angle: 10, label: "Legs"}, moving: false};
+  expect(texts(renderBedGraphic(side)).join(" ")).toContain("80°");
+  expect(bedGraphicGeometry(side).upperTransform).toContain("rotate(75 ");
+});

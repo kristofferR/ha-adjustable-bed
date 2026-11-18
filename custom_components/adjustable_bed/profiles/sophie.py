@@ -1,6 +1,6 @@
-"""Sophie 1.0.6 (com.sddq.sophienew, code 8), accepted unit124 evidence.
+"""Sophie 1.0.6 (com.sddq.sophienew, code 8).
 
-Manually transcribed from the immutable APK Protocol Audit. No catalog generator.
+Transcribed by hand from the app. No catalog generator.
 The frozen commands and builder inputs live in tests/fixtures/sophie.
 """
 

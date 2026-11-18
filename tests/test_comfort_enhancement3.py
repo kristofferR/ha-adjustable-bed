@@ -394,7 +394,7 @@ async def test_real_coordinator_cover_timed_move_and_card_lease(hass, mock_bleak
             const.CONF_PROTOCOL_VARIANT: "apex_3",
             const.CONF_MOTOR_PULSE_COUNT: 3,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_ALWAYS,
             const.CONF_IDLE_DISCONNECT_SECONDS: 0,
         },
     )
@@ -489,26 +489,44 @@ async def test_real_coordinator_cover_timed_move_and_card_lease(hass, mock_bleak
     await coordinator.async_disconnect()
 
 
-async def test_service_all_target_preflight_and_profile12_wakeup(hass, bed):
-    from custom_components.adjustable_bed.services import async_register_services
-    from tests.test_generic_services import select, target
+async def test_set_alarm_maps_to_a_wake_up_program(hass, bed):
+    from tests.alarm_helpers import call_set_alarm
 
     c, _, _ = bed
-    await async_register_services(hass)
-    first = target(const.BED_TYPE_COMFORT_ENHANCEMENT3, family=apex.ComfortEnhancement3Controller)
-    second = target(const.BED_TYPE_COMFORT_ENHANCEMENT3, family=apex.ComfortEnhancement3Controller)
-    first[1].validate_wakeup = MagicMock()
-    second[1].validate_wakeup = MagicMock(side_effect=ValueError("unsupported effect"))
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets") as resolved:
-        select(resolved, first, second)
-        with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(
-                const.DOMAIN,
-                "comfort_enhancement3_set_wakeup",
-                {"device_id": ["a", "b"], "slot": 10, "time": "23:59", "massage": True},
-                blocking=True,
-            )
-    first[0].async_execute_controller_command.assert_not_awaited()
+    await c.async_discover_capabilities()
+    c.set_wakeup = AsyncMock()
+    c.delete_wakeup = AsyncMock()
+    now = datetime(2026, 11, 12, 23, 0, tzinfo=UTC)
+    with patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now):
+        scheduled = await call_set_alarm(
+            hass,
+            c,
+            {"enabled": True, "time": "06:30", "slot": 3, "wake_action": "none"},
+        )
+        await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+    # The time has passed today, so the program runs tomorrow.
+    c.set_wakeup.assert_awaited_once_with(
+        3,
+        datetime(2026, 11, 13, 6, 30, tzinfo=UTC),
+        massage=False,
+        duration=10,
+        intensity=1,
+        kind="head",
+        light=False,
+        preset="None",
+    )
+    c.delete_wakeup.assert_awaited_once_with(3)
+    assert scheduled[0]["cancel_running"] is True and scheduled[0]["resource"] == "*"
+
+
+async def test_set_alarm_rejects_effects_before_any_write(hass, bed):
+    from tests.alarm_helpers import call_set_alarm
+
+    c, _, client = bed
+    await c.async_discover_capabilities()
+    with pytest.raises(ServiceValidationError):
+        await call_set_alarm(hass, c, {"enabled": True, "time": "06:30", "massage_duration": 15})
+    assert not client.write_gatt_char.called
 
 
 @pytest.mark.parametrize("index", range(15))
@@ -626,7 +644,7 @@ async def test_two_address_card_release_stays_on_original_side(hass):
                     const.CONF_PROTOCOL_VARIANT: f"apex_{index}",
                     const.CONF_MOTOR_PULSE_COUNT: 3,
                     const.CONF_DISABLE_ANGLE_SENSING: True,
-                    const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                    const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_ALWAYS,
                     const.CONF_IDLE_DISCONNECT_SECONDS: 0,
                 },
             )
@@ -703,22 +721,36 @@ async def test_two_address_card_release_stays_on_original_side(hass):
             child._controller.on_disconnect()
 
 
-async def test_configure_manual_code_preserves_profile_identity_and_owned_gates(hass):
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.profile_id import resolve_profile_id, with_profile_ids
+async def test_reconfigure_manual_code_preserves_profile_identity_and_owned_gates(hass):
+    from custom_components.adjustable_bed.profile_id import resolve_profile_id
     entry = MockConfigEntry(domain=const.DOMAIN, version=5, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENT3,
         const.CONF_PROTOCOL_VARIANT: "apex_3", const.CONF_HAS_MASSAGE: True,
-        const.CONF_MOTOR_COUNT: 2, const.CONF_DISABLE_ANGLE_SENSING: True})
+        const.CONF_MOTOR_COUNT: 2, const.CONF_DISABLE_ANGLE_SENSING: True,
+        const.CONF_PROFILE_ID: "comfort_enhancement3:apex_3"})
     entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    result = await flow._async_options_form({const.CONF_PROTOCOL_VARIANT: "15", REMOTE_CODE: "PMT-5020"}, step_id="settings")
-    assert not result.get("errors")
+    from custom_components.adjustable_bed.profile_migration import reconfigure_context
+
+    # The remote code picks the route, so it changes in Reconfigure.
+    manager = hass.config_entries.flow
+    result = await manager.async_init(const.DOMAIN, context=reconfigure_context(entry))
+    result = await manager.async_configure(
+        result["flow_id"], {const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENT3}
+    )
+    assert result["step_id"] == "profile_questions"
+    result = await manager.async_configure(
+        result["flow_id"], {const.CONF_PROTOCOL_VARIANT: "15", REMOTE_CODE: "PMT-5020"}
+    )
+    assert result["step_id"] == "migration_confirm", result
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     assert entry.data[const.CONF_PROTOCOL_VARIANT] == "apex_12"
     assert not entry.data[const.CONF_HAS_MASSAGE]
-    saved = with_profile_ids(entry.data)  # Entry setup refreshes ids on the options reload.
-    assert saved[const.CONF_PROFILE_ID] == resolve_profile_id(saved) == "comfort_enhancement3:apex_12"
+    # Reconfigure saves the new route's profile id itself.
+    assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data) == (
+        "comfort_enhancement3:apex_12"
+    )
 
 
 async def test_batch_massage_honors_stop_on_later_target(hass):
@@ -736,7 +768,7 @@ async def test_batch_massage_honors_stop_on_later_target(hass):
                 const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENT3,
                 const.CONF_PROTOCOL_VARIANT: "apex_3", const.CONF_HAS_MASSAGE: True,
                 const.CONF_DISABLE_ANGLE_SENSING: True,
-                const.CONF_DISCONNECT_AFTER_COMMAND: False, const.CONF_IDLE_DISCONNECT_SECONDS: 0,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_ALWAYS, const.CONF_IDLE_DISCONNECT_SECONDS: 0,
             })
             entry.add_to_hass(hass)
             child = AdjustableBedCoordinator(hass, entry)
@@ -799,3 +831,14 @@ async def test_wakeup_retires_previous_massage_countdown(hass, bed, monkeypatch)
         await hass.async_block_till_done()
         assert frames(client) == ["040200000400", "0b0d0000000000000000040005"] * 2 + ["040200000000", "040200000800"]
         c.on_disconnect()
+
+
+async def test_set_alarm_reaches_every_wake_up_program_number(hass, bed):
+    from tests.alarm_helpers import call_set_alarm
+
+    c, _, _ = bed
+    await c.async_discover_capabilities()
+    c.delete_wakeup = AsyncMock()
+    for slot in (0, 99):
+        await call_set_alarm(hass, c, {"enabled": False, "slot": slot})
+    assert [call.args[0] for call in c.delete_wakeup.await_args_list] == [0, 99]

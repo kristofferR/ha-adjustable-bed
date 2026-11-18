@@ -664,11 +664,10 @@ class TestLeggettGen2Connection:
     @pytest.mark.parametrize(
         ("bed_type", "variant", "expected"),
         [
-            (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
-            # Before a controller is resolved, auto/gen2 leggett_platt assume
-            # Gen2's persistent link; okin and mlrm reconnect normally.
-            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, True),
+            # LP Comfort Connect follows the connection mode like other beds.
+            (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, False),
+            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, False),
+            (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
             (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
         ],
@@ -686,15 +685,15 @@ class TestLeggettGen2Connection:
         ("service_uuid", "controller_name", "persistent"),
         [
             (RICHMAT_WILINKE_SERVICE_UUIDS[0], "LeggettWilinkeController", False),
-            (LEGGETT_GEN2_SERVICE_UUID, "LeggettGen2Controller", True),
+            (LEGGETT_GEN2_SERVICE_UUID, "LeggettGen2Controller", False),
         ],
     )
     async def test_resolved_controller_is_authoritative(
         self, hass: HomeAssistant, service_uuid: str, controller_name: str, persistent: bool
     ):
         """Once resolved, the controller decides — a leggett_platt+auto that
-        resolved to WiLinke/MlRM is NOT persistent; one that resolved to Gen2 is
-        (issue #385 review, both directions)."""
+        resolved to WiLinke/MlRM is NOT persistent, and neither is Gen2 until a
+        reconnect stalls (issue #385 review, owner decision 2026-11-18)."""
         coordinator = self._coordinator(hass, BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO)
         client = SimpleNamespace(services=[SimpleNamespace(uuid=service_uuid)])
 
@@ -704,6 +703,11 @@ class TestLeggettGen2Connection:
 
         assert type(coordinator._controller).__name__ == controller_name
         assert coordinator._uses_persistent_connection() is persistent
+        # A stalled reconnect holds an LP Comfort Connect link for the session.
+        coordinator._reconnect_stalled = True
+        assert coordinator._uses_persistent_connection() is (
+            controller_name == "LeggettGen2Controller"
+        )
 
     async def test_persistence_cached_across_disconnect(self, hass: HomeAssistant):
         """_on_disconnect clears the controller before the reconnect decision, so
@@ -717,7 +721,7 @@ class TestLeggettGen2Connection:
         coordinator._controller = None
         assert coordinator._uses_persistent_connection() is False
 
-        # Resolved to a persistent (Gen2) controller, then cleared.
+        # Resolved to a persistent controller, then cleared.
         coordinator._persistent_connection_resolved = True
         assert coordinator._uses_persistent_connection() is True
 

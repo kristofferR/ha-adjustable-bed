@@ -1,4 +1,4 @@
-"""Separate Smart Comfort app profiles over the cluster-024 seat codec.
+"""Separate Smart Comfort app profiles over the Smart Comfort seat codec.
 
 Accepted static evidence: com.synargy.okin 1.1.0 (12), com.synergy.okin 2.2.0
 (16). Shared wire actions do not establish full app/firmware equivalence.

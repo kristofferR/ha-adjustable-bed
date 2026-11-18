@@ -11,14 +11,44 @@
       "hold_start_delay_ms": 0,
       "hold_release_delay_ms": 0,
       "hold_lease_mode": "stream"
+    },
+    "preset_flat": {
+      "held_control": "preset_flat",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream"
+    },
+    "preset_zero_g": {
+      "held_control": "preset_zero_g",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream"
+    },
+    "preset_lounge": {
+      "held_control": "preset_read",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream"
+    },
+    "preset_tv": {
+      "held_control": "preset_tv",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream"
+    },
+    "preset_anti_snore": {
+      "held_control": "preset_anti_snore",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream"
     }
   },
   "p2": {
-    "smart_sleep_flat": {},
-    "smart_sleep_zero_g": {},
-    "smart_sleep_read": {},
-    "smart_sleep_tv": {},
-    "smart_sleep_anti_snore": {},
+    "preset_flat": {},
+    "preset_zero_g": {},
+    "preset_lounge": {},
+    "preset_tv": {},
+    "preset_anti_snore": {},
     "preset_memory_1": {},
     "preset_memory_2": {}
   }

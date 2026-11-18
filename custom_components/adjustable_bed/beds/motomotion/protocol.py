@@ -1,4 +1,4 @@
-"""MotoMotion 3.1.9 numeric rules, from the accepted row113 artifact.
+"""MotoMotion 3.1.9 numeric rules.
 
 The frames these values go into are built by ``codec/motomotion.py``.
 """

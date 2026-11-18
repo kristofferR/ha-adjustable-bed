@@ -1,6 +1,6 @@
 # Casper Base app
 
-**Status:** ❓ Needs testing (accepted APK audit, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -227,7 +227,7 @@ Builders in
 
 ## Position Feedback / Notifications
 
-The **Casper Base state** diagnostic exposes the product, all parsed events,
+The disabled-by-default **Model** diagnostic sensor exposes the product, all parsed events,
 alarm records and malformed-packet errors. Raw motor and desk events are not
 calibrated angles or positions. The
 [Casper and Hush family](richmat.md#casper-and-hush-family) lists every
@@ -268,12 +268,4 @@ Richmat guide's [catalog app timing](richmat.md#catalog-app-timing).
 
 ### Analysis provenance
 
-- Package `com.richmat.casperbase`, Casper Base 1.0.8 (version code 10800).
-- Artifact set SHA-256:
-  `2d21d42c17a7b5ae60c2403ff3654d80993e6d09f879cfe666c6d58270123f8b`
-  (independent audit ACCEPT).
-- The row101 audit records exact accepted seals, every discovery,
-  implementation/test references and all exclusions. Its entries are the
-  [ledger fixture](../../tests/fixtures/casper_base/ledger.json) that
-  `tests/test_casper_base_ledger.py` checks.
-- Raw APKs, extraction, reports and audits remain local and ignored.
+Based on Casper Base 1.0.8 (`com.richmat.casperbase`).
