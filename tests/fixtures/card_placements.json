@@ -4870,7 +4870,7 @@
   "number:agingplace_motion_minutes": {
     "card_section": "lighting"
   },
-  "sensor:agingplace_MAC": {
+  "sensor:agingplace_mac": {
     "card_section": "hidden"
   },
   "sensor:agingplace_bed_mode": {
@@ -4885,7 +4885,7 @@
   "sensor:agingplace_br": {
     "card_section": "hidden"
   },
-  "sensor:agingplace_chkStatu": {
+  "sensor:agingplace_chkstatu": {
     "card_section": "hidden"
   },
   "sensor:agingplace_circulation_remaining": {
@@ -4906,13 +4906,13 @@
   "sensor:agingplace_dt": {
     "card_section": "hidden"
   },
-  "sensor:agingplace_footPlus": {
+  "sensor:agingplace_footplus": {
     "card_section": "hidden"
   },
   "sensor:agingplace_hardver": {
     "card_section": "hidden"
   },
-  "sensor:agingplace_headPlus": {
+  "sensor:agingplace_headplus": {
     "card_section": "hidden"
   },
   "sensor:agingplace_health_breathing_rate": {
@@ -4930,7 +4930,7 @@
   "sensor:agingplace_lb": {
     "card_section": "hidden"
   },
-  "sensor:agingplace_lumbPlus": {
+  "sensor:agingplace_lumbplus": {
     "card_section": "hidden"
   },
   "sensor:agingplace_pcbver": {
@@ -4957,7 +4957,7 @@
   "sensor:agingplace_sn": {
     "card_section": "hidden"
   },
-  "sensor:agingplace_tiltPlus": {
+  "sensor:agingplace_tiltplus": {
     "card_section": "hidden"
   },
   "sensor:agingplace_ts": {

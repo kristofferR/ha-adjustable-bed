@@ -85,6 +85,33 @@ def test_app_single_profile_defaults_to_a_saveable_auto_route():
     assert profile.settled({"bed_type": "agingplace"})["protocol_variant"] == route
 
 
+async def test_app_card_fixture_indexes_translation_keys_without_changing_sensor_ids():
+    from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+    from tests.card_placements import FIXTURE, placements
+
+    coordinator = _FactoryCoordinator()
+    coordinator.entry.data = {"bed_type": "agingplace", "ble_device_name": "KSWF07S123456789"}
+    controller = await create_controller(coordinator, "agingplace", "auto", None)
+    specs = {spec.key: spec for spec in controller.controller_state_sensor_specs}
+    raw_names = ("MAC", "chkStatu", "footPlus", "headPlus", "lumbPlus", "tiltPlus")
+    runtime = MagicMock()
+    runtime.entity_side = None
+    runtime.entity_unique_id.side_effect = lambda key: f"physical_{key}"
+    entities = [
+        AdjustableBedControllerStateSensor(runtime, specs[f"agingplace_{name}"])
+        for name in raw_names
+    ]
+    actual = placements(entities)
+    stored = json.loads(FIXTURE.read_text())
+    assert set(actual) == {f"sensor:agingplace_{name.lower()}" for name in raw_names}
+    for key, value in actual.items():
+        assert stored[key] == value
+    for name, entity in zip(raw_names, entities, strict=True):
+        assert entity.unique_id == f"physical_agingplace_{name}"
+        assert entity.translation_key == f"agingplace_{name.lower()}"
+        assert f"sensor:agingplace_{name}" not in stored
+
+
 @pytest.mark.parametrize("name", ("KSWF07S123456789", "prefixKSWF19Ssuffix"))
 def test_source_case_sensitive_substrings_reach_the_app(name):
     info = MagicMock()
