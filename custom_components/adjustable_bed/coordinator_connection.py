@@ -478,10 +478,16 @@ class CoordinatorConnectionMixin:
         The command's end opens a new idle window, even on a recovered link.
         """
         self._recovered_link_window = False
-        self._command_link_generation += 1
+        self._note_command_demand()
         self._cancel_disconnect_timer()
-        # A recovery still connecting finishes for this command instead of
-        # being cancelled at the window's end and connected again from scratch.
+
+    def _note_command_demand(self: AdjustableBedCoordinator) -> None:
+        """Mark that a command wants the link; call before waiting for the command lock.
+
+        A recovery still connecting finishes for the command instead of being
+        cancelled at the window's end and connected again from scratch.
+        """
+        self._command_link_generation += 1
         window = self._recovery_connect_window
         if window is not None and not window.expired():
             window.reschedule(None)

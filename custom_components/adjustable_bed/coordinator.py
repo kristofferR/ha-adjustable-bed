@@ -1849,6 +1849,7 @@ class AdjustableBedCoordinator(
         # Capture cancel count at entry to detect if we get cancelled while waiting
         entry_cancel_count = self._cancel_counter
 
+        self._note_command_demand()
         async with self._command_lock:
             # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
             self._hold_link_for_command()
@@ -1993,6 +1994,7 @@ class AdjustableBedCoordinator(
         """Send STOP while owning the legacy wire and connection lifecycle lane."""
         # STOP remains outside the ordinary scheduler lane so it can preempt it,
         # then waits for any cancelled controller cleanup to release the wire lock.
+        self._note_command_demand()
         async with self._command_lock:
             self._hold_link_for_command()
             if getattr(self, "_pairing_transfer_active", False) is True:
@@ -2236,6 +2238,8 @@ class AdjustableBedCoordinator(
 
         # Queries keep a recovered link's idle window and are not command demand.
         link_read = preserve_idle_deadline or operation_name == "query"
+        if not link_read:
+            self._note_command_demand()
         entry_cancel_count = self._cancel_counter
         async with self._command_lock, self._link_read_scope(link_read):
             # Background reads can inherit a command context while it is active,

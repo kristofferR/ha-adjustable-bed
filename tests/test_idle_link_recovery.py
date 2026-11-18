@@ -449,3 +449,69 @@ async def test_spent_window_is_not_recovered_after_the_command_left(
 
     assert coordinator.connection_attempt_count == attempts
     assert not coordinator.is_connected
+
+
+async def test_command_queued_behind_a_read_lifts_the_recovery_deadline(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A command still waiting for the command lock already owns the recovery."""
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    coordinator._idle_deadline = hass.loop.time() + 20
+    sent_on: list[object] = []
+    record_stop = _record_stop(coordinator, sent_on)
+    _drop(coordinator, mock_bleak_client)
+    assert _take_reconnect_timer(coordinator)
+
+    gate = asyncio.Event()
+    read_done = asyncio.Event()
+    connect = coordinator._async_connect_locked
+    connects = 0
+
+    async def _gated_connect(reset_timer: bool = True) -> bool:
+        nonlocal connects
+        connects += 1
+        await gate.wait()
+        mock_bleak_client.is_connected = True
+        return await connect(reset_timer)
+
+    async def _read() -> None:
+        async with coordinator._command_lock, coordinator._link_read_scope(True):
+            await read_done.wait()
+
+    coordinator._async_connect_locked = _gated_connect
+    with record_stop:
+        read = hass.async_create_task(_read())
+        recovery = hass.async_create_task(coordinator._async_auto_reconnect())
+        while connects == 0:
+            await asyncio.sleep(0)
+        # STOP queues on the command lock behind the read.
+        stop = hass.async_create_task(coordinator.async_stop_command())
+        await asyncio.sleep(0)
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=60))
+        await asyncio.sleep(0)
+        gate.set()
+        await recovery
+        read_done.set()
+        await read
+        await stop
+
+    assert connects == 1
+    assert sent_on == [mock_bleak_client]
+
+
+async def test_link_opened_for_a_service_check_gets_a_full_window(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A link a service opened to check, then released by STOP, idles normally."""
+    from custom_components.adjustable_bed.services import _release_preflighted
+
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    # The service check connects without arming the idle timer.
+    assert await coordinator.async_ensure_connected(reset_timer=False)
+    assert coordinator._disconnect_timer is None
+
+    await _release_preflighted([(coordinator, coordinator)])
+
+    assert coordinator._idle_deadline == pytest.approx(hass.loop.time() + 40, abs=1.0)
+    assert coordinator._disconnect_timer is not None
