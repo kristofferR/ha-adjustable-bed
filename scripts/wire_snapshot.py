@@ -1768,7 +1768,7 @@ def build_scenarios() -> list[Scenario]:
 
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES]
     scenarios.extend(route_scenarios())
-    # Linx unit079: all independent model/route combinations, preserving
+    # Linx 1.0.7: all independent model/route combinations, preserving
     # the existing Keeson JSON scenarios and their characteristic fixtures.
     for model in ("quest", "orbes"):
         for route in ("a00a", "uart", "uart_json", "a00a_uart"):

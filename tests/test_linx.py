@@ -392,7 +392,10 @@ async def test_set_alarm_clears_one_resident_slot_and_refuses_to_set(hass):
     client.write_gatt_char.side_effect = BleakError("failed slot")
     with pytest.raises(BleakError):
         await hass.services.async_call(
-            DOMAIN, "set_alarm", {"device_id": [device.id], "enabled": False}, blocking=True
+            DOMAIN,
+            "set_alarm",
+            {"device_id": [device.id], "enabled": False, "slot": 1},
+            blocking=True,
         )
     client.write_gatt_char.side_effect = None
     await coord.async_execute_controller_command(lambda c: c.lights_toggle())

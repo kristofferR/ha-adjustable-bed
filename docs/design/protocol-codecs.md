@@ -343,7 +343,7 @@ select its capabilities.
 
 ## Linx
 
-Linx 1.0.7 (27), unit079, adds `codec/linx.py` and typed Quest/Orbes
+Linx 1.0.7 (27) adds `codec/linx.py` and typed Quest/Orbes
 profiles. The existing Keeson JSON encoder does not reproduce the frozen Gson
 field order, and no existing carrier reproduces its complete AA, ASCII startup
 and AB intervention literals. The production harness compares all 39 accepted
