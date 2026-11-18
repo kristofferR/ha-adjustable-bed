@@ -2,15 +2,14 @@
 
 Name the app and its version instead. The integration and its docs are scanned
 in full, comments and docstrings included; tests, scripts and tools are scanned
-in their source text and file names. Exempt are an id that saved state still
-holds, which a ``*LEGACY*`` constant in the integration states so a migration
-can read it, the APK audit process docs and tracker guard, which handle the
-tracker's own id format, and the ids in ``IN_FLIGHT``.
+in their source text and file names. Exempt are the APK audit process docs and
+tracker guard, which handle the tracker's own id format, and the exact files in
+``EXEMPT_IDS``: saved-state keys a migration reads, and beds other in-flight
+work is rewriting.
 """
 
 from __future__ import annotations
 
-import ast
 import gzip
 import json
 import re
@@ -28,37 +27,54 @@ SOURCE_SUFFIXES = {".py", ".md", ".ts", ".sh", ".txt"}
 SKIPPED_PARTS = {"node_modules", "dist", "__pycache__"}
 EXEMPT = {REPO / "docs" / "apk-analysis", REPO / "tests" / "test_apk_tracker_guard.py", Path(__file__)}
 
-# Ids left in beds whose tests other in-flight v5 work is rewriting (2026-11-18).
-# Replace them with the app name and version, then drop them here, once it lands.
-IN_FLIGHT = {
-    "row116",  # Good Vibe
-    "row159", "unit162", "row081", "cluster022", "cluster-022",  # MLILY, MLILY Supreme, Nisco
-    "row101",  # Casper
-    "row126",  # Hush
-    "unit146",  # Luuna
-    "row055", "cluster-020", "row061", "row173",  # Richmat MH and Richmat app
-    "row132", "unit132", "row135",  # Jalon
-    "row179",  # SonicSleep
+# Saved state still holds this id: the Richmat classic app keys a migration
+# reads, and the docs and tests that describe that migration.
+SAVED_STATE = {
+    "custom_components/adjustable_bed/beds/richmat_classic/profiles.py": {"cluster018"},
+    "docs/V5_BREAKING_CHANGES.md": {"cluster018"},
+    "tests/test_richmat_classic_migration.py": {"cluster018"},
 }
-# The only in-flight ids still in file names; no other exemption covers a name.
-IN_FLIGHT_NAMES = {"cluster022"}
-
-
-def legacy_ids() -> set[str]:
-    """Return the ids that ``*LEGACY*`` constants keep for migrations to read."""
-    ids: set[str] = set()
-    for path in INTEGRATION.rglob("*.py"):
-        for node in ast.walk(ast.parse(path.read_text())):
-            targets = (
-                node.targets if isinstance(node, ast.Assign)
-                else [node.target] if isinstance(node, ast.AnnAssign)
-                else []
-            )
-            if any(isinstance(t, ast.Name) and "LEGACY" in t.id for t in targets) and node.value:
-                for child in ast.walk(node.value):
-                    if isinstance(child, ast.Constant) and isinstance(child.value, str):
-                        ids.update(match.lower() for match in AUDIT_ID.findall(child.value))
-    return ids
+# Ids left in beds whose tests other in-flight v5 work is rewriting (2026-11-18):
+# Good Vibe, MLILY, Nisco, Casper, Hush, Luuna, Richmat app and MH, Jalon and
+# SonicSleep. Replace them with the app name and version, then drop the entry.
+IN_FLIGHT = {
+    "custom_components/adjustable_bed/beds/mlily_remote/receive.py": {"unit162"},
+    "scripts/wire_snapshot.py": {"cluster022"},
+    "tests/fixtures/richmat_cluster022": {"cluster022"},
+    "tests/fixtures/richmat_cluster022/README.md": {"cluster022"},
+    "tests/hush_vectors.py": {"row126"},
+    "tests/keeson_vectors.py": {"row135", "unit132"},
+    "tests/luuna_vectors.py": {"unit146"},
+    "tests/mlily_remote_vectors.py": {"unit162"},
+    "tests/richmat_cluster022_proof.py": {"cluster022"},
+    "tests/richmat_vectors.py": {"cluster-020", "cluster022", "row055", "row116", "row173"},
+    "tests/test_casper_base.py": {"row101"},
+    "tests/test_casper_base_protocol.py": {"row101"},
+    "tests/test_casper_base_review.py": {"row101"},
+    "tests/test_execution_capabilities.py": {"row055", "row061", "row081", "row132", "row173"},
+    "tests/test_goodvibe.py": {"row116"},
+    "tests/test_goodvibe_hold_lease.py": {"row116"},
+    "tests/test_hush_base.py": {"row126"},
+    "tests/test_jalon.py": {"unit132"},
+    "tests/test_jalon_bed.py": {"row135"},
+    "tests/test_luuna.py": {"unit146"},
+    "tests/test_mlily.py": {"row159"},
+    "tests/test_mlily_remote_ha.py": {"unit162"},
+    "tests/test_richmat.py": {"row055"},
+    "tests/test_richmat_app.py": {"row173"},
+    "tests/test_richmat_cluster022.py": {"cluster022"},
+    "tests/test_richmat_cluster022_parsers.py": {"cluster022"},
+    "tests/test_richmat_cluster022_services.py": {"cluster022"},
+    "tests/test_richmat_cluster022_setup.py": {"cluster022"},
+    "tests/test_richmat_cluster022_sleep.py": {"cluster022"},
+    "tests/test_richmat_mh.py": {"cluster-020", "row055"},
+    "tests/test_richmat_vectors.py": {"cluster022"},
+    "tests/test_sonicsleep_vectors.py": {"row179"},
+    "tools/generate_casper_base_catalog.py": {"row101"},
+    "tools/generate_casper_sleep_schema.py": {"row101"},
+    "tools/generate_richmat_mh_catalog.py": {"cluster-020", "row055"},
+}
+EXEMPT_IDS = {**IN_FLIGHT, **SAVED_STATE}
 
 
 def _files(root: Path) -> Iterator[Path]:
@@ -70,11 +86,11 @@ def _files(root: Path) -> Iterator[Path]:
 
 
 def _offenders() -> Iterator[str]:
-    allowed = legacy_ids() | IN_FLIGHT
     for root in (*FULL, *SOURCE):
         for path in _files(root):
-            relative = path.relative_to(REPO)
-            if any(match.lower() not in IN_FLIGHT_NAMES for match in AUDIT_ID.findall(path.name)):
+            relative = str(path.relative_to(REPO))
+            allowed = EXEMPT_IDS.get(relative, set())
+            if any(match.lower() not in allowed for match in AUDIT_ID.findall(path.name)):
                 yield f"file name {relative}"
             if path.is_dir() or (root in SOURCE and path.suffix not in SOURCE_SUFFIXES):
                 continue
