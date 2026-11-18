@@ -210,3 +210,21 @@ async def test_setup_asks_the_cb24_side_in_the_final_settings(hass: HomeAssistan
     assert flow._finish_with_verify.await_args.args[0][CONF_CB24_BED_SELECTION] == (
         CB24_BED_SELECTION_A
     )
+
+
+async def test_configure_never_changes_the_route(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    """A product that picks the route is changed in Reconfigure, which reviews it."""
+    del enable_custom_integrations
+    entry, form = await _settings_form(
+        hass, {CONF_BED_TYPE: "rize_home", CONF_PROTOCOL_VARIANT: "remedy_iii"}
+    )
+    assert CONF_PROTOCOL_VARIANT not in {marker.schema for marker in form["data_schema"].schema}
+
+    saved = await hass.config_entries.options.async_configure(
+        form["flow_id"], user_input={}
+    )
+
+    assert saved["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_PROTOCOL_VARIANT] == "remedy_iii"

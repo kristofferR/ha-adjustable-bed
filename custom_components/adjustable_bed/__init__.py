@@ -678,12 +678,17 @@ def migrate_v5_6_entry(
     """
     paired = isinstance(data.get(CONF_PAIR_CHILDREN), list)
     side_overrides: dict[str, Any] = {}
-    if paired and (
-        _LEGACY_DISCONNECT_AFTER_COMMAND in options
-        or options.get(CONF_IDLE_DISCONNECT_SECONDS) == IDLE_DISCONNECT_KEEP_CONNECTED
+    if (
+        paired
+        and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+        and (
+            _LEGACY_DISCONNECT_AFTER_COMMAND in options
+            or CONF_IDLE_DISCONNECT_SECONDS in options
+        )
     ):
-        # A pair's connection options win over each side's own settings, so
-        # each side's mode is derived with them and the options lose them.
+        # A two-address pair's connection options win over each side's own
+        # settings, so each side's mode is derived with them and the options
+        # lose them. A one-address pair's physical bed reads the parent.
         side_overrides = {
             key: options[key]
             for key in (_LEGACY_DISCONNECT_AFTER_COMMAND, CONF_IDLE_DISCONNECT_SECONDS)

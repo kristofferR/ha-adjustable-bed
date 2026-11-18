@@ -383,7 +383,9 @@ async def test_schema_5_3_moves_a_shared_massage_option_into_the_sides(
 
     await async_migrate_entry(hass, entry)
 
-    assert dict(entry.options) == {"idle_disconnect_seconds": 55}
+    # Schema 5.6 moves the shared timeout into each side.
+    assert dict(entry.options) == {}
+    assert all(child["idle_disconnect_seconds"] == 55 for child in entry.data[CONF_PAIR_CHILDREN])
     effective = tuple(
         effective_child_data(entry.data, side, entry.options)[CONF_HAS_MASSAGE]
         for side in ("left", "right")
@@ -738,6 +740,31 @@ async def test_a_5_5_entry_moves_to_5_6(hass: HomeAssistant) -> None:
         "connection_profile",
         f"{CONF_CONNECTION_MODE}={CONNECTION_MODE_RELEASE}",
     ]
+
+
+def test_schema_5_6_a_shared_timeout_wins_over_a_sides_zero() -> None:
+    """A side's 0 under a shared 65 s timeout disconnected after 65 s, and still does."""
+    data = {
+        CONF_PAIR_ID: "pair_65",
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_PAIR_CHILDREN: [
+            {
+                CONF_SIDE: "left",
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:40",
+                CONF_BED_TYPE: BED_TYPE_KEESON,
+                "idle_disconnect_seconds": 0,
+            },
+        ],
+    }
+
+    migrated, options = migrate_v5_6_entry(
+        data, {"idle_disconnect_seconds": 65}, from_version=5, from_minor_version=5
+    )
+
+    (left,) = migrated[CONF_PAIR_CHILDREN]
+    assert left.get(CONF_CONNECTION_MODE) != CONNECTION_MODE_ALWAYS
+    assert left["idle_disconnect_seconds"] == 65
+    assert options == {}
 
 
 def test_schema_5_6_applies_pair_options_to_each_side_first() -> None:

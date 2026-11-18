@@ -1786,12 +1786,19 @@ def _profile_question_schema(
     context: FlowContext,
     *,
     advanced_section: bool = True,
+    skip: Collection[str] = (),
 ) -> dict[vol.Marker, Any]:
-    """Render a profile's questions, its advanced ones in a collapsed section."""
+    """Render a profile's questions, its advanced ones in a collapsed section.
+
+    Questions in ``skip`` are not asked; a condition on one is settled by the
+    saved setup.
+    """
     schema: dict[vol.Marker, Any] = {}
     advanced: dict[vol.Marker, Any] = {}
-    shown = {question.key for question in profile.questions}
+    shown = {question.key for question in profile.questions} - set(skip)
     for question in profile.questions:
+        if question.key in skip:
+            continue
         # A condition on an answer this form does not ask, such as a route
         # Configure leaves to the guided change, is settled by the saved setup.
         visible = question.condition_fields() <= shown
@@ -7678,8 +7685,14 @@ class AdjustableBedOptionsFlow(
                     self.config_entry.data.get(CONF_BED_TYPE),
                 )
             ) is not None:
+                # The route, such as a Reverie model or Rize product, changes in
+                # Reconfigure, which reviews it first.
                 rendered = _profile_question_schema(
-                    questions, current_data, context, advanced_section=False
+                    questions,
+                    current_data,
+                    context,
+                    advanced_section=False,
+                    skip={CONF_PROTOCOL_VARIANT},
                 )
                 schema_dict.update(rendered)
                 question_keys = {marker.schema for marker in rendered}
@@ -7890,6 +7903,8 @@ class AdjustableBedOptionsFlow(
                 )
             ) is not None:
                 answers = _profile_answers(declared, user_input, current_data, context)
+                # The route is not asked here, so it stays as saved.
+                answers.pop(CONF_PROTOCOL_VARIANT, None)
                 # The answers apply to the saved setup, as setup applies them to
                 # the staged one, so a profile can tell what they change.
                 before = {
