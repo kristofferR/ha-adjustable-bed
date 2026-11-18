@@ -128,6 +128,53 @@ async def test_valid_matching_report_toggle_uses_exact_current_physical_side(
     assert writes(client) == [frame] * 2 + [app.QUERY_ALARM] * 3
 
 
+@pytest.mark.parametrize("operation", ["set", "toggle", "query"])
+async def test_native_parent_both_alarm_dispatches_one_combined_plan(
+    runtime,  # noqa: F811 - pytest fixture
+    operation,
+):
+    hass, coord, client = runtime
+    parent = native_pair(hass, coord)
+    if operation == "toggle":
+        client.start_notify.await_args.args[1](None, bytearray(MATCHING))
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(parent, "both")], []),
+        ),
+        virtual_clock(),
+    ):
+        await alarm(
+            hass,
+            operation,
+            **(
+                {key: value for key, value in SET.items() if key != "operation"}
+                if operation == "set"
+                else {}
+            ),
+        )
+    frame = bytes.fromhex("070502022109000000" if operation == "set" else "07057f010630000000")
+    assert writes(client) == (
+        [app.QUERY_ALARM] * 2 if operation == "query" else [frame] * 2 + [app.QUERY_ALARM] * 3
+    )
+
+
+async def test_native_parent_both_toggle_rejects_unequal_reports_before_preflight(runtime):  # noqa: F811 - pytest fixture
+    hass, coord, client = runtime
+    parent = native_pair(hass, coord)
+    client.start_notify.await_args.args[1](None, bytearray(ALARM_REPORT))
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(parent, "both")], []),
+        ),
+        pytest.raises((ServiceValidationError, ValueError), match="Refresh alarms"),
+    ):
+        await alarm(hass, "toggle")
+    assert writes(client) == []
+    coord.async_ensure_connected.assert_not_awaited()
+
+
 async def test_disconnect_and_stale_report_cannot_authorize_registered_toggle(runtime):  # noqa: F811 - pytest fixture
     hass, coord, client = runtime
     callback = client.start_notify.await_args.args[1]
