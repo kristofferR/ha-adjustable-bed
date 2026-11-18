@@ -425,3 +425,27 @@ async def test_stop_during_a_recovery_uses_its_connect(
     assert connects == 1
     assert sent_on == [mock_bleak_client]
     assert coordinator.is_connected
+
+
+async def test_spent_window_is_not_recovered_after_the_command_left(
+    hass: HomeAssistant, mock_bleak_client: MagicMock
+) -> None:
+    """A recovery scheduled under a command does not reuse a spent window.
+
+    The recovered link dropped during a command, so the drop scheduled
+    recovery; by the time it fires the command has finished and the window
+    already had its one recovery.
+    """
+    coordinator = _coordinator(hass, CONNECTION_MODE_IDLE)
+    assert await coordinator.async_connect()
+    coordinator._idle_deadline = hass.loop.time() + 30
+    coordinator._recovered_idle_deadline = coordinator._idle_deadline
+    async with coordinator._command_lock:
+        _drop(coordinator, mock_bleak_client)
+    assert _take_reconnect_timer(coordinator)
+    attempts = coordinator.connection_attempt_count
+
+    await coordinator._async_auto_reconnect()
+
+    assert coordinator.connection_attempt_count == attempts
+    assert not coordinator.is_connected

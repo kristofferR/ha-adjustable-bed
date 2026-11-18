@@ -1995,9 +1995,15 @@ class CoordinatorConnectionMixin:
             self._cancel_command.clear()
 
         bounded = self._idle_recovery_is_bounded()
-        if bounded and not self._idle_window_allows_recovery():
+        if bounded and (
+            not self._idle_window_allows_recovery()
+            # A drop under a command scheduled this; the command is gone now.
+            or self._recovered_idle_deadline == self._idle_deadline
+        ):
             _LOGGER.debug(
-                "Skipping auto-reconnect for %s: the idle window has ended", self._address
+                "Skipping auto-reconnect for %s: the idle window has ended or "
+                "already had its recovery",
+                self._address,
             )
             return
 
