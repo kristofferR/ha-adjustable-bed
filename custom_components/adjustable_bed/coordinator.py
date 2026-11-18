@@ -450,6 +450,23 @@ class AdjustableBedCoordinator(
         self._reconnect_stalled = False
         self._holds_link_after_stall_resolved = False
         self._disconnect_timer: asyncio.TimerHandle | None = None
+        # Loop time at which the current idle window ends (None when unarmed or
+        # persistent). Recovering a dropped link must not extend it.
+        self._idle_deadline: float | None = None
+        # The link was recovered without a command: re-arming keeps _idle_deadline.
+        self._recovered_link_window = False
+        # Bumped whenever a command takes the link; a recovery checks it.
+        self._command_link_generation = 0
+        # Commands between asking for the link and finishing with it.
+        self._command_demand = 0
+        # A read, not a command, holds _command_lock.
+        self._link_read_active = False
+        # The current link was opened by a bounded recovery: not recovered again.
+        self._link_from_recovery = False
+        # Command generation a bounded recovery connect started with.
+        self._recovery_generation: int | None = None
+        # Deadline of a bounded recovery connect in flight; a command lifts it.
+        self._recovery_connect_window: asyncio.Timeout | None = None
         self._reconnect_timer: asyncio.TimerHandle | None = None
         self._reconnect_task: asyncio.Task[None] | None = None
         self._lock = asyncio.Lock()
@@ -1836,9 +1853,9 @@ class AdjustableBedCoordinator(
         # Capture cancel count at entry to detect if we get cancelled while waiting
         entry_cancel_count = self._cancel_counter
 
-        async with self._command_lock:
+        async with self._command_demand_scope(), self._command_lock:
             # Cancel disconnect timer while command is in progress to prevent mid-command disconnect
-            self._cancel_disconnect_timer()
+            self._hold_link_for_command()
 
             # Check if we were cancelled while waiting for the lock
             if self._cancel_counter > entry_cancel_count:
@@ -1980,8 +1997,8 @@ class AdjustableBedCoordinator(
         """Send STOP while owning the legacy wire and connection lifecycle lane."""
         # STOP remains outside the ordinary scheduler lane so it can preempt it,
         # then waits for any cancelled controller cleanup to release the wire lock.
-        async with self._command_lock:
-            self._cancel_disconnect_timer()
+        async with self._command_demand_scope(), self._command_lock:
+            self._hold_link_for_command()
             if getattr(self, "_pairing_transfer_active", False) is True:
                 raise ConnectionError("Bed ownership is being transferred")
             controller = self._controller
@@ -2221,8 +2238,14 @@ class AdjustableBedCoordinator(
             self._cancel_counter += 1
             self._cancel_command.set()
 
+        # Queries keep a recovered link's idle window and are not command demand.
+        link_read = preserve_idle_deadline or operation_name == "query"
         entry_cancel_count = self._cancel_counter
-        async with self._command_lock:
+        async with (
+            self._command_demand_scope(not link_read),
+            self._command_lock,
+            self._link_read_scope(link_read),
+        ):
             # Background reads can inherit a command context while it is active,
             # then acquire this lock after that command has finished. Resolve
             # ownership here so their controller sees the same cancellation event.
@@ -2243,7 +2266,10 @@ class AdjustableBedCoordinator(
                 and controller_before_prepare.requires_disconnected_transport is True
             )
             if not preserve_idle_deadline:
-                self._cancel_disconnect_timer()
+                if link_read:
+                    self._cancel_disconnect_timer()
+                else:
+                    self._hold_link_for_command()
 
             cancelled_while_waiting = (
                 cancel_event.is_set()
@@ -2853,7 +2879,8 @@ class AdjustableBedCoordinator(
 
         context = current_command_context()
         if context is not None and context.scheduler_token is self._command_scheduler.token:
-            await group_operation()
+            async with self._command_demand_scope():
+                await group_operation()
             return
         if (
             expected_stop_epoch is not None
@@ -2880,7 +2907,9 @@ class AdjustableBedCoordinator(
             cancel_running=cancel_running,
             group_id=group_id or uuid4().hex,
         )
-        await self._command_scheduler.execute(intent, expected_stop_epoch=expected_stop_epoch)
+        # A group may connect for a live check before its first operation.
+        async with self._command_demand_scope():
+            await self._command_scheduler.execute(intent, expected_stop_epoch=expected_stop_epoch)
 
     async def async_execute_controller_query(
         self,
@@ -2905,6 +2934,26 @@ class AdjustableBedCoordinator(
             preserve_idle_deadline=preserve_idle_deadline,
         )
         return cast(T, result)
+
+    async def async_refresh_bed_presence(self) -> None:
+        """Read occupancy for both sides over a link that is already open.
+
+        Never connects and never renews the idle window, so the occupancy
+        sensors cannot override the Bluetooth connection setting.
+        """
+        def ready() -> bool:
+            # Startup owns the link until it is ready.
+            return self.is_connected and self._link_ready
+
+        if not ready():
+            return
+        await self.async_execute_controller_query(
+            lambda controller: controller.read_bed_presence_cached(),
+            cancel_running=False,
+            skip_disconnect=True,
+            run_if=ready,
+            preserve_idle_deadline=True,
+        )
 
     def _cancel_diagnostic_polling(self) -> None:
         """End live-link queries and invalidate this connection's observed values."""

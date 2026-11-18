@@ -237,6 +237,10 @@ class CoordinatorPositionsMixin:
         """
         if self._disable_angle_sensing or self._position_hydration_pause_count:
             return
+        # Its retry window would hold a recovered link past the idle window;
+        # the next command reads positions instead.
+        if self._recovered_link_window:
+            return
 
         expected_axes = self._expected_initial_position_axes()
         if not expected_axes or all(self._position_is_current(axis) for axis in expected_axes):
@@ -487,7 +491,7 @@ class CoordinatorPositionsMixin:
         Use this for fire-and-forget position reads (speed mode) to avoid
         "operation in progress" errors from overlapping BLE operations.
         """
-        async with self._command_lock:
+        async with self._command_lock, self._link_read_scope(True):
             if (
                 self._cancel_counter != entry_cancel_count
                 or self._command_scheduler.has_pending
@@ -655,9 +659,9 @@ class CoordinatorPositionsMixin:
         """
         cancel_event = self.cancel_command
 
-        async with self._command_lock:
+        async with self._command_demand_scope(), self._command_lock:
             # Cancel disconnect timer during seeking
-            self._cancel_disconnect_timer()
+            self._hold_link_for_command()
 
             # Check if cancelled while waiting for lock
             if cancel_event.is_set():
