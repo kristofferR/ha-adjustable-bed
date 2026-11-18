@@ -13,7 +13,6 @@ This guide covers common issues and their solutions when using the Adjustable Be
 - [Protocol/Variant Issues](#protocolvariant-issues)
 - [Pairing Required Beds](#pairing-required-beds)
 - [Classic Bluetooth Beds (Not Supported)](#classic-bluetooth-beds-not-supported)
-- [Quick Reference: Service UUIDs](#quick-reference-service-uuids)
 - [Debugging Tools](#debugging-tools)
 - [Support Bundle Download Links](#support-bundle-download-links)
 - [Position Commands and Reported State](#position-commands-and-reported-state)
@@ -51,8 +50,7 @@ that bed type:
   entity IDs.
 - A family with a
   [guided change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
-  is offered that guided change or **Keep current configuration** instead,
-  because **Configure** refuses its app and route changes.
+  is offered that guided change or **Keep current configuration** instead.
 - **Keep current configuration** if the bed already works. The repair comes
   back only if a later release adds an app for that setup that you have not
   been shown.
@@ -178,10 +176,10 @@ If the problem persists:
 1. Open the permanent URL on the **same Home Assistant address** used by the
    failing browser/app. It should return an `import` statement. Open the path in
    that statement too; it should return JavaScript, not a login page or a 404.
-2. Check **Settings → Dashboards → Resources** (enable Advanced mode in your
+2. Check **Settings > Dashboards > Resources** (enable Advanced mode in your
    profile if needed). There should be one Adjustable Bed resource using the
    permanent URL above, with type **JavaScript module**.
-3. Check **Settings → System → Logs** and the browser console. In particular,
+3. Check **Settings > System > Logs** and the browser console. In particular,
    loading both Mushroom and Mushroom Better Sliders causes duplicate
    `mushroom-select` registration errors. The [Better Sliders author explicitly
    requires disabling the original Mushroom](https://github.com/RubenKremer/lovelace-mushroom-better-sliders#what-is-mushroom-better-sliders).
@@ -272,7 +270,7 @@ Configure the PIN in the integration's options.
 **Solutions:**
 1. **Verify BLE advertising:** Use a BLE scanner app to confirm the bed is visible
 2. **Check MAC address:** Verify the MAC address matches what's shown in your BLE scanner
-3. **Try manual configuration:** If auto-discovery doesn't find the bed, use **Settings** → **Devices & Services** → **Add Integration** → **Adjustable Bed** and choose **"Set up by app or remote"** or **"Pick any Bluetooth device"**
+3. **Try manual configuration:** If auto-discovery doesn't find the bed, use **Settings > Devices & services > Add Integration > Adjustable Bed** and choose **"Set up by app or remote"** or **"Pick any Bluetooth device"**
 
 ---
 
@@ -281,21 +279,16 @@ Configure the PIN in the integration's options.
 ### Bed doesn't respond to commands
 
 **Possible Causes:**
-1. Wrong protocol variant selected
+1. Wrong app, model or remote selected
 2. Connection was silently dropped
 3. Command format incompatible with your bed
 
 **Solutions:**
-1. **Try a different variant:** For a family with a
-   [guided change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
-   (Vibradorm, Jiecang, Okin, Keeson, Solace, Leggett & Platt, Sleepy's Elite,
-   Customatic, Jordan's, Malouf / Lucid, LOGICDATA, Jensen / Svane and Limoss),
-   open **Reconfigure** from the entry's three-dot menu and answer the app
-   question again; **Configure** refuses an app or route change for these
-   families (see [Keeson](#keeson-variant-selection) and
-   [Leggett & Platt](#leggett--platt-variant-selection) below). Other beds
-   change the protocol variant in **Configure → Change settings**.
-   - Richmat: Try "nordic" vs "wilinke"
+1. **Try another app, model or remote:** open **Reconfigure** from the
+   entry's three-dots menu and answer the app question again, or choose
+   another **Bed model or remote** (see [Keeson](#keeson-variant-selection),
+   [Leggett & Platt](#leggett--platt-variant-selection) and
+   [Richmat](#richmat-variant-selection) below).
 2. **Reconnect:** Press the "Connect" button or restart the integration
 3. **Check diagnostics:** Download diagnostics and verify the controller type matches your bed
 
@@ -396,7 +389,7 @@ Home Assistant command reconnects automatically.
 
 - The connection sensor reports `state_detail: idle` (and a `disconnect_reason`
   attribute) while it's intentionally disconnected, and the Lovelace card shows
-  an "Idle — reconnects on demand" Bluetooth icon rather than an error.
+  an "Idle, reconnects when needed" Bluetooth icon rather than an error.
 - Routine idle disconnects and on-demand reconnects are logged at debug level,
   so they no longer fill the log. Enable debug logging if you need to see them.
 
@@ -408,7 +401,7 @@ Home Assistant command reconnects automatically.
 
 **Solutions:**
 1. **Press "Connect" button:** Force a reconnection from Home Assistant
-2. **Restart integration:** Reload the integration from Settings > Integrations
+2. **Restart integration:** Reload the entry under **Settings > Devices & services > Adjustable Bed**
 
 ---
 
@@ -417,13 +410,13 @@ Home Assistant command reconnects automatically.
 ### Wrong bed type detected
 
 **Possible Causes:**
-1. Bed shares UUIDs with another type
+1. The bed's Bluetooth name or service is shared with another bed type
 2. OEM bed using different manufacturer's controller
 
 **Solutions:**
-1. **Change the bed type:** Open **Reconfigure** from the entry's three-dot menu and choose the bed type, app or bed model the matching protocol guide names. It [reviews the change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed) before saving, and keeps the existing entry and its entity history.
-2. **Capture evidence if uncertain:** Generate a support bundle. A retail brand or a shared service UUID alone may not distinguish the protocols.
-3. **Paired entries:** Some profile changes require splitting the pair and configuring each side separately before combining again.
+1. **Change the bed type:** Open **Reconfigure** from the entry's three-dots menu and choose the bed type, app or bed model the matching protocol guide names. It [reviews the change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed) before saving, and keeps the existing entry and its entity history.
+2. **Capture evidence if uncertain:** Generate a support bundle. A retail brand or a shared Bluetooth service alone may not tell the bed types apart.
+3. **Combined beds:** Separate the beds, Reconfigure each one, then combine them again.
 
 ### Keeson Variant Selection
 
@@ -452,23 +445,15 @@ Open **Reconfigure** and answer the
 
 ### Richmat Variant Selection
 
-| Symptom | Try This Variant |
-|---------|------------------|
-| Simple single-byte commands | Nordic |
-| 5-byte commands with checksum | WiLinke |
-| Auto-detect fails | Try Nordic first, then WiLinke |
+If a Richmat bed does not respond with **Automatic (recommended)**, open
+**Reconfigure**, answer the Richmat question again and, under **Advanced**,
+try **Nordic receiver**, then **WiLinke receiver**.
 
 ### Motor Movement Issues
 
-If motors move too briefly or movement is choppy, adjust **Motor Pulse Settings**:
-
-| Symptom | Solution |
-|---------|----------|
-| Motors stop too soon | Increase pulse count |
-| Movement is choppy | Decrease pulse delay |
-| Commands get dropped | Increase pulse delay |
-
-See [Motor Pulse Settings](CONFIGURATION.md#movement-per-tap) for default values by bed type.
+If motors stop too soon, increase **Movement per tap** in **Configure**. If one
+tap moves in several short bursts, decrease it. See
+[Movement per tap](CONFIGURATION.md#movement-per-tap) for each bed's default.
 
 ---
 
@@ -478,7 +463,7 @@ Some beds require an OS-level Bluetooth **bond** before they can be controlled: 
 
 ### Putting the bed in pairing mode
 
-- **OKIN bases (Okimat, Okin CST, Nectar / Mattress Firm 900-O / Rize MF900, etc.):** Power-cycle the control box — **unplug it for ~30 seconds, then plug it back in**. The status light blinks blue, then turns green after ~20 seconds. That window is when the base accepts a new Bluetooth bond. Some models instead use the under-bed **lamp/light button** (hold until it blinks blue). There is **no dedicated Bluetooth pairing button** — any "Pair"/"Learn" button on the control box only syncs the RF remote, not Bluetooth.
+- **OKIN bases (Okimat, Okin CST, Nectar / Mattress Firm 900-O / Rize MF900, etc.):** Power-cycle the control box: **unplug it for ~30 seconds, then plug it back in**. The status light blinks blue, then turns green after ~20 seconds. That window is when the base accepts a new Bluetooth bond. Some models instead use the under-bed **lamp/light button** (hold until it blinks blue). There is **no dedicated Bluetooth pairing button**: any "Pair"/"Learn" button on the control box only syncs the RF remote, not Bluetooth.
 - **Sleep Number Climate 360 / FlexFit Fuzion:** hold the side pairing button until the blue light blinks. (Older Sleep Number BAM/MCR i8 / 360 FlexFit 2 beds do **not** need OS-level pairing.)
 - **Leggett & Platt LP Comfort Connect (Gen2):** unplug the bed, remove any batteries from its power supply and plug it back in. A chime plays and a blue light pulses under the bed; pair while it pulses. LP Control can also reopen pairing mode. See [Gen2](beds/leggett-platt.md#gen2-variant).
 
@@ -488,7 +473,7 @@ The integration connects with pairing enabled and, for OKIN-style beds, verifies
 
 **Bluetooth adapter notes:**
 - ESPHome Bluetooth proxies **do** support OS-level pairing, but only on **ESPHome 2024.3.0 or newer**. Pairing over a proxy can be unreliable; if it keeps failing, put the bed in range of a **local Bluetooth adapter** (or the HA host's own adapter) for the initial bond.
-- You can also pair manually from the device running HA's Bluetooth stack — **not your phone**:
+- You can also pair manually from the device running HA's Bluetooth stack, **not your phone**:
   - **Linux / Raspberry Pi / HA OS (SSH):** `bluetoothctl` → `scan on` → `pair XX:XX:XX:XX:XX:XX` → `trust XX:XX:XX:XX:XX:XX`
   - **Windows / macOS (for testing):** Bluetooth settings → find the bed → "Pair"
 
@@ -512,13 +497,13 @@ leaving the link unauthenticated. The integration therefore proves a bond by
 reading a characteristic that an unbonded link cannot read. If that read fails
 with an authentication error, the bond did not form and setup says so. If it
 times out or the characteristic is missing, the result is inconclusive rather
-than assumed good — some receivers (OKIN CST in particular) never answer that
-read even when perfectly bonded — and the integration will simply ask to pair
+than assumed good (some receivers, OKIN CST in particular, never answer that
+read even when bonded), and the integration will simply ask to pair
 again on its next connection instead of claiming a bond it cannot prove.
 
 ### Removing a bond
 
-Settings → Devices & Services → Adjustable Bed → Configure → **Remove the
+Settings > Devices & services > Adjustable Bed > Configure > **Remove the
 Bluetooth bond**. Use it when a bond has gone stale, when you want to re-pair
 from scratch, or to clean up after moving the bed to a different adapter. It
 asks for confirmation, names the adapter the bond is on, and verifies the
@@ -535,7 +520,7 @@ side is disconnected and updated.
 
 ### Repeated authentication failures through an ESPHome proxy
 
-Use these steps when setup or **Settings → System → Repairs → Bluetooth pairing
+Use these steps when setup or **Settings > System > Repairs > Bluetooth pairing
 required** says the bed connected through a proxy but **authentication failed**.
 Bluetooth can connect even when its saved pairing keys no longer work. A full
 erase and reinstall resolved this for a Sleep Number user in
@@ -552,8 +537,8 @@ the next attempt reads the bed's real layout. Retry once before going further.
 **First, try ordinary pairing:**
 
 1. Note the proxy named in the error. If only its address is shown, find the
-   matching device under **Settings → Devices & Services → ESPHome**. In
-   **Settings → Devices & Services → Adjustable Bed → Configure**, select that
+   matching device under **Settings > Devices & services > ESPHome**. In
+   **Settings > Devices & services > Adjustable Bed > Configure**, select that
    proxy as the bed's preferred Bluetooth adapter. If you are still adding the bed, keep the same proxy
    selected in setup.
 2. Close the bed's phone app and keep the proxy near the bed.
@@ -635,36 +620,6 @@ Some older beds use **Classic Bluetooth** instead of **Bluetooth Low Energy (BLE
 
 ---
 
-## Quick Reference: Service UUIDs
-
-Use these to identify your bed type in a BLE scanner:
-
-| UUID | Bed Type(s) |
-|------|-------------|
-| `00001234-0000-1000-8000-00805f9b34fb` | Jensen JMC400 |
-| `00001523-0000-1000-8000-00805f9b34fb` | DewertOkin |
-| `0000aa5c-0000-1000-8000-00805f9b34fb` | Octo Star2 |
-| `0000abcb-0000-1000-8000-00805f9b34fb` | Svane |
-| `0000fee9-0000-1000-8000-00805f9b34fb` | BedTech, Richmat WiLinke (variant) |
-| `0000ff12-0000-1000-8000-00805f9b34fb` | Comfort Motion / Jiecang (Lierda1) |
-| `0000fe60-0000-1000-8000-00805f9b34fb` | Comfort Motion / Jiecang (Lierda3, LOGICDATA MOTIONrelax) |
-| `0000ffb0-0000-1000-8000-00805f9b34fb` | Keeson Base (fallback) |
-| `0000ffe0-0000-1000-8000-00805f9b34fb` | Solace, MotoSleep, Octo (standard), Limoss/Stawett (name-based) |
-| `0000ffe5-0000-1000-8000-00805f9b34fb` | Keeson Base, Ergomotion, Malouf LEGACY_OKIN, OKIN FFE, Serta |
-| `0000fff0-0000-1000-8000-00805f9b34fb` | Keeson Base (fallback), Richmat WiLinke (variant) |
-| `01000001-0000-1000-8000-00805f9b34fb` | Malouf/Lucid family (usually NEW_OKIN; `OKIN-BLE` + `BTCB` uses LEGACY_OKIN/FFE5) |
-| `1b1d9641-b942-4da8-89cc-98e6a58fbd93` | Reverie |
-| `45e25100-3171-4cfc-ae89-1d83cf8d8071` | Leggett & Platt Gen2 |
-| `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` | Sleep Number Climate 360 / FlexFit |
-| `ffffd1fd-388d-938b-344a-939d1f6efee0` | Sleep Number i8 / 360 FlexFit 2 (BAM/MCR) |
-| `62741523-52f9-8864-b1ab-3b3a8d65950b` | Okimat, Leggett Okin, Nectar, Okin CST (MFirm 900-O / Rize MF900), OKIN 64-bit, Sleepy's BOX24 |
-| `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | Richmat Nordic, Keeson KSBT, Mattress Firm 900 |
-| `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | Richmat WiLinke |
-| `99fa0001-338a-1024-8a49-009c0215f78a` | Linak |
-| `db801000-f324-29c3-38d1-85c0c2e86885` | Reverie Nightstand |
-
----
-
 ## Debugging Tools
 
 ### Debug Logging vs Support Bundle
@@ -673,7 +628,7 @@ There are two ways to gather diagnostic information:
 
 | Feature | Debug Logging | Support Bundle |
 |---------|---------------|----------------|
-| **How to access** | Settings → Devices → ⋮ menu → Enable debug logging | Perform the `adjustable_bed.generate_support_bundle` action |
+| **How to access** | **Settings > Devices & services > Adjustable Bed**, three-dots menu, **Enable debug logging** | Perform the `adjustable_bed.generate_support_bundle` action |
 | **What it captures** | Real-time stream of all integration activity | Snapshot of device state at one moment |
 | **Content** | Actual BLE commands sent (e.g., `e5fe16...`), connection events, errors with stack traces | Configuration, advertisements (per source), detection reasoning, GATT/descriptor details, notifications, buffered command trace, connection-attempt details |
 | **Size** | Large, includes unrelated entries from other integrations | Focused JSON file for one device |
@@ -734,15 +689,14 @@ for reference, but do not authorize further movement.
 ### RF ECO BT bed shows only a Stair control or fails pairing
 
 RF ECO BT and P1103 are receiver identities shared by beds and staircases.
-After upgrading, open **Settings → System → Repairs** and use **Confirm the
+After upgrading, open **Settings > System > Repairs** and use **Confirm the
 control layout**. Choose FurniMove with its exact handset ID, the
 single-actuator staircase, or keep the current configuration if the bed already
 works. The repair works while the bed is offline and preserves the same entry,
 device and matching entity IDs. A full OKIMAT bed is promoted at runtime;
 choose its printed handset code through **Reconfigure** in the entry's
-three-dot menu, under **No app: Okimat or OKIN handset code**. **Configure**
-refuses a route or handset change within the Okin family. Another Okin app is
-chosen through the same **Reconfigure** question; an app of another family is
-chosen from the bed-type list in **Configure**. Do not infer the layout from
+three-dots menu, under **No app: Okimat or OKIN handset code**. Another Okin
+app is chosen through the same **Reconfigure** question; an app of another
+family through its **Another app or remote** answer. Do not infer the layout from
 the receiver label or configured motor count. See [FurniMove](beds/furnimove.md)
 and [Okin setup](beds/okin-nframe.md#home-assistant-setup).
