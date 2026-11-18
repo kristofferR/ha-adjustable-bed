@@ -1,4 +1,4 @@
-"""Renewable holds (#483) on the eShine E2000/E3000/E3100/E5000 app (row122).
+"""Renewable holds (#483) on the eShine E2000/E3000/E3100/E5000 app.
 
 Every held key writes at once, refreshes every 300 ms with no fixed count while
 held, and on release sends STOP 200 ms later. The lease tests run the real

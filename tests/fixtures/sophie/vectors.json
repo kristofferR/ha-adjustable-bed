@@ -5,11 +5,6 @@
     "action": "Back up",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000000039701",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/WeitiaoW4Fragment.java:191",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/WeitiaoW4Fragment.smali:999"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -18,11 +13,6 @@
     "action": "Back down",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000004D6C3",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/WeitiaoW4Fragment.java:216",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/WeitiaoW4Fragment.smali:984"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -31,11 +21,6 @@
     "action": "Leg up",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000000065702",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/WeitiaoW4Fragment.java:266",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/WeitiaoW4Fragment.smali:954"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -44,11 +29,6 @@
     "action": "Leg down",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000000796C2",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/WeitiaoW4Fragment.java:242",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/WeitiaoW4Fragment.smali:969"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -57,14 +37,6 @@
     "action": "Movement release / quick-panel header",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000000D700",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/WeitiaoW4Fragment.java:161-169",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:335-338",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:900",
-      "evidence/smali/com/sddq/sophie/fragment/WeitiaoW4Fragment.smali:298",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:760"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -73,13 +45,6 @@
     "action": "Movement-header / massage-header action, physical effect unspecified",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000000D814",
-    "evidence": [
-      "jadx/sources/z1/k.java:17-29",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "jadx/sources/com/sddq/sophie/fragment/AnmoFragment.java:275-284",
-      "evidence/smali/z1/k.smali:110",
-      "evidence/smali/com/sddq/sophie/fragment/AnmoFragment.smali:1294"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -88,11 +53,6 @@
     "action": "Flat bed",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000008D6C6",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:329-334",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:907"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -101,12 +61,6 @@
     "action": "Save Memory 1",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000A00A2F07",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:139",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:570"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -115,12 +69,6 @@
     "action": "Clear Memory 1",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000AF0A2AF7",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:134",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:581"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -129,11 +77,6 @@
     "action": "Recall saved Memory 1",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000A10A2E97",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:397-401",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:1076"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -142,12 +85,6 @@
     "action": "Save Memory 2",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000B00BE307",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:123",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:592"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -156,12 +93,6 @@
     "action": "Clear Memory 2",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000BF0BE6F7",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:118",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:603"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -170,11 +101,6 @@
     "action": "Recall saved Memory 2",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000B10BE297",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:410-414",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:1018"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -183,12 +109,6 @@
     "action": "Save TV",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000050052B03",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:107",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:614"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -197,12 +117,6 @@
     "action": "Clear TV",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500005F052EF3",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:102",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:625"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -211,11 +125,6 @@
     "action": "Recall saved TV",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000051052A93",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:352-359",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:1296"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -224,11 +133,6 @@
     "action": "Recall built-in TV",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000000051703",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:352-359",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:1301"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -237,12 +141,6 @@
     "action": "Save Zero gravity",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000090097B06",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:91",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:636"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -251,12 +149,6 @@
     "action": "Clear Zero gravity",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500009F097EF6",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:86",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:647"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -265,11 +157,6 @@
     "action": "Recall saved Zero gravity",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000091097A96",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:367-374",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:1221"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -278,11 +165,6 @@
     "action": "Recall built-in Zero gravity",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000000091706",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:367-374",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:1226"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -291,12 +173,6 @@
     "action": "Save Anti-snore",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000F00FD304",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:75",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:658"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -305,12 +181,6 @@
     "action": "Clear Anti-snore",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000FF0FD6F4",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:117-148",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment$a.smali:70",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:669"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -319,11 +189,6 @@
     "action": "Recall saved Anti-snore",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000F10FD294",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:382-389",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:1148"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -332,11 +197,6 @@
     "action": "Recall built-in Anti-snore",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000000F9704",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:382-389",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:1153"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -345,11 +205,6 @@
     "action": "Query saved Memory 1 (named03)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF03002800039F09",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:317"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -358,11 +213,6 @@
     "action": "Query saved Memory 2 (named03)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF03003000031F0E",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:325"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -371,11 +221,6 @@
     "action": "Query saved TV (named03)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF03001800039F06",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:333"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -384,11 +229,6 @@
     "action": "Query saved Zero gravity (named03)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF03002000031ECB",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:341"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -397,11 +237,6 @@
     "action": "Query saved Anti-snore (named03)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF03003800039ECC",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:349"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -410,11 +245,6 @@
     "action": "Query saved Memory 1 (fallback09)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF03002800091F0E",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:354"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -423,11 +253,6 @@
     "action": "Query saved Memory 2 (fallback09)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0300310009CEC9",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:362"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -436,11 +261,6 @@
     "action": "Query saved TV (fallback09)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF03001600097EC2",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:370"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -449,11 +269,6 @@
     "action": "Query saved Zero gravity (fallback09)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF03001F0009AEC0",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:378"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -462,11 +277,6 @@
     "action": "Query saved Anti-snore (fallback09)",
     "inputs": {},
     "expected_bytes": "FFFFFFFF03003A0009BF0B",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/KuaijieK2Fragment.java:190-218",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/KuaijieK2Fragment.smali:386"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -475,14 +285,6 @@
     "action": "Synchronize off",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0100090B001104",
-    "evidence": [
-      "jadx/sources/z1/h.java:17-28",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/z1/a.smali:41",
-      "evidence/smali/z1/e.smali:41",
-      "evidence/smali/z1/h.smali:41",
-      "evidence/smali/z1/j.smali:41"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -491,14 +293,6 @@
     "action": "Synchronize on",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0100090B011204",
-    "evidence": [
-      "jadx/sources/z1/h.java:17-28",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/z1/a.smali:48",
-      "evidence/smali/z1/e.smali:48",
-      "evidence/smali/z1/h.smali:48",
-      "evidence/smali/z1/j.smali:48"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -507,11 +301,6 @@
     "action": "Query synchronization support/state",
     "inputs": {},
     "expected_bytes": "FFFFFFFF01000A0B0F2104",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/activity/HomeActivity.java:98-107",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/activity/HomeActivity$a.smali:56"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -520,11 +309,6 @@
     "action": "Massage wave minus button",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000001516CF",
-    "evidence": [
-      "jadx/sources/z1/b.java:16-26",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/z1/b.smali:37"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -533,11 +317,6 @@
     "action": "Massage wave plus button",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000014D70F",
-    "evidence": [
-      "jadx/sources/z1/b.java:16-26",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/z1/b.smali:55"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -546,11 +325,6 @@
     "action": "Massage head minus button",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000011170C",
-    "evidence": [
-      "jadx/sources/z1/c.java:16-26",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/z1/c.smali:37"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -559,11 +333,6 @@
     "action": "Massage head plus button",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000010D6CC",
-    "evidence": [
-      "jadx/sources/z1/c.java:16-26",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/z1/c.smali:55"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -572,11 +341,6 @@
     "action": "Massage foot minus button",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000001396CD",
-    "evidence": [
-      "jadx/sources/z1/d.java:16-26",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/z1/d.smali:37"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -585,11 +349,6 @@
     "action": "Massage foot plus button",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000012570D",
-    "evidence": [
-      "jadx/sources/z1/d.java:16-26",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/z1/d.smali:55"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -598,11 +357,6 @@
     "action": "Massage timer 10 minutes",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000001656CE",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/AnmoFragment.java:312",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/AnmoFragment.smali:1249"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -611,11 +365,6 @@
     "action": "Massage timer 20 minutes",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000017970E",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/AnmoFragment.java:336",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/AnmoFragment.smali:1219"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -624,11 +373,6 @@
     "action": "Massage timer 30 minutes",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000018D70A",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/AnmoFragment.java:360",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/AnmoFragment.smali:1189"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -637,13 +381,6 @@
     "action": "Massage timer deselect/stop",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000001CD6C9",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/AnmoFragment.java:317-374",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/AnmoFragment.smali:1204",
-      "evidence/smali/com/sddq/sophie/fragment/AnmoFragment.smali:1234",
-      "evidence/smali/com/sddq/sophie/fragment/AnmoFragment.smali:1264"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -652,11 +389,6 @@
     "action": "Hidden massage power-off branch",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000001CD9DD",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/AnmoFragment.java:287-301",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/AnmoFragment.smali:1279"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -665,11 +397,6 @@
     "action": "Light brightness 0",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000002396D9",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:146"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -678,11 +405,6 @@
     "action": "Light brightness 1",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000001239749",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:141"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -691,12 +413,6 @@
     "action": "Light brightness 2",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000022397B9",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/AnmoFragment$c.smali:204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:136"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -705,11 +421,6 @@
     "action": "Light brightness 3",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000003239629",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:131"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -718,11 +429,6 @@
     "action": "Light brightness 4",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000004239419",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:126"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -731,11 +437,6 @@
     "action": "Light brightness 5",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000005239589",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:121"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -744,11 +445,6 @@
     "action": "Light brightness 6",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000006239579",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:116"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -757,11 +453,6 @@
     "action": "Light brightness 7",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000072394E9",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:111"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -770,11 +461,6 @@
     "action": "Light brightness 8",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000008239119",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:106"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -783,11 +469,6 @@
     "action": "Light brightness 9",
     "inputs": {},
     "expected_bytes": "FFFFFFFF05000009239089",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:101"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -796,11 +477,6 @@
     "action": "Light brightness 10",
     "inputs": {},
     "expected_bytes": "FFFFFFFF0500000A239079",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:159-203",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:96"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -809,11 +485,6 @@
     "action": "Light timer 10 minutes",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000001916CA",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:288",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:730"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -822,11 +493,6 @@
     "action": "Light timer 8 hours",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000001A56CB",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:299",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:715"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -835,11 +501,6 @@
     "action": "Light timer 10 hours",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050000001B970B",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:277",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment.smali:745"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -848,12 +509,6 @@
     "action": "Query light brightness",
     "inputs": {},
     "expected_bytes": "FFFFFFFF050005FF23C728",
-    "evidence": [
-      "jadx/sources/com/sddq/sophie/fragment/DengguangFragment.java:58-72",
-      "jadx/sources/com/sddq/sophie/blue/BluetoothLeService.java:198-204",
-      "evidence/smali/com/sddq/sophie/activity/HomeActivity.smali:163",
-      "evidence/smali/com/sddq/sophie/fragment/DengguangFragment$a.smali:49"
-    ],
     "kind": "literal from shipped code; independently matched smali"
   },
   {
@@ -864,9 +519,6 @@
       "iso": "2026-11-16T12:34:56"
     },
     "expected_bytes": "FFFFFFFF0100011112345601261116F904",
-    "evidence": [
-      "E12"
-    ],
     "kind": "Concrete app-builder input, not observed hardware traffic"
   },
   {
@@ -877,9 +529,6 @@
       "iso": "2024-01-07T00:00:00"
     },
     "expected_bytes": "FFFFFFFF01000111000000072401074204",
-    "evidence": [
-      "E12"
-    ],
     "kind": "Concrete app-builder input, not observed hardware traffic"
   },
   {
@@ -900,9 +549,6 @@
       "ring": false
     },
     "expected_bytes": "FFFFFFFF01000213010730008A01020100D804",
-    "evidence": [
-      "E12"
-    ],
     "kind": "Concrete app-builder input, not observed hardware traffic"
   },
   {
@@ -919,9 +565,6 @@
       "ring": false
     },
     "expected_bytes": "FFFFFFFF01000213A10000000000030000B604",
-    "evidence": [
-      "E12"
-    ],
     "kind": "Concrete app-builder input, not observed hardware traffic"
   }
 ]

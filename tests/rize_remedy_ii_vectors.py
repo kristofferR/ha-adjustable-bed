@@ -1,4 +1,4 @@
-"""Frozen live literals, row180 com.okin.bedding.rizeii 1.0.1 (2)."""
+"""Frozen live literals, com.okin.bedding.rizeii 1.0.1 (2)."""
 
 VECTORS = (
     ('stop', '0c02000000000000000000000000'),

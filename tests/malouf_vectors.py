@@ -1,6 +1,6 @@
 """Frozen frames per Malouf profile, the vectors the codec must reproduce.
 
-The two app profiles list the single-frame literals of their accepted row023
+The two app profiles list the single-frame literals of their accepted Lucid and Malouf
 reports: Malouf Base 2.4.3 (``com.malouf.bedbase``) and Lucid Base 1.3.3
 (``com.lucid.bedbase``). Each report's command table, reachable rows only, is
 expanded through every transport builder it names; the reports' own test vectors
@@ -12,7 +12,7 @@ Clock and alarm frames are parameterized and tested with the codec instead.
 frame the pre-v5 ``MaloufNewOkinController`` could send.
 """
 
-_ROW023: frozenset[str] = frozenset(
+_APP_REPORT: frozenset[str] = frozenset(
     {
         # richmat_single
         "24",
@@ -193,6 +193,6 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "0502800400000000",
         }
     ),
-    "malouf": _ROW023,
-    "lucid": _ROW023,
+    "malouf": _APP_REPORT,
+    "lucid": _APP_REPORT,
 }

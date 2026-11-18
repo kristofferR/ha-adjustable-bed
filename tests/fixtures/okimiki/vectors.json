@@ -9,11 +9,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002493",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -26,11 +21,6 @@
       "nordic": true
     },
     "expected_bytes": "24",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -43,11 +33,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002594",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -60,11 +45,6 @@
       "nordic": true
     },
     "expected_bytes": "25",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -77,11 +57,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002695",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -94,11 +69,6 @@
       "nordic": true
     },
     "expected_bytes": "26",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -111,11 +81,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002796",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -128,11 +93,6 @@
       "nordic": true
     },
     "expected_bytes": "27",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -145,11 +105,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002998",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -162,11 +117,6 @@
       "nordic": true
     },
     "expected_bytes": "29",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -179,11 +129,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002a99",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -196,11 +141,6 @@
       "nordic": true
     },
     "expected_bytes": "2a",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -213,11 +153,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010031a0",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -230,11 +165,6 @@
       "nordic": true
     },
     "expected_bytes": "31",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -247,11 +177,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002e9d",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -264,11 +189,6 @@
       "nordic": true
     },
     "expected_bytes": "2e",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -281,11 +201,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01002f9e",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -298,11 +213,6 @@
       "nordic": true
     },
     "expected_bytes": "2f",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -315,11 +225,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010059c8",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -332,11 +237,6 @@
       "nordic": true
     },
     "expected_bytes": "59",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -349,11 +249,6 @@
       "nordic": false
     },
     "expected_bytes": "6e010045b4",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -366,11 +261,6 @@
       "nordic": true
     },
     "expected_bytes": "45",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-MENU"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -383,11 +273,6 @@
       "nordic": false
     },
     "expected_bytes": "6e01006edd",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-STOP"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -400,11 +285,6 @@
       "nordic": true
     },
     "expected_bytes": "6e",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-STOP"
-    ],
     "scope": "Static encoder vector; profile dispatch qualification remains incomplete"
   },
   {
@@ -417,12 +297,7 @@
       "long_opcode": 43,
       "long_press": true
     },
-    "expected_bytes": "6e01002b9a",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-UI"
-    ]
+    "expected_bytes": "6e01002b9a"
   },
   {
     "id": "memory_2_save",
@@ -434,12 +309,7 @@
       "long_opcode": 44,
       "long_press": true
     },
-    "expected_bytes": "6e01002c9b",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-UI"
-    ]
+    "expected_bytes": "6e01002c9b"
   },
   {
     "id": "lounge_save",
@@ -451,12 +321,7 @@
       "long_opcode": 101,
       "long_press": true
     },
-    "expected_bytes": "6e010065d4",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-UI"
-    ]
+    "expected_bytes": "6e010065d4"
   },
   {
     "id": "zero_gravity_save",
@@ -468,12 +333,7 @@
       "long_opcode": 102,
       "long_press": true
     },
-    "expected_bytes": "6e010066d5",
-    "evidence": [
-      "E-BUILDER",
-      "E-ENUM",
-      "E-UI"
-    ]
+    "expected_bytes": "6e010066d5"
   },
   {
     "id": "head-up-side-1",
@@ -484,11 +344,7 @@
       "opcode": 36,
       "side": 1
     },
-    "expected_bytes": "6e01012494",
-    "evidence": [
-      "E-BUILDER",
-      "E-SIDE"
-    ]
+    "expected_bytes": "6e01012494"
   },
   {
     "id": "head-up-side-2",
@@ -499,11 +355,7 @@
       "opcode": 36,
       "side": 2
     },
-    "expected_bytes": "6e01022495",
-    "evidence": [
-      "E-BUILDER",
-      "E-SIDE"
-    ]
+    "expected_bytes": "6e01022495"
   },
   {
     "id": "bed-sleep-advertisement-query",
@@ -511,10 +363,7 @@
     "protocol": "P3",
     "action": "query bed-linked sleep advertisement name",
     "inputs": {},
-    "expected_bytes": "6e0820060300009f",
-    "evidence": [
-      "E-SLEEP-LINK"
-    ]
+    "expected_bytes": "6e0820060300009f"
   },
   {
     "id": "notify-alarm",
@@ -526,9 +375,6 @@
     },
     "expected_bytes": "6e09010078",
     "expected_event": "alarm",
-    "evidence": [
-      "E-NOTIFY"
-    ],
     "scope": "EXCLUDED where accessory/audio; retain shared bed-side effect for anti_snore_stop_music"
   },
   {
@@ -541,9 +387,6 @@
     },
     "expected_bytes": "6e0e00037f",
     "expected_event": "light",
-    "evidence": [
-      "E-NOTIFY"
-    ],
     "scope": "EXCLUDED where accessory/audio; retain shared bed-side effect for anti_snore_stop_music"
   },
   {
@@ -556,9 +399,6 @@
     },
     "expected_bytes": "6e1a000189",
     "expected_event": "aroma",
-    "evidence": [
-      "E-NOTIFY"
-    ],
     "scope": "EXCLUDED where accessory/audio; retain shared bed-side effect for anti_snore_stop_music"
   },
   {
@@ -571,9 +411,6 @@
     },
     "expected_bytes": "6e07010177",
     "expected_event": "alarm_add_success",
-    "evidence": [
-      "E-NOTIFY-CORRECTION"
-    ],
     "scope": "BED one-shot alarm acknowledgment; previous provisional music label corrected from actual parser emit and UI subscriber",
     "previous_label_correction": "music"
   },
@@ -587,9 +424,6 @@
     },
     "expected_bytes": "6e07010278",
     "expected_event": "alarm_cancel_success",
-    "evidence": [
-      "E-NOTIFY-CORRECTION"
-    ],
     "scope": "BED one-shot alarm acknowledgment; previous provisional music label corrected from actual parser emit and UI subscriber",
     "previous_label_correction": "music2"
   },
@@ -603,9 +437,6 @@
     },
     "expected_bytes": "6e16010186",
     "expected_event": "music_vibration",
-    "evidence": [
-      "E-NOTIFY"
-    ],
     "scope": "EXCLUDED where accessory/audio; retain shared bed-side effect for anti_snore_stop_music"
   },
   {
@@ -618,9 +449,6 @@
     },
     "expected_bytes": "6e90c101c0",
     "expected_event": "detection",
-    "evidence": [
-      "E-NOTIFY"
-    ],
     "scope": "EXCLUDED where accessory/audio; retain shared bed-side effect for anti_snore_stop_music"
   },
   {
@@ -633,9 +461,6 @@
     },
     "expected_bytes": "6e2100008f",
     "expected_event": "anti_snore",
-    "evidence": [
-      "E-NOTIFY"
-    ],
     "scope": "EXCLUDED where accessory/audio; retain shared bed-side effect for anti_snore_stop_music"
   },
   {
@@ -648,9 +473,6 @@
     },
     "expected_bytes": "6e23018416",
     "expected_event": "control_box_lock",
-    "evidence": [
-      "E-NOTIFY"
-    ],
     "scope": "EXCLUDED where accessory/audio; retain shared bed-side effect for anti_snore_stop_music"
   },
   {
@@ -663,9 +485,6 @@
     },
     "expected_bytes": "6e23008415",
     "expected_event": "control_box_unlock",
-    "evidence": [
-      "E-NOTIFY"
-    ],
     "scope": "EXCLUDED where accessory/audio; retain shared bed-side effect for anti_snore_stop_music"
   },
   {
@@ -678,9 +497,6 @@
     },
     "expected_bytes": "6e23a06e9f",
     "expected_event": "anti_snore_stop_music",
-    "evidence": [
-      "E-NOTIFY"
-    ],
     "scope": "EXCLUDED where accessory/audio; retain shared bed-side effect for anti_snore_stop_music"
   }
 ]

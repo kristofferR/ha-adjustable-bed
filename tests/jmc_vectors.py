@@ -8,7 +8,7 @@ light and fan level, the massage sweeps, and the position query the integration
 sends.
 
 ``svane_remote`` holds the JMC400 and lamp frames of the accepted Svane Remote
-1.8 vectors (row130, ``tests/test_svane_artifact_vectors.py``), and the lamp
+1.8 vectors (``tests/test_svane_artifact_vectors.py``), and the lamp
 levels the wire snapshot records for the ``svane`` bed type.
 
 ``FROZEN_REPORTS`` are the reports the controller tests feed back: the Jensen

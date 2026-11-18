@@ -84,14 +84,14 @@ KEESON_STREAM: dict[str, tuple[str, ...]] = {
     "jalon_13": ("row132",),
     "jalon_15": ("row132",),
     "jalon_24": ("row132",),
-    "comfortbase": ("row161",),
-    "yamada_p1": ("row178",),
-    "yamada_p2": ("row178",),
+    "comfortbase": ("comfortbase",),
+    "yamada_p1": ("yamada",),
+    "yamada_p2": ("yamada",),
     "glideaway_motion": ("glide",),
-    # Malouf's legacy OKIN route over the E6 frame (row023).
-    "malouf_legacy_okin": ("malouf", "row023"),
-    "adjustamattress": ("row067",),
-    "adjustamattress_p2": ("row067",),
+    # Malouf's legacy OKIN route over the E6 frame.
+    "malouf_legacy_okin": ("malouf",),
+    "adjustamattress": ("adjustamattress",),
+    "adjustamattress_p2": ("adjustamattress",),
 }
 # Keeson layout app layouts, and Ergomotion 4.0 per catalog product style.
 KEESON_APP_STREAM: dict[str, tuple[str, ...]] = {
@@ -115,19 +115,19 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
 
     **{f"LinxProfile:{key}": {"hold": ("linx079",)} for key in ("quest", "orbes")},
     **{f"NerumProfile:{key}": {"hold": ("nerum103",)} for key in ("p1", "p2", "p3")},
-    **{f"KeesonProfile:somos_{key}": {"hold": ("row099",)} for key in "abcde"},
+    **{f"KeesonProfile:somos_{key}": {"hold": ("somos",)} for key in "abcde"},
     **{identity: {"hold": ("suta128",), "hold_controls": ("suta128",)} for identity in SUTA_STREAM},
     "CheersSleepProfile:p1": {"hold": ("cheerssleep",)},
     "CheersSleepProfile:p2": {"hold": ("cheerssleep",)},
     "KeesonProfile:agingplace": {"hold": ("agingplace069",)},
-    "OnlySnoreProfile:onlysnore": {"hold": ("row170",)},
-    **{f"LegacyProfile:{key}": {"hold": ("cluster023",), "hold_controls": ("cluster023",)} for key in legacy_profiles()},
-    "SmartSleepProfile:p1": {"hold": ("row094",)},
-    "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
-    **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
+    "OnlySnoreProfile:onlysnore": {"hold": ("onlysnore",)},
+    **{f"LegacyProfile:{key}": {"hold": ("richmat-legacy",), "hold_controls": ("richmat-legacy",)} for key in legacy_profiles()},
+    "SmartSleepProfile:p1": {"hold": ("smartsleep",)},
+    "SmartSleepProfile:p2": {"hold": ("smartsleep",), "hold_controls": ("smartsleep",)},
+    **{f"OkinNFrameProfile:apex_{i}": {"hold": ("apex",)} for i in range(15)},
     **{f"KeesonProfile:ormatek_{wire}": {"hold": ("OrmatekTechnoSmart 1.2.0: immediate held refresh every 200ms until release",)} for wire in ("okin15", "okin24")},
     **{f"KeesonProfile:symphony_sleep_{route}": {"hold": ("symphony078",)} for route in ("box1", "box2", "fallback")},
-    "SymphonyWordProfile:symphony": {"hold": ("row133",)},
+    "SymphonyWordProfile:symphony": {"hold": ("okin-ist",)},
     "L2MotionProfile:l2motion": {"hold": ("l2motion",)},
     "BedgearProfile:bedgear": {"hold": ("bedgear",)},
     **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
@@ -166,10 +166,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "LogicdataProfile:phone": {"hold": ("ld-phone",)},
     "LogicdataProfile:sleep_smart": {"hold": ("ld-mattress",)},
     "LogicdataProfile:tablet": {"hold": ("ld-pad",)},
-    # Malouf / Lucid (#483, row023).
-    "MaloufAppProfile:lucid": {"hold": ("lucid", "row023")},
-    "MaloufAppProfile:malouf": {"hold": ("malouf", "row023")},
-    "MaloufRouteProfile:malouf_new_okin": {"hold": ("lucid", "malouf", "row023")},
+    # Malouf / Lucid (#483).
+    "MaloufAppProfile:lucid": {"hold": ("lucid",)},
+    "MaloufAppProfile:malouf": {"hold": ("malouf",)},
+    "MaloufRouteProfile:malouf_new_okin": {"hold": ("lucid", "malouf")},
     # Okin 5A (O2). Nectar and MF900 evidence reaches the Okin CST frame, not
     # the 5A keys those profiles send, so only ELEVATE declares.
     "Okin5AProfile:star_elevate": {"hold": ("abm5_5", "m1x12")},
@@ -177,7 +177,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     # Move is the Nectar app's CST route; Prodigy CE and U Series also compose (#516).
     "RizeHomeProfile:rize_home_remedy_iii": {"hold": ("rize-home",)},
     "RizeHomeProfile:rize_home_contempo_iv": {"hold": ("rize-home",)},
-    "OkinNFrameProfile:okin_motionbed": {"hold": ("row150",)},
+    "OkinNFrameProfile:okin_motionbed": {"hold": ("motionbed",)},
     "OkinNFrameProfile:n32_motion_bed": {"hold": ("n32",)},
     "OkinNFrameProfile:resident": {"hold": ("resident-base",)},
     "OkinNFrameProfile:ultramatic_smart_bed": {"hold": ("ultramatic-smart-bed",)},
@@ -185,8 +185,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
     # Customatic: held motor keys OR into one shared mask; a release clears one bit (#516).
     "OkinNFrameProfile:clarity": {
-        "hold": ("clarity", "row028"),
-        "concurrent": ("clarity", "row028"),
+        "hold": ("clarity",),
+        "concurrent": ("clarity",),
     },
     "OkinNFrameProfile:cst_aviada": {"hold": ("aviada",)},
     "OkinNFrameProfile:cst_bob": {"hold": ("bob",)},
@@ -194,7 +194,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:cst_clarity": {"hold": ("iiclarity",)},
     "OkinNFrameProfile:cst_contempo": {"hold": ("contempo",)},
     "OkinNFrameProfile:cst_mf900": {"hold": ("mf900",)},
-    "OkinNFrameProfile:cst_nectar_move": {"hold": ("nectar", "row042")},
+    "OkinNFrameProfile:cst_nectar_move": {"hold": ("nectar",)},
     "OkinNFrameProfile:cst_resident": {"hold": ("resident",)},
     "OkinNFrameProfile:cst_sanctuary": {"hold": ("sanctuary",)},
     "OkinNFrameProfile:cst_support": {"hold": ("support",)},
@@ -202,8 +202,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:eshine_e30003100": {"hold": ("eshine-okin",)},
     "OkinNFrameProfile:eshine_e5000": {"hold": ("eshine-okin",)},
     "OkinNFrameProfile:jeromes": {
-        "hold": ("jeromes", "row028"),
-        "concurrent": ("jeromes", "row028"),
+        "hold": ("jeromes",),
+        "concurrent": ("jeromes",),
     },
     "OkinNFrameProfile:prodigy2": {"hold": ("p2", "leggett-disp")},
     "OkinNFrameProfile:prodigy2l": {"hold": ("p2l", "leggett-disp")},
@@ -215,8 +215,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
         "concurrent": ("p4", "#516c"),
     },
     "OkinNFrameProfile:remedy": {
-        "hold": ("remedy", "row028"),
-        "concurrent": ("remedy", "row028"),
+        "hold": ("remedy",),
+        "concurrent": ("remedy",),
     },
     "OkinNFrameProfile:serenity": {"hold": ("serenity",)},
     "OkinNFrameProfile:simmons_okin": {"hold": ("simmons",)},
@@ -226,7 +226,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:starcode_abm5_4_box15": {"hold": ("abm5_4",)},
     "OkinNFrameProfile:starcode_abm5_4_box25": {"hold": ("abm5_4",)},
     "OkinNFrameProfile:starcode_abm5_4_box3633": {"hold": ("abm5_4",)},
-    "OkinNFrameProfile:rize_remedy_ii": {"hold": ("rize-remedy-ii", "row180")},
+    "OkinNFrameProfile:rize_remedy_ii": {"hold": ("rize-remedy-ii",)},
     "OkinNFrameProfile:tranquil": {"hold": ("tranquil",)},
     "OkinNFrameProfile:useries": {
         "hold": ("useries", "leggett-disp"),
@@ -239,7 +239,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     **{f"RichmatProfile:bedtech_{model}": {"hold": ("bedtech713",)}
        for model in ("bt2000", "bt2500", "bt3000", "bt3000fh", "bt6500", "btx4", "btx4fh", "btx5", "btx5fh")},
     "RichmatProfile:eshine": {"hold": ("eshine",)},
-    "RichmatProfile:hjbed": {"hold": ("row121",)},
+    "RichmatProfile:hjbed": {"hold": ("hjbed",)},
     "RichmatProfile:richmat_app": {"hold": ("row173",)},
     "RichmatProfile:leggett_wilinke": {"hold": ("lp2",)},
     "RichmatProfile:richmat_mh_best_mattress": {"hold": ("best", "row055")},
@@ -281,10 +281,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "okimiki": {"hold": ("okimiki",), "hold_controls": ("okimiki",)},
     "bobpowerbase": {"hold": ("bob096",), "hold_controls": ("bob096",)},
     # Scoped to the held controls that run the keep mode under the current
-    # Hold/Release, memory-arm and head/foot selection (row066, five reports).
+    # Hold/Release, memory-arm and head/foot selection (five app reports).
     "richmat_classic_apps": {
-        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066", "row071"),
-        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "row066", "row071"),
+        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior"),
+        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior"),
     },
     "isleep": {"hold": ("kaidi",)},
     "ComfyProfile:komfyd": {"hold": ("komfyd084",)},
@@ -296,8 +296,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "leggett_gen2": {"hold": ("universal",)},
     "linak": {"hold": ("linak-iot", "linak-lp", "linak-mem", "linak-guide")},
     "octo": {"hold": ("octo",)},
-    "remacro": {"hold": ("brick", "jewmes", "slumber", "row050")},  # latched
-    "reverie": {"hold": ("reverie", "row041")},  # latched
+    "remacro": {"hold": ("brick", "jewmes", "slumber")},  # latched
+    "reverie": {"hold": ("reverie",)},  # latched
     "sleepys_box25": {"hold": ("sleepy",)},
     "sleepys_elite_app": {"hold": ("sleepy",)},
     "starcode_m1x12": {"hold": ("m1x12",)},

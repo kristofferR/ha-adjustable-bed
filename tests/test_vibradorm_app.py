@@ -1,4 +1,4 @@
-"""Frozen row031 vectors and real controller delivery/lifecycle behavior."""
+"""Frozen Vibradorm app vectors and real controller delivery/lifecycle behavior."""
 
 from __future__ import annotations
 

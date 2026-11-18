@@ -1,4 +1,4 @@
-"""M Line's independently accepted row147 control and auxiliary format."""
+"""M Line's independently accepted M Line app control and auxiliary format."""
 
 import json
 from pathlib import Path

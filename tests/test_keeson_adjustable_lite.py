@@ -1,6 +1,6 @@
 """Adjustable Lite (com.keeson.adjustablelite 1.0.2) app profile.
 
-Every packet literal comes from the accepted clean-room report (row051); the
+Every packet literal comes from the accepted clean-room report; the
 parser inputs are its synthetic branch vectors, not captured traffic.
 """
 

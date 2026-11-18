@@ -1,4 +1,4 @@
-"""Accepted row063 byte vectors and direct-BLE state/lifecycle consequences.
+"""Accepted BF and Cherish app byte vectors and direct-BLE state/lifecycle consequences.
 
 BF revision01 dff12e6a…, Cherish report 17910423…, cluster db1b2bc5….
 Expected bytes below are artifact values, not calls to the production builders.

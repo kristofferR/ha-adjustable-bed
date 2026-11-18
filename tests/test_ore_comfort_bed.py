@@ -2,7 +2,7 @@
 
 Every frame literal is a test vector from the accepted clean-room reports
 (rows 056, 059 and 062); none comes from captured traffic.
-AMERICANSTAR row062 independently verifies the same 34 unique payloads.
+The AMERICANSTAR app independently verifies the same 34 unique payloads.
 """
 
 from __future__ import annotations

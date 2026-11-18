@@ -1,4 +1,4 @@
-"""All row133 literal constructions, including operation-specific size fields.
+"""All OKIN IST literal constructions, including operation-specific size fields.
 
 Symphony Sleep Sense 2.8.0 (194), accepted static report and audit002. Hardware
 unverified. Excluded analytics literals establish encoding only, not an API.

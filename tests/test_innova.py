@@ -1,4 +1,4 @@
-"""Row059 cluster-015: INNOVA profile and Bedsense Bases on the ORE comfort-bed controller.
+"""INNOVA profile and Bedsense Bases on the ORE comfort-bed controller.
 
 Every frame literal comes from the accepted clean-room reports for
 com.ore.sfm 2.0 (3) and com.ore.sfmc2bedsence 1.1 (3); the notification inputs

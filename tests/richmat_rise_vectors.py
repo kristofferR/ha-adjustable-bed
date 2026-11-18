@@ -1,4 +1,4 @@
-"""Frozen literal frames from the two accepted cluster-021 member reports."""
+"""Frozen literal frames from the two accepted Luuna Rise 2 and PowerCool app reports."""
 
 import gzip
 import json

@@ -1,6 +1,6 @@
-"""Eshine row106 artifact vectors, safe parsing and HA control surfaces.
+"""Eshine artifact vectors, safe parsing and HA control surfaces.
 
-Derived integration tests, not the raw APK Protocol Audit report (row106), which
+Derived integration tests, not the raw APK Protocol Audit report, which
 also records the intentional safety differences.
 """
 
@@ -375,24 +375,24 @@ RECEIVE_VECTORS = [
     ("common-unknown", ["6e91000107"], []),
     ("ota-fragmented", ["6e40000a", "0103030782bb"], []),
     ("ota-bad-crc", ["6e40000a0103030782ba"], []),
-    ("repair001-valid-3-2-00", ["6e200806030200a1"], [("sleep_adv_name", [])]),
-    ("repair001-valid-3-2-0041", ["6e20090603020041e3"], [("sleep_adv_name", [65])]),
-    ("repair001-valid-5-2-0000", ["6e20090605020000a4"], []),
-    ("repair001-valid-5-2-00012a", ["6e200a06050200012ad0"], [("anti_snore_count", 42)]),
-    ("repair001-valid-5-2-00022b", ["6e200a06050200022bd2"], [("anti_snore_time", 43)]),
-    ("repair001-valid-4-2-000001", ["6e200a060402000001a5"], []),
-    ("repair001-valid-4-2-000101", ["6e200a060402000101a6"], [("snore_stop_music", True)]),
-    ("repair001-opgate-3-2", ["6e20070603019f"], []),
-    ("repair001-opgate-5-2", ["6e2007060501a1"], []),
-    ("repair001-valid-3-3-00", ["6e200806030300a2"], [("sleep_adv_name", [])]),
-    ("repair001-valid-3-3-0041", ["6e20090603030041e4"], [("sleep_adv_name", [65])]),
-    ("repair001-valid-5-3-0000", ["6e20090605030000a5"], []),
-    ("repair001-valid-5-3-00012a", ["6e200a06050300012ad1"], [("anti_snore_count", 42)]),
-    ("repair001-valid-5-3-00022b", ["6e200a06050300022bd3"], [("anti_snore_time", 43)]),
-    ("repair001-valid-4-3-000001", ["6e200a060403000001a6"], []),
-    ("repair001-valid-4-3-000101", ["6e200a060403000101a7"], [("snore_stop_music", True)]),
-    ("repair001-opgate-3-3", ["6e20070603019f"], []),
-    ("repair001-opgate-5-3", ["6e2007060501a1"], []),
+    ("valid-3-2-00", ["6e200806030200a1"], [("sleep_adv_name", [])]),
+    ("valid-3-2-0041", ["6e20090603020041e3"], [("sleep_adv_name", [65])]),
+    ("valid-5-2-0000", ["6e20090605020000a4"], []),
+    ("valid-5-2-00012a", ["6e200a06050200012ad0"], [("anti_snore_count", 42)]),
+    ("valid-5-2-00022b", ["6e200a06050200022bd2"], [("anti_snore_time", 43)]),
+    ("valid-4-2-000001", ["6e200a060402000001a5"], []),
+    ("valid-4-2-000101", ["6e200a060402000101a6"], [("snore_stop_music", True)]),
+    ("opgate-3-2", ["6e20070603019f"], []),
+    ("opgate-5-2", ["6e2007060501a1"], []),
+    ("valid-3-3-00", ["6e200806030300a2"], [("sleep_adv_name", [])]),
+    ("valid-3-3-0041", ["6e20090603030041e4"], [("sleep_adv_name", [65])]),
+    ("valid-5-3-0000", ["6e20090605030000a5"], []),
+    ("valid-5-3-00012a", ["6e200a06050300012ad1"], [("anti_snore_count", 42)]),
+    ("valid-5-3-00022b", ["6e200a06050300022bd3"], [("anti_snore_time", 43)]),
+    ("valid-4-3-000001", ["6e200a060403000001a6"], []),
+    ("valid-4-3-000101", ["6e200a060403000101a7"], [("snore_stop_music", True)]),
+    ("opgate-3-3", ["6e20070603019f"], []),
+    ("opgate-5-3", ["6e2007060501a1"], []),
 ]
 
 

@@ -13,7 +13,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, AdjustableBedLight
-from tests.test_reverie_review_lifecycle import _pairlink_central
+from tests.test_reverie_reconnect_lifecycle import _pairlink_central
 from tests.test_reverie_session_lane import _central
 
 

@@ -427,7 +427,7 @@ class TestCoolBaseFanControl:
 
 
 # -----------------------------------------------------------------------------
-# Accepted com.keeson.coolbase 1.0.0 artifact vectors (row047)
+# Accepted com.keeson.coolbase 1.0.0 artifact vectors
 # -----------------------------------------------------------------------------
 
 # Every literal frame the app writes, in its command-table order.

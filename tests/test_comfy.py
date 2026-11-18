@@ -1,4 +1,4 @@
-"""Full row084 bed surface, session ownership and actual caller lifecycles."""
+"""Full Comfy (komfyD, ComfyDS) bed surface, session ownership and actual caller lifecycles."""
 
 from __future__ import annotations
 

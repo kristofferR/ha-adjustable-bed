@@ -1,4 +1,4 @@
-"""Simon Li, Heal Every Night and OKIN-Seating app profiles, row060.
+"""Simon Li, Heal Every Night and OKIN-Seating app profiles.
 
 Every frame literal comes from the accepted clean-room reports for
 com.okin.simon 1.0.1 (2), com.okin.healeverynight 1.0 (1) and

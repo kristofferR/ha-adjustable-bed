@@ -388,7 +388,7 @@ carrier and P3 trailer establishes no side selection. Its five explicit
 `profiles/somos.py` products use the shared family controller, extended only
 for source-specific polling, notification parsing and neutral UI axes.
 
-### SUTA P1/P2 (accepted unit128)
+### SUTA P1/P2 (SUTA 3.20.0)
 
 SUTA's exact-name application panels now use `codec/suta.py`,
 `profiles/suta.py` and the shared `beds/suta/` controller. P1 adds only UTF-8

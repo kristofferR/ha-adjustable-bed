@@ -7,10 +7,7 @@
     "inputs": {
       "seconds": 300
     },
-    "expected_bytes": "6e0b012ca6",
-    "evidence": [
-      "E-LIGHT"
-    ]
+    "expected_bytes": "6e0b012ca6"
   },
   {
     "id": "light-always",
@@ -20,10 +17,7 @@
     "inputs": {
       "seconds": 0
     },
-    "expected_bytes": "6e0bffff77",
-    "evidence": [
-      "E-LIGHT"
-    ]
+    "expected_bytes": "6e0bffff77"
   },
   {
     "id": "light-900",
@@ -33,10 +27,7 @@
     "inputs": {
       "seconds": 900
     },
-    "expected_bytes": "6e0b038400",
-    "evidence": [
-      "E-LIGHT"
-    ]
+    "expected_bytes": "6e0b038400"
   },
   {
     "id": "rgb-r255-b128",
@@ -48,10 +39,7 @@
       "green": 0,
       "blue": 128
     },
-    "expected_bytes": "6e0cffff786e0d0080fb",
-    "evidence": [
-      "E-LIGHT"
-    ]
+    "expected_bytes": "6e0cffff786e0d0080fb"
   },
   {
     "id": "rgb-123",
@@ -63,10 +51,7 @@
       "green": 2,
       "blue": 3
     },
-    "expected_bytes": "6e0cff017a6e0d020380",
-    "evidence": [
-      "E-LIGHT"
-    ]
+    "expected_bytes": "6e0cff017a6e0d020380"
   },
   {
     "id": "single-300-lounge",
@@ -77,10 +62,7 @@
       "minutes": 300,
       "opcode": 89
     },
-    "expected_bytes": "6e052c009f6e060159ce",
-    "evidence": [
-      "E-ALARM"
-    ]
+    "expected_bytes": "6e052c009f6e060159ce"
   },
   {
     "id": "single-60-lounge",
@@ -91,10 +73,7 @@
       "minutes": 60,
       "opcode": 89
     },
-    "expected_bytes": "6e053c00af6e060059cd",
-    "evidence": [
-      "E-ALARM"
-    ]
+    "expected_bytes": "6e053c00af6e060059cd"
   },
   {
     "id": "single-cancel",
@@ -105,10 +84,7 @@
       "minutes": 0,
       "opcode": 0
     },
-    "expected_bytes": "6e050000736e06000074",
-    "evidence": [
-      "E-ALARM"
-    ]
+    "expected_bytes": "6e050000736e06000074"
   },
   {
     "id": "repeat-query",
@@ -116,10 +92,7 @@
     "action": "repeat-query",
     "kind": "repeat_query",
     "inputs": {},
-    "expected_bytes": "6e0820050100009c",
-    "evidence": [
-      "E-REPEAT"
-    ]
+    "expected_bytes": "6e0820050100009c"
   },
   {
     "id": "repeat-delete7",
@@ -129,10 +102,7 @@
     "inputs": {
       "alarm_id": 7
     },
-    "expected_bytes": "6e082005020107a5",
-    "evidence": [
-      "E-REPEAT"
-    ]
+    "expected_bytes": "6e082005020107a5"
   },
   {
     "id": "repeat-mon-fri",
@@ -146,10 +116,7 @@
       "opcode": 89,
       "mask": 137
     },
-    "expected_bytes": "6e0d200501010100071e5989aa",
-    "evidence": [
-      "E-REPEAT"
-    ]
+    "expected_bytes": "6e0d200501010100071e5989aa"
   },
   {
     "id": "repeat-everyday-memory2",
@@ -163,10 +130,7 @@
       "opcode": 47,
       "mask": 255
     },
-    "expected_bytes": "6e0d200501010700173b2fff29",
-    "evidence": [
-      "E-REPEAT"
-    ]
+    "expected_bytes": "6e0d200501010700173b2fff29"
   },
   {
     "id": "epoch-negative-zone",
@@ -177,10 +141,7 @@
       "epoch_seconds": 16909060,
       "timezone_minutes": -300
     },
-    "expected_bytes": "6e0c2008020101020304fbaa",
-    "evidence": [
-      "E-TIME"
-    ]
+    "expected_bytes": "6e0c2008020101020304fbaa"
   },
   {
     "id": "calendar-2026",
@@ -195,10 +156,7 @@
       "minute": 30,
       "second": 45
     },
-    "expected_bytes": "6e0d20080301380b11101e2d56",
-    "evidence": [
-      "E-TIME"
-    ]
+    "expected_bytes": "6e0d20080301380b11101e2d56"
   },
   {
     "id": "calendar-1970",
@@ -213,10 +171,7 @@
       "minute": 0,
       "second": 0
     },
-    "expected_bytes": "6e0d20080301000101000000a9",
-    "evidence": [
-      "E-TIME"
-    ]
+    "expected_bytes": "6e0d20080301000101000000a9"
   },
   {
     "id": "ack-add",
@@ -227,9 +182,6 @@
       "frame": "6e07010177"
     },
     "expected_bytes": "6e07010177",
-    "evidence": [
-      "E-NOTIFY-CORRECTION"
-    ],
     "expected_event": "alarm_add_success"
   },
   {
@@ -241,9 +193,6 @@
       "frame": "6e07010278"
     },
     "expected_bytes": "6e07010278",
-    "evidence": [
-      "E-NOTIFY-CORRECTION"
-    ],
     "expected_event": "alarm_cancel_success"
   },
   {
@@ -255,9 +204,6 @@
       "frame": "6e200d0501020100071e5989ab"
     },
     "expected_bytes": "6e200d0501020100071e5989ab",
-    "evidence": [
-      "E-NOTIFY-ALARM"
-    ],
     "expected_fields": {
       "event": "list_item",
       "id": 1,
@@ -277,10 +223,7 @@
       "epoch_seconds": 16909060,
       "timezone_minutes": 330
     },
-    "expected_bytes": "6e0c200802010102030405b4",
-    "evidence": [
-      "E-TIME"
-    ]
+    "expected_bytes": "6e0c200802010102030405b4"
   },
   {
     "id": "repeat-delete1",
@@ -290,10 +233,7 @@
     "inputs": {
       "alarm_id": 1
     },
-    "expected_bytes": "6e0820050201019f",
-    "evidence": [
-      "E-REPEAT"
-    ]
+    "expected_bytes": "6e0820050201019f"
   },
   {
     "id": "query-clock-framed",
@@ -303,10 +243,7 @@
     "inputs": {
       "kind": "clock"
     },
-    "expected_bytes": "6e08010178",
-    "evidence": [
-      "E-QUERIES"
-    ]
+    "expected_bytes": "6e08010178"
   },
   {
     "id": "query-light-framed",
@@ -316,10 +253,7 @@
     "inputs": {
       "kind": "light"
     },
-    "expected_bytes": "6e0a000179",
-    "evidence": [
-      "E-QUERIES"
-    ]
+    "expected_bytes": "6e0a000179"
   },
   {
     "id": "query-clock-raw",
@@ -330,10 +264,7 @@
       "kind": "clock",
       "nordic": true
     },
-    "expected_bytes": "01",
-    "evidence": [
-      "E-QUERIES"
-    ]
+    "expected_bytes": "01"
   },
   {
     "id": "query-light-raw",
@@ -344,10 +275,7 @@
       "kind": "light",
       "nordic": true
     },
-    "expected_bytes": "01",
-    "evidence": [
-      "E-QUERIES"
-    ]
+    "expected_bytes": "01"
   },
   {
     "id": "exit-limit-framed",
@@ -357,10 +285,7 @@
     "inputs": {
       "opcode": 0
     },
-    "expected_bytes": "6e0100006f",
-    "evidence": [
-      "E-STARTUP"
-    ]
+    "expected_bytes": "6e0100006f"
   },
   {
     "id": "exit-limit-raw",
@@ -371,10 +296,7 @@
       "opcode": 0,
       "nordic": true
     },
-    "expected_bytes": "00",
-    "evidence": [
-      "E-STARTUP"
-    ]
+    "expected_bytes": "00"
   },
   {
     "id": "light-off-framed",
@@ -384,10 +306,7 @@
     "inputs": {
       "opcode": 117
     },
-    "expected_bytes": "6e010075e4",
-    "evidence": [
-      "E-LIGHT"
-    ]
+    "expected_bytes": "6e010075e4"
   },
   {
     "id": "light-off-raw",
@@ -398,10 +317,7 @@
       "opcode": 117,
       "nordic": true
     },
-    "expected_bytes": "75",
-    "evidence": [
-      "E-LIGHT"
-    ]
+    "expected_bytes": "75"
   },
   {
     "id": "repeat-id-exhaustion",
@@ -415,10 +331,6 @@
       "opcode": 89,
       "mask": 137
     },
-    "expected_bytes": "6e0d20050101ff00071e5989a8",
-    "evidence": [
-      "E-REPEAT",
-      "E-SERIALIZATION"
-    ]
+    "expected_bytes": "6e0d20050101ff00071e5989a8"
   }
 ]
