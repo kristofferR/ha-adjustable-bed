@@ -7826,11 +7826,15 @@ class AdjustableBedOptionsFlow(
                     step_id=step_id,
                     data_schema=vol.Schema(schema_dict),
                     # The route is not on this form: it changes in Reconfigure.
-                    errors={
-                        CONF_RMCONTROL_PRODUCT
-                        if vol.Optional(CONF_RMCONTROL_PRODUCT) in schema_dict
-                        else "base": "rmcontrol_needs_reconfigure"
-                    },
+                    errors=(
+                        {"base": "rmcontrol_needs_reconfigure_paired"}
+                        if separate_address_pair
+                        else {
+                            CONF_RMCONTROL_PRODUCT
+                            if vol.Optional(CONF_RMCONTROL_PRODUCT) in schema_dict
+                            else "base": "rmcontrol_needs_reconfigure"
+                        }
+                    ),
                 )
             # Switching a bed to an app that does not list its model would only
             # trade its controls for the fallback ones. Keeping the current app

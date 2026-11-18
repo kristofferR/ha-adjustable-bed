@@ -618,7 +618,8 @@ def _v5_6_settings(
             effective = default_connection_mode(
                 view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
             ) == CONNECTION_MODE_RELEASE
-        if after is True:
+        if after is True or (effective and explicit_mode):
+            # A side saves its handoff, so it never inherits a parent's Always.
             mode = CONNECTION_MODE_RELEASE
         elif not effective:
             mode = CONNECTION_MODE_ALWAYS

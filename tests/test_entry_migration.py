@@ -769,6 +769,24 @@ def test_schema_5_6_a_shared_timeout_wins_over_a_sides_zero() -> None:
     assert effective["idle_disconnect_seconds"] == 65
 
 
+def test_schema_5_6_a_side_that_released_its_link_keeps_releasing() -> None:
+    """A side whose bed type handed the link back never followed a parent's 0."""
+    data = {
+        CONF_PAIR_ID: "pair_ffe",
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        "idle_disconnect_seconds": 0,
+        CONF_PAIR_CHILDREN: [
+            {CONF_SIDE: "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:41", CONF_BED_TYPE: "okin_ffe"},
+        ],
+    }
+
+    migrated, options = migrate_v5_6_entry(data, {}, from_version=5, from_minor_version=5)
+
+    assert migrated[CONF_CONNECTION_MODE] == CONNECTION_MODE_ALWAYS
+    effective = effective_child_data(migrated, "left", options)
+    assert effective[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
+
+
 def test_schema_5_6_applies_pair_options_to_each_side_first() -> None:
     """A pair's options win over its sides, so each side's mode is derived with them."""
     data = {
