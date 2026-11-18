@@ -1467,6 +1467,15 @@
   "card_section": "presets",
   "card_role": "save"
  },
+ "button:richmat_mh_start_detection": {
+  "card_section": "utility"
+ },
+ "button:richmat_mh_stop_detection": {
+  "card_section": "utility"
+ },
+ "button:richmat_mh_toggle_smart_light_lock": {
+  "card_section": "utility"
+ },
  "button:richmat_mh_toggle_smart_set_lock": {
   "card_section": "utility"
  },
@@ -2835,6 +2844,20 @@
  "number:richmat_app_intensity": {
   "card_section": "utility"
  },
+ "number:richmat_mh_back_angle": {
+  "card_section": "motors",
+  "card_motor": "back"
+ },
+ "number:richmat_mh_foot_angle": {
+  "card_section": "motors",
+  "card_motor": "feet"
+ },
+ "number:richmat_mh_foot_massage_intensity": {
+  "card_section": "massage"
+ },
+ "number:richmat_mh_head_massage_intensity": {
+  "card_section": "massage"
+ },
  "number:richmat_mh_light_timer": {
   "card_section": "lighting",
   "card_role": "timer"
@@ -2842,6 +2865,10 @@
  "number:richmat_mh_light_timer_minutes": {
   "card_section": "lighting",
   "card_role": "timer_minutes"
+ },
+ "number:richmat_mh_pillow_angle": {
+  "card_section": "motors",
+  "card_motor": "pillow"
  },
  "number:richmat_resource_lamp_timeout": {
   "card_section": "utility"
@@ -3033,8 +3060,41 @@
  "select:richmat_app_side": {
   "card_section": "utility"
  },
+ "select:richmat_mh_motor_mode": {
+  "card_section": "utility"
+ },
  "select:richmat_mh_snore": {
   "card_section": "utility"
+ },
+ "select:richmat_mh_waist_both_duration": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_both_heat": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_both_pressure": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_left_duration": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_left_heat": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_left_pressure": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_mode": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_right_duration": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_right_heat": {
+  "card_section": "massage"
+ },
+ "select:richmat_mh_waist_right_pressure": {
+  "card_section": "massage"
  },
  "select:rize_home_source": {
   "card_section": "utility"
@@ -3737,6 +3797,33 @@
  },
  "sensor:richmat_classic_status": {
   "card_section": "utility"
+ },
+ "sensor:richmat_mh_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_detection": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_last_reply": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_memory_arrival": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_sleep_left_state": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_sleep_right_state": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_waist_both_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_waist_left_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:richmat_mh_waist_right_alarm": {
+  "card_section": "hidden"
  },
  "sensor:rize_home_combined_intensity": {
   "card_section": "massage"
