@@ -1876,14 +1876,14 @@ class CoordinatorConnectionMixin:
         if not self._command_lock.locked():
             self._cancel_command.clear()
 
-        _LOGGER.info("Attempting automatic reconnection to %s", self._address)
+        _LOGGER.debug("Attempting automatic reconnection to %s", self._address)
         try:
             connected = await self.async_connect()
             if connected:
-                _LOGGER.info("Auto-reconnection successful for %s", self._address)
+                _LOGGER.debug("Auto-reconnection successful for %s", self._address)
                 # Note: async_start_notify is called automatically in _async_connect_locked
             else:
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "Auto-reconnection failed for %s. Will retry on next command.",
                     self._address,
                 )

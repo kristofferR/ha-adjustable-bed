@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 from collections.abc import Mapping
 from typing import Any
 
@@ -17,18 +18,25 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
-from .const import CONF_BED_TYPE, CONF_STARCODE_LIFT_ENTRIES, DOMAIN, STARCODE_GROUP_BED_TYPES
+from .const import (
+    CONF_BED_TYPE,
+    CONF_PROTOCOL_VARIANT,
+    CONF_STARCODE_LIFT_ENTRIES,
+    DOMAIN,
+    STARCODE_GROUP_BED_TYPES,
+    resolve_explicit_bed_type,
+)
 from .pairing import is_paired, pair_member_addresses
 
 CONF_PAIR_SELECTION = "pair_selection"
 
 
 def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
-    """Return loaded standalone beds not already claimed by a paired entry.
+    """Return loaded standalone beds that another standalone bed could pair with.
 
-    Compatibility is deliberately validated later by the pairing flow. Keeping
-    this helper limited to entry lifecycle and ownership makes it suitable for
-    both the Add Integration picker and the Repairs suggestion.
+    Beds already claimed by a pair, StarCode lift groups and beds with no other
+    bed of the same protocol are left out. The pairing flow still validates
+    the chosen two in full (motor layout, capabilities and so on).
     """
     entries = hass.config_entries.async_entries(DOMAIN)
     absorbed_addresses = {
@@ -51,7 +59,7 @@ def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
             group_members.add(entry.entry_id)
             group_members.update(lift for lift in lifts if isinstance(lift, str))
 
-    return [
+    standalone = [
         entry
         for entry in entries
         if entry.state is ConfigEntryState.LOADED
@@ -60,6 +68,17 @@ def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
         and isinstance((address := entry.data.get(CONF_ADDRESS)), str)
         and address.upper() not in absorbed_addresses
     ]
+    # Only beds of one protocol can become two sides of one bed, so a bed with
+    # no partner of its own type is never offered (or suggested in Repairs).
+    protocols = Counter(_protocol(entry) for entry in standalone)
+    return [entry for entry in standalone if protocols[_protocol(entry)] >= 2]
+
+
+def _protocol(entry: ConfigEntry) -> str | None:
+    """Return the concrete protocol the pairing flow compares, as it resolves it."""
+    return resolve_explicit_bed_type(
+        entry.data.get(CONF_BED_TYPE), entry.data.get(CONF_PROTOCOL_VARIANT)
+    )
 
 
 def encode_pair_selection(left_entry_id: str, right_entry_id: str) -> str:
