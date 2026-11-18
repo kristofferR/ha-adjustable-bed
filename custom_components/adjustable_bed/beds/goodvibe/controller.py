@@ -1038,32 +1038,46 @@ class GoodVibeController(BedController):
             action = self.actions[detail]
             if action.local or action.hidden or not action.interactive:
                 continue
-            saves = self._long_press_saves(action)
-            # A long press is a control only where it saves a preset.
-            if action.force_long and self.catalog.bed is None and not saves:
-                continue
             key = "goodvibe_" + detail
-            forced_save = action.force_long and self.catalog.bed is None
-            buttons.append(
-                catalog_button(
-                    key,
-                    "Save " + function_label(action.label) if forced_save
-                    else labels.get(detail, label(action)),
-                    partial(_press, detail=detail),
-                    kind=Kind.SAVE if forced_save else None,
-                    hold=(ControllerHoldSpec(key, 0, 0, "goodvibe_release")
-                          if self.catalog.bed is None or action.gesture != "shortPress" else None),
+            power_bob = self.catalog.bed is not None
+            # A long press sends the action's own long operand. A preset's saves it;
+            # another distinct operand is its own control; a zero operand sends nothing.
+            distinct_long = action.long not in (0, action.short)
+            saves = self._long_press_saves(action)
+            # A long-press-only control's short press sends nothing.
+            long_only = action.gesture == "longPress" and not action.force_long
+            if (power_bob or not long_only) and (
+                power_bob or not action.force_long or distinct_long
+            ):
+                buttons.append(
+                    catalog_button(
+                        key,
+                        "Save " + function_label(action.label)
+                        if action.force_long and saves and not power_bob
+                        else labels.get(detail, label(action)),
+                        partial(_press, detail=detail),
+                        kind=Kind.SAVE if action.force_long and saves and not power_bob else None,
+                        enabled=power_bob or not action.force_long or saves,
+                        # Holding a control whose long press saves would save unconfirmed.
+                        hold=(ControllerHoldSpec(key, 0, 0, "goodvibe_release")
+                              if (not power_bob or action.gesture != "shortPress")
+                              and not saves else None),
+                    )
                 )
-            )
-            if action.gesture in ("longPress", "shortAndLongPress") and (
-                self.catalog.bed is not None or saves and not action.force_long
+            if action.gesture in ("longPress", "shortAndLongPress") and not action.force_long and (
+                power_bob or distinct_long or long_only and action.long != 0
             ):
                 buttons.append(
                     catalog_button(
                         key + "_long",
-                        labels.get(detail + "_long", "Save " + function_label(action.label)),
+                        labels.get(detail + "_long", "Save " + function_label(action.label))
+                        if power_bob or saves
+                        else function_label(action.label)
+                        + ("" if long_only else " (long press)"),
                         partial(_press, detail=detail, duration=3100),
-                        kind=Kind.SAVE,
+                        kind=Kind.SAVE if power_bob or saves else None,
+                        # Another long operand's effect is unnamed: there to enable.
+                        enabled=power_bob or saves or long_only,
                     )
                 )
         buttons.append(
@@ -1372,12 +1386,7 @@ class GoodVibeController(BedController):
                     card=CardPlacement(CardSection.MOTORS),
                 )
             )
-        # The product's light-off request, unless a control already turns the light off.
-        if (
-            self.product.light
-            and (self.catalog.bed is None or self.menu_available("light"))
-            and not any(label(self.actions[d]) == "Light off" for d in self.control_actions)
-        ):
+        if self.product.light and (self.catalog.bed is None or self.menu_available("light")):
 
             async def duration(controller: BedController, value: str) -> None:
                 from .services import Request

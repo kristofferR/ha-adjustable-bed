@@ -25,7 +25,7 @@ from ...controller_state import StateKey
 from ...profiles.ff_frame import MOTION_BED, MotionBedProfile
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
-from ..catalog_buttons import catalog_button, unique_buttons
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerSelectSpec,
@@ -505,6 +505,8 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                 key,
                 motion_bed_button_name(key, action),
                 _action_callback(action.key),
+                # The app's Zero Gravity recall, which it labels Zero pressure.
+                kind=Kind.PRESET if key == "motion_bed_zero_gravity" else None,
                 # One button per brightness step or timer length: off by default.
                 enabled="_brightness_" not in key and not _FIXED_TIMER.search(key),
             )

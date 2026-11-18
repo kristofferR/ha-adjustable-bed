@@ -642,6 +642,9 @@ class RichmatClassicController(BedController):
                 elif (control := classify(label)) is not None and control.kind in (Kind.PRESET, Kind.MEMORY):
                     # A preset's long press saves the position there.
                     result.append(catalog_button(key + "_long", "Save " + label, long, kind=Kind.SAVE))
+                elif button.long != button.short:
+                    # Another long operand's effect is unnamed: there to enable.
+                    result.append(catalog_button(key + "_long", f"{label} (long press)", long, enabled=False))
         result.append(ControllerButtonSpec(
             "richmat_classic_release", "Release", lambda c: c.stop_all(),
             translation_key="richmat_classic_release", release_only=True, card=CARD_HIDDEN,

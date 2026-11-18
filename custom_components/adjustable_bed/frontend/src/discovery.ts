@@ -153,14 +153,18 @@ export function bedEntitiesForDevice(
     const control = attributes?.held_control;
     const startDelayMs = attributes?.hold_start_delay_ms;
     const releaseDelayMs = attributes?.hold_release_delay_ms;
+    // A controller-owned gesture ends through its own release button, like a held cover.
+    const ownRelease = typeof attributes?.hold_release_button_key === "string";
+    const releaseButton = heldReleaseButton(hass, id);
     if (
       typeof control === "string" &&
       typeof startDelayMs === "number" && Number.isFinite(startDelayMs) && startDelayMs >= 0 &&
       typeof releaseDelayMs === "number" && Number.isFinite(releaseDelayMs) && releaseDelayMs >= 0 &&
-      ownerDeviceId
+      ownerDeviceId && (!ownRelease || releaseButton)
     ) {
       item.deviceId = ownerDeviceId;
       item.holdEntityId = id;
+      if (releaseButton) item.releaseButton = releaseButton;
       item.heldControls = {
         ...item.heldControls,
         [direction]: { control, startDelayMs, releaseDelayMs },
@@ -175,7 +179,8 @@ export function bedEntitiesForDevice(
       };
     } else if (
       (key === "back" || key === "legs" || key === "lumbar") &&
-      typeof control === "string"
+      // Only the bed's own motors take a timed move; an app gesture is pressed instead.
+      typeof control === "string" && !ownRelease
     ) item.timedMove = {
       deviceId,
       motor: key,

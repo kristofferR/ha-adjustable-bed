@@ -64,8 +64,10 @@ async def test_every_profile_builds_and_owns_only_its_side_configuration(hass, c
         assert obj.product == PRODUCTS[resolve_product(key)]
         assert obj.catalog.key == "galaxy"
         assert obj.choices.release == RUNTIMES[obj.product_key].initial_release
+        # Every control holds, except where a held press would reach a save unasked.
         assert all(
-            s.hold is not None
+            (s.hold is None)
+            is obj._long_press_saves(CATALOG.actions[s.key.removeprefix("goodvibe_")])
             for s in obj.controller_button_specs
             if s.key.removeprefix("goodvibe_") in CATALOG.actions
             and not CATALOG.actions[s.key.removeprefix("goodvibe_")].local

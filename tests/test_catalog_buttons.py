@@ -123,3 +123,20 @@ async def test_mlily_remotes_list_each_control_once(remote: str) -> None:
     names = [spec.translation_placeholders for spec in controller.controller_button_specs]
     assert len(keys) == len(set(keys))
     assert not any(name and "No action" in name.values() for name in names)
+
+
+def test_an_explicit_save_reads_its_memory_slot() -> None:
+    """Richmat legacy names a memory save "Save to Memory 1"."""
+    spec = catalog_button("save", "Save to Memory 1", _press, kind=Kind.SAVE)
+    assert spec is not None
+    assert (spec.translation_key, spec.card) == ("program_memory_1", memory_card(1, save=True))
+    assert not spec.requires_confirmation
+
+
+def test_a_confirmed_save_never_publishes_a_held_gesture() -> None:
+    """The card holds a held button without asking; a save must ask first."""
+    from custom_components.adjustable_bed.beds.entity_specs import ControllerHoldSpec
+
+    spec = catalog_button("save_zg", "Save Zero gravity", _press, kind=Kind.SAVE,
+                          hold=ControllerHoldSpec("save_zg"))
+    assert spec is not None and spec.hold is None and spec.requires_confirmation

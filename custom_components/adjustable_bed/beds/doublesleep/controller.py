@@ -1080,7 +1080,10 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     f"doublesleep_{i}",
                     name,
                     action(i),
-                    kind=None
+                    # The app's own stop stays a movement control.
+                    kind=Kind.MOTOR
+                    if i == 27
+                    else None
                     if i in _MAINTENANCE_ACTIONS
                     else Kind.MASSAGE
                     if i in (28, 29, 31, 32, 35, 36, 37, 38, 40, 41, *range(79, 91))

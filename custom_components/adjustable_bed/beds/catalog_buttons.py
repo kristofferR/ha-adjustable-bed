@@ -230,7 +230,7 @@ def classify(label: str, *, kind: Kind | None = None) -> CatalogControl | None:
     if is_placeholder(label):
         return None
     name = display_label(label)
-    save = _SAVE.fullmatch(name) if kind is None else None
+    save = _SAVE.fullmatch(name) if kind in (None, Kind.SAVE) else None
     if kind is Kind.SAVE or save is not None:
         rest = display_label(save["rest"]) if save is not None else re.sub(r"^Save\s+", "", name)
         if memory := _MEMORY.fullmatch(rest):
@@ -308,6 +308,9 @@ def catalog_button(
             else {"action": name}
         )
         control = CatalogControl(control.kind, control.translation_key, control.card, name, placeholders)
+    if control.card == CARD_PRESET_SAVE:
+        # The card confirms a tap; a held gesture would send the save unasked.
+        kwargs.pop("hold", None)
     return ControllerButtonSpec(
         key,
         label,

@@ -1569,6 +1569,26 @@ test("App catalog saves sit with the presets and extras in the utility section",
   expect(bedIsEmpty(bed)).toBe(false);
 });
 
+test("A held app motor button releases through its own button and is never timed", () => {
+  const hass = hassWith([
+    entry("button.lumbar_up", "lumbar_up"),
+    entry("button.release", "goodvibe_release"),
+  ]);
+  hass.states["button.lumbar_up"] = {
+    entity_id: "button.lumbar_up", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {
+      card_section: "motors", card_role: "up", card_motor: "lumbar",
+      held_control: "goodvibe_lumbar_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0,
+      hold_release_button_key: "goodvibe_release",
+    },
+  };
+  const [lumbar] = bedEntitiesForDevice(hass, "dev1").motors;
+  expect(lumbar.up).toBe("button.lumbar_up");
+  expect(lumbar.releaseButton).toBe("button.release");
+  expect(lumbar.heldControls?.up?.control).toBe("goodvibe_lumbar_up");
+  expect(lumbar.timedMove).toBeUndefined();
+});
+
 test("HJBed gestures release through their same-side cancellation button", () => {
   const hass = hassWith([
     entry("button.memory", "catalog_preset", "right"),

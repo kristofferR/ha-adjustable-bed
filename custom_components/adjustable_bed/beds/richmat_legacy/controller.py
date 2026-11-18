@@ -331,6 +331,11 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                         # A recall: a memory slot when the label names one.
                         recall = classify(shown)
                         kind = Kind.MEMORY if recall and recall.kind is Kind.MEMORY else Kind.PRESET
+                    elif name.startswith("Massage"):
+                        # The shown wording ("All Off", "Head On/Off") drops the word.
+                        kind = Kind.MASSAGE
+                    elif label == "Toggle Light":
+                        kind = Kind.LIGHT
                     else:
                         kind = None
                     specs.append(
