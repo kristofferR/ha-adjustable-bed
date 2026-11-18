@@ -889,7 +889,8 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             wake_actions=tuple(_ALARM_MODES),
             weekdays=True,
             massage=True,
-            sounds=("none", *_AUDIO_SOUNDS) if self._has_audio else ("none", "alarm"),
+            # The first sound is the default, so an alarm rings unless set to none.
+            sounds=(*_AUDIO_SOUNDS, "none") if self._has_audio else ("alarm", "none"),
             cancel_running=True,
             resource="*",
         )
