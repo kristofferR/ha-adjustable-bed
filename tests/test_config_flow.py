@@ -130,9 +130,9 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
     CONF_PASSIVE_POSITION_RECONCILIATION,
-    CONF_POSITION_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_READ_POSITIONS,
     CONF_RICHMAT_REMOTE,
     CONF_SIDE,
     DOMAIN,
@@ -3525,8 +3525,7 @@ class TestOptionsFlow:
         markers = {marker.schema: marker for marker in initial["data_schema"].schema}
 
         assert markers[CONF_MOTOR_COUNT].default() == 4
-        assert CONF_DISABLE_ANGLE_SENSING not in markers
-        assert CONF_POSITION_MODE not in markers
+        assert CONF_READ_POSITIONS not in markers
         assert CONF_BACK_MAX_ANGLE not in markers
 
     @pytest.mark.parametrize("initial_type", [BED_TYPE_OKIN_CST, BED_TYPE_OKIN_7BYTE])

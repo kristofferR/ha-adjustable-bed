@@ -114,6 +114,7 @@ from .const import (
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
     CONF_CONNECTION_MODE,
+    CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
@@ -874,9 +875,13 @@ class AdjustableBedCoordinator(
         if corrected_bed_type == BED_TYPE_BEDTECH:
             entry_data.pop(CONF_RICHMAT_REMOTE, None)
         if bed_type_changed:
-            # A saved choice stays, but only where the corrected protocol reports
-            # a position; otherwise it reads as that protocol does (#419).
-            store_read_positions(entry_data)
+            # Reading turned off on a protocol that reported a position stays
+            # off; anything else was that protocol's default, so the corrected
+            # protocol reads its position exactly when it reports one (#419).
+            turned_off = entry_data.pop(CONF_DISABLE_ANGLE_SENSING, None) is True and bed_traits(
+                previous_bed_type
+            ).position_feedback
+            store_read_positions(entry_data, False if turned_off else None)
             if not (
                 is_paired(entry_data)
                 and entry_data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS

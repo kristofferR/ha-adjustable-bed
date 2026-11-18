@@ -203,7 +203,6 @@ async def test_managed_reconfigure_verifies_then_updates_same_entry_and_ids(
     entry = entry_for(
         hass,
         options={
-            const.CONF_CONNECTION_PROFILE: "responsive",
             const.CONF_IDLE_DISCONNECT_SECONDS: 77,
         },
     )
