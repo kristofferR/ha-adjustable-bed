@@ -63,9 +63,21 @@ async def handle_alarm(call: ServiceCall) -> None:
     targets = _call_targets(call)
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
     physical = [child for parent, side in targets for child in _command_targets(parent, side)]
+    dispatches = [
+        parent._targets_for(side) if isinstance(parent, PairedBedCoordinator) else [(side, parent)]
+        for parent, side in targets
+    ]
+    # Native Both executes once on a combined view, while admission must still
+    # validate both logical children. Keep identities: the side views compare equal.
+    combined = [
+        child
+        for child in {id(child): child for group in dispatches for _, child in group}.values()
+        if not any(child is logical for logical in physical)
+    ]
+    runtimes = [*physical, *combined]
     if not physical or any(
         child.bed_type != BED_TYPE_ULTRAMATIC_SMART_BED or child.capability_controller is None
-        for child in physical
+        for child in runtimes
     ):
         raise ServiceValidationError("Every target must use the Ultramatic Smart Bed app profile")
     # A configured capability instance already loaded its class in the factory.
@@ -88,7 +100,7 @@ async def handle_alarm(call: ServiceCall) -> None:
         and parent.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
         for child in _command_targets(parent, side)
     }
-    for child in physical:
+    for child in runtimes:
         controller = child.capability_controller
         if not isinstance(controller, UltramaticController):
             raise ServiceValidationError(
@@ -111,7 +123,20 @@ async def handle_alarm(call: ServiceCall) -> None:
             before is not after for before, after in zip(physical, current, strict=True)
         ):
             raise ServiceValidationError("Ultramatic alarm target ownership changed")
-        for child in physical:
+        for (parent, side), captured in zip(targets, dispatches, strict=True):
+            current_dispatch = (
+                parent._targets_for(side)
+                if isinstance(parent, PairedBedCoordinator)
+                else [(side, parent)]
+            )
+            if len(current_dispatch) != len(captured) or any(
+                old_side != new_side or before is not after
+                for (old_side, before), (new_side, after) in zip(
+                    captured, current_dispatch, strict=True
+                )
+            ):
+                raise ServiceValidationError("Ultramatic alarm effective dispatch route changed")
+        for child in runtimes:
             controller = child.capability_controller
             if not isinstance(controller, UltramaticController):
                 raise ServiceValidationError("Ultramatic controller was replaced after validation")
@@ -179,7 +204,7 @@ async def handle_alarm(call: ServiceCall) -> None:
             raise ServiceValidationError(
                 "Toggle requires current reports on concurrently live receivers"
             )
-        for child in physical:
+        for child in runtimes:
             controller = child.capability_controller
             assert isinstance(controller, UltramaticController)
             with controller_side_scope(child):
@@ -231,13 +256,20 @@ async def handle_alarm(call: ServiceCall) -> None:
                     check_initial()
                     with controller_side_scope(child):
                         prepare(controller)
+            for child in combined:
+                check_initial()
+                controller = child.controller
+                if not isinstance(controller, UltramaticController) or controller not in ready:
+                    raise ServiceValidationError("Ultramatic combined receiver was not validated")
+                with controller_side_scope(child):
+                    prepare(controller)
         except BaseException:
             await _release_preflighted(preflighted)
             raise
 
         def check_all() -> None:
             check_owners()
-            for child in physical:
+            for child in runtimes:
                 if id(child) in sequential:
                     continue
                 controller = child.controller
