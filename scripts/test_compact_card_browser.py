@@ -183,7 +183,7 @@ async def main():
             await card.get_by_role("button", name="Bed Right", exact=True).click()
             await card.locator(".compact-stop").click()
             await page.evaluate("card.updateComplete")
-            await card.get_by_role("button", name="Both", exact=True).click()
+            await card.get_by_role("button", name="Both sides", exact=True).click()
             await page.evaluate("calls=[]")
             await card.locator(".compact-stop").click()
             await page.evaluate("card.updateComplete")
@@ -281,7 +281,7 @@ async def main():
           card.hass=hass;
           await configure({layout:'full',default_target:'both',show_motors:true});
         }""")
-        await card.get_by_role("tab", name="Both", exact=True).click()
+        await card.get_by_role("tab", name="Both sides", exact=True).click()
         pair_up = card.get_by_role("button", name="Back up", exact=True).first
         await pair_up.focus()
         await page.keyboard.down("Space")
@@ -345,12 +345,12 @@ async def main():
           editor.hass=hass; editor.setConfig(base); document.body.append(editor);
           window.edited=base;editor.addEventListener('config-changed',e=>{edited=e.detail.config;editor.setConfig(edited);card.setConfig(edited)});""")
         editor = page.locator("adjustable-bed-card-editor")
-        await editor.get_by_role("button", name="A · Glance only", exact=True).click()
+        await editor.get_by_role("button", name="Glance only", exact=True).click()
         assert await page.evaluate("edited.compact_actions.length") == 0
-        await editor.get_by_role("button", name="B · Quick actions", exact=True).click()
+        await editor.get_by_role("button", name="Quick actions", exact=True).click()
         assert await page.evaluate("edited.show_motors") is False
         assert await card.locator(".compact-actions .tile").count() == 3
-        await editor.get_by_role("button", name="C · Compact controls", exact=True).click()
+        await editor.get_by_role("button", name="Compact controls", exact=True).click()
         assert await page.evaluate("edited.show_motors") is True
         assert await card.locator(".compact-motors").count() == 1
         # Dialog settings use the full editor in a separate view, preserving
