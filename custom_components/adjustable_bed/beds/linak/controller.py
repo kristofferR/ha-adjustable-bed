@@ -10,11 +10,12 @@ import contextlib
 import logging
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from time import monotonic
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
+from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...const import (
@@ -2119,21 +2120,24 @@ class LinakController(BedController):
         return tuple(LinakAlarmStep(action) for action in actions)
 
     @staticmethod
-    def _alarm_seconds(alarm: AlarmRequest) -> int:
-        """Seconds until the next occurrence; zero turns the timer off."""
+    def _alarm_seconds(alarm: AlarmRequest, now: datetime | None = None) -> int:
+        """Seconds from ``now`` to the call's selected occurrence; zero turns the timer off."""
         if not alarm.enabled:
             return 0
-        now = alarm.reference_time
-        target = now.replace(hour=alarm.hour, minute=alarm.minute, second=0, microsecond=0)
-        if target <= now:
+        start = alarm.reference_time
+        target = start.replace(hour=alarm.hour, minute=alarm.minute, second=0, microsecond=0)
+        if target <= start:
             target += timedelta(days=1)
-        return int((target - now).total_seconds())
+        # Absolute timestamps keep a slow connection or a clock change from delaying it.
+        return max(1, int(target.timestamp() - (now or start).timestamp()))
 
     def validate_alarm(self, alarm: AlarmRequest) -> None:
         build_timer_event(self._alarm_seconds(alarm), self._alarm_steps(alarm))
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
-        await self.program_alarm(self._alarm_seconds(alarm), self._alarm_steps(alarm), 0, 0)
+        await self.program_alarm(
+            self._alarm_seconds(alarm, dt_util.now()), self._alarm_steps(alarm), 0, 0
+        )
 
     async def program_alarm(
         self,

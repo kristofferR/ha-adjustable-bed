@@ -85,8 +85,6 @@ class YamadaController(KeesonController):
         self._link: _Link | None = None
         self._notifying: list[BleakGATTCharacteristic] = []
         self._alarms: dict[int, app.Alarm] = {}
-        # Plans validated for in-flight calls, so overlapping calls keep their own.
-        self._prepared_alarms: dict[AlarmRequest, AlarmPlan] = {}
         self._alarm_revision = 0
         self._p1_pending_fields: bytes | None = None
         self._cleanup: tuple[_Link, CommandContext] | None = None
@@ -512,13 +510,13 @@ class YamadaController(KeesonController):
             wake_actions=tuple(app.POSITIONS[self.profile.key]), weekdays=True, slots=2
         )
 
-    def validate_alarm(self, alarm: AlarmRequest) -> None:
+    def _alarm_plan(self, alarm: AlarmRequest) -> AlarmPlan:
         # The app's week byte numbers Sunday bit 0, with bit 7 for repeating days.
         weekday = (
             128 | sum(1 << ((day + 1) % 7) for day in alarm.weekdays) if alarm.weekdays else 0
         )
         try:
-            plan = self.prepare_alarm(
+            return self.prepare_alarm(
                 slot=alarm.slot,
                 enabled=alarm.enabled,
                 hour=alarm.hour,
@@ -528,16 +526,13 @@ class YamadaController(KeesonController):
             )
         except ConnectionError as err:
             raise ValueError("Refresh the bed alarms, then try again") from err
-        self._prepared_alarms[alarm] = plan
-        # A call that fails after validation never collects its plan; keep few.
-        while len(self._prepared_alarms) > 8:
-            del self._prepared_alarms[next(iter(self._prepared_alarms))]
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self._alarm_plan(alarm)
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
-        plan = self._prepared_alarms.pop(alarm, None)
-        if plan is None:
-            raise ValueError("The bed reconnected after checking the alarm; refresh its alarms")
-        await self.set_alarm(plan)
+        # Plan again on the live link, so the other slot's latest report is kept.
+        await self.set_alarm(self._alarm_plan(alarm))
 
     def prepare_alarm(
         self,

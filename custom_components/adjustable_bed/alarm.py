@@ -168,5 +168,7 @@ class AlarmRequest:
         selected = (self.hour * 60 + self.minute - start - 1) % 1440 + 1
         if now is None:
             return selected
-        elapsed = int((now - self.reference_time.replace(second=0, microsecond=0)).total_seconds() // 60)
+        # Timestamps are absolute, so a daylight saving change cannot skew this.
+        start_minute = self.reference_time.replace(second=0, microsecond=0).timestamp()
+        elapsed = int((now.timestamp() - start_minute) // 60)
         return max(1, selected - elapsed)

@@ -1729,9 +1729,13 @@ class TestServices:
         ].id
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        with patch(
-            "custom_components.adjustable_bed.services.dt_util.now",
-            return_value=datetime(2026, 11, 18, 6, 0, tzinfo=UTC),
+        now = datetime(2026, 11, 18, 6, 0, tzinfo=UTC)
+        with (
+            patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now),
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.dt_util.now",
+                return_value=now,
+            ),
         ):
             await hass.services.async_call(
                 DOMAIN,
