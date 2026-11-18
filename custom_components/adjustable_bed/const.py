@@ -243,7 +243,12 @@ CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
 CONF_MOTOR_PULSE_COUNT: Final = "motor_pulse_count"
 CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
-CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
+# How long the BLE link stays open after a command: released right away, kept
+# for ``idle_disconnect_seconds``, or kept for good.
+CONF_CONNECTION_MODE: Final = "connection_mode"
+CONNECTION_MODE_RELEASE: Final = "release"
+CONNECTION_MODE_IDLE: Final = "idle"
+CONNECTION_MODE_ALWAYS: Final = "always"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
 CONF_PASSIVE_POSITION_RECONCILIATION: Final = "passive_position_reconciliation"
 # Global (not per-entry) toggle to suppress automatic Bluetooth discovery cards.
@@ -2907,11 +2912,10 @@ POSITION_STALL_COUNT: Final = 3  # Number of consecutive stall detections before
 # Default values
 DEFAULT_MOTOR_COUNT: Final = 2
 DEFAULT_HAS_MASSAGE: Final = False
-DEFAULT_DISABLE_ANGLE_SENSING: Final = True  # For beds without angle sensing
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
-DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
 DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
-# Idle timeout value meaning "never idle-disconnect" (issue #700).
+MAX_IDLE_DISCONNECT_SECONDS: Final = 300
+# The coordinator's idle timeout for "always connected" (issue #700).
 IDLE_DISCONNECT_KEEP_CONNECTED: Final = 0
 DEFAULT_OCTO_PIN: Final = ""
 # BLE connection timing. One setting for every bed: the slower values of the

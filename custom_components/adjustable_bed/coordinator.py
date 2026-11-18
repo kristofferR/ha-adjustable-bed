@@ -31,7 +31,9 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from .app_state_store import app_state_slot, app_state_store
 from .bed_traits import (
     bed_traits,
-    disconnect_after_command_default_enabled,
+    default_connection_mode,
+    reads_positions,
+    store_read_positions,
     passive_position_reconciliation_default_enabled,
 )
 from .beds.vibradorm.app_state import (
@@ -112,7 +114,10 @@ from .const import (
     CONF_BLE_BOND_MARKER_UNRELIABLE,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
@@ -143,9 +148,9 @@ from .const import (
     CONF_VMATBASIC_PROFILE,
     CONNECTION_SETTINGS,
     DEFAULT_BACK_MAX_ANGLE,
-    DEFAULT_DISABLE_ANGLE_SENSING,
     DEFAULT_HAS_MASSAGE,
     DEFAULT_IDLE_DISCONNECT_SECONDS,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     DEFAULT_LEGS_MAX_ANGLE,
     DEFAULT_MOTOR_COUNT,
     DEFAULT_PROTOCOL_VARIANT,
@@ -369,9 +374,7 @@ class AdjustableBedCoordinator(
         else:
             self._motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
         self._has_massage: bool = entry.data.get(CONF_HAS_MASSAGE, DEFAULT_HAS_MASSAGE)
-        self._disable_angle_sensing: bool = entry.data.get(
-            CONF_DISABLE_ANGLE_SENSING, DEFAULT_DISABLE_ANGLE_SENSING
-        )
+        self._disable_angle_sensing: bool = not reads_positions(entry.data)
         # Legacy P1 positions have no side ownership. Keep the stored preference
         # for restoring standalone controls, but never seek using shared feedback.
         if (
@@ -410,13 +413,19 @@ class AdjustableBedCoordinator(
             CONF_MOTOR_PULSE_DELAY_MS, bed_pulse_defaults[1]
         )
 
-        # Disconnect behavior configuration
-        self._disconnect_after_command: bool = entry.data.get(
-            CONF_DISCONNECT_AFTER_COMMAND,
-            disconnect_after_command_default_enabled(self._bed_type, self._protocol_variant),
-        )
-        self._idle_disconnect_seconds: int = entry.data.get(
-            CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS
+        # How long the link stays open after a command.
+        connection_mode = entry.data.get(CONF_CONNECTION_MODE)
+        if connection_mode not in (
+            CONNECTION_MODE_RELEASE,
+            CONNECTION_MODE_IDLE,
+            CONNECTION_MODE_ALWAYS,
+        ):
+            connection_mode = default_connection_mode(self._bed_type, self._protocol_variant)
+        self._disconnect_after_command: bool = connection_mode == CONNECTION_MODE_RELEASE
+        self._idle_disconnect_seconds: int = (
+            IDLE_DISCONNECT_KEEP_CONNECTED
+            if connection_mode == CONNECTION_MODE_ALWAYS
+            else entry.data.get(CONF_IDLE_DISCONNECT_SECONDS, DEFAULT_IDLE_DISCONNECT_SECONDS)
         )
 
         self._client: BleakClient | None = None
@@ -863,45 +872,16 @@ class AdjustableBedCoordinator(
             entry_data[CONF_MOTOR_PULSE_DELAY_MS] = corrected_defaults[1]
         if corrected_bed_type == BED_TYPE_BEDTECH:
             entry_data.pop(CONF_RICHMAT_REMOTE, None)
-        angle_sensing_defaulted = CONF_DISABLE_ANGLE_SENSING not in self.entry.data or (
-            self.entry.data.get(CONF_DISABLE_ANGLE_SENSING) is True
-            and not bed_traits(previous_bed_type).position_feedback
-        )
-        # Config flow defaults disable_angle_sensing from the position_feedback trait,
-        # so the correction must use the same trait: a repaired entry (e.g. CB35 ->
-        # BOX25, #419) should get position feedback re-enabled even when the
-        # corrected type reports percentages rather than angles.
-        if (
-            bed_traits(corrected_bed_type).position_feedback
-            and angle_sensing_defaulted
-            and self._disable_angle_sensing
-            and not (
+        if bed_type_changed:
+            # A saved choice stays, but only where the corrected protocol reports
+            # a position; otherwise it reads as that protocol does (#419).
+            store_read_positions(entry_data)
+            if not (
                 is_paired(entry_data)
                 and entry_data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
                 and corrected_bed_type in {BED_TYPE_KEESON, BED_TYPE_ERGOMOTION}
-            )
-        ):
-            self._disable_angle_sensing = False
-            entry_data[CONF_DISABLE_ANGLE_SENSING] = False
-            _LOGGER.info(
-                "Enabled position feedback for corrected %s protocol on %s: "
-                "the previous entry used the legacy default",
-                corrected_bed_type,
-                self._address,
-            )
-        elif (
-            bed_type_changed
-            and not bed_traits(corrected_bed_type).position_feedback
-            and not self._disable_angle_sensing
-        ):
-            self._disable_angle_sensing = True
-            entry_data[CONF_DISABLE_ANGLE_SENSING] = True
-            _LOGGER.info(
-                "Disabled angle sensing for corrected %s protocol on %s: "
-                "the corrected profile does not support position feedback",
-                corrected_bed_type,
-                self._address,
-            )
+            ):
+                self._disable_angle_sensing = not reads_positions(entry_data)
 
         entry_data_changed = entry_data != self.entry.data
         if entry_data_changed:

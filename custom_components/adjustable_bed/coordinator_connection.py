@@ -280,12 +280,6 @@ class CoordinatorConnectionMixin:
     def _uses_persistent_connection(self: AdjustableBedCoordinator) -> bool:
         """Return True when this controller should stay connected indefinitely.
 
-        Leggett & Platt Gen2 (LP Comfort Connect, 209-M001) is included
-        conservatively until bonded reconnects are confirmed on hardware. We hold
-        the link open for the lifetime of the entry in the meantime (issue #385).
-        Trade-off: the physical remote cannot be used while Home Assistant is
-        connected.
-
         Resolution order:
         1. The live controller's ``requires_persistent_connection`` (authoritative).
         2. The value cached from the last resolved controller — needed because
@@ -293,11 +287,10 @@ class CoordinatorConnectionMixin:
            decision runs, so an Okin/MlRM bed must still be recognised as
            non-persistent and get its reconnect timer.
         3. Before the first connect, the bed type's static ``persistent_connection``
-           trait. ``auto``/``gen2`` ``leggett_platt`` entries assume Gen2;
-           ``okin`` and ``mlrm`` do not (they reconnect normally).
+           trait.
 
-        An idle timeout of 0 opts any bed into the same lifecycle unless
-        Disconnect After Command is on (issue #700). Like persistent
+        The "always connected" mode opts any bed into the same lifecycle
+        (issue #700). Like persistent
         controllers, a dropped link then reconnects on the next command rather
         than on a timer, so receivers that drop idle links cannot storm.
         """
