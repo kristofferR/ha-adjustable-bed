@@ -151,10 +151,10 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     offline configuration reaches.
     """
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
+    from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
     from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
         OreUltramaticController,
     )
-    from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
     from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
