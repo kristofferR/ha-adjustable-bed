@@ -1081,15 +1081,17 @@ async def test_non_lumbar_observer_and_ambiguous_handoff_do_not_save_or_preselec
     assert issue(hass, target).translation_key == "profile_ambiguous"
     before = dict(config_entry.data)
     flow = await open_flow(hass, target)
-    manager = hass.config_entries.options
-    with (
-        patch(HISTORY, return_value=info()),
-        patch.object(manager, "async_configure", wraps=manager.async_configure) as configure,
-    ):
+    with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
-    configure.assert_called_once_with(result["next_flow"][1], {"next_step_id": "settings"})
+    # Reconfigure opens on the current setup: nothing is preselected or saved.
+    kind, flow_id = result["next_flow"]
+    assert kind == "config_flow"
+    shown = await hass.config_entries.flow.async_configure(flow_id)
+    assert shown["step_id"] == "reconfigure_bed_type"
+    schema = shown["data_schema"]
+    assert schema is not None and schema({})[CONF_BED_TYPE] == BED_TYPE_OKIN_CB35
     assert config_entry.data == before
-    manager.async_abort(result["next_flow"][1])
+    hass.config_entries.flow.async_abort(flow_id)
 
 
 @pytest.mark.parametrize(
@@ -1112,10 +1114,10 @@ async def test_variant_and_remote_reviews_open_valid_settings_without_submitting
         assert any(":" in choice for choice in target.recommendation.choices)
         flow = await open_flow(hass, target)
         before = dict(config_entry.data)
-        manager = hass.config_entries.options
-        with patch.object(manager, "async_configure", wraps=manager.async_configure) as configure:
-            result = await flow.async_step_init({"action": "review"})
-        configure.assert_called_once_with(result["next_flow"][1], {"next_step_id": "settings"})
+        manager = hass.config_entries.flow
+        result = await flow.async_step_init({"action": "review"})
+        # A review that offers another route or app opens Reconfigure.
+        assert result["next_flow"][0] == "config_flow"
         assert config_entry.data == before
         manager.async_abort(result["next_flow"][1])
 
@@ -1379,11 +1381,11 @@ async def test_expired_history_keeps_upgrade_review_confirmation(
             result = await flow.async_step_init({"action": "keep"})
         else:
             result = await flow.async_step_init({"action": "review"})
-            with patch.object(hass.config_entries, "async_schedule_reload"):
-                result = await hass.config_entries.options.async_configure(
-                    result["next_flow"][1], {}
-                )
-    assert result["type"] == "create_entry"
+            # Choosing the current setup again in Reconfigure answers it.
+            result = await finish_reconfigure(hass, result)
+            assert result["reason"] == "migration_unchanged"
+    if action == "keep":
+        assert result["type"] == "create_entry"
     assert issue(hass, target) is None
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert any(key.startswith("upgrade_review_") for key in decisions)
@@ -1468,10 +1470,9 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
     flow = await open_flow(hass, target)
     with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
-        with patch.object(hass.config_entries, "async_schedule_reload"):
-            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+        result = await finish_reconfigure(hass, result)
     config_entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
-    assert result["type"] == "create_entry"
+    assert result["reason"] == "migration_unchanged"
     assert config_entry.data == before
     assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CB35
     assert issue(hass, target) is None
@@ -1550,9 +1551,8 @@ async def test_options_save_does_not_confirm_new_advertisement_assessment(
         target.seen(changed, MagicMock())
         unseen = target.recommendation
         assert unseen is not None and unseen.rule != original.rule
-        with patch.object(hass.config_entries, "async_schedule_reload"):
-            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
-    assert result["type"] == "create_entry"
+        result = await finish_reconfigure(hass, result)
+    assert result["reason"] == "migration_unchanged"
     assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CB35
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert decisions[original.rule] is True

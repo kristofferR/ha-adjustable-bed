@@ -25,8 +25,6 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
-    LEGGETT_APP_DEFAULT_PROFILE,
-    LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_VARIANT_OKIN,
     requires_pairing,
 )
@@ -140,11 +138,7 @@ async def test_stored_explicit_profile_keeps_its_motor_count(hass):
 async def test_untouched_configure_form_keeps_a_legacy_entrys_controls(
     hass, enable_custom_integrations, bed_type, variant
 ):
-    """#676: Configure shows an absent app profile as the default four-motor one.
-
-    Saving the ordinary form unchanged must keep the controls the entry already
-    runs: the factory runs that same default profile for an absent one.
-    """
+    """#676: saving the ordinary form unchanged keeps the controls the entry runs."""
     data = {
         CONF_ADDRESS: "11:22:33:44:55:66",
         CONF_NAME: "Prodigy",
@@ -163,14 +157,13 @@ async def test_untouched_configure_form_keeps_a_legacy_entrys_controls(
         menu["flow_id"], {"next_step_id": "settings"}
     )
     shown = form["data_schema"]({})
-    assert shown[CONF_LEGGETT_APP_PROFILE] == LEGGETT_APP_DEFAULT_PROFILE
+    # The app is chosen in Reconfigure's guided change, never Configure.
+    assert CONF_LEGGETT_APP_PROFILE not in shown
     result = await hass.config_entries.options.async_configure(form["flow_id"], shown)
 
     assert result["type"] == FlowResultType.CREATE_ENTRY, result
     saved = {**entry.data, **entry.options}
     assert saved[CONF_BED_TYPE] == bed_type
     assert saved.get(CONF_PROTOCOL_VARIANT) == variant
-    # The saved profile and its motor count are the ones the entry already ran.
-    assert saved[CONF_LEGGETT_APP_PROFILE] == LEGGETT_APP_DEFAULT_PROFILE
-    assert saved[CONF_MOTOR_COUNT] == LEGGETT_APP_MOTOR_COUNTS[LEGGETT_APP_DEFAULT_PROFILE]
+    assert CONF_LEGGETT_APP_PROFILE not in saved
     assert await _async_preview_labels(hass, entry, saved) == before
