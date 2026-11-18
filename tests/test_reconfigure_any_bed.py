@@ -222,3 +222,62 @@ async def test_a_reconfigure_back_to_the_saved_bed_type_keeps_its_settings(
 
     assert flow._pending_entry is not None
     assert flow._pending_entry[const.CONF_STARCODE_LIFT_ENTRIES] == ["lift-1"]
+
+
+def test_returning_to_the_saved_route_restores_its_settings(hass: HomeAssistant) -> None:
+    """Another route's defaults never outlive a return to the saved one."""
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.profile_migration import MigrationSnapshot
+
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        title="Bed",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:47",
+            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_M5X5,
+            const.CONF_MOTOR_PULSE_COUNT: 37,
+            const.CONF_STARCODE_LIFT_ENTRIES: ["lift-1"],
+        },
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, reconfigure_context(entry)
+    flow._migration = MigrationSnapshot.of(entry)
+    flow._manual_data = flow._migration.staged(entry.title)
+
+    flow._select_family_route(const.BED_TYPE_STARCODE_ABM5_4, None)
+    assert flow._manual_data[const.CONF_MOTOR_PULSE_COUNT] != 37
+    flow._select_family_route(const.BED_TYPE_STARCODE_M5X5, None)
+
+    assert flow._manual_data[const.CONF_MOTOR_PULSE_COUNT] == 37
+    assert flow._manual_data[const.CONF_STARCODE_LIFT_ENTRIES] == ["lift-1"]
+
+
+async def test_the_previous_apps_settings_go_before_pairing(hass: HomeAssistant) -> None:
+    """A VMAT app's bond rule and timeout never steer pairing for another bed type."""
+    from unittest.mock import AsyncMock
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.profile_migration import MigrationSnapshot
+
+    entry = MockConfigEntry(
+        domain=const.DOMAIN,
+        title="Bed",
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:48",
+            const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP,
+            const.CONF_VIBRADORM_APP_PROFILE: "vmat",
+        },
+    )
+    entry.add_to_hass(hass)
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, reconfigure_context(entry)
+    flow._migration = MigrationSnapshot.of(entry)
+    flow._manual_data = flow._migration.staged(entry.title)
+    flow._select_family_route(const.BED_TYPE_RESIDENT, None)
+    with patch.object(
+        AdjustableBedConfigFlow, "_finish_with_verify", AsyncMock(return_value={})
+    ), patch.object(AdjustableBedConfigFlow, "async_step_manual_pairing", AsyncMock(return_value={})):
+        await flow._async_finish_family_route()
+
+    assert const.CONF_VIBRADORM_APP_PROFILE not in flow._manual_data

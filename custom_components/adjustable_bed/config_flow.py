@@ -2679,6 +2679,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self._async_new_bed_settings("route")
         assert self._manual_data is not None
         data = self._manual_data
+        if self._migration is not None and data[CONF_BED_TYPE] != self._migration.data.get(
+            CONF_BED_TYPE
+        ):
+            # The previous bed type's own settings must not steer pairing, the
+            # check or the saved entry, such as a VMAT app's bond and timeout.
+            AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(  # noqa: SLF001
+                data, data[CONF_BED_TYPE]
+            )
         if self._migration is not None and grants_one_connection_per_pairing_window(
             data[CONF_BED_TYPE], data.get(CONF_PROTOCOL_VARIANT)
         ):
@@ -2717,6 +2725,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         data = self._manual_data
         self._migration_verified = False
         self._migration_preview = {}
+        if self._migration is not None:
+            saved = self._migration.data
+            if bed_type == saved.get(CONF_BED_TYPE) and variant in (
+                None,
+                saved.get(CONF_PROTOCOL_VARIANT),
+            ):
+                # Back on the saved route: its own settings return too, such as
+                # Movement per tap and lift entries another route reset.
+                restored = self._migration.staged(self._get_reconfigure_entry().title)
+                data.clear()
+                data.update(restored)
+                return
         if bed_type == data[CONF_BED_TYPE] and variant in (None, data.get(CONF_PROTOCOL_VARIANT)):
             return
         _apply_route_defaults(data, bed_type, variant)

@@ -409,6 +409,7 @@ class CoordinatorConnectionMixin:
         attempt_details["error_type"] = self._last_connection_error_type
         attempt_details["error_category"] = "CONNECTION DROPPED"
         self._client = None
+        self._link_ready = False
         self._controller = None
         self._notify_connection_state_change(False)
         self._connection_attempt_details.append(attempt_details)
@@ -451,6 +452,7 @@ class CoordinatorConnectionMixin:
                 self._vmat_unready_client = client
             else:
                 self._client = None
+                self._link_ready = False
                 if self._vmat_unready_client is client:
                     self._vmat_unready_client = None
             self._controller = None
@@ -888,6 +890,7 @@ class CoordinatorConnectionMixin:
                 # Mark that we're connecting to suppress spurious disconnect warnings
                 # during bleak's internal retry process
                 self._connecting = True
+                self._link_ready = False
                 # Notify callbacks so binary sensor can show "connecting" state
                 self._notify_connection_state_change(False)
                 # Serialize with the config flow, repair flow and diagnostic so
@@ -1050,6 +1053,7 @@ class CoordinatorConnectionMixin:
                                         await client.disconnect()
                                 finally:
                                     self._client = None
+                                    self._link_ready = False
                                     self._intentional_disconnect = False
                             _LOGGER.warning(
                                 "Pairing not supported by Bluetooth adapter: %s. "
@@ -1784,6 +1788,7 @@ class CoordinatorConnectionMixin:
                 self._address,
             )
             self._client = None
+            self._link_ready = False
             self._controller = None
             if self._vmat_unready_client is client:
                 self._vmat_unready_client = None
@@ -1809,6 +1814,7 @@ class CoordinatorConnectionMixin:
             self._address,
         )
         self._client = None
+        self._link_ready = False
         self._controller = None
         # Keep _position_data for last known state; entity availability handles offline
         self._cancel_disconnect_timer()
@@ -2099,6 +2105,7 @@ class CoordinatorConnectionMixin:
                     # see the link is still up. The fallback closed it, so
                     # finish the teardown that was left half-done.
                     self._client = None
+                    self._link_ready = False
                     self._controller = None
                     self._last_disconnected = datetime.now(UTC)
                     self._notify_connection_state_change(False)
@@ -2200,6 +2207,7 @@ class CoordinatorConnectionMixin:
             if controller is not None and self._controller is controller:
                 controller.on_disconnect()
             self._client = None
+            self._link_ready = False
             self._controller = None
             if self._vmat_unready_client is client:
                 self._vmat_unready_client = None
