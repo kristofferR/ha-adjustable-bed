@@ -302,7 +302,7 @@ async def test_manual_app_profile_is_findable_and_persists_selector_capabilities
         assert marker.default() == "none"
         assert set(selector.container) == set(SLEEPYS_ELITE_SELECTORS)
         assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEPYS_ELITE_APP] == (
-            "MFRM Sleepy's Elite app (control box selector)"
+            "MFRM Sleepy's Elite app"
         )
 
         result = await flow.async_step_profile_questions({CONF_SLEEPYS_ELITE_SELECTOR: "BOX25"})

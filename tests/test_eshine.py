@@ -214,7 +214,7 @@ async def test_profile_exposes_exact_controls_and_no_invented_queries():
     assert len(ctrl.controller_button_specs) == 7
     assert {row["value"]: row["label"] for row in get_bed_type_options()}[
         BED_TYPE_ESHINE
-    ] == "Eshine app (E6000)"
+    ] == "eShine app (E6000)"
     hidden = hidden_generic_fields(BED_TYPE_ESHINE, None)
     assert {CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS} <= hidden
     assert CONF_MOTOR_PULSE_COUNT not in hidden

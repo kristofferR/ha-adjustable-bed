@@ -149,10 +149,10 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX3633",
-            },
+            }},
         )
         assert result["step_id"] == "finish_settings"
         result = await hass.config_entries.flow.async_configure(
@@ -462,10 +462,10 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: selected_transport,
-            },
+            }},
         )
         assert result["step_id"] == "finish_settings"
         result = await hass.config_entries.flow.async_configure(
@@ -501,7 +501,7 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={const.CONF_STARCODE_TRANSPORT_SELECTOR: selected_transport},
+            user_input={"advanced": {const.CONF_STARCODE_TRANSPORT_SELECTOR: selected_transport}},
         )
         result = await _advance_only_progress(hass, result)
         assert result["step_id"] == "verify_connection"
@@ -667,10 +667,10 @@ async def test_app_unavailable_probe_still_allows_informational_finish(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220",
-            },
+            }},
         )
         result = await _settings_if_asked(hass, result)
         result = await _advance_only_progress(hass, result)
@@ -771,10 +771,10 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "auto",
-            },
+            }},
         )
         result = await _settings_if_asked(hass, result)
         result = await _advance_only_progress(hass, result)
@@ -787,7 +787,7 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"
             }
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], user_input={const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}
+                result["flow_id"], user_input={"advanced": {const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}}
             )
             result = await _advance_only_progress(hass, result)
             result = await hass.config_entries.flow.async_configure(
@@ -850,15 +850,18 @@ async def test_nameless_manual_auto_without_scanner_requires_explicit_transport(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "auto",
-            },
+            }},
         )
         assert result["type"] == FlowResultType.FORM
         assert result["errors"] == {const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"}
+        # The error opens the Advanced section that holds the field.
+        advanced = next(v for k, v in result["data_schema"].schema.items() if k == "advanced")
+        assert advanced.options["collapsed"] is False
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], user_input={const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}
+            result["flow_id"], user_input={"advanced": {const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}}
         )
         result = await _settings_if_asked(hass, result)
         assert result["type"] == FlowResultType.CREATE_ENTRY

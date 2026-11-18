@@ -85,7 +85,7 @@ async def test_ore_app_asks_its_screen_for_the_motor_count(hass):
 
 async def test_one_restonic_row_asks_the_apps_remote_style(hass):
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
-    assert rows["keeson:restonic_a"] == "Restonic BT app (Keeson)"
+    assert rows["keeson:restonic_a"] == "Restonic BT app"
     assert "keeson:restonic_b" not in rows
     # Choosing the row is an app answer, so the style follows directly.
     flow = setup_flow(hass, const.BED_TYPE_KEESON, const.KEESON_VARIANT_RESTONIC_A)
