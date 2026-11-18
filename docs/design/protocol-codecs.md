@@ -391,3 +391,13 @@ framing; CheersSleep's distinct counters and timing remain in its own profile.
 P2's EE normal/setting/query frames require a new encoder, since no existing
 codec reproduces them. Neither UI labels nor shared service identity establish
 byte equivalence. `tests/test_cheerssleep_vectors.py` covers both formats.
+
+ORE Ultramatic 1.0.5 selects the existing Keeson codec only after
+all 81 frozen transmit literals reproduce through its production encoders.
+Both the big-endian P1 and reserved-byte little-endian P2 builders are proven;
+shared names or GATT roles do not establish that match. The app profile owns
+GATT-dependent selection, alarm choices and calendar transformations. A shared
+ORE controller extension owns route capabilities and session-fenced callbacks,
+with corrected fragment early returns in the Keeson parser. The full 91-vector
+harness and 12 parser observations remain fixtures, with
+explicit bounds-safe/session-lifetime differences for Home Assistant.

@@ -3258,6 +3258,24 @@
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
+      "ore_ultramatic_alarm_refresh": {
+        "name": "Refresh alarm"
+      },
+      "ore_ultramatic_massage_head": {
+        "name": "Head massage"
+      },
+      "ore_ultramatic_massage_foot": {
+        "name": "Foot massage"
+      },
+      "ore_ultramatic_massage_timer": {
+        "name": "Massage timer"
+      },
+      "ore_ultramatic_massage_toggle": {
+        "name": "Toggle massage"
+      },
+      "ore_ultramatic_massage_wave": {
+        "name": "Massage wave"
+      },
       "cheerssleep_refresh": {
         "name": "Refresh bed state"
       },
@@ -4869,6 +4887,12 @@
       },
       "sonicsleep": {
         "name": "Model"
+      },
+      "ore_ultramatic_alarm_time": {
+        "name": "Alarm time"
+      },
+      "ore_ultramatic_massage_intensity": {
+        "name": "Massage intensity"
       },
       "cheerssleep_head_massage": {
         "name": "Head massage level"
@@ -9261,6 +9285,12 @@
     },
     "alarm_too_far": {
       "message": "This bed's alarm can be at most 24 hours ahead. Choose a nearer time."
+    },
+    "alarm_route_unknown": {
+      "message": "Connect the bed once so Home Assistant can discover its bed route, then try again."
+    },
+    "alarm_route_changed": {
+      "message": "The bed's controls changed since the alarm was checked. Choose one of: {wake_actions}."
     },
     "timer_minutes_required": {
       "message": "Choose how many minutes the timer runs."

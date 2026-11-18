@@ -1409,6 +1409,14 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(Scenario(id=f"personal_comfort:{key}", bed_type="personal_comfort",
                          protocol_variant=key, entry_data={const.CONF_PRODUCT_TYPE: "pf4"},
                          layout_id=f"personal_comfort:{key}", replies=replies))
+    # Row158: actual user layouts on both live transport-dependent builders.
+    for route in ("P1", "P2"):
+        for motors in (2, 3, 4):
+            scenarios.append(Scenario(
+                id=f"ore_ultramatic:{route}:{motors}", bed_type="keeson",
+                protocol_variant="ore_ultramatic", layout_id=f"ore_ultramatic:{route}",
+                entry_data={const.CONF_MOTOR_COUNT: motors},
+            ))
     # Distinct Symphony carriers, fixed builders, split routes and fifth axis.
     # Model/selector dispatch itself is exhaustively checked in test_symphony.
     for product, selector in (("0", "3"), ("12", "9"), ("13", "4"), ("15", "4"), ("10", "6"), ("20", "7")):
@@ -1435,6 +1443,9 @@ def route_scenarios() -> list[Scenario]:
                     base,
                     id=f"{bed_type}:{variant}",
                     protocol_variant=variant,
+                    layout_id="ore_ultramatic:P1"
+                    if (bed_type, variant) == ("keeson", "ore_ultramatic")
+                    else base.layout_id,
                     entry_data={**base.entry_data, **ROUTE_ENTRY_DATA.get(bed_type, {})},
                     factory_kwargs=ROUTE_KWARGS.get(f"{bed_type}:{variant}")
                     or ROUTE_KWARGS.get(bed_type, base.factory_kwargs),

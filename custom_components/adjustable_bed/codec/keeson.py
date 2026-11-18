@@ -342,6 +342,85 @@ JALON_NOTIFY: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 JALON_PREFIX: Final = bytes.fromhex("f4fe16")
 
 
+@dataclass(slots=True)
+class UltramaticState:
+    """Raw app values, including signed repeat and unconverted P2 action."""
+
+    hour: int = 0
+    minute: int = 0
+    repeat: int = 0
+    type: int = 0
+    timer: int = 0
+    intensity: int = 0
+    true_hour: int = 0
+    true_minute: int = 0
+    true_repeat: int = 0
+    true_type: int = 0
+
+
+class UltramaticParser:
+    """Row158's corrected preflight and decoder, without unsafe indexing.
+
+    Fresh 4..20-byte F4 fragments cache and RETURN. The cache
+    survives continuations and exact 10/16 or >20-byte decoding. Its owner
+    resets it on session changes, unlike the app's activity-wide lifetime.
+    Truncated alarm fields are ignored instead of raising Java bounds errors.
+    No checksum, header validation or action normalization is invented.
+    """
+
+    def __init__(self) -> None:
+        self.state = UltramaticState()
+        self.pending: bytes | None = None
+
+    @staticmethod
+    def _signed(value: int) -> int:
+        return value if value < 128 else value - 256
+
+    def feed(self, data: bytes) -> tuple[str, ...]:
+        s = self.state
+        if not data:
+            return ()
+        if data[:2] == b"\xe2\xfe":
+            if len(data) < 10:
+                return ()
+            s.minute, s.hour, s.repeat = (self._signed(data[i]) for i in (3, 4, 6))
+            if data[9] & 15 in (8, 9):
+                s.type = 2 if data[9] & 15 == 8 else 3
+            if 1 <= self._signed(data[7]) <= 5 and 1 <= self._signed(data[8]) <= 5:
+                s.type = 1
+            return ("alarm",)
+        if len(data) <= 20:
+            if len(data) > 3 and data[:3] == JALON_PREFIX:
+                self.pending = data
+                return ()
+            if len(data) not in (10, 16):
+                if self.pending is None:
+                    return ()
+                data = self.pending + data
+        if len(data) > 3 and data[:2] == b"\xed\x80":
+            if len(data) < 7:
+                return ()
+            hour, minute, repeat, kind = (self._signed(data[i]) for i in (3, 4, 5, 6))
+            if repeat == -128:
+                repeat = s.true_repeat
+            s.hour, s.minute, s.repeat, s.type = hour, minute, repeat, kind
+            changed = (hour, minute, repeat, kind) != (
+                s.true_hour, s.true_minute, s.true_repeat, s.true_type
+            )
+            s.true_hour, s.true_minute, s.true_repeat, s.true_type = hour, minute, repeat, kind
+            return ("alarm",) if changed else ()
+        intensity = timer = 0
+        if len(data) == 23:
+            intensity, timer = data[11] & 15, self._signed(data[19])
+        elif len(data) == 16:
+            intensity, timer = data[7] & 15, data[14] & 15
+        elif len(data) == 10:
+            timer = self._signed(data[8])
+        s.intensity = (intensity + 1) // 2 if 1 <= intensity <= 6 else 0
+        s.timer = timer
+        return ("massage",)
+
+
 @dataclass(frozen=True, slots=True)
 class SymphonyTimer:
     """The source UI's massage minutes, including its P1 comparison quirk."""

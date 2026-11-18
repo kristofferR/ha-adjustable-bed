@@ -1362,6 +1362,24 @@
     "card_section": "presets",
     "card_role": "save"
   },
+  "button:ore_ultramatic_alarm_refresh": {
+    "card_section": "utility"
+  },
+  "button:ore_ultramatic_massage_foot": {
+    "card_section": "massage"
+  },
+  "button:ore_ultramatic_massage_head": {
+    "card_section": "massage"
+  },
+  "button:ore_ultramatic_massage_timer": {
+    "card_section": "massage"
+  },
+  "button:ore_ultramatic_massage_toggle": {
+    "card_section": "massage"
+  },
+  "button:ore_ultramatic_massage_wave": {
+    "card_section": "massage"
+  },
   "button:ormatek_action": {
     "card_section": "massage"
   },
@@ -4134,6 +4152,12 @@
     "card_section": "hidden"
   },
   "sensor:okin_bedding_app_massage_timer_minutes": {
+    "card_section": "hidden"
+  },
+  "sensor:ore_ultramatic_alarm_time": {
+    "card_section": "hidden"
+  },
+  "sensor:ore_ultramatic_massage_intensity": {
     "card_section": "hidden"
   },
   "sensor:ormatek_alarm_time": {

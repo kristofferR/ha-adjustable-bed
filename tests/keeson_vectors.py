@@ -2078,3 +2078,10 @@ for _version in (1, 2):
         row["expected_bytes"].replace(" ", "").lower()
         for row in _YAMADA["packet_vectors"] if row["protocol"] == f"P{_version}"
     )
+
+# ORE Ultramatic 1.0.5: every literal transmit builder from the app.
+FROZEN_FRAMES["ore_ultramatic"] = frozenset(
+    row["expected_bytes"].replace(" ", "").lower()
+    for row in json.loads((Path(__file__).parent / "fixtures/ore_ultramatic/vectors.json").read_text())
+    if row["inputs"]["builder"] != "notification"
+)

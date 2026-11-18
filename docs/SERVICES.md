@@ -449,6 +449,7 @@ data:
 | OrmatekTechnoSmart | New: `massage`, `memory_1`, `flat`. Lite: `zero_g`, `tv` | Daily, one alarm |
 | Solace (Sophie app) | `none`, `zero_g`, `memory_1`; side models `none`, `zero_g_left`, `zero_g_right`, `zero_g` | `weekdays`, `massage` (not QMS2), `sound: alarm` rings. Once the bed reports alarm support |
 | Symphony Sleep | `none`, `memory_1`, `memory_2` | Once |
+| Ultramatic (ORE) | `none`, `massage`, `memory_1`, `memory_2` on the older bed route; `tv`, `massage`, `zero_g` on the newer | `weekdays` or once. Turning it on needs a `wake_action`; connect once first so the route is known |
 | Symphony Sleep Sense | By product | `weekdays` |
 | Yamada | By app version | `slot` 1–2, `weekdays`. Refresh the bed's alarms first |
 | Customatic Z-Series | `massage`, `memory_1` (required to turn on) | Once. Needs a Z-Series controller with an alarm page |
@@ -807,7 +808,7 @@ source capability replies.
 
 Independent MM/SXB entries expose `sensor_time`, `sensor_part`,
 `sensor_query_part`, `sensor_live`, `sensor_report`, `sensor_stop`, and the
-SXB-only `sensor_sensitivity` query. Device-part setting uses `value` (MM 1/2,
+SXB-only `sensor_sensitivity` query. Device-part setting uses `value` (MM1/2,
 SXB 11/12/13). Reports use `part` (1 left, 2 right), `report_type` (1 day, 2 month)
 and optional `report_date`. Live polling uses `enabled`. Local stop sends no
 hardware STOP. The [sleep-module reference](beds/gmmotor.md#sleep-modules) records

@@ -253766,6 +253766,780 @@
         }
       }
     },
+    "keeson:ore_ultramatic": {
+      "info": {
+        "bed_type": "keeson",
+        "controller": "OreUltramaticController",
+        "module": "ore_ultramatic.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe4",
+              "notify",
+              "",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000105",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000204",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "lumbar_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160100000203",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160100000104",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "error": "KeyError",
+          "status": "error",
+          "writes": []
+        },
+        "preset_tv": {
+          "error": "KeyError",
+          "status": "error",
+          "writes": []
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1601000008fd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000008de",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_toggle": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_on": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1631000001d4",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_off": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1631000000d5",
+              1,
+              0
+            ]
+          ]
+        },
+        "massage_off": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000010e6",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe9",
+              false,
+              "e5fe1611000010e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_2": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000009dd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_2": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1601000009fc",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_open": {
+          "as": "feet_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_close": {
+          "as": "feet_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_stop": {
+          "as": "feet_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000010f6",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000020e6",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "read_positions": {
+          "status": "no_writes"
+        },
+        "sync_clock": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000105",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000204",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000010f6",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000020e6",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "button:ore_comfort_program_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000002e4",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_comfort_program_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000001e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_comfort_massage_start": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000021d5",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe9",
+              false,
+              "e5fe1610000011e5",
+              1,
+              0
+            ],
+            [
+              314,
+              "0000ffe9",
+              false,
+              "e5fe1611000011e4",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_alarm_refresh": {
+          "status": "ok",
+          "writes": [
+            [
+              200,
+              "0000ffe9",
+              false,
+              "e2fe1618040305e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=10": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000030c6",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=20": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000031c5",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=30": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000032c4",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_head=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000010e6",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_head=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000013e3",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_foot=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1611000010e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_foot=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1611000013e2",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_wave=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000020d6",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_wave=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000023d3",
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    },
     "keeson:purple": {
       "info": {
         "bed_type": "keeson",
@@ -405279,6 +406053,4986 @@
               "0000ffe9",
               true,
               "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "ore_ultramatic:P1:2": {
+      "info": {
+        "bed_type": "keeson",
+        "controller": "OreUltramaticController",
+        "module": "ore_ultramatic.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe4",
+              "notify",
+              "",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000105",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000204",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "lumbar_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160100000203",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160100000104",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "error": "KeyError",
+          "status": "error",
+          "writes": []
+        },
+        "preset_tv": {
+          "error": "KeyError",
+          "status": "error",
+          "writes": []
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1601000008fd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000008de",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_toggle": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_on": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1631000001d4",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_off": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1631000000d5",
+              1,
+              0
+            ]
+          ]
+        },
+        "massage_off": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000010e6",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe9",
+              false,
+              "e5fe1611000010e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_2": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000009dd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_2": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1601000009fc",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_open": {
+          "as": "feet_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_close": {
+          "as": "feet_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_stop": {
+          "as": "feet_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000010f6",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000020e6",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "read_positions": {
+          "status": "no_writes"
+        },
+        "sync_clock": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000105",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000204",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000010f6",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000020e6",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "button:ore_comfort_program_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000002e4",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_comfort_program_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000001e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_comfort_massage_start": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000021d5",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe9",
+              false,
+              "e5fe1610000011e5",
+              1,
+              0
+            ],
+            [
+              314,
+              "0000ffe9",
+              false,
+              "e5fe1611000011e4",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_alarm_refresh": {
+          "status": "ok",
+          "writes": [
+            [
+              200,
+              "0000ffe9",
+              false,
+              "e2fe1618040305e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=10": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000030c6",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=20": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000031c5",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=30": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000032c4",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_head=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000010e6",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_head=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000013e3",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_foot=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1611000010e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_foot=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1611000013e2",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_wave=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000020d6",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_wave=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000023d3",
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "ore_ultramatic:P1:3": {
+      "info": {
+        "bed_type": "keeson",
+        "controller": "OreUltramaticController",
+        "module": "ore_ultramatic.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe4",
+              "notify",
+              "",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000105",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000204",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "lumbar_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160100000203",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160100000104",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "error": "KeyError",
+          "status": "error",
+          "writes": []
+        },
+        "preset_tv": {
+          "error": "KeyError",
+          "status": "error",
+          "writes": []
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1601000008fd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000008de",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_toggle": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_on": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1631000001d4",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_off": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1631000000d5",
+              1,
+              0
+            ]
+          ]
+        },
+        "massage_off": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000010e6",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe9",
+              false,
+              "e5fe1611000010e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_2": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000009dd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_2": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1601000009fc",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_open": {
+          "as": "feet_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_close": {
+          "as": "feet_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_stop": {
+          "as": "feet_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000010f6",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000020e6",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "read_positions": {
+          "status": "no_writes"
+        },
+        "sync_clock": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000105",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000204",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000010f6",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000020e6",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "button:ore_comfort_program_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000002e4",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_comfort_program_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000001e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_comfort_massage_start": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000021d5",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe9",
+              false,
+              "e5fe1610000011e5",
+              1,
+              0
+            ],
+            [
+              314,
+              "0000ffe9",
+              false,
+              "e5fe1611000011e4",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_alarm_refresh": {
+          "status": "ok",
+          "writes": [
+            [
+              200,
+              "0000ffe9",
+              false,
+              "e2fe1618040305e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=10": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000030c6",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=20": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000031c5",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=30": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000032c4",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_head=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000010e6",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_head=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000013e3",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_foot=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1611000010e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_foot=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1611000013e2",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_wave=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000020d6",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_wave=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000023d3",
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "ore_ultramatic:P1:4": {
+      "info": {
+        "bed_type": "keeson",
+        "controller": "OreUltramaticController",
+        "module": "ore_ultramatic.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe4",
+              "notify",
+              "",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000105",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000204",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "lumbar_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160100000203",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160100000104",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "error": "KeyError",
+          "status": "error",
+          "writes": []
+        },
+        "preset_tv": {
+          "error": "KeyError",
+          "status": "error",
+          "writes": []
+        },
+        "memory_recall_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1601000008fd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_1": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000008de",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_toggle": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_on": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1631000001d4",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_off": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1631000000d5",
+              1,
+              0
+            ]
+          ]
+        },
+        "massage_off": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000010e6",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe9",
+              false,
+              "e5fe1611000010e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_program_2": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000009dd",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_2": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1601000009fc",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_open": {
+          "as": "feet_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_close": {
+          "as": "feet_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_stop": {
+          "as": "feet_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000010f6",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000020e6",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              1,
+              0
+            ]
+          ]
+        },
+        "read_positions": {
+          "status": "no_writes"
+        },
+        "sync_clock": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000105",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000204",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe160000000402",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000008fe",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000010f6",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e5fe1600000020e6",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e5fe160000000006",
+              2,
+              107
+            ]
+          ]
+        },
+        "button:ore_comfort_program_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000002e4",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_comfort_program_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1620000001e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_comfort_massage_start": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000021d5",
+              1,
+              0
+            ],
+            [
+              207,
+              "0000ffe9",
+              false,
+              "e5fe1610000011e5",
+              1,
+              0
+            ],
+            [
+              314,
+              "0000ffe9",
+              false,
+              "e5fe1611000011e4",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_alarm_refresh": {
+          "status": "ok",
+          "writes": [
+            [
+              200,
+              "0000ffe9",
+              false,
+              "e2fe1618040305e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=10": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000030c6",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=20": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000031c5",
+              1,
+              0
+            ]
+          ]
+        },
+        "select:ore_comfort_massage_timer=30": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000032c4",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_head=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000010e6",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_head=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000013e3",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_foot=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1611000010e5",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_foot=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1611000013e2",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_wave=0": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000020d6",
+              1,
+              0
+            ]
+          ]
+        },
+        "number:ore_comfort_massage_wave=3": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e5fe1610000023d3",
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "ore_ultramatic:P2:2": {
+      "info": {
+        "bed_type": "keeson",
+        "controller": "OreUltramaticController",
+        "module": "ore_ultramatic.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe4",
+              "notify",
+              "",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16010000000004",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16020000000003",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16040000000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160800000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16040000000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160800000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "lumbar_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000000800fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160010000000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16008000000085",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_tv": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160040000000c5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_1": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "memory_program_1": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_toggle": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000002000003",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_on": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_off": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "massage_off": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_open": {
+          "as": "feet_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_close": {
+          "as": "feet_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_stop": {
+          "as": "feet_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16050000000000",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160a00000000fb",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "read_positions": {
+          "status": "no_writes"
+        },
+        "sync_clock": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e780017e0002030417f9",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_head": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160008000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000400000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_timer": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000200000003",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_toggle": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000100000004",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_wave": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000001000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_tv": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160040000000c5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16008000000085",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160010000000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000000800fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16010000000004",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16020000000003",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16040000000001",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160800000000fd",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16050000000000",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160a00000000fb",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "button:ore_ultramatic_alarm_refresh": {
+          "status": "ok",
+          "writes": [
+            [
+              200,
+              "0000ffe9",
+              false,
+              "e28003009a",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_head": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160008000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_foot": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000400000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_timer": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000200000003",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_toggle": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000100000004",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_wave": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000001000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "ore_ultramatic:P2:3": {
+      "info": {
+        "bed_type": "keeson",
+        "controller": "OreUltramaticController",
+        "module": "ore_ultramatic.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe4",
+              "notify",
+              "",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16010000000004",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16020000000003",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16040000000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160800000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16040000000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160800000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "lumbar_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000000800fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160010000000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16008000000085",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_tv": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160040000000c5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_1": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "memory_program_1": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_toggle": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000002000003",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_on": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_off": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "massage_off": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_open": {
+          "as": "feet_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_close": {
+          "as": "feet_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_stop": {
+          "as": "feet_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16050000000000",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160a00000000fb",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "read_positions": {
+          "status": "no_writes"
+        },
+        "sync_clock": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e780017e0002030417f9",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_head": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160008000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000400000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_timer": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000200000003",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_toggle": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000100000004",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_wave": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000001000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_tv": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160040000000c5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16008000000085",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160010000000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000000800fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16010000000004",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16020000000003",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16040000000001",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160800000000fd",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16050000000000",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160a00000000fb",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "button:ore_ultramatic_alarm_refresh": {
+          "status": "ok",
+          "writes": [
+            [
+              200,
+              "0000ffe9",
+              false,
+              "e28003009a",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_head": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160008000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_foot": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000400000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_timer": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000200000003",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_toggle": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000100000004",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_wave": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000001000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "ore_ultramatic:P2:4": {
+      "info": {
+        "bed_type": "keeson",
+        "controller": "OreUltramaticController",
+        "module": "ore_ultramatic.controller",
+        "pulse": [
+          10,
+          100
+        ]
+      },
+      "commands": {
+        "connect": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe4",
+              "notify",
+              "",
+              1,
+              0
+            ]
+          ]
+        },
+        "head_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16010000000004",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16020000000003",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "back_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16040000000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160800000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "legs_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_up": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16040000000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_down": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160800000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "feet_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "lumbar_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop_all": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000000800fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160010000000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16008000000085",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "preset_tv": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160040000000c5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "memory_recall_1": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "memory_program_1": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_toggle": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000002000003",
+              1,
+              0
+            ]
+          ]
+        },
+        "lights_on": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "lights_off": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "massage_off": {
+          "error": "ValueError",
+          "status": "error",
+          "writes": []
+        },
+        "cover:back_open": {
+          "as": "back_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_close": {
+          "as": "back_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:back_stop": {
+          "as": "back_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_open": {
+          "as": "feet_up",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_close": {
+          "as": "feet_down",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:feet_stop": {
+          "as": "feet_stop",
+          "ok": "ok",
+          "status": "same"
+        },
+        "cover:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16050000000000",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160a00000000fb",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "cover:both_stop": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "read_positions": {
+          "status": "no_writes"
+        },
+        "sync_clock": {
+          "status": "ok",
+          "writes": [
+            [
+              100,
+              "0000ffe9",
+              false,
+              "e780017e0002030417f9",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_head": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160008000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_foot": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000400000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_timer": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000200000003",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_toggle": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000100000004",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_wave": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000001000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_tv": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160040000000c5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_anti_snore": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16008000000085",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_zero_g": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160010000000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "hold_preset_flat": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000000800fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "stop:back_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16010000000004",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:back_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16020000000003",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16040000000001",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:feet_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160800000000fd",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_open": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16050000000000",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "stop:both_close": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160a00000000fb",
+              3,
+              107
+            ],
+            [
+              421,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              2,
+              107
+            ]
+          ]
+        },
+        "button:ore_ultramatic_alarm_refresh": {
+          "status": "ok",
+          "writes": [
+            [
+              200,
+              "0000ffe9",
+              false,
+              "e28003009a",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_head": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160008000000fd",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_foot": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000400000001",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_timer": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000200000003",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_toggle": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe16000100000004",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
+              1,
+              0
+            ]
+          ]
+        },
+        "button:ore_ultramatic_massage_wave": {
+          "status": "ok",
+          "writes": [
+            [
+              0,
+              "0000ffe9",
+              false,
+              "e6fe160000001000f5",
+              10,
+              107
+            ],
+            [
+              1100,
+              "0000ffe9",
+              false,
+              "e6fe16000000000005",
               1,
               0
             ]

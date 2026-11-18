@@ -1096,3 +1096,13 @@ shared UUIDs and device names do not establish an app identity. Imported entries
 retain their explicit `product_type`, and each paired physical side owns its
 model. The five split keys also support optional native Left/Right children on
 one Bluetooth address. See the [guide](beds/cheerssleep.md).
+
+### ORE Ultramatic
+
+Choose **Ultramatic app (ORE)**, then choose the actual 2-, 3- or 4-motor
+layout. Configure keeps the layout with its physical bed
+side. The live GATT table chooses P1 or P2; names and a shared UUID never select
+this app automatically. Massage and light are part of its bed controls, and
+position sensing stays disabled. P1 has programmable presets and explicit
+massage/light settings; P2 has held presets/massage and a light toggle. See the
+[profile reference](beds/keeson.md#ore-ultramatic) for alarms and raw state.

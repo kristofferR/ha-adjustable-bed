@@ -151,6 +151,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     offline configuration reaches.
     """
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
+    from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
+        OreUltramaticController,
+    )
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
     from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
@@ -175,6 +178,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.suta.controller import SutaController
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
+    from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
     from custom_components.adjustable_bed.profiles.suta import ROUTES as SUTA_ROUTES
 
@@ -190,6 +194,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             for route in SUTA_ROUTES:
                 name = "SUTA-unknown" if route == "fallback" else "SUTA" if route == "short-name" else route.split("*")[0]
                 yield SutaController(controller._coordinator, name=name)
+        elif isinstance(controller, OreUltramaticController):
+            for route in ("P1", "P2"):
+                yield variant(controller, _route=route, profile=ultramatic.profile(route))
         elif isinstance(controller, ParamountController):
             yield variant(controller, _mask=31, _height_bounds=(20, 70))
         elif isinstance(controller, OkimikiController):
