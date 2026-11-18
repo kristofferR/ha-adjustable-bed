@@ -172,3 +172,77 @@ async def test_no_repair_without_references(hass: HomeAssistant) -> None:
     async_carry_over_retyped_entities(hass, entry, _runtime())
     await hass.async_block_till_done()
     assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
+
+
+async def test_area_carries_over_for_an_entity_with_its_default_name(hass: HomeAssistant) -> None:
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    old = registry.async_get_or_create(
+        "switch",
+        DOMAIN,
+        f"{ADDRESS}_under_bed_lights",
+        config_entry=entry,
+        suggested_object_id="bed_under_bed_lights",
+        has_entity_name=True,
+        original_name="Under-bed lights",
+        translation_key="under_bed_lights",
+    )
+    area = ar.async_get(hass).async_create("Bedroom")
+    registry.async_update_entity(old.entity_id, area_id=area.id)
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    new = registry.async_get("light.bed_under_bed_lights")
+    assert new is not None and new.name is None and new.area_id == area.id
+    assert registry.async_get(old.entity_id) is None
+
+
+async def test_a_new_unique_id_on_the_same_platform_keeps_the_row(hass: HomeAssistant) -> None:
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    old = _row(
+        registry, entry, "select", "controller_select_ore_comfort_massage_timer", "bed_timer"
+    )
+    registry.async_update_entity(old.entity_id, name="Timer")
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    row = registry.async_get("select.bed_timer")
+    assert row is not None
+    assert (row.id, row.name, row.unique_id) == (old.id, "Timer", f"{ADDRESS}_massage_timer")
+
+
+async def test_repair_finds_automations_by_registry_id_and_changed_options(
+    hass: HomeAssistant,
+) -> None:
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    light = _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
+    timer = _row(
+        registry, entry, "select", "controller_select_ore_comfort_massage_timer", "bed_timer"
+    )
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": [
+                {
+                    "alias": "By ID",
+                    "trigger": {"platform": "event", "event_type": "test"},
+                    "action": {"action": "switch.turn_on", "target": {"entity_id": light.id}},
+                },
+                {
+                    "alias": "Timer",
+                    "trigger": {"platform": "event", "event_type": "test"},
+                    "action": {
+                        "action": "select.select_option",
+                        "target": {"entity_id": timer.entity_id},
+                        "data": {"option": "20"},
+                    },
+                },
+            ]
+        },
+    )
+    async_carry_over_retyped_entities(hass, entry, _runtime())
+    await hass.async_block_till_done()
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id)
+    assert issue is not None
+    entities = issue.translation_placeholders["entities"]
+    assert "switch.bed_under_bed_lights → light.bed_under_bed_lights: automation.by_id" in entities
+    assert "select.bed_timer (its options changed): automation.timer" in entities

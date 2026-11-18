@@ -128,7 +128,7 @@ def async_carry_over_retyped_entities(
 ) -> None:
     """Give each retyped entity's new row the old row's ID and user settings."""
     registry = er.async_get(hass)
-    moved: list[tuple[str, str]] = []
+    moved: list[Moved] = []
     for runtime in entity_runtimes(coordinator):
         for retype in RETYPES:
             if runtime.bed_type in retype.keep_on:
@@ -157,21 +157,34 @@ def async_carry_over_retyped_entities(
         async_at_started(hass, report)
 
 
+@dataclass(frozen=True, slots=True)
+class Moved:
+    """An old entity a user's automations may still name, and what replaced it."""
+
+    old_entity_id: str
+    old_registry_id: str
+    new_entity_id: str
+    # The same platform with a new unique ID: only the options changed.
+    options_changed: bool
+
+
 def _carry_over(
     registry: er.EntityRegistry,
     entry: ConfigEntry,
     retype: Retype,
     old_unique_id: str,
     new_unique_id: str,
-) -> tuple[str, str] | None:
-    """Create the new row from the old one; return (old, new) entity IDs if done."""
+) -> Moved | None:
+    """Move the old row's identity and user settings to the new entity."""
     old_id = registry.async_get_entity_id(retype.old_domain, DOMAIN, old_unique_id)
     if old_id is None or registry.async_get_entity_id(retype.new_domain, DOMAIN, new_unique_id):
         return None
     old = registry.async_get(old_id)
     assert old is not None
-    # Nothing builds the old entity any more; removing it first frees its object ID.
-    registry.async_remove(old_id)
+    if retype.old_domain == retype.new_domain:
+        # The row itself carries over, with its entity ID and every setting.
+        registry.async_update_entity(old_id, new_unique_id=new_unique_id)
+        return Moved(old_id, old.id, old_id, options_changed=True)
     object_id = split_entity_id(old_id)[1]
     taken = registry.async_is_registered(f"{retype.new_domain}.{object_id}")
     user = er.RegistryEntryDisabler.USER
@@ -187,6 +200,10 @@ def _carry_over(
         hidden_by=er.RegistryEntryHider.USER
         if old.hidden_by is er.RegistryEntryHider.USER
         else None,
+        # The name Home Assistant shows until the platform adds the entity.
+        has_entity_name=old.has_entity_name,
+        original_name=old.original_name,
+        translation_key=old.translation_key,
     )
     registry.async_update_entity(
         new.entity_id,
@@ -200,22 +217,35 @@ def _carry_over(
         # The old platform's own options (units, precision) mean nothing to the new one.
         if namespace != retype.old_domain:
             registry.async_update_entity_options(new.entity_id, namespace, dict(options))
-    return old_id, new.entity_id
+    # Nothing builds the old entity any more.
+    registry.async_remove(old_id)
+    return Moved(old_id, old.id, new.entity_id, options_changed=False)
 
 
 @callback
-def _async_report_references(
-    hass: HomeAssistant, entry: ConfigEntry, moved: list[tuple[str, str]]
-) -> None:
+def _async_report_references(hass: HomeAssistant, entry: ConfigEntry, moved: list[Moved]) -> None:
     """Raise one repair per bed naming the automations and scripts to update."""
     from homeassistant.components.automation import automations_with_entity  # noqa: PLC0415
     from homeassistant.components.script import scripts_with_entity  # noqa: PLC0415
 
     lines: list[str] = []
-    for old_id, new_id in moved:
-        users = [*automations_with_entity(hass, old_id), *scripts_with_entity(hass, old_id)]
-        if users:
-            lines.append(f"- {old_id} → {new_id}: {', '.join(sorted(users))}")
+    for item in moved:
+        users = {
+            user
+            for reference in (item.old_entity_id, item.old_registry_id)
+            for user in (
+                *automations_with_entity(hass, reference),
+                *scripts_with_entity(hass, reference),
+            )
+        }
+        if not users:
+            continue
+        change = (
+            f"{item.old_entity_id} (its options changed)"
+            if item.options_changed
+            else f"{item.old_entity_id} → {item.new_entity_id}"
+        )
+        lines.append(f"- {change}: {', '.join(sorted(users))}")
     if not lines:
         return
     ir.async_create_issue(

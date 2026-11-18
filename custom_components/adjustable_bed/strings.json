@@ -10203,7 +10203,7 @@
     },
     "retyped_entities": {
       "title": "Update automations for {bed}",
-      "description": "Some of {bed}'s controls changed type in this version, so they have new entity IDs. These automations and scripts still use the old ones:\n\n{entities}\n\nEdit each one to use the new entity. An under-bed light is now a light, so use the light actions instead of the switch actions. Then ignore this message."
+      "description": "Some of {bed}'s controls changed type or options in this version. These automations and scripts still use them the old way:\n\n{entities}\n\nEdit each one to use the new entity or its new options. An under-bed light is now a light, so use the light actions instead of the switch actions. Then ignore this message."
     }
   },
   "selector": {
