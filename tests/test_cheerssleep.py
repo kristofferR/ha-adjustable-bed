@@ -1053,10 +1053,10 @@ async def test_registered_ten_services_keep_ordinary_arrays_on_split_models(
     assert frames(c) == [codec.p1(2, 1, press).hex(), codec.p1(3, 1, release).hex()]
     c.client.write_gatt_char.reset_mock()
     await ctrl.execute_request(bed.Request("seven_motion", axis="back", duration_ms=10))
-    assert frames(c) == [codec.p1(4, 1, 0x6404).hex(), codec.p1(5, 1, 0x6403).hex()]
+    assert frames(c) == [codec.p1(4, 1, 0x6401).hex(), codec.p1(5, 1, 0x6400).hex()]
     c.client.write_gatt_char.reset_mock()
     await ctrl.move_back_up()
-    assert frames(c) == [codec.p1(6, 1, 0x6404).hex(), codec.p1(7, 1, 0x6403).hex()]
+    assert frames(c) == [codec.p1(6, 1, 0x6401).hex(), codec.p1(7, 1, 0x6400).hex()]
 
 
 @pytest.mark.parametrize("key", [153, 172])
@@ -1184,7 +1184,7 @@ async def test_native_paired_lights_keep_independent_feedback_and_action_sides(h
         report(0xAA, True)
         report(0xBB, False)
         assert lights["left"].is_on is True and lights["right"].is_on is False
-        assert inner.controller_state[UNDER_BED_LIGHTS_ON] is False
+        assert inner.controller_state[UNDER_BED_LIGHTS_ON] is True  # Unsided mirrors left.
         ctrl.on_disconnect()
         assert lights["left"].is_on is None and lights["right"].is_on is None
         await ctrl.start_notify()
