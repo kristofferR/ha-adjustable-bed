@@ -8733,17 +8733,25 @@ app/model profile; a two-address pair retains each physical side's selection.
 Choose **Separate HJ_Bed sleep and intervention receiver** for the separate
 sensing module. That receiver has no motor controls. Two physical bed addresses
 can use Home Assistant's parent/Left/Right pairing. Transmit modes 0, 1 and 2
-remain app modes and do not create single-address native sides.
+remain app modes and do not create single-address native sides. They and the
+app's motor group are not entities: set them with the `richmat_mh_control`
+action's `app_mode`.
 
 #### Controls
 
 The selected model's own ordered functions, aliases and page maps determine
 motors, presets, recall/program slots, massage, locks and other bed controls.
 The generated tables below list each app separately. Nisco CFRM retains its
-catalog LOCK entry. Selecting a mode changes ordinary command and release
+catalog LOCK entry. The transmit mode changes ordinary command and release
 frames. Snore intervention samples the current mode at the final dispatch
 boundary, including a mode changed while its write waited for the BLE lane.
 The dedicated `13`-family setting is separate from normal anti-snore recall/save.
+
+Button names come from the catalog's command names through a presentation map
+that matches the shared preset and massage buttons; the catalog labels stay as
+recorded. For example `M1` is Memory 1, `Massage 10Min` is Massage: Timer 10
+Minutes, `Zg2 Back`/`Zg2 Set` are Zero Gravity 2 and Save Zero Gravity 2, and
+`Ubl Off` is Under-Bed Light Off.
 
 Nisco's light timer preserves the high and low duration bytes. Normal and
 waist mattress controls are dormant, even though startup probes and shared
@@ -8782,8 +8790,9 @@ The accepted Nisco waist combined forms are 14, 15 and 19 bytes, distinct from
 the sibling's 14, 18 and 19. Nisco's detailed diagnostic result consumer and
 mattress cache offsets are not established by the accepted report.
 
-The sleep receiver retains local rates, occupancy, movement, raw `Std`, user
-mode and intervention settings. Wi-Fi, network/mesh administration, cloud,
+The sleep receiver retains local rates, occupancy, movement, user mode and
+intervention settings. The raw `Std` value is the disabled-by-default
+diagnostic Left/Right sleep receiver state sensor. Wi-Fi, network/mesh administration, cloud,
 accounts, firmware administration, scoring, reports and phone/media features
 are excluded. A source-proven BED effect remains included even when its caller
 sits beside excluded infrastructure.

@@ -4565,7 +4565,7 @@ richmat_mh_control:
       required: true
       selector:
         select:
-          options: [press, remote_long, voice_queue, query]
+          options: [press, remote_long, voice_queue, query, app_mode]
     opcode:
       selector:
         number:
@@ -4591,6 +4591,14 @@ richmat_mh_control:
             - motor4_angle
             - massage
             - light_lock
+    transmit_mode:
+      selector:
+        select:
+          options: ["0", "1", "2"]
+    motor_group:
+      selector:
+        select:
+          options: [single, group_sync, group_split]
 
 richmat_mh_mode_alarm:
   fields:

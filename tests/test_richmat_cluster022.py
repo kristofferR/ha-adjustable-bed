@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -372,8 +373,27 @@ def test_aliases_and_entity_metadata_are_owned_by_each_catalog() -> None:
                             assert {option.lower() for option in spec.options} <= strings[platform][spec.translation_key]["state"].keys()
 
 
-@pytest.mark.parametrize("filename", ("strings.json", "translations/en.json"))
-def test_group_type_translations_use_schema_keys(filename: str) -> None:
-    path = Path(__file__).parents[1] / "custom_components/adjustable_bed" / filename
-    states = json.loads(path.read_text())["entity"]["select"]["richmat_mh_group_type"]["state"]
-    assert set(states) == {"single", "group_sync", "group_split"}
+@pytest.mark.parametrize("app", ("nisco", "mlily_supreme"))
+def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
+    raw = re.compile(r"\b(Inc\d?|Dec|\d*Min|Zg2|Ubl|Flat2|Xiaofeiyan|M\d|Zero gravity)\b")
+    for model in models(app):
+        for advanced in (False, True):
+            controller = make(app, model)
+            if advanced:
+                controller._version, controller._call_page = "0001", True
+            names = [spec.name for spec in controller.controller_button_specs]
+            assert len(names) == len(set(names)), (model, names)
+            for name in names:
+                assert not raw.search(name), (model, name)
+            if model == "bhrm" and not advanced:
+                assert {"Massage: Head Up 2", "Massage: Timer 10 Minutes"} <= set(names)
+
+
+def test_undecoded_mlily_alarm_reply_never_sets_the_alarm_sensor() -> None:
+    from custom_components.adjustable_bed.beds.richmat_mh.app_controller import LAST_REPLY
+    from custom_components.adjustable_bed.beds.richmat_mh.controller import ALARM_STATUS_KEY
+
+    controller = make("mlily_supreme")
+    controller._apply(protocol.Event("alarm", "6e0601ff"))
+    assert ALARM_STATUS_KEY not in controller._coordinator.controller_state
+    assert controller._coordinator.controller_state[LAST_REPLY] == "6e0601ff"

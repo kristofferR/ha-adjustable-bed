@@ -19,7 +19,6 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
-    ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
@@ -28,7 +27,6 @@ from ..ruf_richmat.controller import RufRichmatController, waist_init
 from . import protocol
 from .app_catalog import catalog, details
 from .controller import (
-    ALARM_STATUS_KEY,
     DETECTION_KEY,
     LIGHT_TIMER_KEY,
     SNORE_KEY,
@@ -45,8 +43,6 @@ if TYPE_CHECKING:
 
     from ...coordinator import AdjustableBedCoordinator
 
-TX_MODE: Final = StateKey[str | None]("richmat_mh_transmit_mode")
-GROUP_TYPE: Final = StateKey[str | None]("richmat_mh_group_type")
 DIAGNOSTIC_ROWS: Final = StateKey[list[dict[str, str]]]("richmat_mh_diagnostic_rows")
 DIAGNOSTIC_PROGRESS: Final = StateKey[int]("richmat_mh_diagnostic_progress")
 MATTRESS_FRAME: Final = StateKey[str]("richmat_mh_mattress_frame")
@@ -79,6 +75,59 @@ _NORMAL_SETTINGS: Final = {
     "pillow_duration": (7, {"off": 0, "20_minutes": 1, "40_minutes": 2, "60_minutes": 3}),
     "sleep_duration": (9, {"15_minutes": 1, "20_minutes": 2, "30_minutes": 3}),
 }
+
+
+# Catalog labels are the app's command names, frozen as evidence; this maps them to
+# button names matching the shared preset and massage buttons. Labels not listed are
+# already readable (Relax, Lock, Yoga, Head Up Only, ...).
+_BUTTON_NAMES: Final = {
+    "Zero gravity": "Zero Gravity",
+    "M1": "Memory 1", "M2": "Memory 2", "M3": "Memory 3", "M4": "Memory 4",
+    "Read": "Reading", "Movie Watching": "Movie", "Movie viewing": "Movie",
+    "Xiaofeiyan": "Yoga",
+    "Flat2": "Flat 2", "Zg2 Back": "Zero Gravity 2", "Zg2 Set": "Save Zero Gravity 2",
+    "Head Foot Both": "Head and Foot Up", "Head Foot On Off": "Head and Foot On/Off",
+    "Pillow": "Pillow Up",
+    "Pillow Lumbar Both Tilt Up": "Pillow and Lumbar Tilt Up",
+    "Pillow Lumbar Both Tilt Down": "Pillow and Lumbar Tilt Down",
+    "Ubl Off": "Under-Bed Light Off",
+    "Massage Off": "Massage: Off",
+    "All massage off": "Massage: All Off",
+    "Massage Head Foot Both Off": "Massage: All Off",
+    "Massage Head Foot Both On": "Massage: All On",
+    "Both massage off": "Massage: Both Off",
+    "Massage Off Reset": "Massage: Off and Flat",
+    "Massage Mode": "Massage: Mode",
+    "Massage Constant": "Massage: Constant",
+    "Massage Pulse": "Massage: Pulse",
+    "Massage Wave": "Massage: Wave",
+    "Massage Wave3": "Massage: Wave 3",
+    "Massage 10Min": "Massage: Timer 10 Minutes",
+    "Massage 20Min": "Massage: Timer 20 Minutes",
+    "Massage 30Min": "Massage: Timer 30 Minutes",
+    "Massage Head On Off": "Massage: Head Toggle",
+    "Massage Foot On Off": "Massage: Foot Toggle",
+    "Massage Head Intensity Inc": "Massage: Head Up",
+    "Massage Head Intensity Inc2": "Massage: Head Up 2",
+    "Massage Head Intensity Dec": "Massage: Head Down",
+    "Massage Foot Intensity Inc": "Massage: Foot Up",
+    "Massage Foot Intensity Inc2": "Massage: Foot Up 2",
+    "Massage Foot Intensity Dec": "Massage: Foot Down",
+    "Massage Head Foot Intensity Inc": "Massage: Intensity Up",
+    "Massage Head Foot Intensity Dec": "Massage: Intensity Down",
+    "Massage Head Foot Speed Inc": "Massage: Speed Up",
+    "Massage Head Foot Speed Dec": "Massage: Speed Down",
+    "Massage Intensity1": "Massage: Intensity Level 1",
+    "Massage Intensity2": "Massage: Intensity Level 2",
+    "Massage Intensity3": "Massage: Intensity Level 3",
+}
+
+
+def _button_name(label: str) -> str:
+    if label.startswith("Save "):
+        base = _BUTTON_NAMES.get(label[5:], label[5:])
+        return base.replace("Memory", "Save to Memory", 1) if base.startswith("Memory") else f"Save {base}"
+    return _BUTTON_NAMES.get(label, label)
 
 
 class RichmatMHAppClassifier(protocol.Classifier):
@@ -135,10 +184,8 @@ class RichmatMHAppController(RufRichmatController):
         self._speech = dict(surface.speech) if surface else {}
         stored_group = str(self._stored_snapshot.get("group_type") or "SINGLE")
         self._group_type = stored_group if stored_group in self._mode_groups else None
-        self.forward_controller_state_update(GROUP_TYPE, self._group_type)
         if not APPS[app].normal_mattress:
             self._waist = self._normal_ready = False
-        self.forward_controller_state_update(TX_MODE, str(self._transmit_mode))
 
     @property
     def route(self) -> str:
@@ -408,18 +455,22 @@ class RichmatMHAppController(RufRichmatController):
         await asyncio.sleep(0.1)
         await super().write_massage_intensity(zone, value)
 
+    # Transmit mode and motor group are the app's local pickers: no bed write of
+    # their own, so they are set through the richmat_mh_control action, not entities.
     def set_transmit_mode(self, option: str) -> None:
         if option not in ("0", "1", "2"):
             raise ValueError("Choose transmit mode 0, 1 or 2")
         self._transmit_mode = int(option)
-        self.forward_controller_state_update(TX_MODE, option)
         self._persist_snapshot()
+
+    @property
+    def motor_groups(self) -> tuple[str, ...]:
+        return tuple(self._mode_groups)
 
     def set_group_type(self, option: str) -> None:
         if option not in self._mode_groups:
             raise ValueError("Choose an app group declared by this model")
         self._group_type = option
-        self.forward_controller_state_update(GROUP_TYPE, option)
         self._persist_snapshot()
 
     async def toggle_smart_light_lock(self) -> None:
@@ -495,32 +546,12 @@ class RichmatMHAppController(RufRichmatController):
             await self._release(0)
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        specs = super().controller_select_specs + (
-            ControllerSelectSpec(
-                TX_MODE, "richmat_mh_transmit_mode", TX_MODE, ("0", "1", "2"),
-                lambda ctrl, option: _invoke(ctrl, "select_transmit_mode", option),
-                local_select_fn=self.set_transmit_mode,
-            ),
-        )
-        if self._mode_groups:
-            specs += (ControllerSelectSpec(
-                GROUP_TYPE, str(GROUP_TYPE), GROUP_TYPE, tuple(self._mode_groups),
-                lambda ctrl, option: _invoke(ctrl, "select_group_type", option),
-                local_select_fn=self.set_group_type,
-            ),)
-        return specs
-
-    async def select_transmit_mode(self, option: str) -> None:
-        self.set_transmit_mode(option)
-
-    async def select_group_type(self, option: str) -> None:
-        self.set_group_type(option)
-
-    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         specs = []
         for spec in super().controller_button_specs:
+            if spec.translation_placeholders and "action" in spec.translation_placeholders:
+                name = _button_name(spec.translation_placeholders["action"])
+                spec = replace(spec, name=name, translation_placeholders={"action": name})
             control = next((c for c in self._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
             if control and control.keep_ms:
                 spec = replace(spec, hold=ControllerHoldSpec(f"mh_{control.code:02x}"))
@@ -620,9 +651,9 @@ class RichmatMHAppController(RufRichmatController):
             if event.kind in ("alarm", "snore"):
                 # The accepted sibling forwards these raw; N's exact ACK/lock
                 # consumer mapping is not an established sibling counterpart.
+                # Undecoded, so it never sets the alarm sensor: the raw reply is
+                # only in the diagnostic last-reply sensor.
                 self.forward_controller_state_update(LAST_REPLY, event.data)
-                if event.kind == "alarm":
-                    self.forward_controller_state_update(ALARM_STATUS_KEY, "reported")
                 return
             if event.kind == "init" and event.data.startswith(protocol.RX_CALLBACK_PREFIX):
                 self._apply_init(event.data)

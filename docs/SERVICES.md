@@ -1140,6 +1140,10 @@ not enable microphone, recognition or phone infrastructure.
 The opcode is checked against the current profile; this is not a raw-write API.
 The fixed-remote long action waits three seconds, sends the finalized save and
 releases through that caller's sequence. STOP cancels admission or execution.
+`action: app_mode` sets the app's local `transmit_mode` (`0`, `1` or `2`) and/or
+`motor_group` (`single`, `group_sync` or `group_split`, as the model declares)
+for later commands on that physical side, and sends nothing itself. The motor
+group decides which Motor mode choices are offered.
 
 `richmat_mh_mode_alarm` retains Nisco's separate 150 ms two-phase
 mode-page caller. Its ordinary alarm page still uses 300 ms. The separate

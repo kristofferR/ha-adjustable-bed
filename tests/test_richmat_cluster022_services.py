@@ -136,7 +136,30 @@ async def test_real_pair_captures_both_physical_stop_epochs_before_import(hass, 
         await pair.async_shutdown()
 
 
-async def test_real_local_select_and_button_entities_dispatch_through_runtime(hass, sleeps) -> None:
+async def test_app_mode_action_sets_local_pickers_without_writing(hass, targets) -> None:
+    coordinators, controllers = targets
+    for coordinator, controller in zip(coordinators, controllers, strict=True):
+        async def execute(command, _controller=controller, **_kwargs):
+            await command(_controller)
+        coordinator.async_execute_controller_command.side_effect = execute
+    await hass.services.async_call(DOMAIN, actions.SERVICE, {
+        "device_id": ["left", "right"], "action": "app_mode", "transmit_mode": "2",
+    }, blocking=True)
+    for coordinator, controller in zip(coordinators, controllers, strict=True):
+        assert controller._transmit_mode == 2 and not frames(controller)
+        assert coordinator.async_execute_controller_command.call_args.kwargs["cancel_running"] is False
+    with pytest.raises(ServiceValidationError, match="app_mode"):
+        await hass.services.async_call(DOMAIN, actions.SERVICE, {
+            "device_id": ["left"], "action": "press", "opcode": 1, "transmit_mode": "1",
+        }, blocking=True)
+    # cfrm declares no motor groups, so a group is refused before any target changes.
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(DOMAIN, actions.SERVICE, {
+            "device_id": ["left", "right"], "action": "app_mode", "motor_group": "group_sync",
+        }, blocking=True)
+
+
+async def test_real_button_entity_dispatches_through_runtime(hass, sleeps) -> None:
     from custom_components.adjustable_bed.button import _button_entities_for
     from custom_components.adjustable_bed.select import _select_entities_for
     from tests.test_malouf_app_entities import configure_entity_runtime
@@ -144,11 +167,9 @@ async def test_real_local_select_and_button_entities_dispatch_through_runtime(ha
     controller = make("mlily_supreme", "cfrm")
     controller._dev["led"] = True
     runtime = configure_entity_runtime(hass, controller, "richmat_mlily_supreme")
-    selector = next(entity for entity in _select_entities_for(hass, runtime)
-                    if "richmat_mh_transmit_mode" in entity.unique_id)
-    await selector.async_select_option("2")
-    assert controller._transmit_mode == 2
-    runtime.async_execute_controller_command.assert_not_called()
+    # The app's transmit mode and motor group pickers are not entities.
+    assert not any(key in entity.unique_id for entity in _select_entities_for(hass, runtime)
+                   for key in ("transmit_mode", "group_type"))
     button = next(entity for entity in _button_entities_for(hass, runtime)
                   if "richmat_mh_toggle_smart_light_lock" in entity.unique_id)
     button.hass = hass
