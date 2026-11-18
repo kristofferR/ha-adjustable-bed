@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
@@ -57,6 +58,7 @@ async def test_light_takes_over_the_switch_with_the_users_settings(hass: HomeAss
         hidden_by=er.RegistryEntryHider.USER,
     )
     registry.async_update_entity_options(old.entity_id, "conversation", {"should_expose": False})
+    registry.async_update_entity(old.entity_id, categories={"automation": "lighting"})
 
     async_carry_over_retyped_entities(hass, entry, _runtime())
 
@@ -70,6 +72,7 @@ async def test_light_takes_over_the_switch_with_the_users_settings(hass: HomeAss
     assert new.disabled_by is er.RegistryEntryDisabler.USER
     assert new.hidden_by is er.RegistryEntryHider.USER
     assert new.options["conversation"] == {"should_expose": False}
+    assert new.categories == {"automation": "lighting"}
 
     # A second run, or a fresh install, changes nothing.
     async_carry_over_retyped_entities(hass, entry, _runtime())
@@ -177,11 +180,15 @@ async def test_no_repair_without_references(hass: HomeAssistant) -> None:
 async def test_area_carries_over_for_an_entity_with_its_default_name(hass: HomeAssistant) -> None:
     registry = er.async_get(hass)
     entry = _entry(hass)
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={(DOMAIN, ADDRESS)}
+    )
     old = registry.async_get_or_create(
         "switch",
         DOMAIN,
         f"{ADDRESS}_under_bed_lights",
         config_entry=entry,
+        device_id=device.id,
         suggested_object_id="bed_under_bed_lights",
         has_entity_name=True,
         original_name="Under-bed lights",
@@ -246,3 +253,29 @@ async def test_repair_finds_automations_by_registry_id_and_changed_options(
     entities = issue.translation_placeholders["entities"]
     assert "switch.bed_under_bed_lights → light.bed_under_bed_lights: automation.by_id" in entities
     assert "select.bed_timer (its options changed): automation.timer" in entities
+
+
+async def test_no_repair_for_a_replacement_the_bed_does_not_provide(hass: HomeAssistant) -> None:
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {
+            "automation": {
+                "alias": "Night light",
+                "trigger": {"platform": "event", "event_type": "test"},
+                "action": {
+                    "action": "switch.turn_on",
+                    "target": {"entity_id": "switch.bed_under_bed_lights"},
+                },
+            }
+        },
+    )
+    with patch("custom_components.adjustable_bed.entity_retypes.async_at_started") as at_started:
+        async_carry_over_retyped_entities(hass, entry, _runtime())
+    # The sweep removes a light the bed does not build before startup ends.
+    registry.async_remove("light.bed_under_bed_lights")
+    at_started.call_args.args[1](hass)
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None

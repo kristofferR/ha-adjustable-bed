@@ -212,6 +212,7 @@ def _carry_over(
         area_id=old.area_id,
         labels=set(old.labels),
         aliases=list(old.aliases),
+        categories=dict(old.categories),
     )
     for namespace, options in old.options.items():
         # The old platform's own options (units, precision) mean nothing to the new one.
@@ -228,8 +229,12 @@ def _async_report_references(hass: HomeAssistant, entry: ConfigEntry, moved: lis
     from homeassistant.components.automation import automations_with_entity  # noqa: PLC0415
     from homeassistant.components.script import scripts_with_entity  # noqa: PLC0415
 
+    registry = er.async_get(hass)
     lines: list[str] = []
     for item in moved:
+        # A replacement the bed turned out not to provide was swept again.
+        if registry.async_get(item.new_entity_id) is None:
+            continue
         users = {
             user
             for reference in (item.old_entity_id, item.old_registry_id)
