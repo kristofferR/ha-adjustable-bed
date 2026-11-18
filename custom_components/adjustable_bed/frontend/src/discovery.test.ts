@@ -1843,3 +1843,17 @@ test("further motors-section controls stay with the motors", () => {
   expect([bed.controlSide, ...(bed.motorExtras ?? [])].sort()).toEqual(["select.side", "select.side_2"]);
   expect(bed.utilitySelects).toBeUndefined();
 });
+
+test.each([false, true])("contested slots pick the same control in any registry order (reversed: %p)", (reversed) => {
+  const entries = [
+    entry("button.stop", "stop"),
+    entry("button.stop_both", "stop_both"),
+    entry("button.mood_a", "vibradorm_app_mood_toggle"),
+    entry("button.mood_b", "vmatbasic_mood_toggle"),
+  ];
+  const bed = bedEntitiesForDevice(hassWith(reversed ? entries.reverse() : entries), "dev1");
+  expect(bed.stop).toBe("button.stop");
+  expect(bed.extraStops).toEqual(["button.stop_both"]);
+  expect(bed.lights.mood?.toggle).toBe("button.mood_a");
+  expect(bed.lights.mood?.buttons).toEqual(["button.mood_b"]);
+});
