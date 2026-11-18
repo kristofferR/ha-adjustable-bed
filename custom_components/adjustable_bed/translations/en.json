@@ -4494,7 +4494,7 @@
         "state": {
           "set": "Set",
           "cancelled": "Cancelled",
-          "reported": "Reported"
+          "updated": "Updated"
         }
       },
       "richmat_mh_memory_arrival": {
@@ -5026,13 +5026,13 @@
         "name": "Left heart rate"
       },
       "richmat_cluster022_sleep_left_state": {
-        "name": "Left sleep state"
+        "name": "Left sleep receiver state"
       },
       "richmat_cluster022_last_reply": {
         "name": "Last bed reply"
       },
       "richmat_cluster022_sleep_right_state": {
-        "name": "Right sleep state"
+        "name": "Right sleep receiver state"
       },
       "ruf_richmat_sleep_left_breathing_rate": {
         "name": "Left breathing rate"
@@ -6056,14 +6056,6 @@
           "zero_g": "Zero gravity",
           "anti_snore": "Anti-snore"
         }
-      },
-      "richmat_cluster022_transmit_mode": {
-        "name": "Transmit mode",
-        "state": {"0": "Mode 0", "1": "Mode 1", "2": "Mode 2"}
-      },
-      "richmat_cluster022_group_type": {
-        "name": "Motor group",
-        "state": {"single": "Single", "group_sync": "Synchronized group", "group_split": "Split group"}
       },
       "richmat_mh_waist_mode": {
         "name": "Waist mattress mode",

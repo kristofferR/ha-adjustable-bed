@@ -44,7 +44,9 @@ class Cluster022SleepController(RufRichmatSleepController):
         # bed settings, rates, occupancy, movement and the raw Std state.
         specs = tuple(spec for spec in super().controller_state_sensor_specs if spec.key != "ruf_richmat_sleep_attributes")
         return specs + tuple(
-            ControllerStateSensorSpec(key, str(key), key, "mdi:bed")
+            ControllerStateSensorSpec(
+                key, str(key), key, "mdi:bed", entity_registry_enabled_default=False
+            )
             for key in _STD_KEYS.values()
         )
 

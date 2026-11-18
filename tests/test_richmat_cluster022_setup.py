@@ -160,7 +160,7 @@ async def test_actual_two_address_pair_has_native_side_safe_devices(hass) -> Non
         await paired.async_shutdown()
 
 
-async def test_runtime_mode_and_group_snapshots_persist_on_only_their_physical_side(hass) -> None:
+async def test_mode_snapshots_persist_on_only_their_physical_side(hass) -> None:
     entry = pair_entry(hass, {
         const.CONF_BED_TYPE: "richmat_nisco", const.CONF_PROTOCOL_VARIANT: "model_cfrm",
     }, {
@@ -172,20 +172,19 @@ async def test_runtime_mode_and_group_snapshots_persist_on_only_their_physical_s
     try:
         left = await create_controller(children["left"], "richmat_nisco", "model_cfrm", None)
         right = await create_controller(children["right"], "richmat_mlily_supreme", "model_3i", None)
-        left.set_transmit_mode("2")
+        left._transmit_mode = 2
+        left._persist_snapshot()
         left_saved = child(entry, "left")
-        right.set_transmit_mode("1")
-        right.set_group_type("GROUP_SPLIT")
+        right._transmit_mode = 1
+        right._persist_snapshot()
         assert child(entry, "left") == left_saved
         snapshots = {side: child(entry, side)["capabilities"]["richmat_mh"] for side in children}
         assert snapshots["left"]["app"] == "nisco"
         assert snapshots["left"]["transmit_mode"] == 2
-        assert snapshots["left"]["group_type"] is None
         assert snapshots["right"]["app"] == "mlily_supreme"
         assert snapshots["right"]["transmit_mode"] == 1
-        assert snapshots["right"]["group_type"] == "GROUP_SPLIT"
         restored = await create_controller(children["right"], "richmat_mlily_supreme", "model_3i", None)
-        assert restored._transmit_mode == 1 and restored._group_type == "GROUP_SPLIT"
+        assert restored._transmit_mode == 1
         assert profile_route(child(entry, "left")[const.CONF_PROFILE_ID]).bed_type == "richmat_nisco"
         assert profile_route(child(entry, "right")[const.CONF_PROFILE_ID]).bed_type == "richmat_mlily_supreme"
     finally:

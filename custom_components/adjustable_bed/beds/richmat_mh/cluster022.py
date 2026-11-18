@@ -19,7 +19,6 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
-    ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
@@ -45,8 +44,6 @@ if TYPE_CHECKING:
 
     from ...coordinator import AdjustableBedCoordinator
 
-TX_MODE: Final = StateKey[str | None]("richmat_cluster022_transmit_mode")
-GROUP_TYPE: Final = StateKey[str | None]("richmat_cluster022_group_type")
 DIAGNOSTIC_ROWS: Final = StateKey[list[dict[str, str]]]("richmat_cluster022_diagnostic_rows")
 DIAGNOSTIC_PROGRESS: Final = StateKey[int]("richmat_cluster022_diagnostic_progress")
 MATTRESS_FRAME: Final = StateKey[str]("richmat_cluster022_mattress_frame")
@@ -110,6 +107,58 @@ class Cluster022Classifier(protocol.Classifier):
         super()._mattress(buf)
 
 
+# Catalog labels are the app's command names; these are the button names.
+# Labels not listed are already readable (Relax, Lock, Yoga, Head Up Only, ...).
+_BUTTON_NAMES: Final = {
+    "Zero gravity": "Zero Gravity",
+    "M1": "Memory 1", "M2": "Memory 2", "M3": "Memory 3", "M4": "Memory 4",
+    "Read": "Reading", "Movie Watching": "Movie", "Movie viewing": "Movie",
+    "Xiaofeiyan": "Yoga",
+    "Flat2": "Flat 2", "Zg2 Back": "Zero Gravity 2", "Zg2 Set": "Save Zero Gravity 2",
+    "Head Foot Both": "Head and Foot Up", "Head Foot On Off": "Head and Foot On/Off",
+    "Pillow": "Pillow Up",
+    "Pillow Lumbar Both Tilt Up": "Pillow and Lumbar Tilt Up",
+    "Pillow Lumbar Both Tilt Down": "Pillow and Lumbar Tilt Down",
+    "Ubl Off": "Under-Bed Light Off",
+    "Massage Off": "Massage: Off",
+    "All massage off": "Massage: All Off",
+    "Massage Head Foot Both Off": "Massage: All Off",
+    "Massage Head Foot Both On": "Massage: All On",
+    "Both massage off": "Massage: Both Off",
+    "Massage Off Reset": "Massage: Off and Flat",
+    "Massage Mode": "Massage: Mode",
+    "Massage Constant": "Massage: Constant",
+    "Massage Pulse": "Massage: Pulse",
+    "Massage Wave": "Massage: Wave",
+    "Massage Wave3": "Massage: Wave 3",
+    "Massage 10Min": "Massage: Timer 10 Minutes",
+    "Massage 20Min": "Massage: Timer 20 Minutes",
+    "Massage 30Min": "Massage: Timer 30 Minutes",
+    "Massage Head On Off": "Massage: Head On/Off",
+    "Massage Foot On Off": "Massage: Foot On/Off",
+    "Massage Head Intensity Inc": "Massage: Head Intensity Up",
+    "Massage Head Intensity Inc2": "Massage: Head Intensity Up 2",
+    "Massage Head Intensity Dec": "Massage: Head Intensity Down",
+    "Massage Foot Intensity Inc": "Massage: Foot Intensity Up",
+    "Massage Foot Intensity Inc2": "Massage: Foot Intensity Up 2",
+    "Massage Foot Intensity Dec": "Massage: Foot Intensity Down",
+    "Massage Head Foot Intensity Inc": "Massage: Intensity Up",
+    "Massage Head Foot Intensity Dec": "Massage: Intensity Down",
+    "Massage Head Foot Speed Inc": "Massage: Speed Up",
+    "Massage Head Foot Speed Dec": "Massage: Speed Down",
+    "Massage Intensity1": "Massage: Intensity Level 1",
+    "Massage Intensity2": "Massage: Intensity Level 2",
+    "Massage Intensity3": "Massage: Intensity Level 3",
+}
+
+
+def _button_name(label: str) -> str:
+    if label.startswith("Save "):
+        base = _BUTTON_NAMES.get(label[5:], label[5:])
+        return base.replace("Memory", "Save to Memory", 1) if base.startswith("Memory") else f"Save {base}"
+    return _BUTTON_NAMES.get(label, label)
+
+
 class Cluster022Controller(RufRichmatController):
     """Reuse family controls and mattress entities with two independent catalogs."""
 
@@ -123,6 +172,8 @@ class Cluster022Controller(RufRichmatController):
     ) -> None:
         super().__init__(coordinator, app=app, protocol_variant=protocol_variant, device_name=device_name)
         self._classifier = Cluster022Classifier(app)
+        # The app's transmit mode byte. HA offers no picker because the mode's physical
+        # meaning is not established; it stays 0 unless a saved snapshot carries one.
         stored_mode = self._stored_snapshot.get("transmit_mode")
         self._transmit_mode = stored_mode if type(stored_mode) is int and stored_mode in (0, 1, 2) else 0
         self._session_generation = 0
@@ -133,12 +184,8 @@ class Cluster022Controller(RufRichmatController):
         self._mode_groups = surface.mode_groups if surface else {}
         self._remote_long_codes = surface.remote_long if surface else ()
         self._speech = dict(surface.speech) if surface else {}
-        stored_group = str(self._stored_snapshot.get("group_type") or "SINGLE")
-        self._group_type = stored_group if stored_group in self._mode_groups else None
-        self.forward_controller_state_update(GROUP_TYPE, self._group_type)
         if not APPS[app].normal_mattress:
             self._waist = self._normal_ready = False
-        self.forward_controller_state_update(TX_MODE, str(self._transmit_mode))
 
     @property
     def route(self) -> str:
@@ -168,15 +215,16 @@ class Cluster022Controller(RufRichmatController):
 
     @property
     def motor_mode_options(self) -> tuple[str, ...]:
-        if self.route != "C" or self._group_type is None:
+        # The app's group picker only filters this list, so offer every declared mode.
+        if self.route != "C":
             return ()
-        return tuple(name.lower() for name in self._mode_groups.get(self._group_type, ()))
+        modes = (name.lower() for group in self._mode_groups.values() for name in group)
+        return tuple(dict.fromkeys(modes))
 
     def capability_snapshot(self) -> dict[str, object] | None:
         snapshot = super().capability_snapshot()
         if snapshot is not None:
             snapshot["transmit_mode"] = self._transmit_mode
-            snapshot["group_type"] = self._group_type
         return snapshot
 
     def _light_page(self) -> Literal["led", "btn_led"] | None:
@@ -408,20 +456,6 @@ class Cluster022Controller(RufRichmatController):
         await asyncio.sleep(0.1)
         await super().write_massage_intensity(zone, value)
 
-    def set_transmit_mode(self, option: str) -> None:
-        if option not in ("0", "1", "2"):
-            raise ValueError("Choose transmit mode 0, 1 or 2")
-        self._transmit_mode = int(option)
-        self.forward_controller_state_update(TX_MODE, option)
-        self._persist_snapshot()
-
-    def set_group_type(self, option: str) -> None:
-        if option not in self._mode_groups:
-            raise ValueError("Choose an app group declared by this model")
-        self._group_type = option
-        self.forward_controller_state_update(GROUP_TYPE, option)
-        self._persist_snapshot()
-
     async def toggle_smart_light_lock(self) -> None:
         if not self._smart_light_lock():
             raise ValueError("This app/model has no smart light lock control")
@@ -495,32 +529,12 @@ class Cluster022Controller(RufRichmatController):
             await self._release(0)
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        specs = super().controller_select_specs + (
-            ControllerSelectSpec(
-                TX_MODE, "richmat_cluster022_transmit_mode", TX_MODE, ("0", "1", "2"),
-                lambda ctrl, option: _invoke(ctrl, "select_transmit_mode", option),
-                local_select_fn=self.set_transmit_mode,
-            ),
-        )
-        if self._mode_groups:
-            specs += (ControllerSelectSpec(
-                GROUP_TYPE, str(GROUP_TYPE), GROUP_TYPE, tuple(self._mode_groups),
-                lambda ctrl, option: _invoke(ctrl, "select_group_type", option),
-                local_select_fn=self.set_group_type,
-            ),)
-        return specs
-
-    async def select_transmit_mode(self, option: str) -> None:
-        self.set_transmit_mode(option)
-
-    async def select_group_type(self, option: str) -> None:
-        self.set_group_type(option)
-
-    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         specs = []
         for spec in super().controller_button_specs:
+            if spec.translation_placeholders and "action" in spec.translation_placeholders:
+                name = _button_name(spec.translation_placeholders["action"])
+                spec = replace(spec, name=name, translation_placeholders={"action": name})
             control = next((c for c in self._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
             if control and control.keep_ms:
                 spec = replace(spec, hold=ControllerHoldSpec(f"cluster022_{control.code:02x}"))
@@ -622,7 +636,7 @@ class Cluster022Controller(RufRichmatController):
                 # consumer mapping is not an established sibling counterpart.
                 self.forward_controller_state_update(LAST_REPLY, event.data)
                 if event.kind == "alarm":
-                    self.forward_controller_state_update(ALARM_STATUS_KEY, "reported")
+                    self.forward_controller_state_update(ALARM_STATUS_KEY, "updated")
                 return
             if event.kind == "init" and event.data.startswith(protocol.RX_CALLBACK_PREFIX):
                 self._apply_init(event.data)

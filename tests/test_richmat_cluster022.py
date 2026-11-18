@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -123,13 +124,10 @@ def test_diagnostic_rows_append_and_stop_retains_them() -> None:
     assert [event.kind for event in nisco.feed(bytes.fromhex("6e90c311d2"))] == ["init"]
 
 
-def test_motor_mode_groups_keep_their_own_domains() -> None:
+def test_motor_modes_offer_every_declared_group_mode() -> None:
     controller = make("mlily_supreme", "3i")
     controller._version, controller._call_page = "0001", True
-    controller.set_group_type("GROUP_SYNC")
     assert controller.motor_mode_options == ("mode1", "mode2", "mode3")
-    controller.set_group_type("GROUP_SPLIT")
-    assert controller.motor_mode_options == ("mode1", "mode3")
 
 
 async def test_nisco_snore_reads_mode_after_waiting_for_ble_lock() -> None:
@@ -137,7 +135,7 @@ async def test_nisco_snore_reads_mode_after_waiting_for_ble_lock() -> None:
     await controller._ble_lock.acquire()
     task = asyncio.create_task(controller.set_snore("anti_snore"))
     await asyncio.sleep(0)
-    controller.set_transmit_mode("2")
+    controller._transmit_mode = 2
     controller._ble_lock.release()
     await task
     assert frames(controller) == ["6e130246c9"]
@@ -180,7 +178,7 @@ async def test_fallback_write_first_last_roles_and_missing_preferred_fence() -> 
 async def test_light_timer_keeps_each_apps_final_mode_mask(app: str, expected: str) -> None:
     controller = make(app)
     controller._dev["led"] = True
-    controller.set_transmit_mode("2")
+    controller._transmit_mode = 2
     await controller.write_light_timer(300, 300)
     assert frames(controller) == [expected]
 
@@ -372,8 +370,17 @@ def test_aliases_and_entity_metadata_are_owned_by_each_catalog() -> None:
                             assert {option.lower() for option in spec.options} <= strings[platform][spec.translation_key]["state"].keys()
 
 
-@pytest.mark.parametrize("filename", ("strings.json", "translations/en.json"))
-def test_group_type_translations_use_schema_keys(filename: str) -> None:
-    path = Path(__file__).parents[1] / "custom_components/adjustable_bed" / filename
-    states = json.loads(path.read_text())["entity"]["select"]["richmat_cluster022_group_type"]["state"]
-    assert set(states) == {"single", "group_sync", "group_split"}
+@pytest.mark.parametrize("app", ("nisco", "mlily_supreme"))
+def test_button_names_are_readable_and_unique_per_bed(app: str) -> None:
+    raw = re.compile(r"\b(Inc\d?|Dec|\d*Min|Zg2|Ubl|Flat2|Xiaofeiyan|M\d|Zero gravity)\b")
+    for model in models(app):
+        for advanced in (False, True):
+            controller = make(app, model)
+            if advanced:
+                controller._version, controller._call_page = "0001", True
+            names = [spec.name for spec in controller.controller_button_specs]
+            assert len(names) == len(set(names)), (model, names)
+            for name in names:
+                assert not raw.search(name), (model, name)
+            if model == "bhrm" and not advanced:
+                assert {"Massage: Head Intensity Up 2", "Massage: Timer 10 Minutes"} <= set(names)

@@ -1769,8 +1769,7 @@ def cluster022_scenarios() -> list[Scenario]:
     def scenario(
         bed_type: str, app: str, suffix: str, model: str, *, mode: int = 0, version: bool = False,
     ) -> Scenario:
-        snapshot = {"app": app, "model": model, "transmit_mode": mode,
-                    "group_type": "GROUP_SYNC" if model == "3i" else None}
+        snapshot = {"app": app, "model": model, "transmit_mode": mode}
         return Scenario(
             id=bed_type + suffix, bed_type=bed_type, protocol_variant=f"model_{model}",
             entry_data={"capabilities": {"richmat_mh": snapshot}}, layout_id=bed_type,
