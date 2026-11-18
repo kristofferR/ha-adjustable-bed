@@ -58,6 +58,19 @@ class LocalSession:
 
 _MAINTENANCE_BUTTONS: Final = frozenset({"refresh", "alarm_refresh", "diagnostic", "light_refresh"})
 
+# Massage on/off and sonic on/off are the massage switches.
+_SWITCHED_MASSAGE: Final = frozenset({"on", "off", "sonic_on", "sonic_off"})
+_MASSAGE_LABELS: Final = {
+    "head_strength": "Cycle head massage strength",
+    "foot_strength": "Cycle foot massage strength",
+    "intensity_up": "Massage intensity up",
+    "intensity_down": "Massage intensity down",
+    "timer": "Cycle massage timer",
+    "wave_next": "Next massage wave",
+    "wave_previous": "Previous massage wave",
+}
+_PRESET_NAMES: Final = {"zero_g": "zero gravity", "anti_snore": "anti-snore", "tv": "TV"}
+
 
 class SymphonyController(KeesonController):
     """Independent product/selector, captured releases and current-link state."""
@@ -726,7 +739,7 @@ class SymphonyController(KeesonController):
             buttons.append(
                 button(
                     "save_" + name,
-                    "Save " + name.replace("_", " "),
+                    "Save " + _PRESET_NAMES.get(name, name.replace("_", " ")),
                     lambda c, name=name: c.recall(name, save=True),
                     CARD_PRESETS,
                 )
@@ -755,10 +768,12 @@ class SymphonyController(KeesonController):
                     )
                 )
         for action in self.massage_actions:
+            if action in _SWITCHED_MASSAGE:
+                continue
             buttons.append(
                 button(
                     "massage_" + action,
-                    "Massage " + action.replace("_", " "),
+                    _MASSAGE_LABELS.get(action, "Massage " + action.replace("_", " ")),
                     lambda c, action=action: c.massage_action(action),
                     CARD_MASSAGE,
                 )
@@ -819,7 +834,36 @@ class SymphonyController(KeesonController):
         async def light(ctrl: BedController, on: bool) -> None:
             await selected(ctrl).light_action(on)
 
-        specs = [
+        async def massage(ctrl: BedController, on: bool) -> None:
+            await selected(ctrl).massage_action("on" if on else "off")
+
+        async def sonic(ctrl: BedController, on: bool) -> None:
+            await selected(ctrl).massage_action("sonic_on" if on else "sonic_off")
+
+        specs = []
+        if "on" in self.massage_actions:
+            specs.append(
+                ControllerSwitchSpec(
+                    "symphony_massage_running",
+                    "symphony_massage_running",
+                    massage,
+                    self._key(k.MASSAGE),
+                    icon="mdi:vibrate",
+                    card=CARD_MASSAGE,
+                )
+            )
+        if "sonic_on" in self.massage_actions:
+            specs.append(
+                ControllerSwitchSpec(
+                    "symphony_sonic",
+                    "symphony_sonic",
+                    sonic,
+                    self._key(k.SONIC),
+                    icon="mdi:waveform",
+                    card=CARD_MASSAGE,
+                )
+            )
+        specs += [
             ControllerSwitchSpec(
                 "symphony_child_mode",
                 "symphony_child_mode",

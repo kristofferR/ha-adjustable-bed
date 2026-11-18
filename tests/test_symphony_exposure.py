@@ -89,7 +89,9 @@ async def test_factory_restore_keeps_explicit_choices_and_unknown_numeric_fallba
     controller = await create_controller(coordinator, const.BED_TYPE_SYMPHONY, "4", None)
     assert controller.app.product.value == 0 and controller.app.selector == 4
     coordinator.capability_controller = controller
-    local = controller.controller_switch_specs[0].local_set_fn
+    local = next(
+        s for s in controller.controller_switch_specs if s.key == "symphony_child_mode"
+    ).local_set_fn
     assert local is not None
     local(True)
     replacement = await create_controller(coordinator, const.BED_TYPE_SYMPHONY, "4", None)

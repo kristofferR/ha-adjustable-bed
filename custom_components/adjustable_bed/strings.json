@@ -5177,6 +5177,12 @@
       },
       "symphony_light": {
         "name": "Under-bed light"
+      },
+      "symphony_massage_running": {
+        "name": "Massage"
+      },
+      "symphony_sonic": {
+        "name": "Sonic massage"
       }
     },
     "binary_sensor": {
