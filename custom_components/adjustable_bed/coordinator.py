@@ -576,6 +576,8 @@ class AdjustableBedCoordinator(
         self._connection_success_count: int = 0
         self._last_connection_attempt: datetime | None = None
         self._last_connection_error: str | None = None
+        # Set once a failed connect has been reported, so an outage warns once.
+        self._connect_failure_logged = False
         self._last_connection_error_type: str | None = None
         self._last_disconnect_reason: str | None = (
             None  # "idle_timeout", "intentional", "unexpected"

@@ -685,8 +685,10 @@ class CoordinatorConnectionMixin:
                     attempt_details["lookup_elapsed_seconds"] = round(lookup_elapsed, 3)
                     attempt_details["total_elapsed_seconds"] = round(lookup_elapsed, 3)
                     attempt_details["result"] = "device_not_found"
-                    _LOGGER.warning(
-                        "Device %s NOT FOUND in Bluetooth scanner after %.1fs (attempt %d/%d). "
+                    # Expected while the bed is off or out of range; the final
+                    # failure below says so once.
+                    _LOGGER.debug(
+                        "Device %s not found in Bluetooth scanner after %.1fs (attempt %d/%d). "
                         "Bed may be powered off, out of range, or connected to another device.",
                         self._address,
                         lookup_elapsed,
@@ -733,7 +735,7 @@ class CoordinatorConnectionMixin:
                 lookup_elapsed = time.monotonic() - attempt_start
                 attempt_details["lookup_elapsed_seconds"] = round(lookup_elapsed, 3)
                 connect_log(
-                    "✓ Device %s FOUND in %.1fs (name: %s) via adapter: %s",
+                    "Device %s found in %.1fs (name: %s) via adapter: %s",
                     self._address,
                     lookup_elapsed,
                     device.name or "Unknown",
@@ -757,13 +759,14 @@ class CoordinatorConnectionMixin:
 
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
                     if device_source == self._preferred_adapter:
-                        _LOGGER.info(
-                            "✓ Device discovered by preferred adapter: %s",
+                        _LOGGER.debug(
+                            "Device discovered by preferred adapter: %s",
                             self._preferred_adapter,
                         )
                     else:
-                        _LOGGER.warning(
-                            "⚠ Device discovered by %s, but preferred adapter is %s - connection may use different adapter",
+                        _LOGGER.debug(
+                            "Device discovered by %s, but preferred adapter is %s; "
+                            "the connection may use a different adapter",
                             device_source,
                             self._preferred_adapter,
                         )
@@ -1135,8 +1138,9 @@ class CoordinatorConnectionMixin:
                 attempt_details["connect_elapsed_seconds"] = round(connect_elapsed, 3)
                 attempt_details["total_elapsed_seconds"] = round(total_elapsed, 3)
                 attempt_details["result"] = "connected"
+                self._connect_failure_logged = False
                 connect_log(
-                    "✓ CONNECTED to %s in %.1fs (GATT: %.1fs) via adapter: %s",
+                    "Connected to %s in %.1fs (GATT: %.1fs) via adapter: %s",
                     self._address,
                     total_elapsed,
                     connect_elapsed,
@@ -1145,13 +1149,13 @@ class CoordinatorConnectionMixin:
 
                 if self._preferred_adapter and self._preferred_adapter != ADAPTER_AUTO:
                     if actual_adapter == self._preferred_adapter:
-                        _LOGGER.info(
-                            "✓ Connection using preferred adapter: %s",
+                        _LOGGER.debug(
+                            "Connection using preferred adapter: %s",
                             self._preferred_adapter,
                         )
                     elif actual_adapter != "unknown":
-                        _LOGGER.warning(
-                            "⚠ Connected via %s instead of preferred adapter %s",
+                        _LOGGER.debug(
+                            "Connected via %s instead of preferred adapter %s",
                             actual_adapter,
                             self._preferred_adapter,
                         )
@@ -1213,7 +1217,7 @@ class CoordinatorConnectionMixin:
                         and expected_service not in discovered_uuids
                     ):
                         _LOGGER.warning(
-                            "⚠ Expected OKIN service UUID %s not found in discovered "
+                            "Expected OKIN service UUID %s not found in discovered "
                             "services for %s. This usually means pairing/bonding failed. "
                             "Discovered services: %s. Try removing and re-adding the "
                             "device with 'Pair Now' option.",
@@ -1621,8 +1625,8 @@ class CoordinatorConnectionMixin:
                 self._last_connection_error = str(err)
                 self._last_connection_error_type = type(err).__name__
 
-                _LOGGER.warning(
-                    "✗ %s to %s after %.1fs (attempt %d/%d): %s",
+                _LOGGER.debug(
+                    "%s to %s after %.1fs (attempt %d/%d): %s",
                     error_category,
                     self._address,
                     attempt_elapsed,
@@ -1651,7 +1655,7 @@ class CoordinatorConnectionMixin:
                 attempt_details["error_type"] = type(err).__name__
                 attempt_details["error_category"] = "UNEXPECTED ERROR"
 
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "Unexpected error connecting to %s (attempt %d/%d): %s",
                     self._address,
                     attempt_number,
@@ -1692,18 +1696,19 @@ class CoordinatorConnectionMixin:
         # previously published "idle" would linger until some later event.
         self._last_disconnect_reason = "connect_failed"
         self._notify_connection_state_change(False)
-        _LOGGER.error(
-            "✗ FAILED to connect to %s after %d attempts (%.1fs total). "
-            "Troubleshooting:\n"
-            "  1. Power cycle bed (unplug 30 seconds)\n"
-            "  2. Close any phone apps connected to bed\n"
-            "  3. Check Bluetooth adapter is working\n"
-            "  4. Move adapter closer to bed\n"
-            "  5. If using ESPHome proxy, verify it's online",
+        # Warn once per outage; repeats while the bed stays unreachable are
+        # expected and go to debug.
+        _LOGGER.log(
+            logging.DEBUG if self._connect_failure_logged else logging.WARNING,
+            "Could not connect to %s after %d attempts (%.1fs, last error: %s). "
+            "Check that the bed has power, close any phone app connected to it, "
+            "and check that its Bluetooth adapter or proxy is online",
             self._address,
             attempt,
             total_elapsed,
+            self._last_connection_error or "not found",
         )
+        self._connect_failure_logged = True
         self._schedule_pending_capability_reload()
         return False
 
@@ -1780,8 +1785,12 @@ class CoordinatorConnectionMixin:
             self._schedule_pending_capability_reload()
             return
 
-        _LOGGER.warning(
-            "Unexpectedly disconnected from %s. Client details: is_connected=%s, address=%s",
+        # Many beds drop an idle link by design; a drop under a running command
+        # is worth a warning.
+        _LOGGER.log(
+            logging.WARNING if self._command_lock.locked() else logging.DEBUG,
+            "Disconnected from %s by the bed or adapter. Client details: is_connected=%s, "
+            "address=%s",
             self._address,
             getattr(client, "is_connected", "N/A"),
             getattr(client, "address", "N/A"),
