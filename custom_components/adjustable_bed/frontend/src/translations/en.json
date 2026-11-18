@@ -1,4 +1,6 @@
 {
+  "action.on": "On",
+  "action.off": "Off",
   "action.close": "Close",
   "action.confirm": "{action}? This replaces the saved preset.",
   "editor.open_dialog": "Open full card in a dialog",

@@ -16,6 +16,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability
+from ...card import CARD_PRESET_SAVE
 from ...codec import malouf as codec
 from ...codec.malouf import TRANSPORTS, TransportKey
 from ...const import (
@@ -527,7 +528,12 @@ class MaloufAppController(ProfileExecution[MaloufAppProfile], BedController):
         if self._has_oz_memory_editor:
             return (
                 ControllerButtonSpec(
-                    "malouf_oz_save_memory_2", "Save Memory 2", _app_callback("save_oz_memory_2")
+                    "malouf_oz_save_memory_2",
+                    "Save Memory 2",
+                    _app_callback("save_oz_memory_2"),
+                    translation_key="malouf_oz_save_memory_2",
+                    requires_confirmation=True,
+                    card=CARD_PRESET_SAVE,
                 ),
             )
         return ()

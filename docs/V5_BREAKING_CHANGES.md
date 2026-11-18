@@ -20,6 +20,7 @@ what each beta ships.
 - [Config Entry Migration (Schema 5.5)](#config-entry-migration-schema-55)
 - [Removed or Renamed Options, Bed Types and Entities](#removed-or-renamed-options-bed-types-and-entities)
 - [Removed or Renamed Actions](#removed-or-renamed-actions)
+- [Entity Cleanup](#entity-cleanup)
 - [New Entities, Attributes and Actions](#new-entities-attributes-and-actions)
 - [Behavior Changes](#behavior-changes)
 - [Moved Documentation](#moved-documentation)
@@ -97,11 +98,11 @@ The migration record appears in two places:
 
 ## Removed or Renamed Options, Bed Types and Entities
 
-**One removal: the massage buttons of three layouts without massage** (see
-below). No bed type or option is removed or renamed in v5. Actions and action
-fields changed: see [Removed or Renamed Actions](#removed-or-renamed-actions). No
-other entity is removed, and no saved config key a setting reads is
-removed. The classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks,
+**Two removals: the massage buttons of three layouts without massage** (see
+below) **and the [entity cleanup](#entity-cleanup)** of app-derived entities. No
+bed type or option is removed or renamed in v5. Actions and action fields changed:
+see [Removed or Renamed Actions](#removed-or-renamed-actions). No saved config key a
+setting reads is removed. The classic Richmat apps (Avocado Eco Base, CoasterSleep, Forty Winks,
 Milemont and Superior) shipped in 4.4 with an internal audit name in their
 unique IDs, translation keys, status sensor attributes and the
 `cluster018_third_service` key. The 5.4 step renames them to
@@ -231,6 +232,64 @@ Each bed still applies its own name and control rules.
 `furnimove_action` no longer takes `consumer`. `sleep_number_command` no longer
 accepts service, firmware and diagnostic commands such as `reboot_system`,
 `software_versions` or the internal heating and cooling mode commands.
+
+## Entity Cleanup
+
+v5 gives every entity a name a person understands and removes entities that
+only mirrored the phone app's internals. What to know:
+
+- **Renamed entities keep their entity IDs, history and settings.** Only the
+  displayed name changes: brand and app names, notes such as "(app)" or
+  "(raw)", protocol words (hex values, "field", "axis N", "Part N", "code")
+  and ALL-CAPS app labels are gone. An entity you renamed yourself keeps your
+  name.
+- **Removed entities disappear by themselves** once the bed has connected and
+  reported its capabilities. Remove them from dashboards, automations and
+  scripts. Their values stay in diagnostics and support bundles.
+- **On/off button pairs became switches** with a new entity ID
+  (`switch.<bed>_<name>`). Point automations at the switch. A switch whose bed
+  never reports the setting shows separate on and off controls and forgets its
+  last command when the connection drops.
+- **Raw and protocol state sensors are disabled by default** for new
+  installations. Existing ones keep their enabled state.
+- **Refresh, query and clock-sync buttons are diagnostic** and disabled by
+  default where the bed reports the value itself.
+- **Preset save buttons ask for confirmation** in the dashboard card, and the
+  card never offers them as a compact quick action.
+
+Removed and replaced entities by bed:
+
+| Bed or app | Removed | Replaced |
+|------------|---------|----------|
+| Motion Bed app | 83 state sensors (preset-selected flags, raw positions, calibration samples, day and month report arrays, module and pressure readbacks); alarm-sound preview buttons | Alarm, climate timer, fault and sleep report details became attributes of their sensors |
+| StarCode Adjustable Comfort M1X12 | Part 8 and Part 16 covers and buttons (still available through `hold_control`), Part 8/16/32 position sensors, MemoryType 8 recall, raw time and brightness sensors, motor-stopped, light-on and kneading-demo binary sensors | Parts 1, 2 and 4 are now **Head**, **Foot** and **Lumbar** |
+| StarCode AdjustableM5X5 | Raw time, brightness, RGB-mode and motor part 4-6 sensors, motor-stopped, light-on, firmware-read and kneading-demo binary sensors | |
+| StarCode AdjustableM5X4 | 19 raw field sensors, selector sensors, wake, firmware-read and massage-release buttons | "App massage active" sensor became the **Massage** binary sensor |
+| Sleepy's Elite app | All `field_0x..` sensors, voice STOP, voice brightness and voice position buttons, light on/off buttons | Motion sensor on/off buttons became the **Motion sensor** switch; axes 0, 1 and 2 are now **Head**, **Foot** and **Lumbar** |
+| Limoss Remote | Repeated motor channel buttons, capability count, calibration reply and raw position sensors | |
+| Reverie, Pairlink | Wave sensor, Pairlink massage mode and timer sensors (the select and number show them) | Pairlink massage rhythm select became the **Massage rhythm** switch |
+| RMControl | Protocol version, bed mode and last alarm record sensors | |
+| MP Remote | Memory request sensor | |
+| AdjustaMattress | Privacy-agreement select, reported alarm and strength sensors, sleeping, alarm, anti-snore and auxiliary status binary sensors, clock sync, alarm query and massage query buttons | Alarm commit and anti-snore selects and the sleep button became the **Alarm**, **Intelligent anti-snore** and **Sleep mode** switches |
+| KomfyD | Bed side select, lock status query | Lock and unlock buttons became the **Control lock** switch; timer start and stop became the **Timer** switch |
+| Smart Sleep | App preset buttons (the standard presets remain), massage binary sensor | Child mode and privacy selects and massage all/off buttons became switches |
+| DoubleSleep | Four flag binary sensors, parser-error and privacy sensors | Child lock select and privacy buttons became switches |
+| Paramount | Session-state and registration-result sensors | Call button, bed switch and the four movement selects became switches |
+| Symphony | | Child mode, privacy, light, massage and sonic on/off controls became switches |
+| Rize, Rize Home | | Motion sensor on/off buttons became the **Motion sensor** switch |
+| OKIN Motion Bed app | | "Bed light parameter 0/1" buttons became the **Bed light** switch |
+| FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | |
+| Sleeptracker | Massage pattern and strength sensors | |
+| FSM Relax | 11 count, acknowledgement, calibration, quarantine, information and raw motor sensors | |
+| Svane | Head, feet and position byte sensors | |
+| M Line | Boolean projection binary sensor | |
+| OKIN bedding apps | Status, timer and save-event code sensors | |
+| eShine OKIN | Alarm refresh button | |
+| Smart Comfort | Base light on/off buttons (the light entity drives it), raw feedback counters | Cup holder and reading light on/off buttons became the **Cup holder light** and **Reading light** switches |
+| Richmat sleep receiver | | Left and right intervention selects became **snore intervention** switches |
+| Richmat resource apps | 13 disabled "App ..." request buttons (the `richmat_resource_bed` action still sends every command) | |
+| BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons | |
+| V-MAT Basic | ED motor status binary sensor | |
 
 ## New Entities, Attributes and Actions
 

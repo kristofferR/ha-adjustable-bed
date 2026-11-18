@@ -84,16 +84,14 @@ async def test_motor_cover_and_app_button_use_current_literal_action(hass):
     await covers[0].async_open_cover()
     current.hold_control.assert_awaited_once_with("motor_1_up", 1000)
     current.hold_control.reset_mock()
-    buttons = _button_entities_for(hass, coordinator)
-    action = next(
-        entity
-        for entity in buttons
-        if isinstance(entity, ControllerActionButton)
-        and entity.unique_id == "target_limoss_remote_motor_1_down"
-    )
-    await action.async_press()
+    await covers[0].async_close_cover()
     current.hold_control.assert_awaited_once_with("motor_1_down", 1000)
-    assert action.translation_key == "remote_action"
+    # The covers' own buttons move the channels; no action button repeats them.
+    buttons = _button_entities_for(hass, coordinator)
+    assert not any(
+        isinstance(entity, ControllerActionButton) and "_limoss_remote_motor_" in entity.unique_id
+        for entity in buttons
+    )
 
 
 async def test_removed_app_actions_are_not_built(hass):

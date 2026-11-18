@@ -272,6 +272,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
                 icon="mdi:refresh",
                 translation_key="logicdata_app_query_massage",
                 cancel_movement=False,
+                diagnostic=True,
                 card=CARD_MASSAGE,
             ),
         )
@@ -286,6 +287,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
                 translation_key="under_bed_lights",
                 state_key=UNDER_BED_LIGHTS_ON,
                 icon="mdi:lightbulb",
+                entity_registry_enabled_default=True,
                 card=CARD_LIGHTING,
             ),
         )
@@ -310,6 +312,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
                     translation_key="logicdata_app_massage_mode",
                     state_key=MASSAGE_MODE,
                     icon="mdi:sine-wave",
+                    entity_registry_enabled_default=True,
                 )
             )
         if self.supports_clock_alarm:
@@ -320,6 +323,7 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
                     state_key=ALARM,
                     icon="mdi:alarm",
                     attribute_keys=(ALARM_CONFIG,),
+                    entity_registry_enabled_default=True,
                 )
             )
         return tuple(specs)

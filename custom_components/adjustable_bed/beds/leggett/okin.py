@@ -308,12 +308,14 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
                 translation_key="leggett_led_mask",
                 state_key=LED_MASK,
                 icon="mdi:led-outline",
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 key="leggett_status",
                 translation_key="leggett_status",
                 state_key=STATUS,
                 icon="mdi:information-outline",
+                entity_registry_enabled_default=False,
             ),
         )
 
@@ -326,12 +328,14 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
                 translation_key="leggett_alarm_indicator",
                 state_key=ALARM_INDICATOR,
                 icon="mdi:alarm",
+                entity_registry_enabled_default=True,
             ),
             ControllerStateBinarySensorSpec(
                 key="leggett_sleep_timer_indicator",
                 translation_key="leggett_sleep_timer_indicator",
                 state_key=SLEEP_TIMER_INDICATOR,
                 icon="mdi:timer-outline",
+                entity_registry_enabled_default=True,
             ),
         )
 

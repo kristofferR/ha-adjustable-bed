@@ -5,14 +5,21 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability
 from ...app_session import app_session
-from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
+from ...card import (
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_MASSAGE_TIMER,
+    CARD_PRESET_SAVE,
+    CARD_PRESETS,
+    CARD_UTILITY,
+)
 from ...codec import keeson, okin_nframe, okin_soundwave
 from ...const import (
     CONF_BLE_DEVICE_NAME,
@@ -28,9 +35,9 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
-    ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
 )
 from ..keeson.controller import KeesonController, _wait_unless_cancelled
@@ -55,6 +62,22 @@ PROTOCOL = "00002a27-0000-1000-8000-00805f9b34fb"
 @dataclass
 class LocalSession:
     child: bool = False
+
+
+_MAINTENANCE_BUTTONS: Final = frozenset({"refresh", "alarm_refresh", "diagnostic", "light_refresh"})
+
+# Massage on/off and sonic on/off are the massage switches.
+_SWITCHED_MASSAGE: Final = frozenset({"on", "off", "sonic_on", "sonic_off"})
+_MASSAGE_LABELS: Final = {
+    "head_strength": "Cycle head massage strength",
+    "foot_strength": "Cycle foot massage strength",
+    "intensity_up": "Massage intensity up",
+    "intensity_down": "Massage intensity down",
+    "timer": "Cycle massage timer",
+    "wave_next": "Next massage wave",
+    "wave_previous": "Previous massage wave",
+}
+_PRESET_NAMES: Final = {"zero_g": "zero gravity", "anti_snore": "anti-snore", "tv": "TV"}
 
 
 class SymphonyController(KeesonController):
@@ -711,8 +734,14 @@ class SymphonyController(KeesonController):
                 "symphony_" + key,
                 label,
                 press,
-                translation_key=f"symphony_{card.section.value}_action",
+                translation_key="symphony_save_action"
+                if card is CARD_PRESET_SAVE
+                else f"symphony_{card.section.value}_action",
                 translation_placeholders={"action": label},
+                # Refreshes and the status request are maintenance actions.
+                diagnostic=key in _MAINTENANCE_BUTTONS,
+                # Saving overwrites the stored preset, so the card asks first.
+                requires_confirmation=card is CARD_PRESET_SAVE,
                 card=card,
             )
 
@@ -721,7 +750,7 @@ class SymphonyController(KeesonController):
             button("alarm_refresh", "Refresh alarm", lambda c: c.query_alarm()),
             button(
                 "diagnostic",
-                "Request bed diagnostic status (opaque)",
+                "Request diagnostic status",
                 lambda c: c.write_command(okin_nframe.parameter_record(0xB4, (1,))),
             ),
         ]
@@ -729,9 +758,9 @@ class SymphonyController(KeesonController):
             buttons.append(
                 button(
                     "save_" + name,
-                    "Save " + name.replace("_", " "),
+                    "Save " + _PRESET_NAMES.get(name, name.replace("_", " ")),
                     lambda c, name=name: c.recall(name, save=True),
-                    CARD_PRESETS,
+                    CARD_PRESET_SAVE,
                 )
             )
         if "reading" in self.app.presets:
@@ -740,47 +769,43 @@ class SymphonyController(KeesonController):
             )
         if self.app.product.light:
             if self.app.product.page == "soundwave":
-                buttons.extend(
-                    (
-                        button(
-                            "light_on", "Light on", lambda c: c.light_action(True), CARD_LIGHTING
-                        ),
-                        button(
-                            "light_off", "Light off", lambda c: c.light_action(False), CARD_LIGHTING
-                        ),
-                        button(
-                            "light_refresh",
-                            "Refresh light",
-                            lambda c: c.write_command(okin_soundwave.query(4)),
-                        ),
+                # On/off is the light switch.
+                buttons.append(
+                    button(
+                        "light_refresh",
+                        "Refresh light",
+                        lambda c: c.write_command(okin_soundwave.query(4)),
                     )
                 )
             else:
                 buttons.append(
                     button(
                         "light_toggle",
-                        "Toggle underbed light",
+                        "Toggle under-bed light",
                         lambda c: c.light_action(None),
                         CARD_LIGHTING,
                     )
                 )
         for action in self.massage_actions:
+            if action in _SWITCHED_MASSAGE:
+                continue
             buttons.append(
                 button(
                     "massage_" + action,
-                    "Massage " + action.replace("_", " "),
+                    _MASSAGE_LABELS.get(action, "Massage " + action.replace("_", " ")),
                     lambda c, action=action: c.massage_action(action),
                     CARD_MASSAGE,
                 )
             )
-        if self.app.selector in (2, 9):
-            buttons.extend(
-                (
-                    button("privacy_on", "Privacy on", lambda c: c.set_privacy(True)),
-                    button("privacy_off", "Privacy off", lambda c: c.set_privacy(False)),
-                )
-            )
         return tuple(buttons)
+
+    @property
+    def _privacy_settable(self) -> bool:
+        return self.app.selector in (2, 9)
+
+    @property
+    def _light_switchable(self) -> bool:
+        return self.app.product.light and self.app.product.page == "soundwave"
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -810,28 +835,86 @@ class SymphonyController(KeesonController):
         )
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        def local(option: str) -> None:
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        def local(on: bool) -> None:
             current = self._coordinator.capability_controller
             if not isinstance(current, SymphonyController) or current.local is not self.local:
                 raise ValueError("The Symphony Sleep Sense profile changed")
-            self.local.child = option == "on"
-            self.forward_controller_state_updates(k.CHILD(option))
+            self.local.child = on
+            self.forward_controller_state_updates(k.CHILD("on" if on else "off"))
 
-        async def choose(ctrl: BedController, option: str) -> None:
-            selected(ctrl).local.child = option == "on"
-            ctrl.forward_controller_state_updates(k.CHILD(option))
+        async def choose(ctrl: BedController, on: bool) -> None:
+            selected(ctrl).local.child = on
+            ctrl.forward_controller_state_updates(k.CHILD("on" if on else "off"))
 
-        return (
-            ControllerSelectSpec(
+        async def privacy(ctrl: BedController, on: bool) -> None:
+            await selected(ctrl).set_privacy(on)
+
+        async def light(ctrl: BedController, on: bool) -> None:
+            await selected(ctrl).light_action(on)
+
+        async def massage(ctrl: BedController, on: bool) -> None:
+            await selected(ctrl).massage_action("on" if on else "off")
+
+        async def sonic(ctrl: BedController, on: bool) -> None:
+            await selected(ctrl).massage_action("sonic_on" if on else "sonic_off")
+
+        specs = []
+        if "on" in self.massage_actions:
+            specs.append(
+                ControllerSwitchSpec(
+                    "symphony_massage_running",
+                    "symphony_massage_running",
+                    massage,
+                    self._key(k.MASSAGE),
+                    icon="mdi:vibrate",
+                    card=CARD_MASSAGE,
+                )
+            )
+        if "sonic_on" in self.massage_actions:
+            specs.append(
+                ControllerSwitchSpec(
+                    "symphony_sonic",
+                    "symphony_sonic",
+                    sonic,
+                    self._key(k.SONIC),
+                    icon="mdi:waveform",
+                    card=CARD_MASSAGE,
+                )
+            )
+        specs += [
+            ControllerSwitchSpec(
                 "symphony_child_mode",
                 "symphony_child_mode",
-                k.CHILD,
-                ("off", "on"),
                 choose,
-                local_select_fn=local,
-            ),
-        )
+                k.CHILD,
+                "on",
+                "mdi:lock",
+                local_set_fn=local,
+            )
+        ]
+        if self._privacy_settable:
+            specs.append(
+                ControllerSwitchSpec(
+                    "symphony_privacy",
+                    "symphony_privacy",
+                    privacy,
+                    k.PRIVACY,
+                    icon="mdi:shield-lock",
+                )
+            )
+        if self._light_switchable:
+            specs.append(
+                ControllerSwitchSpec(
+                    "symphony_light",
+                    "symphony_light",
+                    light,
+                    k.LIGHT_ON,
+                    icon="mdi:lightbulb",
+                    card=CARD_LIGHTING,
+                )
+            )
+        return tuple(specs)
 
     def _key[T](self, key: StateKey[T]) -> StateKey[T]:
         return sided(key, self.command_side) if self.supports_single_address_pairing else key
@@ -840,10 +923,18 @@ class SymphonyController(KeesonController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         specs = [
             ControllerStateSensorSpec(
-                "symphony_firmware", "symphony_firmware", k.FIRMWARE, "mdi:chip"
+                "symphony_firmware",
+                "symphony_firmware",
+                k.FIRMWARE,
+                "mdi:chip",
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
-                "symphony_protocol", "symphony_protocol", k.PROTOCOL, "mdi:bluetooth"
+                "symphony_protocol",
+                "symphony_protocol",
+                k.PROTOCOL,
+                "mdi:bluetooth",
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 "symphony_alarm",
@@ -857,6 +948,7 @@ class SymphonyController(KeesonController):
                     self._key(k.MODE),
                     self._key(k.ALARM),
                 ),
+                entity_registry_enabled_default=True,
             ),
         ]
         if self.supports_massage:
@@ -875,25 +967,36 @@ class SymphonyController(KeesonController):
                         self._key(k.PREMIER),
                     ),
                     card=CARD_MASSAGE_TIMER,
+                    entity_registry_enabled_default=True,
                 )
             )
         return tuple(specs)
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        specs = (
-            ControllerStateBinarySensorSpec(
-                "symphony_privacy", "symphony_privacy", k.PRIVACY, "mdi:shield-lock"
-            ),
+        # Privacy and the light read back through their switches where settable.
+        specs: tuple[ControllerStateBinarySensorSpec, ...] = ()
+        if not self._privacy_settable:
+            specs += (
+                ControllerStateBinarySensorSpec(
+                    "symphony_privacy",
+                    "symphony_privacy",
+                    k.PRIVACY,
+                    "mdi:shield-lock",
+                    entity_registry_enabled_default=True,
+                ),
+            )
+        specs += (
             ControllerStateBinarySensorSpec(
                 "symphony_anti_snore",
                 "symphony_anti_snore",
                 k.SNORE,
                 "mdi:sleep",
                 attribute_keys=(k.STRENGTH,),
+                entity_registry_enabled_default=True,
             ),
         )
-        if self.app.product.page == "soundwave":
+        if self.app.product.page == "soundwave" and not self._light_switchable:
             specs += (
                 ControllerStateBinarySensorSpec(
                     "symphony_light_on",
@@ -902,6 +1005,7 @@ class SymphonyController(KeesonController):
                     "mdi:lightbulb",
                     attribute_keys=(k.COLOR, k.BRIGHTNESS),
                     card=CARD_LIGHTING,
+                    entity_registry_enabled_default=True,
                 ),
             )
         return specs

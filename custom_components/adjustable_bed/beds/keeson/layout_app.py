@@ -223,6 +223,7 @@ class AppController(ProfileExecution[AppProfile], BedController):
                 APP_TIMER_STATUS,
                 "mdi:timer-outline",
                 card=CARD_MASSAGE_TIMER,
+                entity_registry_enabled_default=True,
             ),
         )
 

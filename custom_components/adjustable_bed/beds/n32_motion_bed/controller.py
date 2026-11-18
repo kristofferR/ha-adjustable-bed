@@ -216,6 +216,7 @@ class N32MotionBedController(Okin64BitController):
                 translation_key="n32_refresh_alarms",
                 cancel_movement=False,
                 scheduler_resource="configuration",
+                diagnostic=True,
             ),
         )
 
@@ -229,6 +230,7 @@ class N32MotionBedController(Okin64BitController):
                 "mdi:alarm",
                 attribute_keys=(keys.enabled, keys.mode, keys.week, keys.ab, keys.soft, keys.fresh),
                 card=CARD_UTILITY,
+                entity_registry_enabled_default=True,
             )
             for slot, keys in ALARM_KEYS.items()
         )

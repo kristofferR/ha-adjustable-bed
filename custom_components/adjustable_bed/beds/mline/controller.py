@@ -44,6 +44,14 @@ HISTORY_IDLE: Final = 1.0
 HISTORY_ACK_WINDOW: Final = 30.0
 
 
+_MASSAGE_LABELS: Final = {
+    "start": "Toggle massage",
+    "wave": "Cycle massage wave",
+    "intensity": "Cycle massage intensity",
+    "timer": "Cycle massage timer",
+}
+
+
 @dataclass(frozen=True)
 class Link:
     client: BleakClient
@@ -407,7 +415,7 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
         specs = [
             ControllerButtonSpec(
                 "mline_light",
-                "Light action",
+                "Toggle light",
                 lambda c: require(c).one_shot("light"),
                 card=CARD_UTILITY,
             ),
@@ -415,16 +423,20 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
                 "mline_settings_refresh",
                 "Refresh settings",
                 lambda c: require(c).settings_refresh(),
+                diagnostic=True,
             ),
             ControllerButtonSpec(
-                "mline_alarm_refresh", "Refresh alarm", lambda c: require(c).alarm_refresh()
+                "mline_alarm_refresh",
+                "Refresh alarm",
+                lambda c: require(c).alarm_refresh(),
+                diagnostic=True,
             ),
         ]
         if self._coordinator.entry.data.get(CONF_HAS_MASSAGE, False):
             specs.extend(
                 ControllerButtonSpec(
                     f"mline_massage_{key}",
-                    f"Massage {key}",
+                    _MASSAGE_LABELS[key],
                     lambda c, action=action: require(c).one_shot(action),
                     card=CARD_MASSAGE,
                 )
@@ -433,7 +445,10 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
         if self.profile.key == "sleep":
             specs.append(
                 ControllerButtonSpec(
-                    "mline_live_query", "Query live sensor", lambda c: require(c).query_live()
+                    "mline_live_query",
+                    "Refresh live sensor data",
+                    lambda c: require(c).query_live(),
+                    diagnostic=True,
                 )
             )
         return tuple(specs)
@@ -701,7 +716,14 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
                 )
             )
         return tuple(
-            ControllerStateSensorSpec(str(key), str(key), key, icon) for key, icon in fields
+            ControllerStateSensorSpec(
+                str(key),
+                str(key),
+                key,
+                icon,
+                entity_registry_enabled_default=key != state.ANTI_ANGLE,
+            )
+            for key, icon in fields
         )
 
     @property
@@ -715,10 +737,11 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
                 key,
                 icon,
                 attribute_keys=(state.MOTION_WINDOW,) if key == state.MOTION else (),
+                entity_registry_enabled_default=True,
             )
+            # The sensor's unnamed boolean stays in published state for diagnostics.
             for key, icon in (
                 (state.MOTION, "mdi:motion-sensor"),
-                (state.PROJECTION, "mdi:checkbox-blank-circle-outline"),
                 (state.PRIVACY, "mdi:eye-off"),
                 (state.ANTI_ENABLED, "mdi:sleep"),
             )

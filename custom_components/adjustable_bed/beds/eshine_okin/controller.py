@@ -215,19 +215,19 @@ class EshineOkinController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # The alarm is read on connect and after every alarm change.
         labels = {
-            "flat_zero_g": "Flat + Zero Gravity",
+            "flat_zero_g": "Flat and zero gravity",
             "query_state": "Refresh bed state",
-            "query_alarm": "Refresh alarm",
-            "sync_clock": "Synchronize bed clock",
+            "sync_clock": "Sync clock",
         }
         if self.supports_massage:
             labels.update(
                 {
                     "massage_on": "Massage on",
-                    "massage_head_strength": "Head massage strength",
-                    "massage_foot_strength": "Foot massage strength",
-                    "massage_timer": "Massage timer",
+                    "massage_head_strength": "Cycle head massage strength",
+                    "massage_foot_strength": "Cycle foot massage strength",
+                    "massage_timer": "Cycle massage timer",
                 }
             )
         return tuple(
@@ -237,6 +237,7 @@ class EshineOkinController(BedController):
                 _action(key),
                 translation_key=f"eshine_okin_{key}",
                 hold=ControllerHoldSpec(key) if key in HELD else None,
+                diagnostic=key in ("query_state", "sync_clock"),
                 card=CARD_MASSAGE if key.startswith("massage_") else CARD_UTILITY,
             )
             for key, name in labels.items()
@@ -251,6 +252,7 @@ class EshineOkinController(BedController):
                 _group_key(group),
                 "mdi:alarm" if group == "alarm" else "mdi:vibrate",
                 attribute_keys=(_group_data_key(group),),
+                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE if group == "massage" else CARD_UTILITY,
             )
             for group in (("massage", "alarm") if self.supports_massage else ("alarm",))

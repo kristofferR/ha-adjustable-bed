@@ -54,6 +54,7 @@ from .entity_specs import (
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
@@ -1060,6 +1061,11 @@ class BedController(GattWriter):
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         """Return product controls with immutable ranges for the selected profile."""
+        return ()
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        """Return product on/off settings for the selected profile."""
         return ()
 
     @property

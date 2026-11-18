@@ -918,7 +918,8 @@ product/name gates; an HA automation can repeat Start for cycle operation.
 `adjustable_bed.comfy_control` accepts `device_id`, optional paired `side`, and
 `action`: `zero`, `h_increase`, `h_decrease`, `f_increase`, `f_decrease`,
 `timer_start`, `timer_stop`, `lock`, `unlock`, or `query`. Timer duration uses
-the App timer selection entity. H/F and timer buttons work as in the app. All targets are validated before any control
+the Timer duration select; the Control lock and Timer switches send lock/unlock
+and timer start/stop. H/F and timer buttons work as in the app. All targets are validated before any control
 write. See the [profile guide](beds/kaidi.md#komfyd-and-comfyds).
 
 ## Lady Americana and partner beds

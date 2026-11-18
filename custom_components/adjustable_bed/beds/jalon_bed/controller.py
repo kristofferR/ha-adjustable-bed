@@ -423,6 +423,7 @@ class JalonBedController(ProfileExecution[KeesonProfile], BedController):
                 TIMER_BUCKET,
                 "mdi:timer-outline",
                 native_unit_of_measurement="min",
+                entity_registry_enabled_default=True,
             ),
         )
 

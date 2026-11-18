@@ -441,25 +441,30 @@ class SymphonySleepController(KeesonController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return (
             ControllerButtonSpec("symphony_query_alarm", "Refresh bed alarm", lambda c: cast(SymphonySleepController, c).query_alarm(),
-                                 translation_key="symphony_query_alarm", card=CARD_UTILITY, scheduler_resource="*"),
+                                 translation_key="symphony_query_alarm", card=CARD_UTILITY, scheduler_resource="*",
+                                 diagnostic=True),
             ControllerButtonSpec("symphony_sync_clock", "Sync bed clock", lambda c: c.sync_clock(),
-                                 translation_key="symphony_sync_clock", card=CARD_UTILITY, scheduler_resource="*"),
+                                 translation_key="symphony_sync_clock", card=CARD_UTILITY, scheduler_resource="*",
+                                 diagnostic=True),
         )
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
             *((ControllerStateSensorSpec("symphony_massage_minutes", "symphony_massage_minutes", TIMER,
-                                        "mdi:timer", native_unit_of_measurement="min", card=CARD_MASSAGE_TIMER),)
+                                        "mdi:timer", native_unit_of_measurement="min", card=CARD_MASSAGE_TIMER,
+                                        entity_registry_enabled_default=True),)
               if self.supports_massage else ()),
             ControllerStateSensorSpec("symphony_alarm_time", "symphony_alarm_time", ALARM_TIME, "mdi:alarm",
-                                      attribute_keys=(ALARM_ENABLED, ALARM_WAKE), card=CARD_UTILITY),
+                                      attribute_keys=(ALARM_ENABLED, ALARM_WAKE), card=CARD_UTILITY,
+                                      entity_registry_enabled_default=True),
         )
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (ControllerStateBinarySensorSpec("symphony_alarm_enabled", "symphony_alarm_enabled",
-                                                ALARM_ENABLED, "mdi:alarm", card=CARD_UTILITY),)
+                                                ALARM_ENABLED, "mdi:alarm", card=CARD_UTILITY,
+                                                entity_registry_enabled_default=True),)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self._link is None:

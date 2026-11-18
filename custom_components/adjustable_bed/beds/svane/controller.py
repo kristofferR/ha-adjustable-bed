@@ -275,7 +275,7 @@ class SvaneController(BedController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
-            ControllerButtonSpec(f"svane_{key}", label, _action(key))
+            ControllerButtonSpec(f"svane_{key}", label, _action(key), diagnostic=key == "refresh")
             for key, label in (
                 ("light_toggle", "Toggle light"),
                 ("refresh", "Refresh device information"),
@@ -298,15 +298,10 @@ class SvaneController(BedController):
                     PROFILE,
                     INITIALIZATION,
                 ),
+                entity_registry_enabled_default=False,
             )
-            for key in (
-                "head_raw",
-                "feet_raw",
-                "position_raw",
-                "firmware",
-                "hardware",
-                "manufacturer",
-            )
+            # Opaque head/feet/position observations stay in the diagnostics download.
+            for key in ("firmware", "hardware", "manufacturer")
         )
 
     def _publish_intent(self) -> None:
