@@ -133,7 +133,8 @@ def test_nine_fresh_layouts_expose_only_proven_controls(layout, axes, cycle):
     assert {
         k.removeprefix("circulation_") for k in buttons if k.startswith("circulation_")
     } == cycle
-    assert {"light_10_min", "light_8_h", "light_10_h", "refresh_memory"} <= buttons
+    assert {"light_10_min", "light_8_h", "light_10_h"} <= buttons
+    assert "refresh_memory" not in buttons and "background_tap" not in buttons
     assert ("lumbar" in buttons) is (layout in (6, 8))
     assert ("music" in buttons) is (layout in (4, 5))
     assert ("rise" in buttons) is (layout == 9)
@@ -142,7 +143,7 @@ def test_nine_fresh_layouts_expose_only_proven_controls(layout, axes, cycle):
     assert not c.supports_position_feedback and not c.position_number_specs
     assert not c.supports_lights and not c.supports_massage  # app-labelled buttons instead
     assert len(c.controller_state_binary_sensor_specs) == 5
-    assert len(c.controller_state_sensor_specs) == 8
+    assert len(c.controller_state_sensor_specs) == 6
 
 
 async def test_factory_and_explicit_app_registration():
@@ -394,7 +395,7 @@ async def test_profile_entity_exposure_follows_the_profile(hass, retain):
     for key, build in (
         ("hip", _cover_entities_for),
         ("bedsense_rise", _button_entities_for),
-        ("bedsense_head_bar", _sensor_entities_for),
+        ("bedsense_head_steps", _sensor_entities_for),
         ("bedsense_m1_saved", _binary_sensor_entities_for),
     ):
         entities = build(hass, runtime)

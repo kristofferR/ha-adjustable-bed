@@ -8,6 +8,7 @@ const emptyBed = (): BedEntities => ({
   motors: [],
   firmness: [],
   presets: [],
+  presetSaves: [],
   memory: [],
   presence: [],
   lights: {},

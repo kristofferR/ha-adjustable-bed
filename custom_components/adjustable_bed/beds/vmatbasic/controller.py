@@ -36,7 +36,6 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
 )
@@ -670,6 +669,7 @@ class VMatBasicController(BedController):
                 lambda ctrl: callback(cast(VMatBasicController, ctrl)),
                 translation_key=_PREFIX + key,
                 card=card,
+                diagnostic=key == "refresh_info",
             )
 
         specs = [
@@ -806,6 +806,7 @@ class VMatBasicController(BedController):
                     state_key,
                     "mdi:information-outline",
                     native_unit_of_measurement=unit,
+                    entity_registry_enabled_default=False,
                 )
                 for state_key, unit in (
                     (_read_key("model"), None),
@@ -823,14 +824,7 @@ class VMatBasicController(BedController):
                 "mdi:signal",
                 "dBm",
                 attribute_keys=(RSSI_SOURCE, RSSI_SEEN_AT, RSSI_REPRESENTATION),
-            ),
-        )
-
-    @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return (
-            ControllerStateBinarySensorSpec(
-                _PREFIX + "ed", _PREFIX + "ed", _read_key("ed"), "mdi:information-outline"
+                entity_registry_enabled_default=False,
             ),
         )
 

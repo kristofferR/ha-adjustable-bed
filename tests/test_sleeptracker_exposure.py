@@ -475,7 +475,6 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     from custom_components.adjustable_bed.button import ControllerActionButton
     from custom_components.adjustable_bed.number import _number_entities_for
     from custom_components.adjustable_bed.select import _select_entities_for
-    from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 
     runtime, controller = target(hass, "activebreeze_large")
     runtime.device_info = {}
@@ -518,14 +517,8 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     )
     await button.async_press()
     assert controller.async_execute_sleeptracker_request.call_args.args[0].massage_action == "28Hz"
-    sensor = AdjustableBedControllerStateSensor(
-        runtime,
-        next(
-            s
-            for s in controller.controller_state_sensor_specs
-            if s.key == "sleeptracker_massage_head_strength"
-        ),
-    )
+    # Reported strength is the head massage select's state, not a separate sensor.
+    strength = selects["sleeptracker_massage_head_level"]
     light = AdjustableBedControllerStateBinarySensor(
         runtime, controller.controller_state_binary_sensor_specs[0]
     )
@@ -537,12 +530,12 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
             if s.key == "sleeptracker_wind_down_running"
         ),
     )
-    assert sensor.native_value is None and light.is_on is None
+    assert strength.current_option is None and light.is_on is None
     assert wind_down.is_on is None
     controller._update_status(
         {"body": {"snapshots": [{"head": {"massage": {"strength": 4}}, "safetyLightOn": True}]}}
     )
-    assert sensor.native_value == 4 and light.is_on is True
+    assert strength.current_option == "1" and light.is_on is True
     assert numbers["sleeptracker_left_level"].native_value is None
     controller._update_status({"details": {"body": {"snapshots": [{"windDownMode": 2}]}}})
     assert wind_down.is_on is True
@@ -562,5 +555,5 @@ async def test_platform_entities_route_actions_and_show_only_published_state(has
     assert wind_down.is_on is False
     controller.on_disconnect()
     # The processor drops the link after each command; keep what it last reported.
-    assert sensor.native_value == 0 and light.is_on is False
+    assert strength.current_option == "off" and light.is_on is False
     assert wind_down.is_on is False

@@ -31,6 +31,7 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type,
     get_bed_type_options,
 )
+from custom_components.adjustable_bed.labels import display_label
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
@@ -88,7 +89,9 @@ async def test_legacy_page_entities(hass) -> None:
     taps = [e for e in _button_entities_for(hass, runtime)
             if str(getattr(e, "_attr_translation_key", "")).startswith("richmat_mh_")
             and getattr(e, "_attr_translation_placeholders", None)]
-    assert taps and all(e._attr_translation_placeholders == {"action": e._spec.name} for e in taps)
+    assert taps and all(
+        e._attr_translation_placeholders == {"action": display_label(e._spec.name)} for e in taps
+    )
     assert len(_light_entities_for(hass, runtime)) == 1
     numbers = {e.unique_id for e in _number_entities_for(hass, runtime)}
     assert "bed_controller_number_richmat_mh_light_timer_left" in numbers

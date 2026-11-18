@@ -9,7 +9,12 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.kaidi.comfy import LOCK_STATUS, ComfyController
+from custom_components.adjustable_bed.beds.kaidi.comfy import (
+    LOCK_STATUS,
+    LOCKED,
+    TIMER_RUNNING,
+    ComfyController,
+)
 from custom_components.adjustable_bed.codec import kaidi as codec
 from custom_components.adjustable_bed.profiles.comfy import (
     COMFY_ACTIONS,
@@ -246,6 +251,24 @@ async def test_auth_source_ping_query_and_reconnect(app):
     assert c._own == (0x11223344 if app == "comfyds" else None)
 
 
+async def test_lock_and_timer_switches_send_app_commands_and_follow_state():
+    c, co, client = make_controller()
+    lock, timer = c.controller_switch_specs
+    await lock.set_fn(c, True)
+    assert co.controller_state[LOCKED] is True
+    notify(c, codec.control(0, 8, 70, 0).hex())
+    assert co.controller_state[LOCKED] is False
+    await timer.set_fn(c, True)
+    assert co.controller_state[TIMER_RUNNING] is True
+    await timer.set_fn(c, False)
+    assert co.controller_state[TIMER_RUNNING] is False
+    assert packets(client) == [
+        codec.control(0x12345678, 0x11223344, c._opcode(action))
+        for action in ("lock", "timer_start", "timer_stop")
+    ]
+    c._stop_countdown()
+
+
 @pytest.mark.parametrize("owner", range(256))
 def test_unsigned_lock_ownership_and_exact_payload(owner):
     c, _, _ = make_controller()
@@ -262,7 +285,7 @@ def test_unsigned_lock_ownership_and_exact_payload(owner):
 
 async def test_restore_local_side_timer_light_without_wire_or_recall():
     c, co, client = make_controller("comfyds")
-    c._select_side("right")
+    c._selected_side = 2
     await c.lights_on()
     await c.select_timer(30)
     await c.control("timer_start")
@@ -328,7 +351,9 @@ async def test_reconstructed_controller_retains_only_the_app_specific_source(has
     await second.async_after_connect(MagicMock())
     own = 0x11223344 if app == "comfyds" else 0x55667788
     assert packets(client) == [
-        codec.join(second.profile.room), codec.ping(own), codec.control(0, own, 70)
+        codec.join(second.profile.room),
+        codec.ping(own),
+        codec.control(0, own, 70),
     ]
     assert "own" not in second.persisted_app_state
 
@@ -341,13 +366,13 @@ async def test_reconnected_state_owner_remains_current_while_offline(hass, app):
     original = ComfyController(co)
     co._offline_controller = original
     await co._async_restore_app_state(original)
-    original._select_side("left")
+    original._selected_side = 0
 
     current = ComfyController(co)
     co._controller = current
     await co._async_restore_app_state(current)
     assert co._offline_controller is current
-    current._select_side("right")
+    current._selected_side = 2
     current._led[1] = True
     current._timer_minutes[1] = 30
     current._timer_started[1] = time.time()
@@ -358,13 +383,8 @@ async def test_reconnected_state_owner_remains_current_while_offline(hass, app):
     assert await stored_app_state(co) == current.persisted_app_state
     assert original._countdown is None
 
-    selector = next(
-        s for s in co.capability_controller.controller_select_specs if s.key == "comfy_selected_side"
-    )
-    assert selector.local_select_fn is not None
-    selector.local_select_fn("both")
     saved = await stored_app_state(co)
-    assert saved["side"] == 1 and saved["led"][1] and saved["timer_minutes"][1] == 30
+    assert saved["side"] == 2 and saved["led"][1] and saved["timer_minutes"][1] == 30
     current._stop_countdown()
     restored = ComfyController(co)
     co._controller = restored
@@ -385,7 +405,13 @@ async def test_store_gate_and_no_fabricated_capabilities():
     assert not c.supports_massage and not c.supports_preset_zero_g
     assert not c.position_number_specs and c.memory_slot_count == 4
     assert len(c.motor_control_specs) == 3
-    assert len(c.controller_button_specs) == len(COMFY_ACTIONS)
+    # Lock and timer are switches; query is not an entity.
+    assert {s.key for s in c.controller_button_specs} == {
+        f"comfy_{action}"
+        for action in COMFY_ACTIONS
+        if action not in ("lock", "unlock", "query", "timer_start", "timer_stop")
+    }
+    assert [s.key for s in c.controller_switch_specs] == ["comfy_control_lock", "comfy_timer"]
     assert not any("enroll" in s.key for s in c.controller_button_specs)
 
 
