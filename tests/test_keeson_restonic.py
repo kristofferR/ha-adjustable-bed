@@ -347,7 +347,7 @@ async def test_fixed_target_and_android_default_write_type(
 
 
 async def test_remote_capabilities(coordinator):
-    """Each remote exposes only its own controls; neither has memory, massage or STOP."""
+    """Each remote exposes only its own controls; neither has memory or massage."""
     coordinator._motor_count = 4
     for variant, remote_b in ((KEESON_VARIANT_RESTONIC_A, False), (KEESON_VARIANT_RESTONIC_B, True)):
         controller = _restonic(coordinator, variant)
@@ -370,7 +370,8 @@ async def test_remote_capabilities(coordinator):
         assert not controller.supports_preset_lounge
         assert not controller.supports_preset_tv
         assert not controller.supports_preset_anti_snore
-        assert not controller.supports_stop_all
+        # Stop sends the release key the remote sends on button-up.
+        assert controller.supports_stop_all
         assert not controller.supports_discrete_light_control
         assert not controller.auto_enable_massage
         assert not controller.supports_massage_toggle_control
@@ -623,11 +624,11 @@ async def test_setup_exposes_each_remote_surface_and_retires_remote_b_controls(
         ("button", "massage_head_up"),
         ("button", "massage_mode_step"),
         ("button", "massage_wave_next"),
-        ("button", "stop"),
     )
     for platform, key in (
         ("cover", "head"),
         ("cover", "feet"),
+        ("button", "stop"),
         ("button", "preset_flat"),
         ("button", "preset_zero_g"),
         *remote_b_only,
@@ -644,7 +645,12 @@ async def test_setup_exposes_each_remote_surface_and_retires_remote_b_controls(
 
     for platform, key in remote_b_only + never:
         assert not _exists(hass, address, platform, key), key
-    for platform, key in (("cover", "head"), ("cover", "feet"), ("button", "preset_zero_g")):
+    for platform, key in (
+        ("cover", "head"),
+        ("cover", "feet"),
+        ("button", "stop"),
+        ("button", "preset_zero_g"),
+    ):
         assert _exists(hass, address, platform, key), key
 
     assert await hass.config_entries.async_unload(entry.entry_id)

@@ -2132,3 +2132,25 @@ def test_ergomotion_status_feeds_the_massage_sensors(
     # Between connections the last report stays visible.
     coordinator._controller = None
     assert (head.native_value, foot.native_value) == (3, 5)
+
+
+@pytest.mark.parametrize(
+    ("variant", "has_stop"),
+    [("base", True), ("serta", True), ("ergomotion", True), ("ksbt04c", True), ("ksbt", False)],
+)
+async def test_stop_follows_the_profile_release(
+    hass: HomeAssistant,
+    mock_keeson_config_entry,
+    mock_coordinator_connected,
+    mock_bleak_client,
+    variant,
+    has_stop,
+) -> None:
+    """Stop exists exactly where an explicit stop sends the profile's release key."""
+    coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+    await coordinator.async_connect()
+    controller = KeesonController(coordinator, variant=variant)
+    assert controller.supports_stop_all is has_stop
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await controller.stop_all()
+    assert bool(mock_bleak_client.write_gatt_char.await_count) is has_stop
