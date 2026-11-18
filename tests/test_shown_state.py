@@ -49,8 +49,8 @@ class SettingsController(AlarmController):
             return
         self.bed.sent.append(name)  # type: ignore[attr-defined]
 
-    async def set_synchro(self, on: bool) -> None:
-        await self._write(f"synchro {on}")
+    async def set_synchro(self, enabled: bool) -> None:
+        await self._write(f"synchro {enabled}")
 
     async def lights_toggle(self) -> None:
         await self._write("toggle")
