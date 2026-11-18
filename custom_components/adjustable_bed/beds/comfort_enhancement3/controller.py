@@ -47,6 +47,7 @@ FIRMWARE: Final = StateKey[str | None]("apex_firmware")
 # Entity names for the remote's grouped motor keys; the remote prints the M channels.
 _GROUP_NAMES: Final = {
     "lumbar": "Lumbar",
+    "m3_m4": "M3 and M4",
     "head_foot": "Head and foot",
     "head_tilt": "Head tilt",
     "midbody": "Mid-body",
