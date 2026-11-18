@@ -386,8 +386,7 @@ keep advertising after a disconnect but refuse or time out reconnects
 [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)).
 
 - Once a connect to it has timed out or aborted since Home Assistant started, it
-  is held connected, overriding **Disconnect After Command** and the idle
-  timeout, and an unexpected drop schedules one automatic reconnect.
+  is held connected, overriding the **Bluetooth connection** setting, and an unexpected drop schedules one automatic reconnect.
 - Until then it keeps the configured handoff, so a receiver that reconnects
   normally stays free for the FurniMove app
   ([#336](https://github.com/kristofferR/ha-adjustable-bed/issues/336)).

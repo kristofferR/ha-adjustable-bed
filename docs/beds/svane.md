@@ -1,6 +1,6 @@
 # Svane Remote
 
-**Status:** ⚠️ Partially tested (a LinON Pro bed moved and recalled memory with the earlier LinonPI implementation in [#152](https://github.com/kristofferR/ha-adjustable-bed/issues/152); the Svane Remote 1.8 profiles are artifact-verified, physical hardware unverified)
+**Status:** ⚠️ Partially tested (a LinON Pro bed moved and recalled memory with the earlier LinonPI implementation in [#152](https://github.com/kristofferR/ha-adjustable-bed/issues/152); the Svane Remote 1.8 profiles need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -363,7 +363,7 @@ position, save position, recall position and flatten.
   persisted preferences of every profile are kept, so switching back restores
   that profile's slots and intensity.
 - A shared options form cannot change a Svane profile across two separate
-  addresses: unpair and configure each side separately first.
+  addresses: separate the combined bed and configure each side first.
 - Common options and an unchanged rendered profile preserve mixed P1/P2 routes
   and target-local caches.
 
@@ -371,7 +371,7 @@ position, save position, recall position and flatten.
 
 - Earlier versions of this guide marked the previous LinonPI implementation
   ✅ Tested; the current app profiles have not been validated on physical
-  hardware. Physical captures are deferred to real users after beta/release.
+  hardware. Physical captures are deferred.
 - Classic RFCOMM, firmware updates, dead builders, phone-only functions and
   precise unsafe source fragments remain excluded. Earlier analysis identified
   the app's Classic Bluetooth route as OKIN-i devices, which this BLE integration

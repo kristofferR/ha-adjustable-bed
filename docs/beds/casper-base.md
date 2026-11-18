@@ -1,6 +1,6 @@
 # Casper Base app
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -29,9 +29,9 @@
 
 - This profile follows the independently accepted `com.richmat.casperbase`
   1.0.8 artifact.
-- BLE behavior is statically verified. Physical motor effects, firmware
+- BLE behavior is checked against the app. Physical motor effects, firmware
   compatibility, ATT behavior and sensor accuracy remain unverified. Real users
-  can supply captures after a beta or release.
+  can supply captures.
 
 ## Features
 
@@ -264,7 +264,7 @@ Richmat guide's [catalog app timing](richmat.md#catalog-app-timing).
   generic unused plugin APIs and datastore counters, cloud/firmware transfer
   including BLE OTA, SSID/password/network provisioning (not found), unsafe
   undefined long-press fallbacks and unsafe app lifecycle/race behavior.
-- No in-scope command is deferred for lack of maintainer hardware.
+
 
 ### Analysis provenance
 

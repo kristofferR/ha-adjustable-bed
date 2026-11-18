@@ -2,7 +2,7 @@
 
 **Status:** ✅ Tested on JMC400 (motion, position reports, massage and memory
 recall, [#146](https://github.com/kristofferR/ha-adjustable-bed/issues/146) and [#631](https://github.com/kristofferR/ha-adjustable-bed/issues/631)); JMC400 lights and fan, and every LinOn control,
-are implemented from app evidence and await user confirmation.
+need testing.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -37,7 +37,7 @@ JMC400 bed. The JMC400 name and the LinonPI services occur with both apps, so
 they never decide the answer; the apps' own name rules suggest it the same way
 in Bluetooth and manual setup. A LinON Entry box is JMC400 hardware, not a
 LinOn bed. **Reconfigure** changes an existing bed's app or bed; existing
-entries keep their route until then. Configure lists the JMC400 route by its
+entries keep their route until then. Reconfigure lists the JMC400 route by its
 own name, for an entry of another bed type to switch to it.
 
 ## PIN Authentication

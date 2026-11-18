@@ -1,6 +1,6 @@
 # FFFF frame (Solace, Woosa Sleep, BedSense, Motion Bed)
 
-**Status:** ⚠️ Partially tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed, Woosa in [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606); the other profiles are APK-verified with hardware unverified)
+**Status:** ⚠️ Partially tested (the Solace S4-Y layout and Woosa Sleep controls are user-confirmed, Woosa in [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606); the other profiles need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), Bonopaws and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -200,8 +200,8 @@ Every frame starts `FF FF FF FF`. The fifth byte (the kind) selects the trailer:
 - **Sum**: the sum of every preceding byte, appended little-endian. The header
   alone sums to `03FC`, so every frame carries two trailer bytes.
 - The apps ship most frames as fixed hex literals. They all follow these two
-  rules except BedSense row C018 (`FF FF FF FF 05 00 00 00 00 D8 14`), whose
-  trailer is not its CRC; the BedSense profile sends it verbatim.
+  rules except the BedSense background-tap frame (`FF FF FF FF 05 00 00 00 00 D8 14`),
+  whose trailer is not its CRC. No control sends it.
 - Motion Bed module builders keep the app's fixed length bytes, which do not
   always count the frame.
 
@@ -483,8 +483,8 @@ trailers. Each profile section names the replies it consumes:
 written frame in the app (its command table and write-builder
 vectors) for the app profiles, and the pre-v5 controller's frames for the
 Legacy S4-Y and Unverified routes. `tests/test_ff_frame_vectors.py` proves that
-every literal round-trips through the codec byte for byte (the BedSense C018
-anomaly is listed separately and must not), and that every fixed frame a
+every literal round-trips through the codec byte for byte (the BedSense background-tap
+frame, whose trailer is not its CRC, is listed separately and must not), and that every fixed frame a
 profile can send is among its frozen literals.
 
 ## Profiles
@@ -493,7 +493,7 @@ profile can send is among its frozen literals.
 
 **App:** [HomeKobo](https://play.google.com/store/apps/details?id=com.ly.homekobo) 1.4, `com.ly.homekobo`; [Sealy MotionFlex](https://play.google.com/store/apps/details?id=com.sealy.motionflex) 1.0.3, `com.sealy.motionflex`; [Sweet Night](https://play.google.com/store/apps/details?id=com.sn.dianqi) 1.0.6, `com.sn.dianqi`
 
-**Status:** ⚠️ Partially tested (the legacy S4-Y layout is user-confirmed; the app routes are APK-verified)
+**Status:** ⚠️ Partially tested (the legacy S4-Y layout is user-confirmed; the app routes need testing)
 
 #### Setup
 
@@ -591,7 +591,7 @@ entry's three-dot menu, **Reconfigure**, and answer **Woosa Sleep app**.
 
 - The app accepts names containing `QMS-MQ` or `QMS2`, which other apps share.
   Choose this profile from the app you use, not from the name.
-- For a separate-address pair, unpair and configure each side first.
+- For a separate-address pair, separate the combined bed and configure each side first.
 - Massage controls are enabled automatically.
 
 #### Controls
@@ -626,7 +626,7 @@ Flat sends its frame alone; every other preset uses the STOP preamble.
   candidate, never as light state.
 - Alarm replies starting `FF FF FF FF 01 00 03 0B 00` report no alarm; replies
   starting `FF FF FF FF 01 00 04 13` carry enabled state, time, weekdays, action,
-  massage and sound. The **Alarm Enabled** binary sensor shows them.
+  massage and sound. The **Alarm** binary sensor shows them.
 
 #### Services
 
@@ -659,7 +659,7 @@ properties.
 
 **App:** [BedSense](https://play.google.com/store/apps/details?id=com.fenmenbielei.bedsense) 1.8 (18), `com.fenmenbielei.bedsense`
 
-**Status:** ❓ Needs testing (APK-verified, hardware unverified)
+**Status:** 🧪 Needs testing
 
 #### Setup
 
@@ -703,8 +703,6 @@ lists the layouts that expose it.
 
 - Covers send one movement frame and release with STOP after the motor pulse
   window. RISE and DECLINE (type 9) are single clicks without release.
-- The **background tap** button sends row C018 verbatim; its physical effect is
-  unverified, so it is neither STOP nor massage off.
 - Memory: five recalls and saves with explicit clear buttons. Slots 1 and 2
   need a saved indicator; slots 3 to 5 recall the stored or the built-in TV,
   Zero Gravity and Anti Snore by the indicator. Types 6 and 8 replace slot 5
@@ -822,7 +820,8 @@ See [Timing](#timing). Memory queries go in slot order 3, 4, 1, 2, 5
 
 #### Evidence
 
-BedSense sends exactly its frozen command table, including the C018 anomaly.
+BedSense commands match the app's command table. No control sends the
+background-tap frame.
 Useful captures after release: GATT roles and properties, memory
 replies, lift hold versus click, background taps, massage and light durations.
 
@@ -830,7 +829,7 @@ replies, lift hold versus click, background taps, massage and light durations.
 
 **App:** [Motion Bed](https://play.google.com/store/apps/details?id=com.sn.blackdianqi) 1.24 (34), `com.sn.blackdianqi`
 
-**Status:** ❓ Needs testing (APK-verified, hardware unverified)
+**Status:** 🧪 Needs testing
 
 #### Setup
 
@@ -869,7 +868,7 @@ Bluetooth name the app used, preserving case.
 - Retained preset and movement overrides apply only to the same physical target
   and cannot cross between ordinary beds and modular products. An empty or
   unknown restored title needs the explicit app-restored option.
-- Each side of a paired bed keeps its own profile. Unpair before changing fields
+- Each side of a paired bed keeps its own profile. Separate the combined bed before changing fields
   that differ between two addresses; a two-address pair cannot be converted into
   Motion Bed in shared options.
 - **Modular hub**: TL-Q reports motor, air and thermal modules on the same
@@ -882,7 +881,7 @@ Bluetooth name the app used, preserving case.
 
 ##### Home Assistant setup
 
-Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and require unpairing before profile changes.
+Select the explicit **Motion Bed app** route and the original case-sensitive Bluetooth name. Auto chooses the app’s ordered layout; retained overrides belong to the same physical target. FFE1 alone does not identify this app. Two-address pairs preserve each side’s settings and must be separated before a profile change.
 
 #### Controls
 
@@ -1044,9 +1043,16 @@ controls are out of scope.
 
 **App:** [Sophie](https://play.google.com/store/apps/details?id=com.sddq.sophienew) 1.0.6 (8), `com.sddq.sophienew`
 
-**Status:** ❓ Needs testing
+**Status:** 🧪 Needs testing
 
 #### Setup
+
+1. Choose **Sophie app** (in the Solace question).
+2. Keep the bed's exact Bluetooth name. Saved positions, the alarm side options
+   and alarm massage depend on it.
+
+Two motors and massage are fixed, and **Read bed position** is off. When you
+combine two beds, each side keeps its own name.
 
 Choose **Solace → Sophie app** explicitly. Shared names and FFE1 do not identify
 this app. Keep the actual Bluetooth name in setup: it selects the saved-query
@@ -1059,7 +1065,7 @@ prefixes, so names outside those generated matchers require active discovery or
 manual setup. The profile fixes two motors, enables massage and disables angle
 sensing. It never infers a service UUID: the last FFE1 characteristic in the
 GATT table carries writes and notifications, with its runtime write properties.
-No application authentication or ordinary single-address side control is proven.
+No application authentication or ordinary single-address side control is known.
 Two physical addresses can be combined using Home Assistant's paired bed setup;
 each side retains its own name, state and session.
 
@@ -1075,13 +1081,13 @@ instead of delayed Android long-press callbacks that can survive cancellation.
 
 Massage has head and foot minus/plus, wave minus/plus and three timers. Selecting
 an already selected massage timer sends the reachable timer deselect/stop frame.
-The minus/plus labels describe app intent; physical stepping remains unverified.
+The minus/plus labels describe app intent; physical stepping still needs testing.
 Brightness uses the shared literal levels after a brightness reply; the
 brightness query is part of every connection's startup. Light timers are receiver commands;
 Home Assistant does not invent countdown tasks or periodic writes.
 
 The app's movement / massage header action (STOP's body with a different
-trailer) has no proven effect and is not exposed. Use the normal motor STOP for
+trailer) has no effect and is not exposed. Use the normal motor STOP for
 release. Bed synchronization is the **Controller Sync** switch. The shared movement, massage and lighting command tables above
 apply to Sophie; the additional rows and exact startup offsets follow.
 
@@ -1138,7 +1144,7 @@ cancellation. A delayed release can never target a replacement link.
 Only the name-selected query family updates saved flags. Named03 replies mark
 the five presets saved. Fallback09's duplicated AB marks
 both memory 2 and TV saved, matching the shipped app. Save/clear echoes update
-the corresponding flags, with clear taking precedence. Massage literals report
+the corresponding flags, with clear taking precedence. Massage frames report
 head/foot levels and wave, preserving head-before-foot-before-wave priority.
 Brightness retains the reported byte, including values outside the control's
 supported range. The app's unusual timer-cleared signature is retained.
@@ -1146,7 +1152,7 @@ supported range. The app's unusual timer-cleared signature is retained.
 Alarm replies expose enabled, time, weekdays, mode, massage and ring attributes.
 The no-alarm reply clears the previous alarm record, including its time. Alarm
 transmit enable and received enable use different values. Synchronization is
-available only after its own support reply. Proven alarm and synchronization
+available only after its own support reply. Alarm and synchronization
 support stay with that physical bed across idle disconnects; the current
 synchronization value becomes unknown until refreshed or changed. The alarm-present reply takes
 precedence over synchronization. Home Assistant checks lengths and frame starts

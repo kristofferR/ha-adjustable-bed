@@ -1,6 +1,6 @@
 # Limoss
 
-**Status:** ❓ Needs testing (the app profiles are APK-verified with hardware unverified; the legacy route is unverified)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -311,7 +311,7 @@ the Limoss Remote key tables match an independent fixture.
 
 ### Legacy route
 
-**Status:** ❓ Needs testing
+**Status:** 🧪 Needs testing
 
 #### Setup
 
@@ -367,7 +367,7 @@ controller's.
 
 **App:** [Limoss Remote](https://play.google.com/store/apps/details?id=com.limoss.limossremote) 7.1.8 (44), `com.limoss.limossremote`
 
-**Status:** ❓ Needs testing (APK-verified, hardware unverified)
+**Status:** 🧪 Needs testing
 
 #### Setup
 
@@ -428,7 +428,7 @@ controller's.
 
 - Two-address pairs retain independent profiles, reversal flags, features and
   memories per child.
-- Select each receiver's profile before pairing; unpair first to change those
+- Select each receiver's profile before pairing; separate the combined bed first to change those
   profiles or convert the pair to another protocol. Shared paired options do not
   replace child settings.
 - This profile has no single-address side selector.
@@ -470,7 +470,7 @@ Answer **Limoss Remote app** in the [Limoss question](#home-assistant-setup). Ch
   are allowed and sent in motor order. Raw signed 32-bit values are preserved bit
   for bit without inventing distance or angle units.
 - Memory names and positions, and the reported versions and serial, survive
-  controller recreation, entry reload, unpair/re-pair and integration restart as
+  controller recreation, entry reload, separating and recombining, and integration restart as
   the physical target's app state, until no entry owns the bed.
 - The reported capabilities stay in the config entry because they decide the
   entities.
@@ -602,7 +602,7 @@ bodies, and its key tables match the report's rendered tables.
 
 **App:** [FSM Relax](https://play.google.com/store/apps/details?id=com.limoss.fsmrelax) 1.9 (20), `com.limoss.fsmrelax`
 
-**Status:** ❓ Needs testing (APK-verified, hardware unverified)
+**Status:** 🧪 Needs testing
 
 #### Setup
 
@@ -781,8 +781,8 @@ bodies.
   they share the FFE0/FFE1 UUIDs.
 - Physical actuator assignment, GATT compatibility, raw units, calibration
   outcome, optional light/massage effects and real-device timing remain
-  validation for real users after a beta or release. They do not defer any
-  statically proven control or memory operation.
+  validation. They do not defer any
+  app-defined control or memory operation.
 
 ### Profile id
 

@@ -1,6 +1,6 @@
 # Private Pairlink SDK receive consumers
 
-**Status:** ❓ Needs testing (hardware delivery unverified)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 

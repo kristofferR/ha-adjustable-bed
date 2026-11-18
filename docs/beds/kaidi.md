@@ -358,8 +358,8 @@ variants.
 
 ##### Single-address paired controls
 
-Only `seat_1_2` can opt into **Enable Left / Right / Both controls** in the entry's
-options. Left binds Seat 1, Right binds Seat 2, and Both retains the dual-command
+Only `seat_1_2` offers **Add Left, Right and Both controls** in the entry's
+Configure menu. Left binds Seat 1, Right binds Seat 2, and Both retains the dual-command
 behavior over the same Bluetooth connection. Other Kaidi variants remain
 standalone. See [paired-side configuration](../CONFIGURATION.md#single-address-left--right-controls).
 
@@ -432,7 +432,7 @@ implementation, not new physical validation.
 
 **App:** [Floyd Home](https://play.google.com/store/apps/details?id=com.kaidi_test4.floyd) 1.0.7 (7), `com.kaidi_test4.floyd`
 
-**Status:** ❓ Needs testing (static protocol evidence complete, physical effects unverified)
+**Status:** 🧪 Needs testing
 
 #### Setup
 
@@ -606,7 +606,7 @@ only the transport is shared with the Seat profiles.
 
 **App:** [ISleep](https://play.google.com/store/apps/details?id=com.kaidi_test4) 1.6.3 (45), `com.kaidi_test4`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** 🧪 Needs testing
 
 #### Setup
 
@@ -623,7 +623,7 @@ layout, massage, feedback and movement timing. Detection: none.
 | Mode09 company gate | `4B44` |
 | Actuator masks | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 240 <= 5` (the artifact's exact masks) |
 
-- Truncated alternate mode02 records are rejected safely.
+- Truncated alternate mode 02 records are rejected safely.
 - Keep the existing numeric room ID to adopt a provisioned bed. Existing rooms
   are adopted by explicit selection, without reset. Close the phone app before
   connecting.
@@ -645,7 +645,7 @@ layout, massage, feedback and movement timing. Detection: none.
   memory slots (recall and explicit program), light on/off and massage on/off.
 - Product 143 has head strength only and displays 10/20/30-minute timer
   choices. All others have head/foot strengths and 15/30/45-minute choices.
-- The firmware interpretation of product143's timer labels remains unverified:
+- The firmware interpretation of product 143's timer labels remains unverified:
   the phone's local countdown still uses 15-minute units. HA sends the
   corresponding choice opcode and does not present that phone bookkeeping as
   measured bed time.
@@ -669,7 +669,7 @@ layout, massage, feedback and movement timing. Detection: none.
 
 ##### Room enrollment
 
-For a genuinely unprovisioned mode09 bed, set the desired room during setup,
+For a genuinely unprovisioned mode 09 bed, set the desired room during setup,
 then press **Enroll unprovisioned bed in selected room** in the device's
 entities.
 
@@ -687,7 +687,7 @@ entities.
 
 ##### Room reset and app infrastructure
 
-- HA never advertises the destructive mode07 foreign-room reset. This safety
+- HA never advertises the destructive mode 07 foreign-room reset. This safety
   exclusion preserves ownership by an existing room. Use the official app for a
   room transfer/reset, then select that room in HA.
 - HA config entries replace the phone's random room generator, SQL row
@@ -699,7 +699,7 @@ entities.
 - A two-address pair keeps these settings per side. For a two-address pair, add
   both physical beds separately, then combine them. Each keeps its own product,
   room, session and capabilities.
-- For one-address role1 layouts, Left/Both/Right send the exact three-column
+- For one-address role 1 layouts, Left/Both/Right send the exact three-column
   opcodes; Both is one combined opcode, not two sequential side commands.
 - Mixed-product combined controls use HA's capability intersection rather than
   the phone's stale layout or wrong-target timer behavior.
@@ -712,7 +712,7 @@ entities.
 
 Values are the command byte of the control frame, from the ISleep profile's
 command table. The parameter byte is the retained strength parameter. Columns
-are the role1 lanes; products without one-address sides always send the Left /
+are the role 1 lanes; products without one-address sides always send the Left /
 single column.
 
 <!-- generated:kaidi-isleep-commands -->
@@ -837,11 +837,21 @@ payloads. HA never resets an existing room.
 
 **App:** [Rize Beds](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.4.2 (57), `com.kaidi_test4.rize`
 
-**Status:** ❓ Needs testing (static artifact coverage; firmware effects and physical stopping unverified)
+**Status:** 🧪 Needs testing
 
 #### Setup
 
-Choose **Rize Beds app (Kaidi, 1.4.2)**. Setup asks the product, signed room ID
+1. Choose **Rize Beds app**.
+2. Confirm the product, the room number and, under **Advanced**, the actuator
+   number. Setup fills them in from the bed's advertisement.
+3. For a bed with two receivers, add each receiver and combine them. Each side
+   keeps its own product and room.
+
+The product decides which motors, massage and extra controls appear; the motor
+count does not add controls. An entry set up before v5 keeps its controls until
+you change it with **Reconfigure**.
+
+Choose **Rize Beds app**. Setup asks the product, signed room ID
 and advertised actuator descriptor. Manufacturer records suggest those values;
 there is no app name filter. The product and actuator parser gates are those of this app. HA additionally
 requires a Kaidi UUID, name or known OUI for automatic discovery because unrelated
@@ -850,11 +860,11 @@ remains available. Shared mesh advertisements cannot identify the owning app, so
 Home Assistant offers Rize alongside the existing Kaidi/ISleep routes.
 
 Existing Kaidi entries retain their profile until reconfigured. Native
-single-address Left/Right controls require product130 or141 with descriptor
-other than2. Other products use the single-node commands. Combine two physical
+single-address Left/Right controls require product 130 or 141 with descriptor
+other than 2. Other products use the single-node commands. Combine two physical
 entries for two-address side control; each retains its own room and product.
 The room password is local BLE authentication, independent of Wi-Fi or a cloud
-account. The enrollment button accepts only a live unprovisioned mode09 bed
+account. The enrollment button accepts only a live unprovisioned mode 09 bed
 whose product matches setup. Startup leaves such an unprovisioned connection
 available for enrollment; ordinary controls still require room authentication.
 It never resets a foreign room.
@@ -862,8 +872,8 @@ It never resets a foreign room.
 #### Controls
 
 The generated tables list every command and product. HA back is the app's
-primary upper control: HEAD on layouts2/5–8, BACK on3/4. Clarity/layout9 uses
-BACK when descriptor2 selects a single node, and HEAD with the appropriate
+primary upper control: HEAD on layouts 2/5–8, BACK on 3/4. Clarity/layout9 uses
+BACK when descriptor 2 selects a single node, and HEAD with the appropriate
 left/right/both triple when native sides are available. STOP follows the same
 mapping. These are app UI/wire names, not measured physical actuator aliases.
 
@@ -873,9 +883,9 @@ mapping. These are app UI/wire names, not measured physical actuator aliases.
   even where the touch panel omits them.
 - Flat, Zero gravity, Anti-snore, three memory recall/program slots, and
   discrete lights. Reading (TV) and Leisure (Lounge) belong to extended products.
-- Massage on/off, patterns1–3, head strength0–100 and15/30/45-minute timers.
+- Massage on/off, patterns 1–3, head strength 0–100 and 15/30/45-minute timers.
   Extended products also expose leg strength, including the app's voice route.
-  Selecting the same pattern or timer cancels it. Remedy Pro4 adds pattern4;
+  Selecting the same pattern or timer cancels it. Remedy Pro4 adds pattern 4;
   its second parameter distinguishes start/cancel from default programming.
 - **Motion sensor on/off** on extended products, also reached through voice.
   These are commands, not a presence sensor or measured toggle state.
@@ -996,7 +1006,7 @@ Join/enrollment replies, own address, roster changes and current-MAC ping
 replies establish authenticated live routing. Advertised or persisted virtual
 addresses never authorize a write. A zero address from a live ping is valid.
 
-Only the power flag on channel20 is decoded as bed feedback. Its query runs
+Only the power flag on channel 20 is decoded as bed feedback. Its query runs
 on an already live extended-product connection and never reconnects or extends
 idle ownership. Light, massage strength/pattern/timer and graphic positions
 are app intent, not measured bed state. No position sliders or angle telemetry
@@ -1007,7 +1017,7 @@ are inferred. Malformed notifications are ignored safely.
 `adjustable_bed.rize_program_preset` stores the current position as `zero_g`,
 `anti_snore`, `book` or `leisure`, with `confirm: true`. Target one standalone
 physical bed or one explicit side of a paired bed. Reading (`book`) programming
-requires layout5/6 (products135/136/140); Reading recall remains available on7/8
+requires layout 5/6 (products 135/136/140); Reading recall remains available on 7/8
 through the app's voice route. Both/multiple-target
 programming is rejected before writing. HA captures the target under command
 admission and sends one frame without a preliminary memory-slot write.
@@ -1020,17 +1030,28 @@ the app's phone alarms introduce no on-bed alarm protocol.
 Rize Beds 1.4.2 (57), with 225 frozen vectors, including the 48
 topology/confirmation branch probes. The codec reproduces these
 literals byte for byte. This profile uses its own product gates and command
-table. Physical validation belongs to beta/release users; no maintainer hardware
-test is implied by static support.
+table. How the bed responds still needs testing by owners.
 
 
 ### KomfyD and ComfyDS
 
 **App:** [KomfyD](https://play.google.com/store/apps/details?id=com.pairlink.kaidi.komfyD) 1.0.9 (8), `com.pairlink.kaidi.komfyD`
 
-**Status:** ❓ Needs testing. All hardware effects are UNVERIFIED.
+**Status:** 🧪 Needs testing
 
 #### Setup
+
+1. Set the bed up in the KomfyD or ComfyDS app first. Home Assistant joins the
+   room the app created; it cannot create one.
+2. Choose **KomfyD app** or **ComfyDS app**. The bed's name and services cannot
+   tell the two apps apart.
+3. Confirm the product (bed type 129, 130 or 131), the room number and, under
+   **Advanced**, the capability value. Setup fills them in from the bed's
+   advertisement.
+
+Only bed type 130 has separate Left and Right sides: use **Add Left, Right and
+Both controls** in Configure. The capability value decides whether the Save
+buttons appear; it does not change the motors.
 
 Choose **KomfyD app** or **ComfyDS app** explicitly. Shared names, services and
 manufacturer data cannot identify the app. Enter the existing signed room ID,
@@ -1038,7 +1059,7 @@ raw bed type and capability word; a valid advertisement suggests these values.
 Provision the room using the official app first. Only the existing-room BLE
 session is supported here.
 
-The generated product table below includes the type131 alias. The app renders
+The generated product table below includes the type 131 alias. The app renders
 Head, Foot and Waist independently of the capability nibbles; HA represents
 these as Back, Legs and Lumbar controls. These names do not validate motor
 wiring, count, travel, angles or feedback. A nonzero high capability nibble
@@ -1049,7 +1070,7 @@ use single-address pairing or the `comfy_control` action's `side` field. Lock
 and the local timer are switches (Control lock, Timer); the lock query runs on
 connect. The source's missing-record fallbacks are feature-specific:
 movement/presets right, light both, timer first, lock both. The shared lock
-handler also reads that record on129/131 while normal controls stay first.
+handler also reads that record on 129/131 while normal controls stay first.
 
 GATT discovery locates the write/notify characteristics across all services.
 The Android default write requests a response. Bleak owns CCCD subscription,
@@ -1167,7 +1188,7 @@ Timer selections and start/stop have the app's source semantics; no physical
 coupling to H/F is inferred. The remaining-time sensor is a local countdown,
 not bed feedback. Light state is requested on/off intent. These local choices
 survive restart and are kept separate from authentication and live routing.
-Memory banks2/3 are seating routes, never Right/Both bed memories. Memory
+Memory banks 2/3 are seating routes, never Right/Both bed memories. Memory
 labels can be edited through Home Assistant's native entity naming.
 
 #### Timing
@@ -1186,16 +1207,16 @@ The app's scan-list and narrower room-reconnect predicates differ. HA safely
 bounds malformed AD/PDU lengths and uses its Bluetooth discovery/reconnect
 infrastructure instead of reproducing the apps' short-buffer faults, duplicate
 scan cache, UI-stage races or queue failure hangs. KomfyD's current-global
-stage3 recovery is not interpreted as an inability to reconnect. The accepted
+stage 3 recovery is not interpreted as an inability to reconnect. The accepted
 counterpart gaps do not prove different firmware behavior.
 
 #### Notifications
 
 Each value is one PDU, with no fragment reassembly. Own-address and roster
 notifications trigger ping enumeration; the source-zero fallback is all ones.
-A matching-MAC ping installs the signed live destination. Registered channel20
+A matching-MAC ping installs the signed live destination. Registered channel 20
 uses exact eight-byte payloads without a selected-node filter:37–60 ends
-recall,61–63 stores the unsigned owner and70 distinguishes unlocked, locally
+recall,61–63 stores the unsigned owner and 70 distinguishes unlocked, locally
 owned and other-owned locks. Neither app reports measured positions, angles,
 light/massage levels or firmware through these callbacks.
 
@@ -1211,13 +1232,13 @@ by STOP; there is no asserted emergency or memory halt guarantee.
 
 Every KomfyD literal matches the existing Kaidi
 codec; app-specific routing and caller guards remain separate. Hardware
-validation belongs to external beta/release reports.
+validation belongs to reports from owners.
 
 ### ComfyDS
 
 **App:** [ComfyDS](https://play.google.com/store/apps/details?id=com.pairlink.kaidi.ComfyDS) 1.0.0 (1), `com.pairlink.kaidi.ComfyDS`
 
-**Status:** ❓ Needs testing. Hardware UNVERIFIED.
+**Status:** 🧪 Needs testing
 
 Uses the [KomfyD and ComfyDS](#komfyd-and-comfyds) controls with its own frozen
 command table and the following individually established differences.
@@ -1248,7 +1269,7 @@ It does not claim these extra accepted details are proven KomfyD differences.
 
 #### Notifications
 
-Unregistered channels23/24/25/28 may update the internal SDK node metadata.
+Unregistered channels 23/24/25/28 may update the internal SDK node metadata.
 The signed product/group bytes and the existing-row virtual-address quirk
 remain parser state, without selecting a bed variant or exposing firmware,
 measured positions, a new capability or a new bed action.
@@ -1274,12 +1295,11 @@ No hardware confirmation or app equivalence is claimed.
 4. Bed Wi-Fi provisioning, network administration, cloud/accounts, themes, QR
    appearance downloads and unrelated app infrastructure remain outside this
    integration.
-5. Deferred beta/release validation covers Floyd's physical stopping, firmware
+5. Deferred testing by owners covers Floyd's physical stopping, firmware
    timeout, lighting and preset effects, internal-side selectors, room
    assignment and optional battery events, and ISleep's physical axis
-   semantics, held/released/link-loss behavior, room enrollment and product143
-   timers. Real users can supply captures; no maintainer hardware acquisition or
-   immediate physical test is needed.
+   semantics, held/released/link-loss behavior, room enrollment and product 143
+   timers. Owners can help by sending captures.
 
 ### Analysis provenance
 

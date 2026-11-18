@@ -1,6 +1,6 @@
 # TiMOTION AHF
 
-**Status:** ❓ Needs testing (app protocol implemented; physical behavior has not been verified on hardware)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -82,7 +82,7 @@ lamp codes.
 
 ## Detection / Setup
 
-- Auto-detection is name-led: a device name starting with `AHF`, with the Nordic
+- Detection is name-led: a device name starting with `AHF`, with the Nordic
   UART service as a confidence boost. Nordic UART is shared by many bed types.
 - **Motor count** sets how many covers exist. The app-labelled buttons do not
   depend on it.
@@ -224,5 +224,4 @@ data:
 ### Evidence boundary
 
 Based on the AHF Remote app. Physical control effects, the real peripheral's GATT property combination,
-and STOP latency remain unverified until user hardware validation after beta or
-release.
+and STOP latency still need testing by owners.

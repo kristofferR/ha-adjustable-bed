@@ -316,7 +316,7 @@ same test rebuilds each one from its fields.
 
 ### Nectar
 
-**Status:** ❓ Needs testing (legacy seven-byte protocol)
+**Status:** 🧪 Needs testing (legacy seven-byte protocol)
 
 These details apply only to the legacy seven-byte profile. The
 [Nectar Move profile](okin-nframe.md#nectar-move-profile) uses the separate Okin CST
@@ -369,13 +369,13 @@ only its frozen frames, the ones the pre-v5 controller sent, from MaximumWorf's
 
 ### Mattress Firm 900 / iFlex
 
-**Status:** ❓ Needs testing
+**Status:** 🧪 Needs testing
 
 #### Setup
 
 - Use this profile for iFlex / Nordic UART bases only. It uses the Nordic UART
   service rather than the OKIN service, so it is not confused with other Okin
-  beds during auto-detection.
+  beds during detection.
 - Detection: a device name starting with `iflex` (case-insensitive), or
   configure bed type `mattressfirm` manually.
 - Initialization: the two connection frames in the
@@ -524,7 +524,7 @@ protocol definition at
 
 **App:** [Adjustable Comfort M1X12](https://play.google.com/store/apps/details?id=com.starcode.adjustablem1x12) 1.1.3, `com.starcode.adjustablem1x12`; [AdjustableM5X5](https://play.google.com/store/apps/details?id=com.starcode.abm5_5) 1.2.3, `com.starcode.abm5_5`
 
-**Status:** ❓ Needs testing (implemented from complete APK evidence, hardware validation pending)
+**Status:** 🧪 Needs testing
 
 ELEVATE is a separate accessory, not a BOX25 bed variant, even though it uses the
 same Nordic UART service and StarCode envelope. It always uses these Star frames;
@@ -561,7 +561,7 @@ sends the shared STOP frame once.
 
 A renewable hold (`timed_move` with `hold_owner` and `hold_generation`, see
 [Renewable holds](../SERVICES.md#renewable-holds)) refreshes at the apps' 100 ms
-on both routes, whatever the entry's motor pulse settings, until its lease runs
+on both routes, whatever the entry's **Movement per tap**, until its lease runs
 out. Then STOP follows. A finite move on the default route keeps the entry's
 pulse settings; the M1X12 variant always holds at the 100 ms sender interval.
 
@@ -598,8 +598,8 @@ direction and multi-device fan-out await real-hardware checks.
 
 ## Notes
 
-- Nectar and Mattress Firm 900 are part of the
-  [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family).
+- Nectar and Mattress Firm 900 are Okin beds; see the
+  [brand lookup](../SUPPORTED_ACTUATORS.md).
 - Generic `OKIN-XXXXXX` names require user confirmation because several Okin
   protocols share the same advertised UUID.
 

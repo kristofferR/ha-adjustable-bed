@@ -1,6 +1,6 @@
 # GM Control
 
-**Status:** ❓ Needs testing (static app evidence; physical bed and firmware behavior unverified)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -84,15 +84,15 @@ literal prefix, so background advertisements use the corresponding prefix
 patterns. Manual discovery and the callback retain the substring rule. Existing
 receiver matches keep priority and offer the app as an additional explicit choice.
 
-For a single Bluetooth address, **Enable Left / Right / Both controls** in
+For a single Bluetooth address, **Add Left, Right and Both controls** in
 **Configure** appears only for exact products
 that admit Right. If the product has Left and Right without Both, HA serializes
 the two admitted sides. Separate physical receivers retain independent products,
 side settings and session state.
 
-New product entries disable Disconnect After Command by default. Product UI
+New product entries default to **Stay connected for a while**. Product UI
 flags remain local to the physical address, exact product and app side when HA
-replaces a BLE controller, including when quick handoff is explicitly enabled.
+replaces a BLE controller, including when it releases the link after each command.
 Changing product or restarting HA starts a fresh app view. Live capability
 replies are still obtained separately for each connection.
 
@@ -106,7 +106,7 @@ motor-count or inferred-axis settings. FWRM/WFRM select a dedicated desk route.
 
 **GM Control MM sleep module** and **GM Control SXB sleep module** are separate
 Bluetooth entries. Each physical address owns its session, and a paired bed
-retains each receiver's product and wire side. **Enable Left / Right / Both
+retains each receiver's product and wire side. **Add Left, Right and Both
 controls** for one address
 requires the selected product's actual side choices. This guide
 covers commands, raw state and static-only status.

@@ -1,6 +1,6 @@
 # Vibradorm
 
-**Status:** ✅ Tested (generic controller); the Caresse, Werkmeister, VMAT and V-MAT Basic app profiles have artifact-verified behavior and need testing (hardware unverified)
+**Status:** ✅ Tested (generic controller); the Caresse, Werkmeister, VMAT and V-MAT Basic app profiles need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -417,7 +417,7 @@ on hardware.
 
 **App:** [Caresse Remote](https://play.google.com/store/apps/details?id=de.vibradorm.diamant) 0.3, code 3, `de.vibradorm.diamant`; [Werkmeister Unterfederung](https://play.google.com/store/apps/details?id=de.vibradorm.werkmeister) 0.2, code 2, `de.vibradorm.werkmeister`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** 🧪 Needs testing
 
 The bed type is `vibradorm_app` with app profile `caresse` or `werkmeister`. The
 independently verified [VMAT](#vmat) profile shares the explicit app configuration
@@ -969,14 +969,14 @@ the last column.
 - Caresse and Werkmeister send only their frozen frames
   (`caresse` and `werkmeister` in `tests/vibradorm_vectors.py`).
 - Hardware operation, on-air packet delivery, peripheral security and physical
-  effects remain unverified. Real-user checks after beta/release are deferred
+  effects remain unverified. Real-user checks are deferred
   external validation, not missing static implementation evidence.
 
 ### VMAT
 
 **App:** [VIBRADORM Remote](https://play.google.com/store/apps/details?id=de.vibradorm.vmat) (VMAT) 1.11 (49), `de.vibradorm.vmat`
 
-**Status:** ❓ Needs testing (app behavior artifact verified, physical operation unverified)
+**Status:** 🧪 Needs testing
 
 The bed type is `vibradorm_app` with app profile `vmat`. Generic entries keep
 their existing controller. [Caresse / Werkmeister](#caresse-and-werkmeister) and
@@ -1288,14 +1288,13 @@ profile shipped in
 The requested MC4-MD08 retest remains deferred physical validation for its
 owner after release. The accepted app implementation does not prove that
 [issue #162](https://github.com/kristofferR/ha-adjustable-bed/issues/162) is fixed
-or that a particular controller reports positions. No in-scope implementation
-item is deferred for lack of maintainer hardware.
+or that a particular controller reports positions. 
 
 ### V-MAT Basic
 
 **App:** [VIBRADORM Remote for Beds](https://play.google.com/store/apps/details?id=com.vibradorm.vmatbasic) (V-MAT Basic) 2.4.3 (code 14), `com.vibradorm.vmatbasic`
 
-**Status:** ❓ Needs testing (APK-verified, hardware **UNVERIFIED**)
+**Status:** 🧪 Needs testing
 
 The bed type is `vmatbasic` with profile `basic`, `cbi` or `xtbox` (see the
 [product table](#features)). Sibling Vibradorm apps: [VMAT](#vmat) and
@@ -1547,7 +1546,7 @@ The protocol comes from the accepted `com.vibradorm.vmatbasic` 2.4.3 APK,
 version code 14. Each product sends only its frozen frames (`basic`, `cbi` and
 `xtbox` in `tests/vibradorm_vectors.py`, which are its artifact vectors in
 `tests/fixtures/vmatbasic-vectors.json`). Current code and focused executed tests
-cover the accepted behavior. Hardware status: **UNVERIFIED**.
+cover the accepted behavior. Hardware status: needs testing.
 
 ## Notes
 
@@ -1567,11 +1566,11 @@ cover the accepted behavior. Hardware status: **UNVERIFIED**.
   security and physical effects remain unverified.
 - VMAT: hardware absence does not defer implementation. Focused tests exercise
   real controller/setup delivery, frozen vectors, native-proof gates, timing and
-  failure cleanup. Physical validation remains for users after beta/release.
+  failure cleanup. Physical validation remains.
 - V-MAT Basic: physical packet delivery, movement effects, floor timing/scales,
   mood and massage effects, rename persistence, temperature interpretation,
   optional read support, dual connection behavior and security remain deferred
-  user validation after beta/release. Static acceptance does not claim those
+  user validation. App evidence does not claim those
   hardware outcomes.
 
 ### References

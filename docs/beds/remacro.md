@@ -1,6 +1,6 @@
 # Remacro
 
-**Status:** ❓ Needs testing (✅ artifact-verified, hardware unverified)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -141,7 +141,7 @@ that list that model:
 
 When no model has been seen yet, or no app lists it, every app is offered and
 the bed starts on the [fallback controls](#unrecognized-models-fallback). The
-model is remembered as before. **Configure** still changes the app, refusing
+model is remembered as before. **Reconfigure** changes the app, refusing
 one that does not list the model, and the model repair below still switches an
 unlisted bed to an app that lists it.
 
@@ -168,7 +168,7 @@ Remacro bed did up to v4.0.2, with the **fallback** controls described below:
   switching to an app that does not list it, but saves other changes while the
   app stays the same.
 - Each side of a combined bed keeps its own app, so the combined options refuse
-  any app change; use the side's Repairs fix, or unpair and change each side.
+  any app change; use the side's Repairs fix, or separate the combined bed and change each side.
   Removing an entry clears its Repairs issues unless another entry still owns
   that bed.
 
@@ -308,12 +308,12 @@ no STOP for a cancelled touch or a closed screen; that behavior is not copied.
   handoffs and reconnects.
 - In the app only the counter is static; the rest are screen fields that reset
   when the screen reopens. Home Assistant has no app screen and rebuilds its
-  controller after every command when Disconnect After Command is on, so
+  controller after every command when it releases the link after each command, so
   resetting them would restart the massage cycle, lose the preset re-press
   STOP, save an old LED level or move the other side. This is a deliberate
   deviation.
 - The state is kept per bed: it carries over when a pair absorbs a single bed
-  or unpair restores one, and resets when the last entry for that bed unloads,
+  or separating the beds restores one, and resets when the last entry for that bed unloads,
   Home Assistant restarts, or the app profile or model changes.
 
 ## Notes

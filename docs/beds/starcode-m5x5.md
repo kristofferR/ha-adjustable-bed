@@ -1,6 +1,6 @@
 # AdjustableM5X5 app
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -305,7 +305,7 @@ coordinator.
 - Composite flat interrupts the group, sends main flat, waits **1600 ms**, then
   sends lift flat.
 - Every target's connection is held through dispatch, delay and cleanup,
-  including with Disconnect After Command enabled.
+  whatever the **Bluetooth connection** setting.
 - STOP, changed selection, lost transport, replacement
   coordinator/controller/client/session or unload cancels delayed writes.
 - Failure/cancellation cleans every admitted target.
@@ -352,7 +352,7 @@ All 111 owned
 command rows, 138 inherited command routes, accepted packet/parser vectors and
 exhaustive enum branches have focused tests.
 
-Real users after beta/release can validate five physical domains:
+Real users can validate five physical domains:
 
 1. Movement/release and programming duration
 2. Units/actuator mapping

@@ -1,6 +1,6 @@
 # Sleep Number
 
-**Status:** ✅ Tested on Climate 360 (Fuzion) beds in [#318](https://github.com/kristofferR/ha-adjustable-bed/issues/318), [#574](https://github.com/kristofferR/ha-adjustable-bed/issues/574) and [#623](https://github.com/kristofferR/ha-adjustable-bed/issues/623), and i8 / FlexFit 2 (BAM/MCR) beds in [#322](https://github.com/kristofferR/ha-adjustable-bed/issues/322) and [#565](https://github.com/kristofferR/ha-adjustable-bed/issues/565); the expanded BLE controls below are based on the SleepIQ 5.4.11 application, and physical validation of the new behavior remains pending
+**Status:** ✅ Tested on Climate 360 (Fuzion) beds in [#318](https://github.com/kristofferR/ha-adjustable-bed/issues/318), [#574](https://github.com/kristofferR/ha-adjustable-bed/issues/574) and [#623](https://github.com/kristofferR/ha-adjustable-bed/issues/623), and i8 / FlexFit 2 (BAM/MCR) beds in [#322](https://github.com/kristofferR/ha-adjustable-bed/issues/322) and [#565](https://github.com/kristofferR/ha-adjustable-bed/issues/565); the controls added from SleepIQ 5.4.11 need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) with protocol detail and field testing from [@homer-aty](https://github.com/homer-aty) and [@JonGilmore](https://github.com/JonGilmore)
 
@@ -191,7 +191,7 @@ pair a connection whose bond is still usable.
 
 ## Detection
 
-Auto-detection uses the unique Sleep Number service UUID for each protocol family:
+Detection uses the unique Sleep Number service UUID for each protocol family:
 
 - `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` (Fuzion)
 - `ffffd1fd-388d-938b-344a-939d1f6efee0` (MCR)

@@ -1,6 +1,6 @@
 # Paramount
 
-**Status:** ❓ Needs testing (static APK evidence, no hardware confirmation)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -170,12 +170,12 @@ movement or cause a movement refresh.
 The shipped app chooses neutral for a later matching-reply cycle. Its missing
 reply retry can retain stale movement and resets its retry counter. HA never
 replays a movement because its reply is missing. It fails the request and sends
-neutral. Physical stopping latency and any firmware watchdog remain unverified.
+neutral. How quickly the bed stops, and whether its firmware has a watchdog, still needs
+testing.
 
 ### Vectors
 
-`tests/paramount_vectors.py` freezes all eighteen outgoing literals and the six
-response fixtures from the accepted artifact. `tests/test_paramount.py` checks
+`tests/paramount_vectors.py` holds all eighteen frames the app sends and six example replies. `tests/test_paramount.py` checks
 encoding, parsing, capability combinations, startup, cancellation, readback,
 settings preservation and memory clamping. This framing has no equivalent codec
 in the existing v5 families, so it has its own codec and typed profile.
@@ -186,7 +186,7 @@ in the existing v5 families, so it has its own codec and typed profile.
 
 **App:** [Bed Operation](https://play.google.com/store/apps/details?id=com.paramount.bedcontrol) 3.0.4, `com.paramount.bedcontrol`
 
-**Status:** ❓ Needs testing
+**Status:** 🧪 Needs testing
 
 #### Setup
 
@@ -238,8 +238,8 @@ See the generated profile table. Each movement refresh follows its matching repl
 and the app's response delay. HA bounds the whole movement, including slow replies.
 Idle live-link queries send neutral and request settings every fifth reply, in
 HA's preemptible query lane. They never connect or prolong the idle deadline.
-The app's idle default is 30 seconds; HA uses its configurable integration idle
-setting (40 seconds by default), with Disconnect After Command available.
+The app's idle default is 30 seconds; HA uses **Bluetooth connection** (stay connected for
+40 seconds by default, or release right after each command).
 
 #### Notifications
 
@@ -258,9 +258,9 @@ There is no general absolute-position packet inferred from memory targets.
 
 #### Evidence
 
-A07's accepted Bed Operation artifact defines one P1 wire family across the
-current registration and ongoing-operation transports. Static vectors cover its
-complete outgoing command set; hardware validation remains for beta/release users.
+Based on Bed Operation: one P1 frame format for registration and for normal
+operation. The tests cover every command the app sends; the bed itself still
+needs testing.
 
 ## Notes
 

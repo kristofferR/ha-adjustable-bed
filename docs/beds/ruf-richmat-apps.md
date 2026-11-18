@@ -1,6 +1,6 @@
 # RUF, W.Silver, AMERICANSTAR, Bailey and TX apps
 
-**Status:** ❓ Needs testing (app-derived support; physical hardware unverified)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -274,7 +274,7 @@ TX omits Music USB from both initialization lists. Other apps include that
 query in legacy/VER1 lists. Query completion is not a semantic acknowledgment.
 HA's configured pulse count bounds movement and protocol-specific release is
 attempted even after cancellation. Physical timing and firmware stop behavior
-still require real-user confirmation after a beta or release.
+still require real-user confirmation.
 
 ## Notes
 

@@ -1,6 +1,6 @@
 # Adjustable Comfort M1X12 app
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -305,8 +305,7 @@ integration.
   explicit ELEVATE selection, app profile capabilities, group validation,
   paired-side ownership, card hold/release, and actual cover/button/service STOP
   paths.
-- Hardware operation remains unverified. Real-user checks are deferred until a
-  beta or release.
+- Hardware operation still needs testing by owners.
 
 ### Analysis provenance
 

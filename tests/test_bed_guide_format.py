@@ -19,7 +19,7 @@ _NOT_GUIDES = {"sleep-number-services.md"}
 GUIDES = sorted(p for p in BEDS.glob("*.md") if p.name not in _NOT_GUIDES)
 
 _REQUIRED = {
-    "status line": re.compile(r"^\*\*Status:\*\* (✅|❓|⚠️)", re.M),
+    "status line": re.compile(r"^\*\*Status:\*\* (✅|🧪|⚠️)", re.M),
     "credit line": re.compile(r"^\*\*Credit:\*\* ", re.M),
     "Known Models section": re.compile(r"^## Known (Models|Brands|Controllers)\b", re.M),
     "Apps table": re.compile(r"^## Apps\s*$(?:(?!^## ).)*?^\| ", re.M | re.S),

@@ -1,6 +1,6 @@
 # Linak
 
-**Status:** ✅ Tested (existing protocol user tested; full current Android app corpus statically verified)
+**Status:** ✅ Tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), jascdk and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -291,14 +291,14 @@ Reference notifications are exactly four little-endian bytes:
 
 ### Rapid commands and the physical remote
 
-- Keep **Disconnect after command** enabled when using the physical remote.
+- Keep **Bluetooth connection** on **Release right after each command** when using the physical remote.
 - Linak holds the connection for one second after an operation, so rapid
   follow-up taps reuse the authenticated link.
 - Combined actions retain both links until both sides finish, then start the
   handoff together.
 - A new command renews this short window; the explicit **Disconnect** button
-  bypasses it. Turning the option off uses the configured idle timeout instead.
-- With quick disconnect enabled, background position polling is also suppressed
+  bypasses it. Choosing **Stay connected for a while** uses **Seconds to stay connected** instead.
+- When the link is released after each command, background position polling is also suppressed
   so it cannot reclaim the remote's connection while idle. Position feedback
   refreshes during HA operations; remote-only movements appear on the next
   connection.

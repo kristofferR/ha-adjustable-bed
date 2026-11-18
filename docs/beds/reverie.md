@@ -1,6 +1,6 @@
 # Reverie
 
-**Status:** ❓ Needs testing (protocol implementation candidate; hardware behavior unverified on a bed)
+**Status:** 🧪 Needs testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), Vitaliy and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -542,7 +542,7 @@ consumed inside the existing command lane; it is not replaced with a timed
 write during silence.
 
 The BLE connection remains held until all pending comfort fields are consumed,
-cancelled, or fail, including with Disconnect After Command enabled. Cancelling
+cancelled, or fail, whatever the **Bluetooth connection** setting. Cancelling
 a routine also discards its pending comfort progression.
 
 ### Command timing and routines
@@ -576,8 +576,7 @@ routine request. Feedback and unrelated backup disconnects preserve the routine.
 ### Pairlink source scope and implementation status
 
 The implementation covers central and explicit local runtime consumers.
-Hardware delivery remains unverified and is deferred to real-user validation
-after beta/release.
+Delivery to a real bed still needs testing by owners.
 The [SDK implementation notes](reverie-pairlink-sdk.md) describe private receive
 and metadata consumers. They do not create an arbitrary-packet action.
 

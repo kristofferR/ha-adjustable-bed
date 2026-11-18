@@ -266,7 +266,7 @@ rejection is logged as a warning.
 
 **App:** [Svane Remote](https://play.google.com/store/apps/details?id=com.svane.svaneremote) Version 1.8 (8), `com.svane.svaneremote`
 
-**Status:** ⚠️ Artifact-verified; physical hardware unverified
+**Status:** 🧪 Needs testing
 
 The `svane` bed type's `svane_remote_jmc` variant, shown as **Svane Remote app
 (JMC400)**. The [Svane Remote guide](svane.md) covers both of the app's
