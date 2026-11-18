@@ -8744,11 +8744,11 @@ adapter/proxy discovery, connection admission and handoff.
 
 | Feature | Availability |
 |---|---|
-| Movement | App-labelled direction controls; paired head/foot direction graphics also provide covers. Additional graphics remain named held buttons, without inferring physical motor count. |
+| Movement | Paired head/foot direction graphics are covers. Other direction graphics are held buttons named for what they show (Head and Foot Up, Upper Section Up, ...), without inferring physical motor count. |
 | Presets and memory | Exact named actions in the selected profile, including separate Save buttons where programming is proven. No universal slot count or numeric memory namespace. |
 | Massage and bed light | Profile-specific request buttons; local icon/flag changes do not confirm remote state. |
 | Factory Reset | Only where listed; requires confirmation in the native card, as do Save buttons. |
-| Position and device state feedback | None. The selected-profile sensor reports session-local choices, explicitly labelled as local state. |
+| Position and device state feedback | None. |
 | Renewable holds | Proven motion controls only. Countdown, massage, programming and local selectors remain finite. |
 
 The command tables below describe raw single-character ASCII String bytes over
@@ -8766,7 +8766,10 @@ also remain exactly as listed. The source field name alone does not identify a
 control: M5's `h26_flat` is bed-light artwork.
 
 GV's head/foot flag selects an axis, never a bed side. SleepEvolution defaults
-to foot (flag 1); W.Silver defaults to head (flag 0). Their GV periodic maps and
+to foot (flag 1); W.Silver defaults to head (flag 0). Home Assistant has no axis
+picker: GV's position, massage power and +/− controls are separate Head and
+Foot buttons that choose the axis, then press. Likewise U3's selected-axis
+arrows are Lumbar, Tilt and Lounge Up/Down buttons for modes 1, 2 and 3. Their GV periodic maps and
 schedules differ, including W.Silver's off pictogram with no periodic write.
 Use only the chosen app's table. U3 starts in mode 0; its local lumbar selector
 selects mode 1, while mode 2/3 selectors also perform the listed bed writes.
@@ -8777,7 +8780,9 @@ States without a listed timer arm have no periodic write. **Bed release
 gesture** retains the direct bed effects of phone-torch handlers: `m`/`n`,
 release only, or cancellation only as listed. Phone torch is excluded and is
 never exposed as a bed light or phone control. Local-only selectors and
-cancellation-only actions send no wire packet of their own. Network, SSID,
+cancellation-only actions send no wire packet of their own. These, the release
+gesture and U3's tilt selector (the Lounge recall without its release) remain
+`richmat_legacy` action controls but are not buttons. Network, SSID,
 password, cloud, account, OTA and unrelated phone, audio, accessory and seating
 functions are excluded from these direct BLE bed profiles.
 

@@ -72,7 +72,8 @@ async def test_actual_coordinator_entity_and_finite_callers(runtime, caller):
         assert entity.extra_state_attributes["hold_lease_mode"] == "stream"
         await entity.async_open_cover()
     elif caller == "button":
-        spec = next(s for s in ctrl.controller_button_specs if s.key == "richmat_legacy_h26_hdup")
+        # Head up belongs to the back cover; the double-arrow movement stays a button.
+        spec = next(s for s in ctrl.controller_button_specs if s.key == "richmat_legacy_h26_tiltdn")
         entity = ControllerActionButton(c, spec)
         assert entity.extra_state_attributes["hold_lease_mode"] == "stream"
         await entity.async_press()
@@ -90,9 +91,10 @@ async def test_actual_coordinator_entity_and_finite_callers(runtime, caller):
             {"device_id": "bed", "control": "h26_hdup", "duration": 0.1},
             blocking=True,
         )
-    assert values(client)[0] == "24"
+    moved = "2a" if caller == "button" else "24"
+    assert values(client)[0] == moved
     assert values(client)[-1] == "6e"
-    assert set(values(client)) == {"24", "6e"}
+    assert set(values(client)) == {moved, "6e"}
     if caller in ("timed", "hold"):
         assert values(client) == ["24", "6e"] or values(client) == ["24", "24", "6e"]
     assert c._command_scheduler.recent_records

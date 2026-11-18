@@ -5250,9 +5250,6 @@
       },
       "sonicsleep": {
         "name": "SonicSleep state"
-      },
-      "richmat_legacy_profile": {
-        "name": "Selected app profile"
       }
     },
     "light": {

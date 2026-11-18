@@ -13,14 +13,12 @@ from typing import TYPE_CHECKING, Final
 from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
 from ...command_scheduler import current_command_context
 from ...const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
-from ...controller_state import StateKey
 from ...profiles.richmat_legacy import Action, LegacyProfile, profiles
 from ..base import BedController, ProfileExecution
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
-    ControllerStateSensorSpec,
     MotorControlSpec,
 )
 from .protocol import LocalState, Phases, begin, packet
@@ -35,8 +33,112 @@ if TYPE_CHECKING:
 
 from ...codec.richmat import TRANSPORTS
 
-LOCAL: Final = StateKey[dict[str, object]]("richmat_legacy_local")
-PROFILE: Final = StateKey[str]("richmat_legacy_profile")
+# Button names for the apps' button text and artwork descriptions.
+_NAMES: Final = {
+    "head up pictogram": "Head Up", "head down pictogram": "Head Down",
+    "foot up pictogram": "Foot Up", "foot down pictogram": "Foot Down",
+    "head and foot up pictogram": "Head and Foot Up",
+    "head and foot down pictogram": "Head and Foot Down",
+    "double up arrows": "Head and Foot Up", "double down arrows": "Head and Foot Down",
+    "upper-bed segment up pictogram": "Upper Section Up",
+    "upper-bed segment down pictogram": "Upper Section Down",
+    "lower-bed segment up pictogram": "Lower Section Up",
+    "lower-bed segment down pictogram": "Lower Section Down",
+    "whole-bed tilt up pictogram": "Tilt Up", "whole-bed tilt down pictogram": "Tilt Down",
+    "head up": "Head Up", "head down": "Head Down", "foot up": "Foot Up", "foot down": "Foot Down",
+    "lumbar up": "Lumbar Up", "lumbar down": "Lumbar Down",
+    "tilt up": "Tilt Up", "tilt down": "Tilt Down",
+    "zg up": "Zero Gravity Up", "zg down": "Zero Gravity Down",
+    "head rest up": "Head Rest Up", "head rest down": "Head Rest Down",
+    "additional up arrow": "Extra Up", "additional down arrow": "Extra Down",
+    "compound posture pictogram hufu": "Head Up Foot Up",
+    "compound posture pictogram hufd": "Head Up Foot Down",
+    "compound posture pictogram hdfu": "Head Down Foot Up",
+    "flat": "Flat", "lounge": "Lounge", "tv": "TV", "read tv": "Read/TV", "relax": "Relax",
+    "zg": "Zero Gravity", "zero/g": "Zero Gravity", "zero gravity": "Zero Gravity", "0 gravity": "Zero Gravity",
+    "anti snore": "Anti-Snore", "snore": "Anti-Snore",
+    "m": "Memory", "mem": "Memory", "m1": "Memory 1", "m2": "Memory 2", "m3": "Memory 3",
+    "p1": "Memory 1", "p2": "Memory 2",
+    "post1": "Position 1", "post2": "Position 2", "post3": "Position 3", "set": "Set",
+    "under-bed light pictogram": "Toggle Light", "ubl": "Toggle Light", "bed light": "Toggle Light",
+    "led": "Toggle Light",
+    "factory reset": "Factory Reset", "stop": "Stop", "prohibited / off pictogram": "All Off",
+    "head massage on/off": "Massage: Head On/Off", "foot massage on/off": "Massage: Foot On/Off",
+    "bed/massage on/off pictogram": "Massage: On/Off", "on/off": "Massage: On/Off",
+    "massage off": "Massage: Off", "all off": "Massage: Off",
+    "timer / all off": "Massage: Timer / Off", "mode / all on": "Massage: Mode / On",
+    "mode massage": "Massage: Mode", "mode": "Massage: Mode",
+    "massage mode pictogram": "Massage: Mode",
+    "pulse": "Massage: Pulse", "wave": "Massage: Wave", "constant": "Massage: Constant",
+    "10min": "Massage: Timer 10 Minutes", "15min": "Massage: Timer 15 Minutes",
+    "20min": "Massage: Timer 20 Minutes", "30min": "Massage: Timer 30 Minutes",
+    "intensity up": "Massage: Intensity Up", "intensity down": "Massage: Intensity Down",
+    "intensity +": "Massage: Intensity Up", "intensity −": "Massage: Intensity Down",
+    "speed up": "Massage: Speed Up", "speed down": "Massage: Speed Down",
+    "speed +": "Massage: Speed Up", "speed −": "Massage: Speed Down",
+    "gentle touch +": "Massage: Gentle Touch Up", "gentle touch −": "Massage: Gentle Touch Down",
+    "head massage +": "Massage: Head Intensity Up", "head massage −": "Massage: Head Intensity Down",
+    "foot massage +": "Massage: Foot Intensity Up", "foot massage −": "Massage: Foot Intensity Down",
+    "head massage increase pictogram": "Massage: Head Intensity Up",
+    "head massage decrease pictogram": "Massage: Head Intensity Down",
+    "foot massage increase pictogram": "Massage: Foot Intensity Up",
+    "foot massage decrease pictogram": "Massage: Foot Intensity Down",
+    "three intensity arcs": "Massage: Intensity Level 3",
+    "one intensity arc": "Massage: Intensity Level 1",
+}
+# Labels whose meaning depends on the screen: name them by the command they send.
+_BY_COMMAND: Final = {
+    "2": "Massage: Head On/Off", "3": "Massage: Foot On/Off",
+    "4": "Massage: Intensity Up", "5": "Massage: Intensity Down",
+    "L": "Massage: Head Intensity Up", "M": "Massage: Head Intensity Down",
+    "N": "Massage: Foot Intensity Up", "O": "Massage: Foot Intensity Down",
+}
+# Buttons that pick what a shared control acts on get one button per choice.
+_VARIANTS: Final = {
+    "axis": {0: "Head", 1: "Foot"},
+    "mode": {1: "Lumbar", 2: "Tilt", 3: "Lounge"},
+}
+_VARIANT_NAMES: Final = {
+    "+": "Massage: {} Intensity Up", "−": "Massage: {} Intensity Down",
+    "massage power pictogram": "Massage: {} On/Off",
+    "pos up": "{} Up", "pos down": "{} Down",
+    "selected axis up": "{} Up", "selected axis down": "{} Down",
+}
+
+
+def _button_name(action: Action, variant: int | None = None) -> str:
+    label = action.label.lower()
+    if variant is not None and action.select:
+        return _VARIANT_NAMES[label].format(_VARIANTS[action.select][variant])
+    if label == "set" and action.programmable:
+        return "Set Position"
+    if label in _NAMES:
+        return _NAMES[label]
+    sent = (*action.down, *(w for _, b in action.branches for w in b.writes))
+    command = next((c for c in sent if c not in ("m", "n")), None)
+    if command in _BY_COMMAND:
+        return _BY_COMMAND[command]
+    return action.label
+
+
+def _variants(action: Action) -> tuple[int | None, ...]:
+    """One button per choice for a control that acts on the selected axis or mode."""
+    if action.select not in _VARIANTS:
+        return (None,)
+    choices = _VARIANTS[action.select]
+    if action.select == "mode":
+        # Mode 0 has no movement.
+        return tuple(m for m in choices if m < len(action.states) and action.states[m] != "0")
+    return tuple(choices)
+
+
+def _control_id(key: str, variant: int | None) -> str:
+    return key if variant is None else f"{key}@{variant}"
+
+
+def _parse_control(control: str) -> tuple[str, int | None]:
+    key, _, variant = control.partition("@")
+    return key, int(variant) if variant.isdigit() else None
 WRITE_TIMEOUT_S: Final = 5.0
 
 
@@ -151,7 +253,6 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
             LocalState(axis=int(self.profile.app == "sleep_evolution")),
             {screen: now for screen, _, _ in self.profile.schedules},
         )
-        self._publish()
 
     async def stop_notify(self) -> None:
         self.on_disconnect()
@@ -174,66 +275,64 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
             raise ValueError("This app has no single-address bed-side field")
         return current
 
-    def _publish(self) -> None:
-        link = self._link
-        if link is not None:
-            self.forward_controller_state_updates(
-                PROFILE(self.profile.key),
-                LOCAL(
-                    {
-                        "axis": "head" if link.state.axis == 0 else "foot",
-                        "mode": link.state.mode,
-                        "light_request_flag": link.state.led,
-                        "state_source": "local app choices, not bed feedback",
-                    }
-                ),
-            )
-
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            ControllerStateSensorSpec(
-                "richmat_legacy_profile",
-                "richmat_legacy_profile",
-                PROFILE,
-                "mdi:bed",
-                attribute_keys=(LOCAL,),
-            ),
+    def held_control_options(self) -> tuple[str, ...]:
+        return tuple(
+            _control_id(a.key, variant)
+            for a in self.profile.actions
+            if a.motion or a.programmable
+            for variant in dict.fromkeys((None, *_variants(a)))
         )
 
     @property
-    def held_control_options(self) -> tuple[str, ...]:
-        return tuple(a.key for a in self.profile.actions if a.motion or a.programmable)
-
-    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        covered = {
+            key
+            for spec in self.motor_control_specs
+            if spec.hold is not None
+            for key in (spec.hold.up_control, spec.hold.down_control)
+        }
         specs = []
         for action in self.profile.actions:
-            for program in (False, True) if action.programmable else (False,):
-                label = ("Save " if program else "") + action.label
-                section = (
-                    CARD_PRESETS
-                    if action.programmable
-                    else CARD_LIGHTING
-                    if "light" in label.lower() and "release" not in label.lower()
-                    else CARD_MASSAGE
-                    if "massage" in label.lower()
-                    else CARD_UTILITY
-                )
-                specs.append(
-                    ControllerButtonSpec(
-                        "richmat_legacy_" + action.key + ("_save" if program else ""),
-                        label,
-                        partial(_press, control=action.key, program=program),
-                        translation_key="richmat_legacy_" + section.section.value,
-                        translation_placeholders={"action": label},
-                        hold=ControllerHoldSpec(action.key) if action.motion else None,
-                        requires_confirmation=program or "factory reset" in label.lower(),
-                        invalidates_position=action.motion,
-                        scheduler_resource="*",
-                        card=section,
+            # Covers own their directions. Local-only pickers (axis/mode choice,
+            # cancelling the app's refresh) and the phone-torch release gesture
+            # send no bed control of their own, so they are not buttons.
+            if action.key in covered or not (
+                action.down or action.branches or action.short
+            ) or action.label in ("Bed release gesture", "Tilt ZG selector (mode 2)"):
+                continue
+            for variant in _variants(action):
+                control = _control_id(action.key, variant)
+                name = _button_name(action, variant)
+                for program in (False, True) if action.programmable else (False,):
+                    label = name
+                    if program:
+                        label = ("Save to " if name.startswith("Memory") else "Save ") + name
+                    section = (
+                        CARD_PRESETS
+                        if action.programmable
+                        else CARD_LIGHTING
+                        if label == "Toggle Light"
+                        else CARD_MASSAGE
+                        if label.startswith("Massage")
+                        else CARD_UTILITY
                     )
-                )
+                    specs.append(
+                        ControllerButtonSpec(
+                            "richmat_legacy_"
+                            + control.replace("@", "_")
+                            + ("_save" if program else ""),
+                            label,
+                            partial(_press, control=control, program=program),
+                            translation_key="richmat_legacy_" + section.section.value,
+                            translation_placeholders={"action": label},
+                            hold=ControllerHoldSpec(control) if action.motion else None,
+                            requires_confirmation=program or label == "Factory Reset",
+                            invalidates_position=action.motion,
+                            scheduler_resource="*",
+                            card=section,
+                        )
+                    )
         return tuple(specs)
 
     @property
@@ -265,7 +364,10 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
         )
 
     def validate_request(self, control: str, duration_ms: int, program: bool = False) -> Action:
-        action = self.profile.action(control)
+        key, variant = _parse_control(control)
+        action = self.profile.action(key)
+        if variant is not None and variant not in _variants(action):
+            raise ValueError("Choose a control offered by this app and prefix")
         if type(duration_ms) is not int or not 1 <= duration_ms <= 60000:
             raise ValueError("Choose a duration of 1 to 60000 ms")
         if program and not action.programmable:
@@ -351,8 +453,11 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
         cancel = self._coordinator.cancel_command
         if cancel.is_set():
             return
+        _, variant = _parse_control(control)
+        if variant is not None and action.select is not None:
+            # A per-axis/per-mode button makes the app's choice, then presses.
+            setattr(link.state, action.select, variant)
         phase = begin(action, link.state)
-        self._publish()
         _, initial, period = next(s for s in self.profile.schedules if s[0] == action.screen)
         period_s = period / 1000
         epoch = link.epochs[action.screen] + initial / 1000
@@ -420,7 +525,6 @@ class RichmatLegacyController(ProfileExecution[LegacyProfile], BedController):
                 pass
             else:
                 await self._release(link, phase, count, recall=not program)
-            self._publish()
         if program and not completed and not cancel.is_set():
             raise TimeoutError("The bounded operation ended before a save write completed")
 

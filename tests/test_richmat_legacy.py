@@ -187,9 +187,19 @@ async def test_all_profile_controls_run_on_captured_gatt_and_expose_specs(clock,
     await ctrl.start_notify()
     assert frames(c) == []
     specs = {s.key: s for s in ctrl.controller_button_specs}
+    covered = {c for s in ctrl.motor_control_specs for c in (s.hold.up_control, s.hold.down_control)}
     for action in ctrl.profile.actions:
-        assert "richmat_legacy_" + action.key in specs
-        assert bool(specs["richmat_legacy_" + action.key].hold) == action.motion
+        buttons = [
+            spec for key, spec in specs.items()
+            if key == "richmat_legacy_" + action.key or key.startswith(f"richmat_legacy_{action.key}_")
+        ]
+        # Covers own their directions; pickers and the release gesture are not buttons.
+        assert bool(buttons) != (
+            action.key in covered
+            or action.label in ("Bed release gesture", "Tilt ZG selector (mode 2)")
+            or not (action.down or action.branches or action.short)
+        ), action
+        assert all(bool(b.hold) == action.motion for b in buttons if not b.key.endswith("_save"))
         assert ctrl.execution.hold_for(action.key) == ("stream" if action.motion else None)
         c.client.write_gatt_char.reset_mock()
         await ctrl.action(action.key, duration_ms=1)
@@ -350,3 +360,32 @@ async def test_cancellation_during_short_recall_still_completes_release(clock):
     with pytest.raises(asyncio.CancelledError):
         await task
     assert frames(c) == ["45", "45", "45", "6e", "6e"]
+
+
+@pytest.mark.parametrize("key", list(profiles()))
+def test_button_names_are_readable_and_unique(key):
+    ctrl, _ = make(*key.split(":"))
+    names = [spec.name for spec in ctrl.controller_button_specs]
+    assert len(names) == len(set(names)), names
+    for name in names:
+        assert "pictogram" not in name and "arrow" not in name and "(" not in name, name
+        assert not re.search(r"\b(?!TV\b)[A-Z]{2,}\b", name), name
+
+
+async def test_axis_and_mode_buttons_choose_then_press(clock):
+    ctrl, c = make(code="GV")
+    await ctrl.start_notify()
+    names = {spec.name: spec for spec in ctrl.controller_button_specs}
+    assert {"Head Up", "Foot Up", "Massage: Head On/Off", "Massage: Foot On/Off"} <= set(names)
+    assert not any("axis" in name for name in names)
+    await names["Head Up"].press_fn(ctrl)
+    assert ctrl._link.state.axis == 0
+    await names["Foot Up"].press_fn(ctrl)
+    assert ctrl._link.state.axis == 1
+    ctrl, c = make(code="U3")
+    await ctrl.start_notify()
+    names = {spec.name: spec for spec in ctrl.controller_button_specs}
+    assert {"Lumbar Up", "Tilt Up", "Lounge Up"} <= set(names)
+    c.client.write_gatt_char.reset_mock()
+    await ctrl.hold_control("h26_tiltup@2", 1)
+    assert ctrl._link.state.mode == 2 and "41" in frames(c)
