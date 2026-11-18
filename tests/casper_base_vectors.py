@@ -1,10 +1,10 @@
 """Frozen Casper Base frames, the vectors the codec must reproduce.
 
-Each frame is a sent frame of the accepted Casper Base 1.0.8 report
-(``com.richmat.casperbase``, row101): a literal of its builder vectors
-(``tests/fixtures/casper_base/builders.json``) or of its command ledger
-(``tests/fixtures/casper_base/ledger.json``). Three program frames, Lounge,
-Zero Gravity and Anti-Snoring save, are the ledger's ``6e 01 s op sum8``
+Each frame is a sent frame of Casper Base 1.0.8 (``com.richmat.casperbase``):
+a literal of its builder vectors (``tests/fixtures/casper_base/builders.json``)
+or of its command bytes (``tests/fixtures/casper_base/command_bytes.json``).
+Three program frames, Lounge, Zero Gravity and Anti-Snoring save, are the
+app's ``6e 01 s op sum8``
 template at side 0, the only side the app's own products send.
 
 ``FROZEN_FRAMES`` holds the app's two products, PRO and MAX: the frames of

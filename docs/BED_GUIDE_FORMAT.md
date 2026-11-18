@@ -7,11 +7,10 @@ for values. Use this layout for new guides and keep it when you update one.
 A wire format shared by several apps or bed types gets one [codec guide](#codec-guides)
 instead of one guide per app. [Jiecang](beds/jiecang.md) is the reference.
 
-Discovery ledgers are a different document. Evidence, row-by-row dispositions,
-reachability arguments and audit wording belong in the ledger, which is an
-audit record: it stays machine-local with the APK Protocol Audit report and
-never goes in `docs/`. The implementation PR states its totals and exclusions,
-and the guide states the results in reference form.
+Guides state results in reference form. Evidence, dispositions, tracker IDs,
+hashes and audit wording stay out of them: discovery ledgers stay machine-local
+with the APK Protocol Audit report, and the implementation PR states their
+totals and exclusions.
 
 ## Skeleton
 
@@ -74,7 +73,7 @@ and the guide states the results in reference form.
 
 ### Analysis provenance
 
-- <package, version, artifact SHA-256, the PR that implemented it>
+Based on <App> <version> (`<package>`).
 ```
 
 ## Codec guides
@@ -152,7 +151,7 @@ Behaves as the [<family>](#<family>-family), except as below.   <!-- family memb
 #### Timing         <!-- link the generated tables; prose only for sequences the data lacks -->
 #### Notifications  <!-- which responses the profile consumes and how -->
 #### Services       <!-- actions beyond the standard entities -->
-#### Evidence       <!-- the audit row behind it, results in reference form -->
+#### Evidence       <!-- the app and version behind it, results in reference form -->
 ```
 
 - **Detection rules** go under the profile's Setup: the service UUIDs or name
@@ -160,10 +159,10 @@ Behaves as the [<family>](#<family>-family), except as below.   <!-- family memb
   an explicit choice. "Choosing a profile" only says which route detection
   suggests.
 - A family member lists only what differs from its family section.
-- **Evidence** names the audit row and states the result in reference form, for
-  example "Comfort Motion sends only its frozen frames". Dispositions, exclusions,
-  counts and reachability arguments stay in the machine-local ledger. Never link
-  a ledger file.
+- **Evidence** names the app and version and states the result in reference
+  form, for example "Comfort Motion sends only its frozen frames". Tracker IDs,
+  hashes, dispositions, counts and reachability arguments stay in the
+  machine-local ledger. Never link a ledger file.
 
 ## Rules
 

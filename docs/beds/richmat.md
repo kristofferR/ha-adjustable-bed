@@ -110,7 +110,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | Massage | ✅ | ✅ Model-specific zone, mode, off or 20-minute timer actions | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off, 10/20/30-minute buttons | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
 | Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Model-specific toggle; legacy also off | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings | ✅ (toggle) | ✅ Product-gated actions, RGB settings and duration choices | ⚠️ Only as the selected layout's named app buttons; no RGB | ✅ Light buttons; ordinary light or RGB page where the product and its reply allow | ✅ RGB strip for lighting-flag products, colour and timer otherwise |
 | Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ Sync buttons where selected | ✅ Where the layout has it | ❌ | ✅ Sync on/off actions where the product has them | ❌ | ❌ (one-address Left/Right on stored L400SH and L300SH) | ❌ (one-address Left/Right on side-flag products) |
-| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.rmcontrol_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating only on restored products with that capability |
+| Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.set_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating only on restored products with that capability |
 | Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button | ⚠️ Eleven read-only diagnostic sensors | ✅ Snore settings where the normal product's settings menu admits them; independent type 1/type 2 sleep sensors with live values and direct BLE reports; only the product's listed sides. ❌ Firmware, Wi-Fi and cloud are outside the direct BLE bed boundary | ⚠️ Disabled-by-default app-response diagnostic; Stop cancels and releases the active action only (no emergency-stop command) | ✅ Music page, external snore trigger, sensor-name query; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
 
 ## Choosing a profile
@@ -270,8 +270,7 @@ sends STOP.
 
 ### Aliases
 
-No two Richmat bed types send identical bytes. The
-[protocol inventory](../design/protocol-inventory.md) found one model identical in two apps:
+No two Richmat bed types send identical bytes. One model is identical in two apps:
 `model_bfrm` in Best Mattress and in Blvd Home. Each app keeps its own catalog,
 so the model stays a choice in both [Richmat MH apps](#richmat-mh-apps).
 
@@ -501,8 +500,8 @@ CRC-16. See each profile's Notifications.
 
 ### Vectors
 
-`tests/richmat_vectors.py` freezes each profile's frames: the accepted reports'
-literals for the catalog apps (Good Vibe Sleep's from its accepted vectors in
+`tests/richmat_vectors.py` freezes each profile's frames: the apps'
+literals for the catalog apps (Good Vibe Sleep's from its vectors in
 `tests/fixtures/goodvibe`, the L&P legacy app's in both modes from its catalog),
 and the pre-v5 controllers' frames for the fixed-table routes.
 `tests/test_richmat_vectors.py` checks that every literal round-trips through the
@@ -564,7 +563,7 @@ The WiLinke GGRM profile also exposes Save Zero G and Save Anti-snore, plus
 10, 20 and 30 minute massage buttons when massage is enabled. These are
 one-shot catalog actions followed by the standard release after 120 ms.
 Timer buttons do not claim to report the bed's current timer setting.
-The commands are proven by the accepted row055 Revive Control, Blvd Home and
+The commands come from the Revive Control, Blvd Home and
 HARMONY GGRM tables; physical behavior on the issue #695 bed remains unverified.
 
 The app tries BLE services in this order:
@@ -686,7 +685,7 @@ release.
 #### Evidence
 
 The Richmat remotes send only their frozen frames. The GGRM catalog actions are
-proven by the accepted row055 reports (Revive Control, Blvd Home and HARMONY GGRM tables, with the `main_6e` release and
+from the Revive Control, Blvd Home and HARMONY GGRM tables ( with the `main_6e` release and
 its 120 ms delay); the other frames are the pre-v5 controller's.
 
 ### BedTech
@@ -828,15 +827,13 @@ See [the action reference](../SERVICES.md#bedtech-app).
 
 #### Evidence
 
-Accepted unit095 APK Protocol Audit and independent audit001: `com.bedtech`
-7.1.3 (14), nine model routes and 148 frozen literal vectors. The Richmat codec
+Based on `com.bedtech`
+7.1.3 (14): nine model routes and 148 frozen literal vectors. The Richmat codec
 reproduces every literal byte for byte, including bank 1. All 585 app
 model/action/side routes are retained as focused test vectors. Hardware remains
 unverified for the explicit profiles, including cessation of movement after
 refresh ends, bank mapping, memory saves and the timer20 button.
 
-Artifact SHA-256: `0d529e90a1d134c9f2e1ff5d3966616ec8f4c01ec63d7e9e79974d8f7e2137a2`.
-Report manifest SHA-256: `d196849c2c9463ac6bbd929eea3070d0e8f234aa511362284508a9c9cdc945fd`.
 The earlier BedTech 7.1.3 Hermes checks (2026-07-10, issue #410) established
 write-with-response; the contrary light/Lounge experiment in issue #243 did
 not describe the official app's write mode. The legacy field-report behavior
@@ -1017,23 +1014,14 @@ a partial frame after 500 ms without new data, as the app's timer does.
 
 ##### Alarm service
 
-Use `adjustable_bed.rmcontrol_alarm`, selecting the device and operation. It
-requires an explicitly selected RMControl profile and the appropriate supported
-alarm capability. Action names must come from that device's diagnostics
-`alarm_actions` list, not raw bytes or another product's catalog. Ambiguous or
-absent actions are rejected before writing.
+Use [`adjustable_bed.set_alarm`](../SERVICES.md#set_alarm). It requires an
+explicitly selected RMControl profile with an alarm. `wake_action` must be one
+of the actions in that product's alarm list; others are rejected before
+writing. Products with repeating alarms take `slot` (1..7), `time` and at least
+one weekday; `enabled: false` deletes that slot. Other products run one
+countdown alarm to `time`; `enabled: false` cancels it. `sync_clock` sends the
+current Home Assistant time to the alarm subsystem.
 
-| Operation | Additional fields | Effect |
-| --- | --- | --- |
-| `single` | `minutes` (1..65535), `action` | Run the selected action after a countdown measured in minutes. |
-| `cancel_single` | None | Cancel the countdown alarm. |
-| `repeat` | `alarm_id` (1..7), `time`, `weekdays`, `action` | Create or replace the selected repeating-alarm slot at local time, with minute precision. |
-| `delete` | `alarm_id` (1..7) | Delete that repeating-alarm slot. |
-| `query` | None | Request repeating-alarm records; received records appear in state/diagnostics. |
-| `sync` | None | Send current Home Assistant time, timezone and local calendar values to the supported alarm subsystem. |
-
-- `weekdays` uses `monday` through `sunday`; it is not a raw bit mask.
-- An optional `side` accepts `left`, `right` or `both` for paired-bed targeting.
 - Replacing a slot changes the alarm stored on the bed, not merely a Home
   Assistant automation.
 - A **single alarm is a countdown**, not a wall-clock alarm or time-sync
@@ -1079,14 +1067,13 @@ to activate automatic intervention.
 RMControl sends the frames of the selected product's catalog, source-verified
 against RMControl 21.3.7 and hardware unverified. The service list is not a
 promise that every product supports those features; a rejected operation must not
-be worked around by choosing an unrelated product. Evidence: APK Protocol Audit
-row018.
+be worked around by choosing an unrelated product.
 
 ### Richmat MH apps
 
 **App:** Revive Control 1.0.26, Best Mattress 1.1.1, Blvd Home 1.0.1, HARMONY 1.0.0 and Idealbed 2.4.2 (see [Apps](#apps))
 
-**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 #### Setup
 
@@ -1317,16 +1304,17 @@ the catalog.
 
 #### Services
 
-- `adjustable_bed.richmat_mh_alarm`: `enabled`, `time` (local, minute
-  precision), `position` and `massage` choices from the model's alarm page,
-  `slot` (1–3) for three-slot models. The bed receives the minutes until the
+- [`adjustable_bed.set_alarm`](../SERVICES.md#set_alarm): `enabled`, `time`
+  (local, minute precision), `wake_action` and `massage` with `massage_zone` from
+  the model's alarm page, `slot` (1–3) for three-slot models. The bed receives the minutes until the
   next occurrence. A position with a massage uses the app's combined opcode;
   two massages become head-and-foot; a pair the app cannot express is rejected.
   Three-slot models recall M1/M2/M3 per slot.
 - `adjustable_bed.richmat_mh_aroma`: mode 2 startup (1–60 min), mode 3 startup
   (1–60 min) and mode 3 pause (1–12 h), sent as the app's three frames.
-- `adjustable_bed.richmat_mh_waist_alarm`: `waist_side`, `enabled`, `time`,
-  `repeat` (once/daily), `intensity` (1–3). Saving includes Home Assistant's
+- Waist mattress alarm: `adjustable_bed.set_alarm` with `mattress_side`,
+  `enabled`, `time`, `weekdays` (none for once, all seven for daily) and
+  `massage_intensity` (1–3). Saving includes Home Assistant's
   current local time, as the app does.
 - `adjustable_bed.richmat_mh_light_color`: `rgb_color`, written as the light
   page's 10-byte colour frame. Available when the LED or button-light page is
@@ -1340,8 +1328,7 @@ See [Actions](../SERVICES.md).
 
 #### Evidence
 
-The Richmat MH apps send only frames frozen from their accepted row055 reports,
-which record the evidence and every exclusion. Real users should confirm model selection by
+The Richmat MH apps send only frames frozen from their apps. Real users should confirm model selection by
 name, KEEP/STOP behavior, alarm countdown semantics, LED timeout units and the
 waist mattress controls after a beta or release.
 
@@ -1447,7 +1434,7 @@ programming sends its long code once. Explicit Stop remains available separately
 Native cover Stop uses the selected side's shared Stop action, so card ownership
 is cleared across that side's motor controls. Cross-axis firmware effects remain
 unverified.
-The **HJBed layout** local select chooses Normal or the conditionally named Motion
+The **Remote layout** local select chooses Normal or the conditionally named Motion
 layout; Motion reset is a short action and its mode query has a narrower gate.
 
 Short controls with a release callback send once on down, wait for release, then
@@ -1476,101 +1463,101 @@ in single-code mode they send `00` and `01`.
 
 | Command (detail) | Single code | Framed left | Framed right | Gesture / release |
 |---|---|---|---|---|
-| Foot Box Down (`975861`) | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | Refresh 100 ms; STOP |
-| Foot Box Up (`9758e1`) | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | Refresh 100 ms; STOP |
-| Foot Down (`9740e1`) | `27` | `6E 01 00 27 96` | `6E 01 01 27 97` | Refresh 100 ms; STOP |
-| Foot Up (`974161`) | `26` | `6E 01 00 26 95` | `6E 01 01 26 96` | Refresh 100 ms; STOP |
-| Head And Foot Down (`9743e1`) | `2A` | `6E 01 00 2A 99` | `6E 01 01 2A 9A` | Refresh 100 ms; STOP |
-| Head And Foot Up (`974461`) | `29` | `6E 01 00 29 98` | `6E 01 01 29 99` | Refresh 100 ms; STOP |
-| Head Down (`9741e1`) | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | Refresh 100 ms; STOP |
-| Head Up (`974261`) | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | Refresh 100 ms; STOP |
-| Lumbar Down (`973fe1`) | `40` | `6E 01 00 40 AF` | `6E 01 01 40 B0` | Refresh 100 ms; STOP |
-| Lumbar Down (`974be1`) | `42` | `6E 01 00 42 B1` | `6E 01 01 42 B2` | Refresh 100 ms; STOP |
-| Lumbar Up (`974061`) | `3F` | `6E 01 00 3F AE` | `6E 01 01 3F AF` | Refresh 100 ms; STOP |
-| Lumbar Up (`974c61`) | `41` | `6E 01 00 41 B0` | `6E 01 01 41 B1` | Refresh 100 ms; STOP |
-| Pillow Down (`973ee1`) | `42` | `6E 01 00 42 B1` | `6E 01 01 42 B2` | Refresh 100 ms; STOP |
-| Pillow Down (`974a61`) | `40` | `6E 01 00 40 AF` | `6E 01 01 40 B0` | Refresh 100 ms; STOP |
-| Pillow Up (`973f61`) | `41` | `6E 01 00 41 B0` | `6E 01 01 41 B1` | Refresh 100 ms; STOP |
-| Pillow Up (`974ae1`) | `3F` | `6E 01 00 3F AE` | `6E 01 01 3F AF` | Refresh 100 ms; STOP |
-| Tilt Down (`974fe1`) | `5C` | `6E 01 00 5C CB` | `6E 01 01 5C CC` | Refresh 100 ms; STOP |
-| Tilt Up (`975061`) | `5B` | `6E 01 00 5B CA` | `6E 01 01 5B CB` | Refresh 100 ms; STOP |
-| Backward (`975461`) | `5C` | `6E 01 00 5C CB` | `6E 01 01 5C CC` | Refresh 100 ms; STOP |
-| Forword (`9754e1`) | `5B` | `6E 01 00 5B CA` | `6E 01 01 5B CB` | Refresh 100 ms; STOP |
-| Head Down (`975561`) | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | Refresh 100 ms; STOP |
-| Head Up (`9755e1`) | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | Refresh 100 ms; STOP |
-| Lumbar Down (`975661`) | `40` | `6E 01 00 40 AF` | `6E 01 01 40 B0` | Refresh 100 ms; STOP |
-| Lumbar Up (`9756e1`) | `3F` | `6E 01 00 3F AE` | `6E 01 01 3F AF` | Refresh 100 ms; STOP |
-| Pillow Down (`975761`) | `42` | `6E 01 00 42 B1` | `6E 01 01 42 B2` | Refresh 100 ms; STOP |
-| Pillow Up (`9757e1`) | `41` | `6E 01 00 41 B0` | `6E 01 01 41 B1` | Refresh 100 ms; STOP |
+| Foot box down (`975861`) | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | Refresh 100 ms; STOP |
+| Foot box up (`9758e1`) | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | Refresh 100 ms; STOP |
+| Foot down (`9740e1`) | `27` | `6E 01 00 27 96` | `6E 01 01 27 97` | Refresh 100 ms; STOP |
+| Foot up (`974161`) | `26` | `6E 01 00 26 95` | `6E 01 01 26 96` | Refresh 100 ms; STOP |
+| Head and foot down (`9743e1`) | `2A` | `6E 01 00 2A 99` | `6E 01 01 2A 9A` | Refresh 100 ms; STOP |
+| Head and foot up (`974461`) | `29` | `6E 01 00 29 98` | `6E 01 01 29 99` | Refresh 100 ms; STOP |
+| Head down (`9741e1`) | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | Refresh 100 ms; STOP |
+| Head up (`974261`) | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | Refresh 100 ms; STOP |
+| Lumbar down (`973fe1`) | `40` | `6E 01 00 40 AF` | `6E 01 01 40 B0` | Refresh 100 ms; STOP |
+| Lumbar down (`974be1`) | `42` | `6E 01 00 42 B1` | `6E 01 01 42 B2` | Refresh 100 ms; STOP |
+| Lumbar up (`974061`) | `3F` | `6E 01 00 3F AE` | `6E 01 01 3F AF` | Refresh 100 ms; STOP |
+| Lumbar up (`974c61`) | `41` | `6E 01 00 41 B0` | `6E 01 01 41 B1` | Refresh 100 ms; STOP |
+| Pillow down (`973ee1`) | `42` | `6E 01 00 42 B1` | `6E 01 01 42 B2` | Refresh 100 ms; STOP |
+| Pillow down (`974a61`) | `40` | `6E 01 00 40 AF` | `6E 01 01 40 B0` | Refresh 100 ms; STOP |
+| Pillow up (`973f61`) | `41` | `6E 01 00 41 B0` | `6E 01 01 41 B1` | Refresh 100 ms; STOP |
+| Pillow up (`974ae1`) | `3F` | `6E 01 00 3F AE` | `6E 01 01 3F AF` | Refresh 100 ms; STOP |
+| Tilt down (`974fe1`) | `5C` | `6E 01 00 5C CB` | `6E 01 01 5C CC` | Refresh 100 ms; STOP |
+| Tilt up (`975061`) | `5B` | `6E 01 00 5B CA` | `6E 01 01 5B CB` | Refresh 100 ms; STOP |
+| Sofa backward (`975461`) | `5C` | `6E 01 00 5C CB` | `6E 01 01 5C CC` | Refresh 100 ms; STOP |
+| Sofa forward (`9754e1`) | `5B` | `6E 01 00 5B CA` | `6E 01 01 5B CB` | Refresh 100 ms; STOP |
+| Head down (`975561`) | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | Refresh 100 ms; STOP |
+| Head up (`9755e1`) | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | Refresh 100 ms; STOP |
+| Lumbar down (`975661`) | `40` | `6E 01 00 40 AF` | `6E 01 01 40 B0` | Refresh 100 ms; STOP |
+| Lumbar up (`9756e1`) | `3F` | `6E 01 00 3F AE` | `6E 01 01 3F AF` | Refresh 100 ms; STOP |
+| Pillow down (`975761`) | `42` | `6E 01 00 42 B1` | `6E 01 01 42 B2` | Refresh 100 ms; STOP |
+| Pillow up (`9757e1`) | `41` | `6E 01 00 41 B0` | `6E 01 01 41 B1` | Refresh 100 ms; STOP |
 
 ##### Presets
 
 | Command (detail) | Single code | Framed left | Framed right | Gesture / release |
 |---|---|---|---|---|
-| Anti Snoring (`9738e1`) | `46` | `6E 01 00 46 B5` | `6E 01 01 46 B6` | Once; no extra STOP |
-| Anti Snoring (`975961`) | `46` | `6E 01 00 46 B5` | `6E 01 01 46 B6` | Refresh 100 ms; no extra STOP |
-| Coaxing Sleep Mode (`9744e1`) | `86` | `6E 01 00 86 F5` | `6E 01 01 86 F6` | Once; no extra STOP |
-| Lounge Position (`973961`) | `59` | `6E 01 00 59 C8` | `6E 01 01 59 C9` | Once; no extra STOP |
-| Memory Position1 (`973861`) | `2E` | `6E 01 00 2E 9D` | `6E 01 01 2E 9E` | Once; no extra STOP |
-| Memory Position1 (`974e61`) | `2E` | `6E 01 00 2E 9D` | `6E 01 01 2E 9E` | Refresh 100 ms; no extra STOP |
-| Memory Position2 (`9737e1`) | `2F` | `6E 01 00 2F 9E` | `6E 01 01 2F 9F` | Once; no extra STOP |
-| Memory Position2 (`974de1`) | `2F` | `6E 01 00 2F 9E` | `6E 01 01 2F 9F` | Refresh 100 ms; no extra STOP |
-| Memory Position3 (`9751e1`) | `30` | `6E 01 00 30 9F` | `6E 01 01 30 A0` | Refresh 100 ms; no extra STOP |
-| Memory Position4 (`975261`) | `B2` | `6E 01 00 B2 21` | `6E 01 01 B2 22` | Refresh 100 ms; no extra STOP |
-| T V Position (`973a61`) | `58` | `6E 01 00 58 C7` | `6E 01 01 58 C8` | Once; no extra STOP |
-| T V Position (`974d61`) | `58` | `6E 01 00 58 C7` | `6E 01 01 58 C8` | Refresh 100 ms; no extra STOP |
-| T V Position (`975161`) | `58` | `6E 01 00 58 C7` | `6E 01 01 58 C8` | Refresh 100 ms; no extra STOP |
-| Zero Gravity (`9739e1`) | `45` | `6E 01 00 45 B4` | `6E 01 01 45 B5` | Once; no extra STOP |
-| Zero Gravity (`974ce1`) | `45` | `6E 01 00 45 B4` | `6E 01 01 45 B5` | Refresh 100 ms; no extra STOP |
-| Zero Gravity (`9750e1`) | `45` | `6E 01 00 45 B4` | `6E 01 01 45 B5` | Refresh 100 ms; no extra STOP |
+| Anti-snore (`9738e1`) | `46` | `6E 01 00 46 B5` | `6E 01 01 46 B6` | Once; no extra STOP |
+| Anti-snore (`975961`) | `46` | `6E 01 00 46 B5` | `6E 01 01 46 B6` | Refresh 100 ms; no extra STOP |
+| Sleep aid (`9744e1`) | `86` | `6E 01 00 86 F5` | `6E 01 01 86 F6` | Once; no extra STOP |
+| Lounge position (`973961`) | `59` | `6E 01 00 59 C8` | `6E 01 01 59 C9` | Once; no extra STOP |
+| Memory position 1 (`973861`) | `2E` | `6E 01 00 2E 9D` | `6E 01 01 2E 9E` | Once; no extra STOP |
+| Memory position 1 (`974e61`) | `2E` | `6E 01 00 2E 9D` | `6E 01 01 2E 9E` | Refresh 100 ms; no extra STOP |
+| Memory position 2 (`9737e1`) | `2F` | `6E 01 00 2F 9E` | `6E 01 01 2F 9F` | Once; no extra STOP |
+| Memory position 2 (`974de1`) | `2F` | `6E 01 00 2F 9E` | `6E 01 01 2F 9F` | Refresh 100 ms; no extra STOP |
+| Memory position 3 (`9751e1`) | `30` | `6E 01 00 30 9F` | `6E 01 01 30 A0` | Refresh 100 ms; no extra STOP |
+| Memory position 4 (`975261`) | `B2` | `6E 01 00 B2 21` | `6E 01 01 B2 22` | Refresh 100 ms; no extra STOP |
+| TV position (`973a61`) | `58` | `6E 01 00 58 C7` | `6E 01 01 58 C8` | Once; no extra STOP |
+| TV position (`974d61`) | `58` | `6E 01 00 58 C7` | `6E 01 01 58 C8` | Refresh 100 ms; no extra STOP |
+| TV position (`975161`) | `58` | `6E 01 00 58 C7` | `6E 01 01 58 C8` | Refresh 100 ms; no extra STOP |
+| Zero gravity (`9739e1`) | `45` | `6E 01 00 45 B4` | `6E 01 01 45 B5` | Once; no extra STOP |
+| Zero gravity (`974ce1`) | `45` | `6E 01 00 45 B4` | `6E 01 01 45 B5` | Refresh 100 ms; no extra STOP |
+| Zero gravity (`9750e1`) | `45` | `6E 01 00 45 B4` | `6E 01 01 45 B5` | Refresh 100 ms; no extra STOP |
 
 ##### Massage
 
 | Command (detail) | Single code | Framed left | Framed right | Gesture / release |
 |---|---|---|---|---|
-| Massage10 Minute Timer (`973be1`) | `5F` | `6E 01 00 5F CE` | `6E 01 01 5F CF` | Once; STOP |
-| Massage20 Minute Timer (`973b61`) | `63` | `6E 01 00 63 D2` | `6E 01 01 63 D3` | Once; STOP |
-| Massage30 Minute Timer (`973ae1`) | `61` | `6E 01 00 61 D0` | `6E 01 01 61 D1` | Once; STOP |
-| Massage Foot Instensity Strengthen (`973d61`) | `4E` | `6E 01 00 4E BD` | `6E 01 01 4E BE` | Once; STOP |
-| Massage Head Instensity Strengthen (`973de1`) | `4C` | `6E 01 00 4C BB` | `6E 01 01 4C BC` | Once; STOP |
-| Massage Instensity Strengthen (`974361`) | `34` | `6E 01 00 34 A3` | `6E 01 01 34 A4` | Once; STOP |
-| Massage Mode All Off (`973c61`) | `5E` | `6E 01 00 5E CD` | `6E 01 01 5E CE` | Once; STOP |
-| Massage Mode Change (`973ce1`) | `48` | `6E 01 00 48 B7` | `6E 01 01 48 B8` | Once; STOP |
-| Massage Switch (`9742e1`) | `6F` | `6E 01 00 6F DE` | `6E 01 01 6F DF` | Once; STOP |
+| Massage 10 minute timer (`973be1`) | `5F` | `6E 01 00 5F CE` | `6E 01 01 5F CF` | Once; STOP |
+| Massage 20 minute timer (`973b61`) | `63` | `6E 01 00 63 D2` | `6E 01 01 63 D3` | Once; STOP |
+| Massage 30 minute timer (`973ae1`) | `61` | `6E 01 00 61 D0` | `6E 01 01 61 D1` | Once; STOP |
+| Massage foot intensity up (`973d61`) | `4E` | `6E 01 00 4E BD` | `6E 01 01 4E BE` | Once; STOP |
+| Massage head intensity up (`973de1`) | `4C` | `6E 01 00 4C BB` | `6E 01 01 4C BC` | Once; STOP |
+| Massage intensity up (`974361`) | `34` | `6E 01 00 34 A3` | `6E 01 01 34 A4` | Once; STOP |
+| Massage mode all off (`973c61`) | `5E` | `6E 01 00 5E CD` | `6E 01 01 5E CE` | Once; STOP |
+| Massage mode change (`973ce1`) | `48` | `6E 01 00 48 B7` | `6E 01 01 48 B8` | Once; STOP |
+| Massage on/off (`9742e1`) | `6F` | `6E 01 00 6F DE` | `6E 01 01 6F DF` | Once; STOP |
 
 ##### Lights
 
 | Command (detail) | Single code | Framed left | Framed right | Gesture / release |
 |---|---|---|---|---|
-| Bed Light (`974961`) | `3C` | `6E 01 00 3C AB` | `6E 01 01 3C AC` | Once; STOP |
-| Bed Light Close (`9759e1`) | `75` | `6E 01 00 75 E4` | `6E 01 01 75 E5` | Once; no extra STOP |
-| Light Board (`9749e1`) | `50` | `6E 01 00 50 BF` | `6E 01 01 50 C0` | Once; STOP |
+| Bed light (`974961`) | `3C` | `6E 01 00 3C AB` | `6E 01 01 3C AC` | Once; STOP |
+| Bed light off (`9759e1`) | `75` | `6E 01 00 75 E4` | `6E 01 01 75 E5` | Once; no extra STOP |
+| Light board (`9749e1`) | `50` | `6E 01 00 50 BF` | `6E 01 01 50 C0` | Once; STOP |
 | Light (`975361`) | `3C` | `6E 01 00 3C AB` | `6E 01 01 3C AC` | Once; no extra STOP |
 
 ##### Music
 
 | Command (detail) | Single code | Framed left | Framed right | Gesture / release |
 |---|---|---|---|---|
-| Music Blue Tooth Switch (`9748e1`) | `D8` | `6E 01 00 D8 47` | `6E 01 00 D8 47` | Once; no extra STOP |
-| Music Next Song (`974661`) | `D3` | `6E 01 00 D3 42` | `6E 01 00 D3 42` | Once; no extra STOP |
-| Music Pause Play (`9745e1`) | `D7` | `6E 01 00 D7 46` | `6E 01 00 D7 46` | Once; no extra STOP |
-| Music Previous Song (`9746e1`) | `D2` | `6E 01 00 D2 41` | `6E 01 00 D2 41` | Once; no extra STOP |
-| Music Shake Mode (`974861`) | `D6` | `6E 01 00 D6 45` | `6E 01 00 D6 45` | Once; no extra STOP |
-| Music Switch Sound Track (`975ae1`) | `C4` | `6E 01 00 C4 33` | `6E 01 00 C4 33` | Once; no extra STOP |
-| Music Volumu Down (`974761`) | `D5` | `6E 01 00 D5 44` | `6E 01 00 D5 44` | Once; no extra STOP |
-| Music Volumu Up (`9747e1`) | `D4` | `6E 01 00 D4 43` | `6E 01 00 D4 43` | Once; no extra STOP |
+| Music Bluetooth on/off (`9748e1`) | `D8` | `6E 01 00 D8 47` | `6E 01 00 D8 47` | Once; no extra STOP |
+| Music next song (`974661`) | `D3` | `6E 01 00 D3 42` | `6E 01 00 D3 42` | Once; no extra STOP |
+| Music pause play (`9745e1`) | `D7` | `6E 01 00 D7 46` | `6E 01 00 D7 46` | Once; no extra STOP |
+| Music previous song (`9746e1`) | `D2` | `6E 01 00 D2 41` | `6E 01 00 D2 41` | Once; no extra STOP |
+| Music vibration mode (`974861`) | `D6` | `6E 01 00 D6 45` | `6E 01 00 D6 45` | Once; no extra STOP |
+| Music switch soundtrack (`975ae1`) | `C4` | `6E 01 00 C4 33` | `6E 01 00 C4 33` | Once; no extra STOP |
+| Music volume down (`974761`) | `D5` | `6E 01 00 D5 44` | `6E 01 00 D5 44` | Once; no extra STOP |
+| Music volume up (`9747e1`) | `D4` | `6E 01 00 D4 43` | `6E 01 00 D4 43` | Once; no extra STOP |
 
 ##### Reset, stop and sync
 
 | Command (detail) | Single code | Framed left | Framed right | Gesture / release |
 |---|---|---|---|---|
-| Exit Limit (`973761`) | `00` | `6E 02 01 00 71` | `6E 02 01 00 71` | Once; no extra STOP |
-| Motor Reset (`973e61`) | `31` | `6E 01 00 31 A0` | `6E 01 01 31 A1` | Once; STOP; Motion once |
-| Motor Reset (`974f61`) | `31` | `6E 01 00 31 A0` | `6E 01 01 31 A1` | Refresh 100 ms; STOP; Motion once |
+| Exit limit (`973761`) | `00` | `6E 02 01 00 71` | `6E 02 01 00 71` | Once; no extra STOP |
+| Motor reset (`973e61`) | `31` | `6E 01 00 31 A0` | `6E 01 01 31 A1` | Once; STOP; Motion once |
+| Motor reset (`974f61`) | `31` | `6E 01 00 31 A0` | `6E 01 01 31 A1` | Refresh 100 ms; STOP; Motion once |
 | Stop (`975a61`) | `6E` | `6E 01 00 6E DD` | `6E 01 01 6E DE` | Once; no extra STOP |
-| Sync Off (`9752e1`) | `BD` | `6E 01 00 BD 2C` | `6E 01 01 BD 2D` | Once; no extra STOP |
-| Sync On (`974b61`) | `BC` | `6E 01 00 BC 2B` | `6E 01 01 BC 2C` | Once; no extra STOP |
-| Sit Position (`9753e1`) | `E5` | `6E 01 00 E5 54` | `6E 01 01 E5 55` | Refresh 100 ms; no extra STOP |
+| Sync off (`9752e1`) | `BD` | `6E 01 00 BD 2C` | `6E 01 01 BD 2D` | Once; no extra STOP |
+| Sync on (`974b61`) | `BC` | `6E 01 00 BC 2B` | `6E 01 01 BC 2C` | Once; no extra STOP |
+| Sit position (`9753e1`) | `E5` | `6E 01 00 E5 54` | `6E 01 01 E5 55` | Refresh 100 ms; no extra STOP |
 
 ##### Memory
 
@@ -1580,22 +1567,22 @@ separate actions.
 
 | Save command (detail) | Single code | Framed left | Framed right |
 |---|---|---|---|
-| Anti Snoring (`9738e1`) | `69` | `6E 01 00 69 D8` | `6E 01 01 69 D9` |
-| Anti Snoring (`975961`) | `69` | `6E 01 00 69 D8` | `6E 01 01 69 D9` |
-| Coaxing Sleep Mode (`9744e1`) | `89` | `6E 01 00 89 F8` | `6E 01 01 89 F9` |
-| Lounge Position (`973961`) | `65` | `6E 01 00 65 D4` | `6E 01 01 65 D5` |
-| Memory Position1 (`973861`) | `2B` | `6E 01 00 2B 9A` | `6E 01 01 2B 9B` |
-| Memory Position1 (`974e61`) | `2B` | `6E 01 00 2B 9A` | `6E 01 01 2B 9B` |
-| Memory Position2 (`9737e1`) | `2C` | `6E 01 00 2C 9B` | `6E 01 01 2C 9C` |
-| Memory Position2 (`974de1`) | `2C` | `6E 01 00 2C 9B` | `6E 01 01 2C 9C` |
-| Memory Position3 (`9751e1`) | `2D` | `6E 01 00 2D 9C` | `6E 01 01 2D 9D` |
-| Memory Position4 (`975261`) | `B3` | `6E 01 00 B3 22` | `6E 01 01 B3 23` |
-| T V Position (`973a61`) | `64` | `6E 01 00 64 D3` | `6E 01 01 64 D4` |
-| T V Position (`974d61`) | `64` | `6E 01 00 64 D3` | `6E 01 01 64 D4` |
-| T V Position (`975161`) | `64` | `6E 01 00 64 D3` | `6E 01 01 64 D4` |
-| Zero Gravity (`9739e1`) | `66` | `6E 01 00 66 D5` | `6E 01 01 66 D6` |
-| Zero Gravity (`974ce1`) | `66` | `6E 01 00 66 D5` | `6E 01 01 66 D6` |
-| Zero Gravity (`9750e1`) | `66` | `6E 01 00 66 D5` | `6E 01 01 66 D6` |
+| Anti-snore (`9738e1`) | `69` | `6E 01 00 69 D8` | `6E 01 01 69 D9` |
+| Anti-snore (`975961`) | `69` | `6E 01 00 69 D8` | `6E 01 01 69 D9` |
+| Sleep aid (`9744e1`) | `89` | `6E 01 00 89 F8` | `6E 01 01 89 F9` |
+| Lounge position (`973961`) | `65` | `6E 01 00 65 D4` | `6E 01 01 65 D5` |
+| Memory position 1 (`973861`) | `2B` | `6E 01 00 2B 9A` | `6E 01 01 2B 9B` |
+| Memory position 1 (`974e61`) | `2B` | `6E 01 00 2B 9A` | `6E 01 01 2B 9B` |
+| Memory position 2 (`9737e1`) | `2C` | `6E 01 00 2C 9B` | `6E 01 01 2C 9C` |
+| Memory position 2 (`974de1`) | `2C` | `6E 01 00 2C 9B` | `6E 01 01 2C 9C` |
+| Memory position 3 (`9751e1`) | `2D` | `6E 01 00 2D 9C` | `6E 01 01 2D 9D` |
+| Memory position 4 (`975261`) | `B3` | `6E 01 00 B3 22` | `6E 01 01 B3 23` |
+| TV position (`973a61`) | `64` | `6E 01 00 64 D3` | `6E 01 01 64 D4` |
+| TV position (`974d61`) | `64` | `6E 01 00 64 D3` | `6E 01 01 64 D4` |
+| TV position (`975161`) | `64` | `6E 01 00 64 D3` | `6E 01 01 64 D4` |
+| Zero gravity (`9739e1`) | `66` | `6E 01 00 66 D5` | `6E 01 01 66 D6` |
+| Zero gravity (`974ce1`) | `66` | `6E 01 00 66 D5` | `6E 01 01 66 D6` |
+| Zero gravity (`9750e1`) | `66` | `6E 01 00 66 D5` | `6E 01 01 66 D6` |
 <!-- /generated -->
 
 #### Timing
@@ -1727,16 +1714,15 @@ selected product's alarm list.
 
 #### Evidence
 
-HJBed sends only frames frozen from its accepted row121 evidence (artifact set
-`bd3a5e96393fb32be9059fbb9a0eae5639deb7f0d761b4a27b3b382433c4d291`). Physical
+HJBed sends only frames frozen from its app. Physical
 effects, ATT behavior and firmware acceptance are for real users to validate after
-a beta or release. Evidence: APK Protocol Audit row121.
+a beta or release.
 
 ### Eshine
 
 **App:** [Eshine](https://play.google.com/store/apps/details?id=com.richmat.eshinesleep) 1.0.1 (code 10100), `com.richmat.eshinesleep`
 
-**Status:** ❓ Needs testing (static verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 The `eshine` bed type drives the E6000 (metadata H3RN), the only product the
 app offers, from one fixed table: head, feet, lumbar and pillow motors, presets,
@@ -1803,11 +1789,11 @@ buttons in its existing sections.
 | Flat | `31` | `6E 01 00 31 A0` | once |
 | Zero-G | `45` | `6E 01 00 45 B4` | once |
 | Anti-Snore | `46` | `6E 01 00 46 B5` | once |
-| Save Zero Gravity | `66` | `6E 01 00 66 D5` | once |
-| Save Anti-Snore | `69` | `6E 01 00 69 D8` | once |
+| Save zero gravity | `66` | `6E 01 00 66 D5` | once |
+| Save anti-snore | `69` | `6E 01 00 69 D8` | once |
 | Light toggle | `3C` | `6E 01 00 3C AB` | once |
-| Head massage strength | `4C` | `6E 01 00 4C BB` | once |
-| Foot massage strength | `4E` | `6E 01 00 4E BD` | once |
+| Cycle head massage strength | `4C` | `6E 01 00 4C BB` | once |
+| Cycle foot massage strength | `4E` | `6E 01 00 4E BD` | once |
 | Massage mode step | `48` | `6E 01 00 48 B7` | once |
 | Massage off | `5E` | `6E 01 00 5E CD` | once |
 | Massage 10 minutes | `5F` | `6E 01 00 5F CE` | once |
@@ -1871,19 +1857,19 @@ lock, music, mode and component checks.
 
 #### Evidence
 
-Eshine sends only frames frozen from its accepted row106 evidence, framed and
+Eshine sends only frames frozen from its app, framed and
 bare. Desk data, firmware maintenance and OTA, empty pruned blanket and
 diagnostic models, unused enums and unrelated phone infrastructure are excluded;
 no bed Wi-Fi, provisioning, cloud or account path was found. Firmware
 acceptance, physical axis semantics, massage and light cycles and STOP behavior
 are for real users to validate after a beta or release, with full GATT and
-notification captures. Evidence: APK Protocol Audit row106.
+notification captures.
 
 ### Classic Richmat apps
 
 **App:** Avocado Eco Base 1.0.4 (5), CoasterSleep 1.0.10 (10), Forty Winks 1.0.1, Milemont 1.0.4 and Superior 1.0.9 (see [Apps](#apps))
 
-**Status:** ❓ Needs testing (accepted static APK evidence; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 These older resource-driven apps have an independent profile per app. Existing
 Richmat and RMControl entries retain their own behavior, and no capability is
@@ -1956,8 +1942,7 @@ A keep button, including a recall preset or Flat under Hold, accepts a
 worker tick until the lease ends, then releases 50 ms later. Short, long and
 armed presses, and a head/foot selection that leaves a control with nothing to
 send, keep their own gestures and refuse a lease, including when the selector
-changed after the hold was admitted. See the
-[per-control scope](../design/execution-capabilities.md#per-control-hold-scope).
+changed after the hold was admitted.
 
 | Path | Frame |
 |---|---|
@@ -2239,13 +2224,8 @@ motor-mapping configuration stay outside the supported surface. See
 
 #### Evidence
 
-The classic apps send only frames frozen from their five accepted row066
-reports. APK Protocol Audit row066 records the accepted versions, all five
-artifact and report hashes, the accepted authority, exact member differences,
-exclusions, safety divergences, implementation status and deferred hardware
-validation.
-Coaster's indivisible accepted aggregate and its historical six-cache-file FAIL
-remain explicit there. Static acceptance is not hardware confirmation.
+The classic apps send only frames frozen from their five apps. Hardware
+behavior is unverified.
 
 ### Good Vibe Sleep
 
@@ -2265,8 +2245,7 @@ lists every product, alias and action.
   ([`beds/goodvibe/discovery.py`](../../custom_components/adjustable_bed/beds/goodvibe/discovery.py))
   offers Good Vibe Sleep and suggests a product (step 1); it never chooses one.
 - The catalog supplies 848 admitted normal-product/configuration choices and 27
-  remote/image aliases. The row116 audit retains every accepted selector,
-  including excluded selectors.
+  remote/image aliases.
 - Independent sleep sensors use case-sensitive `RM-` (type 1) or `HJ-` (type 2)
   name prefixes. Add the sensor's own Bluetooth address with the corresponding
   sleep profile.
@@ -2320,9 +2299,7 @@ except the startup [function selectors](#function-selectors). The legacy service
 emits only the operand. Short, long and legacy-short operands are distinct per
 descriptor; each is listed in the catalog.
 
-The row116 audit's command table contains every accepted command ID, exact
-framed/legacy alternatives, source owner and implementation disposition. The
-catalog contains 1,393 current layout/alarm action definitions and five
+The catalog contains 1,393 current layout/alarm action definitions and five
 controls constructed inside the Y6RM menu. Controls retain their app labels
 without assigning a physical motor to a name alone.
 
@@ -2351,11 +2328,11 @@ frame on each side, or the single code on the legacy service:
 | Massage countdown 10 min | `5F` | `6E 01 00 5F CE` | `6E 01 01 5F CF` | `6E 01 02 5F D0` |
 | Massage countdown 20 min | `63` | `6E 01 00 63 D2` | `6E 01 01 63 D3` | `6E 01 02 63 D4` |
 | Massage countdown 30 min | `61` | `6E 01 00 61 D0` | `6E 01 01 61 D1` | `6E 01 02 61 D2` |
-| Y6RM Head Up, sustain press | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | `6E 01 02 24 95` |
-| Y6RM Foot Up, sustain press | `26` | `6E 01 00 26 95` | `6E 01 01 26 96` | `6E 01 02 26 97` |
-| Y6RM Head Down, sustain press | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | `6E 01 02 25 96` |
-| Y6RM Foot Down, sustain press | `27` | `6E 01 00 27 96` | `6E 01 01 27 97` | `6E 01 02 27 98` |
-| Y6RM Motor Reset, short press | `31` | `6E 01 00 31 A0` | `6E 01 01 31 A1` | `6E 01 02 31 A2` |
+| Y6RM Head up, sustain press | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | `6E 01 02 24 95` |
+| Y6RM Foot up, sustain press | `26` | `6E 01 00 26 95` | `6E 01 01 26 96` | `6E 01 02 26 97` |
+| Y6RM Head down, sustain press | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | `6E 01 02 25 96` |
+| Y6RM Foot down, sustain press | `27` | `6E 01 00 27 96` | `6E 01 01 27 97` | `6E 01 02 27 98` |
+| Y6RM Motor reset, short press | `31` | `6E 01 00 31 A0` | `6E 01 01 31 A1` | `6E 01 02 31 A2` |
 <!-- /generated -->
 
 The Y6RM sustained controls refresh like any sustained press; a released control
@@ -2369,7 +2346,7 @@ physical axes for an untested bed.
 | Duration | `6e 0b HH LL sum8` | Seconds, big-endian; zero maps to `ff ff` |
 | Color | `6e 0c ff R sum8 6e 0d G B sum8` | Both records in one write buffer |
 
-Close bed light (above) is a dedicated close action, with no extra release.
+**Bed light off** (above) is a dedicated close action, with no extra release.
 Each product offers these durations and colours:
 
 <!-- generated:goodvibe-lights -->
@@ -2385,7 +2362,7 @@ The eight colours are `(255, 255, 0)`, `(0, 255, 0)`, `(0, 127, 255)`,
 `(0, 0, 255)`, `(139, 0, 255)`, `(255, 255, 255)`, `(255, 0, 0)`, `(255, 165, 0)`.
 <!-- /generated -->
 
-##### Massage countdown
+##### Massage timer
 
 Products with the bottom massage countdown offer off, 10, 20 and 30 minutes (see
 the table above). The dedicated slider callback sends once without a release frame.
@@ -2540,18 +2517,16 @@ monitoring to protect the shared response selector.
 
 #### Evidence
 
-Good Vibe Sleep sends only frames frozen from its accepted row116 vectors
+Good Vibe Sleep sends only frames frozen from its app's vectors
 (`tests/fixtures/goodvibe`). Hardware, ATT delivery, firmware acceptance and
 physiological interpretation remain unverified. Real users may validate them
 after beta/release; maintainer hardware acquisition is not required.
-APK Protocol Audit row116 records the source bindings, hashes, exclusions and
-audit limits.
 
 ### L&P legacy app
 
 **App:** [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp) 2.2.1 (13), `com.richmat.lp`
 
-**Status:** ❓ Needs testing (static verified, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 The `leggett_lp_legacy` bed type follows the legacy app's 122 remote layouts,
 each selected by the four-character code used in that app's manual or QR setup
@@ -2569,7 +2544,7 @@ or L&P QRRM configurations.
   routes through the same question in **Reconfigure**; **Configure** still
   changes its own settings.
 - **Transport:** none of the codec's [transports](#transports). The app selects
-  its characteristics at runtime, and its accepted report contains no fixed
+  its characteristics at runtime, and the app contains no fixed
   service or characteristic UUID that can safely be applied to every layout.
   Configure the bed's write characteristic UUID and, when known, its response
   characteristic UUID. These must come from the device's GATT information or a
@@ -2680,16 +2655,14 @@ positions, battery readings, a capability query or proof that an alarm is set.
 
 #### Evidence
 
-The L&P legacy app sends only the packets of its accepted row019 catalog, in
-both modes. APK Protocol Audit row019 records the catalog coverage, excluded
-application-only behavior and the frozen evidence identity. Raw APKs and
-analysis remain machine-local. Physical confirmation is deferred to users with
+The L&P legacy app sends only the packets of its catalog, in
+both modes. Physical confirmation is deferred to users with
 the corresponding bed after a beta or release; it is separate from static
 protocol verification.
 
 ### Casper and Hush family
 
-**Status:** ❓ Needs testing (accepted APK audits, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 The Casper Base and Hush Base apps ship one Richmat library: its transports,
 connect queries, fixed codes, receive parser and settings records are the same
@@ -2840,7 +2813,7 @@ byte. Operation `01` writes and `00` queries; replies use `02` and `03`.
 
 #### Evidence
 
-Both apps send only frames frozen from their accepted reports
+Both apps send only frames frozen from their apps
 (`tests/casper_base_vectors.py`, `tests/hush_vectors.py`);
 `tests/test_casper_base_vectors.py` and `tests/test_hush_vectors.py` rebuild
 each one through this codec. Physical motor effects, firmware compatibility,
@@ -2851,7 +2824,7 @@ captures after a beta or release; maintainer hardware is not required.
 
 **App:** [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (version code 10800), `com.richmat.casperbase`
 
-**Status:** ❓ Needs testing (accepted APK audit, hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 Behaves as the [Casper and Hush family](#casper-and-hush-family), except as below.
 
@@ -2942,16 +2915,15 @@ Only stored products use these further actions:
 
 #### Evidence
 
-Casper Base sends only the frames frozen from its accepted row101 report:
-its builder vectors (`tests/fixtures/casper_base/builders.json`) and command
-ledger. APK Protocol Audit row101 records the accepted seals, every discovery,
-implementation and test references and all exclusions.
+Casper Base sends only the frames frozen from its app: its builder vectors
+(`tests/fixtures/casper_base/builders.json`) and command bytes
+(`tests/fixtures/casper_base/command_bytes.json`).
 
 ### Hush Base
 
 **App:** [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501), `com.richmat.hushbase`
 
-**Status:** ❓ Needs testing (artifact verified; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 Behaves as the [Casper and Hush family](#casper-and-hush-family), except as below.
 
@@ -3074,10 +3046,9 @@ Hush adds to the family's parser:
 
 #### Evidence
 
-Hush Base sends only the frames frozen from its accepted row126 report, whose
+Hush Base sends only the frames frozen from its app, whose
 products, shared builders and auxiliary shards are listed in
-`tests/hush_vectors.py`. APK Protocol Audit row126 records the accepted source
-references, dispositions and exclusions.
+`tests/hush_vectors.py`.
 
 ### SonicSleep
 
@@ -3230,7 +3201,7 @@ creation too. A changed cache or released/replaced connection invalidates a
 prepared all-target settings operation. Choose an individual side if a
 sequential pair cannot retain both live alarm caches.
 
-For forms, `hour`, `minute`, `mode`, `weekdays` (Monday 0 through Sunday 6) and
+For forms, `hour`, `minute`, `mode`, `weekdays` (`monday` through `sunday`) and
 `enabled` supply explicit values; `alarm_id` identifies a received record for
 edit, toggle or delete. Toggle ignores form defaults and preserves raw fields.
 Clock synchronization preserves whole-hour timezone truncation and year minus
@@ -3238,11 +3209,10 @@ Clock synchronization preserves whole-hour timezone truncation and year minus
 
 #### Evidence
 
-APK Protocol Audit row179, SonicSleep 1.0.4 (10400), artifact SHA-256
-`173f81b5e902650733fdd44968f31cf9ceee2b5c376d361acf043b985612b5e4`.
-All accepted command literals use the existing Richmat codec; receive and stream
+Based on SonicSleep 1.0.4 (10400).
+All command literals use the existing Richmat codec; receive and stream
 contracts are covered by the committed SonicSleep fixtures. Opaque alarm fields
-and caller-specific domains include the accepted R179-A001 repair. Hardware
+and caller-specific domains are covered too. Hardware
 validation belongs to external beta/release users with existing beds.
 
 ### Luuna +
@@ -3353,7 +3323,7 @@ Alarm add/cancel acknowledgements update status. The bed-provided sleep name is
 retained as diagnostic state; it does not open an accessory connection.
 Other decoded shared-library messages remain structured diagnostic observations.
 Their presence does not enable extra products, position sliders, music, blanket,
-desk, repeating-alarm or side-control commands. Motor height/type use the audited
+desk, repeating-alarm or side-control commands. Motor height/type use the app's
 unsigned offsets, with optional angle and monitor height; they have no calibrated
 axis mapping. Empty payload classes remain empty.
 
@@ -3379,8 +3349,7 @@ run before any target writes.
 
 #### Evidence
 
-Accepted APK Protocol Audit unit146, including scoped repair001 and independent
-audit002. All normal/program, dynamic-builder and parser literal cases are kept
+All normal/program, dynamic-builder and parser literal cases are kept
 in `tests/fixtures/luuna/` and exercised by `tests/test_luuna.py`. The existing
 Richmat codec reproduces the app's literal command frames without a new codec.
 Physical movement, stop latency, supported firmware, calibration and negotiated
@@ -3435,318 +3404,318 @@ bottom massage countdown; D9RM has its own off operand.
 
 | ID | App control | Gesture | Framed short / long (Left) | Nordic short / long | Flags |
 |---|---|---|---|---|---|
-| 9f4f2493dee8 | Head Up | sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `34` / `00` |  |
-| 75ae7f8d618f | Head Down | sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `37` / `00` |  |
-| ec0a15aea952 | Foot Up | sustainPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `36` / `00` |  |
-| 334e68909524 | Foot Down | sustainPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `41` / `00` |  |
-| 4fbb0fc77db8 | Head And Foot Up | sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `38` / `00` |  |
-| 9ea62e37e453 | Head And Foot Down | sustainPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `39` / `00` |  |
-| 40c92af58e6b | Motor Reset | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |  |
-| 5673678c0373 | Anti Snoring | shortAndLongPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |  |
-| 28496fb1f4c5 | Zero Gravity | shortAndLongPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |  |
-| 117f6978b348 | Bed Light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `3C` / `00` |  |
-| c9c6dc2a9231 | Head Up | sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |  |
-| 2169603a2ccb | Pillow Up | sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |  |
-| 117fd7eb4622 | Foot Up | sustainPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `26` / `00` |  |
-| 4d7ee9a33ecb | Head Down | sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |  |
-| 3261d5acee66 | Pillow Down | sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |  |
-| 9f41c906558f | Foot Down | sustainPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `27` / `00` |  |
-| 6c281b509549 | T V Position | shortAndLongPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |  |
-| 066921cd681d | Massage Head Instensity Strengthen | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `4C` / `00` |  |
-| 8f4abf075ee0 | Memory Position1 | shortAndLongPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |  |
-| fed5208309e0 | Massage Foot Instensity Strengthen | shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `4E` / `00` |  |
-| 19c13c4d0fda | Massage Mode Change | shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `48` / `00` |  |
-| 4bae16e7f959 | Memory Position2 | shortAndLongPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |  |
-| eecf3193581a | Massage Mode All Off | shortPress | `6E 01 00 5E CD` / `6E 01 00 00 6F` | `5E` / `00` |  |
-| a682aa466866 | Memory Position3 | shortAndLongPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |  |
-| 7b913c93bb17 | Lounge Position | shortAndLongPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |  |
-| 3ab5f8fe96f4 | Lumber Up | sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |  |
-| b2fcb856104f | Lumber Down | sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |  |
-| a12633f5f7e7 | Title Massage | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
-| e0e957b09025 | Phone Light | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` | local |
-| d0daaadb8852 | Massage10 Minute Timer | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` |  |
-| cc52e6494256 | Massage20 Minute Timer | shortPress | `6E 01 00 63 D2` / `6E 01 00 00 6F` | `63` / `00` |  |
-| 00467dc3027e | Massage30 Minute Timer | shortPress | `6E 01 00 61 D0` / `6E 01 00 00 6F` | `61` / `00` |  |
-| cd12add2435e | Lumber Up | sustainPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |  |
-| 41ca19922c41 | Lumber Down | sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |  |
-| baeaf2a9d637 | Head And Foot Up | sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `29` / `00` |  |
-| 015704594ec9 | Head And Foot Down | sustainPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `2A` / `00` |  |
-| 2e64e05f3433 | Massage Instensity Strengthen | shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `34` / `00` |  |
-| 7936d8f22c8b | Massage Speed Strengthen | shortPress | `6E 01 00 36 A5` / `6E 01 00 00 6F` | `36` / `00` |  |
-| f361a88972f6 | Massage Instensity Weaken | shortPress | `6E 01 00 35 A4` / `6E 01 00 00 6F` | `35` / `00` |  |
-| ca0bd126e0a1 | Massage Speed Weaken | shortPress | `6E 01 00 37 A6` / `6E 01 00 00 6F` | `37` / `00` |  |
-| fb4a820461aa | Massage Mode Pulse | shortPress | `6E 01 00 38 A7` / `6E 01 00 00 6F` | `38` / `00` |  |
-| 8a49ddf1e409 | Massage Mode Wave | shortPress | `6E 01 00 39 A8` / `6E 01 00 00 6F` | `39` / `00` |  |
-| 2cd34a3a66a4 | Massage Mode Constant | shortPress | `6E 01 00 3A A9` / `6E 01 00 00 6F` | `3A` / `00` |  |
-| 834d0298c2a6 | Pillow Up | sustainPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |  |
-| 0f61cb2ddc7d | Pillow Down | sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |  |
-| 2f6d8987dec5 | Lounge Position | shortPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `32` / `65` |  |
-| 6b7f5b7e4164 | T V Position | shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `33` / `64` |  |
-| b1db771e6321 | Zero Gravity | shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `34` / `66` |  |
-| db703b2419a6 | Head Up | sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `35` / `00` |  |
-| 8813cb017a49 | Head And Foot Up | sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `36` / `00` |  |
-| b8e3489845f5 | Foot Up | sustainPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `37` / `00` |  |
-| 38d7adaf1e75 | Head Down | sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `38` / `00` |  |
-| 82f8199bd9d2 | Memory Position1 | shortAndLongPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `42` / `2B` |  |
-| 8b3a862df042 | Memory Position2 | shortAndLongPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `44` / `2C` |  |
-| 8aa2cd105798 | Massage Mode All Off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `4C` / `00` |  |
-| ab1f300c0bec | Bed Light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `46` / `00` |  |
-| e0f268656b0e | Massage Instensity Strengthen | shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `48` / `00` |  |
-| 45e9ce37fd2b | Massage Mode Change | shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `4A` / `00` |  |
-| ec80d8038d75 | Massage Instensity Weaken | shortPress | `6E 01 00 35 A4` / `6E 01 00 00 6F` | `4B` / `00` |  |
-| 8a9f00d9b56b | Motor3 Up | sustainPress | `6E 01 00 71 E0` / `6E 01 00 00 6F` | `71` / `00` |  |
-| 1c485e495380 | Music Volumu Up | shortPress | `6E 01 00 D4 43` / `6E 01 00 00 6F` | `D4` / `00` |  |
-| 598c167cdd86 | Motor3 Down | sustainPress | `6E 01 00 72 E1` / `6E 01 00 00 6F` | `72` / `00` |  |
-| 3af051d36602 | Music Volumu Down | shortPress | `6E 01 00 D5 44` / `6E 01 00 00 6F` | `D5` / `00` |  |
-| e9ada0a12c3f | Music Blue Tooth Switch | shortPress | `6E 01 00 D8 47` / `6E 01 00 00 6F` | `D8` / `00` |  |
-| 9b1697fdff0d | Music Shake Mode | shortPress | `6E 01 00 D6 45` / `6E 01 00 00 6F` | `D6` / `00` |  |
-| 4deb18342f34 | Motor Reset | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `38` / `00` |  |
-| 67bd828daaae | Zero Gravity | shortAndLongPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `34` / `66` |  |
-| c51a841b2c8c | Massage Mode All Off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` |  |
-| c5f845fc1b8c | None | shortAndLongPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
-| bd888e1de887 | Motor Reset | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` | hidden |
-| 142bbf0bf7fb | Motor And Massage All Off | shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |  |
-| 69224cc45667 | Tile Up | sustainPress | `6E 01 00 43 B2` / `6E 01 00 00 6F` | `43` / `00` |  |
-| 6993e9e0837a | Tile Down | sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |  |
-| 35667705e3aa | Relieve Zero Gravity Setting | shortPress | `6E 01 00 62 D1` / `6E 01 00 00 6F` | `62` / `00` |  |
-| 1d9d650e8a43 | Massage Head Instensity Weaken | shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `4D` / `00` |  |
-| 25c8ea6b1577 | Massage Foot Instensity Weaken | shortPress | `6E 01 00 4F BE` / `6E 01 00 00 6F` | `4F` / `00` |  |
-| 2be41ffbb790 | Head And Foot All Up | shortPress | `6E 01 00 23 92` / `6E 01 00 00 6F` | `23` / `00` |  |
-| 907892216e64 | Lumber Memory Position | shortAndLongPress | `6E 01 00 91 00` / `6E 01 00 92 01` | `91` / `92` |  |
-| ef00e521377c | Reading Position | shortAndLongPress | `6E 01 00 F2 61` / `6E 01 00 F3 62` | `F2` / `F3` |  |
-| 6ae8f5f37ad8 | Control Box Lock | shortAndLongPress | `6E 01 00 84 F3` / `6E 01 00 84 F3` | `84` / `84` |  |
-| a69312fb7952 | Head Up And Foot Down | shortPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` | toggle latch |
-| b0198fb326ef | Foot Up And Head Down | shortPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` | toggle latch |
-| 61a7fe7954d9 | Zero Gravity | shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |  |
-| acbeb1054bf8 | Zero Gravity (long action) | shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` | force long |
-| 85a65e824cea | Anti Snoring | shortPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |  |
-| f4e9bbed8b0f | Anti Snoring (long action) | shortPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` | force long |
-| 2cf18159af62 | Memory Position1 | shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |  |
-| dcef78bc22f0 | T V Position | shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |  |
-| 1aa50b6d640d | Memory Position2 | shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |  |
-| c2ca32745d26 | Memory Position1 (long action) | shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` | force long |
-| 83257209aa9b | T V Position (long action) | shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` | force long |
-| 712ce9b7b11a | Memory Position2 (long action) | shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` | force long |
-| b88f492e2cf8 | Massage Mode All Off | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |  |
-| aa28f346c0b2 | Massage Mode Wave | shortAndLongPress | `6E 01 00 48 B7` / `6E 01 00 47 B6` | `48` / `47` |  |
-| 2814e11c8aa7 | Foot Up And Head Down | sustainPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |  |
-| a34755c5373f | Head Up And Foot Down | sustainPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |  |
-| 27175a0eb1db | Head Up And Foot Down | shortPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |  |
-| 401fefccde6c | Foot Up And Head Down | shortPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |  |
-| 8a1d6deba766 | Motor Reset | sustainPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |  |
-| 1420f18c4e7c | Phone Light | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` | local, hidden |
-| 0d7a31c38a0f | Massage15 Minute Up And Down | shortPress | `6E 01 00 76 E5` / `6E 01 00 00 6F` | `76` / `00` |  |
-| 24c6281aef68 | Massage30 Minute Up And Down | shortPress | `6E 01 00 90 FF` / `6E 01 00 00 6F` | `90` / `00` |  |
-| 0f18e5df2881 | Memory Position1 | shortAndLongPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` | hidden |
-| ec59821b3288 | Massage1 Open Or Close | shortPress | `6E 01 00 32 A1` / `6E 01 00 00 6F` | `32` / `00` |  |
-| 6851aa6370a7 | Massage Mode Off And Motor Reset | shortPress | `6E 01 00 5A C9` / `6E 01 00 00 6F` | `5A` / `00` |  |
-| 0b38648cbc7d | Massage2 Open Or Close | shortPress | `6E 01 00 33 A2` / `6E 01 00 00 6F` | `33` / `00` |  |
-| ead8b334e722 | Massage Instensity Third Gear | shortPress | `6E 01 00 68 D7` / `6E 01 00 00 6F` | `68` / `00` |  |
-| 2da9275ccfd2 | Massage Instensity First Gear | shortPress | `6E 01 00 67 D6` / `6E 01 00 00 6F` | `67` / `00` |  |
-| 77c86cd0c17a | All Motor Up | sustainPress | `6E 01 00 43 B2` / `6E 01 00 00 6F` | `43` / `00` |  |
-| 6aa92787433c | All Motor Down | sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |  |
-| 30dd0d403916 | Massage Mode Wave Third Mode | shortPress | `6E 01 00 4B BA` / `6E 01 00 00 6F` | `4B` / `00` |  |
-| a4c14d2529e4 | Massage Mode All On | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |  |
+| 9f4f2493dee8 | Head up | sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `34` / `00` |  |
+| 75ae7f8d618f | Head down | sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `37` / `00` |  |
+| ec0a15aea952 | Foot up | sustainPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `36` / `00` |  |
+| 334e68909524 | Foot down | sustainPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `41` / `00` |  |
+| 4fbb0fc77db8 | Head and foot up | sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `38` / `00` |  |
+| 9ea62e37e453 | Head and foot down | sustainPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `39` / `00` |  |
+| 40c92af58e6b | Motor reset | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |  |
+| 5673678c0373 | Anti-snore | shortAndLongPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |  |
+| 28496fb1f4c5 | Zero gravity | shortAndLongPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |  |
+| 117f6978b348 | Bed light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `3C` / `00` |  |
+| c9c6dc2a9231 | Head up | sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |  |
+| 2169603a2ccb | Pillow up | sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |  |
+| 117fd7eb4622 | Foot up | sustainPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `26` / `00` |  |
+| 4d7ee9a33ecb | Head down | sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |  |
+| 3261d5acee66 | Pillow down | sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |  |
+| 9f41c906558f | Foot down | sustainPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `27` / `00` |  |
+| 6c281b509549 | TV position | shortAndLongPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |  |
+| 066921cd681d | Massage head intensity up | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `4C` / `00` |  |
+| 8f4abf075ee0 | Memory position 1 | shortAndLongPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |  |
+| fed5208309e0 | Massage foot intensity up | shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `4E` / `00` |  |
+| 19c13c4d0fda | Massage mode change | shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `48` / `00` |  |
+| 4bae16e7f959 | Memory position 2 | shortAndLongPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |  |
+| eecf3193581a | Massage mode all off | shortPress | `6E 01 00 5E CD` / `6E 01 00 00 6F` | `5E` / `00` |  |
+| a682aa466866 | Memory position 3 | shortAndLongPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |  |
+| 7b913c93bb17 | Lounge position | shortAndLongPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |  |
+| 3ab5f8fe96f4 | Lumbar up | sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |  |
+| b2fcb856104f | Lumbar down | sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |  |
+| a12633f5f7e7 | Massage menu | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
+| e0e957b09025 | Phone light | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` | local |
+| d0daaadb8852 | Massage 10 minute timer | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` |  |
+| cc52e6494256 | Massage 20 minute timer | shortPress | `6E 01 00 63 D2` / `6E 01 00 00 6F` | `63` / `00` |  |
+| 00467dc3027e | Massage 30 minute timer | shortPress | `6E 01 00 61 D0` / `6E 01 00 00 6F` | `61` / `00` |  |
+| cd12add2435e | Lumbar up | sustainPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |  |
+| 41ca19922c41 | Lumbar down | sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |  |
+| baeaf2a9d637 | Head and foot up | sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `29` / `00` |  |
+| 015704594ec9 | Head and foot down | sustainPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `2A` / `00` |  |
+| 2e64e05f3433 | Massage intensity up | shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `34` / `00` |  |
+| 7936d8f22c8b | Massage speed up | shortPress | `6E 01 00 36 A5` / `6E 01 00 00 6F` | `36` / `00` |  |
+| f361a88972f6 | Massage intensity down | shortPress | `6E 01 00 35 A4` / `6E 01 00 00 6F` | `35` / `00` |  |
+| ca0bd126e0a1 | Massage speed down | shortPress | `6E 01 00 37 A6` / `6E 01 00 00 6F` | `37` / `00` |  |
+| fb4a820461aa | Massage mode pulse | shortPress | `6E 01 00 38 A7` / `6E 01 00 00 6F` | `38` / `00` |  |
+| 8a49ddf1e409 | Massage mode wave | shortPress | `6E 01 00 39 A8` / `6E 01 00 00 6F` | `39` / `00` |  |
+| 2cd34a3a66a4 | Massage mode constant | shortPress | `6E 01 00 3A A9` / `6E 01 00 00 6F` | `3A` / `00` |  |
+| 834d0298c2a6 | Pillow up | sustainPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |  |
+| 0f61cb2ddc7d | Pillow down | sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |  |
+| 2f6d8987dec5 | Lounge position | shortPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `32` / `65` |  |
+| 6b7f5b7e4164 | TV position | shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `33` / `64` |  |
+| b1db771e6321 | Zero gravity | shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `34` / `66` |  |
+| db703b2419a6 | Head up | sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `35` / `00` |  |
+| 8813cb017a49 | Head and foot up | sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `36` / `00` |  |
+| b8e3489845f5 | Foot up | sustainPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `37` / `00` |  |
+| 38d7adaf1e75 | Head down | sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `38` / `00` |  |
+| 82f8199bd9d2 | Memory position 1 | shortAndLongPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `42` / `2B` |  |
+| 8b3a862df042 | Memory position 2 | shortAndLongPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `44` / `2C` |  |
+| 8aa2cd105798 | Massage mode all off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `4C` / `00` |  |
+| ab1f300c0bec | Bed light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `46` / `00` |  |
+| e0f268656b0e | Massage intensity up | shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `48` / `00` |  |
+| 45e9ce37fd2b | Massage mode change | shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `4A` / `00` |  |
+| ec80d8038d75 | Massage intensity down | shortPress | `6E 01 00 35 A4` / `6E 01 00 00 6F` | `4B` / `00` |  |
+| 8a9f00d9b56b | Motor 3 up | sustainPress | `6E 01 00 71 E0` / `6E 01 00 00 6F` | `71` / `00` |  |
+| 1c485e495380 | Music volume up | shortPress | `6E 01 00 D4 43` / `6E 01 00 00 6F` | `D4` / `00` |  |
+| 598c167cdd86 | Motor 3 down | sustainPress | `6E 01 00 72 E1` / `6E 01 00 00 6F` | `72` / `00` |  |
+| 3af051d36602 | Music volume down | shortPress | `6E 01 00 D5 44` / `6E 01 00 00 6F` | `D5` / `00` |  |
+| e9ada0a12c3f | Music Bluetooth on/off | shortPress | `6E 01 00 D8 47` / `6E 01 00 00 6F` | `D8` / `00` |  |
+| 9b1697fdff0d | Music vibration mode | shortPress | `6E 01 00 D6 45` / `6E 01 00 00 6F` | `D6` / `00` |  |
+| 4deb18342f34 | Motor reset | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `38` / `00` |  |
+| 67bd828daaae | Zero gravity | shortAndLongPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `34` / `66` |  |
+| c51a841b2c8c | Massage mode all off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` |  |
+| c5f845fc1b8c | No action | shortAndLongPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
+| bd888e1de887 | Motor reset | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` | hidden |
+| 142bbf0bf7fb | Motor and massage all off | shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |  |
+| 69224cc45667 | Tilt up | sustainPress | `6E 01 00 43 B2` / `6E 01 00 00 6F` | `43` / `00` |  |
+| 6993e9e0837a | Tilt down | sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |  |
+| 35667705e3aa | Relieve zero gravity setting | shortPress | `6E 01 00 62 D1` / `6E 01 00 00 6F` | `62` / `00` |  |
+| 1d9d650e8a43 | Massage head intensity down | shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `4D` / `00` |  |
+| 25c8ea6b1577 | Massage foot intensity down | shortPress | `6E 01 00 4F BE` / `6E 01 00 00 6F` | `4F` / `00` |  |
+| 2be41ffbb790 | Head and foot all up | shortPress | `6E 01 00 23 92` / `6E 01 00 00 6F` | `23` / `00` |  |
+| 907892216e64 | Lumbar memory position | shortAndLongPress | `6E 01 00 91 00` / `6E 01 00 92 01` | `91` / `92` |  |
+| ef00e521377c | Reading position | shortAndLongPress | `6E 01 00 F2 61` / `6E 01 00 F3 62` | `F2` / `F3` |  |
+| 6ae8f5f37ad8 | Control box lock | shortAndLongPress | `6E 01 00 84 F3` / `6E 01 00 84 F3` | `84` / `84` |  |
+| a69312fb7952 | Head up and foot down | shortPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` | toggle latch |
+| b0198fb326ef | Foot up and head down | shortPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` | toggle latch |
+| 61a7fe7954d9 | Zero gravity | shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |  |
+| acbeb1054bf8 | Zero gravity (long press) | shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` | force long |
+| 85a65e824cea | Anti-snore | shortPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |  |
+| f4e9bbed8b0f | Anti-snore (long press) | shortPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` | force long |
+| 2cf18159af62 | Memory position 1 | shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |  |
+| dcef78bc22f0 | TV position | shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |  |
+| 1aa50b6d640d | Memory position 2 | shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |  |
+| c2ca32745d26 | Memory position 1 (long press) | shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` | force long |
+| 83257209aa9b | TV position (long press) | shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` | force long |
+| 712ce9b7b11a | Memory position 2 (long press) | shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` | force long |
+| b88f492e2cf8 | Massage mode all off | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |  |
+| aa28f346c0b2 | Massage mode wave | shortAndLongPress | `6E 01 00 48 B7` / `6E 01 00 47 B6` | `48` / `47` |  |
+| 2814e11c8aa7 | Foot up and head down | sustainPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |  |
+| a34755c5373f | Head up and foot down | sustainPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |  |
+| 27175a0eb1db | Head up and foot down | shortPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |  |
+| 401fefccde6c | Foot up and head down | shortPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |  |
+| 8a1d6deba766 | Motor reset | sustainPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |  |
+| 1420f18c4e7c | Phone light | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` | local, hidden |
+| 0d7a31c38a0f | Massage 15 minute up and down | shortPress | `6E 01 00 76 E5` / `6E 01 00 00 6F` | `76` / `00` |  |
+| 24c6281aef68 | Massage 30 minute up and down | shortPress | `6E 01 00 90 FF` / `6E 01 00 00 6F` | `90` / `00` |  |
+| 0f18e5df2881 | Memory position 1 | shortAndLongPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` | hidden |
+| ec59821b3288 | Massage 1 on/off | shortPress | `6E 01 00 32 A1` / `6E 01 00 00 6F` | `32` / `00` |  |
+| 6851aa6370a7 | Massage mode off and motor reset | shortPress | `6E 01 00 5A C9` / `6E 01 00 00 6F` | `5A` / `00` |  |
+| 0b38648cbc7d | Massage 2 on/off | shortPress | `6E 01 00 33 A2` / `6E 01 00 00 6F` | `33` / `00` |  |
+| ead8b334e722 | Massage intensity level 3 | shortPress | `6E 01 00 68 D7` / `6E 01 00 00 6F` | `68` / `00` |  |
+| 2da9275ccfd2 | Massage intensity level 1 | shortPress | `6E 01 00 67 D6` / `6E 01 00 00 6F` | `67` / `00` |  |
+| 77c86cd0c17a | All motor up | sustainPress | `6E 01 00 43 B2` / `6E 01 00 00 6F` | `43` / `00` |  |
+| 6aa92787433c | All motor down | sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |  |
+| 30dd0d403916 | Massage mode wave mode 3 | shortPress | `6E 01 00 4B BA` / `6E 01 00 00 6F` | `4B` / `00` |  |
+| a4c14d2529e4 | Massage mode all on | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |  |
 | 0ff117b1a0e4 | Clock | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` | local |
-| 06285d76f7d6 | Lumber Up | sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `42` / `00` |  |
-| 835533d816a5 | Lounge Position | shortAndLongPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `32` / `65` |  |
-| df4710a090bc | Pillow Up | sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |  |
-| 69f676b601cc | Lumber Down | sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `43` / `00` |  |
-| 5cce9d518876 | Pillow Down | sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `45` / `00` |  |
-| a9df34716acf | Bed Light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `36` / `00` |  |
-| 5edcf65572e0 | Massage Head Instensity Strengthen | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `46` / `00` |  |
-| f11b9f7d9d63 | Massage Mode All Off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `47` / `00` |  |
-| 8d5cd2611afe | Massage Foot Instensity Strengthen | shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `48` / `00` |  |
-| 9bb165a7dcda | Massage Head Instensity Weaken | shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `49` / `00` |  |
-| 33c66736687c | Massage Foot Instensity Weaken | shortPress | `6E 01 00 4F BE` / `6E 01 00 00 6F` | `4B` / `00` |  |
-| 4678fa165b43 | Massage1 Instensity | shortPress | `6E 01 00 A4 13` / `6E 01 00 00 6F` | `A4` / `00` |  |
-| 262d2a25c564 | Massage2 Instensity | shortPress | `6E 01 00 A5 14` / `6E 01 00 00 6F` | `A5` / `00` |  |
-| 3dc2f2b7bb6a | None | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
-| 4d2b999586da | Massage10 Minute Timer | shortPress | `6E 01 00 A1 10` / `6E 01 00 00 6F` | `A1` / `00` |  |
-| 0417c61e3983 | Massage20 Minute Timer | shortPress | `6E 01 00 A2 11` / `6E 01 00 00 6F` | `A2` / `00` |  |
-| c9b91d8958e4 | Massage30 Minute Timer | shortPress | `6E 01 00 A3 12` / `6E 01 00 00 6F` | `A3` / `00` |  |
-| bcd458bf83d9 | Memory Position4 | shortAndLongPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |  |
+| 06285d76f7d6 | Lumbar up | sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `42` / `00` |  |
+| 835533d816a5 | Lounge position | shortAndLongPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `32` / `65` |  |
+| df4710a090bc | Pillow up | sustainPress | `6E 01 00 44 B3` / `6E 01 00 00 6F` | `44` / `00` |  |
+| 69f676b601cc | Lumbar down | sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `43` / `00` |  |
+| 5cce9d518876 | Pillow down | sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `45` / `00` |  |
+| a9df34716acf | Bed light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `36` / `00` |  |
+| 5edcf65572e0 | Massage head intensity up | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `46` / `00` |  |
+| f11b9f7d9d63 | Massage mode all off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `47` / `00` |  |
+| 8d5cd2611afe | Massage foot intensity up | shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `48` / `00` |  |
+| 9bb165a7dcda | Massage head intensity down | shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `49` / `00` |  |
+| 33c66736687c | Massage foot intensity down | shortPress | `6E 01 00 4F BE` / `6E 01 00 00 6F` | `4B` / `00` |  |
+| 4678fa165b43 | Massage 1 intensity | shortPress | `6E 01 00 A4 13` / `6E 01 00 00 6F` | `A4` / `00` |  |
+| 262d2a25c564 | Massage 2 intensity | shortPress | `6E 01 00 A5 14` / `6E 01 00 00 6F` | `A5` / `00` |  |
+| 3dc2f2b7bb6a | No action | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
+| 4d2b999586da | Massage 10 minute timer | shortPress | `6E 01 00 A1 10` / `6E 01 00 00 6F` | `A1` / `00` |  |
+| 0417c61e3983 | Massage 20 minute timer | shortPress | `6E 01 00 A2 11` / `6E 01 00 00 6F` | `A2` / `00` |  |
+| c9b91d8958e4 | Massage 30 minute timer | shortPress | `6E 01 00 A3 12` / `6E 01 00 00 6F` | `A3` / `00` |  |
+| bcd458bf83d9 | Memory position 4 | shortAndLongPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |  |
 | bc3a73aad676 | Logo | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
-| 2445a0dfc2f6 | Tile Up | sustainPress | `6E 01 00 5B CA` / `6E 01 00 00 6F` | `5B` / `00` |  |
-| bf729f1b5ed0 | Tile Down | sustainPress | `6E 01 00 5C CB` / `6E 01 00 00 6F` | `5C` / `00` |  |
-| 8b9b6f611374 | Relax Position | shortAndLongPress | `6E 01 00 70 DF` / `6E 01 00 95 04` | `70` / `95` |  |
-| d326af07ba43 | Motor Reset2 | shortPress | `6E 01 00 6C DB` / `6E 01 00 00 6F` | `6C` / `00` |  |
-| 6fa232d21245 | Zero Gravity2 | shortAndLongPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
-| ccecea3d3e29 | Massage Mode All Off | shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `48` / `00` |  |
-| 765d0a06908d | Yoga Position | shortAndLongPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
-| 3641af85cedc | Help Get Up | shortPress | `6E 01 00 3D AC` / `6E 01 00 00 6F` | `3D` / `00` |  |
-| b867d983cdde | Head And Foot Up | sustainPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` |  |
-| 362b90931207 | Head And Foot Down | sustainPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` |  |
-| 747268a767c1 | Sync On | shortPress | `6E 01 00 BC 2B` / `6E 01 00 BC 2B` | `BC` / `BC` |  |
-| aae5ac3a0d37 | Sync Off | shortPress | `6E 01 00 BD 2C` / `6E 01 00 BD 2C` | `BD` / `BD` |  |
-| 9d89827e6527 | Massage Mode All Off | shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |  |
-| 0430aa1692b3 | Adjust Volume | shortPress | `6E 01 00 B7 26` / `6E 01 00 00 6F` | `B7` / `00` |  |
-| 32f839e744fc | Music Cut | shortPress | `6E 01 00 B8 27` / `6E 01 00 00 6F` | `B8` / `00` |  |
-| 01681d7f89d6 | Music Close | shortPress | `6E 01 00 B9 28` / `6E 01 00 00 6F` | `B9` / `00` |  |
-| 6242308520dd | Title Fan | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
-| b47a34f44021 | Title Timer | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
-| cac4b66cd7a7 | Massage Mode Change | shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |  |
-| ea2823e1712c | Head Up And Foot Stop | shortPress | `6E 01 00 3D AC` / `6E 01 00 00 6F` | `3D` / `00` |  |
-| 99105a76fa86 | Side Sleep Position | shortAndLongPress | `6E 01 00 BA 29` / `6E 01 00 BB 2A` | `BA` / `BB` |  |
-| bc6785c7a5e2 | Yoga Position | shortAndLongPress | `6E 01 00 F0 5F` / `6E 01 00 F1 60` | `F0` / `F1` |  |
-| 83ab13a2cb63 | Control Box Lock | shortPress | `6E 01 00 84 F3` / `6E 01 00 84 F3` | `84` / `84` |  |
-| ee9d85e8f679 | Sync On | shortAndLongPress | `6E 01 00 BC 2B` / `6E 01 00 BC 2B` | `BC` / `BC` |  |
-| 8c5b0f15c431 | Sync Off | shortAndLongPress | `6E 01 00 BD 2C` / `6E 01 00 BD 2C` | `BD` / `BD` |  |
-| 7db56e9a5841 | Memory Position1 | sustainPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |  |
-| 5cd238832057 | Memory Position2 | sustainPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |  |
-| 8f030943aeb4 | Memory Position3 | sustainPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |  |
-| a08b869dac7f | Memory Position4 | sustainPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |  |
+| 2445a0dfc2f6 | Tilt up | sustainPress | `6E 01 00 5B CA` / `6E 01 00 00 6F` | `5B` / `00` |  |
+| bf729f1b5ed0 | Tilt down | sustainPress | `6E 01 00 5C CB` / `6E 01 00 00 6F` | `5C` / `00` |  |
+| 8b9b6f611374 | Relax position | shortAndLongPress | `6E 01 00 70 DF` / `6E 01 00 95 04` | `70` / `95` |  |
+| d326af07ba43 | Motor reset 2 | shortPress | `6E 01 00 6C DB` / `6E 01 00 00 6F` | `6C` / `00` |  |
+| 6fa232d21245 | Zero gravity 2 | shortAndLongPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
+| ccecea3d3e29 | Massage mode all off | shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `48` / `00` |  |
+| 765d0a06908d | Yoga position | shortAndLongPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
+| 3641af85cedc | Get-up assist | shortPress | `6E 01 00 3D AC` / `6E 01 00 00 6F` | `3D` / `00` |  |
+| b867d983cdde | Head and foot up | sustainPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` |  |
+| 362b90931207 | Head and foot down | sustainPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` |  |
+| 747268a767c1 | Sync on | shortPress | `6E 01 00 BC 2B` / `6E 01 00 BC 2B` | `BC` / `BC` |  |
+| aae5ac3a0d37 | Sync off | shortPress | `6E 01 00 BD 2C` / `6E 01 00 BD 2C` | `BD` / `BD` |  |
+| 9d89827e6527 | Massage mode all off | shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |  |
+| 0430aa1692b3 | Adjust volume | shortPress | `6E 01 00 B7 26` / `6E 01 00 00 6F` | `B7` / `00` |  |
+| 32f839e744fc | Music cut | shortPress | `6E 01 00 B8 27` / `6E 01 00 00 6F` | `B8` / `00` |  |
+| 01681d7f89d6 | Music off | shortPress | `6E 01 00 B9 28` / `6E 01 00 00 6F` | `B9` / `00` |  |
+| 6242308520dd | Fan menu | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
+| b47a34f44021 | Timer menu | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
+| cac4b66cd7a7 | Massage mode change | shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |  |
+| ea2823e1712c | Head up and foot stop | shortPress | `6E 01 00 3D AC` / `6E 01 00 00 6F` | `3D` / `00` |  |
+| 99105a76fa86 | Side sleep position | shortAndLongPress | `6E 01 00 BA 29` / `6E 01 00 BB 2A` | `BA` / `BB` |  |
+| bc6785c7a5e2 | Yoga position | shortAndLongPress | `6E 01 00 F0 5F` / `6E 01 00 F1 60` | `F0` / `F1` |  |
+| 83ab13a2cb63 | Control box lock | shortPress | `6E 01 00 84 F3` / `6E 01 00 84 F3` | `84` / `84` |  |
+| ee9d85e8f679 | Sync on | shortAndLongPress | `6E 01 00 BC 2B` / `6E 01 00 BC 2B` | `BC` / `BC` |  |
+| 8c5b0f15c431 | Sync off | shortAndLongPress | `6E 01 00 BD 2C` / `6E 01 00 BD 2C` | `BD` / `BD` |  |
+| 7db56e9a5841 | Memory position 1 | sustainPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |  |
+| 5cd238832057 | Memory position 2 | sustainPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |  |
+| 8f030943aeb4 | Memory position 3 | sustainPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |  |
+| a08b869dac7f | Memory position 4 | sustainPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |  |
 | 7630ce144577 | Memory | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` | toggle latch |
-| 1a3d61c98ecd | Massage15 Minute Spine Guard | shortPress | `6E 01 00 76 E5` / `6E 01 00 00 6F` | `76` / `00` |  |
-| 0ed419290436 | Motor4 Up | sustainPress | `6E 01 00 73 E2` / `6E 01 00 00 6F` | `73` / `00` |  |
-| 7d7711b87a5b | Motor4 Down | sustainPress | `6E 01 00 74 E3` / `6E 01 00 00 6F` | `74` / `00` |  |
-| 96c416888e37 | Head And Foot Down | shortPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `2A` / `00` |  |
-| e6916fcf70cf | Relieve Snore Setting | shortPress | `6E 01 00 CB 3A` / `6E 01 00 00 6F` | `CB` / `00` |  |
-| df262cafa7c3 | Motor5 Up | sustainPress | `6E 01 00 D0 3F` / `6E 01 00 00 6F` | `D0` / `00` |  |
-| bbd8006f52ed | Motor5 Down | sustainPress | `6E 01 00 D1 40` / `6E 01 00 00 6F` | `D1` / `00` |  |
-| f74a6c435973 | Music Previous Song | shortPress | `6E 01 00 D2 41` / `6E 01 00 00 6F` | `D2` / `00` |  |
-| 93cf8e749e1a | Music Next Song | shortPress | `6E 01 00 D3 42` / `6E 01 00 00 6F` | `D3` / `00` |  |
-| 6b7e45adcd7e | Music Pause Play | shortPress | `6E 01 00 D7 46` / `6E 01 00 00 6F` | `D7` / `00` |  |
-| 358f52a6aa0d | Massage Mode All Off | shortPress | `6E 01 00 61 D0` / `6E 01 00 00 6F` | `61` / `00` |  |
-| e8fe7d3e6212 | Deep Sleep Position | shortAndLongPress | `6E 01 00 F6 65` / `6E 01 00 F7 66` | `F6` / `F7` |  |
-| 48c2bc0ceadb | Control Box Lock | shortAndLongPress | `6E 01 00 D9 48` / `6E 01 00 84 F3` | `D9` / `84` |  |
-| e68e9e2f64d9 | Reading Position | shortAndLongPress | `6E 01 00 F3 62` / `6E 01 00 F2 61` | `F3` / `F2` |  |
-| 1d5e03f74fc5 | Deep Sleep Position | shortAndLongPress | `6E 01 00 F7 66` / `6E 01 00 F6 65` | `F7` / `F6` |  |
-| 88f0e2ac71b6 | Massage Mode All Off | shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `34` / `00` |  |
-| c6bace77098c | Music Switch Sound Track | shortPress | `6E 01 00 C4 33` / `6E 01 00 00 6F` | `C4` / `00` |  |
-| 650eafce0eaa | Memory Position5 | shortAndLongPress | `6E 01 00 F4 63` / `6E 01 00 F5 64` | `F4` / `F5` |  |
-| 3df9197ac546 | Massage Mode Change | shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `48` / `00` | hidden |
-| 4674d65a3f82 | Massage Mode All Off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` | hidden |
-| 60490ae8efdc | Bed Light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `3C` / `00` | hidden |
-| cf3cb69d4b7f | Relieve Zero Gravity Setting | sustainPress | `6E 01 00 BE 2D` / `6E 01 00 00 6F` | `BE` / `00` |  |
-| 93cf506de9b3 | Massage Switch | shortPress | `6E 01 00 6F DE` / `6E 01 00 00 6F` | `6F` / `00` |  |
-| deb504870d56 | Memory Position1 | shortPress | `6E 01 00 2B 9A` / `6E 01 00 2B 9A` | `2B` / `2B` |  |
-| 02ba78481b03 | Lumber Down | shortPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |  |
-| ba1f116c4be9 | Bed Light Close | shortPress | `6E 01 00 75 E4` / `6E 01 00 00 6F` | `75` / `00` |  |
-| 096137e27d72 | Help Sleep Mode1 | shortAndLongPress | `6E 01 00 86 F5` / `6E 01 00 00 6F` | `86` / `00` |  |
-| 9ac4ed2f3878 | Massage Mode All Off | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` | hidden |
-| cb68d0c1f3d0 | Massage Switch | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |  |
-| 943b0a6f4768 | Massage30 Minute Timer | shortPress | `6E 01 00 90 FF` / `6E 01 00 00 6F` | `90` / `00` |  |
-| e2c34d5c7ade | Massage Mode Wave First Mode | shortPress | `6E 01 00 49 B8` / `6E 01 00 00 6F` | `49` / `00` |  |
-| 880df9c72093 | Massage Mode Wave Second Mode | shortPress | `6E 01 00 4A B9` / `6E 01 00 00 6F` | `4A` / `00` |  |
-| 5f94b5202960 | Memory Position3 | shortPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |  |
-| c152a974ea6c | Memory Position4 | shortPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |  |
-| 269880b9371b | T V Position | sustainPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |  |
-| 0cbc9c0946d9 | Zero Gravity | sustainPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |  |
-| 7f3a7ce922ef | Anti Snoring | sustainPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |  |
-| cea3e21b77bb | Motor Reset | sustainPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` | hidden |
-| c281d87c6bc6 | Head Up | sustainPress | `6E 01 00 23 92` / `6E 01 00 00 6F` | `23` / `00` |  |
-| cca2946b7656 | Head Down | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |  |
-| 40ada9347fc6 | Wake Up | shortAndLongPress | `6E 01 00 85 F4` / `6E 01 00 00 6F` | `85` / `00` |  |
-| dcbbe7e29dbc | Head Up And Foot Stop | shortPress | `6E 01 00 30 9F` / `6E 01 00 00 6F` | `30` / `00` |  |
-| 714e57c2a018 | Memory Position1 | shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `42` / `2B` |  |
-| ef3a6fa0cab9 | Memory Position1 | shortPress | `6E 01 00 2B 9A` / `6E 01 00 2B 9A` | `43` / `2B` |  |
-| 2201ae4481dc | Memory Position2 | shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `44` / `2C` |  |
-| 64a00c529c7e | Memory Position2 | shortPress | `6E 01 00 2C 9B` / `6E 01 00 2C 9B` | `45` / `2C` |  |
-| 89900b928a9a | Massage Mode All Off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `49` / `00` |  |
-| 855711f7ad92 | Title Massage Russian | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
-| d213cf6b3d93 | Memory Position1 | shortPress | `6E 01 00 45 B4` / `6E 01 00 2B 9A` | `35` / `2B` |  |
-| ded03dbb3f14 | Massage Mode All Off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `39` / `00` |  |
-| 1f5c6a24ed34 | Massage Head Instensity Strengthen | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `42` / `00` |  |
-| ebdbb493dcf8 | Bed Light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `43` / `00` |  |
-| 27fbe32d1207 | Massage Foot Instensity Strengthen | shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `44` / `00` |  |
-| d9b3d5dfffab | Massage Mode Wave | shortPress | `6E 01 00 39 A8` / `6E 01 00 00 6F` | `45` / `00` |  |
-| 14755149209f | Massage Mode Pulse | shortPress | `6E 01 00 38 A7` / `6E 01 00 00 6F` | `46` / `00` |  |
-| de25830c8d4b | Massage Mode Constant | shortPress | `6E 01 00 3A A9` / `6E 01 00 00 6F` | `47` / `00` |  |
-| c0dda09c7c32 | Massage Speed Strengthen | shortPress | `6E 01 00 36 A5` / `6E 01 00 00 6F` | `48` / `00` |  |
-| 33c20fd70f57 | Massage Speed Weaken | shortPress | `6E 01 00 37 A6` / `6E 01 00 00 6F` | `49` / `00` |  |
-| 3a435638569b | Massage Instensity Strengthen | shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `4A` / `00` |  |
+| 1a3d61c98ecd | Massage 15 minute spine guard | shortPress | `6E 01 00 76 E5` / `6E 01 00 00 6F` | `76` / `00` |  |
+| 0ed419290436 | Motor 4 up | sustainPress | `6E 01 00 73 E2` / `6E 01 00 00 6F` | `73` / `00` |  |
+| 7d7711b87a5b | Motor 4 down | sustainPress | `6E 01 00 74 E3` / `6E 01 00 00 6F` | `74` / `00` |  |
+| 96c416888e37 | Head and foot down | shortPress | `6E 01 00 2A 99` / `6E 01 00 00 6F` | `2A` / `00` |  |
+| e6916fcf70cf | Relieve snore setting | shortPress | `6E 01 00 CB 3A` / `6E 01 00 00 6F` | `CB` / `00` |  |
+| df262cafa7c3 | Motor 5 up | sustainPress | `6E 01 00 D0 3F` / `6E 01 00 00 6F` | `D0` / `00` |  |
+| bbd8006f52ed | Motor 5 down | sustainPress | `6E 01 00 D1 40` / `6E 01 00 00 6F` | `D1` / `00` |  |
+| f74a6c435973 | Music previous song | shortPress | `6E 01 00 D2 41` / `6E 01 00 00 6F` | `D2` / `00` |  |
+| 93cf8e749e1a | Music next song | shortPress | `6E 01 00 D3 42` / `6E 01 00 00 6F` | `D3` / `00` |  |
+| 6b7e45adcd7e | Music pause play | shortPress | `6E 01 00 D7 46` / `6E 01 00 00 6F` | `D7` / `00` |  |
+| 358f52a6aa0d | Massage mode all off | shortPress | `6E 01 00 61 D0` / `6E 01 00 00 6F` | `61` / `00` |  |
+| e8fe7d3e6212 | Deep sleep position | shortAndLongPress | `6E 01 00 F6 65` / `6E 01 00 F7 66` | `F6` / `F7` |  |
+| 48c2bc0ceadb | Control box lock | shortAndLongPress | `6E 01 00 D9 48` / `6E 01 00 84 F3` | `D9` / `84` |  |
+| e68e9e2f64d9 | Reading position | shortAndLongPress | `6E 01 00 F3 62` / `6E 01 00 F2 61` | `F3` / `F2` |  |
+| 1d5e03f74fc5 | Deep sleep position | shortAndLongPress | `6E 01 00 F7 66` / `6E 01 00 F6 65` | `F7` / `F6` |  |
+| 88f0e2ac71b6 | Massage mode all off | shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `34` / `00` |  |
+| c6bace77098c | Music switch soundtrack | shortPress | `6E 01 00 C4 33` / `6E 01 00 00 6F` | `C4` / `00` |  |
+| 650eafce0eaa | Memory position 5 | shortAndLongPress | `6E 01 00 F4 63` / `6E 01 00 F5 64` | `F4` / `F5` |  |
+| 3df9197ac546 | Massage mode change | shortPress | `6E 01 00 48 B7` / `6E 01 00 00 6F` | `48` / `00` | hidden |
+| 4674d65a3f82 | Massage mode all off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` | hidden |
+| 60490ae8efdc | Bed light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `3C` / `00` | hidden |
+| cf3cb69d4b7f | Relieve zero gravity setting | sustainPress | `6E 01 00 BE 2D` / `6E 01 00 00 6F` | `BE` / `00` |  |
+| 93cf506de9b3 | Massage on/off | shortPress | `6E 01 00 6F DE` / `6E 01 00 00 6F` | `6F` / `00` |  |
+| deb504870d56 | Memory position 1 | shortPress | `6E 01 00 2B 9A` / `6E 01 00 2B 9A` | `2B` / `2B` |  |
+| 02ba78481b03 | Lumbar down | shortPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |  |
+| ba1f116c4be9 | Bed light off | shortPress | `6E 01 00 75 E4` / `6E 01 00 00 6F` | `75` / `00` |  |
+| 096137e27d72 | Sleep aid 1 | shortAndLongPress | `6E 01 00 86 F5` / `6E 01 00 00 6F` | `86` / `00` |  |
+| 9ac4ed2f3878 | Massage mode all off | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` | hidden |
+| cb68d0c1f3d0 | Massage on/off | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |  |
+| 943b0a6f4768 | Massage 30 minute timer | shortPress | `6E 01 00 90 FF` / `6E 01 00 00 6F` | `90` / `00` |  |
+| e2c34d5c7ade | Massage mode wave mode 1 | shortPress | `6E 01 00 49 B8` / `6E 01 00 00 6F` | `49` / `00` |  |
+| 880df9c72093 | Massage mode wave mode 2 | shortPress | `6E 01 00 4A B9` / `6E 01 00 00 6F` | `4A` / `00` |  |
+| 5f94b5202960 | Memory position 3 | shortPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |  |
+| c152a974ea6c | Memory position 4 | shortPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |  |
+| 269880b9371b | TV position | sustainPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |  |
+| 0cbc9c0946d9 | Zero gravity | sustainPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |  |
+| 7f3a7ce922ef | Anti-snore | sustainPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |  |
+| cea3e21b77bb | Motor reset | sustainPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` | hidden |
+| c281d87c6bc6 | Head up | sustainPress | `6E 01 00 23 92` / `6E 01 00 00 6F` | `23` / `00` |  |
+| cca2946b7656 | Head down | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `31` / `00` |  |
+| 40ada9347fc6 | Wake up | shortAndLongPress | `6E 01 00 85 F4` / `6E 01 00 00 6F` | `85` / `00` |  |
+| dcbbe7e29dbc | Head up and foot stop | shortPress | `6E 01 00 30 9F` / `6E 01 00 00 6F` | `30` / `00` |  |
+| 714e57c2a018 | Memory position 1 | shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `42` / `2B` |  |
+| ef3a6fa0cab9 | Memory position 1 | shortPress | `6E 01 00 2B 9A` / `6E 01 00 2B 9A` | `43` / `2B` |  |
+| 2201ae4481dc | Memory position 2 | shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `44` / `2C` |  |
+| 64a00c529c7e | Memory position 2 | shortPress | `6E 01 00 2C 9B` / `6E 01 00 2C 9B` | `45` / `2C` |  |
+| 89900b928a9a | Massage mode all off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `49` / `00` |  |
+| 855711f7ad92 | Russian massage menu | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
+| d213cf6b3d93 | Memory position 1 | shortPress | `6E 01 00 45 B4` / `6E 01 00 2B 9A` | `35` / `2B` |  |
+| ded03dbb3f14 | Massage mode all off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `39` / `00` |  |
+| 1f5c6a24ed34 | Massage head intensity up | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `42` / `00` |  |
+| ebdbb493dcf8 | Bed light | shortPress | `6E 01 00 3C AB` / `6E 01 00 00 6F` | `43` / `00` |  |
+| 27fbe32d1207 | Massage foot intensity up | shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `44` / `00` |  |
+| d9b3d5dfffab | Massage mode wave | shortPress | `6E 01 00 39 A8` / `6E 01 00 00 6F` | `45` / `00` |  |
+| 14755149209f | Massage mode pulse | shortPress | `6E 01 00 38 A7` / `6E 01 00 00 6F` | `46` / `00` |  |
+| de25830c8d4b | Massage mode constant | shortPress | `6E 01 00 3A A9` / `6E 01 00 00 6F` | `47` / `00` |  |
+| c0dda09c7c32 | Massage speed up | shortPress | `6E 01 00 36 A5` / `6E 01 00 00 6F` | `48` / `00` |  |
+| 33c20fd70f57 | Massage speed down | shortPress | `6E 01 00 37 A6` / `6E 01 00 00 6F` | `49` / `00` |  |
+| 3a435638569b | Massage intensity up | shortPress | `6E 01 00 34 A3` / `6E 01 00 00 6F` | `4A` / `00` |  |
 | 976dbfd3d1e0 | Voice | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` | local |
-| a3494ef11b0f | Head Down | shortAndLongPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |  |
-| d3480f51746b | Head Up | shortAndLongPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |  |
-| 40c1cd7355f7 | Head Up | shortPress | `6E 01 00 3D AC` / `6E 01 00 00 6F` | `3D` / `00` |  |
-| 7b8ececd7224 | Head Down | shortPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |  |
-| 63144be9c453 | Foot Up | shortPress | `6E 01 00 3E AD` / `6E 01 00 00 6F` | `3E` / `00` |  |
-| fd7cabcb5995 | Foot Down | shortPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |  |
-| 0e6d9419b849 | Lounge Position | sustainPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |  |
-| 2f1420c5a271 | None | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` |  |
-| be9bf9076ad2 | Massage Head Instensity Strengthen | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `49` / `00` |  |
-| f8e672eec1db | Massage Head Instensity Weaken | shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `4A` / `00` |  |
-| 5530d0fca78d | Massage Mode All Off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `50` / `00` |  |
-| aaa2bcc5127b | Massage Instensity First Gear | shortPress | `6E 01 00 67 D6` / `6E 01 00 00 6F` | `4C` / `00` |  |
-| b993d8df46b2 | Massage Instensity Second Gear | shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `4D` / `00` |  |
-| 9cbb678a9d22 | Massage Instensity Third Gear | shortPress | `6E 01 00 68 D7` / `6E 01 00 00 6F` | `4E` / `00` |  |
-| bc0701329d6d | Foot Up | shortPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `26` / `00` |  |
-| 5f8ce0c4c2dd | Motor Reset | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `32` / `00` |  |
+| a3494ef11b0f | Head down | shortAndLongPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |  |
+| d3480f51746b | Head up | shortAndLongPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |  |
+| 40c1cd7355f7 | Head up | shortPress | `6E 01 00 3D AC` / `6E 01 00 00 6F` | `3D` / `00` |  |
+| 7b8ececd7224 | Head down | shortPress | `6E 01 00 22 91` / `6E 01 00 00 6F` | `22` / `00` |  |
+| 63144be9c453 | Foot up | shortPress | `6E 01 00 3E AD` / `6E 01 00 00 6F` | `3E` / `00` |  |
+| fd7cabcb5995 | Foot down | shortPress | `6E 01 00 21 90` / `6E 01 00 00 6F` | `21` / `00` |  |
+| 0e6d9419b849 | Lounge position | sustainPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |  |
+| 2f1420c5a271 | No action | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `5F` / `00` |  |
+| be9bf9076ad2 | Massage head intensity up | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `49` / `00` |  |
+| f8e672eec1db | Massage head intensity down | shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `4A` / `00` |  |
+| 5530d0fca78d | Massage mode all off | shortPress | `6E 01 00 5F CE` / `6E 01 00 00 6F` | `50` / `00` |  |
+| aaa2bcc5127b | Massage intensity level 1 | shortPress | `6E 01 00 67 D6` / `6E 01 00 00 6F` | `4C` / `00` |  |
+| b993d8df46b2 | Massage intensity level 2 | shortPress | `6E 01 00 4D BC` / `6E 01 00 00 6F` | `4D` / `00` |  |
+| 9cbb678a9d22 | Massage intensity level 3 | shortPress | `6E 01 00 68 D7` / `6E 01 00 00 6F` | `4E` / `00` |  |
+| bc0701329d6d | Foot up | shortPress | `6E 01 00 26 95` / `6E 01 00 00 6F` | `26` / `00` |  |
+| 5f8ce0c4c2dd | Motor reset | shortPress | `6E 01 00 31 A0` / `6E 01 00 00 6F` | `32` / `00` |  |
 | 3a6416ee9d41 | Aromatherapy | shortAndLongPress | `6E 01 00 3B AA` / `6E 01 00 00 6F` | `3B` / `00` |  |
-| c60949e83877 | Memory Position2 | shortPress | `6E 01 00 2C 9B` / `6E 01 00 2C 9B` | `2C` / `2C` |  |
-| 60e96affa5ae | Memory Position3 | shortPress | `6E 01 00 2D 9C` / `6E 01 00 2D 9C` | `2D` / `2D` |  |
-| 416a4029b7a8 | Motor Reset | shortPress | `6E 01 00 30 9F` / `6E 01 00 00 6F` | `30` / `00` |  |
-| 798be2af9a94 | Massage Switch | shortAndLongPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `4C` / `00` |  |
-| 2ae78fe2056f | Title Massage Japan | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
-| 6f8f9641288c | Mlily Menu | sustainPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` | local |
-| d7ec05d2d681 | Head And Foot Up | sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `29` / `00` | hidden |
-| b73241ec2198 | Un Wind Position | shortAndLongPress | `6E 01 00 8C FB` / `6E 01 00 8D FC` | `8C` / `8D` |  |
-| bf7378a0d6b3 | Wake Up Position | shortAndLongPress | `6E 01 00 93 02` / `6E 01 00 94 03` | `93` / `94` |  |
-| a69ac0b746b0 | Sleep Position | shortAndLongPress | `6E 01 00 8E FD` / `6E 01 00 8F FE` | `8E` / `8F` |  |
-| 3f4b74a17f67 | Massage Mode Change | shortPress | `6E 01 00 39 A8` / `6E 01 00 00 6F` | `39` / `00` |  |
-| ae1f78b6afb3 | Head And Foot Up | sustainPress | `6E 01 00 96 05` / `6E 01 00 00 6F` | `96` / `00` |  |
-| 40f883b6ac2b | Head And Foot Down | sustainPress | `6E 01 00 97 06` / `6E 01 00 00 6F` | `97` / `00` |  |
-| a966d07dc322 | Massage Mode All Off | sustainPress | `6E 01 00 5E CD` / `6E 01 00 00 6F` | `5E` / `00` |  |
-| f7b6f0f21335 | Massage Mode All Off | shortPress | `6E 01 00 5E CD` / `6E 01 00 00 6F` | `5E` / `00` | hidden |
-| 9883c4c11c1b | Massage Lumbar Instensity Strengthen | shortPress | `6E 01 00 E0 4F` / `6E 01 00 00 6F` | `E0` / `00` |  |
-| adbc6ec7023d | Coaxing Sleep Mode | shortPress | `6E 01 00 86 F5` / `6E 01 00 89 F8` | `86` / `89` |  |
-| 290d9910a4d6 | Head Up | shortPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |  |
-| 1719150dc50c | Head Down | shortPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |  |
-| 8220cfc68b4c | Foot Down | shortPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `27` / `00` |  |
-| c4aa46ccfc61 | Pillow Up | shortPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |  |
-| fcdb3da2d700 | Pillow Down | shortPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |  |
-| 002aebdb0a22 | All Motor Up | shortPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` |  |
-| a38b6b922f03 | All Motor Down | shortPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` |  |
-| c08507546144 | Coaxing Sleep Mode2 | shortPress | `6E 01 00 87 F6` / `6E 01 00 00 6F` | `87` / `00` |  |
-| c2b08d0842de | Coaxing Sleep Mode3 | shortPress | `6E 01 00 88 F7` / `6E 01 00 00 6F` | `88` / `00` |  |
-| 216754480545 | Help Get Up Position | shortAndLongPress | `6E 01 00 3D AC` / `6E 01 00 F8 67` | `3D` / `F8` |  |
-| 90483ec7049a | Yoga Position | shortPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
-| 1791ad47505a | Forword | sustainPress | `6E 01 00 5B CA` / `6E 01 00 00 6F` | `5B` / `00` |  |
-| 26dec4df5a23 | Backward | sustainPress | `6E 01 00 5C CB` / `6E 01 00 00 6F` | `5C` / `00` |  |
-| 8f924ee61014 | Swing Help Sleep | sustainPress | `6E 01 00 76 E5` / `6E 01 00 00 6F` | `76` / `00` |  |
-| fa348b746fa6 | Head Down | sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |  |
-| 9ed1afa85901 | Head Up | sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |  |
-| fc6b2ae62c27 | Zero Gravity Motor Down | sustainPress | `6E 01 00 72 E1` / `6E 01 00 00 6F` | `72` / `00` |  |
-| f58be5dcd1fe | Zero Gravity Motor Up | sustainPress | `6E 01 00 71 E0` / `6E 01 00 00 6F` | `71` / `00` |  |
-| 0e0ea393ef1e | Pillow Down | sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |  |
-| 10511feca46c | Pillow Up | sustainPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |  |
-| e73cc3cccaca | Lumbar Down | sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |  |
-| 1e7a055c5cb4 | Lumbar Up | sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |  |
-| b3d7c4c9f76b | Sit Position | sustainPress | `6E 01 00 E5 54` / `6E 01 00 00 6F` | `E5` / `00` |  |
-| 5d879bb26b68 | All Motor Up | sustainPress | `6E 01 00 5B CA` / `6E 01 00 00 6F` | `5B` / `00` |  |
-| b7f6aa4c400e | None | sustainPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
-| 42bfa59734d3 | All Motor Down | sustainPress | `6E 01 00 5C CB` / `6E 01 00 00 6F` | `5C` / `00` |  |
-| e77a18d88f25 | Head And Foot Up | shortPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `29` / `00` |  |
-| 18368dd0106a | Motor Reset | shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |  |
-| 2baeb8064f93 | Sync On | longPress | `6E 01 00 BC 2B` / `6E 01 00 BC 2B` | `BC` / `BC` |  |
-| 4acd433d5358 | Sync Off | longPress | `6E 01 00 BD 2C` / `6E 01 00 BD 2C` | `BD` / `BD` |  |
-| d83949b70674 | All Motor Up | sustainPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` | hidden |
-| d9be9bdbf73f | All Motor Down | sustainPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` | hidden |
-| 96fa600efc5a | Lounge Position | shortPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |  |
-| d1b4075edc9c | Reading Position | shortPress | `6E 01 00 F2 61` / `6E 01 00 F3 62` | `F2` / `F3` |  |
-| 002dd35e5d0a | Zero Gravity2 | shortPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
-| dbad80951ce1 | Deep Sleep Position | shortPress | `6E 01 00 F6 65` / `6E 01 00 F7 66` | `F6` / `F7` |  |
-| 54c13a02b356 | T V Position | shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |  |
-| 905d025dc026 | Zero Gravity | shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |  |
-| e9c2c0671d97 | Zero Gravity2 | shortPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
-| 06098b3bf431 | Anti Snoring | shortPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |  |
-| 327d71fae3ff | Lounge Position | shortPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |  |
-| 4f5e1c0d1218 | Memory Position1 | shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |  |
-| 3228164a54b8 | Memory Position2 | shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |  |
-| 2210609e88f8 | Wake Up | shortPress | `6E 01 00 85 F4` / `6E 01 00 00 6F` | `85` / `00` |  |
-| cc8810821e84 | Memory Position3 | shortPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |  |
-| 1693947c0792 | Memory Position5 | shortPress | `6E 01 00 F4 63` / `6E 01 00 F5 64` | `F4` / `F5` |  |
-| d29e676e4bc9 | Massage Head Instensity Strengthen | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `4C` / `00` |  |
-| 2b03e7d24309 | Massage Foot Instensity Strengthen | shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `4E` / `00` |  |
-| 2256dbe95090 | Massage Mode All On | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |  |
-| 825d5590da69 | Alarm Mode1 | shortPress | `6E 01 00 B0 1F` / `6E 01 00 00 6F` | `B0` / `00` |  |
-| 559de78abf9b | Alarm Mode2 | shortPress | `6E 01 00 B1 20` / `6E 01 00 00 6F` | `B1` / `00` |  |
-| b49407ca4efb | Reading Position | shortPress | `6E 01 00 F2 61` / `6E 01 00 F3 62` | `F2` / `F3` |  |
-| 176c6f31715f | Alarm Mode1 | shortPress | `6E 01 00 F5 64` / `6E 01 00 00 6F` | `F5` / `00` |  |
-| c47e1167bb98 | All Motor Up | shortPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` |  |
-| 12629335d2cb | All Motor Down | shortPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` |  |
-| 6cf2073c55b5 | Memory Position4 | shortPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |  |
+| c60949e83877 | Memory position 2 | shortPress | `6E 01 00 2C 9B` / `6E 01 00 2C 9B` | `2C` / `2C` |  |
+| 60e96affa5ae | Memory position 3 | shortPress | `6E 01 00 2D 9C` / `6E 01 00 2D 9C` | `2D` / `2D` |  |
+| 416a4029b7a8 | Motor reset | shortPress | `6E 01 00 30 9F` / `6E 01 00 00 6F` | `30` / `00` |  |
+| 798be2af9a94 | Massage on/off | shortAndLongPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `4C` / `00` |  |
+| 2ae78fe2056f | Japanese massage menu | shortPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
+| 6f8f9641288c | Menu | sustainPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` | local |
+| d7ec05d2d681 | Head and foot up | sustainPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `29` / `00` | hidden |
+| b73241ec2198 | Unwind position | shortAndLongPress | `6E 01 00 8C FB` / `6E 01 00 8D FC` | `8C` / `8D` |  |
+| bf7378a0d6b3 | Wake up position | shortAndLongPress | `6E 01 00 93 02` / `6E 01 00 94 03` | `93` / `94` |  |
+| a69ac0b746b0 | Sleep position | shortAndLongPress | `6E 01 00 8E FD` / `6E 01 00 8F FE` | `8E` / `8F` |  |
+| 3f4b74a17f67 | Massage mode change | shortPress | `6E 01 00 39 A8` / `6E 01 00 00 6F` | `39` / `00` |  |
+| ae1f78b6afb3 | Head and foot up | sustainPress | `6E 01 00 96 05` / `6E 01 00 00 6F` | `96` / `00` |  |
+| 40f883b6ac2b | Head and foot down | sustainPress | `6E 01 00 97 06` / `6E 01 00 00 6F` | `97` / `00` |  |
+| a966d07dc322 | Massage mode all off | sustainPress | `6E 01 00 5E CD` / `6E 01 00 00 6F` | `5E` / `00` |  |
+| f7b6f0f21335 | Massage mode all off | shortPress | `6E 01 00 5E CD` / `6E 01 00 00 6F` | `5E` / `00` | hidden |
+| 9883c4c11c1b | Massage lumbar intensity up | shortPress | `6E 01 00 E0 4F` / `6E 01 00 00 6F` | `E0` / `00` |  |
+| adbc6ec7023d | Sleep aid | shortPress | `6E 01 00 86 F5` / `6E 01 00 89 F8` | `86` / `89` |  |
+| 290d9910a4d6 | Head up | shortPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |  |
+| 1719150dc50c | Head down | shortPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |  |
+| 8220cfc68b4c | Foot down | shortPress | `6E 01 00 27 96` / `6E 01 00 00 6F` | `27` / `00` |  |
+| c4aa46ccfc61 | Pillow up | shortPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |  |
+| fcdb3da2d700 | Pillow down | shortPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |  |
+| 002aebdb0a22 | All motor up | shortPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` |  |
+| a38b6b922f03 | All motor down | shortPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` |  |
+| c08507546144 | Sleep aid 2 | shortPress | `6E 01 00 87 F6` / `6E 01 00 00 6F` | `87` / `00` |  |
+| c2b08d0842de | Sleep aid 3 | shortPress | `6E 01 00 88 F7` / `6E 01 00 00 6F` | `88` / `00` |  |
+| 216754480545 | Get-up assist position | shortAndLongPress | `6E 01 00 3D AC` / `6E 01 00 F8 67` | `3D` / `F8` |  |
+| 90483ec7049a | Yoga position | shortPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
+| 1791ad47505a | Sofa forward | sustainPress | `6E 01 00 5B CA` / `6E 01 00 00 6F` | `5B` / `00` |  |
+| 26dec4df5a23 | Sofa backward | sustainPress | `6E 01 00 5C CB` / `6E 01 00 00 6F` | `5C` / `00` |  |
+| 8f924ee61014 | Swing sleep aid | sustainPress | `6E 01 00 76 E5` / `6E 01 00 00 6F` | `76` / `00` |  |
+| fa348b746fa6 | Head down | sustainPress | `6E 01 00 25 94` / `6E 01 00 00 6F` | `25` / `00` |  |
+| 9ed1afa85901 | Head up | sustainPress | `6E 01 00 24 93` / `6E 01 00 00 6F` | `24` / `00` |  |
+| fc6b2ae62c27 | Zero gravity motor down | sustainPress | `6E 01 00 72 E1` / `6E 01 00 00 6F` | `72` / `00` |  |
+| f58be5dcd1fe | Zero gravity motor up | sustainPress | `6E 01 00 71 E0` / `6E 01 00 00 6F` | `71` / `00` |  |
+| 0e0ea393ef1e | Pillow down | sustainPress | `6E 01 00 42 B1` / `6E 01 00 00 6F` | `42` / `00` |  |
+| 10511feca46c | Pillow up | sustainPress | `6E 01 00 41 B0` / `6E 01 00 00 6F` | `41` / `00` |  |
+| e73cc3cccaca | Lumbar down | sustainPress | `6E 01 00 40 AF` / `6E 01 00 00 6F` | `40` / `00` |  |
+| 1e7a055c5cb4 | Lumbar up | sustainPress | `6E 01 00 3F AE` / `6E 01 00 00 6F` | `3F` / `00` |  |
+| b3d7c4c9f76b | Sit position | sustainPress | `6E 01 00 E5 54` / `6E 01 00 00 6F` | `E5` / `00` |  |
+| 5d879bb26b68 | All motor up | sustainPress | `6E 01 00 5B CA` / `6E 01 00 00 6F` | `5B` / `00` |  |
+| b7f6aa4c400e | No action | sustainPress | `6E 01 00 00 6F` / `6E 01 00 00 6F` | `00` / `00` |  |
+| 42bfa59734d3 | All motor down | sustainPress | `6E 01 00 5C CB` / `6E 01 00 00 6F` | `5C` / `00` |  |
+| e77a18d88f25 | Head and foot up | shortPress | `6E 01 00 29 98` / `6E 01 00 00 6F` | `29` / `00` |  |
+| 18368dd0106a | Motor reset | shortPress | `6E 01 00 47 B6` / `6E 01 00 00 6F` | `47` / `00` |  |
+| 2baeb8064f93 | Sync on | longPress | `6E 01 00 BC 2B` / `6E 01 00 BC 2B` | `BC` / `BC` |  |
+| 4acd433d5358 | Sync off | longPress | `6E 01 00 BD 2C` / `6E 01 00 BD 2C` | `BD` / `BD` |  |
+| d83949b70674 | All motor up | sustainPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` | hidden |
+| d9be9bdbf73f | All motor down | sustainPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` | hidden |
+| 96fa600efc5a | Lounge position | shortPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |  |
+| d1b4075edc9c | Reading position | shortPress | `6E 01 00 F2 61` / `6E 01 00 F3 62` | `F2` / `F3` |  |
+| 002dd35e5d0a | Zero gravity 2 | shortPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
+| dbad80951ce1 | Deep sleep position | shortPress | `6E 01 00 F6 65` / `6E 01 00 F7 66` | `F6` / `F7` |  |
+| 54c13a02b356 | TV position | shortPress | `6E 01 00 58 C7` / `6E 01 00 64 D3` | `58` / `64` |  |
+| 905d025dc026 | Zero gravity | shortPress | `6E 01 00 45 B4` / `6E 01 00 66 D5` | `45` / `66` |  |
+| e9c2c0671d97 | Zero gravity 2 | shortPress | `6E 01 00 6B DA` / `6E 01 00 6A D9` | `6B` / `6A` |  |
+| 06098b3bf431 | Anti-snore | shortPress | `6E 01 00 46 B5` / `6E 01 00 69 D8` | `46` / `69` |  |
+| 327d71fae3ff | Lounge position | shortPress | `6E 01 00 59 C8` / `6E 01 00 65 D4` | `59` / `65` |  |
+| 4f5e1c0d1218 | Memory position 1 | shortPress | `6E 01 00 2E 9D` / `6E 01 00 2B 9A` | `2E` / `2B` |  |
+| 3228164a54b8 | Memory position 2 | shortPress | `6E 01 00 2F 9E` / `6E 01 00 2C 9B` | `2F` / `2C` |  |
+| 2210609e88f8 | Wake up | shortPress | `6E 01 00 85 F4` / `6E 01 00 00 6F` | `85` / `00` |  |
+| cc8810821e84 | Memory position 3 | shortPress | `6E 01 00 30 9F` / `6E 01 00 2D 9C` | `30` / `2D` |  |
+| 1693947c0792 | Memory position 5 | shortPress | `6E 01 00 F4 63` / `6E 01 00 F5 64` | `F4` / `F5` |  |
+| d29e676e4bc9 | Massage head intensity up | shortPress | `6E 01 00 4C BB` / `6E 01 00 00 6F` | `4C` / `00` |  |
+| 2b03e7d24309 | Massage foot intensity up | shortPress | `6E 01 00 4E BD` / `6E 01 00 00 6F` | `4E` / `00` |  |
+| 2256dbe95090 | Massage mode all on | shortPress | `6E 01 00 5D CC` / `6E 01 00 00 6F` | `5D` / `00` |  |
+| 825d5590da69 | Alarm mode 1 | shortPress | `6E 01 00 B0 1F` / `6E 01 00 00 6F` | `B0` / `00` |  |
+| 559de78abf9b | Alarm mode 2 | shortPress | `6E 01 00 B1 20` / `6E 01 00 00 6F` | `B1` / `00` |  |
+| b49407ca4efb | Reading position | shortPress | `6E 01 00 F2 61` / `6E 01 00 F3 62` | `F2` / `F3` |  |
+| 176c6f31715f | Alarm mode 1 | shortPress | `6E 01 00 F5 64` / `6E 01 00 00 6F` | `F5` / `00` |  |
+| c47e1167bb98 | All motor up | shortPress | `6E 01 00 56 C5` / `6E 01 00 00 6F` | `56` / `00` |  |
+| 12629335d2cb | All motor down | shortPress | `6E 01 00 57 C6` / `6E 01 00 00 6F` | `57` / `00` |  |
+| 6cf2073c55b5 | Memory position 4 | shortPress | `6E 01 00 B2 21` / `6E 01 00 B3 22` | `B2` / `B3` |  |
 <!-- /generated -->
 
 <details>
@@ -4663,10 +4632,7 @@ requested. Native session identity prevents cross-device report and command race
 
 #### Evidence
 
-APK Protocol Audit row159, MLILY Control 5.0.2, artifact set
-`3f69a06f281b6c1e79c3db4aca9639cbf504b668ccb2765dfa0a39850b4f4c51`.
-The accepted reconciliation002 and independent audit001 establish the exact
-catalog, corrected framing and alarm closure. Literal vectors are in
+Based on MLILY Control 5.0.2. Literal vectors are in
 `tests/fixtures/mlily/`; all normal bed frames use the Richmat codec and sleep
 JSON uses the shared sleep-envelope codec. Static evidence does not establish
 physical effects, over-air delivery, alarm accuracy or persistence.
@@ -4709,251 +4675,251 @@ gates. Catalog declarations without a live control binding do not create bed ent
 
 | Descriptor | Control | Short (left) | Save / long (left) |
 |---|---|---|---|
-| `caf351` | None | `6E 01 00 00 6F` | `6E 01 00 00 6F` |
+| `caf351` | No action | `6E 01 00 00 6F` | `6E 01 00 00 6F` |
 | `caf3d1` | Stop | `6E 01 00 6E DD` | `6E 01 00 00 6F` |
-| `caf451` | Bed Light Close | `6E 01 00 75 E4` | `6E 01 00 00 6F` |
-| `caf4d1` | Exit Limit | `6E 02 01 00 71` | `6E 02 01 00 71` |
-| `caf551` | Send Stop Detection | `6E 01 00 00 6F` | `6E 01 00 00 6F` |
-| `caf5d1` | Send Start Detection | `6E 88 C2 10 C8` | `6E 88 C2 00 B8` |
-| `caf651` | Music Switch Sound Track | `6E 01 00 C4 33` | `6E 01 00 00 6F` |
-| `caf6d1` | Music Blue Tooth Switch | `6E 01 00 D8 47` | `6E 01 00 00 6F` |
-| `caf751` | Control Box Lock | `6E 01 00 84 F3` | `6E 01 00 84 F3` |
-| `caf7d1` | Relieve Zero Gravity Setting | `6E 01 00 62 D1` | `6E 01 00 00 6F` |
-| `caf851` | Memory Position3 | `6E 01 00 30 9F` | `6E 01 00 2D 9C` |
-| `caf8d1` | Memory Position2 | `6E 01 00 2F 9E` | `6E 01 00 2C 9B` |
-| `caf951` | Memory Position1 | `6E 01 00 2E 9D` | `6E 01 00 2B 9A` |
-| `caf9d1` | T V Position | `6E 01 00 58 C7` | `6E 01 00 64 D3` |
-| `cafa51` | Zero Gravity | `6E 01 00 45 B4` | `6E 01 00 66 D5` |
-| `cafad1` | Lounge Position | `6E 01 00 59 C8` | `6E 01 00 65 D4` |
-| `cafb51` | Anti Snoring | `6E 01 00 46 B5` | `6E 01 00 69 D8` |
-| `cafbd1` | Reading Position | `6E 01 00 F2 61` | `6E 01 00 F3 62` |
-| `cafc51` | Lumbar Memory Position | `6E 01 00 91 00` | `6E 01 00 92 01` |
-| `cafcd1` | Relieve Zero Gravity Setting | `6E 01 00 62 D1` | `6E 01 00 00 6F` |
-| `cafd51` | Massage30 Minute Up And Down | `6E 01 00 90 FF` | `6E 01 00 00 6F` |
-| `cafdd1` | Massage15 Minute Up And Down | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
-| `cafe51` | Release Pressur Position | `6E 01 00 C5 34` | `6E 01 00 00 6F` |
-| `cafed1` | Help Get Up Position | `6E 01 00 3D AC` | `6E 01 00 F8 67` |
-| `caff51` | Yoga Position | `6E 01 00 F0 5F` | `6E 01 00 F1 60` |
-| `caffd1` | Relax Position | `6E 01 00 70 DF` | `6E 01 00 95 04` |
-| `cb0051` | Memory Position4 | `6E 01 00 B2 21` | `6E 01 00 B3 22` |
-| `cb00d1` | Help Get Up | `6E 01 00 3D AC` | `6E 01 00 00 6F` |
-| `cb0151` | Yoga Position | `6E 01 00 6B DA` | `6E 01 00 6A D9` |
-| `cb01d1` | Sleep Position | `6E 01 00 8E FD` | `6E 01 00 8F FE` |
-| `cb0251` | Yoga Position | `6E 01 00 30 9F` | `6E 01 00 2D 9C` |
-| `cb02d1` | Timing Flat Position | `6E 01 00 FE 6D` | `6E 01 00 00 6F` |
-| `cb0351` | Zero Gravity2 | `6E 01 00 6B DA` | `6E 01 00 6A D9` |
-| `cb03d1` | Side Sleep Position | `6E 01 00 BA 29` | `6E 01 00 BB 2A` |
-| `cb0451` | Coaxing Sleep Mode | `6E 01 00 86 F5` | `6E 01 00 89 F8` |
-| `cb04d1` | Lounge Position | `6E 01 00 59 C8` | `6E 01 00 65 D4` |
-| `cb0551` | T V Position | `6E 01 00 58 C7` | `6E 01 00 64 D3` |
-| `cb05d1` | Zero Gravity | `6E 01 00 45 B4` | `6E 01 00 66 D5` |
-| `cb0651` | Help Get Up Position | `6E 01 00 3D AC` | `6E 01 00 F8 67` |
-| `cb06d1` | Relieve Snore Setting | `6E 01 00 CB 3A` | `6E 01 00 00 6F` |
-| `cb0751` | Deep Sleep Position | `6E 01 00 F6 65` | `6E 01 00 F7 66` |
-| `cb07d1` | Massage15 Minute Spine Guard | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
-| `cb0851` | Memory Position5 | `6E 01 00 F4 63` | `6E 01 00 F5 64` |
-| `cb08d1` | Yoga Position | `6E 01 00 6B DA` | `6E 01 00 6A D9` |
-| `cb0951` | Coaxing Sleep Mode3 | `6E 01 00 88 F7` | `6E 01 00 00 6F` |
-| `cb09d1` | Coaxing Sleep Mode2 | `6E 01 00 87 F6` | `6E 01 00 00 6F` |
-| `cb0a51` | Help Sleep Mode1 | `6E 01 00 86 F5` | `6E 01 00 00 6F` |
-| `cb0ad1` | Massage30 Minute Timer | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
-| `cb0b51` | Massage20 Minute Timer | `6E 01 00 63 D2` | `6E 01 00 00 6F` |
-| `cb0bd1` | Massage10 Minute Timer | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
-| `cb0c51` | Memory Position1 | `6E 01 00 76 E5` | `6E 01 00 2B 9A` |
-| `cb0cd1` | Help Sleep Mode1 | `6E 01 00 86 F5` | `6E 01 00 00 6F` |
-| `cb0d51` | Coaxing Sleep Mode | `6E 01 00 76 E5` | `6E 01 00 89 F8` |
-| `cb0dd1` | Coaxing Sleep Mode | `6E 01 00 C5 34` | `6E 01 00 89 F8` |
-| `cb0e51` | Wake Up | `6E 01 00 85 F4` | `6E 01 00 00 6F` |
-| `cb0ed1` | Coaxing Sleep Mode | `6E 01 00 86 F5` | `6E 01 00 89 F8` |
-| `cb0f51` | Head And Foot All Up | `6E 01 00 23 92` | `6E 01 00 00 6F` |
-| `cb0fd1` | Foot Up And Head Down | `6E 01 00 22 91` | `6E 01 00 00 6F` |
-| `cb1051` | Head Up And Foot Down | `6E 01 00 21 90` | `6E 01 00 00 6F` |
-| `cb10d1` | Motor Reset2 | `6E 01 00 6C DB` | `6E 01 00 00 6F` |
-| `cb1151` | Head Up And Foot Stop | `6E 01 00 3D AC` | `6E 01 00 00 6F` |
-| `cb11d1` | Wake Up Position | `6E 01 00 93 02` | `6E 01 00 94 03` |
-| `cb1251` | Relax Position | `6E 01 00 70 DF` | `6E 01 00 95 04` |
-| `cb12d1` | Un Wind Position | `6E 01 00 8C FB` | `6E 01 00 8D FC` |
-| `cb1351` | Tile Down | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
-| `cb13d1` | Tile Up | `6E 01 00 43 B2` | `6E 01 00 00 6F` |
-| `cb1451` | Bed Light | `6E 01 00 3C AB` | `6E 01 00 00 6F` |
-| `cb14d1` | Motor Reset | `6E 01 00 31 A0` | `6E 01 00 00 6F` |
-| `cb1551` | Pillow Down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
-| `cb15d1` | Pillow Up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
-| `cb1651` | Lumbar Down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
-| `cb16d1` | Lumbar Up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
-| `cb1751` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
-| `cb17d1` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
-| `cb1851` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
-| `cb18d1` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
-| `cb1951` | Light Board | `6E 01 00 50 BF` | `6E 01 00 00 6F` |
-| `cb19d1` | Pillow Down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
-| `cb1a51` | Pillow Up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
-| `cb1ad1` | Lumbar Down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
-| `cb1b51` | Lumbar Up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
-| `cb1bd1` | Phone Light | `6E 01 00 00 6F` | `6E 01 00 00 6F` |
-| `cb1c51` | Motor3 Down | `6E 01 00 72 E1` | `6E 01 00 00 6F` |
-| `cb1cd1` | Motor3 Up | `6E 01 00 71 E0` | `6E 01 00 00 6F` |
-| `cb1d51` | Head And Foot Up | `6E 01 00 29 98` | `6E 01 00 00 6F` |
-| `cb1dd1` | Foot Up And Head Down | `6E 01 00 22 91` | `6E 01 00 00 6F` |
-| `cb1e51` | Head And Foot All Up | `6E 01 00 23 92` | `6E 01 00 00 6F` |
-| `cb1ed1` | Head Up And Foot Down | `6E 01 00 21 90` | `6E 01 00 00 6F` |
-| `cb1f51` | Head And Foot Down | `6E 01 00 2A 99` | `6E 01 00 00 6F` |
-| `cb1fd1` | All Motor Down | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
-| `cb2051` | All Motor Up | `6E 01 00 43 B2` | `6E 01 00 00 6F` |
-| `cb20d1` | Lumbar Up | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
-| `cb2151` | Tile Down | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
-| `cb21d1` | Tile Up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
-| `cb2251` | All Motor Down | `6E 01 00 57 C6` | `6E 01 00 00 6F` |
-| `cb22d1` | All Motor Up | `6E 01 00 56 C5` | `6E 01 00 00 6F` |
-| `cb2351` | Motor Reset2 | `6E 01 00 6C DB` | `6E 01 00 00 6F` |
-| `cb23d1` | Head Up And Foot Stop | `6E 01 00 3D AC` | `6E 01 00 00 6F` |
-| `cb2451` | Sync Off | `6E 01 00 BD 2C` | `6E 01 00 BD 2C` |
-| `cb24d1` | Sync On | `6E 01 00 BC 2B` | `6E 01 00 BC 2B` |
-| `cb2551` | Motor4 Down | `6E 01 00 74 E3` | `6E 01 00 00 6F` |
-| `cb25d1` | Motor4 Up | `6E 01 00 73 E2` | `6E 01 00 00 6F` |
-| `cb2651` | Motor5 Down | `6E 01 00 D1 40` | `6E 01 00 00 6F` |
-| `cb26d1` | Motor5 Up | `6E 01 00 D0 3F` | `6E 01 00 00 6F` |
-| `cb2751` | Motor3 Up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
-| `cb27d1` | Motor4 Up | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
-| `cb2851` | Light Board | `6E 01 00 50 BF` | `6E 01 00 00 6F` |
-| `cb28d1` | Head And Foot Down | `6E 01 00 57 C6` | `6E 01 00 00 6F` |
-| `cb2951` | Head And Foot Up | `6E 01 00 56 C5` | `6E 01 00 00 6F` |
-| `cb29d1` | Sofa Backward | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
-| `cb2a51` | Sofa Forword | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
-| `cb2ad1` | Motor4 Down | `6E 01 00 74 E3` | `6E 01 00 00 6F` |
-| `cb2b51` | Tile Down | `6E 01 00 73 E2` | `6E 01 00 00 6F` |
-| `cb2bd1` | Tile Up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
-| `cb2c51` | All Motor Down | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
-| `cb2cd1` | All Motor Up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
-| `cb2d51` | Motor Reset | `6E 01 00 47 B6` | `6E 01 00 00 6F` |
-| `cb2dd1` | Motor4 Down | `6E 01 00 2A 99` | `6E 01 00 00 6F` |
-| `cb2e51` | Motor4 Up | `6E 01 00 29 98` | `6E 01 00 00 6F` |
-| `cb2ed1` | Motor4 Down | `6E 01 00 7B EA` | `6E 01 00 00 6F` |
-| `cb2f51` | Motor4 Up | `6E 01 00 7A E9` | `6E 01 00 00 6F` |
-| `cb2fd1` | Motor3 Down | `6E 01 00 72 E1` | `6E 01 00 00 6F` |
-| `cb3051` | Motor3 Up | `6E 01 00 71 E0` | `6E 01 00 00 6F` |
-| `cb30d1` | Head And Foot Down | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
-| `cb3151` | Head And Foot Up | `6E 01 00 43 B2` | `6E 01 00 00 6F` |
-| `cb31d1` | Foot Down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
-| `cb3251` | Foot Up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
-| `cb32d1` | Head Down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
-| `cb3351` | Head Up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
-| `cb33d1` | Head And Foot Down | `6E 01 00 31 A0` | `6E 01 00 00 6F` |
-| `cb3451` | Head And Foot Up | `6E 01 00 23 92` | `6E 01 00 00 6F` |
-| `cb34d1` | Head And Foot Down | `6E 01 00 97 06` | `6E 01 00 00 6F` |
-| `cb3551` | Head And Foot Up | `6E 01 00 96 05` | `6E 01 00 00 6F` |
-| `cb35d1` | Massage30 Minute Timer | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
-| `cb3651` | Massage20 Minute Timer | `6E 01 00 63 D2` | `6E 01 00 00 6F` |
-| `cb36d1` | Massage10 Minute Timer | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
-| `cb3751` | Massage Mode Change | `6E 01 00 48 B7` | `6E 01 00 00 6F` |
-| `cb37d1` | Massage Mode All Off | `6E 01 00 5E CD` | `6E 01 00 00 6F` |
-| `cb3851` | Massage Foot Instensity Strengthen | `6E 01 00 4E BD` | `6E 01 00 00 6F` |
-| `cb38d1` | Massage Head Instensity Strengthen | `6E 01 00 4C BB` | `6E 01 00 00 6F` |
-| `cb3951` | Massage Instensity Strengthen | `6E 01 00 34 A3` | `6E 01 00 00 6F` |
-| `cb39d1` | Massage Foot Instensity Weaken | `6E 01 00 4F BE` | `6E 01 00 00 6F` |
-| `cb3a51` | Massage Head Instensity Weaken | `6E 01 00 4D BC` | `6E 01 00 00 6F` |
-| `cb3ad1` | Massage Foot Instensity Strengthen | `6E 01 00 4E BD` | `6E 01 00 00 6F` |
-| `cb3b51` | Massage Head Instensity Strengthen | `6E 01 00 4C BB` | `6E 01 00 00 6F` |
-| `cb3bd1` | Heating Switch | `6E 01 00 A0 0F` | `6E 01 00 00 6F` |
-| `cb3c51` | Massage Fan Instensity Strengthen | `6E 01 00 E1 50` | `6E 01 00 00 6F` |
-| `cb3cd1` | Music Volumu Down | `6E 01 00 D5 44` | `6E 01 00 00 6F` |
-| `cb3d51` | Music Volumu Up | `6E 01 00 D4 43` | `6E 01 00 00 6F` |
-| `cb3dd1` | Music Pause Play | `6E 01 00 D7 46` | `6E 01 00 00 6F` |
-| `cb3e51` | Music Shake Mode | `6E 01 00 D6 45` | `6E 01 00 00 6F` |
-| `cb3ed1` | Massage Mode Wave | `6E 01 00 39 A8` | `6E 01 00 00 6F` |
-| `cb3f51` | Massage Mode All Off | `6E 01 00 5A C9` | `6E 01 00 00 6F` |
-| `cb3fd1` | Massage Instensity First Gear | `6E 01 00 67 D6` | `6E 01 00 00 6F` |
-| `cb4051` | Massage Instensity Third Gear | `6E 01 00 68 D7` | `6E 01 00 00 6F` |
-| `cb40d1` | Massage2 Open Or Close | `6E 01 00 33 A2` | `6E 01 00 00 6F` |
-| `cb4151` | Massage1 Open Or Close | `6E 01 00 32 A1` | `6E 01 00 00 6F` |
-| `cb41d1` | Massage Mode Wave Third Mode | `6E 01 00 4B BA` | `6E 01 00 00 6F` |
-| `cb4251` | Massage Mode All On | `6E 01 00 5D CC` | `6E 01 00 00 6F` |
-| `cb42d1` | Massage2 Instensity | `6E 01 00 A5 14` | `6E 01 00 00 6F` |
-| `cb4351` | Massage1 Instensity | `6E 01 00 A4 13` | `6E 01 00 00 6F` |
-| `cb43d1` | Massage Mode All Off | `6E 01 00 47 B6` | `6E 01 00 00 6F` |
-| `cb4451` | Massage Switch | `6E 01 00 5D CC` | `6E 01 00 00 6F` |
-| `cb44d1` | Massage Mode All Off | `6E 01 00 5D CC` | `6E 01 00 00 6F` |
-| `cb4551` | Motor And Massage All Off | `6E 01 00 47 B6` | `6E 01 00 00 6F` |
-| `cb45d1` | Music Cut | `6E 01 00 B8 27` | `6E 01 00 00 6F` |
-| `cb4651` | Adjust Volume | `6E 01 00 B7 26` | `6E 01 00 00 6F` |
-| `cb46d1` | Music Close | `6E 01 00 B9 28` | `6E 01 00 00 6F` |
-| `cb4751` | Massage15 Minute Timer | `6E 01 00 60 CF` | `6E 01 00 00 6F` |
-| `cb47d1` | Massage Lumbar Instensity Strengthen | `6E 01 00 E0 4F` | `6E 01 00 00 6F` |
-| `cb4851` | Massage Mode All Off | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
-| `cb48d1` | Swing Mode Switch | `6E 01 00 D6 45` | `6E 01 00 00 6F` |
-| `cb4951` | Swing On And Off | `6E 01 00 D8 47` | `6E 01 00 00 6F` |
-| `cb49d1` | Swing Help Sleep | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
-| `cb4a51` | Music Next Song | `6E 01 00 D3 42` | `6E 01 00 00 6F` |
-| `cb4ad1` | Music Previous Song | `6E 01 00 D2 41` | `6E 01 00 00 6F` |
-| `cb4b51` | Music Lock | `6E 01 00 D9 48` | `6E 01 00 00 6F` |
-| `cb4bd1` | Massage Mode All Off | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
-| `cb4c51` | Massage Mode All Off | `6E 01 00 34 A3` | `6E 01 00 00 6F` |
-| `cb4cd1` | Fan Timer5 Hour | `6E 01 00 A8 17` | `6E 01 00 00 6F` |
-| `cb4d51` | Fan Timer3 Hour | `6E 01 00 A7 16` | `6E 01 00 00 6F` |
-| `cb4dd1` | Fan Timer2 Hour | `6E 01 00 A6 15` | `6E 01 00 00 6F` |
-| `cb4e51` | Fan Change Mode | `6E 01 00 A2 11` | `6E 01 00 00 6F` |
-| `cb4ed1` | Fan All Off | `6E 01 00 A1 10` | `6E 01 00 00 6F` |
-| `cb4f51` | Fan2 Instensity Strengthen | `6E 01 00 8B FA` | `6E 01 00 00 6F` |
-| `cb4fd1` | Fan1 Instensity Strengthen | `6E 01 00 8A F9` | `6E 01 00 00 6F` |
-| `cb5051` | Anti Pinch Sensitivity Mode Change | `6E 01 00 BE 2D` | `6E 01 00 00 6F` |
-| `cb50d1` | Massage Mode Constant | `6E 01 00 3A A9` | `6E 01 00 00 6F` |
-| `cb5151` | Massage Mode Pulse | `6E 01 00 38 A7` | `6E 01 00 00 6F` |
-| `cb51d1` | Massage Switch | `6E 01 00 6F DE` | `6E 01 00 00 6F` |
-| `cb5251` | Massage Speed Weaken | `6E 01 00 37 A6` | `6E 01 00 00 6F` |
-| `cb52d1` | Massage Speed Strengthen | `6E 01 00 36 A5` | `6E 01 00 00 6F` |
-| `cb5351` | Massage Instensity Weaken | `6E 01 00 35 A4` | `6E 01 00 00 6F` |
-| `cb53d1` | Massage Foot Instens Third Mode | `6E 01 00 9F 0E` | `6E 01 00 00 6F` |
-| `cb5451` | Massage Foot Instens Second Mode | `6E 01 00 9E 0D` | `6E 01 00 00 6F` |
-| `cb54d1` | Massage Foot Instens First Mode | `6E 01 00 9D 0C` | `6E 01 00 00 6F` |
-| `cb5551` | Massage Foot Off | `6E 01 00 9C 0B` | `6E 01 00 00 6F` |
-| `cb55d1` | Massage Head Instens Third Mode | `6E 01 00 9B 0A` | `6E 01 00 00 6F` |
-| `cb5651` | Massage Head Instens Second Mode | `6E 01 00 9A 09` | `6E 01 00 00 6F` |
-| `cb56d1` | Massage Head Instens First Mode | `6E 01 00 99 08` | `6E 01 00 00 6F` |
-| `cb5751` | Massage Head Off | `6E 01 00 98 07` | `6E 01 00 00 6F` |
-| `cb57d1` | Heating Off | `6E 01 00 9C 0B` | `6E 01 00 00 6F` |
-| `cb5851` | Heating High Gear | `6E 01 00 9F 0E` | `6E 01 00 00 6F` |
-| `cb58d1` | Heating Middle Gear | `6E 01 00 9E 0D` | `6E 01 00 00 6F` |
-| `cb5951` | Heating Low Gear | `6E 01 00 9D 0C` | `6E 01 00 00 6F` |
-| `cb59d1` | Heating60 Min | `6E 01 00 A2 11` | `6E 01 00 00 6F` |
-| `cb5a51` | Heating30 Min | `6E 01 00 A1 10` | `6E 01 00 00 6F` |
-| `cb5ad1` | Motor And Massage All Off | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
-| `cb5b51` | Massage30 Minute Up And Down | `6E 01 00 90 FF` | `6E 01 00 00 6F` |
-| `cb5bd1` | Massage15 Minute Spine Guard | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
-| `cb5c51` | Massage Mode Wave Second Mode | `6E 01 00 4A B9` | `6E 01 00 00 6F` |
-| `cb5cd1` | Massage Mode Wave First Mode | `6E 01 00 49 B8` | `6E 01 00 00 6F` |
-| `cb5d51` | Fan Forward And Backward Change | `6E 01 00 8C FB` | `6E 01 00 00 6F` |
-| `cb5dd1` | Massage Foot Instensity Strengthen | `6E 01 00 33 A2` | `6E 01 00 00 6F` |
-| `cb5e51` | Massage Instensity Strengthen | `6E 01 00 4E BD` | `6E 01 00 00 6F` |
-| `cb5ed1` | Massage Instensity Second Gear | `6E 01 00 4D BC` | `6E 01 00 00 6F` |
-| `cb5f51` | Massage Mode Wave | `6E 01 00 48 B7` | `6E 01 00 00 6F` |
-| `cb5fd1` | Massage Switch | `6E 01 00 4C BB` | `6E 01 00 00 6F` |
-| `cb6051` | Bed Light On | `6E 01 00 BF 2E` | `6E 01 00 00 6F` |
-| `cb60d1` | Yoga Position | `6E 01 00 F0 5F` | `6E 01 00 6A D9` |
-| `cb6151` | Alarm Mode1 | `6E 01 00 F5 64` | `6E 01 00 00 6F` |
-| `cb61d1` | Reading Position | `6E 01 00 F2 61` | `6E 01 00 F3 62` |
-| `cb6251` | Alarm Wake | `6E 01 00 2E 9D` | `6E 01 00 00 6F` |
-| `cb62d1` | Alarm Mode2 | `6E 01 00 B1 20` | `6E 01 00 00 6F` |
-| `cb6351` | Alarm Mode1 | `6E 01 00 B0 1F` | `6E 01 00 00 6F` |
-| `cb63d1` | Pillow Down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
-| `cb6451` | Pillow Up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
-| `cb64d1` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
-| `cb6551` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
-| `cb65d1` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
-| `cb6651` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
-| `cb66d1` | Pillow Down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
-| `cb6751` | Pillow Up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
-| `cb67d1` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
-| `cb6851` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
-| `cb68d1` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
-| `cb6951` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
-| `cb69d1` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
-| `cb6a51` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
-| `cb6ad1` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
-| `cb6b51` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
-| `cb6bd1` | Foot Down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
-| `cb6c51` | Foot Up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
-| `cb6cd1` | Head Down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
-| `cb6d51` | Head Up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+| `caf451` | Bed light off | `6E 01 00 75 E4` | `6E 01 00 00 6F` |
+| `caf4d1` | Exit limit | `6E 02 01 00 71` | `6E 02 01 00 71` |
+| `caf551` | Stop detection | `6E 01 00 00 6F` | `6E 01 00 00 6F` |
+| `caf5d1` | Start detection | `6E 88 C2 10 C8` | `6E 88 C2 00 B8` |
+| `caf651` | Music switch soundtrack | `6E 01 00 C4 33` | `6E 01 00 00 6F` |
+| `caf6d1` | Music Bluetooth on/off | `6E 01 00 D8 47` | `6E 01 00 00 6F` |
+| `caf751` | Control box lock | `6E 01 00 84 F3` | `6E 01 00 84 F3` |
+| `caf7d1` | Relieve zero gravity setting | `6E 01 00 62 D1` | `6E 01 00 00 6F` |
+| `caf851` | Memory position 3 | `6E 01 00 30 9F` | `6E 01 00 2D 9C` |
+| `caf8d1` | Memory position 2 | `6E 01 00 2F 9E` | `6E 01 00 2C 9B` |
+| `caf951` | Memory position 1 | `6E 01 00 2E 9D` | `6E 01 00 2B 9A` |
+| `caf9d1` | TV position | `6E 01 00 58 C7` | `6E 01 00 64 D3` |
+| `cafa51` | Zero gravity | `6E 01 00 45 B4` | `6E 01 00 66 D5` |
+| `cafad1` | Lounge position | `6E 01 00 59 C8` | `6E 01 00 65 D4` |
+| `cafb51` | Anti-snore | `6E 01 00 46 B5` | `6E 01 00 69 D8` |
+| `cafbd1` | Reading position | `6E 01 00 F2 61` | `6E 01 00 F3 62` |
+| `cafc51` | Lumbar memory position | `6E 01 00 91 00` | `6E 01 00 92 01` |
+| `cafcd1` | Relieve zero gravity setting | `6E 01 00 62 D1` | `6E 01 00 00 6F` |
+| `cafd51` | Massage 30 minute up and down | `6E 01 00 90 FF` | `6E 01 00 00 6F` |
+| `cafdd1` | Massage 15 minute up and down | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
+| `cafe51` | Pressure relief position | `6E 01 00 C5 34` | `6E 01 00 00 6F` |
+| `cafed1` | Get-up assist position | `6E 01 00 3D AC` | `6E 01 00 F8 67` |
+| `caff51` | Yoga position | `6E 01 00 F0 5F` | `6E 01 00 F1 60` |
+| `caffd1` | Relax position | `6E 01 00 70 DF` | `6E 01 00 95 04` |
+| `cb0051` | Memory position 4 | `6E 01 00 B2 21` | `6E 01 00 B3 22` |
+| `cb00d1` | Get-up assist | `6E 01 00 3D AC` | `6E 01 00 00 6F` |
+| `cb0151` | Yoga position | `6E 01 00 6B DA` | `6E 01 00 6A D9` |
+| `cb01d1` | Sleep position | `6E 01 00 8E FD` | `6E 01 00 8F FE` |
+| `cb0251` | Yoga position | `6E 01 00 30 9F` | `6E 01 00 2D 9C` |
+| `cb02d1` | Timing flat position | `6E 01 00 FE 6D` | `6E 01 00 00 6F` |
+| `cb0351` | Zero gravity 2 | `6E 01 00 6B DA` | `6E 01 00 6A D9` |
+| `cb03d1` | Side sleep position | `6E 01 00 BA 29` | `6E 01 00 BB 2A` |
+| `cb0451` | Sleep aid | `6E 01 00 86 F5` | `6E 01 00 89 F8` |
+| `cb04d1` | Lounge position | `6E 01 00 59 C8` | `6E 01 00 65 D4` |
+| `cb0551` | TV position | `6E 01 00 58 C7` | `6E 01 00 64 D3` |
+| `cb05d1` | Zero gravity | `6E 01 00 45 B4` | `6E 01 00 66 D5` |
+| `cb0651` | Get-up assist position | `6E 01 00 3D AC` | `6E 01 00 F8 67` |
+| `cb06d1` | Relieve snore setting | `6E 01 00 CB 3A` | `6E 01 00 00 6F` |
+| `cb0751` | Deep sleep position | `6E 01 00 F6 65` | `6E 01 00 F7 66` |
+| `cb07d1` | Massage 15 minute spine guard | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
+| `cb0851` | Memory position 5 | `6E 01 00 F4 63` | `6E 01 00 F5 64` |
+| `cb08d1` | Yoga position | `6E 01 00 6B DA` | `6E 01 00 6A D9` |
+| `cb0951` | Sleep aid 3 | `6E 01 00 88 F7` | `6E 01 00 00 6F` |
+| `cb09d1` | Sleep aid 2 | `6E 01 00 87 F6` | `6E 01 00 00 6F` |
+| `cb0a51` | Sleep aid 1 | `6E 01 00 86 F5` | `6E 01 00 00 6F` |
+| `cb0ad1` | Massage 30 minute timer | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
+| `cb0b51` | Massage 20 minute timer | `6E 01 00 63 D2` | `6E 01 00 00 6F` |
+| `cb0bd1` | Massage 10 minute timer | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
+| `cb0c51` | Memory position 1 | `6E 01 00 76 E5` | `6E 01 00 2B 9A` |
+| `cb0cd1` | Sleep aid 1 | `6E 01 00 86 F5` | `6E 01 00 00 6F` |
+| `cb0d51` | Sleep aid | `6E 01 00 76 E5` | `6E 01 00 89 F8` |
+| `cb0dd1` | Sleep aid | `6E 01 00 C5 34` | `6E 01 00 89 F8` |
+| `cb0e51` | Wake up | `6E 01 00 85 F4` | `6E 01 00 00 6F` |
+| `cb0ed1` | Sleep aid | `6E 01 00 86 F5` | `6E 01 00 89 F8` |
+| `cb0f51` | Head and foot all up | `6E 01 00 23 92` | `6E 01 00 00 6F` |
+| `cb0fd1` | Foot up and head down | `6E 01 00 22 91` | `6E 01 00 00 6F` |
+| `cb1051` | Head up and foot down | `6E 01 00 21 90` | `6E 01 00 00 6F` |
+| `cb10d1` | Motor reset 2 | `6E 01 00 6C DB` | `6E 01 00 00 6F` |
+| `cb1151` | Head up and foot stop | `6E 01 00 3D AC` | `6E 01 00 00 6F` |
+| `cb11d1` | Wake up position | `6E 01 00 93 02` | `6E 01 00 94 03` |
+| `cb1251` | Relax position | `6E 01 00 70 DF` | `6E 01 00 95 04` |
+| `cb12d1` | Unwind position | `6E 01 00 8C FB` | `6E 01 00 8D FC` |
+| `cb1351` | Tilt down | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
+| `cb13d1` | Tilt up | `6E 01 00 43 B2` | `6E 01 00 00 6F` |
+| `cb1451` | Bed light | `6E 01 00 3C AB` | `6E 01 00 00 6F` |
+| `cb14d1` | Motor reset | `6E 01 00 31 A0` | `6E 01 00 00 6F` |
+| `cb1551` | Pillow down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
+| `cb15d1` | Pillow up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
+| `cb1651` | Lumbar down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
+| `cb16d1` | Lumbar up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
+| `cb1751` | Foot down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb17d1` | Foot up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb1851` | Head down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb18d1` | Head up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+| `cb1951` | Light board | `6E 01 00 50 BF` | `6E 01 00 00 6F` |
+| `cb19d1` | Pillow down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
+| `cb1a51` | Pillow up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
+| `cb1ad1` | Lumbar down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
+| `cb1b51` | Lumbar up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
+| `cb1bd1` | Phone light | `6E 01 00 00 6F` | `6E 01 00 00 6F` |
+| `cb1c51` | Motor 3 down | `6E 01 00 72 E1` | `6E 01 00 00 6F` |
+| `cb1cd1` | Motor 3 up | `6E 01 00 71 E0` | `6E 01 00 00 6F` |
+| `cb1d51` | Head and foot up | `6E 01 00 29 98` | `6E 01 00 00 6F` |
+| `cb1dd1` | Foot up and head down | `6E 01 00 22 91` | `6E 01 00 00 6F` |
+| `cb1e51` | Head and foot all up | `6E 01 00 23 92` | `6E 01 00 00 6F` |
+| `cb1ed1` | Head up and foot down | `6E 01 00 21 90` | `6E 01 00 00 6F` |
+| `cb1f51` | Head and foot down | `6E 01 00 2A 99` | `6E 01 00 00 6F` |
+| `cb1fd1` | All motor down | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
+| `cb2051` | All motor up | `6E 01 00 43 B2` | `6E 01 00 00 6F` |
+| `cb20d1` | Lumbar up | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
+| `cb2151` | Tilt down | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
+| `cb21d1` | Tilt up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb2251` | All motor down | `6E 01 00 57 C6` | `6E 01 00 00 6F` |
+| `cb22d1` | All motor up | `6E 01 00 56 C5` | `6E 01 00 00 6F` |
+| `cb2351` | Motor reset 2 | `6E 01 00 6C DB` | `6E 01 00 00 6F` |
+| `cb23d1` | Head up and foot stop | `6E 01 00 3D AC` | `6E 01 00 00 6F` |
+| `cb2451` | Sync off | `6E 01 00 BD 2C` | `6E 01 00 BD 2C` |
+| `cb24d1` | Sync on | `6E 01 00 BC 2B` | `6E 01 00 BC 2B` |
+| `cb2551` | Motor 4 down | `6E 01 00 74 E3` | `6E 01 00 00 6F` |
+| `cb25d1` | Motor 4 up | `6E 01 00 73 E2` | `6E 01 00 00 6F` |
+| `cb2651` | Motor 5 down | `6E 01 00 D1 40` | `6E 01 00 00 6F` |
+| `cb26d1` | Motor 5 up | `6E 01 00 D0 3F` | `6E 01 00 00 6F` |
+| `cb2751` | Motor 3 up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb27d1` | Motor 4 up | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
+| `cb2851` | Light board | `6E 01 00 50 BF` | `6E 01 00 00 6F` |
+| `cb28d1` | Head and foot down | `6E 01 00 57 C6` | `6E 01 00 00 6F` |
+| `cb2951` | Head and foot up | `6E 01 00 56 C5` | `6E 01 00 00 6F` |
+| `cb29d1` | Sofa backward | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
+| `cb2a51` | Sofa forward | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb2ad1` | Motor 4 down | `6E 01 00 74 E3` | `6E 01 00 00 6F` |
+| `cb2b51` | Tilt down | `6E 01 00 73 E2` | `6E 01 00 00 6F` |
+| `cb2bd1` | Tilt up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb2c51` | All motor down | `6E 01 00 5C CB` | `6E 01 00 00 6F` |
+| `cb2cd1` | All motor up | `6E 01 00 5B CA` | `6E 01 00 00 6F` |
+| `cb2d51` | Motor reset | `6E 01 00 47 B6` | `6E 01 00 00 6F` |
+| `cb2dd1` | Motor 4 down | `6E 01 00 2A 99` | `6E 01 00 00 6F` |
+| `cb2e51` | Motor 4 up | `6E 01 00 29 98` | `6E 01 00 00 6F` |
+| `cb2ed1` | Motor 4 down | `6E 01 00 7B EA` | `6E 01 00 00 6F` |
+| `cb2f51` | Motor 4 up | `6E 01 00 7A E9` | `6E 01 00 00 6F` |
+| `cb2fd1` | Motor 3 down | `6E 01 00 72 E1` | `6E 01 00 00 6F` |
+| `cb3051` | Motor 3 up | `6E 01 00 71 E0` | `6E 01 00 00 6F` |
+| `cb30d1` | Head and foot down | `6E 01 00 44 B3` | `6E 01 00 00 6F` |
+| `cb3151` | Head and foot up | `6E 01 00 43 B2` | `6E 01 00 00 6F` |
+| `cb31d1` | Foot down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
+| `cb3251` | Foot up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
+| `cb32d1` | Head down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
+| `cb3351` | Head up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
+| `cb33d1` | Head and foot down | `6E 01 00 31 A0` | `6E 01 00 00 6F` |
+| `cb3451` | Head and foot up | `6E 01 00 23 92` | `6E 01 00 00 6F` |
+| `cb34d1` | Head and foot down | `6E 01 00 97 06` | `6E 01 00 00 6F` |
+| `cb3551` | Head and foot up | `6E 01 00 96 05` | `6E 01 00 00 6F` |
+| `cb35d1` | Massage 30 minute timer | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
+| `cb3651` | Massage 20 minute timer | `6E 01 00 63 D2` | `6E 01 00 00 6F` |
+| `cb36d1` | Massage 10 minute timer | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
+| `cb3751` | Massage mode change | `6E 01 00 48 B7` | `6E 01 00 00 6F` |
+| `cb37d1` | Massage mode all off | `6E 01 00 5E CD` | `6E 01 00 00 6F` |
+| `cb3851` | Massage foot intensity up | `6E 01 00 4E BD` | `6E 01 00 00 6F` |
+| `cb38d1` | Massage head intensity up | `6E 01 00 4C BB` | `6E 01 00 00 6F` |
+| `cb3951` | Massage intensity up | `6E 01 00 34 A3` | `6E 01 00 00 6F` |
+| `cb39d1` | Massage foot intensity down | `6E 01 00 4F BE` | `6E 01 00 00 6F` |
+| `cb3a51` | Massage head intensity down | `6E 01 00 4D BC` | `6E 01 00 00 6F` |
+| `cb3ad1` | Massage foot intensity up | `6E 01 00 4E BD` | `6E 01 00 00 6F` |
+| `cb3b51` | Massage head intensity up | `6E 01 00 4C BB` | `6E 01 00 00 6F` |
+| `cb3bd1` | Heating on/off | `6E 01 00 A0 0F` | `6E 01 00 00 6F` |
+| `cb3c51` | Massage fan intensity up | `6E 01 00 E1 50` | `6E 01 00 00 6F` |
+| `cb3cd1` | Music volume down | `6E 01 00 D5 44` | `6E 01 00 00 6F` |
+| `cb3d51` | Music volume up | `6E 01 00 D4 43` | `6E 01 00 00 6F` |
+| `cb3dd1` | Music pause play | `6E 01 00 D7 46` | `6E 01 00 00 6F` |
+| `cb3e51` | Music vibration mode | `6E 01 00 D6 45` | `6E 01 00 00 6F` |
+| `cb3ed1` | Massage mode wave | `6E 01 00 39 A8` | `6E 01 00 00 6F` |
+| `cb3f51` | Massage mode all off | `6E 01 00 5A C9` | `6E 01 00 00 6F` |
+| `cb3fd1` | Massage intensity level 1 | `6E 01 00 67 D6` | `6E 01 00 00 6F` |
+| `cb4051` | Massage intensity level 3 | `6E 01 00 68 D7` | `6E 01 00 00 6F` |
+| `cb40d1` | Massage 2 on/off | `6E 01 00 33 A2` | `6E 01 00 00 6F` |
+| `cb4151` | Massage 1 on/off | `6E 01 00 32 A1` | `6E 01 00 00 6F` |
+| `cb41d1` | Massage mode wave mode 3 | `6E 01 00 4B BA` | `6E 01 00 00 6F` |
+| `cb4251` | Massage mode all on | `6E 01 00 5D CC` | `6E 01 00 00 6F` |
+| `cb42d1` | Massage 2 intensity | `6E 01 00 A5 14` | `6E 01 00 00 6F` |
+| `cb4351` | Massage 1 intensity | `6E 01 00 A4 13` | `6E 01 00 00 6F` |
+| `cb43d1` | Massage mode all off | `6E 01 00 47 B6` | `6E 01 00 00 6F` |
+| `cb4451` | Massage on/off | `6E 01 00 5D CC` | `6E 01 00 00 6F` |
+| `cb44d1` | Massage mode all off | `6E 01 00 5D CC` | `6E 01 00 00 6F` |
+| `cb4551` | Motor and massage all off | `6E 01 00 47 B6` | `6E 01 00 00 6F` |
+| `cb45d1` | Music cut | `6E 01 00 B8 27` | `6E 01 00 00 6F` |
+| `cb4651` | Adjust volume | `6E 01 00 B7 26` | `6E 01 00 00 6F` |
+| `cb46d1` | Music off | `6E 01 00 B9 28` | `6E 01 00 00 6F` |
+| `cb4751` | Massage 15 minute timer | `6E 01 00 60 CF` | `6E 01 00 00 6F` |
+| `cb47d1` | Massage lumbar intensity up | `6E 01 00 E0 4F` | `6E 01 00 00 6F` |
+| `cb4851` | Massage mode all off | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
+| `cb48d1` | Swing mode on/off | `6E 01 00 D6 45` | `6E 01 00 00 6F` |
+| `cb4951` | Swing on and off | `6E 01 00 D8 47` | `6E 01 00 00 6F` |
+| `cb49d1` | Swing sleep aid | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
+| `cb4a51` | Music next song | `6E 01 00 D3 42` | `6E 01 00 00 6F` |
+| `cb4ad1` | Music previous song | `6E 01 00 D2 41` | `6E 01 00 00 6F` |
+| `cb4b51` | Music lock | `6E 01 00 D9 48` | `6E 01 00 00 6F` |
+| `cb4bd1` | Massage mode all off | `6E 01 00 61 D0` | `6E 01 00 00 6F` |
+| `cb4c51` | Massage mode all off | `6E 01 00 34 A3` | `6E 01 00 00 6F` |
+| `cb4cd1` | Fan timer 5 hour | `6E 01 00 A8 17` | `6E 01 00 00 6F` |
+| `cb4d51` | Fan timer 3 hour | `6E 01 00 A7 16` | `6E 01 00 00 6F` |
+| `cb4dd1` | Fan timer 2 hour | `6E 01 00 A6 15` | `6E 01 00 00 6F` |
+| `cb4e51` | Fan change mode | `6E 01 00 A2 11` | `6E 01 00 00 6F` |
+| `cb4ed1` | Fan all off | `6E 01 00 A1 10` | `6E 01 00 00 6F` |
+| `cb4f51` | Fan 2 intensity up | `6E 01 00 8B FA` | `6E 01 00 00 6F` |
+| `cb4fd1` | Fan 1 intensity up | `6E 01 00 8A F9` | `6E 01 00 00 6F` |
+| `cb5051` | Anti pinch sensitivity mode change | `6E 01 00 BE 2D` | `6E 01 00 00 6F` |
+| `cb50d1` | Massage mode constant | `6E 01 00 3A A9` | `6E 01 00 00 6F` |
+| `cb5151` | Massage mode pulse | `6E 01 00 38 A7` | `6E 01 00 00 6F` |
+| `cb51d1` | Massage on/off | `6E 01 00 6F DE` | `6E 01 00 00 6F` |
+| `cb5251` | Massage speed down | `6E 01 00 37 A6` | `6E 01 00 00 6F` |
+| `cb52d1` | Massage speed up | `6E 01 00 36 A5` | `6E 01 00 00 6F` |
+| `cb5351` | Massage intensity down | `6E 01 00 35 A4` | `6E 01 00 00 6F` |
+| `cb53d1` | Massage foot intensity mode 3 | `6E 01 00 9F 0E` | `6E 01 00 00 6F` |
+| `cb5451` | Massage foot intensity mode 2 | `6E 01 00 9E 0D` | `6E 01 00 00 6F` |
+| `cb54d1` | Massage foot intensity mode 1 | `6E 01 00 9D 0C` | `6E 01 00 00 6F` |
+| `cb5551` | Massage foot off | `6E 01 00 9C 0B` | `6E 01 00 00 6F` |
+| `cb55d1` | Massage head intensity mode 3 | `6E 01 00 9B 0A` | `6E 01 00 00 6F` |
+| `cb5651` | Massage head intensity mode 2 | `6E 01 00 9A 09` | `6E 01 00 00 6F` |
+| `cb56d1` | Massage head intensity mode 1 | `6E 01 00 99 08` | `6E 01 00 00 6F` |
+| `cb5751` | Massage head off | `6E 01 00 98 07` | `6E 01 00 00 6F` |
+| `cb57d1` | Heating off | `6E 01 00 9C 0B` | `6E 01 00 00 6F` |
+| `cb5851` | Heating high | `6E 01 00 9F 0E` | `6E 01 00 00 6F` |
+| `cb58d1` | Heating medium | `6E 01 00 9E 0D` | `6E 01 00 00 6F` |
+| `cb5951` | Heating low | `6E 01 00 9D 0C` | `6E 01 00 00 6F` |
+| `cb59d1` | Heating 60 min | `6E 01 00 A2 11` | `6E 01 00 00 6F` |
+| `cb5a51` | Heating 30 min | `6E 01 00 A1 10` | `6E 01 00 00 6F` |
+| `cb5ad1` | Motor and massage all off | `6E 01 00 5F CE` | `6E 01 00 00 6F` |
+| `cb5b51` | Massage 30 minute up and down | `6E 01 00 90 FF` | `6E 01 00 00 6F` |
+| `cb5bd1` | Massage 15 minute spine guard | `6E 01 00 76 E5` | `6E 01 00 00 6F` |
+| `cb5c51` | Massage mode wave mode 2 | `6E 01 00 4A B9` | `6E 01 00 00 6F` |
+| `cb5cd1` | Massage mode wave mode 1 | `6E 01 00 49 B8` | `6E 01 00 00 6F` |
+| `cb5d51` | Fan forward and backward change | `6E 01 00 8C FB` | `6E 01 00 00 6F` |
+| `cb5dd1` | Massage foot intensity up | `6E 01 00 33 A2` | `6E 01 00 00 6F` |
+| `cb5e51` | Massage intensity up | `6E 01 00 4E BD` | `6E 01 00 00 6F` |
+| `cb5ed1` | Massage intensity level 2 | `6E 01 00 4D BC` | `6E 01 00 00 6F` |
+| `cb5f51` | Massage mode wave | `6E 01 00 48 B7` | `6E 01 00 00 6F` |
+| `cb5fd1` | Massage on/off | `6E 01 00 4C BB` | `6E 01 00 00 6F` |
+| `cb6051` | Bed light on | `6E 01 00 BF 2E` | `6E 01 00 00 6F` |
+| `cb60d1` | Yoga position | `6E 01 00 F0 5F` | `6E 01 00 6A D9` |
+| `cb6151` | Alarm mode 1 | `6E 01 00 F5 64` | `6E 01 00 00 6F` |
+| `cb61d1` | Reading position | `6E 01 00 F2 61` | `6E 01 00 F3 62` |
+| `cb6251` | Alarm wake | `6E 01 00 2E 9D` | `6E 01 00 00 6F` |
+| `cb62d1` | Alarm mode 2 | `6E 01 00 B1 20` | `6E 01 00 00 6F` |
+| `cb6351` | Alarm mode 1 | `6E 01 00 B0 1F` | `6E 01 00 00 6F` |
+| `cb63d1` | Pillow down | `6E 01 00 40 AF` | `6E 01 00 00 6F` |
+| `cb6451` | Pillow up | `6E 01 00 3F AE` | `6E 01 00 00 6F` |
+| `cb64d1` | Foot down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb6551` | Foot up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb65d1` | Head down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb6651` | Head up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+| `cb66d1` | Pillow down | `6E 01 00 42 B1` | `6E 01 00 00 6F` |
+| `cb6751` | Pillow up | `6E 01 00 41 B0` | `6E 01 00 00 6F` |
+| `cb67d1` | Foot down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb6851` | Foot up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb68d1` | Head down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb6951` | Head up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+| `cb69d1` | Foot down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb6a51` | Foot up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb6ad1` | Head down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb6b51` | Head up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
+| `cb6bd1` | Foot down | `6E 01 00 27 96` | `6E 01 00 00 6F` |
+| `cb6c51` | Foot up | `6E 01 00 26 95` | `6E 01 00 00 6F` |
+| `cb6cd1` | Head down | `6E 01 00 25 94` | `6E 01 00 00 6F` |
+| `cb6d51` | Head up | `6E 01 00 24 93` | `6E 01 00 00 6F` |
 
 | Query | Frame |
 |---|---|
@@ -6201,11 +6167,10 @@ no action accepts arbitrary packet bytes.
 
 #### Evidence
 
-Row173's accepted Richmat 4.2.0 artifact provides every catalog, frame and lifecycle
+Richmat 4.2.0 provides every catalog, frame and lifecycle
 value. `tests/test_richmat_app_vectors.py` preserves all 2,094 literal fixtures and
 24 semantic cases. `tests/test_richmat_app.py` checks integration behavior.
 Physical validation is for real beta/release users and is not implied here.
-Artifact set SHA-256: `ca4b6ab4750585672889a6dd2e53b16a0e693804408eaa343ed6c6af4df2f0b7`.
 
 
 ### Power Bob Base
@@ -6363,20 +6328,10 @@ product, GATT route, release, lighting and alarm behavior.
 
 ### Analysis provenance
 
-- RMControl: APK Protocol Audit row018.
-- Richmat MH: row055.
-- HJBed: row121.
-- Eshine: row106.
-- Classic apps: row066.
-- Good Vibe Sleep: row116.
-- MLILY Control: row159.
-- L&P legacy app: row019.
-- Casper Base: row101, artifact set
-  `2d21d42c17a7b5ae60c2403ff3654d80993e6d09f879cfe666c6d58270123f8b`.
-- Hush Base: row126, artifact set
-  `d24ad2c95ea839969a5406fa8219f62048386598152608554641586041293cd7`.
-- The Richmat remotes, BedTech and L&P MlRM routes have no accepted report of
-  their own; their frames are the pre-v5 controllers'.
+Based on RMControl, the Richmat MH apps, HJBed, Eshine, the classic apps,
+Good Vibe Sleep, MLILY Control, the L&P legacy app, Casper Base 1.0.8 and Hush
+Base 1.0.5, each named with its version in its section. The Richmat remotes,
+Legacy BedTech and L&P MlRM routes send the pre-v5 controllers' frames.
 
 ### Galaxy Bed Control
 
@@ -7661,7 +7616,7 @@ each copied configuration’s own gates.
 
 #### Notifications
 
-The Galaxy bed status sensor exposes decoded events as attributes, including
+The disabled-by-default Galaxy **Status** sensor exposes decoded events as attributes, including
 motor/angle records, massage, lights, lock, fan, heating, atomization, alarm
 acknowledgements and records, diagnostics and bed sleep-advertisement metadata.
 Raw values retain their reported numbering and units; they do not create assumed
@@ -7734,11 +7689,7 @@ parsers, countdown commits and reconciled runtime transitions. This is static
 app evidence, not a claim of hardware validation. Real beta/release users can
 validate firmware, physical sides and release behavior with timestamped captures.
 
-Analysis provenance: `nl.starinternational.galaxy` 3.3.0 (330002), primary arm64
-artifact SHA-256 `9a0b0cca3d62c85a749a17cfacd772740f5b07be85687c491cf269ac85646bdb`;
-accepted reconciliation manifest
-`bb26a0b2a2d97af9e91b40dc83aaf2b7cd46c4753710aa1a2e797ffc64199b59`.
-Supplemental v7a delivery is not interchangeable evidence.
+Based on Galaxy 3.3.0 (`nl.starinternational.galaxy`).
 
 ## Luuna Rise / Power Cool
 
@@ -8370,10 +8321,7 @@ direct bed diagnostics are available only through their explicit layouts.
 
 ### Analysis provenance
 
-- Luuna Rise `com.richmat.luunarise2` 1.0.13 (21), artifact SHA-256
-  04c89b0e7bb18bf8c11522c27af89cbbcf665d753452b168756f013a8153d549.
-- Power Cool Sleep System `com.richmat.powercool` 1.0.8 (9), artifact set SHA-256
-  `71123fc12a3d063a3acc278f3bc2b2bf5ad507fe1a5322694f509cbb272143db`.
+Based on Luuna Rise 1.0.13 (`com.richmat.luunarise2`) and Power Cool Sleep System 1.0.8 (`com.richmat.powercool`).
 
 ### Lady Americana / ACAA / STA Homecare / Zero Gravity family
 
@@ -8410,8 +8358,7 @@ fourth or fifth for later adjustments. Legacy-long attributes ignored by the
 Android constructor are not alternate commands.
 
 The separate generic BED requests correspond to the app's recognized-command
-callbacks. They remain usable through `richmat_resource_bed` and optional
-app-request buttons, independently of XML buttons and alarm choices. A
+callbacks. They remain usable through `richmat_resource_bed`, independently of XML buttons and alarm choices. A
 `memory_three` request does not certify a third physical slot. Use the normal
 Stop action for movement release. `voice_stop_request` sends the app's separate
 request and then the protocol release; its label is not emergency STOP evidence.
@@ -8776,7 +8723,7 @@ standard `hold_control` action; held buttons publish current card metadata.
 
 #### Evidence
 
-All four independently accepted row071 app reports establish the shared binding
+All four apps share the binding
 domain, both movement formats and direct settings builders. The Richmat codec
 reproduces their frozen literal vectors; the controllers use each member's
 explicit product scope and preserve its source-qualified limits. Hardware
@@ -8800,7 +8747,7 @@ Uses the common catalog. The UYRM/VYRM aroma-labelled button is outside its bed 
 
 #### Evidence
 
-Accepted row071 Lady Americana 1.0.2 (3), artifact SHA-256 `5feff848f129c77f06faaae3031add398588bc372965f7b9ae51219826eae228`.
+Based on Lady Americana 1.0.2 (3).
 
 ### ACAA
 
@@ -8820,7 +8767,7 @@ Retains its accepted UYRM/VYRM shared BED action. This does not expose accessory
 
 #### Evidence
 
-Accepted row071 ACAA 1.0.4 (5), artifact SHA-256 `3d2760f83ea1f97d4552641b2a3ff2ee4051888888250d01c306be2827af04fe`.
+Based on ACAA 1.0.4 (5).
 
 ### STA Homecare
 
@@ -8840,7 +8787,7 @@ The UYRM/VYRM aroma-labelled button is outside its bed scope. The D1RM slider re
 
 #### Evidence
 
-Accepted row071 STA Homecare 1.0.5 (6), artifact SHA-256 `3385bd3b50f777d41ef632c74c4ed5cac00decba4a7ae8d357182c5c0fe65d6c`.
+Based on STA Homecare 1.0.5 (6).
 
 ### Zero Gravity
 
@@ -8862,4 +8809,4 @@ Retains its accepted UYRM/VYRM shared BED action without accessory settings.
 
 #### Evidence
 
-Accepted row071 Zero Gravity 1.0.3 (4), artifact SHA-256 `82ad82b84bfe881af3e74f72accd136b783e5fb0bf62077fc85fcc37ef901678`.
+Based on Zero Gravity 1.0.3 (4).

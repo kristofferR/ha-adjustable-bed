@@ -207,8 +207,10 @@ async def test_paired_local_setup_keeps_both_backends_without_a_peer(
     data = pairing.build_pair_entry_data(
         {**entries[0].data, **entries[0].options},
         {**entries[1].data, **entries[1].options},
-        name="Pairlink local pair", connection_mode=mode,
+        name="Pairlink local pair",
     )
+    # Tests start the pair in this mode (see conftest).
+    data["pair_connection_mode"] = mode
     entry = MockConfigEntry(domain=DOMAIN, title="Local pair", unique_id=data["pair_id"], data=data)
     entry.add_to_hass(hass)
     buses = [

@@ -6,7 +6,6 @@ import pytest
 from homeassistant.config_entries import SOURCE_BLUETOOTH, SOURCE_USER
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
@@ -17,7 +16,6 @@ from custom_components.adjustable_bed.beds.kaidi.protocol import (
 from custom_components.adjustable_bed.beds.richmat_mh.models import RICHMAT_MH_VARIANTS_BY_APP
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
     _default_setup_route,
     _labelled_routes,
     _route_section,
@@ -224,22 +222,16 @@ async def test_aliases_show_friendly_labels_and_keep_their_saved_id(hass, alias,
     label = bed_type_label(alias)
     # Friendly, and distinct from the route it runs so it maps back exactly.
     assert alias not in label and label != bed_type_label(target)
-    entry = MockConfigEntry(
-        domain=const.DOMAIN,
-        data={CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: alias},
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler, flow.hass = entry.entry_id, hass
-    result = await flow.async_step_settings()
-    selector = result["data_schema"].schema[const.CONF_BED_TYPE]
+    from custom_components.adjustable_bed.config_flow import _bed_type_selector
+
+    # Reconfigure's bed-type list, drawn for an entry saved under the alias.
+    selector = _bed_type_selector(alias, show_saved_id=True)
     # An alias inside a family's journey names that family too.
     family = " · Okin" if alias == const.BED_TYPE_OKIMAT else ""
     shown = f"{bed_type_label(alias)}{family} (saved as {alias})"
     assert shown in {option["label"] for option in selector.config["options"]}
     # The shown label maps back to the saved ID, never to the route it runs.
     assert selector(shown) == alias
-    assert entry.data[const.CONF_BED_TYPE] == alias
 
 
 def test_leggett_umbrella_route_has_a_friendly_label():
@@ -272,33 +264,36 @@ def test_every_listed_app_is_searchable_by_name(name):
 _FLOYD = bed_type_choice(const.BED_TYPE_KAIDI, const.KAIDI_VARIANT_FLOYD)
 
 
+def _cst(variant: str) -> str:
+    return bed_type_choice(const.BED_TYPE_OKIN_CST, variant)
+
+
 @pytest.mark.parametrize(
     ("name", "choices"),
     [
         # Okin apps also carry the Rize brand; only Kaidi's app is "Rize Beds".
-        ("Rize Beds", {const.BED_TYPE_KAIDI, const.BED_TYPE_RIZE}),
-        ("Rize Beds app (Kaidi, 1.4.2)", {const.BED_TYPE_RIZE}),
-        ("Floyd Home", {const.BED_TYPE_KAIDI, _FLOYD}),
-        ("ISleep", {const.BED_TYPE_KAIDI, const.BED_TYPE_ISLEEP}),
-        ("Kaidi", {const.BED_TYPE_KAIDI, _FLOYD, const.BED_TYPE_ISLEEP, const.BED_TYPE_RIZE, const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS}),
+        ("Rize Beds", {const.BED_TYPE_RIZE}),
+        ("Rize Beds app", {const.BED_TYPE_RIZE}),
+        ("Floyd Home", {_FLOYD}),
+        ("ISleep", {const.BED_TYPE_ISLEEP}),
         ("KomfyD", {const.BED_TYPE_KOMFYD}),
         ("ComfyDS", {const.BED_TYPE_COMFYDS}),
         ("Bed Connect", {const.BED_TYPE_LINAK}),
         # POWER BOB ULTRA-O is the app of the Rize Bob product on Okin CST.
-        ("Power Bob", {const.BED_TYPE_MOTOSLEEP, const.BED_TYPE_OKIN_CST, const.BED_TYPE_BOBPOWERBASE}),
+        ("Power Bob", {const.BED_TYPE_MOTOSLEEP, _cst(const.OKIN_CST_VARIANT_BOB), const.BED_TYPE_BOBPOWERBASE}),
         *(
-            (name, {const.BED_TYPE_OKIN_CST})
+            (name, {_cst(variant)})
             # The full app names of their accepted reports.
-            for name in (
-                "MFirm 900 - O",
-                "Jordan's Sanctuary - O",
-                "Resident Adjustable Bed",
-                "Rize Aviada - O",
-                "POWER BOB ULTRA-O",
-                "Rize Contemporary III - O",
-                "Carefree",
-                "Rize Clarity II - O",
-                "Support 挺你 科技調整床",
+            for name, variant in (
+                ("MFirm 900 - O", const.OKIN_CST_VARIANT_MF900),
+                ("Jordan's Sanctuary - O", const.OKIN_CST_VARIANT_SANCTUARY),
+                ("Resident Adjustable Bed", const.OKIN_CST_VARIANT_RESIDENT),
+                ("Rize Aviada - O", const.OKIN_CST_VARIANT_AVIADA),
+                ("POWER BOB ULTRA-O", const.OKIN_CST_VARIANT_BOB),
+                ("Rize Contemporary III - O", const.OKIN_CST_VARIANT_CONTEMPO),
+                ("Carefree", const.OKIN_CST_VARIANT_CAREFREE),
+                ("Rize Clarity II - O", const.OKIN_CST_VARIANT_CLARITY),
+                ("Support 挺你 科技調整床", const.OKIN_CST_VARIANT_SUPPORT),
             )
         ),
     ],

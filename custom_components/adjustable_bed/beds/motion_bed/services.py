@@ -14,16 +14,12 @@ from ...import_executor import async_import_modules
 from .protocol import (
     AirMode,
     AirTimer,
-    AlarmMode,
-    AlarmSound,
-    AlarmSwitch,
     ModuleType,
     SleepPage,
     SleepReport,
     ThermalMode,
     build_air_query,
     build_air_save,
-    build_alarm,
     build_audio_track,
     build_audio_volume,
     build_clock,
@@ -75,18 +71,6 @@ def _integers(data: Mapping[str, object], key: str) -> tuple[int, ...]:
 def build_motion_bed_request(service: str, data: Mapping[str, object]) -> MotionBedWrite:
     """Construct only one of the published domain-specific writes."""
     confirm = _boolean(data, "confirmed")
-    if service == "motion_bed_alarm":
-        selected = _integers(data, "weekdays")
-        if any(day not in range(1, 8) for day in selected):
-            raise ValueError("Weekdays use 1 (Monday) through 7 (Sunday)")
-        weekdays = {day: day in selected for day in range(1, 8)} if _boolean(data, "repeat") else {}
-        switch = AlarmSwitch(_integer(data, "switch")) if "switch" in data else None
-        frame = build_alarm(enabled=_boolean(data, "enabled"), hour=_integer(data, "hour"),
-                            minute=_integer(data, "minute"), weekdays=weekdays,
-                            mode=AlarmMode(_integer(data, "mode")), massage=_boolean(data, "massage"),
-                            sound=AlarmSound(_integer(data, "sound")), switch=switch,
-                            audio=_boolean(data, "audio"))
-        return MotionBedWrite("alarm", (frame,), "motor_settings" if "switch" in data else "home", confirmed=confirm, persistent=True, alarm_audio=_boolean(data, "audio"), alarm_switch=int(switch) if switch is not None else None)
     if service == "motion_bed_clock":
         timestamp = datetime.fromisoformat(_text(data, "timestamp"))
         frame = build_thermal_clock(timestamp) if _boolean(data, "thermal") else build_clock(timestamp)
@@ -203,7 +187,6 @@ def async_register_motion_bed_services(hass: HomeAssistant) -> None:
     integer_list = vol.All(cv.ensure_list, [int])
     schemas = {
         "motion_bed_action": {required("action"): str, optional("branch", default="app"): vol.In(("app", "save", "clear")), optional("duration", default=1): vol.All(vol.Coerce(float), vol.Range(min=0.01,max=10))},
-        "motion_bed_alarm": {required("enabled"): bool, required("hour"): int, required("minute"): int, optional("weekdays",default=[]): integer_list, optional("repeat",default=False): bool, optional("mode",default=1): int, optional("massage",default=False): bool, optional("sound",default=0): int, optional("audio",default=False): bool, optional("switch"): int},
         "motion_bed_clock": {required("timestamp"): str, optional("thermal",default=False): bool},
         "motion_bed_sleep_angles": {required("page"): int, required("flat"): integer_list, required("side_positions"): integer_list},
         "motion_bed_calibration": {required("flat"): int, required("side_position"): int},

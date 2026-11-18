@@ -645,6 +645,7 @@ class Ergomotion4Controller(AppController):
                 "app_timer_status",
                 _side_key(APP_TIMER_STATUS, self.command_side),
                 "mdi:timer-outline",
+                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE_TIMER,
             ),
         )
@@ -657,6 +658,7 @@ class Ergomotion4Controller(AppController):
                 "ergomotion4_light",
                 _side_key(LIGHT, self.command_side),
                 "mdi:lightbulb-outline",
+                entity_registry_enabled_default=True,
             ),
         )
 

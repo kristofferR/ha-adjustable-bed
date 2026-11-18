@@ -166,7 +166,7 @@ def _reported_recommendation(
 ) -> Recommendation | None:
     """Match only the user-confirmed identity in #670, not every Star/BOX25 bed.
 
-    The accepted row054 report proves the current profile's table selection.
+    Adjustable bed (Lumbar) 1.2.2 proves the current profile's table selection.
     #670 adds physical evidence for numbered memory on the suggested profile.
     See docs/design/profile-recommendations.md for the limits of that evidence.
     """
@@ -555,7 +555,7 @@ class ProfileRecommendationWatch:
             "choices": "\n".join(
                 f"- {_recommendation_label(choice)}" for choice in self.recommendation.choices
             ),
-            "pair_action": "Split into two beds" if self.side else "Restore standalone controls",
+            "pair_action": "Separate into two beds" if self.side else "Remove Left, Right and Both controls",
             "processor_guide_url": (
                 "https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/beds/sleeptracker.md"
             ),
@@ -750,10 +750,8 @@ def _reviews_within_guided_family(
 ) -> bool:
     """Return True when every candidate stays in the entry's guided family.
 
-    Configure refuses an app or route change within a guided family, so such a
-    review runs the guided change, as the app review does. A candidate of
-    another bed type stays a Configure change, which the guided change cannot
-    offer.
+    Such a review runs the family's question in Reconfigure, as the app review
+    does, even without one suggested app.
     """
     family = managed_family(entry_data)
     if family is None or recommendation.rule == _TEMPUR_PROCESSOR_RULE:
@@ -801,13 +799,25 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     step_id="processor",
                     description_placeholders=watch.placeholders(),
                 )
-            if guided:
+            candidates = (
+                (recommendation.suggested,)
+                if recommendation.suggested
+                else recommendation.choices
+            )
+            if guided or (
+                not is_paired(watch.entry.data)
+                and any(not choice.startswith(_REMOTE_PREFIX) for choice in candidates)
+            ):
+                # An app, bed type or route is chosen, checked and reviewed in
+                # Reconfigure, with a single suggestion preselected.
                 return await self._async_start_guided_change(watch, recommendation)
             if is_paired(watch.entry.data):
                 # Existing per-side profile restrictions require an explicit split.
                 # Open the menu; never split or change either side from this repair.
                 result = await self.hass.config_entries.options.async_init(watch.entry.entry_id)
             else:
+                # A remote setting, or nothing to choose, is checked in
+                # Configure; saving it answers the review.
                 manager = self.hass.config_entries.options
                 original_data, original_options = watch.entry.data, watch.entry.options
                 result = await manager.async_init(watch.entry.entry_id)
@@ -826,12 +836,6 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     ):
                         manager.async_abort(flow_id)
                         return self.async_abort(reason="recommendation_changed")
-                    # A bed-type change only re-renders settings. The user must
-                    # submit that form to apply it, exactly as in Configure.
-                    if recommendation.suggested is not None:
-                        result = await manager.async_configure(
-                            flow_id, {CONF_BED_TYPE: recommendation.suggested}
-                        )
                 except BaseException:
                     try:
                         manager.async_abort(flow_id)
@@ -880,9 +884,19 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
     async def _async_start_guided_change(
         self, watch: ProfileRecommendationWatch, recommendation: Recommendation
     ) -> RepairsFlowResult:
-        """Open Reconfigure; the notice stays until it saves a change or keeps the profile."""
+        """Open Reconfigure, with the suggested app preselected where it names one.
+
+        The notice stays until Reconfigure saves a change or keeps the profile.
+        """
         result = await self.hass.config_entries.flow.async_init(
-            DOMAIN, context=reconfigure_context(watch.entry)
+            DOMAIN,
+            context=reconfigure_context(
+                watch.entry,
+                recommendation.suggested
+                if recommendation.suggested
+                and not recommendation.suggested.startswith(_REMOTE_PREFIX)
+                else None,
+            ),
         )
         if result.get("type") is not FlowResultType.FORM:
             return self.async_abort(reason="recommendation_changed")

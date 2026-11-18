@@ -75,7 +75,8 @@ export interface AdjustableBedCardConfig {
   show_side_selector?: boolean;
   // "both", a native child device ID, or "left"/"right" for one-address pairs.
   default_target?: string;
-  // Stable preset translation keys; omitted = flat + first recall, [] = none.
+  // Quick action entity ids, in order; omitted = flat + first recall, [] = none.
+  // Older cards stored translation keys, which still resolve.
   compact_actions?: string[];
   navigation_path?: string;
   open_dialog?: boolean;
@@ -168,6 +169,7 @@ export interface LightEntities {
   buttons?: string[];
   light?: string; // light.* under_bed_lights (color)
   switch?: string; // switch.* under_bed_lights
+  switches?: string[]; // accessory lights, such as a reading or cup-holder light
   state?: string; // binary_sensor.* under_bed_lights (read-only)
   states?: string[]; // read-only light telemetry
   level?: string; // number.* light_level (brightness)
@@ -192,15 +194,25 @@ export interface BedEntities {
   controlSide?: string; // select.* choosing which side shared controls drive
   firmness: string[]; // number.* sleep_number_setting[_left|_right]
   presets: string[]; // button.* in preferred display order
+  // button.* overwriting a named preset: confirmed, never a quick action.
+  presetSaves: string[];
   stop?: string; // button.* stop
   memory: MemorySlot[];
   connect?: string;
   disconnect?: string;
   connectivity?: string; // binary_sensor.* ble_connection
   lights: LightEntities;
-  massage: { buttons: string[]; numbers: string[]; selects?: string[]; states?: string[]; timer?: string };
+  massage: {
+    buttons: string[];
+    numbers: string[];
+    selects?: string[];
+    switches?: string[];
+    states?: string[];
+    timer?: string;
+  };
   climate: { entities: string[]; selects: string[]; numbers: string[] }; // numbers: fan_level
   utility: string[]; // button.* sync_positions / child_lock_toggle
+  utilitySwitches?: string[]; // switch.* product settings such as a lock or sleep mode
   utilityNumbers?: string[]; // controller-declared number controls without a card section
   utilitySelects?: string[]; // select.* active app/module surface
   utilityStates?: string[]; // read-only app/device state

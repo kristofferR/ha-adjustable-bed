@@ -157,6 +157,7 @@ function bedForMemory(slot: MemorySlot, stop: string): BedEntities {
     motors: [],
     firmness: [],
     presets: [],
+    presetSaves: [],
     memory: [slot],
     stop,
     presence: [],

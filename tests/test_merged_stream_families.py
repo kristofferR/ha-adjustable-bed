@@ -32,8 +32,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SVANE_VARIANT_JMC,
@@ -127,7 +127,7 @@ class Bed:
             CONF_ADDRESS: "AA:BB:CC:DD:EE:51",
             CONF_NAME: "Stream bed",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         }
         if family.name.startswith("svane"):
             data |= {

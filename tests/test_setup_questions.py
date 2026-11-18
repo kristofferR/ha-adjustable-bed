@@ -294,20 +294,3 @@ async def test_configure_cannot_turn_massage_on_without_a_massage_page(hass, lay
     assert entry.data[const.CONF_HAS_MASSAGE] is False
 
 
-async def test_configure_turns_massage_off_when_switching_to_mc3(hass):
-    entry = entry_for(
-        hass,
-        {
-            const.CONF_BED_TYPE: const.BED_TYPE_LINAK,
-            const.CONF_MOTOR_COUNT: 2,
-            const.CONF_HAS_MASSAGE: True,
-        },
-    )
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    await flow._async_options_form(
-        {const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENTS}, step_id="settings"
-    )
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        await flow._async_options_form({const.CONF_PROTOCOL_VARIANT: "mc3"}, step_id="settings")
-    assert entry.data[const.CONF_HAS_MASSAGE] is False

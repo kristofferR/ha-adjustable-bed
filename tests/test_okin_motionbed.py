@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.beds import okin_motionbed as app
 from custom_components.adjustable_bed.codec import keeson, okin_nframe
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profiles.okin_nframe import OKIN_MOTIONBED as PROFILE
+from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/okin_motionbed_vectors.json").read_text())
 WRITE, NOTIFY = const.KEESON_BASE_WRITE_CHAR_UUID, const.KEESON_BASE_NOTIFY_CHAR_UUID
@@ -139,6 +140,9 @@ async def test_every_live_action_has_a_production_caller(bed, action):
             await ctrl.preset_memory(int(action[-1]))
         elif action.startswith("save_memory_"):
             await ctrl.program_memory(int(action[-1]))
+        elif action.startswith("light_parameter_"):
+            # The light switch: parameter 0 is the app's light-on frame.
+            await ctrl.controller_switch_specs[0].set_fn(ctrl, action.endswith("_0"))
         else:
             key = "motionbed_preset_stop" if action == "preset_stop" else f"motionbed_{action}"
             await next(s for s in ctrl.controller_button_specs if s.key == key).press_fn(ctrl)
@@ -289,7 +293,7 @@ async def test_app_picker_manual_setup_and_configure_keep_fixed_profile(
 
     from custom_components.adjustable_bed.app_profiles import per_side_profile
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
-    from custom_components.adjustable_bed.detection import bed_type_choice, detect_bed_type_detailed
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
     from custom_components.adjustable_bed.profile_id import resolve_profile_id, with_profile_ids
     from tests.test_config_flow import _advance_progress, _open_options_form, form_fields
     from tests.test_detection import _make_service_info
@@ -305,7 +309,7 @@ async def test_app_picker_manual_setup_and_configure_keep_fixed_profile(
         )
         picker = result["data_schema"].schema[const.CONF_BED_TYPE]
         choice = next(row for row in picker.rows() if "OKIN Motion Bed" in row)
-        assert "com.okin.motionbed" in choice
+        assert choice == "OKIN Motion Bed app"
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {const.CONF_BED_TYPE: choice}
         )
@@ -342,7 +346,7 @@ async def test_app_picker_manual_setup_and_configure_keep_fixed_profile(
     options = await _open_options_form(hass, entry.entry_id)
     assert options["type"] == FlowResultType.FORM
     saved = await hass.config_entries.options.async_configure(
-        options["flow_id"], {const.CONF_BED_TYPE: bed_type_choice("okin_motionbed", None)}
+        options["flow_id"], {}
     )
     assert saved["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[const.CONF_PROFILE_ID] == "okin_motionbed"
@@ -413,9 +417,10 @@ async def test_real_coordinator_failure_idle_reconnect_entities_and_services(
         )
         button.hass = hass
         await button.async_press()
-        light = ControllerActionButton(coordinator, ctrl.controller_button_specs[1])
+        light = AdjustableBedControllerSwitch(coordinator, ctrl.controller_switch_specs[0])
         light.hass = hass
-        await light.async_press()
+        monkeypatch.setattr(light, "async_write_ha_state", MagicMock())
+        await light.async_turn_on()
         cover = AdjustableBedCover(
             coordinator, _build_cover_description(ctrl.motor_control_specs[1])
         )

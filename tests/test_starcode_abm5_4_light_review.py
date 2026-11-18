@@ -47,7 +47,7 @@ async def test_actual_HA_light_catalog_does_not_claim_impossible_fresh_feedback(
             const.CONF_STARCODE_UI_SELECTOR: ui,
             const.CONF_STARCODE_TRANSPORT_SELECTOR: transport,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)
@@ -154,12 +154,10 @@ async def test_actual_HA_light_catalog_does_not_claim_impossible_fresh_feedback(
                         command, builder
                     )
             assert not controller._ui_state_observed
-            observed_sensor = next(
-                row
+            assert not any(
+                row.translation_key == "starcode_abm5_4_light_on" and row.domain == "sensor"
                 for row in rows
-                if row.translation_key == "starcode_abm5_4_light_on" and row.domain == "sensor"
             )
-            assert hass.states.get(observed_sensor.entity_id).state == "unknown"
         observed = controller.supports_light_state_feedback
         assert await hass.config_entries.async_unload(entry.entry_id)
         assert observed is feedback
@@ -186,7 +184,7 @@ async def test_actual_HA_positive_C_feedback_boundary_reloads_exact_child_catalo
         const.CONF_STARCODE_UI_SELECTOR: ui,
         const.CONF_STARCODE_TRANSPORT_SELECTOR: transport,
         const.CONF_DISABLE_ANGLE_SENSING: True,
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
     }
     if paired:
         data.update(
@@ -354,7 +352,7 @@ async def test_actual_HA_reconnect_classification_adds_power_buttons_without_pos
             const.CONF_STARCODE_UI_SELECTOR: "BOX1220",
             const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX25",
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)

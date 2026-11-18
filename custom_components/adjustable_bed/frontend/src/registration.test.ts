@@ -42,6 +42,12 @@ describe("custom card registration", () => {
     });
   });
 
+  test("names the card in the page language", () => {
+    const target: CustomCardsWindow = {};
+    registerCustomCard(target, "nb-NO");
+    expect(target.customCards?.[0].name).toBe("Adjustable Bed-kort");
+  });
+
   test("replaces stale metadata from an older bundle", () => {
     const target: CustomCardsWindow = {
       customCards: [

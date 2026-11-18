@@ -15,7 +15,7 @@ from tests.test_setup_entry import _app_then_address, app_question, app_rows
 async def test_the_hush_base_app_is_one_row_of_the_app_question(hass, enable_custom_integrations):
     rows = app_rows(await app_question(hass))
     hush = {label: row for label, row in rows.items() if row == const.BED_TYPE_HUSH_BASE}
-    assert list(hush) == ["Hush Base app (select product)"]
+    assert list(hush) == ["Hush Base app"]
 
 
 async def test_the_product_is_asked_with_the_apps_own_twelve_first(

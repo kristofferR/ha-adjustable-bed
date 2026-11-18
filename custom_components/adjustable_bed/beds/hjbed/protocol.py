@@ -1,4 +1,4 @@
-"""HJBed 2.1.2 frames over the Richmat 6E codec; source RVAs and vectors in the row121 ledger."""
+"""HJBed 2.1.2 frames over the Richmat 6E codec."""
 
 from __future__ import annotations
 

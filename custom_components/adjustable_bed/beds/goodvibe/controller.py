@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 import zlib
 from collections.abc import Callable, Mapping
 from copy import deepcopy
@@ -32,6 +31,7 @@ from ..entity_specs import (
     ControllerSelectSpec,
     ControllerStateSensorSpec,
 )
+from ..richmat.labels import function_label
 from . import protocol as p
 from .catalog import ACTION_EXPANSIONS, ACTIONS, PRODUCTS, Action
 from .receive import Notifications
@@ -151,9 +151,8 @@ def _stop(side: int, link: Link) -> bytes:
 
 
 def label(action: Action) -> str:
-    key = action.label.removeprefix("deviceFunctionItem").removeprefix("deviceFunctionSofa")
-    suffix = " (long action)" if action.force_long else ""
-    return re.sub(r"(?<!^)(?=[A-Z])", " ", key) + suffix
+    suffix = " (long press)" if action.force_long else ""
+    return function_label(action.label) + suffix
 
 
 def select_link(
@@ -1010,7 +1009,7 @@ class GoodVibeController(BedController):
 
                 await selected(controller).async_execute_goodvibe_request(Request("light_off"))
 
-            off = labels.get("light_off", "Close bed light")
+            off = labels.get("light_off", "Bed light off")
             buttons.append(
                 ControllerButtonSpec(
                     "goodvibe_light_off",
@@ -1070,7 +1069,7 @@ class GoodVibeController(BedController):
         )
 
     def _effective_gesture(self, action: Action) -> tuple[str, bool]:
-        """The gesture a press runs, and whether local memory mode applies (row116).
+        """The gesture a press runs, and whether local memory mode applies.
 
         Memory mode replaces an eligible sustained press with one long operand.
         """
@@ -1084,7 +1083,7 @@ class GoodVibeController(BedController):
     def execution(self) -> ExecutionCapabilities:
         """Renewable holds on the held controls that run a sustained press (#483).
 
-        Row116: a sustained press first sends after 100 ms, repeats every 100 ms
+        Good Vibe Sleep: a sustained press first sends after 100 ms, repeats every 100 ms
         with no fixed count and, once a tick fired, releases with the generic
         STOP. Short, long and short-and-long gestures, and sustained controls
         local memory mode turns into one long operand, keep their gestures.
@@ -1323,6 +1322,8 @@ class GoodVibeController(BedController):
                 )
             )
         if len(self.product.sides) > 1:
+            # Good Vibe has no single-address pairing, so the select is the
+            # only way to reach the other side of a split bed.
 
             async def set_side(_controller: BedController, value: str) -> None:
                 self._select_side(value)
@@ -1424,7 +1425,7 @@ class GoodVibeController(BedController):
                     MONITORING,
                     MEMORY,
                 ),
-                card=CARD_UTILITY,
+                entity_registry_enabled_default=False,
             )
         ]
         if self.product is None:
@@ -1433,7 +1434,12 @@ class GoodVibeController(BedController):
                     key = f"goodvibe_{side}_{name}"
                     specs.append(
                         ControllerStateSensorSpec(
-                            key, key.lower(), _live_key(side, name), "mdi:bed", card=CARD_UTILITY
+                            key,
+                            key.lower(),
+                            _live_key(side, name),
+                            "mdi:bed",
+                            entity_registry_enabled_default=True,
+                            card=CARD_UTILITY,
                         )
                     )
         return tuple(specs)

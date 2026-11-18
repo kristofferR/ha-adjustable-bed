@@ -143,7 +143,7 @@ class OkinNFrameProfile:
     """A 96-bit CST product's capabilities and field routing."""
 
 
-# OKIN Motion Bed 1.0 (2), com.okin.motionbed, accepted row150. These are
+# OKIN Motion Bed 1.0 (2), com.okin.motionbed. These are
 # app words, not the gateway handset table. 05/0A have unverified mechanics.
 OKIN_MOTIONBED: Final = OkinNFrameProfile(
     key="okin_motionbed",
@@ -277,7 +277,7 @@ def _customatic(
         hold=CUSTOMATIC_HOLD,
         # Each app streams a held motor mask until release, ORs held motors into
         # one shared mask and clears only a released motor's bit (clarity,
-        # jeromes, remedy, row028).
+        # jeromes, remedy).
         execution=ExecutionCapabilities(
             hold="stream", concurrent=frozenset(f"motor:{axis}" for axis in axes)
         ),
@@ -776,7 +776,7 @@ STARCODE_ABM5_4_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyT
     }
 )
 
-# eShine (com.okin.eshine 1.1.8, row122): one key table in the app's order; each
+# eShine (com.okin.eshine 1.1.8): one key table in the app's order; each
 # product selector exposes part of it.
 ESHINE_KEYS: Final = MappingProxyType(
     {
@@ -1344,7 +1344,7 @@ _BEDDING_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
 )
 
 
-# Row180 com.okin.bedding.rizeii 1.0.1 (2): all 24 live rows, including STOP.
+# com.okin.bedding.rizeii 1.0.1 (2): all 24 live rows, including STOP.
 # The axes are the live UI's head, foot and lumbar, not ConfigManager.motorNumber.
 RIZE_REMEDY_II_ACTIONS: Final = {
     "head_up": (1, 0), "head_down": (2, 0),
@@ -1498,7 +1498,7 @@ ADJUSTABLE_LUMBAR_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProx
 )
 
 
-# Resident Adjustable Base 1.0.0 (unit160), the only live 36_33_01a catalog.
+# Resident Adjustable Base 1.0.0, the only live 36_33_01a catalog.
 # Frozen literals, not the similarly named Rize Resident CST app.
 RESIDENT: Final = OkinNFrameProfile(
     key="resident",

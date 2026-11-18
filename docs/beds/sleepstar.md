@@ -248,16 +248,7 @@ feedback-only and appears in controller diagnostics as
 
 ### Analysis provenance
 
-The implementation comes from a clean-room APK Protocol Audit analysis of:
-
-- App: SleepSpa 1.3.7 (build 37)
-- Package: `com.dot.bedding.sleepspa.sleep_spa`
-- Complete split APK set: base, `arm64_v8a`, `en`, `nb`, and `xxhdpi`
-- Artifact-set SHA-256: `d114ec34fcd6645c30d356019ad756d3117d09f0eed8c41eb8e377b885557fdf`
-- Report status: COMPLETE, with 29/29 independent packet/parser vectors passing
-
-The report proves application behavior. Real-bed validation remains deferred
-until a user can test a beta or release and provide a support bundle if needed.
+Based on SleepSpa 1.3.7 (`com.dot.bedding.sleepspa.sleep_spa`).
 
 ### Deferred physical validation
 

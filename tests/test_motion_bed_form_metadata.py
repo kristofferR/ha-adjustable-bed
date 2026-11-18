@@ -66,7 +66,7 @@ async def test_motion_ui_matches_registered_multiple_target_contract(hass, name)
 
 
 @pytest.mark.parametrize(
-    ("name", "field"), [("motion_bed_alarm", "mode"), ("motion_bed_thermal_schedule", "gear")]
+    ("name", "field"), [("motion_bed_thermal_schedule", "gear")]
 )
 async def test_motion_ui_required_matches_actual_registered_schema(hass, name, field):
     async_register_motion_bed_services(hass)

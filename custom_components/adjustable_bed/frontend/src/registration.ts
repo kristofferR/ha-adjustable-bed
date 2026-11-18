@@ -1,4 +1,5 @@
 import { PLATFORM } from "./discovery";
+import { localizeLanguage } from "./localize";
 import type { AdjustableBedCardConfig, HomeAssistant } from "./types";
 
 export interface CustomCardSuggestion {
@@ -23,10 +24,16 @@ export interface CustomCardsWindow {
 
 const CARD_TYPE = "adjustable-bed-card";
 
-const cardEntry: CustomCardEntry = {
+// The card picker has no hass object yet, so it follows the page language.
+function pageLanguage(): string | undefined {
+  return typeof document !== "undefined"
+    ? document.documentElement.lang || navigator.language : undefined;
+}
+
+const cardEntry = (language?: string): CustomCardEntry => ({
   type: CARD_TYPE,
-  name: "Adjustable Bed Card",
-  description: "Native control card for the Adjustable Bed integration.",
+  name: localizeLanguage(language, "card.picker_name"),
+  description: localizeLanguage(language, "card.picker_description"),
   preview: true,
   documentationURL: "https://github.com/kristofferR/ha-adjustable-bed",
   getEntitySuggestion: (hass, entityId) => {
@@ -40,16 +47,19 @@ const cardEntry: CustomCardEntry = {
       },
     };
   },
-};
+});
 
-export function registerCustomCard(target: CustomCardsWindow): void {
+export function registerCustomCard(
+  target: CustomCardsWindow,
+  language: string | undefined = pageLanguage(),
+): void {
   const cards = (target.customCards ??= []);
   const existingIndex = cards.findIndex((card) => card.type === CARD_TYPE);
 
   if (existingIndex === -1) {
-    cards.push(cardEntry);
+    cards.push(cardEntry(language));
   } else {
-    cards[existingIndex] = cardEntry;
+    cards[existingIndex] = cardEntry(language);
   }
 }
 
