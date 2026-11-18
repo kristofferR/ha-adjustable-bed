@@ -4247,14 +4247,16 @@ class TestOctoPinLockDiagnostics:
         strings_path = Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json"
         strings = json.loads(strings_path.read_text(encoding="utf-8"))
         text = strings["issues"]["octo_pin_required"]
+        # A fixable issue explains itself in its flow, whose form names the bed.
+        description = text["fix_flow"]["step"]["init"]["description"]
         referenced = {
             field
-            for value in (text["title"], text["description"])
+            for value in (text["title"], description)
             for _, field, _, _ in _string.Formatter().parse(value)
             if field
         }
         assert referenced <= set(issue.translation_placeholders or {})
-        assert "http" not in text["description"]
+        assert "http" not in description
         assert "recovery_url" not in (issue.translation_placeholders or {})
 
     async def test_star2_variant_clears_a_stale_standard_octo_repair(

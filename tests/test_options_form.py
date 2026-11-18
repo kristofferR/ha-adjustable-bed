@@ -12,7 +12,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bed_traits import default_connection_mode
-from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+from custom_components.adjustable_bed.config_flow import TAP_COUNT_UNUSED, AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_OKIN_CB24,
@@ -168,6 +168,9 @@ async def test_configure_saves_movement_per_tap_within_its_range(
         # Fixed travel replaces both maximum angles.
         ("serta_mp_remote", CONF_BACK_MAX_ANGLE),
         ("sbi", CONF_BACK_MAX_ANGLE),
+        # Taps that never repeat the command by that count.
+        ("paramount", CONF_MOTOR_PULSE_COUNT),
+        ("reverie", CONF_MOTOR_PULSE_COUNT),
     ],
 )
 async def test_configure_hides_settings_the_bed_ignores(
@@ -241,3 +244,45 @@ async def test_configure_keeps_an_automatic_route_unsaved(
 
     assert saved["type"] == FlowResultType.CREATE_ENTRY
     assert CONF_PROTOCOL_VARIANT not in entry.data
+
+
+@pytest.mark.parametrize("bed_type", sorted(TAP_COUNT_UNUSED))
+async def test_beds_without_movement_per_tap_never_read_it(bed_type: str) -> None:
+    """The field is hidden only where no tap repeats its command by that count."""
+    import inspect
+
+    from custom_components.adjustable_bed.beds.base import BedController
+    from tests.test_controller_contract import _create_controller_for_bed_type
+
+    controller = await _create_controller_for_bed_type(bed_type)
+    own = [
+        cls
+        for cls in type(controller).__mro__
+        if cls.__module__.startswith("custom_components.adjustable_bed")
+        and cls is not BedController
+    ]
+    sources = "\n".join(inspect.getsource(cls) for cls in own)
+    assert "motor_pulse" not in sources
+    # The base movement helper repeats by that count unless overridden.
+    if "self._move_with_stop(" in sources:
+        assert any("_move_with_stop" in vars(cls) for cls in own)
+
+
+
+async def test_configure_asks_a_profiles_angle_question_as_read_bed_position(
+    hass: HomeAssistant, enable_custom_integrations
+) -> None:
+    """A profile that asks about angle sensing shows the positive toggle; the stored key stays."""
+    del enable_custom_integrations
+    entry, form = await _settings_form(hass, {CONF_BED_TYPE: "sleep_number"})
+    fields = {marker.schema for marker in form["data_schema"].schema}
+    assert "read_positions" in fields
+    assert CONF_DISABLE_ANGLE_SENSING not in fields
+
+    saved = await hass.config_entries.options.async_configure(
+        form["flow_id"], user_input={"read_positions": False}
+    )
+
+    assert saved["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+    assert "read_positions" not in entry.data
