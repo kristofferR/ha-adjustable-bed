@@ -3878,8 +3878,6 @@ jalon_bed_set_alarm:
           options: [both, left, right]
 
 onlysnore_set_alarm:
-  name: Snore Monitor BED alarm
-  description: Configure the exact local BED alarm. Triple slots and soft wake require reported support. One-time masks preserve the app's single/triple weekday quirks.
   fields:
     device_id:
       required: true
@@ -3909,7 +3907,6 @@ onlysnore_set_alarm:
         time:
     week_mask:
       default: 0
-      description: Exact app mask. Zero and 128 use the app's one-time preprocessing.
       selector:
         number:
           min: 0
@@ -3918,7 +3915,6 @@ onlysnore_set_alarm:
           mode: box
     action_index:
       default: 0
-      description: App action index 0 through 4, transmitted as 01, 09, 05, 06 or 08.
       selector:
         number:
           min: 0

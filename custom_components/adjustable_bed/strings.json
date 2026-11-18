@@ -6839,6 +6839,26 @@
     }
   },
   "services": {
+    "onlysnore_set_alarm": {
+      "name": "Snore Monitor BED alarm",
+      "description": "Configure the exact local BED alarm. Triple slots and soft wake require reported support. One-time masks preserve the app's single/triple weekday quirks.",
+      "fields": {
+        "device_id": {"name": "Device"},
+        "side": {"name": "Side"},
+        "slot": {"name": "Alarm slot"},
+        "enabled": {"name": "Enabled"},
+        "time": {"name": "Time"},
+        "week_mask": {
+          "name": "Week mask",
+          "description": "Exact app mask. Zero and 128 use the app's one-time preprocessing."
+        },
+        "action_index": {
+          "name": "Action",
+          "description": "App action index 0 through 4, transmitted as 01, 09, 05, 06 or 08."
+        },
+        "soft_wake": {"name": "Soft wake"}
+      }
+    },
     "comfort_enhancements_set_alarm": {
       "name": "Comfort Enhancements: set alarm",
       "description": "Program or disable the BLE alarm for the current local day. No alarm feedback is available.",
