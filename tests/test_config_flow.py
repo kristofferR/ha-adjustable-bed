@@ -3340,9 +3340,9 @@ class TestOptionsFlow:
         remote_marker = markers[CONF_RICHMAT_REMOTE]
         remote_validator = initial["data_schema"].schema[remote_marker]
 
-        assert remote_marker.default() == "qrrm"
-        assert "qrrm" in remote_validator.container
-        assert RICHMAT_REMOTE_LP_QRRM in remote_validator.container
+        # The long remote list is a searchable picker that still takes the code.
+        assert remote_validator(remote_marker.default()) == "qrrm"
+        assert remote_validator(RICHMAT_REMOTE_LP_QRRM) == RICHMAT_REMOTE_LP_QRRM
 
         saved = await hass.config_entries.options.async_configure(
             initial["flow_id"],

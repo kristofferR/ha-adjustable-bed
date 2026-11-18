@@ -131,9 +131,10 @@ def test_every_declared_question_has_a_receiver_label():
     import json
     from pathlib import Path
 
+    from custom_components.adjustable_bed.config_flow import _form_key
     from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
 
-    keys = {question.key for profile in SETUP_PROFILES.values() for question in profile.questions}
+    keys = {_form_key(question) for profile in SETUP_PROFILES.values() for question in profile.questions}
     for path in ("strings.json", "translations/en.json"):
         steps = json.loads((Path("custom_components/adjustable_bed") / path).read_text())
         for side in ("left_settings", "right_settings"):

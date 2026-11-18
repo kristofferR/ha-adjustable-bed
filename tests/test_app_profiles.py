@@ -187,7 +187,7 @@ def test_m1x12_main_and_elevate_profiles_are_explicit_and_findable() -> None:
     # The StarCode apps' row names the app; its question opens the app's step.
     assert "Adjustable Comfort M1X12" in options[BED_TYPE_STARCODE_ABM5_4]
     assert BED_TYPE_STARCODE_M1X12 in FAMILY_STEP_ROUTES
-    assert options[elevate_app] == "Adjustable Comfort M1X12 ELEVATE"
+    assert options[elevate_app] == "Adjustable Comfort M1X12 app, Elevate lift"
     assert resolve_bed_type_choice(elevate_app) == (
         BED_TYPE_STAR_ELEVATE,
         STAR_ELEVATE_VARIANT_M1X12,
@@ -210,7 +210,7 @@ def test_m1x12_main_and_elevate_profiles_are_explicit_and_findable() -> None:
             (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12),
         ],
         {CONF_PROTOCOL_VARIANT: STAR_ELEVATE_VARIANT_M1X12},
-    ) == (CONF_PROTOCOL_VARIANT, "Adjustable Comfort M1X12 ELEVATE")
+    ) == (CONF_PROTOCOL_VARIANT, "Adjustable Comfort M1X12 Elevate lift")
 
 
 @pytest.mark.parametrize("variant", [KEESON_VARIANT_INNOVA, KEESON_VARIANT_AMERICANSTAR])

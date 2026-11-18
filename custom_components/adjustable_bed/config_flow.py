@@ -159,6 +159,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BOBPOWERBASE,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFYDS,
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -192,11 +193,20 @@ from .const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIMIKI,
+    BED_TYPE_OKIN_7BYTE,
+    BED_TYPE_OKIN_64BIT,
+    BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
+    BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_NORDIC,
+    BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
+    BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
     BED_TYPE_RICHMAT_APP,
@@ -467,6 +477,22 @@ async def _async_translation(hass: HomeAssistant, category: str, key: str, defau
     except Exception:  # noqa: BLE001 - a missing translation must not block a flow
         return default
     return translations.get(f"component.{DOMAIN}.{category}.{key}", default)
+
+
+async def _async_selector_labels(hass: HomeAssistant, selector: str) -> dict[str, str]:
+    """Return a translated selector's option labels by option value."""
+    try:
+        translations = await async_get_translations(
+            hass, hass.config.language, "selector", {DOMAIN}
+        )
+    except Exception:  # noqa: BLE001 - a missing translation must not block a flow
+        return {}
+    prefix = f"component.{DOMAIN}.selector.{selector}.options."
+    return {
+        key.removeprefix(prefix): label
+        for key, label in translations.items()
+        if key.startswith(prefix)
+    }
 
 
 # English fallbacks for the connection check's lines; the shipped text lives in
@@ -809,6 +835,35 @@ _SETUP_ROUTE_EXCLUSIONS: Final[dict[str, frozenset[str]]] = {
 }
 
 
+# A longer dropdown becomes a picker the user can search by label.
+_DROPDOWN_ROWS: Final = 30
+
+
+def _searchable(choices: Mapping[Any, str]) -> bool:
+    """Return whether a list of text choices is long enough to search.
+
+    The picker submits labels, so every label must name one choice.
+    """
+    return (
+        len(choices) > _DROPDOWN_ROWS
+        and all(isinstance(key, str) for key in choices)
+        and len(set(choices.values())) == len(choices)
+    )
+
+
+def _choice_field(choices: Mapping[str, str]) -> SelectSelector:
+    """Return a dropdown of labelled choices, searchable when it is long."""
+    options = [SelectOptionDict(value=key, label=label) for key, label in choices.items()]
+    if _searchable(choices):
+        return _SearchableSelect(options)
+    return SelectSelector(SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN))
+
+
+def _shown(field: SelectSelector, choice: str) -> object:
+    """Return the value a choice field shows for a choice."""
+    return field.shown(choice) if isinstance(field, _SearchableSelect) else choice
+
+
 def _route_section(bed_type: str | None, default: str) -> section | None:
     """Return a collapsed Advanced section with a bed type's labelled routes."""
     routes = _setup_routes(bed_type)
@@ -816,14 +871,11 @@ def _route_section(bed_type: str | None, default: str) -> section | None:
         return None
     if default not in routes:
         default = VARIANT_AUTO if VARIANT_AUTO in routes else next(iter(routes))
-    field = SelectSelector(
-        SelectSelectorConfig(
-            options=[SelectOptionDict(value=key, label=label) for key, label in routes.items()],
-            mode=SelectSelectorMode.DROPDOWN,
-        )
-    )
+    field = _choice_field(routes)
     return section(
-        vol.Schema({vol.Required(CONF_PROTOCOL_VARIANT, default=default): field}),
+        vol.Schema(
+            {vol.Required(CONF_PROTOCOL_VARIANT, default=_shown(field, default)): field}
+        ),
         {"collapsed": VARIANT_AUTO in routes},
     )
 
@@ -967,6 +1019,19 @@ class _SearchableSelect(SelectSelector):
 
 
 _APP_NOT_LISTED: Final = "not_listed"
+# The brand list's one row for the Okin receivers named after their protocol.
+_OKIN_RECEIVERS: Final = "okin_receivers"
+# Its question's answers, the protocol routes, alphabetical by their English label.
+OKIN_RECEIVER_ROUTES: Final = (
+    BED_TYPE_OKIN_HANDLE,
+    BED_TYPE_OKIN_NORDIC,
+    BED_TYPE_OKIN_7BYTE,
+    BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_ORE,
+    BED_TYPE_OKIN_64BIT,
+    BED_TYPE_OKIN_CB35,
+    BED_TYPE_OKIN_CB24,
+)
 _FAMILY_NOT_SURE: Final = "not_sure"
 # A discovered bed's app question searches every app with this answer.
 _ANOTHER_APP: Final = "another"
@@ -1027,7 +1092,9 @@ def _offer_another_app(schema: vol.Schema) -> vol.Schema:
     return schema
 
 
-def _family_rows(detected: str | None = None) -> list[tuple[str, str]]:
+def _family_rows(
+    detected: str | None = None, other_receivers: str = "Okin (other receivers)"
+) -> list[tuple[str, str]]:
     """Return the brand list's rows, as (choice, label), from the bed-type list.
 
     Each brand group gives the rows that open a family question, as the list
@@ -1045,6 +1112,13 @@ def _family_rows(detected: str | None = None) -> list[tuple[str, str]]:
         # A family route is reached through its family's row.
         return by_label.get(str(_bed_type_selector(choice).shown(choice)))
 
+    def family_row(choice: str) -> str:
+        # An app its family's question offers is reached through the family row.
+        family = answer_family(*resolve_bed_type_choice(choice))
+        if family is None or (row := row_for(family.row)) is None:
+            return choice
+        return row
+
     rows: dict[str, str] = {}
     for routes in ACTUATOR_GROUPS.values():
         choices = [row_for(bed_type_choice(bed_type, variant)) for bed_type, variant in routes]
@@ -1057,11 +1131,16 @@ def _family_rows(detected: str | None = None) -> list[tuple[str, str]]:
         ]
         for choice in families or choices:
             if choice is not None:
+                choice = family_row(choice)
                 rows.setdefault(choice, _brand_first(choice, listed[choice]))
-        # The protocol-named routes are off the app question; the brand list keeps them.
+        # The protocol-named routes are off the app question. One row asks which
+        # receiver it is in plain words; a detected one keeps its own row.
         for bed_type, _variant in routes:
             if bed_type in PROTOCOL_ROUTES:
-                rows.setdefault(bed_type, bed_type_label(bed_type))
+                if bed_type == detected:
+                    rows.setdefault(bed_type, bed_type_label(bed_type))
+                else:
+                    rows.setdefault(_OKIN_RECEIVERS, other_receivers)
     return sorted(rows.items(), key=lambda row: row[1].lower())
 
 
@@ -1074,7 +1153,8 @@ def _brand_first(choice: str, label: str) -> str:
         (family for family in APP_FAMILIES if family_row_label(family.row) == label), None
     )
     if family is None:
-        return label
+        app, separator, name = label.rpartition(FAMILY_ROW_SEPARATOR)
+        return f"{name}: {app}" if separator else label
     return f"{family.name}: {family.apps}"
 
 
@@ -1181,10 +1261,11 @@ def _hide_owned_generic_fields(
     keep: Collection[str] = frozenset(),
 ) -> None:
     """Drop the generic fields the selected app profile sets itself, except ``keep``."""
-    hidden = hidden_generic_fields(bed_type, variant) - set(keep)
+    hidden = hidden_generic_fields(bed_type, variant)
     if CONF_DISABLE_ANGLE_SENSING in hidden:
         # The profile sets the stored value behind Read bed position.
         hidden = hidden | {CONF_READ_POSITIONS}
+    hidden = hidden - set(keep)
     for marker in tuple(schema):
         if marker.schema in hidden:
             del schema[marker]
@@ -1802,8 +1883,29 @@ def _configure_questions(
     )
 
 
+def _condition_fields(profile: SetupProfile) -> frozenset[str]:
+    """Return the questions whose answers decide whether others are shown."""
+    return frozenset(
+        field for question in profile.questions for field in question.condition_fields()
+    )
+
+
+def _form_key(question: Question) -> str:
+    """Return the form field a question is asked as.
+
+    Profiles store "Disable angle sensing", but every form asks the positive
+    "Read bed position", so its answer is inverted on the way in and out.
+    """
+    return CONF_READ_POSITIONS if question.key == CONF_DISABLE_ANGLE_SENSING else question.key
+
+
 def _question_field(
-    question: Question, data: Mapping[str, Any], context: FlowContext, *, visible: bool = False
+    question: Question,
+    data: Mapping[str, Any],
+    context: FlowContext,
+    *,
+    visible: bool = False,
+    drivers: Collection[str] = (),
 ) -> tuple[vol.Marker, Any]:
     """Return one declared question's form marker and validator.
 
@@ -1815,6 +1917,9 @@ def _question_field(
     from .setup_questions import OPTIONAL, REQUIRED
 
     default = question.default_for(data, context)
+    if question.key == CONF_DISABLE_ANGLE_SENSING and isinstance(default, bool):
+        # Asked as the positive "Read bed position"; stored as before.
+        default = not default
     marker_type = (
         data_entry_flow.Required if default is REQUIRED else data_entry_flow.Optional
     )
@@ -1823,11 +1928,18 @@ def _question_field(
         _SearchableSelect(
             [SelectOptionDict(value=str(key), label=label) for key, label in options.items()]
         )
-        if question.searchable and options
+        if options
+        and not question.multiple
+        and (
+            question.searchable
+            # Home Assistant shows conditional fields by the submitted label,
+            # so a question other fields depend on keeps its values.
+            or (_searchable(options) and question.key not in drivers)
+        )
         else None
     )
     marker = marker_type(
-        question.key,
+        _form_key(question),
         default=(
             vol.UNDEFINED
             if default in (REQUIRED, OPTIONAL)
@@ -1881,6 +1993,7 @@ def _profile_question_schema(
     schema: dict[vol.Marker, Any] = {}
     advanced: dict[vol.Marker, Any] = {}
     shown = {question.key for question in profile.questions} - set(skip)
+    drivers = _condition_fields(profile)
     for question in profile.questions:
         if question.key in skip:
             continue
@@ -1889,7 +2002,9 @@ def _profile_question_schema(
         visible = question.condition_fields() <= shown
         if not visible and not question.asked(data):
             continue
-        marker, validator = _question_field(question, data, context, visible=visible)
+        marker, validator = _question_field(
+            question, data, context, visible=visible, drivers=drivers
+        )
         (advanced if question.advanced and advanced_section else schema)[marker] = validator
     if advanced:
         named = {marker.schema for marker in advanced} & set(errors or ())
@@ -1918,13 +2033,18 @@ def _profile_answers(
         if not question.asked({**data, **submitted}):
             # A hidden question is neither required nor saved.
             continue
-        if question.key in submitted:
-            _marker, validator = _question_field(question, data, context)
+        if (key := _form_key(question)) in submitted:
+            _marker, validator = _question_field(
+                question, data, context, drivers=_condition_fields(profile)
+            )
             try:
                 # The schema coerces a select's text; a direct call gets the same.
-                answers[question.key] = validator(submitted[question.key])
+                answer = validator(submitted[key])
             except vol.Invalid:
-                answers[question.key] = submitted[question.key]
+                answer = submitted[key]
+            answers[question.key] = (
+                not answer if key != question.key and isinstance(answer, bool) else answer
+            )
         elif user_input and (default := question.default_for(data, context)) not in (
             REQUIRED,
             OPTIONAL,
@@ -1936,6 +2056,20 @@ def _profile_answers(
 # The one movement timing a user may tune: how many times a tap repeats its
 # command (#510). The repeat delay stays each bed's own.
 _PULSE_FIELDS: Final = (CONF_MOTOR_PULSE_COUNT,)
+# Beds whose taps never read that count, so the field would change nothing.
+# Paramount sets its tap length with its own setting; the others time each
+# press from their app's own tables.
+TAP_COUNT_UNUSED: Final = frozenset(
+    {
+        "paramount",
+        BED_TYPE_GOODVIBE,
+        BED_TYPE_GALAXY,
+        BED_TYPE_MLILY,
+        BED_TYPE_BOBPOWERBASE,
+        BED_TYPE_MOTOMOTION,
+        BED_TYPE_REVERIE,
+    }
+)
 _PULSE_COUNT_RANGE: Final = (1, 100)
 _ANGLE_LIMITS: Final[dict[str, float]] = {
     CONF_BACK_MAX_ANGLE: DEFAULT_BACK_MAX_ANGLE,
@@ -2007,6 +2141,8 @@ def _connection_fields(
 def _unused_generic_fields(bed_type: str, variant: str | None) -> set[str]:
     """Return the generic settings a route ignores or sets itself, which no form shows."""
     unused: set[str] = set()
+    if bed_type in TAP_COUNT_UNUSED:
+        unused.add(CONF_MOTOR_PULSE_COUNT)
     if not asks_massage(bed_type):
         unused.add(CONF_HAS_MASSAGE)
     if len(_motor_count_options(bed_type, variant or VARIANT_AUTO)) < 2:
@@ -2440,10 +2576,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 # The saved route, even unsaved as auto, keeps its settings.
                 self._select_family_route(bed_type, chosen)
             return await self._async_reconfigure_continue(exact=True)
+        field = _choice_field(routes)
         return self.async_show_form(
             step_id="reconfigure_route",
             data_schema=vol.Schema(
-                {vol.Required(CONF_PROTOCOL_VARIANT, default=current): vol.In(routes)}
+                {vol.Required(CONF_PROTOCOL_VARIANT, default=_shown(field, current)): field}
             ),
             description_placeholders={"bed_type": bed_type_label(bed_type)},
         )
@@ -2982,15 +3119,22 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._narrowing = (family, answer)
                 return await getattr(self, f"async_step_{answer.step}")()
             return await self._async_stage_answer(family, visit, answer)
+        keys = list(offered)
+        if family.form is Form.KEYS and len(keys) > _LIST_ROWS:
+            # A long list of peer apps reads alphabetically; Keep stays last. A
+            # labelled question keeps its order: a discovered Okin CST bed's
+            # own products come before the other Okin routes (#573).
+            labels = await _async_selector_labels(self.hass, f"{family.step}_choice")
+            keys.sort(key=lambda key: (offered[key].keep, labels.get(key, key).casefold()))
         options: list[str] | list[SelectOptionDict] = (
-            list(offered)
+            keys
             if family.form is Form.KEYS
             else [
                 SelectOptionDict(
                     value=key,
-                    label=answer.label or (family.keep_label if answer.keep else key),
+                    label=offered[key].label or (family.keep_label if offered[key].keep else key),
                 )
-                for key, answer in offered.items()
+                for key in keys
             ]
         )
         selector = SelectSelector(
@@ -4760,11 +4904,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if self._app_after_device == "device" and self._discovery_info is not None
             else None
         )
+        other_receivers = await self._get_config_translation(
+            "step.select_family.data.okin_receivers", "Okin (other receivers)"
+        )
         picker = _SearchableSelect(
             [
                 *(
                     SelectOptionDict(value=choice, label=label)
-                    for choice, label in _family_rows(detected)
+                    for choice, label in _family_rows(detected, other_receivers)
                 ),
                 SelectOptionDict(value=_FAMILY_NOT_SURE, label=not_sure),
             ]
@@ -4774,6 +4921,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             if choice == _FAMILY_NOT_SURE:
                 self._app_after_device = None
                 return await self.async_step_diagnostic()
+            if choice == _OKIN_RECEIVERS:
+                return await self.async_step_okin_receiver()
             bed_type, variant = resolve_bed_type_choice(choice)
             self._selected_bed_type = bed_type
             self._selected_protocol_variant = variant
@@ -4781,6 +4930,29 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="select_family",
             data_schema=vol.Schema({vol.Required(CONF_BED_TYPE): picker}),
+        )
+
+    async def async_step_okin_receiver(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask which Okin receiver it is, by the beds and remotes it came with."""
+        if user_input is not None:
+            self._selected_bed_type = user_input["choice"]
+            self._selected_protocol_variant = None
+            return await self._async_after_app_choice()
+        return self.async_show_form(
+            step_id="okin_receiver",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=list(OKIN_RECEIVER_ROUTES),
+                            translation_key="okin_receiver_choice",
+                            mode=SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
         )
 
     async def async_step_manual(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -7415,7 +7587,11 @@ class AdjustableBedOptionsFlow(
             current,
             bed_type,
             variant,
-            (CONF_PREFERRED_ADAPTER, CONF_CONNECTION_MODE, *_PULSE_FIELDS),
+            [
+                key
+                for key in (CONF_PREFERRED_ADAPTER, CONF_CONNECTION_MODE, *_PULSE_FIELDS)
+                if key not in _unused_generic_fields(bed_type, variant)
+            ],
         )
         if bed_type == BED_TYPE_REVERIE_PAIRLINK:
             await async_import_modules(self.hass, *_PAIRLINK_SETTINGS_MODULES)
@@ -7465,7 +7641,12 @@ class AdjustableBedOptionsFlow(
                 if changes.keys() & {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS}:
                     changes[CONF_MOTOR_PULSE_USER_SET] = True
                 if questions is not None:
-                    asked = {question.key for question in questions.questions}
+                    # Answers are stored under their own keys, never their form's.
+                    asked = {
+                        key
+                        for question in questions.questions
+                        for key in (question.key, _form_key(question))
+                    }
                     changes = {key: value for key, value in changes.items() if key not in asked}
                     before = {**current, **changes}
                     answers = _profile_answers(questions, user_input, current, context)

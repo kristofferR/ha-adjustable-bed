@@ -137,7 +137,7 @@ async def test_entries_created_now_are_never_marked(hass: HomeAssistant) -> None
     assert (AdjustableBedConfigFlow.VERSION, AdjustableBedConfigFlow.MINOR_VERSION) == (5, 6)
     entry = MockConfigEntry(
         domain=DOMAIN,
-        data={CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "auto"},
+        data={CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: BED_TYPE_LINAK, CONF_PROTOCOL_VARIANT: "auto"},
         version=4,
         minor_version=3,
     )
@@ -378,16 +378,16 @@ async def test_a_solace_review_asks_about_woosa_and_adds_motion_bed_once_adverti
     entry = _entry(hass, BED_TYPE_SOLACE, variant=None)
     with patch(_HISTORY, return_value=None):
         async_refresh_profile_review_issue(hass, entry)
-    # Woosa Sleep shares the name routes' names, so no advertisement decides it.
+    # Woosa Sleep and Sophie share the name routes' names, so no advertisement decides it.
     issue = _issue(hass, entry)
-    assert issue is not None and issue.translation_key == "app_profile_woosa"
-    assert issue.translation_placeholders["apps"] == "- Woosa Sleep app"
+    assert issue is not None and issue.translation_key == "app_profile_review"
+    assert issue.translation_placeholders["apps"] == "- Sophie app\n- Woosa Sleep app"
 
     with patch(_HISTORY, return_value=_advertisement("QMS-IQ 1234", SOLACE_SERVICE_UUID)):
         async_refresh_profile_review_issue(hass, entry)
     issue = _issue(hass, entry)
     assert issue is not None and issue.translation_key == "app_profile_review"
-    assert issue.translation_placeholders["apps"] == "- Motion Bed app\n- Woosa Sleep app"
+    assert issue.translation_placeholders["apps"] == "- Motion Bed app\n- Sophie app\n- Woosa Sleep app"
 
 
 def _paired(hass: HomeAssistant, mode: str) -> MockConfigEntry:
@@ -464,14 +464,12 @@ def test_review_text_is_translated_identically() -> None:
     strings, english = (
         json.loads((root / name).read_text()) for name in ("strings.json", "translations/en.json")
     )
-    for key in ("app_profile_review", "app_profile_match", "app_profile_woosa"):
+    for key in ("app_profile_review", "app_profile_match"):
         issue = strings["issues"][key]
         assert issue == english["issues"][key]
-        # Solace has a guided change, so the Woosa review opens only its managed step.
-        steps = {"managed"} if key == "app_profile_woosa" else {"init", "unpair", "managed"}
-        assert set(issue["fix_flow"]["step"]) == steps
+        assert set(issue["fix_flow"]["step"]) == {"init", "unpair", "managed"}
         assert "entry_missing" in issue["fix_flow"]["abort"]
         assert "—" not in json.dumps(issue, ensure_ascii=False)
     assert strings["selector"]["app_profile_review"] == {
-        "options": {"keep": "Keep current configuration"}
+        "options": {"keep": "Keep the current setup"}
     }

@@ -203,9 +203,9 @@ async def test_a_route_change_takes_configures_route_defaults(hass, enable_custo
     sensing = next(
         marker
         for marker in result["data_schema"].schema
-        if marker.schema == const.CONF_DISABLE_ANGLE_SENSING
+        if marker.schema == const.CONF_READ_POSITIONS
     )
-    assert sensing.default() is False
+    assert sensing.default() is True
     result = await manager.async_configure(result["flow_id"], {})
     result = await manager.async_configure(result["flow_id"], {"action": "apply"})
     assert result["reason"] == "migration_applied"
