@@ -199,7 +199,7 @@ Configure for its product, and **Reconfigure** asks the same question, so it
 can also move to another Okin route.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
 The same question appears, with **Keep** leaving the entry as it is. Before the
 review, each Okin route is checked for the command endpoint its controller
 writes, and the Okimat and staircase routes also check the bond; a bed without
@@ -1468,7 +1468,7 @@ command characteristic, and **Configure** no longer changes the app.
 
 The Jordan's row asks the same way between [Serenity](#jordans-serenity) and
 [Tranquil](#jordans-tranquil). An app's own row in the app question, such as
-Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)); **Keep** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
+Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)); **Keep** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
 characteristic; Z-Series, Serenity and Tranquil check their command and
 notification characteristics.
 

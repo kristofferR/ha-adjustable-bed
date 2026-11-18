@@ -43,7 +43,7 @@ from homeassistant.components.repairs.const import FlowType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResultType, UnknownFlow
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import selector
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
@@ -626,85 +626,11 @@ def async_keep_current_profile(hass: HomeAssistant, entry: ConfigEntry) -> None:
     async_clear_profile_review_issue(hass, entry.entry_id)
 
 
-# A bed type change re-renders the form once, and a variant can re-render it
-# for its own fields; a form still open after this needs real input.
-_MAX_OPTIONS_SUBMISSIONS: Final = 4
-
-
-async def _async_switch_via_options(hass: HomeAssistant, entry: ConfigEntry, choice: str) -> bool:
-    """Submit an app choice through the options flow; True once it is saved.
-
-    Every other field keeps the value Configure shows, so the options flow
-    applies its own validation, cleanup and pair guards. A form that reports
-    an error, or still waits for input, is abandoned without saving anything.
-    """
-    manager = hass.config_entries.options
-    result = await manager.async_init(entry.entry_id)
-    flow_id = result["flow_id"]
-    try:
-        result = await manager.async_configure(flow_id, {"next_step_id": "settings"})
-        submission: dict[str, Any] = {CONF_BED_TYPE: choice}
-        for _ in range(_MAX_OPTIONS_SUBMISSIONS):
-            if result.get("type") is not FlowResultType.FORM or result.get("errors"):
-                break
-            result = await manager.async_configure(flow_id, submission)
-            submission = {}
-    finally:
-        if result.get("type") is not FlowResultType.CREATE_ENTRY:
-            try:
-                manager.async_abort(flow_id)
-            except UnknownFlow:
-                pass
-    return result.get("type") is FlowResultType.CREATE_ENTRY
-
-
-async def _async_open_options_with(
-    hass: HomeAssistant, entry: ConfigEntry, choice: str
-) -> tuple[FlowResultType | None, str]:
-    """Open Configure's settings form with the chosen app selected.
-
-    Returns the result type and options flow id. A form is left open for the
-    handoff; an app without settings of its own may already have saved.
-    """
-    manager = hass.config_entries.options
-    result = await manager.async_init(entry.entry_id)
-    flow_id = result["flow_id"]
-    try:
-        result = await manager.async_configure(flow_id, {"next_step_id": "settings"})
-        if result.get("type") is FlowResultType.FORM:
-            # A bed-type change only re-renders the form with the app's fields.
-            result = await manager.async_configure(flow_id, {CONF_BED_TYPE: choice})
-    except BaseException:
-        try:
-            manager.async_abort(flow_id)
-        except UnknownFlow:
-            pass
-        raise
-    kind = result.get("type")
-    if kind is FlowResultType.FORM and not result.get("errors"):
-        return kind, flow_id
-    if kind is not FlowResultType.CREATE_ENTRY:
-        try:
-            manager.async_abort(flow_id)
-        except UnknownFlow:
-            pass
-        kind = None
-    return kind, flow_id
-
-
-def _needs_app_settings(choice: str) -> bool:
-    """Return True for apps whose own settings this shared repair cannot collect."""
-    from .config_flow import APP_SETTINGS_BED_TYPES
-
-    return resolve_bed_type_choice(choice)[0] in APP_SETTINGS_BED_TYPES
-
-
 class ProfileReviewRepairFlow(RepairsFlow):
     """Switch an older entry to one listed app profile, or keep it."""
 
     def __init__(self, entry_id: str) -> None:
         self._entry_id = entry_id
-        self._choice: str | None = None
 
     def _entry(self) -> ConfigEntry | None:
         entry = self.hass.config_entries.async_get_entry(self._entry_id)
@@ -723,15 +649,7 @@ class ProfileReviewRepairFlow(RepairsFlow):
             if (user_input or {}).get("choice") == _KEEP:
                 return self._finish(entry)
             if (user_input or {}).get("choice") == "configure":
-                result = await self.hass.config_entries.flow.async_init(
-                    DOMAIN, context=reconfigure_context(entry)
-                )
-                if result.get("type") is not FlowResultType.FORM:
-                    return self.async_abort(reason="migration_setup_unavailable")
-                return self.async_abort(
-                    reason="migration_setup_started",
-                    next_flow=(FlowType.CONFIG_FLOW, result["flow_id"]),
-                )
+                return await self._async_reconfigure(entry, None)
             return self.async_show_form(
                 step_id="managed",
                 description_placeholders=_placeholders(entry, choices, choices[0]),
@@ -756,15 +674,9 @@ class ProfileReviewRepairFlow(RepairsFlow):
         if choice == _KEEP:
             return self._finish(entry)
         if choice in choices:
-            self._choice = choice
-            if _needs_app_settings(choice) or not await _async_switch_via_options(
-                self.hass, entry, choice
-            ):
-                return await self.async_step_configure()
-            # The saved options reload the entry; its setup retires the mark
-            # because the entry no longer uses the reviewed route.
-            async_delete_issue(self.hass, DOMAIN, _issue_id(entry.entry_id))
-            return self.async_create_entry(title="", data={})
+            # Reconfigure asks the app's own questions, checks and reviews the
+            # change, and settles this review when it saves or keeps.
+            return await self._async_reconfigure(entry, choice)
         return self.async_show_form(
             step_id="init",
             description_placeholders=_placeholders(entry, choices, choices[0]),
@@ -793,26 +705,16 @@ class ProfileReviewRepairFlow(RepairsFlow):
         """Take the guided-change answer the init step's managed form submits."""
         return await self.async_step_init(user_input)
 
-    async def async_step_configure(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
-        """Hand an app with its own settings to Configure, leaving the review open."""
-        entry = self._entry()
-        if entry is None or self._choice is None:
-            return self.async_abort(reason="entry_missing")
-        if user_input is not None:
-            kind, flow_id = await _async_open_options_with(self.hass, entry, self._choice)
-            if kind is FlowResultType.FORM:
-                return self.async_abort(
-                    reason="profile_review_handoff",
-                    next_flow=(FlowType.OPTIONS_FLOW, flow_id),
-                )
-            if kind is FlowResultType.CREATE_ENTRY:
-                # Saved: the reload retires the review for the changed route.
-                async_delete_issue(self.hass, DOMAIN, _issue_id(entry.entry_id))
-                return self.async_create_entry(title="", data={})
-            return self.async_abort(reason="profile_review_open")
-        return self.async_show_form(
-            step_id="configure",
-            description_placeholders=_placeholders(entry, (self._choice,), self._choice),
+    async def _async_reconfigure(self, entry: ConfigEntry, choice: str | None) -> RepairsFlowResult:
+        """Hand the change to Reconfigure, with the chosen app preselected."""
+        result = await self.hass.config_entries.flow.async_init(
+            DOMAIN, context=reconfigure_context(entry, choice)
+        )
+        if result.get("type") is not FlowResultType.FORM:
+            return self.async_abort(reason="migration_setup_unavailable")
+        return self.async_abort(
+            reason="migration_setup_started",
+            next_flow=(FlowType.CONFIG_FLOW, result["flow_id"]),
         )
 
     async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:

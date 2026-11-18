@@ -34,8 +34,8 @@ from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_ELITE_APP,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_SLEEPYS_ELITE_SELECTOR,
     DEVICE_INFO_CHARS,
     DEVICE_INFO_SERVICE_UUID,
@@ -240,7 +240,7 @@ async def sleepys_runtime(
             CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
             CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     entry.add_to_hass(hass)
@@ -712,7 +712,7 @@ async def test_sequential_both_button_is_finite_and_drops_stale_hold_metadata(
             CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
             CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     right_entry.add_to_hass(hass)
@@ -876,7 +876,7 @@ async def test_stale_both_hold_preflight_preserves_new_left_hold(
             CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
             CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     right_entry.add_to_hass(hass)

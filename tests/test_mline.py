@@ -580,7 +580,7 @@ async def make_receiver(hass, address, *, protocol="sleep"):
             CONF_PRODUCT_TYPE: "four",
             CONF_HAS_MASSAGE: True,
             CONF_DISABLE_ANGLE_SENSING: True,
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
         },
     )
     e.add_to_hass(hass)

@@ -103,7 +103,7 @@ app or remote you use; the bed's name and services never decide it.
    saves the detected legacy route.
 
 For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed)).
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
 The same question appears, with **Keep** leaving the entry as it is. Choosing an
 app checks the bed's Bluetooth services with the app's own transport selection
 before anything is saved; a bed without that app's services keeps its setup.

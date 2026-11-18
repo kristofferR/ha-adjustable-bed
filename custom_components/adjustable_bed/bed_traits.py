@@ -117,7 +117,12 @@ from .const import (
     BED_TYPE_ZSERIES,
     BEDJET_POWERLAYER_FOOT_MAX_ANGLE,
     BEDJET_POWERLAYER_HEAD_MAX_ANGLE,
-    DEFAULT_DISCONNECT_AFTER_COMMAND,
+    CONF_BED_TYPE,
+    CONF_DISABLE_ANGLE_SENSING,
+    CONF_PROTOCOL_VARIANT,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
     KEESON_LAYOUT_APP_BED_TYPES,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_SINO,
@@ -152,6 +157,9 @@ class BedTraits:
     # Controls keep state in the connection-scoped controller, so a new entry
     # keeps the link between commands by default.
     connection_scoped_state: bool = False
+    # Reconnecting needs a bond the bed may refuse outside its pairing window,
+    # so a new entry keeps the link between commands by default.
+    costly_reconnect: bool = False
     # Startup hooks own Device Information reads, including their timing.
     owns_device_info_reads: bool = False
     # A single-address pair may need separate Left and Right operations.
@@ -164,14 +172,18 @@ class BedTraits:
     max_angles: Mapping[str, float] = field(default_factory=dict)
 
     @property
-    def disconnect_after_command(self) -> bool:
-        """Return the "disconnect after command" default for a new entry.
+    def connection_mode(self) -> str:
+        """Return a new entry's default connection mode.
 
         These beds accept one BLE connection at a time, so holding the link
         locks out the physical remote and the vendor app until the idle timeout.
         Handing it straight back is the better default unless the bed needs it.
         """
-        return not (self.persistent_connection or self.connection_scoped_state)
+        if self.persistent_connection:
+            return CONNECTION_MODE_ALWAYS
+        if self.connection_scoped_state or self.costly_reconnect:
+            return CONNECTION_MODE_IDLE
+        return CONNECTION_MODE_RELEASE
 
 
 _NONE: Final = BedTraits()
@@ -276,12 +288,12 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     # Keeson, Serta and OKIN FFE share KeesonController, which reports
     # percentages. Only the Ergomotion variant reports positions.
     BED_TYPE_KEESON: BedTraits(percentage_positions=True, connection_scoped_state=True),
-    # LP Comfort Connect is held open pending hardware confirmation of bonded
-    # reconnects (#385).
-    BED_TYPE_LEGGETT_GEN2: BedTraits(persistent_connection=True),
+    # LP Comfort Connect needs its bond on every reconnect (#385, #709), so it
+    # stays connected between commands and holds the link once a reconnect stalls.
+    BED_TYPE_LEGGETT_GEN2: BedTraits(costly_reconnect=True),
     BED_TYPE_LEGGETT_LP_LEGACY: _NO_ANGLES,
     # The automatic route usually resolves to Gen2, so assume it until connected.
-    BED_TYPE_LEGGETT_PLATT: BedTraits(persistent_connection=True),
+    BED_TYPE_LEGGETT_PLATT: BedTraits(costly_reconnect=True),
     BED_TYPE_LEGGETT_WILINKE: _SCOPED,
     BED_TYPE_LIMOSS: BedTraits(position_feedback=True, connection_scoped_state=True),
     BED_TYPE_LIMOSS_REMOTE: _NO_ANGLES,
@@ -409,16 +421,81 @@ def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str |
     return bed_traits(bed_type, protocol_variant).position_feedback
 
 
-def disconnect_after_command_default_enabled(
-    bed_type: str | None, protocol_variant: str | None = None
-) -> bool:
-    """Return whether a NEW entry should free the BLE link after each command.
-
-    An existing entry already stores its own value, which is left alone.
-    """
+def default_connection_mode(bed_type: str | None, protocol_variant: str | None = None) -> str:
+    """Return the connection mode an entry runs when it stores none."""
     if not bed_type:
-        return DEFAULT_DISCONNECT_AFTER_COMMAND
-    return bed_traits(bed_type, protocol_variant).disconnect_after_command
+        return CONNECTION_MODE_IDLE
+    return bed_traits(bed_type, protocol_variant).connection_mode
+
+
+def connection_mode_is_fixed(bed_type: str | None, protocol_variant: str | None = None) -> bool:
+    """Return True when the bed holds its link whatever the connection mode says."""
+    return bed_traits(bed_type, protocol_variant).persistent_connection
+
+
+def reads_positions(data: Mapping[str, object]) -> bool:
+    """Return whether an entry (or paired side) reads the bed's position.
+
+    The saved choice wins; without one, a bed reads its position exactly when
+    its route reports one. Flows store the choice only when it differs.
+    """
+    stored = data.get(CONF_DISABLE_ANGLE_SENSING)
+    if isinstance(stored, bool):
+        return not stored
+    bed_type = data.get(CONF_BED_TYPE)
+    variant = data.get(CONF_PROTOCOL_VARIANT)
+    return bed_type_has_position_feedback(
+        bed_type if isinstance(bed_type, str) else None,
+        variant if isinstance(variant, str) else None,
+    )
+
+
+def store_read_positions(data: dict[str, object], read: bool | None = None) -> None:
+    """Save ``read`` (or keep the saved choice) only where it differs from the route.
+
+    Changes ``data`` in place, so a bed whose route reports no position, or
+    one reading as its route does, stores nothing.
+    """
+    if read is None:
+        read = reads_positions(data)
+    data.pop(CONF_DISABLE_ANGLE_SENSING, None)
+    if read != reads_positions(data):
+        data[CONF_DISABLE_ANGLE_SENSING] = not read
+
+
+# Bed types that never read "Has massage": their controllers have no massage
+# commands, or turn massage on themselves. tests/test_controller_contract.py
+# keeps this in step with the controllers.
+MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
+    {
+     "adjustable_bed", "adjustable_lumbar", "adjustamattress", "bailey_bed_control",
+     "bedgear", "bedjet_powerlayer", "bedsense", "bf", "casper_base", "casper_remote",
+     "casper_sleep_mm", "casper_sleep_sxb", "cherish", "comfort_enhancement3",
+     "comfortbase", "coolbase", "customatic_clarity", "customatic_jeromes",
+     "customatic_remedy", "customatic_zseries", "diagnostic", "doublesleep", "ergo_slim",
+     "ergomotion_4", "ergomotion_app", "eshine", "fsm_relax", "galaxy",
+     "glideaway_motion", "gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "goodvibe",
+     "hjbed", "hush_base", "hush_remote", "hush_sleep_mm", "hush_sleep_sxb", "jalon",
+     "leggett_lp_legacy", "logicdata_air_pump", "luuna", "malouf_app", "mlily",
+     "motion_bed", "motomotion", "motosleep", "octo", "okin_motionbed", "okin_rf_eco_bt",
+     "omazz_adjusto_iii", "paramount", "qplus_app", "remacro", "resident", "reverie",
+     "reverie_nightstand", "richmat_americanstar", "richmat_app", "richmat_app_sleep",
+     "richmat_best_mattress", "richmat_blvd_home", "richmat_classic_apps",
+     "richmat_harmony", "richmat_idealbed", "richmat_revive", "richmat_sleep_receiver",
+     "richmat_tx", "rize_home", "rize_remedy_ii", "row_control", "ruf_betten",
+     "serenity", "serta_mp_remote", "simmons", "sleep_number", "sleepstar",
+     "sleeptracker", "sleepys_box15", "sleepys_box24", "smart_comfort_synargy",
+     "smart_comfort_synergy", "solace", "sonicsleep", "star_elevate", "starcode_abm5_4",
+     "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
+     "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
+     "wsilver_products", "yamada",
+    }
+)
+
+
+def asks_massage(bed_type: str | None) -> bool:
+    """Return True when the "Has massage" setting changes this bed's controls."""
+    return bed_type not in MASSAGE_SETTING_UNUSED_BED_TYPES
 
 
 def supports_passive_position_reconciliation(bed_type: str | None) -> bool:

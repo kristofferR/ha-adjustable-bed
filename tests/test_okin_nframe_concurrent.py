@@ -25,8 +25,8 @@ from custom_components.adjustable_bed.command_scheduler import CommandKind
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -62,7 +62,7 @@ async def make_runtime(hass: HomeAssistant) -> AsyncIterator[Callable[[str], Run
                     CONF_NAME: "Okin concurrent bed",
                     CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
                     CONF_DISABLE_ANGLE_SENSING: True,
-                    CONF_DISCONNECT_AFTER_COMMAND: False,
+                    CONF_CONNECTION_MODE: "idle",
                 },
             )
             entry.add_to_hass(hass)

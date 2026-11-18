@@ -7,6 +7,7 @@ import pytest
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -36,12 +37,12 @@ async def test_setup_routes_require_product_and_keep_fifth_axis(
         await finish_new_bed(
             flow,
             await flow.async_step_profile_questions(values),
-            {"name": "SS800", "disconnect_after_command": False},
+            {"name": "SS800", "connection_mode": "idle"},
         )
     saved = finish.call_args.args[0]
     assert saved["product_type"] == "13" and saved["protocol_variant"] == "9"
     assert saved["motor_count"] == 5 and saved["has_massage"]
-    assert saved["disable_angle_sensing"]
+    assert not reads_positions(saved)
 
 
 def test_findability_side_owned_fields_and_options_preservation():

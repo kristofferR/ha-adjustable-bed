@@ -27,8 +27,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
@@ -367,7 +367,7 @@ async def test_diagnostic_keeps_connection_until_cleanup(
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PREFERRED_ADAPTER: "auto",
         },
-        options={CONF_DISCONNECT_AFTER_COMMAND: True},
+        options={CONF_CONNECTION_MODE: "release"},
         unique_id="AA:BB:CC:DD:EE:FF",
     )
     entry.add_to_hass(hass)

@@ -15,8 +15,8 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_APP,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
@@ -231,7 +231,7 @@ async def test_phone_clock_reply_keeps_scheduler_out_of_its_disconnect_path(
 ):
     entry = _entry(hass)
     hass.config_entries.async_update_entry(
-        entry, data={**entry.data, CONF_DISCONNECT_AFTER_COMMAND: True}
+        entry, data={**entry.data, CONF_CONNECTION_MODE: "release"}
     )
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()

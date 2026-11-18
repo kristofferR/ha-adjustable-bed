@@ -56,7 +56,7 @@ async def _settings_if_asked(hass, result):
     """Submit a new bed's final settings, once its app's questions are answered."""
     if result.get("step_id") == "finish_settings":
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], user_input={const.CONF_DISCONNECT_AFTER_COMMAND: False}
+            result["flow_id"], user_input={const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE}
         )
     return result
 
@@ -160,7 +160,7 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
             user_input={
                 CONF_NAME: "Explicit app bed",
                 const.CONF_PREFERRED_ADAPTER: "auto",
-                const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             },
         )
         assert result["type"] == FlowResultType.SHOW_PROGRESS
@@ -338,7 +338,7 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             for marker in form_fields(result["data_schema"])
             if marker.schema in (const.CONF_MOTOR_PULSE_COUNT, const.CONF_MOTOR_PULSE_DELAY_MS)
         }
-        assert defaults == {const.CONF_MOTOR_PULSE_COUNT: "3", const.CONF_MOTOR_PULSE_DELAY_MS: "50"}
+        assert defaults == {const.CONF_MOTOR_PULSE_COUNT: 3}
         with (
             patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
             patch(
@@ -350,7 +350,7 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
                 result["flow_id"],
                 user_input={
                     "advanced": {const.CONF_PROTOCOL_VARIANT: const.OCTO_VARIANT_STAR2},
-                    const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                    const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
                 },
             )
             assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -469,7 +469,7 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
         )
         assert result["step_id"] == "finish_settings"
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], user_input={const.CONF_DISCONNECT_AFTER_COMMAND: False}
+            result["flow_id"], user_input={const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE}
         )
         result = await _advance_only_progress(hass, result)
         assert result["step_id"] == "verify_connection"

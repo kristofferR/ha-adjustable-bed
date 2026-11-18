@@ -102,7 +102,7 @@ async def test_cold_public_coordinator_classification_and_pending_query_do_not_d
             const.CONF_STARCODE_UI_SELECTOR: "BOX15",
             const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX25",
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)
@@ -246,7 +246,7 @@ async def test_actual_HA_adoption_rebuilds_catalog_once_preserves_side_identity_
         const.CONF_MOTOR_COUNT: 2,
         const.CONF_HAS_MASSAGE: True,
         const.CONF_DISABLE_ANGLE_SENSING: True,
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_STARCODE_COMMAND_SELECTOR: "none",
         const.CONF_STARCODE_UI_SELECTOR: "BOX25",
         const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220",

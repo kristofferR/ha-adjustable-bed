@@ -327,7 +327,7 @@ async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_c
     assert {k: v for k, v in entry.data.items() if k in before} == before
 
 
-async def test_configure_saves_settings_but_sends_a_code_change_to_the_guided_change(hass):
+async def test_configure_saves_settings_but_never_the_handset_code(hass):
     entry = entry_for(
         hass, {const.CONF_BED_TYPE: const.BED_TYPE_OKIN_UUID, const.CONF_MOTOR_COUNT: 2}
     )
@@ -336,7 +336,8 @@ async def test_configure_saves_settings_but_sends_a_code_change_to_the_guided_ch
     result = await flow._async_options_form(
         {const.CONF_PROTOCOL_VARIANT: "62612"}, step_id="settings"
     )
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
+    # The code is not on the form, so the save leaves it as saved.
+    assert result["type"] == "create_entry"
     assert const.CONF_PROTOCOL_VARIANT not in entry.data
 
 

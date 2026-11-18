@@ -17,6 +17,7 @@ from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_profiles import per_side_profile
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.keeson import symphony_sleep as ctrl
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.codec import okin_nframe
@@ -422,7 +423,7 @@ async def test_explicit_picker_and_saved_setup_roundtrip(hass, enable_custom_int
     saved = result["data"]
     assert saved[CONF_PRODUCT_TYPE] == "SS600" and saved[CONF_PROTOCOL_VARIANT] == "fallback"
     assert saved[CONF_MOTOR_COUNT] == 2 and saved[CONF_HAS_MASSAGE] is True
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(saved)
 
 
 @pytest.mark.parametrize("service", ("set_alarm", "sync_clock"))

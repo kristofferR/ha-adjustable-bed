@@ -69,8 +69,7 @@ from .bond_verification import (
     has_evidence_backed_verifier,
 )
 from .const import (
-    CONNECTION_PROFILES,
-    DEFAULT_CONNECTION_PROFILE,
+    CONNECTION_SETTINGS,
     grants_one_connection_per_pairing_window,
 )
 from .setup_operation import OperationOutcome, OperationResult, SetupAction
@@ -529,7 +528,7 @@ async def _async_connect_and_verify(
             device,
             address,
             max_attempts=1,
-            timeout=CONNECTION_PROFILES[DEFAULT_CONNECTION_PROFILE].connection_timeout,
+            timeout=CONNECTION_SETTINGS.connection_timeout,
             # HaBleakClientWrapper may reroute a scanner-specific BLEDevice
             # during connect. Pair only after the resulting source is proven.
             pair=False,

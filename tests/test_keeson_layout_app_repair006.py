@@ -137,7 +137,7 @@ async def test_ordinary_options_reload_preserves_owned_app_layout(
     reload = AsyncMock(return_value=True)
     monkeypatch.setattr(hass.config_entries, "async_reload", reload)
     try:
-        await save_options(hass, config, idle_disconnect_seconds=47)
+        await save_options(hass, config, connection_mode="idle", idle_disconnect_seconds=47)
         await hass.async_block_till_done()
         reload.assert_any_await(config.entry_id)
     finally:

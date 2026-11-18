@@ -21,7 +21,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
@@ -115,7 +115,7 @@ async def test_entities_follow_the_app_surface(
             CONF_HAS_MASSAGE: True,
             CONF_MOTOR_PULSE_COUNT: 1,
             CONF_PREFERRED_ADAPTER: "auto",
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
         unique_id=ADDRESS,
     )
