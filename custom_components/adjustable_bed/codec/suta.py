@@ -1,4 +1,4 @@
-"""SUTA P1 text and P2 additive-sum frames, accepted unit128."""
+"""SUTA P1 text and P2 additive-sum frames, from SUTA 3.20.0."""
 
 from __future__ import annotations
 

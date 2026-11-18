@@ -2,7 +2,7 @@
 
 Clarity, Jerome's and Remedy OR every held motor key into one shared mask on a
 120 ms refresh, and a released motor's bit leaves the mask while the others
-keep streaming (row028). The real controller runs through the coordinator and
+keep streaming. The real controller runs through the coordinator and
 services on virtual time, with every write taking ``WRITE_S``, so a Stop can
 arrive while a refresh is on the wire.
 """

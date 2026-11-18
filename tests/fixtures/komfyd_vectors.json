@@ -10,10 +10,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 01 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -27,10 +23,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 02 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -44,10 +36,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 03 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -61,10 +49,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 04 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -78,10 +62,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 05 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -95,10 +75,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 06 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -112,10 +88,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 07 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -129,10 +101,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 08 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -146,10 +114,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 09 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -163,10 +127,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0a 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -180,10 +140,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0b 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -197,10 +153,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0c 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -214,10 +166,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0d 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -231,10 +179,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0e 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -248,10 +192,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 0f 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -265,10 +205,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 10 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -282,10 +218,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 11 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -299,10 +231,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 12 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -316,10 +244,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 13 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -333,10 +257,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 14 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -350,10 +270,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 15 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -367,10 +283,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 16 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -384,10 +296,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 17 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -401,10 +309,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 18 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -418,10 +322,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 19 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -435,10 +335,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1a 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -452,10 +348,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1b 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -469,10 +361,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1c 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -486,10 +374,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1d 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -503,10 +387,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1e 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -520,10 +400,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 1f 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -537,10 +413,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 20 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -554,10 +426,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 21 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -571,10 +439,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 22 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -588,10 +452,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 23 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -605,10 +465,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 24 00 00",
-    "evidence": [
-      "E07",
-      "E08"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -622,10 +478,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 25 00 00",
-    "evidence": [
-      "E07",
-      "E10"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -639,10 +491,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 26 00 00",
-    "evidence": [
-      "E07",
-      "E10"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -656,10 +504,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 27 00 00",
-    "evidence": [
-      "E07",
-      "E10"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -673,10 +517,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 28 00 00",
-    "evidence": [
-      "E07",
-      "E10"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -690,11 +530,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 29 00 00",
-    "evidence": [
-      "E07",
-      "E10",
-      "E12"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -708,11 +543,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 2a 00 00",
-    "evidence": [
-      "E07",
-      "E10",
-      "E12"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -726,11 +556,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 2b 00 00",
-    "evidence": [
-      "E07",
-      "E10",
-      "E12"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -744,11 +569,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 2c 00 00",
-    "evidence": [
-      "E07",
-      "E10",
-      "E12"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -762,10 +582,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 3d 00 00",
-    "evidence": [
-      "E07",
-      "E11"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -779,10 +595,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 3e 00 00",
-    "evidence": [
-      "E07",
-      "E11"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -796,10 +608,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 3f 00 00",
-    "evidence": [
-      "E07",
-      "E11"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -813,10 +621,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 40 00 00",
-    "evidence": [
-      "E07",
-      "E11"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -830,10 +634,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 41 00 00",
-    "evidence": [
-      "E07",
-      "E11"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -847,10 +647,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 42 00 00",
-    "evidence": [
-      "E07",
-      "E11"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -864,10 +660,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 45 00 00",
-    "evidence": [
-      "E07",
-      "E16"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -881,11 +673,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 46 00 00",
-    "evidence": [
-      "E07",
-      "E11",
-      "E12"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -899,11 +686,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 47 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -917,11 +699,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 48 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -935,11 +712,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 4a 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -953,11 +725,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 4b 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -971,11 +738,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 4d 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -989,11 +751,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 4e 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1007,11 +764,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 50 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1025,11 +777,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 51 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1043,11 +790,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 53 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1061,11 +803,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 54 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1079,11 +816,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 56 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1097,11 +829,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 57 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1115,11 +842,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 59 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1133,11 +855,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5a 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1151,11 +868,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5b 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1169,11 +881,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5c 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1187,11 +894,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5d 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1205,11 +907,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5e 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1223,11 +920,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 5f 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1241,11 +933,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 60 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1259,11 +946,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 61 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1277,11 +959,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 62 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1295,11 +972,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 63 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1313,11 +985,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 64 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1331,11 +998,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 65 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1349,11 +1011,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 66 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1367,11 +1024,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 67 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1385,11 +1037,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 68 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1403,11 +1050,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 69 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1421,11 +1063,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6a 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1439,11 +1076,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6b 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1457,11 +1089,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6c 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1475,11 +1102,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6d 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E17"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1493,11 +1115,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6e 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E09"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1511,11 +1128,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 6f 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E09"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1529,11 +1141,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 70 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E09"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1547,11 +1154,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 71 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E09"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1565,11 +1167,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 72 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E09"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1583,11 +1180,6 @@
       "own": 287454020
     },
     "expected_bytes": "03 78 56 34 12 20 44 33 22 11 01 73 00 00",
-    "evidence": [
-      "E07",
-      "E08",
-      "E09"
-    ],
     "origin": "Artifact branch constants and final builder; dynamic fields use explicitly synthetic values; not traffic captures"
   },
   {
@@ -1598,10 +1190,7 @@
       "builder": "auth",
       "room": 305419896
     },
-    "expected_bytes": "01 16 01 78 56 34 12 31 31 32 32",
-    "evidence": [
-      "E06"
-    ]
+    "expected_bytes": "01 16 01 78 56 34 12 31 31 32 32"
   },
   {
     "id": "membership",
@@ -1611,11 +1200,7 @@
       "builder": "membership",
       "room": 305419896
     },
-    "expected_bytes": "01 03 78 56 34 12 31 31 32 32 00 00 00 00",
-    "evidence": [
-      "E06",
-      "E16"
-    ]
+    "expected_bytes": "01 03 78 56 34 12 31 31 32 32 00 00 00 00"
   },
   {
     "id": "ping",
@@ -1625,10 +1210,6 @@
       "builder": "ping",
       "own": 287454020
     },
-    "expected_bytes": "03 ff ff ff ff fe 44 33 22 11",
-    "evidence": [
-      "E06",
-      "E12"
-    ]
+    "expected_bytes": "03 ff ff ff ff fe 44 33 22 11"
   }
 ]

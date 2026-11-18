@@ -13,7 +13,7 @@ from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
 from custom_components.adjustable_bed.pairing import get_child
 from tests.test_coordinator_limoss_remote import actual_coordinator
-from tests.test_limoss_remote_review_lifecycle import (
+from tests.test_limoss_remote_entity_reloads import (
     CAPS,
     live_controller,
     pair_runtime,

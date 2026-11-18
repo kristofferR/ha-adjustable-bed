@@ -1,4 +1,4 @@
-"""Unit163's original literals, retained independently of the production profile."""
+"""Rize Home app's original literals, retained independently of the production profile."""
 
 from __future__ import annotations
 

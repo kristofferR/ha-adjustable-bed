@@ -7,10 +7,6 @@
       "command": "00000001"
     },
     "expected_bytes": "e5fe160000000105",
-    "evidence": [
-      "E07",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -22,10 +18,6 @@
       "command": "00000002"
     },
     "expected_bytes": "e5fe160000000204",
-    "evidence": [
-      "E07",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -37,10 +29,6 @@
       "command": "00000004"
     },
     "expected_bytes": "e5fe160000000402",
-    "evidence": [
-      "E07",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -52,10 +40,6 @@
       "command": "00000008"
     },
     "expected_bytes": "e5fe1600000008fe",
-    "evidence": [
-      "E07",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -67,10 +51,6 @@
       "command": "00000005"
     },
     "expected_bytes": "e5fe160000000501",
-    "evidence": [
-      "E07",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -82,10 +62,6 @@
       "command": "0000000a"
     },
     "expected_bytes": "e5fe160000000afc",
-    "evidence": [
-      "E07",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -97,10 +73,6 @@
       "command": "00000010"
     },
     "expected_bytes": "e5fe1600000010f6",
-    "evidence": [
-      "E08",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -112,10 +84,6 @@
       "command": "00000020"
     },
     "expected_bytes": "e5fe1600000020e6",
-    "evidence": [
-      "E08",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -127,10 +95,6 @@
       "command": "00000040"
     },
     "expected_bytes": "e5fe1600000040c6",
-    "evidence": [
-      "E08",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -142,10 +106,6 @@
       "command": "00000080"
     },
     "expected_bytes": "e5fe160000008086",
-    "evidence": [
-      "E08",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -157,10 +117,6 @@
       "command": "00000000"
     },
     "expected_bytes": "e5fe160000000006",
-    "evidence": [
-      "E12",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -172,10 +128,6 @@
       "command": "21000001"
     },
     "expected_bytes": "e5fe1621000001e4",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -187,10 +139,6 @@
       "command": "21000002"
     },
     "expected_bytes": "e5fe1621000002e3",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -202,10 +150,6 @@
       "command": "21000003"
     },
     "expected_bytes": "e5fe1621000003e2",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -217,10 +161,6 @@
       "command": "21000004"
     },
     "expected_bytes": "e5fe1621000004e1",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -232,10 +172,6 @@
       "command": "21000006"
     },
     "expected_bytes": "e5fe1621000006df",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -247,10 +183,6 @@
       "command": "21000000"
     },
     "expected_bytes": "e5fe1621000000e5",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -262,10 +194,6 @@
       "command": "21000011"
     },
     "expected_bytes": "e5fe1621000011d4",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -277,10 +205,6 @@
       "command": "21000012"
     },
     "expected_bytes": "e5fe1621000012d3",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -292,10 +216,6 @@
       "command": "21000013"
     },
     "expected_bytes": "e5fe1621000013d2",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -307,10 +227,6 @@
       "command": "21000014"
     },
     "expected_bytes": "e5fe1621000014d1",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -322,10 +238,6 @@
       "command": "21000016"
     },
     "expected_bytes": "e5fe1621000016cf",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -337,10 +249,6 @@
       "command": "ffffffff"
     },
     "expected_bytes": "e5fe16ffffffff0a",
-    "evidence": [
-      "E09",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -352,10 +260,6 @@
       "command": "10000011"
     },
     "expected_bytes": "e5fe1610000011e5",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -367,10 +271,6 @@
       "command": "10000010"
     },
     "expected_bytes": "e5fe1610000010e6",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -382,10 +282,6 @@
       "command": "10000011"
     },
     "expected_bytes": "e5fe1610000011e5",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -397,10 +293,6 @@
       "command": "10000012"
     },
     "expected_bytes": "e5fe1610000012e4",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -412,10 +304,6 @@
       "command": "10000013"
     },
     "expected_bytes": "e5fe1610000013e3",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -427,10 +315,6 @@
       "command": "10000021"
     },
     "expected_bytes": "e5fe1610000021d5",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -442,10 +326,6 @@
       "command": "10000022"
     },
     "expected_bytes": "e5fe1610000022d4",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -457,10 +337,6 @@
       "command": "10000023"
     },
     "expected_bytes": "e5fe1610000023d3",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -472,10 +348,6 @@
       "command": "10000030"
     },
     "expected_bytes": "e5fe1610000030c6",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -487,10 +359,6 @@
       "command": "10000031"
     },
     "expected_bytes": "e5fe1610000031c5",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -502,10 +370,6 @@
       "command": "10000032"
     },
     "expected_bytes": "e5fe1610000032c4",
-    "evidence": [
-      "E10",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -517,10 +381,6 @@
       "command": "31000000"
     },
     "expected_bytes": "e5fe1631000000d5",
-    "evidence": [
-      "E11",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -532,10 +392,6 @@
       "command": "31000001"
     },
     "expected_bytes": "e5fe1631000001d4",
-    "evidence": [
-      "E11",
-      "E06"
-    ],
     "kind": "command",
     "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
   },
@@ -548,9 +404,6 @@
     },
     "expected_bytes": "0000000000000000",
     "expected_result": "reject_length",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   },
@@ -563,9 +416,6 @@
     },
     "expected_bytes": "000000000000000700",
     "expected_result": "cancel_repeater_without_stop",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   },
@@ -578,9 +428,6 @@
     },
     "expected_bytes": "ffffffffffffff06ff",
     "expected_result": "cancel_repeater_without_stop",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   },
@@ -593,9 +440,6 @@
     },
     "expected_bytes": "000000000000000a00",
     "expected_result": "cancel_repeater_without_stop",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   },
@@ -608,9 +452,6 @@
     },
     "expected_bytes": "000000300000000700",
     "expected_result": "accessory_lamp_dispatch_index2",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   },
@@ -623,9 +464,6 @@
     },
     "expected_bytes": "000000100000000700",
     "expected_result": "cancel_repeater_without_stop",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   },
@@ -638,9 +476,6 @@
     },
     "expected_bytes": "000000100000000700",
     "expected_result": "accessory_massage_dispatch_index0",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   },
@@ -653,9 +488,6 @@
     },
     "expected_bytes": "000000f00000000300",
     "expected_result": "accessory_audio_dispatch_index1",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   },
@@ -668,9 +500,6 @@
     },
     "expected_bytes": "000000f00000000c00",
     "expected_result": "accessory_fridge_dispatch_index3",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   },
@@ -683,9 +512,6 @@
     },
     "expected_bytes": "000000000000000000",
     "expected_result": "ignored",
-    "evidence": [
-      "E13"
-    ],
     "kind": "notification",
     "provenance": "Synthetic parser branch fixture derived from code, no capture"
   }

@@ -10,7 +10,7 @@ from homeassistant.config_entries import SOURCE_RECONFIGURE
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.codec import limoss as codec
 from tests.test_coordinator_limoss_remote import actual_coordinator
-from tests.test_limoss_remote_review_lifecycle import CAPS, live_controller, pair_runtime
+from tests.test_limoss_remote_entity_reloads import CAPS, live_controller, pair_runtime
 
 
 async def test_offline_paired_cached_capability_sensors_publish_restored_values(hass):

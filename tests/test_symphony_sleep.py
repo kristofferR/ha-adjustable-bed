@@ -1,4 +1,4 @@
-"""Row078: frozen literals, all 15 routes and the real HA command lifecycle."""
+"""Symphony app: frozen literals, all 15 routes and the real HA command lifecycle."""
 from __future__ import annotations
 
 import asyncio

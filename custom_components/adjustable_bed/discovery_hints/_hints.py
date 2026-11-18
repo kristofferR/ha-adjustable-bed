@@ -6,7 +6,6 @@ import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from enum import Enum
-from itertools import product
 from typing import NamedTuple
 
 # One entry of the manifest's ``bluetooth`` list.
@@ -76,20 +75,22 @@ class ManufacturerHint:
 
 
 class Case(Enum):
-    """How Home Assistant's case-sensitive name matcher must spell a pattern."""
+    """How Home Assistant's case-sensitive name matcher must spell a pattern.
+
+    Declare the spellings beds advertise, even when their app ignores case.
+    Other spellings stay reachable by choosing the app manually: admitting every
+    upper/lower combination would turn a four-letter ID into 16 matchers and let
+    unrelated names such as "Firmware" or "Sleep Sound" offer a bed.
+    """
 
     EXACT = "exact"  # only as declared
     FOLD = "fold"  # as declared and in lowercase
-    ANY = "any"  # every upper/lower combination of its letters
 
 
 def _spellings(pattern: str, case: Case) -> tuple[str, ...]:
     if case is Case.EXACT:
         return (pattern,)
-    if case is Case.FOLD:
-        return tuple(dict.fromkeys((pattern, pattern.lower())))
-    options = [(c.lower(), c.upper()) if c.isalpha() else (c,) for c in pattern]
-    return tuple("".join(chars) for chars in product(*options))
+    return tuple(dict.fromkeys((pattern, pattern.lower())))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -181,3 +182,8 @@ def manufacturer(
     return ManufacturerHint(
         company_id=company_id, bed_types=_bed_types(bed_types), data_start=data_start
     )
+
+
+# The shared platform name as beds advertise it. Several apps read it without
+# regard to case; discovery admits only these spellings.
+SMARTBED: tuple[str, ...] = ("Smartbed", "SmartBed", "smartbed", "SMARTBED")

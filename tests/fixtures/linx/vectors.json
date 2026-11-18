@@ -6,11 +6,7 @@
     "inputs": {
       "key": 0
     },
-    "expected_bytes": "aa03000a0004010000000000faf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000000faf355"
   },
   {
     "id": "aa-1",
@@ -19,11 +15,7 @@
     "inputs": {
       "key": 1
     },
-    "expected_bytes": "aa03000a0004010100000000f9f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010100000000f9f355"
   },
   {
     "id": "aa-2",
@@ -32,11 +24,7 @@
     "inputs": {
       "key": 2
     },
-    "expected_bytes": "aa03000a0004010200000000f8f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010200000000f8f355"
   },
   {
     "id": "aa-4",
@@ -45,11 +33,7 @@
     "inputs": {
       "key": 4
     },
-    "expected_bytes": "aa03000a0004010400000000f6f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010400000000f6f355"
   },
   {
     "id": "aa-8",
@@ -58,11 +42,7 @@
     "inputs": {
       "key": 8
     },
-    "expected_bytes": "aa03000a0004010800000000f2f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010800000000f2f355"
   },
   {
     "id": "aa-16",
@@ -71,11 +51,7 @@
     "inputs": {
       "key": 16
     },
-    "expected_bytes": "aa03000a0004011000000000eaf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004011000000000eaf355"
   },
   {
     "id": "aa-32",
@@ -84,11 +60,7 @@
     "inputs": {
       "key": 32
     },
-    "expected_bytes": "aa03000a0004012000000000daf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004012000000000daf355"
   },
   {
     "id": "aa-64",
@@ -97,11 +69,7 @@
     "inputs": {
       "key": 64
     },
-    "expected_bytes": "aa03000a0004014000000000baf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004014000000000baf355"
   },
   {
     "id": "aa-128",
@@ -110,11 +78,7 @@
     "inputs": {
       "key": 128
     },
-    "expected_bytes": "aa03000a00040180000000007af355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a00040180000000007af355"
   },
   {
     "id": "aa-256",
@@ -123,11 +87,7 @@
     "inputs": {
       "key": 256
     },
-    "expected_bytes": "aa03000a0004010001000000f9f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010001000000f9f355"
   },
   {
     "id": "aa-512",
@@ -136,11 +96,7 @@
     "inputs": {
       "key": 512
     },
-    "expected_bytes": "aa03000a0004010002000000f8f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010002000000f8f355"
   },
   {
     "id": "aa-1024",
@@ -149,11 +105,7 @@
     "inputs": {
       "key": 1024
     },
-    "expected_bytes": "aa03000a0004010004000000f6f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010004000000f6f355"
   },
   {
     "id": "aa-2048",
@@ -162,11 +114,7 @@
     "inputs": {
       "key": 2048
     },
-    "expected_bytes": "aa03000a0004010008000000f2f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010008000000f2f355"
   },
   {
     "id": "aa-4096",
@@ -175,11 +123,7 @@
     "inputs": {
       "key": 4096
     },
-    "expected_bytes": "aa03000a0004010010000000eaf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010010000000eaf355"
   },
   {
     "id": "aa-8192",
@@ -188,11 +132,7 @@
     "inputs": {
       "key": 8192
     },
-    "expected_bytes": "aa03000a0004010020000800d2f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010020000800d2f355"
   },
   {
     "id": "aa-16384",
@@ -201,11 +141,7 @@
     "inputs": {
       "key": 16384
     },
-    "expected_bytes": "aa03000a0004010040000800b2f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010040000800b2f355"
   },
   {
     "id": "aa-32768",
@@ -214,11 +150,7 @@
     "inputs": {
       "key": 32768
     },
-    "expected_bytes": "aa03000a00040100800000007af355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a00040100800000007af355"
   },
   {
     "id": "aa-65536",
@@ -227,11 +159,7 @@
     "inputs": {
       "key": 65536
     },
-    "expected_bytes": "aa03000a0004010000010000f9f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000010000f9f355"
   },
   {
     "id": "aa-131072",
@@ -240,11 +168,7 @@
     "inputs": {
       "key": 131072
     },
-    "expected_bytes": "aa03000a0004010000020000f8f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000020000f8f355"
   },
   {
     "id": "aa-8388608",
@@ -253,11 +177,7 @@
     "inputs": {
       "key": 8388608
     },
-    "expected_bytes": "aa03000a00040100008000007af355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a00040100008000007af355"
   },
   {
     "id": "aa-16777216",
@@ -266,11 +186,7 @@
     "inputs": {
       "key": 16777216
     },
-    "expected_bytes": "aa03000a0004010000000100f9f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000100f9f355"
   },
   {
     "id": "aa-33554432",
@@ -279,11 +195,7 @@
     "inputs": {
       "key": 33554432
     },
-    "expected_bytes": "aa03000a0004010000000200f8f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000200f8f355"
   },
   {
     "id": "aa-134217728",
@@ -292,11 +204,7 @@
     "inputs": {
       "key": 134217728
     },
-    "expected_bytes": "aa03000a0004010000000800f2f355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000800f2f355"
   },
   {
     "id": "aa-536870912",
@@ -305,11 +213,7 @@
     "inputs": {
       "key": 536870912
     },
-    "expected_bytes": "aa03000a0004010000002000daf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000002000daf355"
   },
   {
     "id": "aa-1073741824",
@@ -318,11 +222,7 @@
     "inputs": {
       "key": 1073741824
     },
-    "expected_bytes": "aa03000a0004010000004000baf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000004000baf355"
   },
   {
     "id": "aa--2147483648",
@@ -331,11 +231,7 @@
     "inputs": {
       "key": -2147483648
     },
-    "expected_bytes": "aa03000a00040100000080007af355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a00040100000080007af355"
   },
   {
     "id": "aa-5",
@@ -344,11 +240,7 @@
     "inputs": {
       "key": 5
     },
-    "expected_bytes": "aa03000a0004010000000000faf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000000faf355"
   },
   {
     "id": "aa-10",
@@ -357,11 +249,7 @@
     "inputs": {
       "key": 10
     },
-    "expected_bytes": "aa03000a0004010000000000faf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000000faf355"
   },
   {
     "id": "aa-262144",
@@ -370,11 +258,7 @@
     "inputs": {
       "key": 262144
     },
-    "expected_bytes": "aa03000a0004010000000000faf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000000faf355"
   },
   {
     "id": "aa-524288",
@@ -383,11 +267,7 @@
     "inputs": {
       "key": 524288
     },
-    "expected_bytes": "aa03000a0004010000000000faf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000000faf355"
   },
   {
     "id": "aa-1048576",
@@ -396,11 +276,7 @@
     "inputs": {
       "key": 1048576
     },
-    "expected_bytes": "aa03000a0004010000000000faf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000000faf355"
   },
   {
     "id": "aa-67108864",
@@ -409,11 +285,7 @@
     "inputs": {
       "key": 67108864
     },
-    "expected_bytes": "aa03000a0004010000000000faf355",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/DataUtilSec.java:562-737",
-      "reference/Reference.java (exact decompiled method, substitutions documented)"
-    ]
+    "expected_bytes": "aa03000a0004010000000000faf355"
   },
   {
     "id": "query-7D0E0000000000AB54",
@@ -422,11 +294,7 @@
     "inputs": {
       "prefix": "7D0E0000000000AB54"
     },
-    "expected_bytes": "3744304530303030303030303030414235343735",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/service/FastBleService.java:270-282",
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/CommunicationUtilSec.java:121-154"
-    ]
+    "expected_bytes": "3744304530303030303030303030414235343735"
   },
   {
     "id": "query-7D0E0012345678AB54",
@@ -435,11 +303,7 @@
     "inputs": {
       "prefix": "7D0E0012345678AB54"
     },
-    "expected_bytes": "3744304530303132333435363738414235346666666666663631",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/service/FastBleService.java:270-282",
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/CommunicationUtilSec.java:121-154"
-    ]
+    "expected_bytes": "3744304530303132333435363738414235346666666666663631"
   },
   {
     "id": "query-7D0E0099999999AB54",
@@ -448,11 +312,7 @@
     "inputs": {
       "prefix": "7D0E0099999999AB54"
     },
-    "expected_bytes": "3744304530303939393939393939414235346666666666653131",
-    "evidence": [
-      "jadx/sources/com/keeson/connectedbed/service/FastBleService.java:270-282",
-      "jadx/sources/com/keeson/connectedbed/utils/deviceByte2/CommunicationUtilSec.java:121-154"
-    ]
+    "expected_bytes": "3744304530303939393939393939414235346666666666653131"
   },
   {
     "id": "json-head-held",
@@ -462,11 +322,7 @@
       "N": "KSWF07D00000000",
       "K": 6
     },
-    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030303031222c226b65796b74223a312c226b6d223a367d2c22636f6465223a322c2264766964223a224b5357463037443030303030303030227d",
-    "evidence": [
-      "E04",
-      "reproduce.py command() assertion"
-    ]
+    "expected_bytes": "7b22636d64223a7b226374726d223a302c226b6579223a223030303030303031222c226b65796b74223a312c226b6d223a367d2c22636f6465223a322c2264766964223a224b5357463037443030303030303030227d"
   },
   {
     "id": "snore-default",
@@ -477,11 +333,7 @@
       "upSpeed": 10,
       "upTime": 10
     },
-    "expected_bytes": "ab03000b0a070100008000000a0a7af355",
-    "evidence": [
-      "E07",
-      "reproduce.py snore() assertion"
-    ]
+    "expected_bytes": "ab03000b0a070100008000000a0a7af355"
   },
   {
     "id": "snore-narrowing",
@@ -492,21 +344,13 @@
       "upSpeed": 128,
       "upTime": -1
     },
-    "expected_bytes": "ab03000b000701000080000080ff7af355",
-    "evidence": [
-      "E07",
-      "reproduce.py snore() assertion"
-    ]
+    "expected_bytes": "ab03000b000701000080000080ff7af355"
   },
   {
     "id": "snore-status",
     "protocol": "P4",
     "action": "post intervention status",
     "inputs": {},
-    "expected_bytes": "ab03020b1d0701000080000080ca55",
-    "evidence": [
-      "E07",
-      "service/SnoreService.java:189 literal"
-    ]
+    "expected_bytes": "ab03020b1d0701000080000080ca55"
   }
 ]

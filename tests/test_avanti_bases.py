@@ -1,4 +1,4 @@
-"""Row065 Avanti Bases 1.0.5 (7), vectors from its accepted FULL report.
+"""Avanti Bases 1.0.5 (7), vectors from its accepted FULL report.
 
 These literals were checked against Avanti E07-E15 and audit round01, not
 inferred from another ORE app. Hardware remains unverified.

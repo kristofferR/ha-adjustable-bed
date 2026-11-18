@@ -1,7 +1,7 @@
 """Where each entity the integration can create sits in the Lovelace card.
 
-Builds the entities offline controllers and the static descriptions produce and
-reads the placement each publishes. The frontend tests attach these placements
+Reads the placement of every entity offline controllers' specs declare, and of
+the entities static descriptions build. The frontend tests attach these placements
 to their mock entities by translation key, so the card is tested against what
 the integration really publishes.
 
@@ -16,9 +16,11 @@ import ast
 import asyncio
 import copy
 import json
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import fields, replace
+from itertools import chain
 from pathlib import Path
+from typing import NamedTuple, cast
 from unittest.mock import MagicMock
 
 from homeassistant.helpers.entity import Entity
@@ -41,6 +43,7 @@ from custom_components.adjustable_bed.button import (
     PairedBedCombinedMotorButton,
     PairedBedStopButton,
 )
+from custom_components.adjustable_bed.card import CardPlacement, CardRole, motor_card
 from custom_components.adjustable_bed.climate import (
     FOOTWARMING_CLIMATE_DESCRIPTION,
     SLEEP_NUMBER_THERMAL_CLIMATE_DESCRIPTION,
@@ -130,18 +133,66 @@ def _runtime() -> MagicMock:
     return runtime
 
 
-def motor_entities(specs: Iterable[MotorControlSpec]) -> list[Entity]:
-    """Build each motor's cover and its combined both-sides buttons."""
-    runtime = _runtime()
-    entities: list[Entity] = []
+class Placed(NamedTuple):
+    """An entity a spec declares: its class, constructor arguments, key and placement.
+
+    Reading these from specs, instead of building the entity, keeps the full
+    catalog walk (hundreds of thousands of entities) cheap. ``sample_entities``
+    builds the distinct ones for real to prove they agree.
+    """
+
+    cls: type[PlacedInCard]
+    args: tuple[object, ...]
+    translation_key: str | None
+    card: CardPlacement
+
+    def build(self, runtime: MagicMock) -> Entity:
+        # Each entity class takes the runtime and its spec or description, which
+        # PlacedInCard, a mixin without a constructor, cannot state.
+        return cast("Callable[..., Entity]", self.cls)(runtime, *self.args)
+
+
+def motor_entities(specs: Iterable[MotorControlSpec]) -> Iterator[Placed]:
+    """Each motor's cover and its combined both-sides buttons."""
     for spec in specs:
-        entities.append(AdjustableBedCover(runtime, _build_cover_description(spec)))
+        key = spec.translation_key or spec.key
+        yield Placed(AdjustableBedCover, (_build_cover_description(spec),), key, motor_card(key))
         # A natively sided motor differs between sides, so it is never combined.
         if not spec.translation_key.endswith(("_left", "_right")):
-            entities.extend(
-                PairedBedCombinedMotorButton(runtime, spec, d) for d in ("up", "down")
-            )
-    return entities
+            for direction, role in (("up", CardRole.UP), ("down", CardRole.DOWN)):
+                yield Placed(
+                    PairedBedCombinedMotorButton,
+                    (spec, direction),
+                    f"{spec.translation_key}_{direction}",
+                    motor_card(spec.translation_key, role),
+                )
+
+
+def spec_entities(controller: BedController) -> Iterator[Placed]:
+    """Every entity a controller's specs declare, as its platform builds it."""
+    yield from motor_entities(controller.motor_control_specs)
+    for spec in controller.position_number_specs:
+        yield Placed(
+            AdjustableBedPositionNumber,
+            (_build_position_description(spec),),
+            spec.translation_key or spec.key,
+            motor_card(spec.motor),
+        )
+    for spec in controller.controller_button_specs:
+        if isinstance(spec, ProductButtonSpec):
+            yield Placed(AdjustableBedProductButton, (spec,), "product_action", spec.card)
+        else:
+            # An untranslated action takes the class's shared "remote_action" key.
+            key = "remote_action" if spec.translation_key is None else spec.translation_key
+            yield Placed(ControllerActionButton, (spec,), key, spec.card)
+    for cls, specs in (
+        (AdjustableBedControllerSelect, controller.controller_select_specs),
+        (AdjustableBedControllerNumber, controller.controller_number_specs),
+        (AdjustableBedControllerSwitch, controller.controller_switch_specs),
+        (AdjustableBedControllerStateSensor, controller.controller_state_sensor_specs),
+        (AdjustableBedControllerStateBinarySensor, controller.controller_state_binary_sensor_specs),
+    ):
+        yield from (Placed(cls, (spec,), spec.translation_key, spec.card) for spec in specs)
 
 
 def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedController]:
@@ -250,39 +301,25 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 def controller_entities(controllers: Iterable[BedController]) -> list[Entity]:
     """Build the entities every controller's specs declare."""
     runtime = _runtime()
+    return [
+        placed.build(runtime)
+        for controller in runtime_variants(controllers)
+        for placed in spec_entities(controller)
+    ]
+
+
+def sample_entities(declared: Iterable[Placed]) -> list[Entity]:
+    """Build each declared entity for real and check it publishes what was declared."""
+    runtime = _runtime()
     entities: list[Entity] = []
-    for controller in runtime_variants(controllers):
-        entities.extend(motor_entities(controller.motor_control_specs))
-        entities.extend(
-            AdjustableBedPositionNumber(runtime, _build_position_description(spec))
-            for spec in controller.position_number_specs
+    for placed in declared:
+        entity = placed.build(runtime)
+        assert isinstance(entity, PlacedInCard), placed.cls.__name__
+        assert (entity.translation_key, entity._card) == (placed.translation_key, placed.card), (
+            f"{placed.cls.__name__} builds {entity.translation_key} {entity._card}, "
+            f"not {placed.translation_key} {placed.card}"
         )
-        entities.extend(
-            AdjustableBedProductButton(runtime, spec)
-            if isinstance(spec, ProductButtonSpec)
-            else ControllerActionButton(runtime, spec)
-            for spec in controller.controller_button_specs
-        )
-        entities.extend(
-            AdjustableBedControllerSelect(runtime, spec)
-            for spec in controller.controller_select_specs
-        )
-        entities.extend(
-            AdjustableBedControllerNumber(runtime, spec)
-            for spec in controller.controller_number_specs
-        )
-        entities.extend(
-            AdjustableBedControllerSwitch(runtime, spec)
-            for spec in controller.controller_switch_specs
-        )
-        entities.extend(
-            AdjustableBedControllerStateSensor(runtime, spec)
-            for spec in controller.controller_state_sensor_specs
-        )
-        entities.extend(
-            AdjustableBedControllerStateBinarySensor(runtime, spec)
-            for spec in controller.controller_state_binary_sensor_specs
-        )
+        entities.append(entity)
     return entities
 
 
@@ -363,24 +400,34 @@ def description_entities() -> list[Entity]:
 
 def placements(entities: Iterable[Entity]) -> dict[str, dict[str, str | int]]:
     """Map ``domain:translation_key`` to the placement its entities publish."""
-    result: dict[str, dict[str, str | int]] = {}
+    declared: list[Placed] = []
     for entity in entities:
         assert isinstance(entity, PlacedInCard), type(entity).__name__
-        if not entity.translation_key:
+        declared.append(Placed(type(entity), (), entity.translation_key, entity._card))
+    return declared_placements(declared)
+
+
+def declared_placements(declared: Iterable[Placed]) -> dict[str, dict[str, str | int]]:
+    """Map ``domain:translation_key`` to the placement its entities publish."""
+    result: dict[str, dict[str, str | int]] = {}
+    domains: dict[type[PlacedInCard], str] = {}
+    for placed in declared:
+        if not placed.translation_key:
             continue
-        key = f"{_domain(entity)}:{entity.translation_key}"
-        attributes = entity._card.attributes
+        domain = domains.get(placed.cls) or domains.setdefault(placed.cls, _domain(placed.cls))
+        key = f"{domain}:{placed.translation_key}"
+        attributes = placed.card.attributes
         if result.setdefault(key, attributes) != attributes:
             raise ValueError(f"{key} is placed as both {result[key]} and {attributes}")
     return dict(sorted(result.items()))
 
 
-def _domain(entity: Entity) -> str:
-    for cls in type(entity).__mro__:
-        module = cls.__module__
+def _domain(cls: type[Entity]) -> str:
+    for base in cls.__mro__:
+        module = base.__module__
         if module.startswith("homeassistant.components."):
             return module.split(".")[2]
-    raise TypeError(type(entity).__name__)
+    raise TypeError(cls.__name__)
 
 
 def literal_spec_placements() -> dict[str, dict[str, str | int]]:
@@ -429,31 +476,42 @@ def literal_spec_placements() -> dict[str, dict[str, str | int]]:
     return result
 
 
-async def built_entities() -> list[Entity]:
-    """Build every entity offline controllers and descriptions create."""
+async def declared_entities() -> list[Placed]:
+    """Every distinct entity offline controllers declare, without building them.
+
+    A placement depends only on the class, key and card, so one record of each
+    is kept; the catalog walk yields hundreds of thousands of duplicates.
+    """
     # Motion Bed motors depend on the movement layout; its other specs do not.
     motion_bed_motors = [
         spec for controller in _motion_bed_controllers() for spec in controller.motor_control_specs
     ]
-    return [
-        *controller_entities(await factory_controllers()),
-        *motor_entities(motion_bed_motors),
-        *description_entities(),
-    ]
+    declared = chain(
+        (
+            placed
+            for controller in runtime_variants(await factory_controllers())
+            for placed in spec_entities(controller)
+        ),
+        motor_entities(motion_bed_motors),
+    )
+    distinct: dict[tuple[type[PlacedInCard], str | None, CardPlacement], Placed] = {}
+    for placed in declared:
+        distinct.setdefault((placed.cls, placed.translation_key, placed.card), placed)
+    return list(distinct.values())
 
 
-def all_placements(entities: Iterable[Entity]) -> dict[str, dict[str, str | int]]:
-    """Return the placement of every built entity and every literal spec."""
-    result = placements(entities)
-    for key, attributes in literal_spec_placements().items():
+def all_placements(declared: Iterable[Placed]) -> dict[str, dict[str, str | int]]:
+    """Return the placement of every declared entity, every description and every literal spec."""
+    result = declared_placements(declared)
+    for key, attributes in (*placements(description_entities()).items(), *literal_spec_placements().items()):
         if result.setdefault(key, attributes) != attributes:
             raise ValueError(f"{key} is placed as both {result[key]} and {attributes}")
     return dict(sorted(result.items()))
 
 
 def main() -> None:
-    entities = asyncio.run(built_entities())
-    FIXTURE.write_text(json.dumps(all_placements(entities), indent=1) + "\n")
+    declared = asyncio.run(declared_entities())
+    FIXTURE.write_text(json.dumps(all_placements(declared), indent=1) + "\n")
 
 
 if __name__ == "__main__":

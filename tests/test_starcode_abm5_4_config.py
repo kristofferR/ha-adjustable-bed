@@ -207,7 +207,6 @@ async def test_two_address_options_cannot_copy_app_selectors_between_children(ha
 
 def test_name_candidate_never_guesses_the_app_or_requires_manufacturer_payload():
     import fnmatch
-    import itertools
     import json
     from pathlib import Path
 
@@ -218,7 +217,7 @@ def test_name_candidate_never_guesses_the_app_or_requires_manufacturer_payload()
         (Path(__file__).parents[1] / "custom_components/adjustable_bed/manifest.json").read_text()
     )
     matchers = [row["local_name"] for row in manifest["bluetooth"] if "local_name" in row]
-    for prefix in map("".join, itertools.product("sS", "tT", "aA", "rR")):
+    for prefix in ("STAR", "Star", "star"):
         name = prefix + "254202079996"
         assert any(fnmatch.fnmatchcase(name, matcher) for matcher in matchers)
         result = detect_bed_type_detailed(

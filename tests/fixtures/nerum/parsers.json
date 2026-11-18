@@ -283,7 +283,6 @@
       "id": "\u00e92AA00ABCDEFGHI",
       "motors": 2,
       "massage": false
-    },
-    "evidence": "OREBleDeviceManager new String(byte[]) followed by OREBleModel substring(1,2)/(4,6)"
+    }
   }
 ]
