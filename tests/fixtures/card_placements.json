@@ -912,6 +912,35 @@
  "button:luuna_preset": {
   "card_section": "presets"
  },
+ "button:majestichome_light_action": {
+  "card_section": "lighting"
+ },
+ "button:majestichome_massage_action": {
+  "card_section": "massage"
+ },
+ "button:majestichome_memory_1": {
+  "card_section": "memory",
+  "card_role": "recall",
+  "card_slot": 1
+ },
+ "button:majestichome_memory_1_save": {
+  "card_section": "memory",
+  "card_role": "save",
+  "card_slot": 1
+ },
+ "button:majestichome_memory_2": {
+  "card_section": "memory",
+  "card_role": "recall",
+  "card_slot": 2
+ },
+ "button:majestichome_memory_2_save": {
+  "card_section": "memory",
+  "card_role": "save",
+  "card_slot": 2
+ },
+ "button:majestichome_preset_action": {
+  "card_section": "presets"
+ },
  "button:malouf_oz_save_memory_2": {
   "card_section": "presets",
   "card_role": "save"
@@ -3582,6 +3611,9 @@
   "card_section": "hidden"
  },
  "sensor:luuna": {
+  "card_section": "hidden"
+ },
+ "sensor:majestichome": {
   "card_section": "hidden"
  },
  "sensor:malouf_massage_remaining": {
