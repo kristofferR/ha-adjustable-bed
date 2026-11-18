@@ -5263,8 +5263,8 @@ The frozen July 2026 delivery has no newer recency attestation.
 ### Configuration
 
 Choose **Somos / SomosBeds**, then Signature (A), Elite (B), Ultra (C),
-Signature Split Head (D), or Ultra Split Head (E). Setup, Configure and imports
-require an explicit product. Names containing `base-i5`, `KSBT03C3` or
+Signature Split Head (D), or Ultra Split Head (E). Setup and imports require an
+explicit product; use **Reconfigure** to change it later. Names containing `base-i5`, `KSBT03C3` or
 `KSBT03CR` are case-sensitive candidates, not product identification. HA keeps
 the selected physical Bluetooth address; no QR, phone ID or network setup is needed.
 Two separate receivers can be combined with independent product choices.
@@ -5273,8 +5273,8 @@ D/E do not support single-address left/right pairing.
 ### Capabilities
 
 A/C expose head and feet. B additionally exposes the app's lumbar/tilt control.
-D/E expose **Lift 1**, **Lift 2** and **Lift 3** (actions and `hold_control`
-use `axis_1`–`axis_3`). These are neutral app control identities: physical
+D/E expose **Lift 1**, **Lift 2** and **Lift 3** (motors `axis_1`–`axis_3` in
+`timed_move`, and `axis_1_up`/`axis_1_down` and so on in `hold_control`). These are neutral app control identities: physical
 anatomy and side are unverified. Both first rockers use head artwork; the third
 uses separate leg-arrow artwork. Neither the product name nor a Java field name
 assigns an axis to a side or body part.
