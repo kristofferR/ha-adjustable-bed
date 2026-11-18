@@ -34,6 +34,7 @@ import {
   bedIsEmpty,
   hasLightingControls,
   isSingleAddressPairedDevice,
+  nameCombinedMotors,
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
@@ -414,6 +415,7 @@ export class AdjustableBedCard extends LitElement {
       // from display order. A renamed child can appear in either visual pane.
       synchronizationTarget: { deviceId: id },
     }));
+    nameCombinedMotors(parentBed, sides.map((side) => side.bed));
     const childStops = sides.flatMap((side) => side.bed.stop ? [side.bed.stop] : []);
     const parentStop = parentBed.stop;
     const bothStopScope = [...new Set([
@@ -471,6 +473,7 @@ export class AdjustableBedCard extends LitElement {
       left: bedEntitiesForDevice(hass, deviceId, "left"),
       right: bedEntitiesForDevice(hass, deviceId, "right"),
     };
+    nameCombinedMotors(beds.both, [beds.left, beds.right]);
     const childStops = [beds.left.stop, beds.right.stop].filter(
       (id): id is string => id !== undefined,
     );
@@ -2161,7 +2164,8 @@ export class AdjustableBedCard extends LitElement {
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ");
     // A bed-specific motor key has no card label; its cover's name is the right one.
-    return m.cover ? entityLabel(this.hass, m.cover, fallback) : fallback;
+    const named = m.cover ?? m.nameFrom;
+    return named ? entityLabel(this.hass, named, fallback) : fallback;
   }
 
   private _angle(m: MotorEntity): number | undefined {

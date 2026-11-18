@@ -6,6 +6,7 @@ import {
   bedEntitiesForDevice,
   bedIsEmpty,
   isSingleAddressPairedDevice,
+  nameCombinedMotors,
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
@@ -1789,4 +1790,33 @@ test("accessory light switches sit beside the floor light instead of replacing i
   expect(bed.lights.light).toBe("light.base");
   expect(bed.lights.switch).toBeUndefined();
   expect(bed.lights.switches).toEqual(["switch.cup", "switch.read"]);
+});
+
+test("a second entity in a single-slot role is shown, never dropped", () => {
+  // Linx publishes a massage timer button and a remaining-time sensor, and
+  // OKIN Smart Sleep P2 a timer select and a timer button, all as the timer.
+  const hass = hassWith([
+    entry("button.linx_timer", "linx_massage_timer"),
+    entry("sensor.linx_minutes", "linx_massage_minutes"),
+    entry("button.floor_hold", "vmatbasic_floor_hold"),
+    entry("button.floor_toggle", "vmatbasic_floor_toggle"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  const timers = [bed.massage.timer, ...bed.massage.buttons, ...(bed.massage.states ?? [])];
+  expect(timers.sort()).toEqual(["button.linx_timer", "sensor.linx_minutes"]);
+  const toggles = [bed.lights.toggle, ...(bed.lights.buttons ?? [])];
+  expect(toggles.sort()).toEqual(["button.floor_hold", "button.floor_toggle"]);
+});
+
+test("a combined pane names a bed-specific motor after a side's cover", () => {
+  const hass = hassWith([
+    entry("button.pair_lumbar_up", "ultramatic_lumbar_up", "pair"),
+    entry("cover.left_lumbar", "ultramatic_lumbar", "left"),
+  ]);
+  const both = bedEntitiesForDevice(hass, "pair");
+  const left = bedEntitiesForDevice(hass, "left");
+  const key = left.motors[0].key;
+  expect(both.motors.map((m) => m.key)).toEqual([key]);
+  nameCombinedMotors(both, [left]);
+  expect(both.motors[0].nameFrom).toBe("cover.left_lumbar");
 });

@@ -157,6 +157,8 @@ export interface MotorEntity {
   position?: string; // number.* position
   estimate?: string; // number.* <motor>_position_estimated (travel-time estimate)
   reference?: string; // button.* set_<motor>_reference
+  // A combined pane's motor without a cover is named after a side's cover.
+  nameFrom?: string;
 }
 
 export interface MemorySlot {
