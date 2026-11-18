@@ -10994,6 +10994,106 @@
         "both": "Both",
         "wave": "Wave"
       }
+    },
+    "lower_to_flat_motors": {
+      "options": {
+        "tv_lift": "TV lift",
+        "back": "Back",
+        "legs": "Legs",
+        "head": "Head",
+        "feet": "Feet"
+      }
+    },
+    "comfort_enhancement3_start_massage_kind": {
+      "options": {
+        "head": "Head",
+        "feet": "Feet",
+        "both": "Both",
+        "wave": "Wave"
+      }
+    },
+    "doublesleep_configure_right_sensitivity": {
+      "options": {
+        "1": "Low",
+        "2": "Medium",
+        "3": "High"
+      }
+    },
+    "furnimove_move_simultaneously_second_motor": {
+      "options": {
+        "head": "Head",
+        "back": "Back",
+        "legs": "Legs",
+        "feet": "Feet"
+      }
+    },
+    "hush_base_mode": {
+      "options": {
+        "tv": "TV",
+        "zero_g": "Zero gravity",
+        "anti_snore": "Anti-snore",
+        "lounge": "Lounge",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2",
+        "memory_3": "Memory 3"
+      }
+    },
+    "jiecang_wake_preset": {
+      "options": {
+        "flat": "Flat",
+        "zero_g": "Zero gravity",
+        "anti_snore": "Anti-snore",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2"
+      }
+    },
+    "linak_move_simultaneously_second_motor": {
+      "options": {
+        "base": "Base",
+        "feet": "Feet",
+        "head": "Head",
+        "legs": "Legs",
+        "back": "Back"
+      }
+    },
+    "mlily_report_type": {
+      "options": {
+        "1": "1",
+        "2": "2"
+      }
+    },
+    "mline_command_position": {
+      "options": {
+        "1": "Head",
+        "2": "Elevation"
+      }
+    },
+    "motomotion_side": {
+      "options": {
+        "left": "Left",
+        "right": "Right"
+      }
+    },
+    "richmat_app_zone": {
+      "options": {
+        "1": "A",
+        "2": "B",
+        "3": "Both"
+      }
+    },
+    "richmat_classic_popup": {
+      "options": {
+        "15": "15 minutes",
+        "30": "30 minutes",
+        "45": "45 minutes",
+        "toggle": "Turn on or off"
+      }
+    },
+    "rize_program_preset_side": {
+      "options": {
+        "left": "Left",
+        "right": "Right"
+      }
     }
   }
 }

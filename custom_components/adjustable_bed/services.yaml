@@ -343,7 +343,7 @@ lower_to_flat:
         select:
           multiple: true
           options: [tv_lift, back, legs, head, feet]
-          translation_key: estimate_set_reference_motors
+          translation_key: lower_to_flat_motors
 
 estimate_save_position:
   fields:
@@ -759,7 +759,7 @@ comfort_enhancement3_start_massage:
       selector:
         select:
           options: [head, feet, both, wave]
-          translation_key: set_alarm_massage_zone
+          translation_key: comfort_enhancement3_start_massage_kind
 
 comfy_control:
   fields:
@@ -918,7 +918,7 @@ doublesleep_configure:
       selector:
         select:
           options: ['1', '2', '3']
-          translation_key: doublesleep_configure_left_sensitivity
+          translation_key: doublesleep_configure_right_sensitivity
     date:
       selector:
         date:
@@ -1088,7 +1088,7 @@ furnimove_move_simultaneously:
       selector:
         select:
           options: [head, back, legs, feet]
-          translation_key: furnimove_move_simultaneously_first_motor
+          translation_key: furnimove_move_simultaneously_second_motor
     first_direction:
       required: true
       selector:
@@ -1434,7 +1434,7 @@ hush_base:
       selector:
         select:
           options: [tv, zero_g, anti_snore, lounge, memory_1, memory_2, memory_3]
-          translation_key: casper_base_mode
+          translation_key: hush_base_mode
     slot:
       selector:
         number:
@@ -1514,7 +1514,7 @@ jiecang_wake:
       selector:
         select:
           options: [flat, zero_g, anti_snore, memory_1, memory_2]
-          translation_key: logicdata_hold_preset_preset
+          translation_key: jiecang_wake_preset
     head_level:
       default: 0
       selector:
@@ -1669,7 +1669,7 @@ linak_move_simultaneously:
       selector:
         select:
           options: [base, feet, head, legs, back]
-          translation_key: linak_move_simultaneously_first_motor
+          translation_key: linak_move_simultaneously_second_motor
     second_direction:
       required: true
       selector:
@@ -1837,7 +1837,7 @@ mlily:
       selector:
         select:
           options: ['1', '2']
-          translation_key: goodvibe_report_type
+          translation_key: mlily_report_type
     alarm_record:
       selector:
         object:
@@ -1883,7 +1883,7 @@ mline_command:
       selector:
         select:
           options: ['1', '2']
-          translation_key: goodvibe_report_type
+          translation_key: mline_command_position
     all_records:
       default: false
       selector:
@@ -2283,7 +2283,7 @@ motomotion:
       selector:
         select:
           options: [left, right]
-          translation_key: doublesleep_configure_report_side
+          translation_key: motomotion_side
 
 octo_enroll_pin:
   fields:
@@ -2457,7 +2457,7 @@ richmat_app:
       selector:
         select:
           options: ['1', '2', '3']
-          translation_key: doublesleep_configure_left_sensitivity
+          translation_key: richmat_app_zone
     temperature:
       selector:
         number:
@@ -2572,7 +2572,7 @@ richmat_classic:
       selector:
         select:
           options: ['15', '30', '45', toggle]
-          translation_key: richmat_rise_popup
+          translation_key: richmat_classic_popup
     duration_ms:
       selector:
         number:
@@ -2766,7 +2766,7 @@ rize_program_preset:
       selector:
         select:
           options: [left, right]
-          translation_key: doublesleep_configure_report_side
+          translation_key: rize_program_preset_side
 
 rmcontrol_anti_snore:
   fields:
