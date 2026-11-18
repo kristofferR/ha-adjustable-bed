@@ -18,8 +18,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
@@ -49,7 +49,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: True,
         CONF_DISABLE_ANGLE_SENSING: False,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: "idle",
         CONF_PREFERRED_ADAPTER: "auto",
     }
     result = await start_new_bed(flow, route, BED_TYPE_LOGICDATA_APP)

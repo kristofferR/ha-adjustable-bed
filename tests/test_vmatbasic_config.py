@@ -29,7 +29,7 @@ def app_data(profile="basic", **extra):
         CONF_NAME: "App receiver",
         const.CONF_BED_TYPE: const.BED_TYPE_VMATBASIC,
         const.CONF_VMATBASIC_PROFILE: profile,
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_DISABLE_ANGLE_SENSING: True,
         **extra,
     }
@@ -45,7 +45,7 @@ async def test_all_setup_routes_collect_explicit_profile_without_bond(
     flow._discovery_info = mock_bluetooth_service_info
     settings = {
         CONF_NAME: "Basic",
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_PREFERRED_ADAPTER: "auto",
     }
     result = await start_new_bed(flow, route, const.BED_TYPE_VMATBASIC)

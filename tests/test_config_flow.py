@@ -106,9 +106,9 @@ from custom_components.adjustable_bed.const import (
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
     CONF_BLE_BOND_ESTABLISHED,
     CONF_BLE_BOND_MARKER_UNRELIABLE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_DISABLE_DISCOVERY,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_ADV_TYPE,
     CONF_KAIDI_PRODUCT_ID,
@@ -1755,7 +1755,7 @@ class TestBluetoothDiscoveryFlow:
     def test_disconnect_after_command_default_per_bed_type(self):
         """Beds that must hold the link open keep the option off; others get it on."""
         from custom_components.adjustable_bed.bed_traits import (
-            disconnect_after_command_default_enabled,
+            default_connection_mode,
         )
         from custom_components.adjustable_bed.const import (
             BED_TYPE_COMFORT_MOTION,
@@ -1787,52 +1787,52 @@ class TestBluetoothDiscoveryFlow:
             VARIANT_AUTO,
         )
 
-        assert disconnect_after_command_default_enabled(BED_TYPE_LINAK, VARIANT_AUTO) is True
-        assert disconnect_after_command_default_enabled(BED_TYPE_ERGOMOTION, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_GEN2, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_SLEEP_NUMBER_MCR, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_COMFORT_MOTION, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_JENSEN, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_JIECANG, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_KAIDI, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_KEESON, VARIANT_AUTO) is False
+        assert (default_connection_mode(BED_TYPE_LINAK, VARIANT_AUTO) == "release") is True
+        assert (default_connection_mode(BED_TYPE_ERGOMOTION, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_LEGGETT_GEN2, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_SLEEP_NUMBER_MCR, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_COMFORT_MOTION, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_JENSEN, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_JIECANG, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_KAIDI, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_KEESON, VARIANT_AUTO) == "release") is False
         assert (
-            disconnect_after_command_default_enabled(BED_TYPE_KEESON, KEESON_VARIANT_SINO) is False
+            (default_connection_mode(BED_TYPE_KEESON, KEESON_VARIANT_SINO) == "release") is False
         )
         assert (
-            disconnect_after_command_default_enabled(BED_TYPE_KEESON, KEESON_VARIANT_ERGOMOTION)
+            (default_connection_mode(BED_TYPE_KEESON, KEESON_VARIANT_ERGOMOTION) == "release")
             is False
         )
-        assert disconnect_after_command_default_enabled(BED_TYPE_LIMOSS, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_OCTO, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_OKIN_CB24, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_OKIN_CST, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_OKIMAT, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_OKIN_ORE, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_OKIN_UUID, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_REVERIE, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_REVERIE_NIGHTSTAND, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_SLEEP_NUMBER, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_SLEEPSTAR, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_SLEEPYS_BOX25, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_SUTA, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_SVANE, None) is False
-        assert disconnect_after_command_default_enabled(BED_TYPE_VIBRADORM, None) is False
+        assert (default_connection_mode(BED_TYPE_LIMOSS, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_OCTO, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_OKIN_CB24, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_OKIN_CST, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_OKIMAT, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_OKIN_ORE, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_OKIN_UUID, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_REVERIE, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_REVERIE_NIGHTSTAND, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_SLEEP_NUMBER, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_SLEEPSTAR, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_SLEEPYS_BOX25, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_SUTA, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_SVANE, None) == "release") is False
+        assert (default_connection_mode(BED_TYPE_VIBRADORM, None) == "release") is False
         # An umbrella type resolves through its explicit variant.
         assert (
-            disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2)
+            (default_connection_mode(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2) == "release")
             is False
         )
         assert (
-            disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM)
+            (default_connection_mode(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM) == "release")
             is False
         )
         assert (
-            disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO) is False
+            (default_connection_mode(BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO) == "release") is False
         )
-        assert disconnect_after_command_default_enabled(BED_TYPE_LEGGETT_WILINKE, None) is False
+        assert (default_connection_mode(BED_TYPE_LEGGETT_WILINKE, None) == "release") is False
         # No bed type chosen yet (auto-detect): keep the conservative default.
-        assert disconnect_after_command_default_enabled(None, None) is False
+        assert (default_connection_mode(None, None) == "release") is False
 
     async def test_discovery_defaults_to_freeing_the_link_after_each_command(
         self,
@@ -1852,9 +1852,9 @@ class TestBluetoothDiscoveryFlow:
         marker = next(
             marker
             for marker in result["data_schema"].schema
-            if marker.schema == CONF_DISCONNECT_AFTER_COMMAND
+            if marker.schema == CONF_CONNECTION_MODE
         )
-        assert marker.default() is True
+        assert marker.default() == "release"
 
     async def test_a_typed_address_gets_its_chosen_beds_disconnect_default(
         self,
@@ -1872,17 +1872,17 @@ class TestBluetoothDiscoveryFlow:
         disconnect_marker = next(
             marker
             for marker in result["data_schema"].schema
-            if marker.schema == CONF_DISCONNECT_AFTER_COMMAND
+            if marker.schema == CONF_CONNECTION_MODE
         )
-        assert disconnect_marker.default() is True
+        assert disconnect_marker.default() == "release"
 
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await flow.async_step_finish_settings(
-                {CONF_NAME: "Manual Bed", CONF_DISCONNECT_AFTER_COMMAND: False}
+                {CONF_NAME: "Manual Bed", CONF_CONNECTION_MODE: "idle"}
             )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert result["data"][CONF_DISCONNECT_AFTER_COMMAND] is False
+        assert result["data"][CONF_CONNECTION_MODE] == "idle"
 
     async def test_explicitly_unchecking_disconnect_after_command_is_kept(
         self,
@@ -1906,14 +1906,14 @@ class TestBluetoothDiscoveryFlow:
                 CONF_HAS_MASSAGE: False,
                 CONF_DISABLE_ANGLE_SENSING: False,
                 CONF_PREFERRED_ADAPTER: "auto",
-                CONF_DISCONNECT_AFTER_COMMAND: False,
+                CONF_CONNECTION_MODE: "idle",
             },
         )
         result = await _advance_progress(hass, result)
         assert result["step_id"] == "verify_connection"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert result["data"][CONF_DISCONNECT_AFTER_COMMAND] is False
+        assert result["data"][CONF_CONNECTION_MODE] == "idle"
 
     async def test_bluetooth_discovery_confirm(
         self,
@@ -2748,7 +2748,7 @@ class TestManualFlow:
         assert result["data"][CONF_ADDRESS] == "11:22:33:44:55:66"
         assert result["data"][CONF_BED_TYPE] == bed_type
         assert result["data"][CONF_MOTOR_COUNT] == 3
-        assert result["data"][CONF_DISCONNECT_AFTER_COMMAND] is disconnect_after_command
+        assert result["data"][CONF_CONNECTION_MODE] == ("release" if disconnect_after_command else "idle")
 
     async def test_manual_entry_normalizes_cst_profile_motor_count(
         self, hass: HomeAssistant, enable_custom_integrations
@@ -2910,7 +2910,7 @@ class TestManualFlow:
         with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
-                {CONF_NAME: "Malouf Bed", CONF_PREFERRED_ADAPTER: "auto", CONF_DISCONNECT_AFTER_COMMAND: True},
+                {CONF_NAME: "Malouf Bed", CONF_PREFERRED_ADAPTER: "auto", CONF_CONNECTION_MODE: "release"},
             )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY

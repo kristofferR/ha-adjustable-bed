@@ -160,14 +160,14 @@ async def test_task_cancelled_release_is_retried_with_the_same_proven_frame(prof
 async def test_admitted_coordinator_stop_retries_failed_cancelled_motion_cleanup(hass, profile):
     import asyncio
 
-    from custom_components.adjustable_bed.const import CONF_DISCONNECT_AFTER_COMMAND
+    from custom_components.adjustable_bed.const import CONF_CONNECTION_MODE
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Svane",
         CONF_BED_TYPE: BED_TYPE_SVANE,
         CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC if profile == "jmc" else SVANE_VARIANT_MULTI,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: "idle",
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)

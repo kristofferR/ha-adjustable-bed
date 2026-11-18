@@ -774,7 +774,7 @@ async def loaded_runtime(hass, name, client):
             CONF_BED_TYPE: "motomotion",
             CONF_BLE_DEVICE_NAME: name,
             "disable_angle_sensing": True,
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
         },
         unique_id="AA:BB:CC:DD:EE:13",
         version=4,

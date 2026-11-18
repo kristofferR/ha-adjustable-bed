@@ -13,7 +13,7 @@ from custom_components.adjustable_bed.beds.goodvibe.protocol import action_frame
 from custom_components.adjustable_bed.const import (
     BED_TYPE_GOODVIBE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
 )
@@ -28,7 +28,7 @@ def runtime(hass, profile="sleep_hj", handoff=True, address="AA:BB:CC:DD:EE:16")
             CONF_NAME: "Good Vibe Sleep",
             CONF_BED_TYPE: BED_TYPE_GOODVIBE,
             CONF_PROTOCOL_VARIANT: profile,
-            CONF_DISCONNECT_AFTER_COMMAND: handoff,
+            CONF_CONNECTION_MODE: "release" if handoff else "idle",
         },
     )
     entry.add_to_hass(hass)

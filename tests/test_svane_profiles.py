@@ -388,7 +388,7 @@ async def test_new_explicit_svane_selection_uses_case_sensitive_app_name_rule(ha
     answer = {SVANE_VARIANT_JMC: "svane_jmc400", VARIANT_AUTO: "svane_bed"}[expected]
     assert choice.default() == answer
     result = await flow.async_step_jensen_family({"choice": choice.default()})
-    await finish_new_bed(flow, result, {"disconnect_after_command": False})
+    await finish_new_bed(flow, result, {"connection_mode": "idle"})
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected
 
 

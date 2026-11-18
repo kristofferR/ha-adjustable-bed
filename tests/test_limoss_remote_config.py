@@ -45,7 +45,7 @@ async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_se
     flow._discovery_info = mock_bluetooth_service_info
     settings = {
         CONF_NAME: "App bed",
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_PREFERRED_ADAPTER: "auto",
     }
     result = await start_new_bed(flow, route, const.BED_TYPE_LIMOSS_REMOTE)

@@ -18,7 +18,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_RICHMAT,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_READ_UUID,
@@ -100,7 +100,7 @@ async def test_manual_entry_collects_and_saves_legacy_settings(hass: HomeAssista
         result = await flow.async_step_profile_questions(_settings())
         assert result["step_id"] == "finish_settings"
         result = await flow.async_step_finish_settings(
-            {CONF_NAME: "Legacy app bed", CONF_DISCONNECT_AFTER_COMMAND: False}
+            {CONF_NAME: "Legacy app bed", CONF_CONNECTION_MODE: "idle"}
         )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_BED_TYPE] == BED_TYPE_LEGGETT_LP_LEGACY

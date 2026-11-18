@@ -21,8 +21,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
@@ -58,7 +58,7 @@ def _entry_data(name: str = "QMS2", variant: str = SOLACE_VARIANT_WOOSA) -> dict
         CONF_HAS_MASSAGE: True,
         CONF_DISABLE_ANGLE_SENSING: True,
         CONF_PREFERRED_ADAPTER: "auto",
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: "idle",
     }
 
 
@@ -108,7 +108,7 @@ async def test_manual_setup_saves_woosa_profile(hass: HomeAssistant) -> None:
         result = await flow.async_step_solace_woosa({})
         # The app's fixed layout ignores a motor count a client still submits.
         result = await flow.async_step_finish_settings(
-            {CONF_NAME: "Bedroom bed", CONF_MOTOR_COUNT: 4, CONF_DISCONNECT_AFTER_COMMAND: False}
+            {CONF_NAME: "Bedroom bed", CONF_MOTOR_COUNT: 4, CONF_CONNECTION_MODE: "idle"}
         )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_PROTOCOL_VARIANT] == SOLACE_VARIANT_WOOSA

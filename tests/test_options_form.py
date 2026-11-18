@@ -10,7 +10,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
+from custom_components.adjustable_bed.bed_traits import default_connection_mode
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
@@ -22,7 +22,7 @@ from custom_components.adjustable_bed.const import (
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_CB24_BED_SELECTION,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -104,15 +104,15 @@ def _defaults(form: Any) -> dict:
     }
 
 
-async def test_configure_shows_the_beds_own_disconnect_default(
+async def test_configure_shows_the_beds_own_connection_mode_default(
     hass: HomeAssistant, enable_custom_integrations
 ) -> None:
     """An entry without a saved choice shows the per-bed default, as setup does."""
     del enable_custom_integrations
     _entry, form = await _settings_form(hass, {CONF_BED_TYPE: BED_TYPE_LINAK})
 
-    assert _defaults(form)[CONF_DISCONNECT_AFTER_COMMAND] is (
-        disconnect_after_command_default_enabled(BED_TYPE_LINAK, VARIANT_AUTO)
+    assert _defaults(form)[CONF_CONNECTION_MODE] == default_connection_mode(
+        BED_TYPE_LINAK, VARIANT_AUTO
     )
 
 

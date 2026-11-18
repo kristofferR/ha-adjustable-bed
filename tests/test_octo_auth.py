@@ -545,7 +545,7 @@ async def test_pin_collection_routes_through_verification(hass):
         result = await flow.async_step_manual_entry({"address": "AA:BB:CC:DD:EE:FF"})
         assert CONF_OCTO_PIN in {marker.schema for marker in result["data_schema"].schema}
         result = await flow.async_step_finish_settings(
-            {"name": "Octo bed", "disconnect_after_command": False, CONF_OCTO_PIN: " 1234 "}
+            {"name": "Octo bed", "connection_mode": "idle", CONF_OCTO_PIN: " 1234 "}
         )
     assert verify.await_args is not None, result
     data, title = verify.await_args.args

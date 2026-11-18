@@ -394,7 +394,7 @@ async def test_real_coordinator_cover_timed_move_and_card_lease(hass, mock_bleak
             const.CONF_PROTOCOL_VARIANT: "apex_3",
             const.CONF_MOTOR_PULSE_COUNT: 3,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             const.CONF_IDLE_DISCONNECT_SECONDS: 0,
         },
     )
@@ -626,7 +626,7 @@ async def test_two_address_card_release_stays_on_original_side(hass):
                     const.CONF_PROTOCOL_VARIANT: f"apex_{index}",
                     const.CONF_MOTOR_PULSE_COUNT: 3,
                     const.CONF_DISABLE_ANGLE_SENSING: True,
-                    const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                    const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
                     const.CONF_IDLE_DISCONNECT_SECONDS: 0,
                 },
             )
@@ -736,7 +736,7 @@ async def test_batch_massage_honors_stop_on_later_target(hass):
                 const.CONF_BED_TYPE: const.BED_TYPE_COMFORT_ENHANCEMENT3,
                 const.CONF_PROTOCOL_VARIANT: "apex_3", const.CONF_HAS_MASSAGE: True,
                 const.CONF_DISABLE_ANGLE_SENSING: True,
-                const.CONF_DISCONNECT_AFTER_COMMAND: False, const.CONF_IDLE_DISCONNECT_SECONDS: 0,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE, const.CONF_IDLE_DISCONNECT_SECONDS: 0,
             })
             entry.add_to_hass(hass)
             child = AdjustableBedCoordinator(hass, entry)

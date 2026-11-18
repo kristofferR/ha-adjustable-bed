@@ -54,7 +54,7 @@ async def test_every_setup_route_collects_processor_profile(
         await finish_new_bed(
             flow,
             await flow.async_step_profile_questions(values),
-            {"name": "Processor", "disconnect_after_command": False, "preferred_adapter": "auto"},
+            {"name": "Processor", "connection_mode": "idle", "preferred_adapter": "auto"},
         )
     data = finish.call_args.args[0]
     assert data["product_type"] == "activebreeze_small"
@@ -216,7 +216,7 @@ async def test_wave_entities_keep_shared_settings_across_reconnect_and_restart(h
     entry = MockConfigEntry(domain=const.DOMAIN, data={
         "address": "AA:BB:CC:01:02:03", "name": "Processor",
         "bed_type": const.BED_TYPE_SLEEPTRACKER, "product_type": "ergo_prosmart",
-        "disconnect_after_command": True,
+        "connection_mode": "release",
     })
     entry.add_to_hass(hass)
     runtime = AdjustableBedCoordinator(hass, entry)

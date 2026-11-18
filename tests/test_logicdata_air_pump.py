@@ -11,13 +11,13 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
+from custom_components.adjustable_bed.bed_traits import default_connection_mode
 from custom_components.adjustable_bed.beds.logicdata import air_pump as pump
 from custom_components.adjustable_bed.beds.logicdata.air_pump import LogicdataAirPumpController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
 )
@@ -218,7 +218,7 @@ def test_pump_has_no_motor_or_bed_preset_capabilities(coordinator):
         "logicdata_air_pump_save_memory",
     ]
     # The shared ffe0 service never selects the pump automatically.
-    assert not disconnect_after_command_default_enabled(BED_TYPE_LOGICDATA_AIR_PUMP)
+    assert not (default_connection_mode(BED_TYPE_LOGICDATA_AIR_PUMP) == "release")
 
 
 def test_shared_service_never_detects_the_pump():
@@ -262,7 +262,7 @@ async def test_entry_exposes_pump_controls_without_motors(
             CONF_NAME: "Air pump",
             CONF_BED_TYPE: BED_TYPE_LOGICDATA_AIR_PUMP,
             CONF_PREFERRED_ADAPTER: "auto",
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
         unique_id=address,
     )

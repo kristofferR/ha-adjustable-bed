@@ -70,7 +70,7 @@ async def runtime(hass):
             const.CONF_BED_TYPE: "bedgear",
             const.CONF_BLE_DEVICE_NAME: name(),
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)

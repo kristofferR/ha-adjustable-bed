@@ -25,7 +25,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_RICHMAT,
-    BED_TYPE_RICHMAT_REVIVE,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
@@ -54,7 +53,6 @@ from custom_components.adjustable_bed.profile_review import (
     _ROUTE_APPS,
     ProfileReviewRepairFlow,
     async_refresh_profile_review_issue,
-    choice_label,
     profile_review_mark,
 )
 from custom_components.adjustable_bed.repairs import async_create_fix_flow

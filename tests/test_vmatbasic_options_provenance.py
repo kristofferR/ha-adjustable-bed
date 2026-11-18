@@ -31,7 +31,7 @@ async def test_hidden_artifact_cadence_remains_generated_on_repeated_options_sav
             CONF_NAME: "App receiver",
             const.CONF_BED_TYPE: const.BED_TYPE_VMATBASIC,
             const.CONF_VMATBASIC_PROFILE: profile,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             const.CONF_DISABLE_ANGLE_SENSING: True,
             const.CONF_MOTOR_PULSE_COUNT: 34,
             const.CONF_MOTOR_PULSE_DELAY_MS: 30,

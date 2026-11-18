@@ -29,8 +29,8 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
@@ -320,7 +320,7 @@ async def test_bluetooth_setup_stores_the_app_profile(
         # LinOn asks its motor count, the setting its old row showed.
         assert result["step_id"] == "profile_questions"
         result = await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"})
-    await finish_new_bed(flow, result, {CONF_DISCONNECT_AFTER_COMMAND: False})
+    await finish_new_bed(flow, result, {CONF_CONNECTION_MODE: "idle"})
 
     assert finish.await_args is not None
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected
@@ -374,7 +374,7 @@ async def test_paired_options_reject_a_shared_profile_change(
             CONF_HAS_MASSAGE: False,
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PREFERRED_ADAPTER: "auto",
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         }
 
     entry = MockConfigEntry(

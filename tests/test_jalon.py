@@ -498,10 +498,10 @@ def test_entity_translation_keys_follow_home_assistant_contract():
 def test_massage_connection_state_keeps_link_between_commands_by_default():
     from custom_components.adjustable_bed.bed_traits import (
         bed_traits,
-        disconnect_after_command_default_enabled,
+        default_connection_mode,
     )
 
     traits = bed_traits(BED_TYPE_JALON)
     assert traits.connection_scoped_state
     assert not traits.persistent_connection
-    assert not disconnect_after_command_default_enabled(BED_TYPE_JALON)
+    assert not (default_connection_mode(BED_TYPE_JALON) == "release")

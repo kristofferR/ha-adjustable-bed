@@ -602,7 +602,7 @@ async def test_fresh_legacy_choice_keeps_existing_pairing_route(
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     flow._discovery_info = mock_bluetooth_service_info
-    settings = {CONF_NAME: "Bed", const.CONF_PREFERRED_ADAPTER: "auto", const.CONF_DISCONNECT_AFTER_COMMAND: False}
+    settings = {CONF_NAME: "Bed", const.CONF_PREFERRED_ADAPTER: "auto", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE}
     result = await start_new_bed(flow, route, const.BED_TYPE_VIBRADORM)
     assert result["step_id"] == "vibradorm"
     # The legacy setup asks its motors, massage and angle sensing, then pairs.

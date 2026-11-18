@@ -40,7 +40,7 @@ async def test_all_setup_routes_collect_separate_saved_model_and_driver(
         await finish_new_bed(
             flow,
             await flow.async_step_profile_questions(values),
-            {"name": "SleepEase", "disconnect_after_command": False},
+            {"name": "SleepEase", "connection_mode": "idle"},
         )
     saved = finish.call_args.args[0]
     assert saved["product_type"] == "11136" and saved["protocol_variant"] == "p2"

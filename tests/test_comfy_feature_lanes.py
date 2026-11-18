@@ -36,7 +36,7 @@ async def feature_bed(hass, request):
             const.CONF_KAIDI_ROOM_ID: 10001,
             const.CONF_KAIDI_SOFA_ACU_NO: 0xF322,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)

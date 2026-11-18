@@ -18,8 +18,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MALOUF_NEW_OKIN,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_MALOUF_APP_MODEL,
     CONF_MALOUF_APP_PRIMARY,
     CONF_MALOUF_APP_PROFILE,
@@ -53,7 +53,7 @@ async def test_setup_routes_require_app_and_model(hass, mock_bluetooth_service_i
         await finish_new_bed(
             flow,
             await flow.async_step_profile_questions(schema({CONF_MALOUF_APP_MODEL: "Premium"})),
-            {CONF_NAME: "App bed", CONF_DISCONNECT_AFTER_COMMAND: False},
+            {CONF_NAME: "App bed", CONF_CONNECTION_MODE: "idle"},
         )
     saved = finish.call_args.args[0]
     assert saved[CONF_MALOUF_APP_PROFILE] == "lucid"

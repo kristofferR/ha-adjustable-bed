@@ -2269,7 +2269,7 @@ class TestPairBedsConversion:
         """Splitting a provenance-bearing pair keeps the connection preferences
         chosen while combined and restores the side's original bed settings."""
         from custom_components.adjustable_bed.const import (
-            CONF_DISCONNECT_AFTER_COMMAND,
+            CONF_CONNECTION_MODE,
             CONF_IDLE_DISCONNECT_SECONDS,
             SIDE_LEFT,
         )
@@ -2309,7 +2309,7 @@ class TestPairBedsConversion:
                 {
                     CONF_PREFERRED_ADAPTER: "hci1",
                     CONF_IDLE_DISCONNECT_SECONDS: 120,
-                    CONF_DISCONNECT_AFTER_COMMAND: False,
+                    CONF_CONNECTION_MODE: "idle",
                 },
             )
             assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -2329,7 +2329,7 @@ class TestPairBedsConversion:
             **left_original,
             CONF_PREFERRED_ADAPTER: "hci1",
             CONF_IDLE_DISCONNECT_SECONDS: 120,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         }
         assert restored.data[CONF_MOTOR_COUNT] == 2
         # The original idle option no longer shadows the retained value.

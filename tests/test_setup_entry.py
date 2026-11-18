@@ -142,7 +142,7 @@ async def test_an_app_row_with_no_more_questions_finishes(hass, enable_custom_in
         patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
     ):
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {CONF_NAME: "Bed", const.CONF_DISCONNECT_AFTER_COMMAND: False}
+            result["flow_id"], {CONF_NAME: "Bed", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE}
         )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert (result["data"][const.CONF_BED_TYPE], result["data"][const.CONF_PROTOCOL_VARIANT]) == (
@@ -374,7 +374,7 @@ async def test_the_final_settings_come_after_the_apps_questions(hass, enable_cus
     )
     assert result["step_id"] == "finish_settings"
     top = {marker.schema for marker in result["data_schema"].schema}
-    assert {CONF_NAME, const.CONF_PREFERRED_ADAPTER, const.CONF_DISCONNECT_AFTER_COMMAND} <= top
+    assert {CONF_NAME, const.CONF_PREFERRED_ADAPTER, const.CONF_CONNECTION_MODE} <= top
     # What the app sets is not asked, its route least of all; timing is
     # collapsed under Advanced connection and timing.
     from custom_components.adjustable_bed.app_profiles import hidden_generic_fields

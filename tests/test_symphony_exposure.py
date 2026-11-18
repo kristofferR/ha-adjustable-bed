@@ -36,7 +36,7 @@ async def test_setup_routes_require_product_and_keep_fifth_axis(
         await finish_new_bed(
             flow,
             await flow.async_step_profile_questions(values),
-            {"name": "SS800", "disconnect_after_command": False},
+            {"name": "SS800", "connection_mode": "idle"},
         )
     saved = finish.call_args.args[0]
     assert saved["product_type"] == "13" and saved["protocol_variant"] == "9"

@@ -256,7 +256,7 @@ async def test_public_explicit_profile_finishes_without_pairing_backend(
             user_input={
                 CONF_NAME: "App profile",
                 const.CONF_PREFERRED_ADAPTER: const.ADAPTER_AUTO,
-                const.CONF_DISCONNECT_AFTER_COMMAND: True,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_RELEASE,
             },
         )
         assert result["type"] == FlowResultType.CREATE_ENTRY

@@ -17,7 +17,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_HAS_MASSAGE,
     CONF_LEGGETT_APP_PROFILE,
     CONF_MOTOR_COUNT,
@@ -52,7 +52,7 @@ async def test_setup_collects_app_then_preserves_pairing(
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    settings = {CONF_NAME: "Prodigy", CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISCONNECT_AFTER_COMMAND: False, CONF_PREFERRED_ADAPTER: "auto"}
+    settings = {CONF_NAME: "Prodigy", CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_CONNECTION_MODE: "idle", CONF_PREFERRED_ADAPTER: "auto"}
     result = await start_new_bed(flow, route, BED_TYPE_LEGGETT_OKIN)
     # The L&P question names each app, which picks its own layout.
     assert result["step_id"] == "leggett_family"

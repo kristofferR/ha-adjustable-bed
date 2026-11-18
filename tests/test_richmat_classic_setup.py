@@ -197,7 +197,7 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import (
         CONF_BED_TYPE,
-        CONF_DISCONNECT_AFTER_COMMAND,
+        CONF_CONNECTION_MODE,
         CONF_PRODUCT_TYPE,
         CONF_PROTOCOL_VARIANT,
     )
@@ -216,7 +216,7 @@ async def test_manual_setup_asks_the_chosen_apps_layout_on_the_generic_step(hass
         result = await flow.async_step_profile_questions({CONF_PRODUCT_TYPE: "ZRS6:CORN"})
         assert result["step_id"] == "finish_settings"
         result = await flow.async_step_finish_settings(
-            {CONF_NAME: "Classic bed", CONF_DISCONNECT_AFTER_COMMAND: False}
+            {CONF_NAME: "Classic bed", CONF_CONNECTION_MODE: "idle"}
         )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     data = result["data"]

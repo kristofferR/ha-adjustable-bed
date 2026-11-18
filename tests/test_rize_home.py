@@ -358,7 +358,7 @@ async def test_real_coordinator_startup_reconnect_entity_and_service_callers(
             const.CONF_BED_TYPE: "rize_home",
             const.CONF_PROTOCOL_VARIANT: product,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             const.CONF_MOTOR_PULSE_COUNT: 3,
         },
     )

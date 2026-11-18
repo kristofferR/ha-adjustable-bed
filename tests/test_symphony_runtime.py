@@ -56,7 +56,7 @@ async def target(hass, monkeypatch, product="12", selector=9, side=1):
             "disable_angle_sensing": True,
             "motor_pulse_count": 1,
             "motor_pulse_delay_ms": 100,
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
         },
     )
     entry.add_to_hass(hass)

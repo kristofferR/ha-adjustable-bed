@@ -33,7 +33,7 @@ async def target(hass, profile="xtbox", address="AA:BB:CC:DD:EE:01"):
             const.CONF_BED_TYPE: const.BED_TYPE_VMATBASIC,
             const.CONF_VMATBASIC_PROFILE: profile,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)
@@ -306,7 +306,7 @@ async def actual_descriptor_pair(hass):
             const.CONF_VMATBASIC_FLOOR_LEVEL: level,
             const.CONF_VMATBASIC_FLOOR_MINUTES: minutes,
             const.CONF_SIDE: side,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         }
         for side, address, profile, level, minutes in [
             (const.SIDE_LEFT, "AA:BB:CC:DD:EE:01", "cbi", 201, 321),

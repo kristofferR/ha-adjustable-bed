@@ -80,7 +80,7 @@ async def test_every_setup_route_collects_app_then_pairs(hass, mock_bluetooth_se
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    settings = {CONF_NAME: "App bed", const.CONF_DISCONNECT_AFTER_COMMAND: False, const.CONF_PREFERRED_ADAPTER: "auto"}
+    settings = {CONF_NAME: "App bed", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE, const.CONF_PREFERRED_ADAPTER: "auto"}
     result = await start_new_bed(flow, route, const.BED_TYPE_VIBRADORM_APP)
     assert result["step_id"] == "vibradorm"
     result = await flow.async_step_vibradorm({"choice": "caresse"})

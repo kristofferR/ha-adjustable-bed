@@ -31,8 +31,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_LEGGETT_OKIN,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -114,7 +114,7 @@ async def runtime(
             CONF_NAME: "Okin hold bed",
             CONF_BED_TYPE: case.bed_type,
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     entry.add_to_hass(hass)

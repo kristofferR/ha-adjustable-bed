@@ -22,7 +22,7 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_families import APP_FAMILIES, GUIDED_FAMILIES
 from custom_components.adjustable_bed.bed_traits import (
     bed_type_has_position_feedback,
-    disconnect_after_command_default_enabled,
+    default_connection_mode,
 )
 from custom_components.adjustable_bed.config_flow import (
     _APP_SETUP_STEPS,
@@ -123,8 +123,8 @@ async def _run(
     """Set the row up with these route answers; return the saved route or the next choice.
 
     The final settings submit the answers a route's own default would never
-    give. With ``change_disconnect``, they also submit disconnect after each
-    command: as drawn, or changed from it.
+    give. With ``change_disconnect``, they also submit the connection mode: as
+    drawn, or changed from it.
     """
     flow = _new_flow(hass, row)
     sentinels = {
@@ -133,7 +133,7 @@ async def _run(
         const.CONF_DISABLE_ANGLE_SENSING: True,
     }
     submitted: dict[str, Any] = {}
-    drawn: bool | None = None
+    drawn: str | None = None
     later: set[str] = set()
     with _finishing(flow):
         try:
@@ -158,10 +158,13 @@ async def _run(
                     }
                     answers.update(submitted)
                     drawn = next(
-                        _default(m) for m in fields if m.schema == const.CONF_DISCONNECT_AFTER_COMMAND
+                        (_default(m) for m in fields if m.schema == const.CONF_CONNECTION_MODE),
+                        None,
                     )
-                    if change_disconnect is not None:
-                        answers[const.CONF_DISCONNECT_AFTER_COMMAND] = drawn != change_disconnect
+                    if change_disconnect is not None and drawn is not None:
+                        answers[const.CONF_CONNECTION_MODE] = (
+                            _other_mode(drawn) if change_disconnect else drawn
+                        )
                 elif (key := _route_field(flow, step)) is not None:
                     if answered == len(path):
                         marker = next(m for m in fields if m.schema == key)
@@ -388,7 +391,7 @@ async def test_an_entry_on_any_route_reaches_every_sibling_route(
 
 @pytest.mark.parametrize("row", _starting_rows())
 @pytest.mark.parametrize("change", [False, True], ids=["left", "changed"])
-async def test_disconnect_after_command_follows_the_route_unless_changed(hass, row, change):
+async def test_connection_mode_follows_the_route_unless_changed(hass, row, change):
     """Left as drawn it saves the chosen route's own default; a change is kept."""
     gaps = {}
     paths: list[list[Any]] = [[]]
@@ -401,12 +404,20 @@ async def test_disconnect_after_command_follows_the_route_unless_changed(hass, r
         if (saved := result["saved"]) is None:
             continue
         drawn = result["drawn_disconnect"]
-        expected = not drawn if change else disconnect_after_command_default_enabled(
-            saved[const.CONF_BED_TYPE], saved.get(const.CONF_PROTOCOL_VARIANT)
-        )
-        if saved.get(const.CONF_DISCONNECT_AFTER_COMMAND) != expected:
+        if drawn is None:
+            # A bed that holds its link shows no connection mode and stores none.
+            expected = None
+        else:
+            expected = _other_mode(drawn) if change else default_connection_mode(
+                saved[const.CONF_BED_TYPE], saved.get(const.CONF_PROTOCOL_VARIANT)
+            )
+        if saved.get(const.CONF_CONNECTION_MODE) != expected:
             gaps[" > ".join(map(str, path)) or "(row)"] = (_route(saved), expected)
     assert not gaps, gaps
+
+
+def _other_mode(mode: str) -> str:
+    return const.CONNECTION_MODE_IDLE if mode == const.CONNECTION_MODE_RELEASE else const.CONNECTION_MODE_RELEASE
 
 
 def _app_rows() -> list[str]:

@@ -18,8 +18,8 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SIMMONS,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
@@ -79,7 +79,7 @@ async def test_quick_handoff_session_syncs_clock_before_the_first_alarm_write(
     mock_async_ble_device_from_address: MagicMock,
 ) -> None:
     mock_async_ble_device_from_address.return_value.name = "OKIN-112233"
-    entry = _entry(hass, **{CONF_DISCONNECT_AFTER_COMMAND: True})
+    entry = _entry(hass, **{CONF_CONNECTION_MODE: "release"})
     coordinator = AdjustableBedCoordinator(hass, entry)
     original_write = simmons_client.write_gatt_char.side_effect
 
