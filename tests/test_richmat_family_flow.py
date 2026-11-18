@@ -316,7 +316,8 @@ async def test_each_receiver_of_a_pair_answers_for_itself(hass, enable_custom_in
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert child(entry, "left")[const.CONF_RMCONTROL_SIDE] == "right"
     right = await receiver_form(hass, entry, "right")
-    assert receiver_fields(right)[const.CONF_PROTOCOL_VARIANT].default() == "model_vorm"
+    # The model picks the route, which changes in Reconfigure.
+    assert const.CONF_PROTOCOL_VARIANT not in receiver_fields(right)
     hass.config_entries.options.async_abort(right["flow_id"])
     assert child(entry, "right")[const.CONF_PROTOCOL_VARIANT] == "model_vorm"
 

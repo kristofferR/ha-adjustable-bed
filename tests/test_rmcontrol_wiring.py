@@ -526,35 +526,6 @@ async def test_alarm_validates_every_product_before_writing(hass, operation, pai
     execute.assert_not_awaited()
 
 
-@pytest.mark.parametrize("variant", ["prefix55", "prefixaa", "wilinke"])
-async def test_each_receiver_checks_its_own_product_transport(
-    hass: HomeAssistant, enable_custom_integrations, variant: str
-) -> None:
-    """A receiver's dialect is its own answer, checked against its own product."""
-    from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT
-    from tests.test_paired_receiver_questions import child, pair_entry, receiver_form
-
-    richmat = {CONF_BED_TYPE: BED_TYPE_RICHMAT, CONF_PROTOCOL_VARIANT: "auto"}
-    entry = pair_entry(
-        hass,
-        {**richmat, CONF_RMCONTROL_PRODUCT: ""},
-        {**richmat, CONF_RMCONTROL_PRODUCT: "A0RM"},
-    )
-    right = await receiver_form(hass, entry, "right")
-    result = await hass.config_entries.options.async_configure(
-        right["flow_id"], {**right["data_schema"]({}), CONF_PROTOCOL_VARIANT: variant}
-    )
-    if variant.startswith("prefix"):
-        assert result["errors"] == {CONF_PROTOCOL_VARIANT: "invalid_variant_for_bed_type"}
-        assert child(entry, "right")[CONF_PROTOCOL_VARIANT] == "auto"
-        hass.config_entries.options.async_abort(right["flow_id"])
-    else:
-        assert result["type"] == "create_entry"
-        assert child(entry, "right")[CONF_PROTOCOL_VARIANT] == variant
-    # The other receiver keeps its own route.
-    assert child(entry, "left")[CONF_PROTOCOL_VARIANT] == "auto"
-
-
 @pytest.mark.parametrize("pair_mode", [None, "single_address", "separate_address"])
 async def test_product_options_are_not_shared_between_physical_controllers(
     hass: HomeAssistant, pair_mode: str | None
