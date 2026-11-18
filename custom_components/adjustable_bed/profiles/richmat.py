@@ -297,6 +297,8 @@ RICHMAT_MH: Final[dict[str, RichmatProfile]] = {
         "americanstar",
         "bailey2",
         "tx",
+        "nisco",
+        "mlily_supreme",
     )
 }
 HJBED: Final = RichmatProfile(

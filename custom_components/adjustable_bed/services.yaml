@@ -4548,3 +4548,93 @@ sonicsleep:
       default: true
       selector:
         boolean: null
+
+richmat_cluster022_control:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    action:
+      required: true
+      selector:
+        select:
+          options: [press, remote_long, voice_queue, query]
+    opcode:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    query:
+      selector:
+        select:
+          options:
+            - version
+            - exit_one_minute
+            - alarm
+            - light
+            - mattress
+            - waist_mattress
+            - snore
+            - diagnostics
+            - motor_mode
+            - motor1_angle
+            - motor2_angle
+            - motor3_angle
+            - motor4_angle
+            - massage
+            - light_lock
+
+richmat_cluster022_mode_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      required: true
+      selector:
+        boolean: null
+    time:
+      selector:
+        time: null
+    position:
+      selector:
+        text: null
+    massage:
+      default: []
+      selector:
+        select:
+          multiple: true
+          options: [head_massage, foot_massage, head_foot_massage, head_foot_massage_intensity, head_massage_intensity_down, heat, sleep_aid]
+
+richmat_cluster022_sleep_mode:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+    mode:
+      required: true
+      selector:
+        select:
+          options: [single, double]

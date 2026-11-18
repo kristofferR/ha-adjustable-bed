@@ -4808,5 +4808,98 @@
   },
   "sensor:sonicsleep": {
     "card_section": "hidden"
+  },
+  "button:richmat_cluster022_smart_light_lock": {
+    "card_section": "utility"
+  },
+  "button:richmat_mh_start_detection": {
+    "card_section": "utility"
+  },
+  "button:richmat_mh_stop_detection": {
+    "card_section": "utility"
+  },
+  "number:richmat_mh_back_angle": {
+    "card_section": "motors",
+    "card_motor": "back"
+  },
+  "number:richmat_mh_foot_angle": {
+    "card_section": "motors",
+    "card_motor": "feet"
+  },
+  "number:richmat_mh_foot_massage_intensity": {
+    "card_section": "massage"
+  },
+  "number:richmat_mh_head_massage_intensity": {
+    "card_section": "massage"
+  },
+  "number:richmat_mh_pillow_angle": {
+    "card_section": "motors",
+    "card_motor": "pillow"
+  },
+  "select:richmat_cluster022_group_type": {
+    "card_section": "utility"
+  },
+  "select:richmat_cluster022_transmit_mode": {
+    "card_section": "utility"
+  },
+  "select:richmat_mh_motor_mode": {
+    "card_section": "utility"
+  },
+  "select:richmat_mh_waist_both_duration": {
+    "card_section": "massage"
+  },
+  "select:richmat_mh_waist_both_heat": {
+    "card_section": "massage"
+  },
+  "select:richmat_mh_waist_both_pressure": {
+    "card_section": "massage"
+  },
+  "select:richmat_mh_waist_left_duration": {
+    "card_section": "massage"
+  },
+  "select:richmat_mh_waist_left_heat": {
+    "card_section": "massage"
+  },
+  "select:richmat_mh_waist_left_pressure": {
+    "card_section": "massage"
+  },
+  "select:richmat_mh_waist_mode": {
+    "card_section": "massage"
+  },
+  "select:richmat_mh_waist_right_duration": {
+    "card_section": "massage"
+  },
+  "select:richmat_mh_waist_right_heat": {
+    "card_section": "massage"
+  },
+  "select:richmat_mh_waist_right_pressure": {
+    "card_section": "massage"
+  },
+  "sensor:richmat_cluster022_last_reply": {
+    "card_section": "hidden"
+  },
+  "sensor:richmat_cluster022_sleep_left_state": {
+    "card_section": "hidden"
+  },
+  "sensor:richmat_cluster022_sleep_right_state": {
+    "card_section": "hidden"
+  },
+  "sensor:richmat_mh_alarm": {
+    "card_section": "hidden"
+  },
+  "sensor:richmat_mh_detection": {
+    "card_section": "hidden"
+  },
+  "sensor:richmat_mh_memory_arrival": {
+    "card_section": "hidden"
+  },
+  "sensor:richmat_mh_waist_both_alarm": {
+    "card_section": "hidden"
+  },
+  "sensor:richmat_mh_waist_left_alarm": {
+    "card_section": "hidden"
+  },
+  "sensor:richmat_mh_waist_right_alarm": {
+    "card_section": "hidden"
   }
 }

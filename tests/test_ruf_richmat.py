@@ -475,8 +475,9 @@ async def test_alarm_service_schema_and_validation(hass, monkeypatch):
     c = make("wsilver2", "bfrm_mattress")
     c._normal_ready = True
 
-    async def execute(targets, interface, label, command, *, supported, validate):
+    async def execute(targets, interface, label, command, *, supported, validate, admit, admissions):
         assert isinstance(c, interface) and supported(c)
+        assert admit is True and admissions == []
         validate(c)
         await command(c)
 

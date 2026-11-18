@@ -31,7 +31,13 @@ from ...card import (
     CardSection,
     motor_card,
 )
-from ...const import CONF_BLE_DEVICE_NAME, RICHMAT_MH_APPS, RUF_RICHMAT_APPS, VARIANT_AUTO
+from ...const import (
+    CONF_BLE_DEVICE_NAME,
+    RICHMAT_CLUSTER022_APPS,
+    RICHMAT_MH_APPS,
+    RUF_RICHMAT_APPS,
+    VARIANT_AUTO,
+)
 from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
 from ...profiles.richmat import RICHMAT_MH, RichmatProfile
@@ -233,6 +239,10 @@ class Model:
 
 def load_model(app: str, model_id: str) -> Model | None:
     """Return a catalog model, or None when the app has no such live model."""
+    if app in RICHMAT_CLUSTER022_APPS.values():
+        from .cluster022_catalog import load_model as load_cluster022_model
+
+        return load_cluster022_model(app, model_id)
     if app in ("ruf", "wsilver2", "americanstar", "bailey2", "tx"):
         from ..ruf_richmat.controller import load_app_model
 
@@ -256,6 +266,11 @@ def selectable_models(app: str) -> tuple[str, ...]:
 
 def _model_is_known(app: str, model: str) -> bool:
     """Validate new app selectors from static IDs without loading a catalog on HA's loop."""
+    if app in RICHMAT_CLUSTER022_APPS.values():
+        from ...profiles.richmat_cluster022 import APPS, models
+
+        base = model.removesuffix("_mattress")
+        return base in models(app) and (base == model or APPS[app].normal_mattress)
     if models := RUF_RICHMAT_MODEL_IDS.get(app):
         base = model.removesuffix("_mattress")
         return base in models and (model == base or app in ("wsilver2", "americanstar", "tx"))
@@ -275,6 +290,8 @@ def resolve_model(
     sentinel (Idealbed also asks for names starting with ``Cool Touch``), and a
     prefix without a live model is reported as invalid.
     """
+    if app in RICHMAT_CLUSTER022_APPS.values() and protocol_variant == "sleep":
+        return "sleep", None
     if app == "ruf":
         return ("bqrm", None) if protocol_variant in (None, VARIANT_AUTO, "model_bqrm") else (None, "unknown_model")
     if protocol_variant and protocol_variant.startswith(MODEL_VARIANT_PREFIX):
@@ -390,6 +407,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
     """Faithful Richmat MH app controls for one selected model."""
 
     _app_groups: Mapping[str, AppGroup] = APP_GROUPS
+    _wire_profiles: Mapping[str, RichmatProfile] = RICHMAT_MH
 
     def __init__(
         self,
@@ -403,7 +421,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if app not in self._app_groups:
             raise ValueError(f"Unknown Richmat MH app: {app}")
         self._app = app
-        self.profile = RICHMAT_MH[app]
+        self.profile = self._wire_profiles[app]
         data = getattr(getattr(coordinator, "entry", None), "data", None)
         data = data if isinstance(data, Mapping) else {}
         stored_name = data.get(CONF_BLE_DEVICE_NAME)
@@ -557,6 +575,10 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
 
     def _detection_page(self) -> bool:
         return self.route == "L" and self._detection
+
+    @property
+    def waist_fields(self) -> Mapping[str, Mapping[str, int]]:
+        return WAIST_FIELDS
 
     def _smart_set_lock(self) -> bool:
         f = self._features
@@ -874,7 +896,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 )
             )
             for side in WAIST_SIDES:
-                for field, options in WAIST_FIELDS.items():
+                for field, options in self.waist_fields.items():
                     key = _waist_setting_key(side, field)
                     specs.append(
                         ControllerSelectSpec(
@@ -1475,7 +1497,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             else:
                 side, name = reply_field.split("_", 1)
                 # A value the dialog cannot select (e.g. pressure off) is unknown.
-                option = next((o for o, v in WAIST_FIELDS[name].items() if v == value), None)
+                option = next((o for o, v in self.waist_fields[name].items() if v == value), None)
                 updates.append(_waist_setting_key(side, name)(option))
         if updates:
             self.forward_controller_state_updates(*updates)
@@ -1607,7 +1629,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
 
     async def set_waist_setting(self, side: str, field: str, option: str) -> None:
         """Waist heat, pressure and duration dialogs for the selected side."""
-        options = WAIST_FIELDS.get(field)
+        options = self.waist_fields.get(field)
         if not self._waist or side not in WAIST_SIDES or options is None or option not in options:
             raise ValueError(f"Unsupported waist mattress {field}: {option}")
         command = WAIST_SIDES[side][("heat", "pressure", "duration").index(field)]
@@ -1750,12 +1772,17 @@ def _tap_action(code: int) -> MotorCommandCallable:
     return invoke
 
 
-async def build_controller(ctx: BuildContext) -> RichmatMhController:
+async def build_controller(ctx: BuildContext) -> BedController:
     """Build the controller for the app's model.
 
     The app's name rule picks the model unless the variant fixes it; offline
     controllers must not read the display name.
     """
+    if ctx.bed_type in RICHMAT_CLUSTER022_APPS:
+        await ctx.preload("richmat_mh.cluster022")
+        from .cluster022 import build_controller as build_cluster022_controller
+
+        return await build_cluster022_controller(ctx)
     controller_class = RichmatMhController
     if ctx.bed_type in RUF_RICHMAT_APPS:
         await ctx.preload("ruf_richmat.controller")

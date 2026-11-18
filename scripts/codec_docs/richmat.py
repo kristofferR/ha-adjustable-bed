@@ -44,7 +44,7 @@ from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
 from custom_components.adjustable_bed.profiles import sonicsleep as sonic
-from scripts.codec_docs import _galaxy
+from scripts.codec_docs import _galaxy, _richmat_cluster022
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/richmat.md"
@@ -80,6 +80,7 @@ _RICHMAT_NAMES = {
             (
                 *("Revive Control", "Best Mattress", "Blvd Home", "HARMONY", "Idealbed"),
                 *("RUF Betten", "W.Silver", "AMERICANSTAR", "Bailey", "TX"),
+                *("Nisco", "MLILY Supreme"),
             ),
             strict=True,
         )
@@ -1381,6 +1382,7 @@ BLOCKS: list[Block] = [
 ]
 
 BLOCKS += _galaxy.BLOCKS
+BLOCKS += _richmat_cluster022.BLOCKS
 
 
 def render_richmat_app_commands() -> str:

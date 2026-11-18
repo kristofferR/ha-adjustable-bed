@@ -52,9 +52,11 @@ def _vital_key(side: str, kind: str) -> StateKey[int | bool]:
 
 
 class RufRichmatSleepController(BedController):
+    app_labels = APPS
+
     def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:
         super().__init__(coordinator)
-        if app not in APPS:
+        if app not in self.app_labels:
             raise ValueError("Select the app that owns this sleep receiver")
         self.app = app
         self._char: BleakGATTCharacteristic | None = None

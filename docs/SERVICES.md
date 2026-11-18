@@ -1128,3 +1128,32 @@ all received raw fields except enabled. Clock capability and current alarm cache
 are required before writes. Missing/changed cache rejects the action. A silent
 empty-list query cannot safely allocate a new alarm. All target constraints pass
 before any target's setting changes. See the [SonicSleep reference](beds/richmat.md#sonicsleep).
+
+### Nisco / MLILY Supreme controls
+
+`adjustable_bed.richmat_cluster022_control` accepts `action: press` and a decimal
+`opcode` declared by the selected app/model page, `action: remote_long` for an
+attached fixed-remote save, or `action: query` and one named included query.
+`action: voice_queue` takes a source opcode from this model's own speech map,
+resolves its BED output and uses that caller's 120 ms queue cadence. It does
+not enable microphone, recognition or phone infrastructure.
+The opcode is checked against the current profile; this is not a raw-write API.
+The fixed-remote long action waits three seconds, sends the finalized save and
+releases through that caller's sequence. STOP cancels admission or execution.
+
+`richmat_cluster022_mode_alarm` retains Nisco's separate 150 ms two-phase
+mode-page caller. Its ordinary alarm page still uses 300 ms. The separate
+`richmat_cluster022_sleep_mode` action retains Nisco's direct single/double
+user-mode caller. MLILY Supreme does not inherit either Nisco-only caller.
+
+Use standard preset/memory actions, `richmat_mh_alarm`,
+`richmat_mh_light_color` and `richmat_app_alarm` for their admitted native pages.
+A normal mattress alarm requires its explicit extra selection and powered
+initialization. The separate HJ_Bed receiver exposes local sensing/intervention
+entities and no bed motor actions. Shared network, cloud, OTA, audio and
+accessory infrastructure is excluded.
+
+Each service captures physical targets before its first await and validates the
+whole selection before sending control frames. A paired child target retains
+its side. Transmit modes and mattress pad selectors do not choose another BLE
+recipient or create one-address native Left/Right devices.

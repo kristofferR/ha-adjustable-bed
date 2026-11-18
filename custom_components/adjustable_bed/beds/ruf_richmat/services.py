@@ -8,7 +8,13 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
 from ...import_executor import async_import_modules
-from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...services import (
+    DEVICE_IDS,
+    SIDE_FIELD,
+    _call_targets,
+    _capture_command_admission,
+    _preflight_and_execute,
+)
 from .protocol import AlarmRequest
 
 SERVICE = "richmat_app_alarm"
@@ -32,6 +38,8 @@ SCHEMA = vol.Schema(_FIELDS)
 
 
 async def handle_alarm(call: ServiceCall) -> None:
+    targets = _call_targets(call)
+    admissions = [_capture_command_admission(parent, side, ("configuration",)) for parent, side in targets]
     await async_import_modules(call.hass, "beds.ruf_richmat.controller")
     from .controller import RufRichmatController
 
@@ -51,12 +59,14 @@ async def handle_alarm(call: ServiceCall) -> None:
         weekdays=tuple(data["weekdays"]),
     )
     await _preflight_and_execute(
-        _call_targets(call),
+        targets,
         RufRichmatController,
         "Richmat app alarms",
         lambda ctrl: ctrl.ruf_richmat_alarm(request),
         supported=lambda ctrl: ctrl.supports_ruf_richmat_alarms,
         validate=lambda ctrl: ctrl.validate_ruf_richmat_alarm(request),
+        admit=True,
+        admissions=admissions,
     )
 
 

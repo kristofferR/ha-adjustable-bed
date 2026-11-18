@@ -34,6 +34,8 @@ APPS = [
     "americanstar",
     "bailey2",
     "tx",
+    "nisco",
+    "mlily_supreme",
     "avocadoecobase",
     "coastersleep",
     "fortywinks",

@@ -66,6 +66,8 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [LP Control](https://play.google.com/store/apps/details?id=com.leggett.android.universal) 2.9.0 | `com.leggett.android.universal` | [Leggett & Platt](leggett-platt.md) |
 | ✅ | [SVEN & SON](https://play.google.com/store/apps/details?id=com.richmat.svenson) | `com.richmat.svenson` | [Richmat remotes](#richmat-remotes) |
 | ✅ | [Revive Control](https://play.google.com/store/apps/details?id=com.richmat.revive3) 1.0.26 | `com.richmat.revive3` | [Richmat MH](#richmat-mh-apps), bed type `richmat_revive` |
+| ✅ | Nisco 1.1.1 (3) | `com.richmat.nisco` | [Nisco](#nisco), bed type `richmat_nisco` |
+| ✅ | MLILY Supreme 1.3.1 (5) | `com.richmat.mlily_supreme` | [MLILY Supreme](#mlily-supreme), bed type `richmat_mlily_supreme` |
 | ✅ | [Best Mattress](https://play.google.com/store/apps/details?id=com.richmat.best_mattress) 1.1.1 | `com.richmat.best_mattress` | [Richmat MH](#richmat-mh-apps), bed type `richmat_best_mattress` |
 | ✅ | [Blvd Home](https://play.google.com/store/apps/details?id=com.richmat.blvd_home) 1.0.1 | `com.richmat.blvd_home` | [Richmat MH](#richmat-mh-apps), bed type `richmat_blvd_home` |
 | ✅ | [HARMONY](https://play.google.com/store/apps/details?id=com.richmat.harmony) 1.0.0 | `com.richmat.harmony` | [Richmat MH](#richmat-mh-apps), bed type `richmat_harmony` |
@@ -197,6 +199,8 @@ sends STOP.
 | Richmat MH AMERICANSTAR | `richmat_americanstar` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH Bailey | `bailey_bed_control` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH TX | `richmat_tx` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH Nisco | `richmat_nisco` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH MLILY Supreme | `richmat_mlily_supreme` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Classic Avocado Eco Base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic CoasterSleep | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Forty Winks | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
@@ -8710,3 +8714,1129 @@ Retains its accepted UYRM/VYRM shared BED action without accessory settings.
 #### Evidence
 
 Accepted row071 Zero Gravity 1.0.3 (4), artifact SHA-256 `82ad82b84bfe881af3e74f72accd136b783e5fb0bf62077fc85fcc37ef901678`.
+
+### Nisco
+
+**App:** Nisco 1.1.1 (code 3), `com.richmat.nisco`
+
+**Status:** ❓ Needs testing (accepted static app evidence; hardware unverified)
+
+#### Setup
+
+Choose **Nisco app (Richmat)** explicitly. Auto uses the first four Bluetooth
+name characters, lowercased, as the surface identifier. A saved explicit model
+wins over the name. QRRM asks for a real model. The six short identifiers
+3i/4i/4it/5i/6i/7i are dormant in this app and are not offered. Shared UUIDs and
+brand names do not select this app. Configure, import and restore retain the
+app/model profile; a two-address pair retains each physical side's selection.
+
+Choose **Separate HJ_Bed sleep and intervention receiver** for the separate
+sensing module. That receiver has no motor controls. Two physical bed addresses
+can use Home Assistant's parent/Left/Right pairing. Transmit modes 0, 1 and 2
+remain app modes and do not create single-address native sides.
+
+#### Controls
+
+The selected model's own ordered functions, aliases and page maps determine
+motors, presets, recall/program slots, massage, locks and other bed controls.
+The generated tables below list each app separately. Nisco CFRM retains its
+catalog LOCK entry. Selecting a mode changes ordinary command and release
+frames. Snore intervention samples the current mode at the final dispatch
+boundary, including a mode changed while its write waited for the BLE lane.
+The dedicated `13`-family setting is separate from normal anti-snore recall/save.
+
+Nisco's light timer preserves the high and low duration bytes. Normal and
+waist mattress controls are dormant, even though startup probes and shared
+checksum/parser effects exist. Parsed mattress frames remain controller state;
+the sibling's detailed offsets and controls are not borrowed.
+
+#### Timing
+
+Ordinary KEEP uses the selected widget's interval. Fixed-layout remotes use
+150 ms refresh; their long-save gesture waits three one-second ticks and sends
+a checksummed save, followed by the 150 ms release sequence. The generic
+LONG-worker's malformed checksum-zero example is evidence of a distinct path,
+not a reason to corrupt all saves or assume firmware tolerance.
+HA does not expose that raw threshold path. Its attachment to a current Nisco
+widget is not established by the accepted evidence. Ordinary programming and
+the separately attached, checksummed fixed-remote saves remain available.
+
+Startup subscribes, waits 300 ms, queries the version, waits 300 ms, then runs
+the old or new ordered query schedule with 300 ms slots. Aroma and speech
+infrastructure probes are excluded; their schedule slots remain. Queries target
+one physical receiver. Group membership and physical recipients are independent
+of transmit mode.
+
+HA bounds light timers to 0..300 seconds, finite holds to elapsed time and
+renewable holds to the scheduler's current deadline. These are HA choices, not
+Android validation or a hardware watchdog guarantee. In-flight writes drain
+before cancellation cleanup; source-defined releases use an independent cancel
+event and cannot migrate into a replacement BLE session.
+
+#### Notifications
+
+The shared classifier retains exact version handling, INIT checksum/length
+gates, mode, signed angle, massage, memory and alarm/snore state. The identical
+massage/UBL-lock prefix remains shadowed; no missing lock decoder is invented.
+The accepted Nisco waist combined forms are 14, 15 and 19 bytes, distinct from
+the sibling's 14, 18 and 19. Nisco's detailed diagnostic result consumer and
+mattress cache offsets are not established by the accepted report.
+
+The sleep receiver retains local rates, occupancy, movement, raw `Std`, user
+mode and intervention settings. Wi-Fi, network/mesh administration, cloud,
+accounts, firmware administration, scoring, reports and phone/media features
+are excluded. A source-proven BED effect remains included even when its caller
+sits beside excluded infrastructure.
+
+#### Services
+
+`richmat_cluster022_control` runs a declared current-page opcode, its attached
+fixed-remote long-save caller, or an included query. Arbitrary opcodes and
+unavailable model controls are rejected. Standard preset/memory actions and
+`richmat_mh_alarm`/`richmat_mh_light_color` use the same family runtime. Service
+admission captures all physical targets and STOP epochs before lazy imports.
+
+#### Evidence
+
+Canonical row081, accepted cluster-022 reconciliation of Nisco 1.1.1 and MLILY
+Supreme 1.3.1. The frozen delivery is dated 2026-07-14; this is not a fresh
+latest-version claim. Production builders reproduced all 778 outbound literals
+before runtime selection. Parser and diagnostic validation are separate from
+that outbound proof. Physical qualification belongs to external beta users.
+
+### MLILY Supreme
+
+**App:** MLILY Supreme 1.3.1 (code 5), `com.richmat.mlily_supreme`
+
+**Status:** ❓ Needs testing (accepted static app evidence; hardware unverified)
+
+#### Setup
+
+Choose **MLILY Supreme app (Richmat)** explicitly. This is a separate profile
+from MLILY Control and other same-brand integrations. The name rule and GATT
+priority match Nisco's established common domains. Unlike Nisco, the six short
+manual surface identifiers are selectable. Choose the explicit normal-mattress
+variant only for that app-selected extra; a powered initialization must still
+arrive. Waist powered initialization admits its own area. Configure and paired
+side storage retain these choices independently.
+
+#### Controls
+
+Use this app's own table. CFRM lacks Nisco's catalog LOCK entry. Its dedicated
+smart-light-lock caller is independently available on the admitted CFRM light
+page, preserves fixed mode 00 and sends once without motor release.
+
+The light timer's final high byte is the current transmit mode, including its
+zero-duration form; it is not Nisco's duration-high-byte behavior. Motor target
+and massage builders preserve their own masks and packed fields. Normal
+mattress pressure, warmth, zone, duration, mode, leg/pillow movement and alarm
+controls require the normal-mattress selection and initialization. Waist mode,
+warmth, pressure, duration and alarms retain their separate left/right/both
+setting domains. Pad selectors do not create another BLE recipient.
+
+#### Timing
+
+The shared query schedule and ordinary/fixed-remote caller timings apply only
+where established. Two-phase alarms use 300 ms. Nisco's separate 150 ms ModeFrag
+alarm caller is not asserted as a sibling equivalent. Mattress initialization
+consumers run 300 ms after their admitted frames. Mattress commands are one-shot;
+mode zero and leg/pillow zero are explicit stop values.
+
+#### Notifications
+
+The diagnostic INIT decoder checks exact capability, start and stop replies
+before result-prefix decoding. Results use the low nibble of byte 2, high
+nibble of byte 3 and low nibble of byte 3. The guarded consumer appends recognized
+motor1..5, massager1..2, UBL and controller USB results. Repeated components
+remain repeated rows; unknown type/number pairs append nothing. Unknown result
+nibbles remain raw. Only result 1 is a pass. Start clears rows and resets progress;
+stop resets progress and retains rows. Other valid INIT frames keep their generic
+fallback. The source length/checksum gate covers the whole accumulated buffer.
+
+Normal/waist cache keys, alarm tails and the source's fixed-end-index resync
+quirk remain distinct from Nisco's bounded evidence. Coalesced waist lengths are
+14, 18 and 19 bytes. The separate sleep receiver's live consumer requires a
+saved physical receiver; `Std` defaults to 1. HA rejects signed-length overflow
+headers and bounds malformed buffering rather than claiming Android recovered
+those inputs. Bleak owns subscription descriptors; HA does not write arbitrary
+non-CCCD descriptors. Missing preferred characteristics fail safely, without a
+guaranteed Android fallback-recovery claim.
+
+#### Services
+
+The family control, alarm, light-color and mattress-alarm services target the
+selected physical bed or paired child. Every target is validated before the
+first control frame, and stale ownership or a later STOP invalidates admission.
+No Wi-Fi, SSID, mesh, cloud, account, OTA, audio or accessory administration
+service is provided.
+
+#### Evidence
+
+Canonical row081/cluster-022, independently full-covered DELTA sibling. Hardware
+is unverified; external beta qualification remains separate. The 25 retained
+diagnostic repair fixtures are distinct from the 383 sibling outbound literals
+covered by the codec proof.
+
+#### Nisco and MLILY Supreme control tables
+
+<!-- generated:richmat-cluster022 -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+**Nisco**
+
+| Models | Page | Control | Gesture | Mode 0 bytes | Refresh ms |
+|---|---|---|---|---|---|
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Back | up | 6E 01 00 24 93 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Back | down | 6E 01 00 25 94 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Foot | up | 6E 01 00 26 95 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Foot | down | 6E 01 00 27 96 | 150 |
+| 6BRM, BQRM | Legacy | Head Foot Both | up | 6E 01 00 29 98 | 150 |
+| 6BRM, BQRM | Legacy | Head Foot Both | down | 6E 01 00 2A 99 | 150 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Back | up | 6E 01 00 24 93 | 100 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Back | down | 6E 01 00 25 94 | 100 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Foot | up | 6E 01 00 26 95 | 100 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Foot | down | 6E 01 00 27 96 | 100 |
+| 6CRM, 6DRM, B0RM, BKRM, D7RM, M6RM, M7RM, U8RM, V5RM, V6RM, VARM | Legacy | Head Foot Both | press | 6E 01 00 29 98 | 100 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B7RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IKRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OWRM, OXRM, OYRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T2RM, T3RM, T5RM, T6RM, T7RM, T9RM, TARM, TBRM, THRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA2, ZRI0 | Legacy | Flat | press | 6E 01 00 31 A0 | once |
+| 6DRM, 6ERM, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, EHRM, ELRM, F0RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O4RM, O7RM, O8RM, OARM, OQRM, OTRM, OYRM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UCRM, UDRM, UGRM, UIRM, UJRM, UKRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VSRM, VVRM, VWRM, WCRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, XCRM, XFRM, XGRM, XLRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZR40, ZR50, ZR51, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Anti-Snore | recall | 6E 01 00 46 B5 | once |
+| 6DRM, 6ERM, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, CFRM, CWRM, CXRM, D0RM, D1RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, EHRM, F0RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O4RM, O7RM, O8RM, OARM, OQRM, OTRM, OYRM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UCRM, UDRM, UGRM, UIRM, UJRM, UKRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VSRM, VVRM, VWRM, WCRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, XCRM, XFRM, XGRM, XLRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZR40, ZR50, ZR51, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Anti-Snore | save | 6E 01 00 69 D8 | once |
+| 6DRM, 6ERM, 6HRM, A0RM, A1RM, A3RM, A6RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EFRM, ELRM, F0RM, FIRM, FJRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, S9RM, SARM, T3RM, T4RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Zero Gravity | recall | 6E 01 00 45 B4 | once |
+| 6DRM, 6ERM, 6HRM, A0RM, A1RM, A3RM, A6RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, ELRM, F0RM, FIRM, FJRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Zero Gravity | save | 6E 01 00 66 D5 | once |
+| 6ERM, 6FRM, A1RM, A3RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AWRM, AXRM, B1RM, B4RM, BDRM, BERM, BHRM, BIRM, BJRM, BLRM, BMRM, BNRM, BZRM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DZRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FJRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IMRM, ISRM, M3RM, M5RM, M6RM, M7RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, ORRM, OSRM, OTRM, OYRM, OZRM, P0RM, P1RM, P2RM, P6RM, R2RM, R5RM, T1RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, TLRM, U1RM, U2RM, U3RM, U4RM, U5RM, U7RM, U8RM, U9RM, UARM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UVRM, UWRM, UYRM, V0RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WORM, WSRM, WURM, WVRM, WXRM, WYRM, XCRM, XFRM, XLRM, Y2RM, Y3RM, Y6RM, Y8RM, YARM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZQRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZR60, ZRA0, ZRI0 | Legacy | Ubl On Off | press | 6E 01 00 3C AB | once |
+| 6HRM, A2RM, A3RM, AARM, AWRM, B6RM, B6RU, B7RM, BFRM, BGRM, BHRM, BNRM, BZRM, CERM, D2RM, D5RM, DFRM, EFRM, ELRM, FIRM, FRRM, GMRM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, MMRM, O1RM, O2RM, O3RM, O9RM, OARM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, R6RM, S9RM, SARM, T4RM, T8RM, TARM, TLRM, TWRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UQRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WLRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, Y3RM, Y4RM, YHRM, YJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2 | Legacy | Head Foot Both | up | 6E 01 00 29 98 | 100 |
+| 6HRM, A2RM, A3RM, AARM, AWRM, B6RM, B6RU, B7RM, BFRM, BGRM, BHRM, BNRM, BZRM, CERM, D2RM, D5RM, DFRM, EFRM, ELRM, FIRM, FRRM, GMRM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, MMRM, O1RM, O2RM, O3RM, O9RM, OARM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, R6RM, S9RM, SARM, T4RM, T8RM, TARM, TLRM, TWRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UQRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WLRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, Y3RM, Y4RM, YHRM, YJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2 | Legacy | Head Foot Both | down | 6E 01 00 2A 99 | 100 |
+| 6HRM, UZRM | Legacy | Reading | recall | 6E 01 00 58 C7 | once |
+| 6HRM, A0RM, A3RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AWRM, AXRM, B4RM, B5RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CXRM, D2RM, D4RM, DFRM, DNRM, DZRM, E1RM, EARM, EBRM, EFRM, ELRM, F0RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, ISRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O9RM, OARM, OMRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R2RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WIRM, WJRM, WLRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XFRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | TV | save | 6E 01 00 64 D3 | once |
+| 6HRM, UZRM | Legacy | Yoga | recall | 6E 01 00 59 C8 | once |
+| 6HRM, A3RM, ACRM, ADRM, B4RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BZRM, IGRM, IRRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O6RM, O9RM, OMRM, OSRM, OXRM, OZRM, P1RM, R2RM, R5RM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, UZRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WDRM, WERM, WLRM, WQRM, WSRM, WTRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YORM, YPRM, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | Lounge | save | 6E 01 00 65 D4 | once |
+| 6HRM, UZRM | Legacy | Movie | recall | 6E 01 00 2E 9D | once |
+| 6HRM, A0RM, A1RM, A2RM, A3RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VSRM, VVRM, VWRM, VXRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0 | Legacy | M1 | save | 6E 01 00 2B 9A | once |
+| 6HRM, UZRM | Legacy | Lactation | recall | 6E 01 00 2F 9E | once |
+| 6HRM, A0RM, A1RM, A2RM, A3RM, A9RM, ADRM, AERM, AFRM, AGRM, AWRM, AXRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CXRM, D0RM, D1RM, D2RM, D4RM, DNRM, E6RM, EARM, EBRM, EFRM, ELRM, FIRM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UWRM, UXRM, UZRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VWRM, VXRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WLRM, WNRM, WPRM, WSRM, WURM, WXRM, XCRM, XFRM, Y4RM, Y5RM, Y6RM, Y8RM, YERM, YFRM, YGRM, YHRM, YJRM, YMRM, YPRM, ZR12, ZR50, ZR51, ZR80, ZRA2 | Legacy | M2 | save | 6E 01 00 2C 9B | once |
+| 6HRM, UZRM | Legacy | Anti Snore3 | recall | 6E 01 00 30 9F | once |
+| 6HRM, A0RM, A2RM, ADRM, BMRM, BNRM, BZRM, DFRM, DGRM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, UZRM, V7RM, VWRM, VXRM, W5RM, W7RM, WLRM, Y4RM, YPRM, ZQRM, ZRA2 | Legacy | M3 | save | 6E 01 00 2D 9C | once |
+| 6HRM, ABRM, ACRM, ADRM, B9TT, D7RM, I0RM, I4RM, I5RM, M9RM, MLRM, O1RM, OTRM, S9RM, U0RM, U7RM, U8RM, U9RM, UARM, UJRM, UNRM, UZRM, V0RM, V1RM, V6RM, V7RM, VARM, VKRM, YHRM, ZR21, ZR90, ZRI0 | Legacy | Factory Reset | press | 6E 01 00 62 D1 | once |
+| 6HRM, A2RM, A3RM, BZRM, M6RM, MMRM, O1RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM, U1RM, U2RM, UKRM, UZRM, W7RM, WDRM, WERM | Legacy | Massage Head Foot Intensity Inc | press | 6E 01 00 34 A3 | once |
+| 6HRM, A2RM, A3RM, BZRM, M6RM, MMRM, O1RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM, U1RM, U2RM, UKRM, UZRM, W7RM | Legacy | Massage Head Foot Intensity Dec | press | 6E 01 00 35 A4 | once |
+| 6HRM, A0RM, A1RM, A3RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, B8RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VRRM, VSRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51 | Legacy | Massage Mode | press | 6E 01 00 48 B7 | once |
+| 6HRM, A3RM, A9RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, D2RM, D4RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IARM, IBRM, IORM, ISRM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R2RM, R5RM, T5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 10Min | press | 6E 01 00 5F CE | once |
+| 6HRM, A3RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IBRM, M3RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 20Min | press | 6E 01 00 63 D2 | once |
+| 6HRM, A3RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IBRM, ILRM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 30Min | press | 6E 01 00 61 D0 | once |
+| A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AXRM, BDRM, BERM, BGRM, BIRM, BLRM, BMRM, CFRM, CWRM, D4RM, D6RM, E1RM, E6RM, EERM, EFRM, EHRM, F0RM, GARM, I0RM, I4RM, I5RM, I6RM, ICRM, IGRM, M3RM, M5RM, MRRM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TZRM, U2RM, U3RM, U5RM, U9RM, UARM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WTRM, WWRM, WXRM, XCRM, XLRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, ZR11, ZR50, ZR51, ZRA0, ZRI0 | Legacy | Pillow | up | 6E 01 00 3F AE | 100 |
+| A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AXRM, BDRM, BERM, BGRM, BIRM, BLRM, BMRM, CFRM, CWRM, D4RM, D6RM, E1RM, E6RM, EERM, EFRM, EHRM, F0RM, GARM, I0RM, I4RM, I5RM, I6RM, ICRM, IGRM, M3RM, M5RM, MRRM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TZRM, U2RM, U3RM, U5RM, U9RM, UARM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WTRM, WWRM, WXRM, XCRM, XLRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, ZR11, ZR50, ZR51, ZRA0, ZRI0 | Legacy | Pillow | down | 6E 01 00 40 AF | 100 |
+| A0RM, A3RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AWRM, AXRM, B4RM, B5RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, D2RM, D4RM, DFRM, DZRM, E1RM, EFRM, ELRM, F0RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, ISRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O9RM, OARM, OMRM, ONRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R2RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, THRM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WIRM, WJRM, WLRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XFRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | TV | recall | 6E 01 00 58 C7 | once |
+| A0RM, A1RM, A2RM, A3RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DNRM, DZRM, E6RM, EARM, EBRM, EFRM, EHRM, ELRM, F0RM, FIRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VSRM, VVRM, VWRM, VXRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0 | Legacy | M1 | recall | 6E 01 00 2E 9D | once |
+| A0RM, A1RM, A2RM, A3RM, A9RM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, D0RM, D1RM, D2RM, D4RM, DNRM, E6RM, EARM, EBRM, EFRM, ELRM, FIRM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UWRM, UXRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VWRM, VXRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WLRM, WNRM, WPRM, WSRM, WURM, WXRM, XCRM, XFRM, Y4RM, Y5RM, Y6RM, Y8RM, YERM, YFRM, YGRM, YHRM, YJRM, YMRM, YPRM, ZR12, ZR50, ZR51, ZR80, ZRA2 | Legacy | M2 | recall | 6E 01 00 2F 9E | once |
+| A0RM, A2RM, ADRM, BMRM, BNRM, BZRM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, V7RM, VWRM, VXRM, W5RM, W7RM, WLRM, Y4RM, YPRM, ZQRM, ZRA2 | Legacy | M3 | recall | 6E 01 00 30 9F | once |
+| A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, BDRM, BERM, CFRM, CWRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R2RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, U3RM, U4RM, U5RM, U9RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, X2RM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage Head Intensity Inc | press | 6E 01 00 4C BB | once |
+| A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, B8TT, B9TT, BDRM, BERM, CFRM, CWRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R2RM, R5RM, T5RM, T7RM, TARM, TBRM, THRM, U3RM, U4RM, U5RM, U9RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR50, ZR51, ZRI0 | Legacy | Massage Foot Intensity Inc | press | 6E 01 00 4E BD | once |
+| A0RM, A1RM, AARM, AERM, AFRM, BGRM, CFRM, CWRM, D0RM, D1RM, E1RM, F0RM, I1RM, IERM, IGRM, M6RM, M7RM, MARM, O8RM, P1RM, P6RM, T7RM, U4RM, U5RM, URRM, UTRM, UYRM, VBRM, VKRM, VLRM, VPRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VZRM, W6RM, W7RM, W9RM, WHRM, WJRM, WKRM, WLRM, WNRM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YIRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51 | Legacy | Massage Head Foot Both Off | press | 6E 01 00 5E CD | once |
+| A1RM, AARM, AHRM, BDRM, BERM, BIRM, CFRM, D4RM, E1RM, E6RM, EERM, EHRM, GARM, I5RM, O5RM, ORRM, P6RM, T1RM, U3RM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, YARM, YIRM, YORM, YPRM, ZR50, ZRA0 | Legacy | Lumbar | up | 6E 01 00 41 B0 | 100 |
+| A1RM, AARM, AHRM, BDRM, BERM, BIRM, CFRM, D4RM, E1RM, E6RM, EERM, EHRM, GARM, I5RM, O5RM, ORRM, P6RM, T1RM, U3RM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, YARM, YIRM, YORM, YPRM, ZR50, ZRA0 | Legacy | Lumbar | down | 6E 01 00 42 B1 | 100 |
+| A2RM, O4RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Head Foot Speed Inc | press | 6E 01 00 36 A5 | once |
+| A2RM, O4RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Head Foot Speed Dec | press | 6E 01 00 37 A6 | once |
+| A2RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Pulse | press | 6E 01 00 38 A7 | once |
+| A2RM, I0RM, I4RM, I5RM, MLRM, O0RM, O6RM, OMRM, ONRM, OORM, OTRM, OYRM, R6RM, THRM, U9RM, UARM, UJRM, V7RM, ZRI0 | Legacy | Massage Wave | press | 6E 01 00 39 A8 | once |
+| A2RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Constant | press | 6E 01 00 3A A9 | once |
+| A3RM, ACRM, ADRM, B4RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BZRM, IGRM, IRRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O6RM, O9RM, OMRM, ONRM, OORM, OSRM, OXRM, OZRM, P1RM, R2RM, R5RM, TBRM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WDRM, WERM, WLRM, WQRM, WSRM, WTRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YORM, YPRM, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | Lounge | recall | 6E 01 00 59 C8 | once |
+| ACRM, ADRM, BERM, D7RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, R2RM, T9RM, U9RM, UARM, UJRM, ULRM, V7RM, VQRM, W5RM, Y3RM, YGRM | Legacy | Massage Head Intensity Dec | press | 6E 01 00 4D BC | once |
+| ACRM, ADRM, B8TT, B9TT, BERM, D7RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, R2RM, U9RM, UARM, UJRM, V7RM, VQRM, W5RM, Y3RM, YGRM | Legacy | Massage Foot Intensity Dec | press | 6E 01 00 4F BE | once |
+| AERM, AGRM | Legacy | Pillow | up | 6E 01 00 3F AE | 150 |
+| AERM, AGRM | Legacy | Pillow | down | 6E 01 00 40 AF | 150 |
+| AERM, Y1RM, YGRM | Legacy | Head Up Foot Up | press | 6E 01 00 23 92 | once |
+| AERM | Legacy | Lumbar | recall | 6E 01 00 91 00 | once |
+| AERM | Legacy | Lumbar | save | 6E 01 00 92 01 | once |
+| AFRM, AGRM | Legacy | Head Up Foot Up | press | 6E 01 00 23 92 | 150 |
+| AHRM, B9TT, I2RM, I7RM, I8RM, ICRM, IERM, IFRM, IHRM, IIRM, IRRM, O5RM, V9RM, VIRM, VNRM, WIRM, YGRM | Legacy | Massage Head Foot Both On | press | 6E 01 00 5D CC | once |
+| AWRM, AXRM, DFRM, EARM, EBRM, EERM, EFRM, EHRM, GARM, UFRM | Legacy | All massage off | press | 6E 01 00 5E CD | once |
+| B1RM, I9RM, INRM, O6RM, OMRM, OORM, R6RM, VGRM, WDRM, WERM | Legacy | Massage Head On Off | press | 6E 01 00 32 A1 | once |
+| B1RM, O6RM, OMRM, OORM, R6RM | Legacy | Massage Foot On Off | press | 6E 01 00 33 A2 | once |
+| B1RM | Legacy | Massage Off Reset | press | 6E 01 00 5A C9 | once |
+| B1RM, R2RM | Legacy | Massage Intensity3 | press | 6E 01 00 68 D7 | once |
+| B1RM, R2RM | Legacy | Massage Intensity1 | press | 6E 01 00 67 D6 | once |
+| B4RM, B9RM, ISRM, ORRM, P2RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 | Legacy | Pillow Lumbar Both | up | 6E 01 00 43 B2 | 100 |
+| B4RM, B9RM, ISRM, ORRM, P2RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 | Legacy | Pillow Lumbar Both | down | 6E 01 00 44 B3 | 100 |
+| B8RM | Legacy | Massage Wave3 | press | 6E 01 00 4B BA | once |
+| B9TT, BHRM, BIRM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OURM, OWRM, OYRM, P5RM, U9RM, UARM, UJRM, V6RM, V7RM, YERM, YGRM, ZRI0 | Legacy | Massage Off | press | 6E 01 00 47 B6 | once |
+| BGRM, BHRM, BIRM, BLRM, BNRM | Legacy | Massage Head Intensity Inc2 | press | 6E 01 00 A4 13 | once |
+| BGRM, BHRM, BIRM, BLRM, BNRM | Legacy | Massage Foot Intensity Inc2 | press | 6E 01 00 A5 14 | once |
+| BZRM | Legacy | Relax | press | 6E 01 00 70 DF | once |
+| CERM, ELRM | Entity | Head | up | 6E 01 00 24 93 | 100 |
+| CERM, ELRM | Entity | Head | down | 6E 01 00 25 94 | 100 |
+| CERM, ELRM | Entity | Foot | up | 6E 01 00 26 95 | 100 |
+| CERM, ELRM | Entity | Foot | down | 6E 01 00 27 96 | 100 |
+| CERM, ELRM | Entity | Head Foot Both | up | 6E 01 00 29 98 | 100 |
+| CERM, ELRM | Entity | Head Foot Both | down | 6E 01 00 2A 99 | 100 |
+| CERM, ELRM | Entity | Flat | press | 6E 01 00 31 A0 | once |
+| CERM, ELRM | Entity | TV | recall | 6E 01 00 58 C7 | once |
+| CERM, ELRM | Entity | TV | save | 6E 01 00 64 D3 | once |
+| CERM, ELRM | Entity | Zero Gravity | recall | 6E 01 00 45 B4 | once |
+| CERM, ELRM | Entity | Zero Gravity | save | 6E 01 00 66 D5 | once |
+| CERM, ELRM | Entity | Anti-Snore | recall | 6E 01 00 46 B5 | once |
+| CERM, ELRM | Entity | M1 | recall | 6E 01 00 2E 9D | once |
+| CERM, ELRM | Entity | M1 | save | 6E 01 00 2B 9A | once |
+| CERM, ELRM | Entity | M2 | recall | 6E 01 00 2F 9E | once |
+| CERM, ELRM | Entity | M2 | save | 6E 01 00 2C 9B | once |
+| CFRM, E6RM, EERM, GARM, M5RM, U3RM | Legacy | Motor5 | up | 6E 01 00 71 E0 | 100 |
+| CFRM, E6RM, EERM, GARM, M5RM, U3RM | Legacy | Motor5 | down | 6E 01 00 72 E1 | 100 |
+| CFRM, ZQRM | Legacy | Lock | press | 6E 01 00 84 F3 | once |
+| CFRM, E1RM, EERM, GARM | Legacy | Memory1 | recall | 6E 01 00 2E 9D | once |
+| CXRM, DNRM | Legacy | Movie Watching | recall | 6E 01 00 58 C7 | once |
+| CXRM | Legacy | Yoga | recall | 6E 01 00 2F 9E | once |
+| DFRM, DGRM | Legacy | Yoga | recall | 6E 01 00 30 9F | once |
+| DNRM | Legacy | Xiaofeiyan | recall | 6E 01 00 F0 5F | once |
+| DNRM, DZRM, EARM, EBRM | Legacy | Yoga | save | 6E 01 00 F1 60 | once |
+| DZRM, EARM, EBRM | Legacy | Yoga | recall | 6E 01 00 F0 5F | once |
+| E6RM, M5RM | Legacy | Motor6 | up | 6E 01 00 73 E2 | 100 |
+| E6RM, M5RM | Legacy | Motor6 | down | 6E 01 00 74 E3 | 100 |
+| EARM, EBRM | Legacy | Zero gravity | recall | 6E 01 00 45 B4 | once |
+| EARM, EBRM | Legacy | Movie viewing | recall | 6E 01 00 58 C7 | once |
+| FIRM, FRRM | Legacy | Read | recall | 6E 01 00 F2 61 | once |
+| FIRM, FRRM | Legacy | Read | save | 6E 01 00 F3 62 | once |
+| FIRM, FRRM | Legacy | Recline | recall | 6E 01 00 F6 65 | once |
+| FIRM, FRRM | Legacy | Flat Sleep | save | 6E 01 00 F7 66 | once |
+| FJRM | Legacy | Both massage off | press | 6E 01 00 34 A3 | once |
+| GARM | Legacy | Music Vibration Mode | press | 6E 01 00 D6 45 | once |
+| OORM, OURM, OWRM, YFRM, YGRM | Legacy | Head Up Foot Down | press | 6E 01 00 21 90 | once |
+| OURM, OWRM, YFRM, YGRM | Legacy | Head Down Foot Up | press | 6E 01 00 22 91 | once |
+| OWRM, XFRM, XGRM, XLRM, YIRM, YMRM, YNRM, YORM, YPRM | Legacy | Head Up Only | press | 6E 01 00 3D AC | once |
+| OWRM | Legacy | Foot Up Only | press | 6E 01 00 3E AD | once |
+| P2RM, ZR70, ZR80 | Legacy | Pillow Lumbar Both Tilt Up | press | 6E 01 00 5B CA | once |
+| P2RM, ZR70, ZR80 | Legacy | Pillow Lumbar Both Tilt Down | press | 6E 01 00 5C CB | once |
+| P2RM, ZRA0 | Legacy | Ubl Off | press | 6E 01 00 75 E4 | once |
+| R2RM | Legacy | Massage Intensity2 | press | 6E 01 00 AF 1E | once |
+| T3RM | Legacy | Both massage off | press | 6E 01 00 5D CC | once |
+| U3RM | Legacy | Zg2 Back | press | 6E 01 00 6B DA | once |
+| U3RM | Legacy | Zg2 Set | press | 6E 01 00 6A D9 | once |
+| VRRM | Legacy | Flat2 | press | 6E 01 00 6C DB | once |
+| WYRM | Legacy | Pillow | press | 6E 01 00 3F AE | 100 |
+| Y2RM | Legacy | Head Foot On Off | press | 6E 01 00 6F DE | once |
+| ZQRM | Legacy | M4 | recall | 6E 01 00 B2 21 | once |
+| ZQRM | Legacy | M4 | save | 6E 01 00 B3 22 | once |
+
+| Model | Alarm operands | Snore operands | Angle targets | Motor modes |
+|---|---|---|---|---|
+| 6BRM |  |  |  |  |
+| 6CRM |  |  |  |  |
+| 6DRM |  |  |  |  |
+| 6ERM |  |  |  |  |
+| 6FRM |  |  |  |  |
+| 6HRM |  |  |  | SINGLE: LEFT, RIGHT |
+| A0RM |  |  |  |  |
+| A1RM |  |  |  |  |
+| A2RM |  |  |  |  |
+| A3RM |  |  |  |  |
+| A6RM |  |  |  |  |
+| A7RM |  |  |  |  |
+| A8RM |  |  |  |  |
+| A9RM |  |  |  |  |
+| AARM |  |  |  |  |
+| ABRM |  |  |  |  |
+| ACRM |  |  |  |  |
+| ADRM |  |  |  |  |
+| AERM |  |  |  |  |
+| AFRM |  |  |  |  |
+| AGRM |  |  |  |  |
+| AHRM |  |  |  |  |
+| AIRM |  |  |  |  |
+| AJRM |  |  |  |  |
+| AKRM |  |  |  |  |
+| AWRM |  |  |  |  |
+| AXRM |  |  |  |  |
+| B0RM |  |  |  |  |
+| B1RM |  |  |  |  |
+| B2RM |  |  |  |  |
+| B3RM |  |  |  |  |
+| B4RM |  |  |  |  |
+| B5RM |  |  |  |  |
+| B6RM |  |  |  |  |
+| B6RU |  |  |  |  |
+| B7RM |  |  |  |  |
+| B8RM |  |  |  |  |
+| B8TT |  |  |  |  |
+| B9RM |  |  |  |  |
+| B9TT |  |  |  |  |
+| BARM |  |  |  |  |
+| BBRM |  |  |  |  |
+| BCRM |  |  |  |  |
+| BDRM |  |  |  |  |
+| BERM |  |  |  |  |
+| BFRM |  |  |  |  |
+| BGRM |  |  |  |  |
+| BHRM |  |  |  |  |
+| BIRM |  |  |  |  |
+| BJRM |  |  |  |  |
+| BKRM |  |  |  |  |
+| BLRM |  |  |  |  |
+| BMRM |  |  |  |  |
+| BNRM |  |  |  |  |
+| BPRM |  |  |  |  |
+| BQRM |  |  |  |  |
+| BZRM |  |  |  |  |
+| CERM | 58, 45, 46, 2E, 2F |  | Back 0..58, Foot 0..42 |  |
+| CFRM | 46, 45, 2E | 46, 45 |  |  |
+| CWRM |  |  |  |  |
+| CXRM | 45, 46, 58, 2F, 2E |  |  |  |
+| D0RM |  |  |  |  |
+| D1RM |  |  |  |  |
+| D2RM |  |  |  |  |
+| D4RM |  |  |  |  |
+| D5RM |  |  |  |  |
+| D6RM |  |  |  |  |
+| D7RM |  |  |  |  |
+| DFRM | 58, 46, 45, 2E, 4C, 4E |  |  |  |
+| DGRM | 46, 45 |  |  |  |
+| DNRM |  |  |  |  |
+| DZRM | 45, 46, 58, F0, 2E |  |  |  |
+| E1RM | 46, 45, 2E | 46, 45 |  |  |
+| E6RM |  |  |  |  |
+| EARM | 45, 46, 58, F0, 2E, 2F |  |  |  |
+| EBRM | 45, 46, 58, F0, 2E, 2F |  |  | GROUP_SPLIT: LEFT, RIGHT |
+| EERM | 2E |  |  |  |
+| EFRM | 45, 46, 58, 2E, 2F |  |  |  |
+| EHRM |  |  |  |  |
+| ELRM | 58, 45, 46, 2E, 2F |  | Back 0..59, Foot 0..34 |  |
+| F0RM |  |  |  |  |
+| FIRM |  |  |  |  |
+| FJRM |  |  |  |  |
+| FRRM |  |  |  |  |
+| GARM | 2E | 46 |  |  |
+| GMRM |  |  |  |  |
+| I0RM |  |  |  |  |
+| I1RM |  |  |  |  |
+| I2RM |  |  |  |  |
+| I3RM |  |  |  |  |
+| I4RM |  |  |  |  |
+| I5RM |  |  |  |  |
+| I6RM |  |  |  |  |
+| I7RM |  |  |  |  |
+| I8RM |  |  |  |  |
+| I9RM |  |  |  |  |
+| IARM |  |  |  |  |
+| IBRM |  |  |  |  |
+| ICRM |  |  |  |  |
+| IDRM |  |  |  |  |
+| IERM |  |  |  |  |
+| IFRM |  |  |  |  |
+| IGRM |  |  |  |  |
+| IHRM |  |  |  |  |
+| IIRM |  |  |  |  |
+| IJRM |  |  |  |  |
+| IKRM |  |  |  |  |
+| ILRM |  |  |  |  |
+| IMRM |  |  |  |  |
+| INRM |  |  |  |  |
+| IORM |  |  |  |  |
+| IPRM |  |  |  |  |
+| IQRM |  |  |  |  |
+| IRRM |  |  |  |  |
+| ISRM |  |  |  |  |
+| M3RM |  |  |  |  |
+| M4RM |  |  |  |  |
+| M5RM |  |  |  |  |
+| M6RM |  |  |  |  |
+| M7RM |  |  |  |  |
+| M9RM |  |  |  |  |
+| MARM |  |  |  |  |
+| MLRM |  |  |  |  |
+| MMRM |  |  |  |  |
+| MRRM |  |  |  |  |
+| O0RM |  |  |  |  |
+| O1RM |  |  |  |  |
+| O2RM |  |  |  |  |
+| O3RM |  |  |  |  |
+| O4RM |  |  |  |  |
+| O5RM |  |  |  |  |
+| O6RM |  |  |  |  |
+| O7RM |  |  |  |  |
+| O8RM |  |  |  |  |
+| O9RM | 58, 45, 59, 2E, 2F, 4C, 4E |  |  |  |
+| OARM |  |  |  |  |
+| OMRM |  |  |  |  |
+| ONRM |  |  |  |  |
+| OORM |  |  |  |  |
+| OQRM |  |  |  |  |
+| ORRM |  |  |  |  |
+| OSRM |  |  |  |  |
+| OTRM | 45, 46, 2E, 4C, 4E |  |  |  |
+| OURM |  |  |  |  |
+| OVRM |  |  |  |  |
+| OWRM |  |  |  |  |
+| OXRM |  |  |  |  |
+| OYRM |  |  |  |  |
+| OZRM |  |  |  |  |
+| P0RM |  |  |  |  |
+| P1RM | 58, 45, 59, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P2RM |  |  |  |  |
+| P3RM |  |  |  |  |
+| P4RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P5RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P6RM |  |  |  |  |
+| P9RM |  |  |  |  |
+| R2RM |  |  |  |  |
+| R5RM | 58, 45, 59, 2E, 2F |  |  |  |
+| R6RM |  |  |  |  |
+| S9RM |  |  |  |  |
+| SARM |  |  |  |  |
+| T0RM |  |  |  |  |
+| T1RM |  |  |  |  |
+| T2RM |  |  |  |  |
+| T3RM |  |  |  |  |
+| T4RM |  |  |  |  |
+| T5RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| T6RM |  |  |  |  |
+| T7RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| T8RM |  |  |  |  |
+| T9RM | 45, 46, 2E, 4C, 4D |  |  |  |
+| TARM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| TBRM |  |  |  |  |
+| THRM |  |  |  |  |
+| TLRM |  |  |  |  |
+| TWRM |  |  |  |  |
+| TZRM |  |  |  |  |
+| U0RM |  |  |  |  |
+| U1RM |  |  |  |  |
+| U2RM |  |  |  |  |
+| U3RM |  |  |  |  |
+| U4RM |  |  |  |  |
+| U5RM |  |  |  |  |
+| U6RM | 45, 46, 2E |  |  |  |
+| U7RM |  |  |  |  |
+| U8RM |  |  |  |  |
+| U9RM |  |  |  |  |
+| UARM |  |  |  |  |
+| UCRM |  |  |  |  |
+| UDRM |  |  |  |  |
+| UERM |  |  |  |  |
+| UFRM | 58, 45, 59, 2E, 2F, 4C, 4E |  |  |  |
+| UGRM |  |  |  |  |
+| UHRM |  |  |  |  |
+| UIRM |  |  |  |  |
+| UJRM |  |  |  |  |
+| UKRM |  |  |  |  |
+| ULRM |  |  |  |  |
+| UMRM |  |  |  |  |
+| UNRM |  |  |  |  |
+| UORM |  |  |  |  |
+| UPRM |  |  |  |  |
+| UQRM |  |  |  |  |
+| URRM | 46, 2E, 4C, 4E |  |  |  |
+| UTRM |  |  |  |  |
+| UURM |  |  |  |  |
+| UVRM | 58, 45, 46, 2E, 2F |  |  |  |
+| UWRM |  |  |  |  |
+| UXRM |  |  |  |  |
+| UYRM |  |  |  |  |
+| UZRM |  |  |  |  |
+| V0RM |  |  |  |  |
+| V1RM | 45, 46, 2E |  |  |  |
+| V2RM |  |  |  |  |
+| V3RM |  |  |  |  |
+| V4RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| V5RM |  |  |  |  |
+| V6RM |  |  |  |  |
+| V7RM |  |  |  |  |
+| V8RM |  |  |  |  |
+| V9RM |  |  |  |  |
+| VARM |  |  |  |  |
+| VBRM |  |  |  |  |
+| VCRM |  |  |  |  |
+| VDRM |  |  |  |  |
+| VERM |  |  |  |  |
+| VFRM |  |  |  |  |
+| VGRM |  |  |  |  |
+| VHRM |  |  |  |  |
+| VIRM |  |  |  |  |
+| VJRM |  |  |  |  |
+| VKRM |  |  |  |  |
+| VLRM |  |  |  |  |
+| VMRM |  |  |  |  |
+| VNRM |  |  |  |  |
+| VORM |  |  |  |  |
+| VPRM |  |  |  |  |
+| VQRM |  |  |  |  |
+| VRRM |  |  |  |  |
+| VSRM |  |  |  |  |
+| VTRM |  |  |  |  |
+| VURM |  |  |  |  |
+| VVRM |  |  |  |  |
+| VWRM |  |  |  |  |
+| VXRM |  |  |  |  |
+| VYRM |  |  |  |  |
+| VZRM |  |  |  |  |
+| W0RM |  |  |  |  |
+| W1RM |  |  |  |  |
+| W2RM | 58, 45, 59, 2E, 2F |  |  |  |
+| W3RM |  |  |  |  |
+| W4RM |  |  |  |  |
+| W5RM |  |  |  |  |
+| W6RM |  |  |  |  |
+| W7RM |  |  |  |  |
+| W8RM |  |  |  |  |
+| W9RM |  |  |  |  |
+| WARM |  |  |  |  |
+| WBRM |  |  |  |  |
+| WCRM |  |  |  |  |
+| WDRM |  |  |  |  |
+| WERM |  |  |  |  |
+| WGRM |  |  |  |  |
+| WHRM |  |  |  |  |
+| WIRM |  |  |  |  |
+| WJRM | 58, 45, 46, 2E, 4C, 4E |  |  |  |
+| WKRM | 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WLRM | 58, 45, 46, 59, 2F, 30, 4C, 4E |  |  |  |
+| WMRM |  |  |  |  |
+| WNRM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WORM |  |  |  |  |
+| WPRM |  |  |  |  |
+| WQRM |  |  |  |  |
+| WRRM |  |  |  |  |
+| WSRM | 58, 45, 59, 2E, 2F |  |  |  |
+| WTRM |  |  |  |  |
+| WURM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WVRM |  |  |  |  |
+| WWRM |  |  |  |  |
+| WXRM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WYRM |  |  |  |  |
+| WZRM |  |  |  |  |
+| X1RM | 45, 46 |  |  |  |
+| X2RM |  |  |  |  |
+| XCRM | 45, 46, 4C, 4E |  |  |  |
+| XFRM | 58, 45, 46, 4C, 4E |  |  |  |
+| XGRM | 45, 46, 2E |  |  |  |
+| XLRM | 58, 45, 46, 4C, 4E |  |  |  |
+| Y0RM |  |  |  |  |
+| Y1RM | 45, 46, 2E |  |  |  |
+| Y2RM |  |  |  |  |
+| Y3RM |  |  |  |  |
+| Y4RM | 58, 45, 46, 59, 2F, 30 |  |  |  |
+| Y5RM |  |  |  |  |
+| Y6RM | 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| Y7RM | 45, 46, 2E |  |  |  |
+| Y8RM | 58, 45, 46, 59, 2E, 2F, 4C, 4E |  |  |  |
+| Y9RM | 45, 46, 2E |  |  |  |
+| YARM |  |  |  |  |
+| YBRM |  |  |  |  |
+| YCRM |  |  |  |  |
+| YDRM |  |  |  |  |
+| YERM | 58, 45, 46, 59, 2E, 2F, 4C, 4E |  |  |  |
+| YFRM |  |  |  |  |
+| YGRM |  |  |  |  |
+| YHRM |  |  |  |  |
+| YIRM | B0, B1 |  |  |  |
+| YJRM |  |  |  |  |
+| YKRM |  |  |  |  |
+| YMRM |  |  |  |  |
+| YNRM |  |  |  |  |
+| YORM | B0, B1 |  |  |  |
+| YPRM | B0, B1 |  |  |  |
+| ZQRM | 30, B2 |  |  |  |
+| ZR00 |  |  |  |  |
+| ZR01 |  |  |  |  |
+| ZR10 |  |  |  |  |
+| ZR11 |  |  |  |  |
+| ZR12 |  |  |  |  |
+| ZR20 |  |  |  |  |
+| ZR21 |  |  |  |  |
+| ZR30 |  |  |  |  |
+| ZR40 |  |  |  |  |
+| ZR50 |  |  |  |  |
+| ZR51 |  |  |  |  |
+| ZR60 |  |  |  |  |
+| ZR70 |  |  |  |  |
+| ZR80 |  |  |  |  |
+| ZR90 |  |  |  |  |
+| ZRA0 |  |  |  |  |
+| ZRA1 |  |  |  |  |
+| ZRA2 |  |  |  |  |
+| ZRI0 |  |  |  |  |
+
+**MLILY Supreme**
+
+| Models | Page | Control | Gesture | Mode 0 bytes | Refresh ms |
+|---|---|---|---|---|---|
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Back | up | 6E 01 00 24 93 | 100 |
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Back | down | 6E 01 00 25 94 | 100 |
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Foot | up | 6E 01 00 26 95 | 100 |
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Foot | down | 6E 01 00 27 96 | 100 |
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B7RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IKRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OWRM, OXRM, OYRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T2RM, T3RM, T5RM, T6RM, T7RM, T9RM, TARM, TBRM, THRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA2, ZRI0 | Legacy | Flat | press | 6E 01 00 31 A0 | once |
+| 3I, 4I, 4IT, 5I, 6DRM, 6ERM, 6HRM, 6I, 7I, A0RM, A1RM, A3RM, A6RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EFRM, ELRM, F0RM, FIRM, FJRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, S9RM, SARM, T3RM, T4RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Zero Gravity | recall | 6E 01 00 45 B4 | once |
+| 3I, 4I, 4IT, 5I, 6DRM, 6ERM, 6HRM, 6I, 7I, A0RM, A1RM, A3RM, A6RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, ELRM, F0RM, FIRM, FJRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Zero Gravity | save | 6E 01 00 66 D5 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DNRM, DZRM, E6RM, EARM, EBRM, EFRM, EHRM, ELRM, F0RM, FIRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VSRM, VVRM, VWRM, VXRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0 | Legacy | M1 | recall | 6E 01 00 2E 9D | once |
+| 3I, 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VSRM, VVRM, VWRM, VXRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0 | Legacy | M1 | save | 6E 01 00 2B 9A | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A9RM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, D0RM, D1RM, D2RM, D4RM, DNRM, E6RM, EARM, EBRM, EFRM, ELRM, FIRM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UWRM, UXRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VWRM, VXRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WLRM, WNRM, WPRM, WSRM, WURM, WXRM, XCRM, XFRM, Y4RM, Y5RM, Y6RM, Y8RM, YERM, YFRM, YGRM, YHRM, YJRM, YMRM, YPRM, ZR12, ZR50, ZR51, ZR80, ZRA2 | Legacy | M2 | recall | 6E 01 00 2F 9E | once |
+| 3I, 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A9RM, ADRM, AERM, AFRM, AGRM, AWRM, AXRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CXRM, D0RM, D1RM, D2RM, D4RM, DNRM, E6RM, EARM, EBRM, EFRM, ELRM, FIRM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UWRM, UXRM, UZRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VWRM, VXRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WLRM, WNRM, WPRM, WSRM, WURM, WXRM, XCRM, XFRM, Y4RM, Y5RM, Y6RM, Y8RM, YERM, YFRM, YGRM, YHRM, YJRM, YMRM, YPRM, ZR12, ZR50, ZR51, ZR80, ZRA2 | Legacy | M2 | save | 6E 01 00 2C 9B | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, A0RM, A2RM, ADRM, BMRM, BNRM, BZRM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, V7RM, VWRM, VXRM, W5RM, W7RM, WLRM, Y4RM, YPRM, ZQRM, ZRA2 | Legacy | M3 | recall | 6E 01 00 30 9F | once |
+| 3I, 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A2RM, ADRM, BMRM, BNRM, BZRM, DFRM, DGRM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, UZRM, V7RM, VWRM, VXRM, W5RM, W7RM, WLRM, Y4RM, YPRM, ZQRM, ZRA2 | Legacy | M3 | save | 6E 01 00 2D 9C | once |
+| 3I, 4IT, ZQRM | Legacy | M4 | recall | 6E 01 00 B2 21 | once |
+| 3I, 4IT, ZQRM | Legacy | M4 | save | 6E 01 00 B3 22 | once |
+| 3I, 4IT | Legacy | M5 | recall | 6E 01 00 F4 63 | once |
+| 3I, 4IT | Legacy | M5 | save | 6E 01 00 F5 64 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Head | up | 6E 01 00 24 93 | 100 |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Head | down | 6E 01 00 25 94 | 100 |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Foot | up | 6E 01 00 26 95 | 100 |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Foot | down | 6E 01 00 27 96 | 100 |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Flat | press | 6E 01 00 31 A0 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Zero Gravity | recall | 6E 01 00 45 B4 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Zero Gravity | save | 6E 01 00 66 D5 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | M1 | recall | 6E 01 00 2E 9D | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | M1 | save | 6E 01 00 2B 9A | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | M2 | recall | 6E 01 00 2F 9E | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | M2 | save | 6E 01 00 2C 9B | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M3 | recall | 6E 01 00 30 9F | once |
+| 3I | Entity | M3 | save | 6E 01 00 B3 22 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M4 | recall | 6E 01 00 B2 21 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M4 | save | 6E 01 00 B3 22 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M5 | recall | 6E 01 00 F4 63 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M5 | save | 6E 01 00 F5 64 | once |
+| 4I, 5I, 6HRM, A2RM, A3RM, AARM, AWRM, B6RM, B6RU, B7RM, BFRM, BGRM, BHRM, BNRM, BZRM, CERM, D2RM, D5RM, DFRM, EFRM, ELRM, FIRM, FRRM, GMRM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, MMRM, O1RM, O2RM, O3RM, O9RM, OARM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, R6RM, S9RM, SARM, T4RM, T8RM, TARM, TLRM, TWRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UQRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WLRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, Y3RM, Y4RM, YHRM, YJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2 | Legacy | Head Foot Both | up | 6E 01 00 29 98 | 100 |
+| 4I, 5I, 6HRM, A2RM, A3RM, AARM, AWRM, B6RM, B6RU, B7RM, BFRM, BGRM, BHRM, BNRM, BZRM, CERM, D2RM, D5RM, DFRM, EFRM, ELRM, FIRM, FRRM, GMRM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, MMRM, O1RM, O2RM, O3RM, O9RM, OARM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, R6RM, S9RM, SARM, T4RM, T8RM, TARM, TLRM, TWRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UQRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WLRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, Y3RM, Y4RM, YHRM, YJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2 | Legacy | Head Foot Both | down | 6E 01 00 2A 99 | 100 |
+| 4I, 4IT, 5I, 6ERM, 6FRM, 6I, 7I, A1RM, A3RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AWRM, AXRM, B1RM, B4RM, BDRM, BERM, BHRM, BIRM, BJRM, BLRM, BMRM, BNRM, BZRM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DZRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FJRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IMRM, ISRM, M3RM, M5RM, M6RM, M7RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, ORRM, OSRM, OTRM, OYRM, OZRM, P0RM, P1RM, P2RM, P6RM, R2RM, R5RM, T1RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, TLRM, U1RM, U2RM, U3RM, U4RM, U5RM, U7RM, U8RM, U9RM, UARM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UVRM, UWRM, UYRM, V0RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WORM, WSRM, WURM, WVRM, WXRM, WYRM, XCRM, XFRM, XLRM, Y2RM, Y3RM, Y6RM, Y8RM, YARM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZQRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZR60, ZRA0, ZRI0 | Legacy | Ubl On Off | press | 6E 01 00 3C AB | once |
+| 4I, 4IT, 5I, 6DRM, 6ERM, 6I, 7I, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, EHRM, ELRM, F0RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O4RM, O7RM, O8RM, OARM, OQRM, OTRM, OYRM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UCRM, UDRM, UGRM, UIRM, UJRM, UKRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VSRM, VVRM, VWRM, WCRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, XCRM, XFRM, XGRM, XLRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZR40, ZR50, ZR51, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Anti-Snore | recall | 6E 01 00 46 B5 | once |
+| 4I, 4IT, 5I, 6DRM, 6ERM, 6I, 7I, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, CFRM, CWRM, CXRM, D0RM, D1RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, EHRM, F0RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O4RM, O7RM, O8RM, OARM, OQRM, OTRM, OYRM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UCRM, UDRM, UGRM, UIRM, UJRM, UKRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VSRM, VVRM, VWRM, WCRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, XCRM, XFRM, XGRM, XLRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZR40, ZR50, ZR51, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Anti-Snore | save | 6E 01 00 69 D8 | once |
+| 4I, 4IT, 5I, 6I, 7I, A0RM, A3RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AWRM, AXRM, B4RM, B5RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, D2RM, D4RM, DFRM, DZRM, E1RM, EFRM, ELRM, F0RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, ISRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O9RM, OARM, OMRM, ONRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R2RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, THRM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WIRM, WJRM, WLRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XFRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | TV | recall | 6E 01 00 58 C7 | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A3RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AWRM, AXRM, B4RM, B5RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CXRM, D2RM, D4RM, DFRM, DNRM, DZRM, E1RM, EARM, EBRM, EFRM, ELRM, F0RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, ISRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O9RM, OARM, OMRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R2RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WIRM, WJRM, WLRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XFRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | TV | save | 6E 01 00 64 D3 | once |
+| 4I, 4IT, 5I, 6I, 7I, A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, BDRM, BERM, CFRM, CWRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R2RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, U3RM, U4RM, U5RM, U9RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, X2RM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage Head Intensity Inc | press | 6E 01 00 4C BB | once |
+| 4I, 4IT, 5I, 6I, 7I, A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, B8TT, B9TT, BDRM, BERM, CFRM, CWRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R2RM, R5RM, T5RM, T7RM, TARM, TBRM, THRM, U3RM, U4RM, U5RM, U9RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR50, ZR51, ZRI0 | Legacy | Massage Foot Intensity Inc | press | 6E 01 00 4E BD | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A1RM, A3RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, B8RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VRRM, VSRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51 | Legacy | Massage Mode | press | 6E 01 00 48 B7 | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A3RM, A9RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, D2RM, D4RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IARM, IBRM, IORM, ISRM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R2RM, R5RM, T5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 10Min | press | 6E 01 00 5F CE | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A3RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IBRM, M3RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 20Min | press | 6E 01 00 63 D2 | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A3RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IBRM, ILRM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 30Min | press | 6E 01 00 61 D0 | once |
+| 4I, 4IT, 5I, 6I, 7I, AWRM, AXRM, DFRM, EARM, EBRM, EERM, EFRM, EHRM, GARM, UFRM | Legacy | All massage off | press | 6E 01 00 5E CD | once |
+| 4I, 5I, CERM, ELRM | Entity | Head Foot Both | up | 6E 01 00 29 98 | 100 |
+| 4I, 5I, CERM, ELRM | Entity | Head Foot Both | down | 6E 01 00 2A 99 | 100 |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Ubl On Off | press | 6E 01 00 3C AB | once |
+| 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Anti-Snore | recall | 6E 01 00 46 B5 | once |
+| 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | TV | recall | 6E 01 00 58 C7 | once |
+| 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | TV | save | 6E 01 00 64 D3 | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | M3 | save | 6E 01 00 2D 9C | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage Head Intensity Inc | press | 6E 01 00 4C BB | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage Foot Intensity Inc | press | 6E 01 00 4E BD | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage Mode | press | 6E 01 00 48 B7 | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage 10Min | press | 6E 01 00 5F CE | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage 20Min | press | 6E 01 00 63 D2 | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage 30Min | press | 6E 01 00 61 D0 | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage Head Foot Both Off | press | 6E 01 00 5E CD | once |
+| 4IT, 6I, 7I, A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AXRM, BDRM, BERM, BGRM, BIRM, BLRM, BMRM, CFRM, CWRM, D4RM, D6RM, E1RM, E6RM, EERM, EFRM, EHRM, F0RM, GARM, I0RM, I4RM, I5RM, I6RM, ICRM, IGRM, M3RM, M5RM, MRRM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TZRM, U2RM, U3RM, U5RM, U9RM, UARM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WTRM, WWRM, WXRM, XCRM, XLRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, ZR11, ZR50, ZR51, ZRA0, ZRI0 | Legacy | Pillow | up | 6E 01 00 3F AE | 100 |
+| 4IT, 6I, 7I, A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AXRM, BDRM, BERM, BGRM, BIRM, BLRM, BMRM, CFRM, CWRM, D4RM, D6RM, E1RM, E6RM, EERM, EFRM, EHRM, F0RM, GARM, I0RM, I4RM, I5RM, I6RM, ICRM, IGRM, M3RM, M5RM, MRRM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TZRM, U2RM, U3RM, U5RM, U9RM, UARM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WTRM, WWRM, WXRM, XCRM, XLRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, ZR11, ZR50, ZR51, ZRA0, ZRI0 | Legacy | Pillow | down | 6E 01 00 40 AF | 100 |
+| 4IT, 6I, 7I | Entity | Pillow | up | 6E 01 00 3F AE | 100 |
+| 4IT, 6I, 7I | Entity | Pillow | down | 6E 01 00 40 AF | 100 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Back | up | 6E 01 00 24 93 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Back | down | 6E 01 00 25 94 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Foot | up | 6E 01 00 26 95 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Foot | down | 6E 01 00 27 96 | 150 |
+| 6BRM, BQRM | Legacy | Head Foot Both | up | 6E 01 00 29 98 | 150 |
+| 6BRM, BQRM | Legacy | Head Foot Both | down | 6E 01 00 2A 99 | 150 |
+| 6CRM, 6DRM, B0RM, BKRM, D7RM, M6RM, M7RM, U8RM, V5RM, V6RM, VARM | Legacy | Head Foot Both | press | 6E 01 00 29 98 | 100 |
+| 6HRM, UZRM | Legacy | Reading | recall | 6E 01 00 58 C7 | once |
+| 6HRM, UZRM | Legacy | Yoga | recall | 6E 01 00 59 C8 | once |
+| 6HRM, A3RM, ACRM, ADRM, B4RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BZRM, IGRM, IRRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O6RM, O9RM, OMRM, OSRM, OXRM, OZRM, P1RM, R2RM, R5RM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, UZRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WDRM, WERM, WLRM, WQRM, WSRM, WTRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YORM, YPRM, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | Lounge | save | 6E 01 00 65 D4 | once |
+| 6HRM, UZRM | Legacy | Movie | recall | 6E 01 00 2E 9D | once |
+| 6HRM, UZRM | Legacy | Lactation | recall | 6E 01 00 2F 9E | once |
+| 6HRM, UZRM | Legacy | Anti Snore3 | recall | 6E 01 00 30 9F | once |
+| 6HRM, ABRM, ACRM, ADRM, B9TT, D7RM, I0RM, I4RM, I5RM, M9RM, MLRM, O1RM, OTRM, S9RM, U0RM, U7RM, U8RM, U9RM, UARM, UJRM, UNRM, UZRM, V0RM, V1RM, V6RM, V7RM, VARM, VKRM, YHRM, ZR21, ZR90, ZRI0 | Legacy | Factory Reset | press | 6E 01 00 62 D1 | once |
+| 6HRM, A2RM, A3RM, BZRM, M6RM, MMRM, O1RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM, U1RM, U2RM, UKRM, UZRM, W7RM, WDRM, WERM | Legacy | Massage Head Foot Intensity Inc | press | 6E 01 00 34 A3 | once |
+| 6HRM, A2RM, A3RM, BZRM, M6RM, MMRM, O1RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM, U1RM, U2RM, UKRM, UZRM, W7RM | Legacy | Massage Head Foot Intensity Dec | press | 6E 01 00 35 A4 | once |
+| 7I, A1RM, AARM, AHRM, BDRM, BERM, BIRM, CFRM, D4RM, E1RM, E6RM, EERM, EHRM, GARM, I5RM, O5RM, ORRM, P6RM, T1RM, U3RM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, YARM, YIRM, YORM, YPRM, ZR50, ZRA0 | Legacy | Lumbar | up | 6E 01 00 41 B0 | 100 |
+| 7I, A1RM, AARM, AHRM, BDRM, BERM, BIRM, CFRM, D4RM, E1RM, E6RM, EERM, EHRM, GARM, I5RM, O5RM, ORRM, P6RM, T1RM, U3RM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, YARM, YIRM, YORM, YPRM, ZR50, ZRA0 | Legacy | Lumbar | down | 6E 01 00 42 B1 | 100 |
+| A0RM, A1RM, AARM, AERM, AFRM, BGRM, CFRM, CWRM, D0RM, D1RM, E1RM, F0RM, I1RM, IERM, IGRM, M6RM, M7RM, MARM, O8RM, P1RM, P6RM, T7RM, U4RM, U5RM, URRM, UTRM, UYRM, VBRM, VKRM, VLRM, VPRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VZRM, W6RM, W7RM, W9RM, WHRM, WJRM, WKRM, WLRM, WNRM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YIRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51 | Legacy | Massage Head Foot Both Off | press | 6E 01 00 5E CD | once |
+| A2RM, O4RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Head Foot Speed Inc | press | 6E 01 00 36 A5 | once |
+| A2RM, O4RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Head Foot Speed Dec | press | 6E 01 00 37 A6 | once |
+| A2RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Pulse | press | 6E 01 00 38 A7 | once |
+| A2RM, I0RM, I4RM, I5RM, MLRM, O0RM, O6RM, OMRM, ONRM, OORM, OTRM, OYRM, R6RM, THRM, U9RM, UARM, UJRM, V7RM, ZRI0 | Legacy | Massage Wave | press | 6E 01 00 39 A8 | once |
+| A2RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Constant | press | 6E 01 00 3A A9 | once |
+| A3RM, ACRM, ADRM, B4RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BZRM, IGRM, IRRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O6RM, O9RM, OMRM, ONRM, OORM, OSRM, OXRM, OZRM, P1RM, R2RM, R5RM, TBRM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WDRM, WERM, WLRM, WQRM, WSRM, WTRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YORM, YPRM, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | Lounge | recall | 6E 01 00 59 C8 | once |
+| ACRM, ADRM, BERM, D7RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, R2RM, T9RM, U9RM, UARM, UJRM, ULRM, V7RM, VQRM, W5RM, Y3RM, YGRM | Legacy | Massage Head Intensity Dec | press | 6E 01 00 4D BC | once |
+| ACRM, ADRM, B8TT, B9TT, BERM, D7RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, R2RM, U9RM, UARM, UJRM, V7RM, VQRM, W5RM, Y3RM, YGRM | Legacy | Massage Foot Intensity Dec | press | 6E 01 00 4F BE | once |
+| AERM, AGRM | Legacy | Pillow | up | 6E 01 00 3F AE | 150 |
+| AERM, AGRM | Legacy | Pillow | down | 6E 01 00 40 AF | 150 |
+| AERM, Y1RM, YGRM | Legacy | Head Up Foot Up | press | 6E 01 00 23 92 | once |
+| AERM | Legacy | Lumbar | recall | 6E 01 00 91 00 | once |
+| AERM | Legacy | Lumbar | save | 6E 01 00 92 01 | once |
+| AFRM, AGRM | Legacy | Head Up Foot Up | press | 6E 01 00 23 92 | 150 |
+| AHRM, B9TT, I2RM, I7RM, I8RM, ICRM, IERM, IFRM, IHRM, IIRM, IRRM, O5RM, V9RM, VIRM, VNRM, WIRM, YGRM | Legacy | Massage Head Foot Both On | press | 6E 01 00 5D CC | once |
+| B1RM, I9RM, INRM, O6RM, OMRM, OORM, R6RM, VGRM, WDRM, WERM | Legacy | Massage Head On Off | press | 6E 01 00 32 A1 | once |
+| B1RM, O6RM, OMRM, OORM, R6RM | Legacy | Massage Foot On Off | press | 6E 01 00 33 A2 | once |
+| B1RM, R2RM | Legacy | Massage Intensity3 | press | 6E 01 00 68 D7 | once |
+| B1RM, R2RM | Legacy | Massage Intensity1 | press | 6E 01 00 67 D6 | once |
+| B4RM, B9RM, ISRM, ORRM, P2RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 | Legacy | Pillow Lumbar Both | up | 6E 01 00 43 B2 | 100 |
+| B4RM, B9RM, ISRM, ORRM, P2RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 | Legacy | Pillow Lumbar Both | down | 6E 01 00 44 B3 | 100 |
+| B9TT, BHRM, BIRM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OURM, OWRM, OYRM, P5RM, U9RM, UARM, UJRM, V6RM, V7RM, YERM, YGRM, ZRI0 | Legacy | Massage Off | press | 6E 01 00 47 B6 | once |
+| BGRM, BHRM, BIRM, BLRM, BNRM | Legacy | Massage Head Intensity Inc2 | press | 6E 01 00 A4 13 | once |
+| BGRM, BHRM, BIRM, BLRM, BNRM | Legacy | Massage Foot Intensity Inc2 | press | 6E 01 00 A5 14 | once |
+| BZRM | Legacy | Relax | press | 6E 01 00 70 DF | once |
+| CFRM, E6RM, EERM, GARM, M5RM, U3RM | Legacy | Motor5 | up | 6E 01 00 71 E0 | 100 |
+| CFRM, E6RM, EERM, GARM, M5RM, U3RM | Legacy | Motor5 | down | 6E 01 00 72 E1 | 100 |
+| CFRM, E1RM, EERM, GARM | Legacy | Memory1 | recall | 6E 01 00 2E 9D | once |
+| CXRM, DNRM | Legacy | Movie Watching | recall | 6E 01 00 58 C7 | once |
+| CXRM | Legacy | Yoga | recall | 6E 01 00 2F 9E | once |
+| DFRM, DGRM | Legacy | Yoga | recall | 6E 01 00 30 9F | once |
+| DNRM | Legacy | Xiaofeiyan | recall | 6E 01 00 F0 5F | once |
+| DNRM, DZRM, EARM, EBRM | Legacy | Yoga | save | 6E 01 00 F1 60 | once |
+| DZRM, EARM, EBRM | Legacy | Yoga | recall | 6E 01 00 F0 5F | once |
+| E6RM, M5RM | Legacy | Motor6 | up | 6E 01 00 73 E2 | 100 |
+| E6RM, M5RM | Legacy | Motor6 | down | 6E 01 00 74 E3 | 100 |
+| EARM, EBRM | Legacy | Zero gravity | recall | 6E 01 00 45 B4 | once |
+| EARM, EBRM | Legacy | Movie viewing | recall | 6E 01 00 58 C7 | once |
+| FIRM, FRRM | Legacy | Read | recall | 6E 01 00 F2 61 | once |
+| FIRM, FRRM | Legacy | Read | save | 6E 01 00 F3 62 | once |
+| FIRM, FRRM | Legacy | Recline | recall | 6E 01 00 F6 65 | once |
+| FIRM, FRRM | Legacy | Flat Sleep | save | 6E 01 00 F7 66 | once |
+| FJRM | Legacy | Both massage off | press | 6E 01 00 34 A3 | once |
+| OORM, OURM, OWRM, YFRM, YGRM | Legacy | Head Up Foot Down | press | 6E 01 00 21 90 | once |
+| OURM, OWRM, YFRM, YGRM | Legacy | Head Down Foot Up | press | 6E 01 00 22 91 | once |
+| OWRM, XFRM, XGRM, XLRM, YIRM, YMRM, YNRM, YORM, YPRM | Legacy | Head Up Only | press | 6E 01 00 3D AC | once |
+| OWRM | Legacy | Foot Up Only | press | 6E 01 00 3E AD | once |
+| P2RM, ZR70, ZR80 | Legacy | Pillow Lumbar Both Tilt Up | press | 6E 01 00 5B CA | once |
+| P2RM, ZR70, ZR80 | Legacy | Pillow Lumbar Both Tilt Down | press | 6E 01 00 5C CB | once |
+| P2RM, ZRA0 | Legacy | Ubl Off | press | 6E 01 00 75 E4 | once |
+| R2RM | Legacy | Massage Intensity2 | press | 6E 01 00 AF 1E | once |
+| T3RM | Legacy | Both massage off | press | 6E 01 00 5D CC | once |
+| VRRM | Legacy | Flat2 | press | 6E 01 00 6C DB | once |
+| WYRM | Legacy | Pillow | press | 6E 01 00 3F AE | 100 |
+| Y2RM | Legacy | Head Foot On Off | press | 6E 01 00 6F DE | once |
+| ZQRM | Legacy | Lock | press | 6E 01 00 84 F3 | once |
+
+| Model | Alarm operands | Snore operands | Angle targets | Motor modes |
+|---|---|---|---|---|
+| 3I | 2E |  |  | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 4I |  |  | Back 0..35, Foot 0..30 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 4IT |  |  | Back 0..75, Foot 0..30, Pillow 0..25 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 5I |  |  | Back 0..70, Foot 0..45 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 6BRM |  |  |  |  |
+| 6CRM |  |  |  |  |
+| 6DRM |  |  |  |  |
+| 6ERM |  |  |  |  |
+| 6FRM |  |  |  |  |
+| 6HRM |  |  |  | SINGLE: LEFT, RIGHT |
+| 6I |  |  | Back 0..70, Foot 0..45, Pillow 0..25 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 7I |  |  | Back 0..70, Foot 0..45 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| A0RM |  |  |  |  |
+| A1RM |  |  |  |  |
+| A2RM |  |  |  |  |
+| A3RM |  |  |  |  |
+| A6RM |  |  |  |  |
+| A7RM |  |  |  |  |
+| A8RM |  |  |  |  |
+| A9RM |  |  |  |  |
+| AARM |  |  |  |  |
+| ABRM |  |  |  |  |
+| ACRM |  |  |  |  |
+| ADRM |  |  |  |  |
+| AERM |  |  |  |  |
+| AFRM |  |  |  |  |
+| AGRM |  |  |  |  |
+| AHRM |  |  |  |  |
+| AIRM |  |  |  |  |
+| AJRM |  |  |  |  |
+| AKRM |  |  |  |  |
+| AWRM |  |  |  |  |
+| AXRM |  |  |  |  |
+| B0RM |  |  |  |  |
+| B1RM |  |  |  |  |
+| B2RM |  |  |  |  |
+| B3RM |  |  |  |  |
+| B4RM |  |  |  |  |
+| B5RM |  |  |  |  |
+| B6RM |  |  |  |  |
+| B6RU |  |  |  |  |
+| B7RM |  |  |  |  |
+| B8RM |  |  |  |  |
+| B8TT |  |  |  |  |
+| B9RM |  |  |  |  |
+| B9TT |  |  |  |  |
+| BARM |  |  |  |  |
+| BBRM |  |  |  |  |
+| BCRM |  |  |  |  |
+| BDRM |  |  |  |  |
+| BERM |  |  |  |  |
+| BFRM |  |  |  |  |
+| BGRM |  |  |  |  |
+| BHRM |  |  |  |  |
+| BIRM |  |  |  |  |
+| BJRM |  |  |  |  |
+| BKRM |  |  |  |  |
+| BLRM |  |  |  |  |
+| BMRM |  |  |  |  |
+| BNRM |  |  |  |  |
+| BPRM |  |  |  |  |
+| BQRM |  |  |  |  |
+| BZRM |  |  |  |  |
+| CERM | 58, 45, 46, 2E, 2F |  | Back 0..58, Foot 0..42 |  |
+| CFRM | 46, 45, 2E | 46, 45 |  |  |
+| CWRM |  |  |  |  |
+| CXRM | 45, 46, 58, 2F, 2E |  |  |  |
+| D0RM |  |  |  |  |
+| D1RM |  |  |  |  |
+| D2RM |  |  |  |  |
+| D4RM |  |  |  |  |
+| D5RM |  |  |  |  |
+| D6RM |  |  |  |  |
+| D7RM |  |  |  |  |
+| DFRM | 58, 46, 45, 2E, 4C, 4E |  |  |  |
+| DGRM | 46, 45 |  |  |  |
+| DNRM |  |  |  |  |
+| DZRM | 45, 46, 58, F0, 2E |  |  |  |
+| E1RM | 46, 45, 2E | 46, 45 |  |  |
+| E6RM |  |  |  |  |
+| EARM | 45, 46, 58, F0, 2E, 2F |  |  |  |
+| EBRM | 45, 46, 58, F0, 2E, 2F |  |  | GROUP_SPLIT: LEFT, RIGHT |
+| EERM | 2E |  |  |  |
+| EFRM | 45, 46, 58, 2E, 2F |  |  |  |
+| EHRM |  |  |  |  |
+| ELRM | 58, 45, 46, 2E, 2F |  | Back 0..59, Foot 0..34 |  |
+| F0RM |  |  |  |  |
+| FIRM |  |  |  |  |
+| FJRM |  |  |  |  |
+| FRRM |  |  |  |  |
+| GARM | 2E | 46 |  |  |
+| GMRM |  |  |  |  |
+| I0RM |  |  |  |  |
+| I1RM |  |  |  |  |
+| I2RM |  |  |  |  |
+| I3RM |  |  |  |  |
+| I4RM |  |  |  |  |
+| I5RM |  |  |  |  |
+| I6RM |  |  |  |  |
+| I7RM |  |  |  |  |
+| I8RM |  |  |  |  |
+| I9RM |  |  |  |  |
+| IARM |  |  |  |  |
+| IBRM |  |  |  |  |
+| ICRM |  |  |  |  |
+| IDRM |  |  |  |  |
+| IERM |  |  |  |  |
+| IFRM |  |  |  |  |
+| IGRM |  |  |  |  |
+| IHRM |  |  |  |  |
+| IIRM |  |  |  |  |
+| IJRM |  |  |  |  |
+| IKRM |  |  |  |  |
+| ILRM |  |  |  |  |
+| IMRM |  |  |  |  |
+| INRM |  |  |  |  |
+| IORM |  |  |  |  |
+| IPRM |  |  |  |  |
+| IQRM |  |  |  |  |
+| IRRM |  |  |  |  |
+| ISRM |  |  |  |  |
+| M3RM |  |  |  |  |
+| M4RM |  |  |  |  |
+| M5RM |  |  |  |  |
+| M6RM |  |  |  |  |
+| M7RM |  |  |  |  |
+| M9RM |  |  |  |  |
+| MARM |  |  |  |  |
+| MLRM |  |  |  |  |
+| MMRM |  |  |  |  |
+| MRRM |  |  |  |  |
+| O0RM |  |  |  |  |
+| O1RM |  |  |  |  |
+| O2RM |  |  |  |  |
+| O3RM |  |  |  |  |
+| O4RM |  |  |  |  |
+| O5RM |  |  |  |  |
+| O6RM |  |  |  |  |
+| O7RM |  |  |  |  |
+| O8RM |  |  |  |  |
+| O9RM | 58, 45, 59, 2E, 2F, 4C, 4E |  |  |  |
+| OARM |  |  |  |  |
+| OMRM |  |  |  |  |
+| ONRM |  |  |  |  |
+| OORM |  |  |  |  |
+| OQRM |  |  |  |  |
+| ORRM |  |  |  |  |
+| OSRM |  |  |  |  |
+| OTRM | 45, 46, 2E, 4C, 4E |  |  |  |
+| OURM |  |  |  |  |
+| OVRM |  |  |  |  |
+| OWRM |  |  |  |  |
+| OXRM |  |  |  |  |
+| OYRM |  |  |  |  |
+| OZRM |  |  |  |  |
+| P0RM |  |  |  |  |
+| P1RM | 58, 45, 59, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P2RM |  |  |  |  |
+| P3RM |  |  |  |  |
+| P4RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P5RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P6RM |  |  |  |  |
+| P9RM |  |  |  |  |
+| R2RM |  |  |  |  |
+| R5RM | 58, 45, 59, 2E, 2F |  |  |  |
+| R6RM |  |  |  |  |
+| S9RM |  |  |  |  |
+| SARM |  |  |  |  |
+| T0RM |  |  |  |  |
+| T1RM |  |  |  |  |
+| T2RM |  |  |  |  |
+| T3RM |  |  |  |  |
+| T4RM |  |  |  |  |
+| T5RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| T6RM |  |  |  |  |
+| T7RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| T8RM |  |  |  |  |
+| T9RM | 45, 46, 2E, 4C, 4D |  |  |  |
+| TARM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| TBRM |  |  |  |  |
+| THRM |  |  |  |  |
+| TLRM |  |  |  |  |
+| TWRM |  |  |  |  |
+| TZRM |  |  |  |  |
+| U0RM |  |  |  |  |
+| U1RM |  |  |  |  |
+| U2RM |  |  |  |  |
+| U3RM |  |  |  |  |
+| U4RM |  |  |  |  |
+| U5RM |  |  |  |  |
+| U6RM | 45, 46, 2E |  |  |  |
+| U7RM |  |  |  |  |
+| U8RM |  |  |  |  |
+| U9RM |  |  |  |  |
+| UARM |  |  |  |  |
+| UCRM |  |  |  |  |
+| UDRM |  |  |  |  |
+| UERM |  |  |  |  |
+| UFRM | 58, 45, 59, 2E, 2F, 4C, 4E |  |  |  |
+| UGRM |  |  |  |  |
+| UHRM |  |  |  |  |
+| UIRM |  |  |  |  |
+| UJRM |  |  |  |  |
+| UKRM |  |  |  |  |
+| ULRM |  |  |  |  |
+| UMRM |  |  |  |  |
+| UNRM |  |  |  |  |
+| UORM |  |  |  |  |
+| UPRM |  |  |  |  |
+| UQRM |  |  |  |  |
+| URRM | 46, 2E, 4C, 4E |  |  |  |
+| UTRM |  |  |  |  |
+| UURM |  |  |  |  |
+| UVRM | 58, 45, 46, 2E, 2F |  |  |  |
+| UWRM |  |  |  |  |
+| UXRM |  |  |  |  |
+| UYRM |  |  |  |  |
+| UZRM |  |  |  |  |
+| V0RM |  |  |  |  |
+| V1RM | 45, 46, 2E |  |  |  |
+| V2RM |  |  |  |  |
+| V3RM |  |  |  |  |
+| V4RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| V5RM |  |  |  |  |
+| V6RM |  |  |  |  |
+| V7RM |  |  |  |  |
+| V8RM |  |  |  |  |
+| V9RM |  |  |  |  |
+| VARM |  |  |  |  |
+| VBRM |  |  |  |  |
+| VCRM |  |  |  |  |
+| VDRM |  |  |  |  |
+| VERM |  |  |  |  |
+| VFRM |  |  |  |  |
+| VGRM |  |  |  |  |
+| VHRM |  |  |  |  |
+| VIRM |  |  |  |  |
+| VJRM |  |  |  |  |
+| VKRM |  |  |  |  |
+| VLRM |  |  |  |  |
+| VMRM |  |  |  |  |
+| VNRM |  |  |  |  |
+| VORM |  |  |  |  |
+| VPRM |  |  |  |  |
+| VQRM |  |  |  |  |
+| VRRM |  |  |  |  |
+| VSRM |  |  |  |  |
+| VTRM |  |  |  |  |
+| VURM |  |  |  |  |
+| VVRM |  |  |  |  |
+| VWRM |  |  |  |  |
+| VXRM |  |  |  |  |
+| VYRM |  |  |  |  |
+| VZRM |  |  |  |  |
+| W0RM |  |  |  |  |
+| W1RM |  |  |  |  |
+| W2RM | 58, 45, 59, 2E, 2F |  |  |  |
+| W3RM |  |  |  |  |
+| W4RM |  |  |  |  |
+| W5RM |  |  |  |  |
+| W6RM |  |  |  |  |
+| W7RM |  |  |  |  |
+| W8RM |  |  |  |  |
+| W9RM |  |  |  |  |
+| WARM |  |  |  |  |
+| WBRM |  |  |  |  |
+| WCRM |  |  |  |  |
+| WDRM |  |  |  |  |
+| WERM |  |  |  |  |
+| WGRM |  |  |  |  |
+| WHRM |  |  |  |  |
+| WIRM |  |  |  |  |
+| WJRM | 58, 45, 46, 2E, 4C, 4E |  |  |  |
+| WKRM | 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WLRM | 58, 45, 46, 59, 2F, 30, 4C, 4E |  |  |  |
+| WMRM |  |  |  |  |
+| WNRM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WORM |  |  |  |  |
+| WPRM |  |  |  |  |
+| WQRM |  |  |  |  |
+| WRRM |  |  |  |  |
+| WSRM | 58, 45, 59, 2E, 2F |  |  |  |
+| WTRM |  |  |  |  |
+| WURM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WVRM |  |  |  |  |
+| WWRM |  |  |  |  |
+| WXRM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WYRM |  |  |  |  |
+| WZRM |  |  |  |  |
+| X1RM | 45, 46 |  |  |  |
+| X2RM |  |  |  |  |
+| XCRM | 45, 46, 4C, 4E |  |  |  |
+| XFRM | 58, 45, 46, 4C, 4E |  |  |  |
+| XGRM | 45, 46, 2E |  |  |  |
+| XLRM | 58, 45, 46, 4C, 4E |  |  |  |
+| Y0RM |  |  |  |  |
+| Y1RM | 45, 46, 2E |  |  |  |
+| Y2RM |  |  |  |  |
+| Y3RM |  |  |  |  |
+| Y4RM | 58, 45, 46, 59, 2F, 30 |  |  |  |
+| Y5RM |  |  |  |  |
+| Y6RM | 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| Y7RM | 45, 46, 2E |  |  |  |
+| Y8RM | 58, 45, 46, 59, 2E, 2F, 4C, 4E |  |  |  |
+| Y9RM | 45, 46, 2E |  |  |  |
+| YARM |  |  |  |  |
+| YBRM |  |  |  |  |
+| YCRM |  |  |  |  |
+| YDRM |  |  |  |  |
+| YERM | 58, 45, 46, 59, 2E, 2F, 4C, 4E |  |  |  |
+| YFRM |  |  |  |  |
+| YGRM |  |  |  |  |
+| YHRM |  |  |  |  |
+| YIRM | B0, B1 |  |  |  |
+| YJRM |  |  |  |  |
+| YKRM |  |  |  |  |
+| YMRM |  |  |  |  |
+| YNRM |  |  |  |  |
+| YORM | B0, B1 |  |  |  |
+| YPRM | B0, B1 |  |  |  |
+| ZQRM | 30, B2 |  |  |  |
+| ZR00 |  |  |  |  |
+| ZR01 |  |  |  |  |
+| ZR10 |  |  |  |  |
+| ZR11 |  |  |  |  |
+| ZR12 |  |  |  |  |
+| ZR20 |  |  |  |  |
+| ZR21 |  |  |  |  |
+| ZR30 |  |  |  |  |
+| ZR40 |  |  |  |  |
+| ZR50 |  |  |  |  |
+| ZR51 |  |  |  |  |
+| ZR60 |  |  |  |  |
+| ZR70 |  |  |  |  |
+| ZR80 |  |  |  |  |
+| ZR90 |  |  |  |  |
+| ZRA0 |  |  |  |  |
+| ZRA1 |  |  |  |  |
+| ZRA2 |  |  |  |  |
+| ZRI0 |  |  |  |  |
+<!-- /generated -->

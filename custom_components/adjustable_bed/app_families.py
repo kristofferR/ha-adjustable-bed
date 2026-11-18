@@ -1419,6 +1419,7 @@ RICHMAT_FAMILY: Final = AppFamily(
     apps=(
         "RMControl, MLILY Control, Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed, "
         "RUF | Betten (Motor 2), W.Silver Products, AMERICANSTAR, Bailey's Bed Control, TX, "
+        "Nisco, MLILY Supreme, "
         "Avocado Eco Base, CoasterSleep, Forty Winks, Milemont, Superior, Luuna Rise, Power Cool Sleep System, "
         "Lady Americana, ACAA, STA Homecare, Zero Gravity, SleepFunction and "
         "SVEN & SON apps, Luuna +, SonicSleep / 소닉슬립, and Richmat remotes"

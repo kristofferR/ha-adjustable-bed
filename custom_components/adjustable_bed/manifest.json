@@ -183,19 +183,145 @@
       "local_name": "6BRM*"
     },
     {
+      "local_name": "6BRm*"
+    },
+    {
+      "local_name": "6BrM*"
+    },
+    {
+      "local_name": "6Brm*"
+    },
+    {
       "local_name": "6CRM*"
+    },
+    {
+      "local_name": "6CRm*"
+    },
+    {
+      "local_name": "6CrM*"
+    },
+    {
+      "local_name": "6Crm*"
     },
     {
       "local_name": "6DRM*"
     },
     {
+      "local_name": "6DRm*"
+    },
+    {
+      "local_name": "6DrM*"
+    },
+    {
+      "local_name": "6Drm*"
+    },
+    {
       "local_name": "6ERM*"
+    },
+    {
+      "local_name": "6ERm*"
+    },
+    {
+      "local_name": "6ErM*"
+    },
+    {
+      "local_name": "6Erm*"
     },
     {
       "local_name": "6FRM*"
     },
     {
+      "local_name": "6FRm*"
+    },
+    {
+      "local_name": "6FrM*"
+    },
+    {
+      "local_name": "6Frm*"
+    },
+    {
       "local_name": "6HRM*"
+    },
+    {
+      "local_name": "6HRm*"
+    },
+    {
+      "local_name": "6HrM*"
+    },
+    {
+      "local_name": "6Hrm*"
+    },
+    {
+      "local_name": "6bRM*"
+    },
+    {
+      "local_name": "6bRm*"
+    },
+    {
+      "local_name": "6brM*"
+    },
+    {
+      "local_name": "6brm*"
+    },
+    {
+      "local_name": "6cRM*"
+    },
+    {
+      "local_name": "6cRm*"
+    },
+    {
+      "local_name": "6crM*"
+    },
+    {
+      "local_name": "6crm*"
+    },
+    {
+      "local_name": "6dRM*"
+    },
+    {
+      "local_name": "6dRm*"
+    },
+    {
+      "local_name": "6drM*"
+    },
+    {
+      "local_name": "6drm*"
+    },
+    {
+      "local_name": "6eRM*"
+    },
+    {
+      "local_name": "6eRm*"
+    },
+    {
+      "local_name": "6erM*"
+    },
+    {
+      "local_name": "6erm*"
+    },
+    {
+      "local_name": "6fRM*"
+    },
+    {
+      "local_name": "6fRm*"
+    },
+    {
+      "local_name": "6frM*"
+    },
+    {
+      "local_name": "6frm*"
+    },
+    {
+      "local_name": "6hRM*"
+    },
+    {
+      "local_name": "6hRm*"
+    },
+    {
+      "local_name": "6hrM*"
+    },
+    {
+      "local_name": "6hrm*"
     },
     {
       "local_name": "7IRM*"
@@ -213,7 +339,25 @@
       "local_name": "A0RN*"
     },
     {
+      "local_name": "A0Rm*"
+    },
+    {
+      "local_name": "A0rM*"
+    },
+    {
+      "local_name": "A0rm*"
+    },
+    {
       "local_name": "A1RM*"
+    },
+    {
+      "local_name": "A1Rm*"
+    },
+    {
+      "local_name": "A1rM*"
+    },
+    {
+      "local_name": "A1rm*"
     },
     {
       "local_name": "A2RM*"
@@ -222,10 +366,28 @@
       "local_name": "A2RN*"
     },
     {
+      "local_name": "A2Rm*"
+    },
+    {
+      "local_name": "A2rM*"
+    },
+    {
+      "local_name": "A2rm*"
+    },
+    {
       "local_name": "A3RM*"
     },
     {
       "local_name": "A3RN*"
+    },
+    {
+      "local_name": "A3Rm*"
+    },
+    {
+      "local_name": "A3rM*"
+    },
+    {
+      "local_name": "A3rm*"
     },
     {
       "local_name": "A4RN*"
@@ -240,10 +402,28 @@
       "local_name": "A6RN*"
     },
     {
+      "local_name": "A6Rm*"
+    },
+    {
+      "local_name": "A6rM*"
+    },
+    {
+      "local_name": "A6rm*"
+    },
+    {
       "local_name": "A7RM*"
     },
     {
       "local_name": "A7RN*"
+    },
+    {
+      "local_name": "A7Rm*"
+    },
+    {
+      "local_name": "A7rM*"
+    },
+    {
+      "local_name": "A7rm*"
     },
     {
       "local_name": "A8RM*"
@@ -252,10 +432,28 @@
       "local_name": "A8RN*"
     },
     {
+      "local_name": "A8Rm*"
+    },
+    {
+      "local_name": "A8rM*"
+    },
+    {
+      "local_name": "A8rm*"
+    },
+    {
       "local_name": "A9RM*"
     },
     {
       "local_name": "A9RN*"
+    },
+    {
+      "local_name": "A9Rm*"
+    },
+    {
+      "local_name": "A9rM*"
+    },
+    {
+      "local_name": "A9rm*"
     },
     {
       "local_name": "AARM*"
@@ -264,10 +462,28 @@
       "local_name": "AARN*"
     },
     {
+      "local_name": "AARm*"
+    },
+    {
+      "local_name": "AArM*"
+    },
+    {
+      "local_name": "AArm*"
+    },
+    {
       "local_name": "ABRM*"
     },
     {
       "local_name": "ABRN*"
+    },
+    {
+      "local_name": "ABRm*"
+    },
+    {
+      "local_name": "ABrM*"
+    },
+    {
+      "local_name": "ABrm*"
     },
     {
       "local_name": "ACRM*"
@@ -276,10 +492,28 @@
       "local_name": "ACRN*"
     },
     {
+      "local_name": "ACRm*"
+    },
+    {
+      "local_name": "ACrM*"
+    },
+    {
+      "local_name": "ACrm*"
+    },
+    {
       "local_name": "ADRM*"
     },
     {
       "local_name": "ADRN*"
+    },
+    {
+      "local_name": "ADRm*"
+    },
+    {
+      "local_name": "ADrM*"
+    },
+    {
+      "local_name": "ADrm*"
     },
     {
       "local_name": "AERM*"
@@ -288,13 +522,40 @@
       "local_name": "AERN*"
     },
     {
+      "local_name": "AERm*"
+    },
+    {
+      "local_name": "AErM*"
+    },
+    {
+      "local_name": "AErm*"
+    },
+    {
       "local_name": "AFRM*"
     },
     {
       "local_name": "AFRN*"
     },
     {
+      "local_name": "AFRm*"
+    },
+    {
+      "local_name": "AFrM*"
+    },
+    {
+      "local_name": "AFrm*"
+    },
+    {
       "local_name": "AGRM*"
+    },
+    {
+      "local_name": "AGRm*"
+    },
+    {
+      "local_name": "AGrM*"
+    },
+    {
+      "local_name": "AGrm*"
     },
     {
       "local_name": "AHF*"
@@ -303,10 +564,28 @@
       "local_name": "AHRM*"
     },
     {
+      "local_name": "AHRm*"
+    },
+    {
+      "local_name": "AHrM*"
+    },
+    {
+      "local_name": "AHrm*"
+    },
+    {
       "local_name": "AIRM*"
     },
     {
       "local_name": "AIRN*"
+    },
+    {
+      "local_name": "AIRm*"
+    },
+    {
+      "local_name": "AIrM*"
+    },
+    {
+      "local_name": "AIrm*"
     },
     {
       "local_name": "AJRM*"
@@ -315,10 +594,28 @@
       "local_name": "AJRN*"
     },
     {
+      "local_name": "AJRm*"
+    },
+    {
+      "local_name": "AJrM*"
+    },
+    {
+      "local_name": "AJrm*"
+    },
+    {
       "local_name": "AKRM*"
     },
     {
       "local_name": "AKRN*"
+    },
+    {
+      "local_name": "AKRm*"
+    },
+    {
+      "local_name": "AKrM*"
+    },
+    {
+      "local_name": "AKrm*"
     },
     {
       "local_name": "ALRM*"
@@ -387,10 +684,28 @@
       "local_name": "AWRN*"
     },
     {
+      "local_name": "AWRm*"
+    },
+    {
+      "local_name": "AWrM*"
+    },
+    {
+      "local_name": "AWrm*"
+    },
+    {
       "local_name": "AXRM*"
     },
     {
       "local_name": "AXRN*"
+    },
+    {
+      "local_name": "AXRm*"
+    },
+    {
+      "local_name": "AXrM*"
+    },
+    {
+      "local_name": "AXrm*"
     },
     {
       "local_name": "AYRM*"
@@ -405,7 +720,172 @@
       "local_name": "AZRN*"
     },
     {
+      "local_name": "AaRM*"
+    },
+    {
+      "local_name": "AaRm*"
+    },
+    {
+      "local_name": "AarM*"
+    },
+    {
+      "local_name": "Aarm*"
+    },
+    {
+      "local_name": "AbRM*"
+    },
+    {
+      "local_name": "AbRm*"
+    },
+    {
+      "local_name": "AbrM*"
+    },
+    {
+      "local_name": "Abrm*"
+    },
+    {
+      "local_name": "AcRM*"
+    },
+    {
+      "local_name": "AcRm*"
+    },
+    {
+      "local_name": "AcrM*"
+    },
+    {
+      "local_name": "Acrm*"
+    },
+    {
+      "local_name": "AdRM*"
+    },
+    {
+      "local_name": "AdRm*"
+    },
+    {
+      "local_name": "AdrM*"
+    },
+    {
+      "local_name": "Adrm*"
+    },
+    {
+      "local_name": "AeRM*"
+    },
+    {
+      "local_name": "AeRm*"
+    },
+    {
+      "local_name": "AerM*"
+    },
+    {
+      "local_name": "Aerm*"
+    },
+    {
+      "local_name": "AfRM*"
+    },
+    {
+      "local_name": "AfRm*"
+    },
+    {
+      "local_name": "AfrM*"
+    },
+    {
+      "local_name": "Afrm*"
+    },
+    {
+      "local_name": "AgRM*"
+    },
+    {
+      "local_name": "AgRm*"
+    },
+    {
+      "local_name": "AgrM*"
+    },
+    {
+      "local_name": "Agrm*"
+    },
+    {
+      "local_name": "AhRM*"
+    },
+    {
+      "local_name": "AhRm*"
+    },
+    {
+      "local_name": "AhrM*"
+    },
+    {
+      "local_name": "Ahrm*"
+    },
+    {
+      "local_name": "AiRM*"
+    },
+    {
+      "local_name": "AiRm*"
+    },
+    {
+      "local_name": "AirM*"
+    },
+    {
+      "local_name": "Airm*"
+    },
+    {
+      "local_name": "AjRM*"
+    },
+    {
+      "local_name": "AjRm*"
+    },
+    {
+      "local_name": "AjrM*"
+    },
+    {
+      "local_name": "Ajrm*"
+    },
+    {
+      "local_name": "AkRM*"
+    },
+    {
+      "local_name": "AkRm*"
+    },
+    {
+      "local_name": "AkrM*"
+    },
+    {
+      "local_name": "Akrm*"
+    },
+    {
+      "local_name": "AwRM*"
+    },
+    {
+      "local_name": "AwRm*"
+    },
+    {
+      "local_name": "AwrM*"
+    },
+    {
+      "local_name": "Awrm*"
+    },
+    {
+      "local_name": "AxRM*"
+    },
+    {
+      "local_name": "AxRm*"
+    },
+    {
+      "local_name": "AxrM*"
+    },
+    {
+      "local_name": "Axrm*"
+    },
+    {
       "local_name": "B0RM*"
+    },
+    {
+      "local_name": "B0Rm*"
+    },
+    {
+      "local_name": "B0rM*"
+    },
+    {
+      "local_name": "B0rm*"
     },
     {
       "local_name": "B1RM*"
@@ -414,10 +894,28 @@
       "local_name": "B1RN*"
     },
     {
+      "local_name": "B1Rm*"
+    },
+    {
+      "local_name": "B1rM*"
+    },
+    {
+      "local_name": "B1rm*"
+    },
+    {
       "local_name": "B2RM*"
     },
     {
       "local_name": "B2RN*"
+    },
+    {
+      "local_name": "B2Rm*"
+    },
+    {
+      "local_name": "B2rM*"
+    },
+    {
+      "local_name": "B2rm*"
     },
     {
       "local_name": "B3RM*"
@@ -426,10 +924,28 @@
       "local_name": "B3RN*"
     },
     {
+      "local_name": "B3Rm*"
+    },
+    {
+      "local_name": "B3rM*"
+    },
+    {
+      "local_name": "B3rm*"
+    },
+    {
       "local_name": "B4RM*"
     },
     {
       "local_name": "B4RN*"
+    },
+    {
+      "local_name": "B4Rm*"
+    },
+    {
+      "local_name": "B4rM*"
+    },
+    {
+      "local_name": "B4rm*"
     },
     {
       "local_name": "B5RM*"
@@ -438,10 +954,37 @@
       "local_name": "B5RN*"
     },
     {
+      "local_name": "B5Rm*"
+    },
+    {
+      "local_name": "B5rM*"
+    },
+    {
+      "local_name": "B5rm*"
+    },
+    {
       "local_name": "B6RM*"
     },
     {
       "local_name": "B6RU*"
+    },
+    {
+      "local_name": "B6Rm*"
+    },
+    {
+      "local_name": "B6Ru*"
+    },
+    {
+      "local_name": "B6rM*"
+    },
+    {
+      "local_name": "B6rU*"
+    },
+    {
+      "local_name": "B6rm*"
+    },
+    {
+      "local_name": "B6ru*"
     },
     {
       "local_name": "B7RM*"
@@ -450,13 +993,40 @@
       "local_name": "B7RN*"
     },
     {
+      "local_name": "B7Rm*"
+    },
+    {
+      "local_name": "B7rM*"
+    },
+    {
+      "local_name": "B7rm*"
+    },
+    {
       "local_name": "B8RM*"
     },
     {
       "local_name": "B8RN*"
     },
     {
+      "local_name": "B8Rm*"
+    },
+    {
       "local_name": "B8TT*"
+    },
+    {
+      "local_name": "B8Tt*"
+    },
+    {
+      "local_name": "B8rM*"
+    },
+    {
+      "local_name": "B8rm*"
+    },
+    {
+      "local_name": "B8tT*"
+    },
+    {
+      "local_name": "B8tt*"
     },
     {
       "local_name": "B9RM*"
@@ -465,7 +1035,25 @@
       "local_name": "B9RN*"
     },
     {
+      "local_name": "B9Rm*"
+    },
+    {
       "local_name": "B9TT*"
+    },
+    {
+      "local_name": "B9Tt*"
+    },
+    {
+      "local_name": "B9rM*"
+    },
+    {
+      "local_name": "B9rm*"
+    },
+    {
+      "local_name": "B9tT*"
+    },
+    {
+      "local_name": "B9tt*"
     },
     {
       "local_name": "BARM*"
@@ -474,10 +1062,28 @@
       "local_name": "BARN*"
     },
     {
+      "local_name": "BARm*"
+    },
+    {
+      "local_name": "BArM*"
+    },
+    {
+      "local_name": "BArm*"
+    },
+    {
       "local_name": "BBRM*"
     },
     {
       "local_name": "BBRN*"
+    },
+    {
+      "local_name": "BBRm*"
+    },
+    {
+      "local_name": "BBrM*"
+    },
+    {
+      "local_name": "BBrm*"
     },
     {
       "local_name": "BCRM*"
@@ -486,10 +1092,28 @@
       "local_name": "BCRN*"
     },
     {
+      "local_name": "BCRm*"
+    },
+    {
+      "local_name": "BCrM*"
+    },
+    {
+      "local_name": "BCrm*"
+    },
+    {
       "local_name": "BDRM*"
     },
     {
       "local_name": "BDRN*"
+    },
+    {
+      "local_name": "BDRm*"
+    },
+    {
+      "local_name": "BDrM*"
+    },
+    {
+      "local_name": "BDrm*"
     },
     {
       "local_name": "BED-*"
@@ -507,10 +1131,28 @@
       "local_name": "BERN*"
     },
     {
+      "local_name": "BERm*"
+    },
+    {
+      "local_name": "BErM*"
+    },
+    {
+      "local_name": "BErm*"
+    },
+    {
       "local_name": "BFRM*"
     },
     {
       "local_name": "BFRN*"
+    },
+    {
+      "local_name": "BFRm*"
+    },
+    {
+      "local_name": "BFrM*"
+    },
+    {
+      "local_name": "BFrm*"
     },
     {
       "local_name": "BGRM*"
@@ -519,10 +1161,28 @@
       "local_name": "BGRN*"
     },
     {
+      "local_name": "BGRm*"
+    },
+    {
+      "local_name": "BGrM*"
+    },
+    {
+      "local_name": "BGrm*"
+    },
+    {
       "local_name": "BHRM*"
     },
     {
       "local_name": "BHRN*"
+    },
+    {
+      "local_name": "BHRm*"
+    },
+    {
+      "local_name": "BHrM*"
+    },
+    {
+      "local_name": "BHrm*"
     },
     {
       "local_name": "BIRM*"
@@ -531,7 +1191,25 @@
       "local_name": "BIRN*"
     },
     {
+      "local_name": "BIRm*"
+    },
+    {
+      "local_name": "BIrM*"
+    },
+    {
+      "local_name": "BIrm*"
+    },
+    {
       "local_name": "BJRM*"
+    },
+    {
+      "local_name": "BJRm*"
+    },
+    {
+      "local_name": "BJrM*"
+    },
+    {
+      "local_name": "BJrm*"
     },
     {
       "local_name": "BKRM*"
@@ -540,10 +1218,28 @@
       "local_name": "BKRN*"
     },
     {
+      "local_name": "BKRm*"
+    },
+    {
+      "local_name": "BKrM*"
+    },
+    {
+      "local_name": "BKrm*"
+    },
+    {
       "local_name": "BLRM*"
     },
     {
       "local_name": "BLRN*"
+    },
+    {
+      "local_name": "BLRm*"
+    },
+    {
+      "local_name": "BLrM*"
+    },
+    {
+      "local_name": "BLrm*"
     },
     {
       "local_name": "BMRM*"
@@ -552,10 +1248,28 @@
       "local_name": "BMRN*"
     },
     {
+      "local_name": "BMRm*"
+    },
+    {
+      "local_name": "BMrM*"
+    },
+    {
+      "local_name": "BMrm*"
+    },
+    {
       "local_name": "BNRM*"
     },
     {
       "local_name": "BNRN*"
+    },
+    {
+      "local_name": "BNRm*"
+    },
+    {
+      "local_name": "BNrM*"
+    },
+    {
+      "local_name": "BNrm*"
     },
     {
       "local_name": "BORM*"
@@ -570,7 +1284,25 @@
       "local_name": "BPRN*"
     },
     {
+      "local_name": "BPRm*"
+    },
+    {
+      "local_name": "BPrM*"
+    },
+    {
+      "local_name": "BPrm*"
+    },
+    {
       "local_name": "BQRM*"
+    },
+    {
+      "local_name": "BQRm*"
+    },
+    {
+      "local_name": "BQrM*"
+    },
+    {
+      "local_name": "BQrm*"
     },
     {
       "local_name": "BRRM*"
@@ -628,7 +1360,220 @@
       "local_name": "BZRN*"
     },
     {
+      "local_name": "BZRm*"
+    },
+    {
+      "local_name": "BZrM*"
+    },
+    {
+      "local_name": "BZrm*"
+    },
+    {
+      "local_name": "BaRM*"
+    },
+    {
+      "local_name": "BaRm*"
+    },
+    {
+      "local_name": "BarM*"
+    },
+    {
+      "local_name": "Barm*"
+    },
+    {
+      "local_name": "BbRM*"
+    },
+    {
+      "local_name": "BbRm*"
+    },
+    {
+      "local_name": "BbrM*"
+    },
+    {
+      "local_name": "Bbrm*"
+    },
+    {
+      "local_name": "BcRM*"
+    },
+    {
+      "local_name": "BcRm*"
+    },
+    {
+      "local_name": "BcrM*"
+    },
+    {
+      "local_name": "Bcrm*"
+    },
+    {
+      "local_name": "BdRM*"
+    },
+    {
+      "local_name": "BdRm*"
+    },
+    {
+      "local_name": "BdrM*"
+    },
+    {
+      "local_name": "Bdrm*"
+    },
+    {
+      "local_name": "BeRM*"
+    },
+    {
+      "local_name": "BeRm*"
+    },
+    {
       "local_name": "Bed*"
+    },
+    {
+      "local_name": "BerM*"
+    },
+    {
+      "local_name": "Berm*"
+    },
+    {
+      "local_name": "BfRM*"
+    },
+    {
+      "local_name": "BfRm*"
+    },
+    {
+      "local_name": "BfrM*"
+    },
+    {
+      "local_name": "Bfrm*"
+    },
+    {
+      "local_name": "BgRM*"
+    },
+    {
+      "local_name": "BgRm*"
+    },
+    {
+      "local_name": "BgrM*"
+    },
+    {
+      "local_name": "Bgrm*"
+    },
+    {
+      "local_name": "BhRM*"
+    },
+    {
+      "local_name": "BhRm*"
+    },
+    {
+      "local_name": "BhrM*"
+    },
+    {
+      "local_name": "Bhrm*"
+    },
+    {
+      "local_name": "BiRM*"
+    },
+    {
+      "local_name": "BiRm*"
+    },
+    {
+      "local_name": "BirM*"
+    },
+    {
+      "local_name": "Birm*"
+    },
+    {
+      "local_name": "BjRM*"
+    },
+    {
+      "local_name": "BjRm*"
+    },
+    {
+      "local_name": "BjrM*"
+    },
+    {
+      "local_name": "Bjrm*"
+    },
+    {
+      "local_name": "BkRM*"
+    },
+    {
+      "local_name": "BkRm*"
+    },
+    {
+      "local_name": "BkrM*"
+    },
+    {
+      "local_name": "Bkrm*"
+    },
+    {
+      "local_name": "BlRM*"
+    },
+    {
+      "local_name": "BlRm*"
+    },
+    {
+      "local_name": "BlrM*"
+    },
+    {
+      "local_name": "Blrm*"
+    },
+    {
+      "local_name": "BmRM*"
+    },
+    {
+      "local_name": "BmRm*"
+    },
+    {
+      "local_name": "BmrM*"
+    },
+    {
+      "local_name": "Bmrm*"
+    },
+    {
+      "local_name": "BnRM*"
+    },
+    {
+      "local_name": "BnRm*"
+    },
+    {
+      "local_name": "BnrM*"
+    },
+    {
+      "local_name": "Bnrm*"
+    },
+    {
+      "local_name": "BpRM*"
+    },
+    {
+      "local_name": "BpRm*"
+    },
+    {
+      "local_name": "BprM*"
+    },
+    {
+      "local_name": "Bprm*"
+    },
+    {
+      "local_name": "BqRM*"
+    },
+    {
+      "local_name": "BqRm*"
+    },
+    {
+      "local_name": "BqrM*"
+    },
+    {
+      "local_name": "Bqrm*"
+    },
+    {
+      "local_name": "BzRM*"
+    },
+    {
+      "local_name": "BzRm*"
+    },
+    {
+      "local_name": "BzrM*"
+    },
+    {
+      "local_name": "Bzrm*"
     },
     {
       "local_name": "C0RM*"
@@ -718,10 +1663,28 @@
       "local_name": "CERN*"
     },
     {
+      "local_name": "CERm*"
+    },
+    {
+      "local_name": "CErM*"
+    },
+    {
+      "local_name": "CErm*"
+    },
+    {
       "local_name": "CFRM*"
     },
     {
       "local_name": "CFRN*"
+    },
+    {
+      "local_name": "CFRm*"
+    },
+    {
+      "local_name": "CFrM*"
+    },
+    {
+      "local_name": "CFrm*"
     },
     {
       "local_name": "CGRM*"
@@ -823,10 +1786,28 @@
       "local_name": "CWRN*"
     },
     {
+      "local_name": "CWRm*"
+    },
+    {
+      "local_name": "CWrM*"
+    },
+    {
+      "local_name": "CWrm*"
+    },
+    {
       "local_name": "CXRM*"
     },
     {
       "local_name": "CXRN*"
+    },
+    {
+      "local_name": "CXRm*"
+    },
+    {
+      "local_name": "CXrM*"
+    },
+    {
+      "local_name": "CXrm*"
     },
     {
       "local_name": "CYRM*"
@@ -841,10 +1822,67 @@
       "local_name": "CZRN*"
     },
     {
+      "local_name": "CeRM*"
+    },
+    {
+      "local_name": "CeRm*"
+    },
+    {
+      "local_name": "CerM*"
+    },
+    {
+      "local_name": "Cerm*"
+    },
+    {
+      "local_name": "CfRM*"
+    },
+    {
+      "local_name": "CfRm*"
+    },
+    {
+      "local_name": "CfrM*"
+    },
+    {
+      "local_name": "Cfrm*"
+    },
+    {
       "local_name": "Cool*"
     },
     {
+      "local_name": "CwRM*"
+    },
+    {
+      "local_name": "CwRm*"
+    },
+    {
+      "local_name": "CwrM*"
+    },
+    {
+      "local_name": "Cwrm*"
+    },
+    {
+      "local_name": "CxRM*"
+    },
+    {
+      "local_name": "CxRm*"
+    },
+    {
+      "local_name": "CxrM*"
+    },
+    {
+      "local_name": "Cxrm*"
+    },
+    {
       "local_name": "D0RM*"
+    },
+    {
+      "local_name": "D0Rm*"
+    },
+    {
+      "local_name": "D0rM*"
+    },
+    {
+      "local_name": "D0rm*"
     },
     {
       "local_name": "D1RM*"
@@ -853,10 +1891,28 @@
       "local_name": "D1RN*"
     },
     {
+      "local_name": "D1Rm*"
+    },
+    {
+      "local_name": "D1rM*"
+    },
+    {
+      "local_name": "D1rm*"
+    },
+    {
       "local_name": "D2RM*"
     },
     {
       "local_name": "D2RN*"
+    },
+    {
+      "local_name": "D2Rm*"
+    },
+    {
+      "local_name": "D2rM*"
+    },
+    {
+      "local_name": "D2rm*"
     },
     {
       "local_name": "D3RM*"
@@ -868,13 +1924,49 @@
       "local_name": "D4RM*"
     },
     {
+      "local_name": "D4Rm*"
+    },
+    {
+      "local_name": "D4rM*"
+    },
+    {
+      "local_name": "D4rm*"
+    },
+    {
       "local_name": "D5RM*"
+    },
+    {
+      "local_name": "D5Rm*"
+    },
+    {
+      "local_name": "D5rM*"
+    },
+    {
+      "local_name": "D5rm*"
     },
     {
       "local_name": "D6RM*"
     },
     {
+      "local_name": "D6Rm*"
+    },
+    {
+      "local_name": "D6rM*"
+    },
+    {
+      "local_name": "D6rm*"
+    },
+    {
       "local_name": "D7RM*"
+    },
+    {
+      "local_name": "D7Rm*"
+    },
+    {
+      "local_name": "D7rM*"
+    },
+    {
+      "local_name": "D7rm*"
     },
     {
       "local_name": "D8RM*"
@@ -925,10 +2017,28 @@
       "local_name": "DFRN*"
     },
     {
+      "local_name": "DFRm*"
+    },
+    {
+      "local_name": "DFrM*"
+    },
+    {
+      "local_name": "DFrm*"
+    },
+    {
       "local_name": "DGRM*"
     },
     {
       "local_name": "DGRN*"
+    },
+    {
+      "local_name": "DGRm*"
+    },
+    {
+      "local_name": "DGrM*"
+    },
+    {
+      "local_name": "DGrm*"
     },
     {
       "local_name": "DHRM*"
@@ -971,6 +2081,15 @@
     },
     {
       "local_name": "DNRN*"
+    },
+    {
+      "local_name": "DNRm*"
+    },
+    {
+      "local_name": "DNrM*"
+    },
+    {
+      "local_name": "DNrm*"
     },
     {
       "local_name": "DORN*"
@@ -1042,6 +2161,63 @@
       "local_name": "DZRN*"
     },
     {
+      "local_name": "DZRm*"
+    },
+    {
+      "local_name": "DZrM*"
+    },
+    {
+      "local_name": "DZrm*"
+    },
+    {
+      "local_name": "DfRM*"
+    },
+    {
+      "local_name": "DfRm*"
+    },
+    {
+      "local_name": "DfrM*"
+    },
+    {
+      "local_name": "Dfrm*"
+    },
+    {
+      "local_name": "DgRM*"
+    },
+    {
+      "local_name": "DgRm*"
+    },
+    {
+      "local_name": "DgrM*"
+    },
+    {
+      "local_name": "Dgrm*"
+    },
+    {
+      "local_name": "DnRM*"
+    },
+    {
+      "local_name": "DnRm*"
+    },
+    {
+      "local_name": "DnrM*"
+    },
+    {
+      "local_name": "Dnrm*"
+    },
+    {
+      "local_name": "DzRM*"
+    },
+    {
+      "local_name": "DzRm*"
+    },
+    {
+      "local_name": "DzrM*"
+    },
+    {
+      "local_name": "Dzrm*"
+    },
+    {
       "local_name": "E0RM*"
     },
     {
@@ -1049,6 +2225,15 @@
     },
     {
       "local_name": "E1RN*"
+    },
+    {
+      "local_name": "E1Rm*"
+    },
+    {
+      "local_name": "E1rM*"
+    },
+    {
+      "local_name": "E1rm*"
     },
     {
       "local_name": "E2RM*"
@@ -1075,6 +2260,15 @@
       "local_name": "E6RM*"
     },
     {
+      "local_name": "E6Rm*"
+    },
+    {
+      "local_name": "E6rM*"
+    },
+    {
+      "local_name": "E6rm*"
+    },
+    {
       "local_name": "E7RM*"
     },
     {
@@ -1087,7 +2281,25 @@
       "local_name": "EARM*"
     },
     {
+      "local_name": "EARm*"
+    },
+    {
+      "local_name": "EArM*"
+    },
+    {
+      "local_name": "EArm*"
+    },
+    {
       "local_name": "EBRM*"
+    },
+    {
+      "local_name": "EBRm*"
+    },
+    {
+      "local_name": "EBrM*"
+    },
+    {
+      "local_name": "EBrm*"
     },
     {
       "local_name": "ECRM*"
@@ -1099,10 +2311,28 @@
       "local_name": "EERM*"
     },
     {
+      "local_name": "EERm*"
+    },
+    {
+      "local_name": "EErM*"
+    },
+    {
+      "local_name": "EErm*"
+    },
+    {
       "local_name": "EFRM*"
     },
     {
       "local_name": "EFRN*"
+    },
+    {
+      "local_name": "EFRm*"
+    },
+    {
+      "local_name": "EFrM*"
+    },
+    {
+      "local_name": "EFrm*"
     },
     {
       "local_name": "EGRM*"
@@ -1115,6 +2345,15 @@
     },
     {
       "local_name": "EHRN*"
+    },
+    {
+      "local_name": "EHRm*"
+    },
+    {
+      "local_name": "EHrM*"
+    },
+    {
+      "local_name": "EHrm*"
     },
     {
       "local_name": "EIRM*"
@@ -1142,6 +2381,15 @@
     },
     {
       "local_name": "ELRN*"
+    },
+    {
+      "local_name": "ELRm*"
+    },
+    {
+      "local_name": "ELrM*"
+    },
+    {
+      "local_name": "ELrm*"
     },
     {
       "local_name": "EMRM*"
@@ -1222,7 +2470,88 @@
       "local_name": "EZRN*"
     },
     {
+      "local_name": "EaRM*"
+    },
+    {
+      "local_name": "EaRm*"
+    },
+    {
+      "local_name": "EarM*"
+    },
+    {
+      "local_name": "Earm*"
+    },
+    {
+      "local_name": "EbRM*"
+    },
+    {
+      "local_name": "EbRm*"
+    },
+    {
+      "local_name": "EbrM*"
+    },
+    {
+      "local_name": "Ebrm*"
+    },
+    {
+      "local_name": "EeRM*"
+    },
+    {
+      "local_name": "EeRm*"
+    },
+    {
+      "local_name": "EerM*"
+    },
+    {
+      "local_name": "Eerm*"
+    },
+    {
+      "local_name": "EfRM*"
+    },
+    {
+      "local_name": "EfRm*"
+    },
+    {
+      "local_name": "EfrM*"
+    },
+    {
+      "local_name": "Efrm*"
+    },
+    {
+      "local_name": "EhRM*"
+    },
+    {
+      "local_name": "EhRm*"
+    },
+    {
+      "local_name": "EhrM*"
+    },
+    {
+      "local_name": "Ehrm*"
+    },
+    {
+      "local_name": "ElRM*"
+    },
+    {
+      "local_name": "ElRm*"
+    },
+    {
+      "local_name": "ElrM*"
+    },
+    {
+      "local_name": "Elrm*"
+    },
+    {
       "local_name": "F0RM*"
+    },
+    {
+      "local_name": "F0Rm*"
+    },
+    {
+      "local_name": "F0rM*"
+    },
+    {
+      "local_name": "F0rm*"
     },
     {
       "local_name": "F1RM*"
@@ -1330,10 +2659,28 @@
       "local_name": "FIRM*"
     },
     {
+      "local_name": "FIRm*"
+    },
+    {
+      "local_name": "FIrM*"
+    },
+    {
+      "local_name": "FIrm*"
+    },
+    {
       "local_name": "FJRM*"
     },
     {
       "local_name": "FJRN*"
+    },
+    {
+      "local_name": "FJRm*"
+    },
+    {
+      "local_name": "FJrM*"
+    },
+    {
+      "local_name": "FJrm*"
     },
     {
       "local_name": "FKRM*"
@@ -1376,6 +2723,15 @@
     },
     {
       "local_name": "FRRN*"
+    },
+    {
+      "local_name": "FRRm*"
+    },
+    {
+      "local_name": "FRrM*"
+    },
+    {
+      "local_name": "FRrm*"
     },
     {
       "local_name": "FSRM*"
@@ -1424,6 +2780,42 @@
     },
     {
       "local_name": "FZRN*"
+    },
+    {
+      "local_name": "FiRM*"
+    },
+    {
+      "local_name": "FiRm*"
+    },
+    {
+      "local_name": "FirM*"
+    },
+    {
+      "local_name": "Firm*"
+    },
+    {
+      "local_name": "FjRM*"
+    },
+    {
+      "local_name": "FjRm*"
+    },
+    {
+      "local_name": "FjrM*"
+    },
+    {
+      "local_name": "Fjrm*"
+    },
+    {
+      "local_name": "FrRM*"
+    },
+    {
+      "local_name": "FrRm*"
+    },
+    {
+      "local_name": "FrrM*"
+    },
+    {
+      "local_name": "Frrm*"
     },
     {
       "local_name": "G1RN*"
@@ -1481,6 +2873,15 @@
     },
     {
       "local_name": "GARN*"
+    },
+    {
+      "local_name": "GARm*"
+    },
+    {
+      "local_name": "GArM*"
+    },
+    {
+      "local_name": "GArm*"
     },
     {
       "local_name": "GBRM*"
@@ -1547,6 +2948,15 @@
     },
     {
       "local_name": "GMRN*"
+    },
+    {
+      "local_name": "GMRm*"
+    },
+    {
+      "local_name": "GMrM*"
+    },
+    {
+      "local_name": "GMrm*"
     },
     {
       "local_name": "GNRM*"
@@ -1616,6 +3026,30 @@
     },
     {
       "local_name": "GZRN*"
+    },
+    {
+      "local_name": "GaRM*"
+    },
+    {
+      "local_name": "GaRm*"
+    },
+    {
+      "local_name": "GarM*"
+    },
+    {
+      "local_name": "Garm*"
+    },
+    {
+      "local_name": "GmRM*"
+    },
+    {
+      "local_name": "GmRm*"
+    },
+    {
+      "local_name": "GmrM*"
+    },
+    {
+      "local_name": "Gmrm*"
     },
     {
       "local_name": "H2RM*"
@@ -1705,6 +3139,9 @@
       "local_name": "HJRN*"
     },
     {
+      "local_name": "HJ_Bed*"
+    },
+    {
       "local_name": "HKRM*"
     },
     {
@@ -1780,88 +3217,577 @@
       "local_name": "I0RM*"
     },
     {
+      "local_name": "I0Rm*"
+    },
+    {
+      "local_name": "I0rM*"
+    },
+    {
+      "local_name": "I0rm*"
+    },
+    {
       "local_name": "I1RM*"
+    },
+    {
+      "local_name": "I1Rm*"
+    },
+    {
+      "local_name": "I1rM*"
+    },
+    {
+      "local_name": "I1rm*"
     },
     {
       "local_name": "I2RM*"
     },
     {
+      "local_name": "I2Rm*"
+    },
+    {
+      "local_name": "I2rM*"
+    },
+    {
+      "local_name": "I2rm*"
+    },
+    {
       "local_name": "I3RM*"
+    },
+    {
+      "local_name": "I3Rm*"
+    },
+    {
+      "local_name": "I3rM*"
+    },
+    {
+      "local_name": "I3rm*"
     },
     {
       "local_name": "I4RM*"
     },
     {
+      "local_name": "I4Rm*"
+    },
+    {
+      "local_name": "I4rM*"
+    },
+    {
+      "local_name": "I4rm*"
+    },
+    {
       "local_name": "I5RM*"
+    },
+    {
+      "local_name": "I5Rm*"
+    },
+    {
+      "local_name": "I5rM*"
+    },
+    {
+      "local_name": "I5rm*"
     },
     {
       "local_name": "I6RM*"
     },
     {
+      "local_name": "I6Rm*"
+    },
+    {
+      "local_name": "I6rM*"
+    },
+    {
+      "local_name": "I6rm*"
+    },
+    {
       "local_name": "I7RM*"
+    },
+    {
+      "local_name": "I7Rm*"
+    },
+    {
+      "local_name": "I7rM*"
+    },
+    {
+      "local_name": "I7rm*"
     },
     {
       "local_name": "I8RM*"
     },
     {
+      "local_name": "I8Rm*"
+    },
+    {
+      "local_name": "I8rM*"
+    },
+    {
+      "local_name": "I8rm*"
+    },
+    {
       "local_name": "I9RM*"
+    },
+    {
+      "local_name": "I9Rm*"
+    },
+    {
+      "local_name": "I9rM*"
+    },
+    {
+      "local_name": "I9rm*"
     },
     {
       "local_name": "IARM*"
     },
     {
+      "local_name": "IARm*"
+    },
+    {
+      "local_name": "IArM*"
+    },
+    {
+      "local_name": "IArm*"
+    },
+    {
       "local_name": "IBRM*"
+    },
+    {
+      "local_name": "IBRm*"
+    },
+    {
+      "local_name": "IBrM*"
+    },
+    {
+      "local_name": "IBrm*"
     },
     {
       "local_name": "ICRM*"
     },
     {
+      "local_name": "ICRm*"
+    },
+    {
+      "local_name": "ICrM*"
+    },
+    {
+      "local_name": "ICrm*"
+    },
+    {
       "local_name": "IDRM*"
+    },
+    {
+      "local_name": "IDRm*"
+    },
+    {
+      "local_name": "IDrM*"
+    },
+    {
+      "local_name": "IDrm*"
     },
     {
       "local_name": "IERM*"
     },
     {
+      "local_name": "IERm*"
+    },
+    {
+      "local_name": "IErM*"
+    },
+    {
+      "local_name": "IErm*"
+    },
+    {
       "local_name": "IFRM*"
+    },
+    {
+      "local_name": "IFRm*"
+    },
+    {
+      "local_name": "IFrM*"
+    },
+    {
+      "local_name": "IFrm*"
     },
     {
       "local_name": "IGRM*"
     },
     {
+      "local_name": "IGRm*"
+    },
+    {
+      "local_name": "IGrM*"
+    },
+    {
+      "local_name": "IGrm*"
+    },
+    {
       "local_name": "IHRM*"
+    },
+    {
+      "local_name": "IHRm*"
+    },
+    {
+      "local_name": "IHrM*"
+    },
+    {
+      "local_name": "IHrm*"
     },
     {
       "local_name": "IIRM*"
     },
     {
+      "local_name": "IIRm*"
+    },
+    {
+      "local_name": "IIrM*"
+    },
+    {
+      "local_name": "IIrm*"
+    },
+    {
       "local_name": "IJRM*"
+    },
+    {
+      "local_name": "IJRm*"
+    },
+    {
+      "local_name": "IJrM*"
+    },
+    {
+      "local_name": "IJrm*"
     },
     {
       "local_name": "IKRM*"
     },
     {
+      "local_name": "IKRm*"
+    },
+    {
+      "local_name": "IKrM*"
+    },
+    {
+      "local_name": "IKrm*"
+    },
+    {
       "local_name": "ILRM*"
+    },
+    {
+      "local_name": "ILRm*"
+    },
+    {
+      "local_name": "ILrM*"
+    },
+    {
+      "local_name": "ILrm*"
     },
     {
       "local_name": "IMRM*"
     },
     {
+      "local_name": "IMRm*"
+    },
+    {
+      "local_name": "IMrM*"
+    },
+    {
+      "local_name": "IMrm*"
+    },
+    {
       "local_name": "INRM*"
+    },
+    {
+      "local_name": "INRm*"
+    },
+    {
+      "local_name": "INrM*"
+    },
+    {
+      "local_name": "INrm*"
     },
     {
       "local_name": "IORM*"
     },
     {
+      "local_name": "IORm*"
+    },
+    {
+      "local_name": "IOrM*"
+    },
+    {
+      "local_name": "IOrm*"
+    },
+    {
       "local_name": "IPRM*"
+    },
+    {
+      "local_name": "IPRm*"
+    },
+    {
+      "local_name": "IPrM*"
+    },
+    {
+      "local_name": "IPrm*"
     },
     {
       "local_name": "IQRM*"
     },
     {
+      "local_name": "IQRm*"
+    },
+    {
+      "local_name": "IQrM*"
+    },
+    {
+      "local_name": "IQrm*"
+    },
+    {
       "local_name": "IRRM*"
     },
     {
+      "local_name": "IRRm*"
+    },
+    {
+      "local_name": "IRrM*"
+    },
+    {
+      "local_name": "IRrm*"
+    },
+    {
       "local_name": "ISRM*"
+    },
+    {
+      "local_name": "ISRm*"
+    },
+    {
+      "local_name": "ISrM*"
+    },
+    {
+      "local_name": "ISrm*"
+    },
+    {
+      "local_name": "IaRM*"
+    },
+    {
+      "local_name": "IaRm*"
+    },
+    {
+      "local_name": "IarM*"
+    },
+    {
+      "local_name": "Iarm*"
+    },
+    {
+      "local_name": "IbRM*"
+    },
+    {
+      "local_name": "IbRm*"
+    },
+    {
+      "local_name": "IbrM*"
+    },
+    {
+      "local_name": "Ibrm*"
+    },
+    {
+      "local_name": "IcRM*"
+    },
+    {
+      "local_name": "IcRm*"
+    },
+    {
+      "local_name": "IcrM*"
+    },
+    {
+      "local_name": "Icrm*"
+    },
+    {
+      "local_name": "IdRM*"
+    },
+    {
+      "local_name": "IdRm*"
+    },
+    {
+      "local_name": "IdrM*"
+    },
+    {
+      "local_name": "Idrm*"
+    },
+    {
+      "local_name": "IeRM*"
+    },
+    {
+      "local_name": "IeRm*"
+    },
+    {
+      "local_name": "IerM*"
+    },
+    {
+      "local_name": "Ierm*"
+    },
+    {
+      "local_name": "IfRM*"
+    },
+    {
+      "local_name": "IfRm*"
+    },
+    {
+      "local_name": "IfrM*"
+    },
+    {
+      "local_name": "Ifrm*"
+    },
+    {
+      "local_name": "IgRM*"
+    },
+    {
+      "local_name": "IgRm*"
+    },
+    {
+      "local_name": "IgrM*"
+    },
+    {
+      "local_name": "Igrm*"
+    },
+    {
+      "local_name": "IhRM*"
+    },
+    {
+      "local_name": "IhRm*"
+    },
+    {
+      "local_name": "IhrM*"
+    },
+    {
+      "local_name": "Ihrm*"
+    },
+    {
+      "local_name": "IiRM*"
+    },
+    {
+      "local_name": "IiRm*"
+    },
+    {
+      "local_name": "IirM*"
+    },
+    {
+      "local_name": "Iirm*"
+    },
+    {
+      "local_name": "IjRM*"
+    },
+    {
+      "local_name": "IjRm*"
+    },
+    {
+      "local_name": "IjrM*"
+    },
+    {
+      "local_name": "Ijrm*"
+    },
+    {
+      "local_name": "IkRM*"
+    },
+    {
+      "local_name": "IkRm*"
+    },
+    {
+      "local_name": "IkrM*"
+    },
+    {
+      "local_name": "Ikrm*"
+    },
+    {
+      "local_name": "IlRM*"
+    },
+    {
+      "local_name": "IlRm*"
+    },
+    {
+      "local_name": "IlrM*"
+    },
+    {
+      "local_name": "Ilrm*"
+    },
+    {
+      "local_name": "ImRM*"
+    },
+    {
+      "local_name": "ImRm*"
+    },
+    {
+      "local_name": "ImrM*"
+    },
+    {
+      "local_name": "Imrm*"
+    },
+    {
+      "local_name": "InRM*"
+    },
+    {
+      "local_name": "InRm*"
+    },
+    {
+      "local_name": "InrM*"
+    },
+    {
+      "local_name": "Inrm*"
+    },
+    {
+      "local_name": "IoRM*"
+    },
+    {
+      "local_name": "IoRm*"
+    },
+    {
+      "local_name": "IorM*"
+    },
+    {
+      "local_name": "Iorm*"
+    },
+    {
+      "local_name": "IpRM*"
+    },
+    {
+      "local_name": "IpRm*"
+    },
+    {
+      "local_name": "IprM*"
+    },
+    {
+      "local_name": "Iprm*"
+    },
+    {
+      "local_name": "IqRM*"
+    },
+    {
+      "local_name": "IqRm*"
+    },
+    {
+      "local_name": "IqrM*"
+    },
+    {
+      "local_name": "Iqrm*"
+    },
+    {
+      "local_name": "IrRM*"
+    },
+    {
+      "local_name": "IrRm*"
+    },
+    {
+      "local_name": "IrrM*"
+    },
+    {
+      "local_name": "Irrm*"
+    },
+    {
+      "local_name": "IsRM*"
+    },
+    {
+      "local_name": "IsRm*"
+    },
+    {
+      "local_name": "IsrM*"
+    },
+    {
+      "local_name": "Isrm*"
     },
     {
       "local_name": "J2RM*"
@@ -2439,10 +4365,28 @@
       "local_name": "M3RM*"
     },
     {
+      "local_name": "M3Rm*"
+    },
+    {
+      "local_name": "M3rM*"
+    },
+    {
+      "local_name": "M3rm*"
+    },
+    {
       "local_name": "M4RM*"
     },
     {
       "local_name": "M4RN*"
+    },
+    {
+      "local_name": "M4Rm*"
+    },
+    {
+      "local_name": "M4rM*"
+    },
+    {
+      "local_name": "M4rm*"
     },
     {
       "local_name": "M5RM*"
@@ -2451,16 +4395,43 @@
       "local_name": "M5RN*"
     },
     {
+      "local_name": "M5Rm*"
+    },
+    {
+      "local_name": "M5rM*"
+    },
+    {
+      "local_name": "M5rm*"
+    },
+    {
       "local_name": "M6RM*"
     },
     {
       "local_name": "M6RN*"
     },
     {
+      "local_name": "M6Rm*"
+    },
+    {
+      "local_name": "M6rM*"
+    },
+    {
+      "local_name": "M6rm*"
+    },
+    {
       "local_name": "M7RM*"
     },
     {
       "local_name": "M7RN*"
+    },
+    {
+      "local_name": "M7Rm*"
+    },
+    {
+      "local_name": "M7rM*"
+    },
+    {
+      "local_name": "M7rm*"
     },
     {
       "local_name": "M8RM*"
@@ -2475,10 +4446,28 @@
       "local_name": "M9RN*"
     },
     {
+      "local_name": "M9Rm*"
+    },
+    {
+      "local_name": "M9rM*"
+    },
+    {
+      "local_name": "M9rm*"
+    },
+    {
       "local_name": "MARM*"
     },
     {
       "local_name": "MARN*"
+    },
+    {
+      "local_name": "MARm*"
+    },
+    {
+      "local_name": "MArM*"
+    },
+    {
+      "local_name": "MArm*"
     },
     {
       "local_name": "MBRM*"
@@ -2532,10 +4521,28 @@
       "local_name": "MLRN*"
     },
     {
+      "local_name": "MLRm*"
+    },
+    {
+      "local_name": "MLrM*"
+    },
+    {
+      "local_name": "MLrm*"
+    },
+    {
       "local_name": "MMRM*"
     },
     {
       "local_name": "MMRN*"
+    },
+    {
+      "local_name": "MMRm*"
+    },
+    {
+      "local_name": "MMrM*"
+    },
+    {
+      "local_name": "MMrm*"
     },
     {
       "local_name": "MNRN*"
@@ -2570,6 +4577,15 @@
     },
     {
       "local_name": "MRRN*"
+    },
+    {
+      "local_name": "MRRm*"
+    },
+    {
+      "local_name": "MRrM*"
+    },
+    {
+      "local_name": "MRrm*"
     },
     {
       "local_name": "MSRM*"
@@ -2617,10 +4633,55 @@
       "local_name": "MZRN*"
     },
     {
+      "local_name": "MaRM*"
+    },
+    {
+      "local_name": "MaRm*"
+    },
+    {
+      "local_name": "MarM*"
+    },
+    {
+      "local_name": "Marm*"
+    },
+    {
       "local_name": "MlRM*"
     },
     {
+      "local_name": "MlRm*"
+    },
+    {
+      "local_name": "MlrM*"
+    },
+    {
+      "local_name": "Mlrm*"
+    },
+    {
+      "local_name": "MmRM*"
+    },
+    {
+      "local_name": "MmRm*"
+    },
+    {
+      "local_name": "MmrM*"
+    },
+    {
+      "local_name": "Mmrm*"
+    },
+    {
       "local_name": "Mouselet*"
+    },
+    {
+      "local_name": "MrRM*"
+    },
+    {
+      "local_name": "MrRm*"
+    },
+    {
+      "local_name": "MrrM*"
+    },
+    {
+      "local_name": "Mrrm*"
     },
     {
       "local_name": "My QMS2*"
@@ -4258,34 +6319,133 @@
       "local_name": "O0RM*"
     },
     {
+      "local_name": "O0Rm*"
+    },
+    {
+      "local_name": "O0rM*"
+    },
+    {
+      "local_name": "O0rm*"
+    },
+    {
       "local_name": "O1RM*"
+    },
+    {
+      "local_name": "O1Rm*"
+    },
+    {
+      "local_name": "O1rM*"
+    },
+    {
+      "local_name": "O1rm*"
     },
     {
       "local_name": "O2RM*"
     },
     {
+      "local_name": "O2Rm*"
+    },
+    {
+      "local_name": "O2rM*"
+    },
+    {
+      "local_name": "O2rm*"
+    },
+    {
       "local_name": "O3RM*"
+    },
+    {
+      "local_name": "O3Rm*"
+    },
+    {
+      "local_name": "O3rM*"
+    },
+    {
+      "local_name": "O3rm*"
     },
     {
       "local_name": "O4RM*"
     },
     {
+      "local_name": "O4Rm*"
+    },
+    {
+      "local_name": "O4rM*"
+    },
+    {
+      "local_name": "O4rm*"
+    },
+    {
       "local_name": "O5RM*"
+    },
+    {
+      "local_name": "O5Rm*"
+    },
+    {
+      "local_name": "O5rM*"
+    },
+    {
+      "local_name": "O5rm*"
     },
     {
       "local_name": "O6RM*"
     },
     {
+      "local_name": "O6Rm*"
+    },
+    {
+      "local_name": "O6rM*"
+    },
+    {
+      "local_name": "O6rm*"
+    },
+    {
       "local_name": "O7RM*"
+    },
+    {
+      "local_name": "O7Rm*"
+    },
+    {
+      "local_name": "O7rM*"
+    },
+    {
+      "local_name": "O7rm*"
     },
     {
       "local_name": "O8RM*"
     },
     {
+      "local_name": "O8Rm*"
+    },
+    {
+      "local_name": "O8rM*"
+    },
+    {
+      "local_name": "O8rm*"
+    },
+    {
       "local_name": "O9RM*"
     },
     {
+      "local_name": "O9Rm*"
+    },
+    {
+      "local_name": "O9rM*"
+    },
+    {
+      "local_name": "O9rm*"
+    },
+    {
       "local_name": "OARM*"
+    },
+    {
+      "local_name": "OARm*"
+    },
+    {
+      "local_name": "OArM*"
+    },
+    {
+      "local_name": "OArm*"
     },
     {
       "local_name": "OKIN*"
@@ -4437,10 +6597,37 @@
       "local_name": "OMRM*"
     },
     {
+      "local_name": "OMRm*"
+    },
+    {
+      "local_name": "OMrM*"
+    },
+    {
+      "local_name": "OMrm*"
+    },
+    {
       "local_name": "ONRM*"
     },
     {
+      "local_name": "ONRm*"
+    },
+    {
+      "local_name": "ONrM*"
+    },
+    {
+      "local_name": "ONrm*"
+    },
+    {
       "local_name": "OORM*"
+    },
+    {
+      "local_name": "OORm*"
+    },
+    {
+      "local_name": "OOrM*"
+    },
+    {
+      "local_name": "OOrm*"
     },
     {
       "local_name": "OPRM*"
@@ -4449,31 +6636,133 @@
       "local_name": "OQRM*"
     },
     {
+      "local_name": "OQRm*"
+    },
+    {
+      "local_name": "OQrM*"
+    },
+    {
+      "local_name": "OQrm*"
+    },
+    {
       "local_name": "ORRM*"
+    },
+    {
+      "local_name": "ORRm*"
+    },
+    {
+      "local_name": "ORrM*"
+    },
+    {
+      "local_name": "ORrm*"
     },
     {
       "local_name": "OSRM*"
     },
     {
+      "local_name": "OSRm*"
+    },
+    {
+      "local_name": "OSrM*"
+    },
+    {
+      "local_name": "OSrm*"
+    },
+    {
       "local_name": "OTRM*"
+    },
+    {
+      "local_name": "OTRm*"
+    },
+    {
+      "local_name": "OTrM*"
+    },
+    {
+      "local_name": "OTrm*"
     },
     {
       "local_name": "OURM*"
     },
     {
+      "local_name": "OURm*"
+    },
+    {
+      "local_name": "OUrM*"
+    },
+    {
+      "local_name": "OUrm*"
+    },
+    {
       "local_name": "OVRM*"
+    },
+    {
+      "local_name": "OVRm*"
+    },
+    {
+      "local_name": "OVrM*"
+    },
+    {
+      "local_name": "OVrm*"
     },
     {
       "local_name": "OWRM*"
     },
     {
+      "local_name": "OWRm*"
+    },
+    {
+      "local_name": "OWrM*"
+    },
+    {
+      "local_name": "OWrm*"
+    },
+    {
       "local_name": "OXRM*"
+    },
+    {
+      "local_name": "OXRm*"
+    },
+    {
+      "local_name": "OXrM*"
+    },
+    {
+      "local_name": "OXrm*"
     },
     {
       "local_name": "OYRM*"
     },
     {
+      "local_name": "OYRm*"
+    },
+    {
+      "local_name": "OYrM*"
+    },
+    {
+      "local_name": "OYrm*"
+    },
+    {
       "local_name": "OZRM*"
+    },
+    {
+      "local_name": "OZRm*"
+    },
+    {
+      "local_name": "OZrM*"
+    },
+    {
+      "local_name": "OZrm*"
+    },
+    {
+      "local_name": "OaRM*"
+    },
+    {
+      "local_name": "OaRm*"
+    },
+    {
+      "local_name": "OarM*"
+    },
+    {
+      "local_name": "Oarm*"
     },
     {
       "local_name": "OkIN*"
@@ -4622,13 +6911,196 @@
       "connectable": true
     },
     {
+      "local_name": "OmRM*"
+    },
+    {
+      "local_name": "OmRm*"
+    },
+    {
+      "local_name": "OmrM*"
+    },
+    {
+      "local_name": "Omrm*"
+    },
+    {
+      "local_name": "OnRM*"
+    },
+    {
+      "local_name": "OnRm*"
+    },
+    {
+      "local_name": "OnrM*"
+    },
+    {
+      "local_name": "Onrm*"
+    },
+    {
+      "local_name": "OoRM*"
+    },
+    {
+      "local_name": "OoRm*"
+    },
+    {
+      "local_name": "OorM*"
+    },
+    {
+      "local_name": "Oorm*"
+    },
+    {
+      "local_name": "OqRM*"
+    },
+    {
+      "local_name": "OqRm*"
+    },
+    {
+      "local_name": "OqrM*"
+    },
+    {
+      "local_name": "Oqrm*"
+    },
+    {
+      "local_name": "OrRM*"
+    },
+    {
+      "local_name": "OrRm*"
+    },
+    {
+      "local_name": "OrrM*"
+    },
+    {
+      "local_name": "Orrm*"
+    },
+    {
+      "local_name": "OsRM*"
+    },
+    {
+      "local_name": "OsRm*"
+    },
+    {
+      "local_name": "OsrM*"
+    },
+    {
+      "local_name": "Osrm*"
+    },
+    {
+      "local_name": "OtRM*"
+    },
+    {
+      "local_name": "OtRm*"
+    },
+    {
+      "local_name": "OtrM*"
+    },
+    {
+      "local_name": "Otrm*"
+    },
+    {
+      "local_name": "OuRM*"
+    },
+    {
+      "local_name": "OuRm*"
+    },
+    {
+      "local_name": "OurM*"
+    },
+    {
+      "local_name": "Ourm*"
+    },
+    {
+      "local_name": "OvRM*"
+    },
+    {
+      "local_name": "OvRm*"
+    },
+    {
+      "local_name": "OvrM*"
+    },
+    {
+      "local_name": "Ovrm*"
+    },
+    {
+      "local_name": "OwRM*"
+    },
+    {
+      "local_name": "OwRm*"
+    },
+    {
+      "local_name": "OwrM*"
+    },
+    {
+      "local_name": "Owrm*"
+    },
+    {
+      "local_name": "OxRM*"
+    },
+    {
+      "local_name": "OxRm*"
+    },
+    {
+      "local_name": "OxrM*"
+    },
+    {
+      "local_name": "Oxrm*"
+    },
+    {
+      "local_name": "OyRM*"
+    },
+    {
+      "local_name": "OyRm*"
+    },
+    {
+      "local_name": "OyrM*"
+    },
+    {
+      "local_name": "Oyrm*"
+    },
+    {
+      "local_name": "OzRM*"
+    },
+    {
+      "local_name": "OzRm*"
+    },
+    {
+      "local_name": "OzrM*"
+    },
+    {
+      "local_name": "Ozrm*"
+    },
+    {
       "local_name": "P0RM*"
+    },
+    {
+      "local_name": "P0Rm*"
+    },
+    {
+      "local_name": "P0rM*"
+    },
+    {
+      "local_name": "P0rm*"
     },
     {
       "local_name": "P1RM*"
     },
     {
+      "local_name": "P1Rm*"
+    },
+    {
+      "local_name": "P1rM*"
+    },
+    {
+      "local_name": "P1rm*"
+    },
+    {
       "local_name": "P2RM*"
+    },
+    {
+      "local_name": "P2Rm*"
+    },
+    {
+      "local_name": "P2rM*"
+    },
+    {
+      "local_name": "P2rm*"
     },
     {
       "local_name": "P3RM*"
@@ -4637,22 +7109,67 @@
       "local_name": "P3RN*"
     },
     {
+      "local_name": "P3Rm*"
+    },
+    {
+      "local_name": "P3rM*"
+    },
+    {
+      "local_name": "P3rm*"
+    },
+    {
       "local_name": "P4RM*"
     },
     {
       "local_name": "P4RN*"
     },
     {
+      "local_name": "P4Rm*"
+    },
+    {
+      "local_name": "P4rM*"
+    },
+    {
+      "local_name": "P4rm*"
+    },
+    {
       "local_name": "P5RM*"
     },
     {
+      "local_name": "P5Rm*"
+    },
+    {
+      "local_name": "P5rM*"
+    },
+    {
+      "local_name": "P5rm*"
+    },
+    {
       "local_name": "P6RM*"
+    },
+    {
+      "local_name": "P6Rm*"
+    },
+    {
+      "local_name": "P6rM*"
+    },
+    {
+      "local_name": "P6rm*"
     },
     {
       "local_name": "P9RM*"
     },
     {
       "local_name": "P9RN*"
+    },
+    {
+      "local_name": "P9Rm*"
+    },
+    {
+      "local_name": "P9rM*"
+    },
+    {
+      "local_name": "P9rm*"
     },
     {
       "local_name": "PARN*"
@@ -4715,10 +7232,40 @@
       "local_name": "QRRM*"
     },
     {
+      "local_name": "QRRm*"
+    },
+    {
+      "local_name": "QRrM*"
+    },
+    {
+      "local_name": "QRrm*"
+    },
+    {
       "local_name": "QVRN*"
     },
     {
+      "local_name": "QrRM*"
+    },
+    {
+      "local_name": "QrRm*"
+    },
+    {
+      "local_name": "QrrM*"
+    },
+    {
+      "local_name": "Qrrm*"
+    },
+    {
       "local_name": "R2RM*"
+    },
+    {
+      "local_name": "R2Rm*"
+    },
+    {
+      "local_name": "R2rM*"
+    },
+    {
+      "local_name": "R2rm*"
     },
     {
       "local_name": "R5RM*"
@@ -4727,7 +7274,25 @@
       "local_name": "R5RN*"
     },
     {
+      "local_name": "R5Rm*"
+    },
+    {
+      "local_name": "R5rM*"
+    },
+    {
+      "local_name": "R5rm*"
+    },
+    {
       "local_name": "R6RM*"
+    },
+    {
+      "local_name": "R6Rm*"
+    },
+    {
+      "local_name": "R6rM*"
+    },
+    {
+      "local_name": "R6rm*"
     },
     {
       "local_name": "R7RN*"
@@ -4775,7 +7340,25 @@
       "local_name": "S9RM*"
     },
     {
+      "local_name": "S9Rm*"
+    },
+    {
+      "local_name": "S9rM*"
+    },
+    {
+      "local_name": "S9rm*"
+    },
+    {
       "local_name": "SARM*"
+    },
+    {
+      "local_name": "SARm*"
+    },
+    {
+      "local_name": "SArM*"
+    },
+    {
+      "local_name": "SArm*"
     },
     {
       "local_name": "SLEEP*"
@@ -5087,6 +7670,18 @@
       "local_name": "SUTA*"
     },
     {
+      "local_name": "SaRM*"
+    },
+    {
+      "local_name": "SaRm*"
+    },
+    {
+      "local_name": "SarM*"
+    },
+    {
+      "local_name": "Sarm*"
+    },
+    {
       "local_name": "SealyMF*"
     },
     {
@@ -5388,37 +7983,145 @@
       "local_name": "T0RM*"
     },
     {
+      "local_name": "T0Rm*"
+    },
+    {
+      "local_name": "T0rM*"
+    },
+    {
+      "local_name": "T0rm*"
+    },
+    {
       "local_name": "T1RM*"
+    },
+    {
+      "local_name": "T1Rm*"
+    },
+    {
+      "local_name": "T1rM*"
+    },
+    {
+      "local_name": "T1rm*"
     },
     {
       "local_name": "T2RM*"
     },
     {
+      "local_name": "T2Rm*"
+    },
+    {
+      "local_name": "T2rM*"
+    },
+    {
+      "local_name": "T2rm*"
+    },
+    {
       "local_name": "T3RM*"
+    },
+    {
+      "local_name": "T3Rm*"
+    },
+    {
+      "local_name": "T3rM*"
+    },
+    {
+      "local_name": "T3rm*"
     },
     {
       "local_name": "T4RM*"
     },
     {
+      "local_name": "T4Rm*"
+    },
+    {
+      "local_name": "T4rM*"
+    },
+    {
+      "local_name": "T4rm*"
+    },
+    {
       "local_name": "T5RM*"
+    },
+    {
+      "local_name": "T5Rm*"
+    },
+    {
+      "local_name": "T5rM*"
+    },
+    {
+      "local_name": "T5rm*"
     },
     {
       "local_name": "T6RM*"
     },
     {
+      "local_name": "T6Rm*"
+    },
+    {
+      "local_name": "T6rM*"
+    },
+    {
+      "local_name": "T6rm*"
+    },
+    {
       "local_name": "T7RM*"
+    },
+    {
+      "local_name": "T7Rm*"
+    },
+    {
+      "local_name": "T7rM*"
+    },
+    {
+      "local_name": "T7rm*"
     },
     {
       "local_name": "T8RM*"
     },
     {
+      "local_name": "T8Rm*"
+    },
+    {
+      "local_name": "T8rM*"
+    },
+    {
+      "local_name": "T8rm*"
+    },
+    {
       "local_name": "T9RM*"
+    },
+    {
+      "local_name": "T9Rm*"
+    },
+    {
+      "local_name": "T9rM*"
+    },
+    {
+      "local_name": "T9rm*"
     },
     {
       "local_name": "TARM*"
     },
     {
+      "local_name": "TARm*"
+    },
+    {
+      "local_name": "TArM*"
+    },
+    {
+      "local_name": "TArm*"
+    },
+    {
       "local_name": "TBRM*"
+    },
+    {
+      "local_name": "TBRm*"
+    },
+    {
+      "local_name": "TBrM*"
+    },
+    {
+      "local_name": "TBrm*"
     },
     {
       "local_name": "TCRM*"
@@ -5436,46 +8139,253 @@
       "local_name": "THRM*"
     },
     {
+      "local_name": "THRm*"
+    },
+    {
+      "local_name": "THrM*"
+    },
+    {
+      "local_name": "THrm*"
+    },
+    {
       "local_name": "TLRM*"
+    },
+    {
+      "local_name": "TLRm*"
+    },
+    {
+      "local_name": "TLrM*"
+    },
+    {
+      "local_name": "TLrm*"
     },
     {
       "local_name": "TWRM*"
     },
     {
+      "local_name": "TWRm*"
+    },
+    {
+      "local_name": "TWrM*"
+    },
+    {
+      "local_name": "TWrm*"
+    },
+    {
       "local_name": "TZRM*"
+    },
+    {
+      "local_name": "TZRm*"
+    },
+    {
+      "local_name": "TZrM*"
+    },
+    {
+      "local_name": "TZrm*"
+    },
+    {
+      "local_name": "TaRM*"
+    },
+    {
+      "local_name": "TaRm*"
+    },
+    {
+      "local_name": "TarM*"
+    },
+    {
+      "local_name": "Tarm*"
+    },
+    {
+      "local_name": "TbRM*"
+    },
+    {
+      "local_name": "TbRm*"
+    },
+    {
+      "local_name": "TbrM*"
+    },
+    {
+      "local_name": "Tbrm*"
+    },
+    {
+      "local_name": "ThRM*"
+    },
+    {
+      "local_name": "ThRm*"
+    },
+    {
+      "local_name": "ThrM*"
+    },
+    {
+      "local_name": "Thrm*"
+    },
+    {
+      "local_name": "TlRM*"
+    },
+    {
+      "local_name": "TlRm*"
+    },
+    {
+      "local_name": "TlrM*"
+    },
+    {
+      "local_name": "Tlrm*"
+    },
+    {
+      "local_name": "TwRM*"
+    },
+    {
+      "local_name": "TwRm*"
+    },
+    {
+      "local_name": "TwrM*"
+    },
+    {
+      "local_name": "Twrm*"
+    },
+    {
+      "local_name": "TzRM*"
+    },
+    {
+      "local_name": "TzRm*"
+    },
+    {
+      "local_name": "TzrM*"
+    },
+    {
+      "local_name": "Tzrm*"
     },
     {
       "local_name": "U0RM*"
     },
     {
+      "local_name": "U0Rm*"
+    },
+    {
+      "local_name": "U0rM*"
+    },
+    {
+      "local_name": "U0rm*"
+    },
+    {
       "local_name": "U1RM*"
+    },
+    {
+      "local_name": "U1Rm*"
+    },
+    {
+      "local_name": "U1rM*"
+    },
+    {
+      "local_name": "U1rm*"
     },
     {
       "local_name": "U2RM*"
     },
     {
+      "local_name": "U2Rm*"
+    },
+    {
+      "local_name": "U2rM*"
+    },
+    {
+      "local_name": "U2rm*"
+    },
+    {
       "local_name": "U3RM*"
+    },
+    {
+      "local_name": "U3Rm*"
+    },
+    {
+      "local_name": "U3rM*"
+    },
+    {
+      "local_name": "U3rm*"
     },
     {
       "local_name": "U4RM*"
     },
     {
+      "local_name": "U4Rm*"
+    },
+    {
+      "local_name": "U4rM*"
+    },
+    {
+      "local_name": "U4rm*"
+    },
+    {
       "local_name": "U5RM*"
+    },
+    {
+      "local_name": "U5Rm*"
+    },
+    {
+      "local_name": "U5rM*"
+    },
+    {
+      "local_name": "U5rm*"
     },
     {
       "local_name": "U6RM*"
     },
     {
+      "local_name": "U6Rm*"
+    },
+    {
+      "local_name": "U6rM*"
+    },
+    {
+      "local_name": "U6rm*"
+    },
+    {
       "local_name": "U7RM*"
+    },
+    {
+      "local_name": "U7Rm*"
+    },
+    {
+      "local_name": "U7rM*"
+    },
+    {
+      "local_name": "U7rm*"
     },
     {
       "local_name": "U8RM*"
     },
     {
+      "local_name": "U8Rm*"
+    },
+    {
+      "local_name": "U8rM*"
+    },
+    {
+      "local_name": "U8rm*"
+    },
+    {
       "local_name": "U9RM*"
     },
     {
+      "local_name": "U9Rm*"
+    },
+    {
+      "local_name": "U9rM*"
+    },
+    {
+      "local_name": "U9rm*"
+    },
+    {
       "local_name": "UARM*"
+    },
+    {
+      "local_name": "UARm*"
+    },
+    {
+      "local_name": "UArM*"
+    },
+    {
+      "local_name": "UArm*"
     },
     {
       "local_name": "UBRM*"
@@ -5484,139 +8394,829 @@
       "local_name": "UCRM*"
     },
     {
+      "local_name": "UCRm*"
+    },
+    {
+      "local_name": "UCrM*"
+    },
+    {
+      "local_name": "UCrm*"
+    },
+    {
       "local_name": "UDRM*"
+    },
+    {
+      "local_name": "UDRm*"
+    },
+    {
+      "local_name": "UDrM*"
+    },
+    {
+      "local_name": "UDrm*"
     },
     {
       "local_name": "UERM*"
     },
     {
+      "local_name": "UERm*"
+    },
+    {
+      "local_name": "UErM*"
+    },
+    {
+      "local_name": "UErm*"
+    },
+    {
       "local_name": "UFRM*"
+    },
+    {
+      "local_name": "UFRm*"
+    },
+    {
+      "local_name": "UFrM*"
+    },
+    {
+      "local_name": "UFrm*"
     },
     {
       "local_name": "UGRM*"
     },
     {
+      "local_name": "UGRm*"
+    },
+    {
+      "local_name": "UGrM*"
+    },
+    {
+      "local_name": "UGrm*"
+    },
+    {
       "local_name": "UHRM*"
+    },
+    {
+      "local_name": "UHRm*"
+    },
+    {
+      "local_name": "UHrM*"
+    },
+    {
+      "local_name": "UHrm*"
     },
     {
       "local_name": "UIRM*"
     },
     {
+      "local_name": "UIRm*"
+    },
+    {
+      "local_name": "UIrM*"
+    },
+    {
+      "local_name": "UIrm*"
+    },
+    {
       "local_name": "UJRM*"
+    },
+    {
+      "local_name": "UJRm*"
+    },
+    {
+      "local_name": "UJrM*"
+    },
+    {
+      "local_name": "UJrm*"
     },
     {
       "local_name": "UKRM*"
     },
     {
+      "local_name": "UKRm*"
+    },
+    {
+      "local_name": "UKrM*"
+    },
+    {
+      "local_name": "UKrm*"
+    },
+    {
       "local_name": "ULRM*"
+    },
+    {
+      "local_name": "ULRm*"
+    },
+    {
+      "local_name": "ULrM*"
+    },
+    {
+      "local_name": "ULrm*"
     },
     {
       "local_name": "UMRM*"
     },
     {
+      "local_name": "UMRm*"
+    },
+    {
+      "local_name": "UMrM*"
+    },
+    {
+      "local_name": "UMrm*"
+    },
+    {
       "local_name": "UNRM*"
+    },
+    {
+      "local_name": "UNRm*"
+    },
+    {
+      "local_name": "UNrM*"
+    },
+    {
+      "local_name": "UNrm*"
     },
     {
       "local_name": "UORM*"
     },
     {
+      "local_name": "UORm*"
+    },
+    {
+      "local_name": "UOrM*"
+    },
+    {
+      "local_name": "UOrm*"
+    },
+    {
       "local_name": "UPRM*"
+    },
+    {
+      "local_name": "UPRm*"
+    },
+    {
+      "local_name": "UPrM*"
+    },
+    {
+      "local_name": "UPrm*"
     },
     {
       "local_name": "UQRM*"
     },
     {
+      "local_name": "UQRm*"
+    },
+    {
+      "local_name": "UQrM*"
+    },
+    {
+      "local_name": "UQrm*"
+    },
+    {
       "local_name": "URRM*"
+    },
+    {
+      "local_name": "URRm*"
+    },
+    {
+      "local_name": "URrM*"
+    },
+    {
+      "local_name": "URrm*"
     },
     {
       "local_name": "UTRM*"
     },
     {
+      "local_name": "UTRm*"
+    },
+    {
+      "local_name": "UTrM*"
+    },
+    {
+      "local_name": "UTrm*"
+    },
+    {
       "local_name": "UURM*"
+    },
+    {
+      "local_name": "UURm*"
+    },
+    {
+      "local_name": "UUrM*"
+    },
+    {
+      "local_name": "UUrm*"
     },
     {
       "local_name": "UVRM*"
     },
     {
+      "local_name": "UVRm*"
+    },
+    {
+      "local_name": "UVrM*"
+    },
+    {
+      "local_name": "UVrm*"
+    },
+    {
       "local_name": "UWRM*"
+    },
+    {
+      "local_name": "UWRm*"
+    },
+    {
+      "local_name": "UWrM*"
+    },
+    {
+      "local_name": "UWrm*"
     },
     {
       "local_name": "UXRM*"
     },
     {
+      "local_name": "UXRm*"
+    },
+    {
+      "local_name": "UXrM*"
+    },
+    {
+      "local_name": "UXrm*"
+    },
+    {
       "local_name": "UYRM*"
+    },
+    {
+      "local_name": "UYRm*"
+    },
+    {
+      "local_name": "UYrM*"
+    },
+    {
+      "local_name": "UYrm*"
     },
     {
       "local_name": "UZRM*"
     },
     {
+      "local_name": "UZRm*"
+    },
+    {
+      "local_name": "UZrM*"
+    },
+    {
+      "local_name": "UZrm*"
+    },
+    {
       "local_name": "UaRM*"
+    },
+    {
+      "local_name": "UaRm*"
+    },
+    {
+      "local_name": "UarM*"
+    },
+    {
+      "local_name": "Uarm*"
+    },
+    {
+      "local_name": "UcRM*"
+    },
+    {
+      "local_name": "UcRm*"
+    },
+    {
+      "local_name": "UcrM*"
+    },
+    {
+      "local_name": "Ucrm*"
+    },
+    {
+      "local_name": "UdRM*"
+    },
+    {
+      "local_name": "UdRm*"
+    },
+    {
+      "local_name": "UdrM*"
+    },
+    {
+      "local_name": "Udrm*"
+    },
+    {
+      "local_name": "UeRM*"
+    },
+    {
+      "local_name": "UeRm*"
+    },
+    {
+      "local_name": "UerM*"
+    },
+    {
+      "local_name": "Uerm*"
+    },
+    {
+      "local_name": "UfRM*"
+    },
+    {
+      "local_name": "UfRm*"
+    },
+    {
+      "local_name": "UfrM*"
+    },
+    {
+      "local_name": "Ufrm*"
+    },
+    {
+      "local_name": "UgRM*"
+    },
+    {
+      "local_name": "UgRm*"
+    },
+    {
+      "local_name": "UgrM*"
+    },
+    {
+      "local_name": "Ugrm*"
+    },
+    {
+      "local_name": "UhRM*"
+    },
+    {
+      "local_name": "UhRm*"
+    },
+    {
+      "local_name": "UhrM*"
+    },
+    {
+      "local_name": "Uhrm*"
+    },
+    {
+      "local_name": "UiRM*"
+    },
+    {
+      "local_name": "UiRm*"
+    },
+    {
+      "local_name": "UirM*"
+    },
+    {
+      "local_name": "Uirm*"
+    },
+    {
+      "local_name": "UjRM*"
+    },
+    {
+      "local_name": "UjRm*"
+    },
+    {
+      "local_name": "UjrM*"
+    },
+    {
+      "local_name": "Ujrm*"
+    },
+    {
+      "local_name": "UkRM*"
+    },
+    {
+      "local_name": "UkRm*"
+    },
+    {
+      "local_name": "UkrM*"
+    },
+    {
+      "local_name": "Ukrm*"
+    },
+    {
+      "local_name": "UlRM*"
+    },
+    {
+      "local_name": "UlRm*"
+    },
+    {
+      "local_name": "UlrM*"
+    },
+    {
+      "local_name": "Ulrm*"
+    },
+    {
+      "local_name": "UmRM*"
+    },
+    {
+      "local_name": "UmRm*"
+    },
+    {
+      "local_name": "UmrM*"
+    },
+    {
+      "local_name": "Umrm*"
+    },
+    {
+      "local_name": "UnRM*"
+    },
+    {
+      "local_name": "UnRm*"
+    },
+    {
+      "local_name": "UnrM*"
+    },
+    {
+      "local_name": "Unrm*"
+    },
+    {
+      "local_name": "UoRM*"
+    },
+    {
+      "local_name": "UoRm*"
+    },
+    {
+      "local_name": "UorM*"
+    },
+    {
+      "local_name": "Uorm*"
+    },
+    {
+      "local_name": "UpRM*"
+    },
+    {
+      "local_name": "UpRm*"
+    },
+    {
+      "local_name": "UprM*"
+    },
+    {
+      "local_name": "Uprm*"
+    },
+    {
+      "local_name": "UqRM*"
+    },
+    {
+      "local_name": "UqRm*"
+    },
+    {
+      "local_name": "UqrM*"
+    },
+    {
+      "local_name": "Uqrm*"
+    },
+    {
+      "local_name": "UrRM*"
+    },
+    {
+      "local_name": "UrRm*"
+    },
+    {
+      "local_name": "UrrM*"
+    },
+    {
+      "local_name": "Urrm*"
+    },
+    {
+      "local_name": "UtRM*"
+    },
+    {
+      "local_name": "UtRm*"
+    },
+    {
+      "local_name": "UtrM*"
+    },
+    {
+      "local_name": "Utrm*"
+    },
+    {
+      "local_name": "UuRM*"
+    },
+    {
+      "local_name": "UuRm*"
+    },
+    {
+      "local_name": "UurM*"
+    },
+    {
+      "local_name": "Uurm*"
+    },
+    {
+      "local_name": "UvRM*"
+    },
+    {
+      "local_name": "UvRm*"
+    },
+    {
+      "local_name": "UvrM*"
+    },
+    {
+      "local_name": "Uvrm*"
+    },
+    {
+      "local_name": "UwRM*"
+    },
+    {
+      "local_name": "UwRm*"
+    },
+    {
+      "local_name": "UwrM*"
+    },
+    {
+      "local_name": "Uwrm*"
+    },
+    {
+      "local_name": "UxRM*"
+    },
+    {
+      "local_name": "UxRm*"
+    },
+    {
+      "local_name": "UxrM*"
+    },
+    {
+      "local_name": "Uxrm*"
+    },
+    {
+      "local_name": "UyRM*"
+    },
+    {
+      "local_name": "UyRm*"
+    },
+    {
+      "local_name": "UyrM*"
+    },
+    {
+      "local_name": "Uyrm*"
+    },
+    {
+      "local_name": "UzRM*"
+    },
+    {
+      "local_name": "UzRm*"
+    },
+    {
+      "local_name": "UzrM*"
+    },
+    {
+      "local_name": "Uzrm*"
     },
     {
       "local_name": "V0RM*"
     },
     {
+      "local_name": "V0Rm*"
+    },
+    {
+      "local_name": "V0rM*"
+    },
+    {
+      "local_name": "V0rm*"
+    },
+    {
       "local_name": "V1RM*"
+    },
+    {
+      "local_name": "V1Rm*"
+    },
+    {
+      "local_name": "V1rM*"
+    },
+    {
+      "local_name": "V1rm*"
     },
     {
       "local_name": "V2RM*"
     },
     {
+      "local_name": "V2Rm*"
+    },
+    {
+      "local_name": "V2rM*"
+    },
+    {
+      "local_name": "V2rm*"
+    },
+    {
       "local_name": "V3RM*"
+    },
+    {
+      "local_name": "V3Rm*"
+    },
+    {
+      "local_name": "V3rM*"
+    },
+    {
+      "local_name": "V3rm*"
     },
     {
       "local_name": "V4RM*"
     },
     {
+      "local_name": "V4Rm*"
+    },
+    {
+      "local_name": "V4rM*"
+    },
+    {
+      "local_name": "V4rm*"
+    },
+    {
       "local_name": "V5RM*"
+    },
+    {
+      "local_name": "V5Rm*"
+    },
+    {
+      "local_name": "V5rM*"
+    },
+    {
+      "local_name": "V5rm*"
     },
     {
       "local_name": "V6RM*"
     },
     {
+      "local_name": "V6Rm*"
+    },
+    {
+      "local_name": "V6rM*"
+    },
+    {
+      "local_name": "V6rm*"
+    },
+    {
       "local_name": "V7RM*"
+    },
+    {
+      "local_name": "V7Rm*"
+    },
+    {
+      "local_name": "V7rM*"
+    },
+    {
+      "local_name": "V7rm*"
     },
     {
       "local_name": "V8RM*"
     },
     {
+      "local_name": "V8Rm*"
+    },
+    {
+      "local_name": "V8rM*"
+    },
+    {
+      "local_name": "V8rm*"
+    },
+    {
       "local_name": "V9RM*"
+    },
+    {
+      "local_name": "V9Rm*"
+    },
+    {
+      "local_name": "V9rM*"
+    },
+    {
+      "local_name": "V9rm*"
     },
     {
       "local_name": "VARM*"
     },
     {
+      "local_name": "VARm*"
+    },
+    {
+      "local_name": "VArM*"
+    },
+    {
+      "local_name": "VArm*"
+    },
+    {
       "local_name": "VBRM*"
+    },
+    {
+      "local_name": "VBRm*"
+    },
+    {
+      "local_name": "VBrM*"
+    },
+    {
+      "local_name": "VBrm*"
     },
     {
       "local_name": "VCRM*"
     },
     {
+      "local_name": "VCRm*"
+    },
+    {
+      "local_name": "VCrM*"
+    },
+    {
+      "local_name": "VCrm*"
+    },
+    {
       "local_name": "VDRM*"
+    },
+    {
+      "local_name": "VDRm*"
+    },
+    {
+      "local_name": "VDrM*"
+    },
+    {
+      "local_name": "VDrm*"
     },
     {
       "local_name": "VERM*"
     },
     {
+      "local_name": "VERm*"
+    },
+    {
+      "local_name": "VErM*"
+    },
+    {
+      "local_name": "VErm*"
+    },
+    {
       "local_name": "VFRM*"
+    },
+    {
+      "local_name": "VFRm*"
+    },
+    {
+      "local_name": "VFrM*"
+    },
+    {
+      "local_name": "VFrm*"
     },
     {
       "local_name": "VGRM*"
     },
     {
+      "local_name": "VGRm*"
+    },
+    {
+      "local_name": "VGrM*"
+    },
+    {
+      "local_name": "VGrm*"
+    },
+    {
       "local_name": "VHRM*"
+    },
+    {
+      "local_name": "VHRm*"
+    },
+    {
+      "local_name": "VHrM*"
+    },
+    {
+      "local_name": "VHrm*"
     },
     {
       "local_name": "VIRM*"
     },
     {
+      "local_name": "VIRm*"
+    },
+    {
+      "local_name": "VIrM*"
+    },
+    {
+      "local_name": "VIrm*"
+    },
+    {
       "local_name": "VJRM*"
+    },
+    {
+      "local_name": "VJRm*"
+    },
+    {
+      "local_name": "VJrM*"
+    },
+    {
+      "local_name": "VJrm*"
     },
     {
       "local_name": "VKRM*"
     },
     {
+      "local_name": "VKRm*"
+    },
+    {
+      "local_name": "VKrM*"
+    },
+    {
+      "local_name": "VKrm*"
+    },
+    {
       "local_name": "VLRM*"
+    },
+    {
+      "local_name": "VLRm*"
+    },
+    {
+      "local_name": "VLrM*"
+    },
+    {
+      "local_name": "VLrm*"
     },
     {
       "local_name": "VMAT*"
@@ -5625,88 +9225,661 @@
       "local_name": "VMRM*"
     },
     {
+      "local_name": "VMRm*"
+    },
+    {
+      "local_name": "VMrM*"
+    },
+    {
+      "local_name": "VMrm*"
+    },
+    {
       "local_name": "VNRM*"
+    },
+    {
+      "local_name": "VNRm*"
+    },
+    {
+      "local_name": "VNrM*"
+    },
+    {
+      "local_name": "VNrm*"
     },
     {
       "local_name": "VORM*"
     },
     {
+      "local_name": "VORm*"
+    },
+    {
+      "local_name": "VOrM*"
+    },
+    {
+      "local_name": "VOrm*"
+    },
+    {
       "local_name": "VPRM*"
+    },
+    {
+      "local_name": "VPRm*"
+    },
+    {
+      "local_name": "VPrM*"
+    },
+    {
+      "local_name": "VPrm*"
     },
     {
       "local_name": "VQRM*"
     },
     {
+      "local_name": "VQRm*"
+    },
+    {
+      "local_name": "VQrM*"
+    },
+    {
+      "local_name": "VQrm*"
+    },
+    {
       "local_name": "VRRM*"
+    },
+    {
+      "local_name": "VRRm*"
+    },
+    {
+      "local_name": "VRrM*"
+    },
+    {
+      "local_name": "VRrm*"
     },
     {
       "local_name": "VSRM*"
     },
     {
+      "local_name": "VSRm*"
+    },
+    {
+      "local_name": "VSrM*"
+    },
+    {
+      "local_name": "VSrm*"
+    },
+    {
       "local_name": "VTRM*"
+    },
+    {
+      "local_name": "VTRm*"
+    },
+    {
+      "local_name": "VTrM*"
+    },
+    {
+      "local_name": "VTrm*"
     },
     {
       "local_name": "VURM*"
     },
     {
+      "local_name": "VURm*"
+    },
+    {
+      "local_name": "VUrM*"
+    },
+    {
+      "local_name": "VUrm*"
+    },
+    {
       "local_name": "VVRM*"
+    },
+    {
+      "local_name": "VVRm*"
+    },
+    {
+      "local_name": "VVrM*"
+    },
+    {
+      "local_name": "VVrm*"
     },
     {
       "local_name": "VWRM*"
     },
     {
+      "local_name": "VWRm*"
+    },
+    {
+      "local_name": "VWrM*"
+    },
+    {
+      "local_name": "VWrm*"
+    },
+    {
       "local_name": "VXRM*"
+    },
+    {
+      "local_name": "VXRm*"
+    },
+    {
+      "local_name": "VXrM*"
+    },
+    {
+      "local_name": "VXrm*"
     },
     {
       "local_name": "VYRM*"
     },
     {
+      "local_name": "VYRm*"
+    },
+    {
+      "local_name": "VYrM*"
+    },
+    {
+      "local_name": "VYrm*"
+    },
+    {
       "local_name": "VZRM*"
+    },
+    {
+      "local_name": "VZRm*"
+    },
+    {
+      "local_name": "VZrM*"
+    },
+    {
+      "local_name": "VZrm*"
+    },
+    {
+      "local_name": "VaRM*"
+    },
+    {
+      "local_name": "VaRm*"
+    },
+    {
+      "local_name": "VarM*"
+    },
+    {
+      "local_name": "Varm*"
+    },
+    {
+      "local_name": "VbRM*"
+    },
+    {
+      "local_name": "VbRm*"
+    },
+    {
+      "local_name": "VbrM*"
+    },
+    {
+      "local_name": "Vbrm*"
+    },
+    {
+      "local_name": "VcRM*"
+    },
+    {
+      "local_name": "VcRm*"
+    },
+    {
+      "local_name": "VcrM*"
+    },
+    {
+      "local_name": "Vcrm*"
+    },
+    {
+      "local_name": "VdRM*"
+    },
+    {
+      "local_name": "VdRm*"
+    },
+    {
+      "local_name": "VdrM*"
+    },
+    {
+      "local_name": "Vdrm*"
+    },
+    {
+      "local_name": "VeRM*"
+    },
+    {
+      "local_name": "VeRm*"
+    },
+    {
+      "local_name": "VerM*"
+    },
+    {
+      "local_name": "Verm*"
+    },
+    {
+      "local_name": "VfRM*"
+    },
+    {
+      "local_name": "VfRm*"
+    },
+    {
+      "local_name": "VfrM*"
+    },
+    {
+      "local_name": "Vfrm*"
+    },
+    {
+      "local_name": "VgRM*"
+    },
+    {
+      "local_name": "VgRm*"
+    },
+    {
+      "local_name": "VgrM*"
+    },
+    {
+      "local_name": "Vgrm*"
+    },
+    {
+      "local_name": "VhRM*"
+    },
+    {
+      "local_name": "VhRm*"
+    },
+    {
+      "local_name": "VhrM*"
+    },
+    {
+      "local_name": "Vhrm*"
+    },
+    {
+      "local_name": "ViRM*"
+    },
+    {
+      "local_name": "ViRm*"
+    },
+    {
+      "local_name": "VirM*"
+    },
+    {
+      "local_name": "Virm*"
+    },
+    {
+      "local_name": "VjRM*"
+    },
+    {
+      "local_name": "VjRm*"
+    },
+    {
+      "local_name": "VjrM*"
+    },
+    {
+      "local_name": "Vjrm*"
+    },
+    {
+      "local_name": "VkRM*"
+    },
+    {
+      "local_name": "VkRm*"
+    },
+    {
+      "local_name": "VkrM*"
+    },
+    {
+      "local_name": "Vkrm*"
+    },
+    {
+      "local_name": "VlRM*"
+    },
+    {
+      "local_name": "VlRm*"
+    },
+    {
+      "local_name": "VlrM*"
+    },
+    {
+      "local_name": "Vlrm*"
+    },
+    {
+      "local_name": "VmRM*"
+    },
+    {
+      "local_name": "VmRm*"
+    },
+    {
+      "local_name": "VmrM*"
+    },
+    {
+      "local_name": "Vmrm*"
+    },
+    {
+      "local_name": "VnRM*"
+    },
+    {
+      "local_name": "VnRm*"
+    },
+    {
+      "local_name": "VnrM*"
+    },
+    {
+      "local_name": "Vnrm*"
+    },
+    {
+      "local_name": "VoRM*"
+    },
+    {
+      "local_name": "VoRm*"
+    },
+    {
+      "local_name": "VorM*"
+    },
+    {
+      "local_name": "Vorm*"
+    },
+    {
+      "local_name": "VpRM*"
+    },
+    {
+      "local_name": "VpRm*"
+    },
+    {
+      "local_name": "VprM*"
+    },
+    {
+      "local_name": "Vprm*"
+    },
+    {
+      "local_name": "VqRM*"
+    },
+    {
+      "local_name": "VqRm*"
+    },
+    {
+      "local_name": "VqrM*"
+    },
+    {
+      "local_name": "Vqrm*"
+    },
+    {
+      "local_name": "VrRM*"
+    },
+    {
+      "local_name": "VrRm*"
+    },
+    {
+      "local_name": "VrrM*"
+    },
+    {
+      "local_name": "Vrrm*"
+    },
+    {
+      "local_name": "VsRM*"
+    },
+    {
+      "local_name": "VsRm*"
+    },
+    {
+      "local_name": "VsrM*"
+    },
+    {
+      "local_name": "Vsrm*"
+    },
+    {
+      "local_name": "VtRM*"
+    },
+    {
+      "local_name": "VtRm*"
+    },
+    {
+      "local_name": "VtrM*"
+    },
+    {
+      "local_name": "Vtrm*"
+    },
+    {
+      "local_name": "VuRM*"
+    },
+    {
+      "local_name": "VuRm*"
+    },
+    {
+      "local_name": "VurM*"
+    },
+    {
+      "local_name": "Vurm*"
+    },
+    {
+      "local_name": "VvRM*"
+    },
+    {
+      "local_name": "VvRm*"
+    },
+    {
+      "local_name": "VvrM*"
+    },
+    {
+      "local_name": "Vvrm*"
+    },
+    {
+      "local_name": "VwRM*"
+    },
+    {
+      "local_name": "VwRm*"
+    },
+    {
+      "local_name": "VwrM*"
+    },
+    {
+      "local_name": "Vwrm*"
+    },
+    {
+      "local_name": "VxRM*"
+    },
+    {
+      "local_name": "VxRm*"
+    },
+    {
+      "local_name": "VxrM*"
+    },
+    {
+      "local_name": "Vxrm*"
+    },
+    {
+      "local_name": "VyRM*"
+    },
+    {
+      "local_name": "VyRm*"
+    },
+    {
+      "local_name": "VyrM*"
+    },
+    {
+      "local_name": "Vyrm*"
+    },
+    {
+      "local_name": "VzRM*"
+    },
+    {
+      "local_name": "VzRm*"
+    },
+    {
+      "local_name": "VzrM*"
+    },
+    {
+      "local_name": "Vzrm*"
     },
     {
       "local_name": "W0RM*"
     },
     {
+      "local_name": "W0Rm*"
+    },
+    {
+      "local_name": "W0rM*"
+    },
+    {
+      "local_name": "W0rm*"
+    },
+    {
       "local_name": "W1RM*"
+    },
+    {
+      "local_name": "W1Rm*"
+    },
+    {
+      "local_name": "W1rM*"
+    },
+    {
+      "local_name": "W1rm*"
     },
     {
       "local_name": "W2RM*"
     },
     {
+      "local_name": "W2Rm*"
+    },
+    {
+      "local_name": "W2rM*"
+    },
+    {
+      "local_name": "W2rm*"
+    },
+    {
       "local_name": "W3RM*"
+    },
+    {
+      "local_name": "W3Rm*"
+    },
+    {
+      "local_name": "W3rM*"
+    },
+    {
+      "local_name": "W3rm*"
     },
     {
       "local_name": "W4RM*"
     },
     {
+      "local_name": "W4Rm*"
+    },
+    {
+      "local_name": "W4rM*"
+    },
+    {
+      "local_name": "W4rm*"
+    },
+    {
       "local_name": "W5RM*"
+    },
+    {
+      "local_name": "W5Rm*"
+    },
+    {
+      "local_name": "W5rM*"
+    },
+    {
+      "local_name": "W5rm*"
     },
     {
       "local_name": "W6RM*"
     },
     {
+      "local_name": "W6Rm*"
+    },
+    {
+      "local_name": "W6rM*"
+    },
+    {
+      "local_name": "W6rm*"
+    },
+    {
       "local_name": "W7RM*"
+    },
+    {
+      "local_name": "W7Rm*"
+    },
+    {
+      "local_name": "W7rM*"
+    },
+    {
+      "local_name": "W7rm*"
     },
     {
       "local_name": "W8RM*"
     },
     {
+      "local_name": "W8Rm*"
+    },
+    {
+      "local_name": "W8rM*"
+    },
+    {
+      "local_name": "W8rm*"
+    },
+    {
       "local_name": "W9RM*"
+    },
+    {
+      "local_name": "W9Rm*"
+    },
+    {
+      "local_name": "W9rM*"
+    },
+    {
+      "local_name": "W9rm*"
     },
     {
       "local_name": "WARM*"
     },
     {
+      "local_name": "WARm*"
+    },
+    {
+      "local_name": "WArM*"
+    },
+    {
+      "local_name": "WArm*"
+    },
+    {
       "local_name": "WBRM*"
+    },
+    {
+      "local_name": "WBRm*"
+    },
+    {
+      "local_name": "WBrM*"
+    },
+    {
+      "local_name": "WBrm*"
     },
     {
       "local_name": "WCRM*"
     },
     {
+      "local_name": "WCRm*"
+    },
+    {
+      "local_name": "WCrM*"
+    },
+    {
+      "local_name": "WCrm*"
+    },
+    {
       "local_name": "WDRM*"
     },
     {
+      "local_name": "WDRm*"
+    },
+    {
+      "local_name": "WDrM*"
+    },
+    {
+      "local_name": "WDrm*"
+    },
+    {
       "local_name": "WERM*"
+    },
+    {
+      "local_name": "WERm*"
+    },
+    {
+      "local_name": "WErM*"
+    },
+    {
+      "local_name": "WErm*"
     },
     {
       "local_name": "WFRM*"
@@ -5715,61 +9888,541 @@
       "local_name": "WGRM*"
     },
     {
+      "local_name": "WGRm*"
+    },
+    {
+      "local_name": "WGrM*"
+    },
+    {
+      "local_name": "WGrm*"
+    },
+    {
       "local_name": "WHRM*"
+    },
+    {
+      "local_name": "WHRm*"
+    },
+    {
+      "local_name": "WHrM*"
+    },
+    {
+      "local_name": "WHrm*"
     },
     {
       "local_name": "WIRM*"
     },
     {
+      "local_name": "WIRm*"
+    },
+    {
+      "local_name": "WIrM*"
+    },
+    {
+      "local_name": "WIrm*"
+    },
+    {
       "local_name": "WJRM*"
+    },
+    {
+      "local_name": "WJRm*"
+    },
+    {
+      "local_name": "WJrM*"
+    },
+    {
+      "local_name": "WJrm*"
     },
     {
       "local_name": "WKRM*"
     },
     {
+      "local_name": "WKRm*"
+    },
+    {
+      "local_name": "WKrM*"
+    },
+    {
+      "local_name": "WKrm*"
+    },
+    {
       "local_name": "WLRM*"
+    },
+    {
+      "local_name": "WLRm*"
+    },
+    {
+      "local_name": "WLrM*"
+    },
+    {
+      "local_name": "WLrm*"
     },
     {
       "local_name": "WMRM*"
     },
     {
+      "local_name": "WMRm*"
+    },
+    {
+      "local_name": "WMrM*"
+    },
+    {
+      "local_name": "WMrm*"
+    },
+    {
       "local_name": "WNRM*"
+    },
+    {
+      "local_name": "WNRm*"
+    },
+    {
+      "local_name": "WNrM*"
+    },
+    {
+      "local_name": "WNrm*"
     },
     {
       "local_name": "WORM*"
     },
     {
+      "local_name": "WORm*"
+    },
+    {
+      "local_name": "WOrM*"
+    },
+    {
+      "local_name": "WOrm*"
+    },
+    {
       "local_name": "WPRM*"
+    },
+    {
+      "local_name": "WPRm*"
+    },
+    {
+      "local_name": "WPrM*"
+    },
+    {
+      "local_name": "WPrm*"
     },
     {
       "local_name": "WQRM*"
     },
     {
+      "local_name": "WQRm*"
+    },
+    {
+      "local_name": "WQrM*"
+    },
+    {
+      "local_name": "WQrm*"
+    },
+    {
       "local_name": "WRRM*"
+    },
+    {
+      "local_name": "WRRm*"
+    },
+    {
+      "local_name": "WRrM*"
+    },
+    {
+      "local_name": "WRrm*"
     },
     {
       "local_name": "WSRM*"
     },
     {
+      "local_name": "WSRm*"
+    },
+    {
+      "local_name": "WSrM*"
+    },
+    {
+      "local_name": "WSrm*"
+    },
+    {
       "local_name": "WTRM*"
+    },
+    {
+      "local_name": "WTRm*"
+    },
+    {
+      "local_name": "WTrM*"
+    },
+    {
+      "local_name": "WTrm*"
     },
     {
       "local_name": "WURM*"
     },
     {
+      "local_name": "WURm*"
+    },
+    {
+      "local_name": "WUrM*"
+    },
+    {
+      "local_name": "WUrm*"
+    },
+    {
       "local_name": "WVRM*"
+    },
+    {
+      "local_name": "WVRm*"
+    },
+    {
+      "local_name": "WVrM*"
+    },
+    {
+      "local_name": "WVrm*"
     },
     {
       "local_name": "WWRM*"
     },
     {
+      "local_name": "WWRm*"
+    },
+    {
+      "local_name": "WWrM*"
+    },
+    {
+      "local_name": "WWrm*"
+    },
+    {
       "local_name": "WXRM*"
+    },
+    {
+      "local_name": "WXRm*"
+    },
+    {
+      "local_name": "WXrM*"
+    },
+    {
+      "local_name": "WXrm*"
     },
     {
       "local_name": "WYRM*"
     },
     {
+      "local_name": "WYRm*"
+    },
+    {
+      "local_name": "WYrM*"
+    },
+    {
+      "local_name": "WYrm*"
+    },
+    {
       "local_name": "WZRM*"
+    },
+    {
+      "local_name": "WZRm*"
+    },
+    {
+      "local_name": "WZrM*"
+    },
+    {
+      "local_name": "WZrm*"
+    },
+    {
+      "local_name": "WaRM*"
+    },
+    {
+      "local_name": "WaRm*"
+    },
+    {
+      "local_name": "WarM*"
+    },
+    {
+      "local_name": "Warm*"
+    },
+    {
+      "local_name": "WbRM*"
+    },
+    {
+      "local_name": "WbRm*"
+    },
+    {
+      "local_name": "WbrM*"
+    },
+    {
+      "local_name": "Wbrm*"
+    },
+    {
+      "local_name": "WcRM*"
+    },
+    {
+      "local_name": "WcRm*"
+    },
+    {
+      "local_name": "WcrM*"
+    },
+    {
+      "local_name": "Wcrm*"
+    },
+    {
+      "local_name": "WdRM*"
+    },
+    {
+      "local_name": "WdRm*"
+    },
+    {
+      "local_name": "WdrM*"
+    },
+    {
+      "local_name": "Wdrm*"
+    },
+    {
+      "local_name": "WeRM*"
+    },
+    {
+      "local_name": "WeRm*"
+    },
+    {
+      "local_name": "WerM*"
+    },
+    {
+      "local_name": "Werm*"
+    },
+    {
+      "local_name": "WgRM*"
+    },
+    {
+      "local_name": "WgRm*"
+    },
+    {
+      "local_name": "WgrM*"
+    },
+    {
+      "local_name": "Wgrm*"
+    },
+    {
+      "local_name": "WhRM*"
+    },
+    {
+      "local_name": "WhRm*"
+    },
+    {
+      "local_name": "WhrM*"
+    },
+    {
+      "local_name": "Whrm*"
+    },
+    {
+      "local_name": "WiRM*"
+    },
+    {
+      "local_name": "WiRm*"
+    },
+    {
+      "local_name": "WirM*"
+    },
+    {
+      "local_name": "Wirm*"
+    },
+    {
+      "local_name": "WjRM*"
+    },
+    {
+      "local_name": "WjRm*"
+    },
+    {
+      "local_name": "WjrM*"
+    },
+    {
+      "local_name": "Wjrm*"
+    },
+    {
+      "local_name": "WkRM*"
+    },
+    {
+      "local_name": "WkRm*"
+    },
+    {
+      "local_name": "WkrM*"
+    },
+    {
+      "local_name": "Wkrm*"
+    },
+    {
+      "local_name": "WlRM*"
+    },
+    {
+      "local_name": "WlRm*"
+    },
+    {
+      "local_name": "WlrM*"
+    },
+    {
+      "local_name": "Wlrm*"
+    },
+    {
+      "local_name": "WmRM*"
+    },
+    {
+      "local_name": "WmRm*"
+    },
+    {
+      "local_name": "WmrM*"
+    },
+    {
+      "local_name": "Wmrm*"
+    },
+    {
+      "local_name": "WnRM*"
+    },
+    {
+      "local_name": "WnRm*"
+    },
+    {
+      "local_name": "WnrM*"
+    },
+    {
+      "local_name": "Wnrm*"
+    },
+    {
+      "local_name": "WoRM*"
+    },
+    {
+      "local_name": "WoRm*"
+    },
+    {
+      "local_name": "WorM*"
+    },
+    {
+      "local_name": "Worm*"
+    },
+    {
+      "local_name": "WpRM*"
+    },
+    {
+      "local_name": "WpRm*"
+    },
+    {
+      "local_name": "WprM*"
+    },
+    {
+      "local_name": "Wprm*"
+    },
+    {
+      "local_name": "WqRM*"
+    },
+    {
+      "local_name": "WqRm*"
+    },
+    {
+      "local_name": "WqrM*"
+    },
+    {
+      "local_name": "Wqrm*"
+    },
+    {
+      "local_name": "WrRM*"
+    },
+    {
+      "local_name": "WrRm*"
+    },
+    {
+      "local_name": "WrrM*"
+    },
+    {
+      "local_name": "Wrrm*"
+    },
+    {
+      "local_name": "WsRM*"
+    },
+    {
+      "local_name": "WsRm*"
+    },
+    {
+      "local_name": "WsrM*"
+    },
+    {
+      "local_name": "Wsrm*"
+    },
+    {
+      "local_name": "WtRM*"
+    },
+    {
+      "local_name": "WtRm*"
+    },
+    {
+      "local_name": "WtrM*"
+    },
+    {
+      "local_name": "Wtrm*"
+    },
+    {
+      "local_name": "WuRM*"
+    },
+    {
+      "local_name": "WuRm*"
+    },
+    {
+      "local_name": "WurM*"
+    },
+    {
+      "local_name": "Wurm*"
+    },
+    {
+      "local_name": "WvRM*"
+    },
+    {
+      "local_name": "WvRm*"
+    },
+    {
+      "local_name": "WvrM*"
+    },
+    {
+      "local_name": "Wvrm*"
+    },
+    {
+      "local_name": "WwRM*"
+    },
+    {
+      "local_name": "WwRm*"
+    },
+    {
+      "local_name": "WwrM*"
+    },
+    {
+      "local_name": "Wwrm*"
+    },
+    {
+      "local_name": "WxRM*"
+    },
+    {
+      "local_name": "WxRm*"
+    },
+    {
+      "local_name": "WxrM*"
+    },
+    {
+      "local_name": "Wxrm*"
+    },
+    {
+      "local_name": "WyRM*"
+    },
+    {
+      "local_name": "WyRm*"
+    },
+    {
+      "local_name": "WyrM*"
+    },
+    {
+      "local_name": "Wyrm*"
+    },
+    {
+      "local_name": "WzRM*"
+    },
+    {
+      "local_name": "WzRm*"
+    },
+    {
+      "local_name": "WzrM*"
+    },
+    {
+      "local_name": "Wzrm*"
     },
     {
       "local_name": "X0RM*"
@@ -5778,7 +10431,25 @@
       "local_name": "X1RM*"
     },
     {
+      "local_name": "X1Rm*"
+    },
+    {
+      "local_name": "X1rM*"
+    },
+    {
+      "local_name": "X1rm*"
+    },
+    {
       "local_name": "X2RM*"
+    },
+    {
+      "local_name": "X2Rm*"
+    },
+    {
+      "local_name": "X2rM*"
+    },
+    {
+      "local_name": "X2rm*"
     },
     {
       "local_name": "X4RM*"
@@ -5808,6 +10479,15 @@
       "local_name": "XCRM*"
     },
     {
+      "local_name": "XCRm*"
+    },
+    {
+      "local_name": "XCrM*"
+    },
+    {
+      "local_name": "XCrm*"
+    },
+    {
       "local_name": "XDRM*"
     },
     {
@@ -5817,7 +10497,25 @@
       "local_name": "XFRM*"
     },
     {
+      "local_name": "XFRm*"
+    },
+    {
+      "local_name": "XFrM*"
+    },
+    {
+      "local_name": "XFrm*"
+    },
+    {
       "local_name": "XGRM*"
+    },
+    {
+      "local_name": "XGRm*"
+    },
+    {
+      "local_name": "XGrM*"
+    },
+    {
+      "local_name": "XGrm*"
     },
     {
       "local_name": "XHRM*"
@@ -5833,6 +10531,15 @@
     },
     {
       "local_name": "XLRM*"
+    },
+    {
+      "local_name": "XLRm*"
+    },
+    {
+      "local_name": "XLrM*"
+    },
+    {
+      "local_name": "XLrm*"
     },
     {
       "local_name": "XMRM*"
@@ -5877,79 +10584,352 @@
       "local_name": "XZRM*"
     },
     {
+      "local_name": "XcRM*"
+    },
+    {
+      "local_name": "XcRm*"
+    },
+    {
+      "local_name": "XcrM*"
+    },
+    {
+      "local_name": "Xcrm*"
+    },
+    {
+      "local_name": "XfRM*"
+    },
+    {
+      "local_name": "XfRm*"
+    },
+    {
+      "local_name": "XfrM*"
+    },
+    {
+      "local_name": "Xfrm*"
+    },
+    {
+      "local_name": "XgRM*"
+    },
+    {
+      "local_name": "XgRm*"
+    },
+    {
+      "local_name": "XgrM*"
+    },
+    {
+      "local_name": "Xgrm*"
+    },
+    {
+      "local_name": "XlRM*"
+    },
+    {
+      "local_name": "XlRm*"
+    },
+    {
+      "local_name": "XlrM*"
+    },
+    {
+      "local_name": "Xlrm*"
+    },
+    {
       "local_name": "Y0RM*"
+    },
+    {
+      "local_name": "Y0Rm*"
+    },
+    {
+      "local_name": "Y0rM*"
+    },
+    {
+      "local_name": "Y0rm*"
     },
     {
       "local_name": "Y1RM*"
     },
     {
+      "local_name": "Y1Rm*"
+    },
+    {
+      "local_name": "Y1rM*"
+    },
+    {
+      "local_name": "Y1rm*"
+    },
+    {
       "local_name": "Y2RM*"
+    },
+    {
+      "local_name": "Y2Rm*"
+    },
+    {
+      "local_name": "Y2rM*"
+    },
+    {
+      "local_name": "Y2rm*"
     },
     {
       "local_name": "Y3RM*"
     },
     {
+      "local_name": "Y3Rm*"
+    },
+    {
+      "local_name": "Y3rM*"
+    },
+    {
+      "local_name": "Y3rm*"
+    },
+    {
       "local_name": "Y4RM*"
+    },
+    {
+      "local_name": "Y4Rm*"
+    },
+    {
+      "local_name": "Y4rM*"
+    },
+    {
+      "local_name": "Y4rm*"
     },
     {
       "local_name": "Y5RM*"
     },
     {
+      "local_name": "Y5Rm*"
+    },
+    {
+      "local_name": "Y5rM*"
+    },
+    {
+      "local_name": "Y5rm*"
+    },
+    {
       "local_name": "Y6RM*"
+    },
+    {
+      "local_name": "Y6Rm*"
+    },
+    {
+      "local_name": "Y6rM*"
+    },
+    {
+      "local_name": "Y6rm*"
     },
     {
       "local_name": "Y7RM*"
     },
     {
+      "local_name": "Y7Rm*"
+    },
+    {
+      "local_name": "Y7rM*"
+    },
+    {
+      "local_name": "Y7rm*"
+    },
+    {
       "local_name": "Y8RM*"
+    },
+    {
+      "local_name": "Y8Rm*"
+    },
+    {
+      "local_name": "Y8rM*"
+    },
+    {
+      "local_name": "Y8rm*"
     },
     {
       "local_name": "Y9RM*"
     },
     {
+      "local_name": "Y9Rm*"
+    },
+    {
+      "local_name": "Y9rM*"
+    },
+    {
+      "local_name": "Y9rm*"
+    },
+    {
       "local_name": "YARM*"
+    },
+    {
+      "local_name": "YARm*"
+    },
+    {
+      "local_name": "YArM*"
+    },
+    {
+      "local_name": "YArm*"
     },
     {
       "local_name": "YBRM*"
     },
     {
+      "local_name": "YBRm*"
+    },
+    {
+      "local_name": "YBrM*"
+    },
+    {
+      "local_name": "YBrm*"
+    },
+    {
       "local_name": "YCRM*"
+    },
+    {
+      "local_name": "YCRm*"
+    },
+    {
+      "local_name": "YCrM*"
+    },
+    {
+      "local_name": "YCrm*"
     },
     {
       "local_name": "YDRM*"
     },
     {
+      "local_name": "YDRm*"
+    },
+    {
+      "local_name": "YDrM*"
+    },
+    {
+      "local_name": "YDrm*"
+    },
+    {
       "local_name": "YERM*"
+    },
+    {
+      "local_name": "YERm*"
+    },
+    {
+      "local_name": "YErM*"
+    },
+    {
+      "local_name": "YErm*"
     },
     {
       "local_name": "YFRM*"
     },
     {
+      "local_name": "YFRm*"
+    },
+    {
+      "local_name": "YFrM*"
+    },
+    {
+      "local_name": "YFrm*"
+    },
+    {
       "local_name": "YGRM*"
+    },
+    {
+      "local_name": "YGRm*"
+    },
+    {
+      "local_name": "YGrM*"
+    },
+    {
+      "local_name": "YGrm*"
     },
     {
       "local_name": "YHRM*"
     },
     {
+      "local_name": "YHRm*"
+    },
+    {
+      "local_name": "YHrM*"
+    },
+    {
+      "local_name": "YHrm*"
+    },
+    {
       "local_name": "YIRM*"
+    },
+    {
+      "local_name": "YIRm*"
+    },
+    {
+      "local_name": "YIrM*"
+    },
+    {
+      "local_name": "YIrm*"
     },
     {
       "local_name": "YJRM*"
     },
     {
+      "local_name": "YJRm*"
+    },
+    {
+      "local_name": "YJrM*"
+    },
+    {
+      "local_name": "YJrm*"
+    },
+    {
       "local_name": "YKRM*"
+    },
+    {
+      "local_name": "YKRm*"
+    },
+    {
+      "local_name": "YKrM*"
+    },
+    {
+      "local_name": "YKrm*"
     },
     {
       "local_name": "YMRM*"
     },
     {
+      "local_name": "YMRm*"
+    },
+    {
+      "local_name": "YMrM*"
+    },
+    {
+      "local_name": "YMrm*"
+    },
+    {
       "local_name": "YNRM*"
+    },
+    {
+      "local_name": "YNRm*"
+    },
+    {
+      "local_name": "YNrM*"
+    },
+    {
+      "local_name": "YNrm*"
     },
     {
       "local_name": "YORM*"
     },
     {
+      "local_name": "YORm*"
+    },
+    {
+      "local_name": "YOrM*"
+    },
+    {
+      "local_name": "YOrm*"
+    },
+    {
       "local_name": "YPRM*"
+    },
+    {
+      "local_name": "YPRm*"
+    },
+    {
+      "local_name": "YPrM*"
+    },
+    {
+      "local_name": "YPrm*"
     },
     {
       "local_name": "YQRM*"
@@ -5980,6 +10960,186 @@
     },
     {
       "local_name": "YZRM*"
+    },
+    {
+      "local_name": "YaRM*"
+    },
+    {
+      "local_name": "YaRm*"
+    },
+    {
+      "local_name": "YarM*"
+    },
+    {
+      "local_name": "Yarm*"
+    },
+    {
+      "local_name": "YbRM*"
+    },
+    {
+      "local_name": "YbRm*"
+    },
+    {
+      "local_name": "YbrM*"
+    },
+    {
+      "local_name": "Ybrm*"
+    },
+    {
+      "local_name": "YcRM*"
+    },
+    {
+      "local_name": "YcRm*"
+    },
+    {
+      "local_name": "YcrM*"
+    },
+    {
+      "local_name": "Ycrm*"
+    },
+    {
+      "local_name": "YdRM*"
+    },
+    {
+      "local_name": "YdRm*"
+    },
+    {
+      "local_name": "YdrM*"
+    },
+    {
+      "local_name": "Ydrm*"
+    },
+    {
+      "local_name": "YeRM*"
+    },
+    {
+      "local_name": "YeRm*"
+    },
+    {
+      "local_name": "YerM*"
+    },
+    {
+      "local_name": "Yerm*"
+    },
+    {
+      "local_name": "YfRM*"
+    },
+    {
+      "local_name": "YfRm*"
+    },
+    {
+      "local_name": "YfrM*"
+    },
+    {
+      "local_name": "Yfrm*"
+    },
+    {
+      "local_name": "YgRM*"
+    },
+    {
+      "local_name": "YgRm*"
+    },
+    {
+      "local_name": "YgrM*"
+    },
+    {
+      "local_name": "Ygrm*"
+    },
+    {
+      "local_name": "YhRM*"
+    },
+    {
+      "local_name": "YhRm*"
+    },
+    {
+      "local_name": "YhrM*"
+    },
+    {
+      "local_name": "Yhrm*"
+    },
+    {
+      "local_name": "YiRM*"
+    },
+    {
+      "local_name": "YiRm*"
+    },
+    {
+      "local_name": "YirM*"
+    },
+    {
+      "local_name": "Yirm*"
+    },
+    {
+      "local_name": "YjRM*"
+    },
+    {
+      "local_name": "YjRm*"
+    },
+    {
+      "local_name": "YjrM*"
+    },
+    {
+      "local_name": "Yjrm*"
+    },
+    {
+      "local_name": "YkRM*"
+    },
+    {
+      "local_name": "YkRm*"
+    },
+    {
+      "local_name": "YkrM*"
+    },
+    {
+      "local_name": "Ykrm*"
+    },
+    {
+      "local_name": "YmRM*"
+    },
+    {
+      "local_name": "YmRm*"
+    },
+    {
+      "local_name": "YmrM*"
+    },
+    {
+      "local_name": "Ymrm*"
+    },
+    {
+      "local_name": "YnRM*"
+    },
+    {
+      "local_name": "YnRm*"
+    },
+    {
+      "local_name": "YnrM*"
+    },
+    {
+      "local_name": "Ynrm*"
+    },
+    {
+      "local_name": "YoRM*"
+    },
+    {
+      "local_name": "YoRm*"
+    },
+    {
+      "local_name": "YorM*"
+    },
+    {
+      "local_name": "Yorm*"
+    },
+    {
+      "local_name": "YpRM*"
+    },
+    {
+      "local_name": "YpRm*"
+    },
+    {
+      "local_name": "YprM*"
+    },
+    {
+      "local_name": "Yprm*"
     },
     {
       "local_name": "Z0RM*"
@@ -6063,6 +11223,15 @@
       "local_name": "ZQRM*"
     },
     {
+      "local_name": "ZQRm*"
+    },
+    {
+      "local_name": "ZQrM*"
+    },
+    {
+      "local_name": "ZQrm*"
+    },
+    {
       "local_name": "ZR00*"
     },
     {
@@ -6144,6 +11313,18 @@
       "local_name": "ZRS6*"
     },
     {
+      "local_name": "ZRa0*"
+    },
+    {
+      "local_name": "ZRa1*"
+    },
+    {
+      "local_name": "ZRa2*"
+    },
+    {
+      "local_name": "ZRi0*"
+    },
+    {
       "local_name": "ZSRM*"
     },
     {
@@ -6168,6 +11349,867 @@
       "local_name": "ZZRM*"
     },
     {
+      "local_name": "ZqRM*"
+    },
+    {
+      "local_name": "ZqRm*"
+    },
+    {
+      "local_name": "ZqrM*"
+    },
+    {
+      "local_name": "Zqrm*"
+    },
+    {
+      "local_name": "Zr00*"
+    },
+    {
+      "local_name": "Zr01*"
+    },
+    {
+      "local_name": "Zr10*"
+    },
+    {
+      "local_name": "Zr11*"
+    },
+    {
+      "local_name": "Zr12*"
+    },
+    {
+      "local_name": "Zr20*"
+    },
+    {
+      "local_name": "Zr21*"
+    },
+    {
+      "local_name": "Zr30*"
+    },
+    {
+      "local_name": "Zr40*"
+    },
+    {
+      "local_name": "Zr50*"
+    },
+    {
+      "local_name": "Zr51*"
+    },
+    {
+      "local_name": "Zr60*"
+    },
+    {
+      "local_name": "Zr70*"
+    },
+    {
+      "local_name": "Zr80*"
+    },
+    {
+      "local_name": "Zr90*"
+    },
+    {
+      "local_name": "ZrA0*"
+    },
+    {
+      "local_name": "ZrA1*"
+    },
+    {
+      "local_name": "ZrA2*"
+    },
+    {
+      "local_name": "ZrI0*"
+    },
+    {
+      "local_name": "Zra0*"
+    },
+    {
+      "local_name": "Zra1*"
+    },
+    {
+      "local_name": "Zra2*"
+    },
+    {
+      "local_name": "Zri0*"
+    },
+    {
+      "local_name": "a0RM*"
+    },
+    {
+      "local_name": "a0Rm*"
+    },
+    {
+      "local_name": "a0rM*"
+    },
+    {
+      "local_name": "a0rm*"
+    },
+    {
+      "local_name": "a1RM*"
+    },
+    {
+      "local_name": "a1Rm*"
+    },
+    {
+      "local_name": "a1rM*"
+    },
+    {
+      "local_name": "a1rm*"
+    },
+    {
+      "local_name": "a2RM*"
+    },
+    {
+      "local_name": "a2Rm*"
+    },
+    {
+      "local_name": "a2rM*"
+    },
+    {
+      "local_name": "a2rm*"
+    },
+    {
+      "local_name": "a3RM*"
+    },
+    {
+      "local_name": "a3Rm*"
+    },
+    {
+      "local_name": "a3rM*"
+    },
+    {
+      "local_name": "a3rm*"
+    },
+    {
+      "local_name": "a6RM*"
+    },
+    {
+      "local_name": "a6Rm*"
+    },
+    {
+      "local_name": "a6rM*"
+    },
+    {
+      "local_name": "a6rm*"
+    },
+    {
+      "local_name": "a7RM*"
+    },
+    {
+      "local_name": "a7Rm*"
+    },
+    {
+      "local_name": "a7rM*"
+    },
+    {
+      "local_name": "a7rm*"
+    },
+    {
+      "local_name": "a8RM*"
+    },
+    {
+      "local_name": "a8Rm*"
+    },
+    {
+      "local_name": "a8rM*"
+    },
+    {
+      "local_name": "a8rm*"
+    },
+    {
+      "local_name": "a9RM*"
+    },
+    {
+      "local_name": "a9Rm*"
+    },
+    {
+      "local_name": "a9rM*"
+    },
+    {
+      "local_name": "a9rm*"
+    },
+    {
+      "local_name": "aARM*"
+    },
+    {
+      "local_name": "aARm*"
+    },
+    {
+      "local_name": "aArM*"
+    },
+    {
+      "local_name": "aArm*"
+    },
+    {
+      "local_name": "aBRM*"
+    },
+    {
+      "local_name": "aBRm*"
+    },
+    {
+      "local_name": "aBrM*"
+    },
+    {
+      "local_name": "aBrm*"
+    },
+    {
+      "local_name": "aCRM*"
+    },
+    {
+      "local_name": "aCRm*"
+    },
+    {
+      "local_name": "aCrM*"
+    },
+    {
+      "local_name": "aCrm*"
+    },
+    {
+      "local_name": "aDRM*"
+    },
+    {
+      "local_name": "aDRm*"
+    },
+    {
+      "local_name": "aDrM*"
+    },
+    {
+      "local_name": "aDrm*"
+    },
+    {
+      "local_name": "aERM*"
+    },
+    {
+      "local_name": "aERm*"
+    },
+    {
+      "local_name": "aErM*"
+    },
+    {
+      "local_name": "aErm*"
+    },
+    {
+      "local_name": "aFRM*"
+    },
+    {
+      "local_name": "aFRm*"
+    },
+    {
+      "local_name": "aFrM*"
+    },
+    {
+      "local_name": "aFrm*"
+    },
+    {
+      "local_name": "aGRM*"
+    },
+    {
+      "local_name": "aGRm*"
+    },
+    {
+      "local_name": "aGrM*"
+    },
+    {
+      "local_name": "aGrm*"
+    },
+    {
+      "local_name": "aHRM*"
+    },
+    {
+      "local_name": "aHRm*"
+    },
+    {
+      "local_name": "aHrM*"
+    },
+    {
+      "local_name": "aHrm*"
+    },
+    {
+      "local_name": "aIRM*"
+    },
+    {
+      "local_name": "aIRm*"
+    },
+    {
+      "local_name": "aIrM*"
+    },
+    {
+      "local_name": "aIrm*"
+    },
+    {
+      "local_name": "aJRM*"
+    },
+    {
+      "local_name": "aJRm*"
+    },
+    {
+      "local_name": "aJrM*"
+    },
+    {
+      "local_name": "aJrm*"
+    },
+    {
+      "local_name": "aKRM*"
+    },
+    {
+      "local_name": "aKRm*"
+    },
+    {
+      "local_name": "aKrM*"
+    },
+    {
+      "local_name": "aKrm*"
+    },
+    {
+      "local_name": "aWRM*"
+    },
+    {
+      "local_name": "aWRm*"
+    },
+    {
+      "local_name": "aWrM*"
+    },
+    {
+      "local_name": "aWrm*"
+    },
+    {
+      "local_name": "aXRM*"
+    },
+    {
+      "local_name": "aXRm*"
+    },
+    {
+      "local_name": "aXrM*"
+    },
+    {
+      "local_name": "aXrm*"
+    },
+    {
+      "local_name": "aaRM*"
+    },
+    {
+      "local_name": "aaRm*"
+    },
+    {
+      "local_name": "aarM*"
+    },
+    {
+      "local_name": "aarm*"
+    },
+    {
+      "local_name": "abRM*"
+    },
+    {
+      "local_name": "abRm*"
+    },
+    {
+      "local_name": "abrM*"
+    },
+    {
+      "local_name": "abrm*"
+    },
+    {
+      "local_name": "acRM*"
+    },
+    {
+      "local_name": "acRm*"
+    },
+    {
+      "local_name": "acrM*"
+    },
+    {
+      "local_name": "acrm*"
+    },
+    {
+      "local_name": "adRM*"
+    },
+    {
+      "local_name": "adRm*"
+    },
+    {
+      "local_name": "adrM*"
+    },
+    {
+      "local_name": "adrm*"
+    },
+    {
+      "local_name": "aeRM*"
+    },
+    {
+      "local_name": "aeRm*"
+    },
+    {
+      "local_name": "aerM*"
+    },
+    {
+      "local_name": "aerm*"
+    },
+    {
+      "local_name": "afRM*"
+    },
+    {
+      "local_name": "afRm*"
+    },
+    {
+      "local_name": "afrM*"
+    },
+    {
+      "local_name": "afrm*"
+    },
+    {
+      "local_name": "agRM*"
+    },
+    {
+      "local_name": "agRm*"
+    },
+    {
+      "local_name": "agrM*"
+    },
+    {
+      "local_name": "agrm*"
+    },
+    {
+      "local_name": "ahRM*"
+    },
+    {
+      "local_name": "ahRm*"
+    },
+    {
+      "local_name": "ahrM*"
+    },
+    {
+      "local_name": "ahrm*"
+    },
+    {
+      "local_name": "aiRM*"
+    },
+    {
+      "local_name": "aiRm*"
+    },
+    {
+      "local_name": "airM*"
+    },
+    {
+      "local_name": "airm*"
+    },
+    {
+      "local_name": "ajRM*"
+    },
+    {
+      "local_name": "ajRm*"
+    },
+    {
+      "local_name": "ajrM*"
+    },
+    {
+      "local_name": "ajrm*"
+    },
+    {
+      "local_name": "akRM*"
+    },
+    {
+      "local_name": "akRm*"
+    },
+    {
+      "local_name": "akrM*"
+    },
+    {
+      "local_name": "akrm*"
+    },
+    {
+      "local_name": "awRM*"
+    },
+    {
+      "local_name": "awRm*"
+    },
+    {
+      "local_name": "awrM*"
+    },
+    {
+      "local_name": "awrm*"
+    },
+    {
+      "local_name": "axRM*"
+    },
+    {
+      "local_name": "axRm*"
+    },
+    {
+      "local_name": "axrM*"
+    },
+    {
+      "local_name": "axrm*"
+    },
+    {
+      "local_name": "b0RM*"
+    },
+    {
+      "local_name": "b0Rm*"
+    },
+    {
+      "local_name": "b0rM*"
+    },
+    {
+      "local_name": "b0rm*"
+    },
+    {
+      "local_name": "b1RM*"
+    },
+    {
+      "local_name": "b1Rm*"
+    },
+    {
+      "local_name": "b1rM*"
+    },
+    {
+      "local_name": "b1rm*"
+    },
+    {
+      "local_name": "b2RM*"
+    },
+    {
+      "local_name": "b2Rm*"
+    },
+    {
+      "local_name": "b2rM*"
+    },
+    {
+      "local_name": "b2rm*"
+    },
+    {
+      "local_name": "b3RM*"
+    },
+    {
+      "local_name": "b3Rm*"
+    },
+    {
+      "local_name": "b3rM*"
+    },
+    {
+      "local_name": "b3rm*"
+    },
+    {
+      "local_name": "b4RM*"
+    },
+    {
+      "local_name": "b4Rm*"
+    },
+    {
+      "local_name": "b4rM*"
+    },
+    {
+      "local_name": "b4rm*"
+    },
+    {
+      "local_name": "b5RM*"
+    },
+    {
+      "local_name": "b5Rm*"
+    },
+    {
+      "local_name": "b5rM*"
+    },
+    {
+      "local_name": "b5rm*"
+    },
+    {
+      "local_name": "b6RM*"
+    },
+    {
+      "local_name": "b6RU*"
+    },
+    {
+      "local_name": "b6Rm*"
+    },
+    {
+      "local_name": "b6Ru*"
+    },
+    {
+      "local_name": "b6rM*"
+    },
+    {
+      "local_name": "b6rU*"
+    },
+    {
+      "local_name": "b6rm*"
+    },
+    {
+      "local_name": "b6ru*"
+    },
+    {
+      "local_name": "b7RM*"
+    },
+    {
+      "local_name": "b7Rm*"
+    },
+    {
+      "local_name": "b7rM*"
+    },
+    {
+      "local_name": "b7rm*"
+    },
+    {
+      "local_name": "b8RM*"
+    },
+    {
+      "local_name": "b8Rm*"
+    },
+    {
+      "local_name": "b8TT*"
+    },
+    {
+      "local_name": "b8Tt*"
+    },
+    {
+      "local_name": "b8rM*"
+    },
+    {
+      "local_name": "b8rm*"
+    },
+    {
+      "local_name": "b8tT*"
+    },
+    {
+      "local_name": "b8tt*"
+    },
+    {
+      "local_name": "b9RM*"
+    },
+    {
+      "local_name": "b9Rm*"
+    },
+    {
+      "local_name": "b9TT*"
+    },
+    {
+      "local_name": "b9Tt*"
+    },
+    {
+      "local_name": "b9rM*"
+    },
+    {
+      "local_name": "b9rm*"
+    },
+    {
+      "local_name": "b9tT*"
+    },
+    {
+      "local_name": "b9tt*"
+    },
+    {
+      "local_name": "bARM*"
+    },
+    {
+      "local_name": "bARm*"
+    },
+    {
+      "local_name": "bArM*"
+    },
+    {
+      "local_name": "bArm*"
+    },
+    {
+      "local_name": "bBRM*"
+    },
+    {
+      "local_name": "bBRm*"
+    },
+    {
+      "local_name": "bBrM*"
+    },
+    {
+      "local_name": "bBrm*"
+    },
+    {
+      "local_name": "bCRM*"
+    },
+    {
+      "local_name": "bCRm*"
+    },
+    {
+      "local_name": "bCrM*"
+    },
+    {
+      "local_name": "bCrm*"
+    },
+    {
+      "local_name": "bDRM*"
+    },
+    {
+      "local_name": "bDRm*"
+    },
+    {
+      "local_name": "bDrM*"
+    },
+    {
+      "local_name": "bDrm*"
+    },
+    {
+      "local_name": "bERM*"
+    },
+    {
+      "local_name": "bERm*"
+    },
+    {
+      "local_name": "bErM*"
+    },
+    {
+      "local_name": "bErm*"
+    },
+    {
+      "local_name": "bFRM*"
+    },
+    {
+      "local_name": "bFRm*"
+    },
+    {
+      "local_name": "bFrM*"
+    },
+    {
+      "local_name": "bFrm*"
+    },
+    {
+      "local_name": "bGRM*"
+    },
+    {
+      "local_name": "bGRm*"
+    },
+    {
+      "local_name": "bGrM*"
+    },
+    {
+      "local_name": "bGrm*"
+    },
+    {
+      "local_name": "bHRM*"
+    },
+    {
+      "local_name": "bHRm*"
+    },
+    {
+      "local_name": "bHrM*"
+    },
+    {
+      "local_name": "bHrm*"
+    },
+    {
+      "local_name": "bIRM*"
+    },
+    {
+      "local_name": "bIRm*"
+    },
+    {
+      "local_name": "bIrM*"
+    },
+    {
+      "local_name": "bIrm*"
+    },
+    {
+      "local_name": "bJRM*"
+    },
+    {
+      "local_name": "bJRm*"
+    },
+    {
+      "local_name": "bJrM*"
+    },
+    {
+      "local_name": "bJrm*"
+    },
+    {
+      "local_name": "bKRM*"
+    },
+    {
+      "local_name": "bKRm*"
+    },
+    {
+      "local_name": "bKrM*"
+    },
+    {
+      "local_name": "bKrm*"
+    },
+    {
+      "local_name": "bLRM*"
+    },
+    {
+      "local_name": "bLRm*"
+    },
+    {
+      "local_name": "bLrM*"
+    },
+    {
+      "local_name": "bLrm*"
+    },
+    {
+      "local_name": "bMRM*"
+    },
+    {
+      "local_name": "bMRm*"
+    },
+    {
+      "local_name": "bMrM*"
+    },
+    {
+      "local_name": "bMrm*"
+    },
+    {
+      "local_name": "bNRM*"
+    },
+    {
+      "local_name": "bNRm*"
+    },
+    {
+      "local_name": "bNrM*"
+    },
+    {
+      "local_name": "bNrm*"
+    },
+    {
+      "local_name": "bPRM*"
+    },
+    {
+      "local_name": "bPRm*"
+    },
+    {
+      "local_name": "bPrM*"
+    },
+    {
+      "local_name": "bPrm*"
+    },
+    {
+      "local_name": "bQRM*"
+    },
+    {
+      "local_name": "bQRm*"
+    },
+    {
+      "local_name": "bQrM*"
+    },
+    {
+      "local_name": "bQrm*"
+    },
+    {
+      "local_name": "bZRM*"
+    },
+    {
+      "local_name": "bZRm*"
+    },
+    {
+      "local_name": "bZrM*"
+    },
+    {
+      "local_name": "bZrm*"
+    },
+    {
+      "local_name": "baRM*"
+    },
+    {
+      "local_name": "baRm*"
+    },
+    {
+      "local_name": "barM*"
+    },
+    {
+      "local_name": "barm*"
+    },
+    {
       "local_name": "base-i4*",
       "connectable": true
     },
@@ -6176,16 +12218,1528 @@
       "connectable": true
     },
     {
+      "local_name": "bbRM*"
+    },
+    {
+      "local_name": "bbRm*"
+    },
+    {
+      "local_name": "bbrM*"
+    },
+    {
+      "local_name": "bbrm*"
+    },
+    {
+      "local_name": "bcRM*"
+    },
+    {
+      "local_name": "bcRm*"
+    },
+    {
+      "local_name": "bcrM*"
+    },
+    {
+      "local_name": "bcrm*"
+    },
+    {
+      "local_name": "bdRM*"
+    },
+    {
+      "local_name": "bdRm*"
+    },
+    {
+      "local_name": "bdrM*"
+    },
+    {
+      "local_name": "bdrm*"
+    },
+    {
+      "local_name": "beRM*"
+    },
+    {
+      "local_name": "beRm*"
+    },
+    {
+      "local_name": "berM*"
+    },
+    {
+      "local_name": "berm*"
+    },
+    {
+      "local_name": "bfRM*"
+    },
+    {
+      "local_name": "bfRm*"
+    },
+    {
+      "local_name": "bfrM*"
+    },
+    {
+      "local_name": "bfrm*"
+    },
+    {
+      "local_name": "bgRM*"
+    },
+    {
+      "local_name": "bgRm*"
+    },
+    {
+      "local_name": "bgrM*"
+    },
+    {
+      "local_name": "bgrm*"
+    },
+    {
+      "local_name": "bhRM*"
+    },
+    {
+      "local_name": "bhRm*"
+    },
+    {
+      "local_name": "bhrM*"
+    },
+    {
+      "local_name": "bhrm*"
+    },
+    {
+      "local_name": "biRM*"
+    },
+    {
+      "local_name": "biRm*"
+    },
+    {
+      "local_name": "birM*"
+    },
+    {
+      "local_name": "birm*"
+    },
+    {
+      "local_name": "bjRM*"
+    },
+    {
+      "local_name": "bjRm*"
+    },
+    {
+      "local_name": "bjrM*"
+    },
+    {
+      "local_name": "bjrm*"
+    },
+    {
+      "local_name": "bkRM*"
+    },
+    {
+      "local_name": "bkRm*"
+    },
+    {
+      "local_name": "bkrM*"
+    },
+    {
+      "local_name": "bkrm*"
+    },
+    {
+      "local_name": "blRM*"
+    },
+    {
+      "local_name": "blRm*"
+    },
+    {
+      "local_name": "blrM*"
+    },
+    {
+      "local_name": "blrm*"
+    },
+    {
+      "local_name": "bmRM*"
+    },
+    {
+      "local_name": "bmRm*"
+    },
+    {
+      "local_name": "bmrM*"
+    },
+    {
+      "local_name": "bmrm*"
+    },
+    {
+      "local_name": "bnRM*"
+    },
+    {
+      "local_name": "bnRm*"
+    },
+    {
+      "local_name": "bnrM*"
+    },
+    {
+      "local_name": "bnrm*"
+    },
+    {
+      "local_name": "bpRM*"
+    },
+    {
+      "local_name": "bpRm*"
+    },
+    {
+      "local_name": "bprM*"
+    },
+    {
+      "local_name": "bprm*"
+    },
+    {
+      "local_name": "bqRM*"
+    },
+    {
+      "local_name": "bqRm*"
+    },
+    {
+      "local_name": "bqrM*"
+    },
+    {
+      "local_name": "bqrm*"
+    },
+    {
+      "local_name": "bzRM*"
+    },
+    {
+      "local_name": "bzRm*"
+    },
+    {
+      "local_name": "bzrM*"
+    },
+    {
+      "local_name": "bzrm*"
+    },
+    {
+      "local_name": "cERM*"
+    },
+    {
+      "local_name": "cERm*"
+    },
+    {
+      "local_name": "cErM*"
+    },
+    {
+      "local_name": "cErm*"
+    },
+    {
+      "local_name": "cFRM*"
+    },
+    {
+      "local_name": "cFRm*"
+    },
+    {
+      "local_name": "cFrM*"
+    },
+    {
+      "local_name": "cFrm*"
+    },
+    {
+      "local_name": "cWRM*"
+    },
+    {
+      "local_name": "cWRm*"
+    },
+    {
+      "local_name": "cWrM*"
+    },
+    {
+      "local_name": "cWrm*"
+    },
+    {
+      "local_name": "cXRM*"
+    },
+    {
+      "local_name": "cXRm*"
+    },
+    {
+      "local_name": "cXrM*"
+    },
+    {
+      "local_name": "cXrm*"
+    },
+    {
+      "local_name": "ceRM*"
+    },
+    {
+      "local_name": "ceRm*"
+    },
+    {
+      "local_name": "cerM*"
+    },
+    {
+      "local_name": "cerm*"
+    },
+    {
+      "local_name": "cfRM*"
+    },
+    {
+      "local_name": "cfRm*"
+    },
+    {
+      "local_name": "cfrM*"
+    },
+    {
+      "local_name": "cfrm*"
+    },
+    {
+      "local_name": "cwRM*"
+    },
+    {
+      "local_name": "cwRm*"
+    },
+    {
+      "local_name": "cwrM*"
+    },
+    {
+      "local_name": "cwrm*"
+    },
+    {
+      "local_name": "cxRM*"
+    },
+    {
+      "local_name": "cxRm*"
+    },
+    {
+      "local_name": "cxrM*"
+    },
+    {
+      "local_name": "cxrm*"
+    },
+    {
+      "local_name": "d0RM*"
+    },
+    {
+      "local_name": "d0Rm*"
+    },
+    {
+      "local_name": "d0rM*"
+    },
+    {
+      "local_name": "d0rm*"
+    },
+    {
+      "local_name": "d1RM*"
+    },
+    {
+      "local_name": "d1Rm*"
+    },
+    {
+      "local_name": "d1rM*"
+    },
+    {
+      "local_name": "d1rm*"
+    },
+    {
+      "local_name": "d2RM*"
+    },
+    {
+      "local_name": "d2Rm*"
+    },
+    {
+      "local_name": "d2rM*"
+    },
+    {
+      "local_name": "d2rm*"
+    },
+    {
+      "local_name": "d4RM*"
+    },
+    {
+      "local_name": "d4Rm*"
+    },
+    {
+      "local_name": "d4rM*"
+    },
+    {
+      "local_name": "d4rm*"
+    },
+    {
+      "local_name": "d5RM*"
+    },
+    {
+      "local_name": "d5Rm*"
+    },
+    {
+      "local_name": "d5rM*"
+    },
+    {
+      "local_name": "d5rm*"
+    },
+    {
+      "local_name": "d6RM*"
+    },
+    {
+      "local_name": "d6Rm*"
+    },
+    {
+      "local_name": "d6rM*"
+    },
+    {
+      "local_name": "d6rm*"
+    },
+    {
+      "local_name": "d7RM*"
+    },
+    {
+      "local_name": "d7Rm*"
+    },
+    {
+      "local_name": "d7rM*"
+    },
+    {
+      "local_name": "d7rm*"
+    },
+    {
+      "local_name": "dFRM*"
+    },
+    {
+      "local_name": "dFRm*"
+    },
+    {
+      "local_name": "dFrM*"
+    },
+    {
+      "local_name": "dFrm*"
+    },
+    {
+      "local_name": "dGRM*"
+    },
+    {
+      "local_name": "dGRm*"
+    },
+    {
+      "local_name": "dGrM*"
+    },
+    {
+      "local_name": "dGrm*"
+    },
+    {
+      "local_name": "dNRM*"
+    },
+    {
+      "local_name": "dNRm*"
+    },
+    {
+      "local_name": "dNrM*"
+    },
+    {
+      "local_name": "dNrm*"
+    },
+    {
+      "local_name": "dZRM*"
+    },
+    {
+      "local_name": "dZRm*"
+    },
+    {
+      "local_name": "dZrM*"
+    },
+    {
+      "local_name": "dZrm*"
+    },
+    {
+      "local_name": "dfRM*"
+    },
+    {
+      "local_name": "dfRm*"
+    },
+    {
+      "local_name": "dfrM*"
+    },
+    {
+      "local_name": "dfrm*"
+    },
+    {
+      "local_name": "dgRM*"
+    },
+    {
+      "local_name": "dgRm*"
+    },
+    {
+      "local_name": "dgrM*"
+    },
+    {
+      "local_name": "dgrm*"
+    },
+    {
+      "local_name": "dnRM*"
+    },
+    {
+      "local_name": "dnRm*"
+    },
+    {
+      "local_name": "dnrM*"
+    },
+    {
+      "local_name": "dnrm*"
+    },
+    {
+      "local_name": "dzRM*"
+    },
+    {
+      "local_name": "dzRm*"
+    },
+    {
+      "local_name": "dzrM*"
+    },
+    {
+      "local_name": "dzrm*"
+    },
+    {
+      "local_name": "e1RM*"
+    },
+    {
+      "local_name": "e1Rm*"
+    },
+    {
+      "local_name": "e1rM*"
+    },
+    {
+      "local_name": "e1rm*"
+    },
+    {
+      "local_name": "e6RM*"
+    },
+    {
+      "local_name": "e6Rm*"
+    },
+    {
+      "local_name": "e6rM*"
+    },
+    {
+      "local_name": "e6rm*"
+    },
+    {
+      "local_name": "eARM*"
+    },
+    {
+      "local_name": "eARm*"
+    },
+    {
+      "local_name": "eArM*"
+    },
+    {
+      "local_name": "eArm*"
+    },
+    {
+      "local_name": "eBRM*"
+    },
+    {
+      "local_name": "eBRm*"
+    },
+    {
+      "local_name": "eBrM*"
+    },
+    {
+      "local_name": "eBrm*"
+    },
+    {
+      "local_name": "eERM*"
+    },
+    {
+      "local_name": "eERm*"
+    },
+    {
+      "local_name": "eErM*"
+    },
+    {
+      "local_name": "eErm*"
+    },
+    {
+      "local_name": "eFRM*"
+    },
+    {
+      "local_name": "eFRm*"
+    },
+    {
+      "local_name": "eFrM*"
+    },
+    {
+      "local_name": "eFrm*"
+    },
+    {
+      "local_name": "eHRM*"
+    },
+    {
+      "local_name": "eHRm*"
+    },
+    {
+      "local_name": "eHrM*"
+    },
+    {
+      "local_name": "eHrm*"
+    },
+    {
+      "local_name": "eLRM*"
+    },
+    {
+      "local_name": "eLRm*"
+    },
+    {
+      "local_name": "eLrM*"
+    },
+    {
+      "local_name": "eLrm*"
+    },
+    {
+      "local_name": "eaRM*"
+    },
+    {
+      "local_name": "eaRm*"
+    },
+    {
+      "local_name": "earM*"
+    },
+    {
+      "local_name": "earm*"
+    },
+    {
+      "local_name": "ebRM*"
+    },
+    {
+      "local_name": "ebRm*"
+    },
+    {
+      "local_name": "ebrM*"
+    },
+    {
+      "local_name": "ebrm*"
+    },
+    {
+      "local_name": "eeRM*"
+    },
+    {
+      "local_name": "eeRm*"
+    },
+    {
+      "local_name": "eerM*"
+    },
+    {
+      "local_name": "eerm*"
+    },
+    {
+      "local_name": "efRM*"
+    },
+    {
+      "local_name": "efRm*"
+    },
+    {
+      "local_name": "efrM*"
+    },
+    {
+      "local_name": "efrm*"
+    },
+    {
+      "local_name": "ehRM*"
+    },
+    {
+      "local_name": "ehRm*"
+    },
+    {
+      "local_name": "ehrM*"
+    },
+    {
+      "local_name": "ehrm*"
+    },
+    {
+      "local_name": "elRM*"
+    },
+    {
+      "local_name": "elRm*"
+    },
+    {
       "local_name": "elevate*"
     },
     {
+      "local_name": "elrM*"
+    },
+    {
+      "local_name": "elrm*"
+    },
+    {
+      "local_name": "f0RM*"
+    },
+    {
+      "local_name": "f0Rm*"
+    },
+    {
+      "local_name": "f0rM*"
+    },
+    {
+      "local_name": "f0rm*"
+    },
+    {
+      "local_name": "fIRM*"
+    },
+    {
+      "local_name": "fIRm*"
+    },
+    {
+      "local_name": "fIrM*"
+    },
+    {
+      "local_name": "fIrm*"
+    },
+    {
+      "local_name": "fJRM*"
+    },
+    {
+      "local_name": "fJRm*"
+    },
+    {
+      "local_name": "fJrM*"
+    },
+    {
+      "local_name": "fJrm*"
+    },
+    {
+      "local_name": "fRRM*"
+    },
+    {
+      "local_name": "fRRm*"
+    },
+    {
+      "local_name": "fRrM*"
+    },
+    {
+      "local_name": "fRrm*"
+    },
+    {
+      "local_name": "fiRM*"
+    },
+    {
+      "local_name": "fiRm*"
+    },
+    {
+      "local_name": "firM*"
+    },
+    {
+      "local_name": "firm*"
+    },
+    {
+      "local_name": "fjRM*"
+    },
+    {
+      "local_name": "fjRm*"
+    },
+    {
+      "local_name": "fjrM*"
+    },
+    {
+      "local_name": "fjrm*"
+    },
+    {
+      "local_name": "frRM*"
+    },
+    {
+      "local_name": "frRm*"
+    },
+    {
+      "local_name": "frrM*"
+    },
+    {
+      "local_name": "frrm*"
+    },
+    {
+      "local_name": "gARM*"
+    },
+    {
+      "local_name": "gARm*"
+    },
+    {
+      "local_name": "gArM*"
+    },
+    {
+      "local_name": "gArm*"
+    },
+    {
+      "local_name": "gMRM*"
+    },
+    {
+      "local_name": "gMRm*"
+    },
+    {
+      "local_name": "gMrM*"
+    },
+    {
+      "local_name": "gMrm*"
+    },
+    {
+      "local_name": "gaRM*"
+    },
+    {
+      "local_name": "gaRm*"
+    },
+    {
+      "local_name": "garM*"
+    },
+    {
+      "local_name": "garm*"
+    },
+    {
+      "local_name": "gmRM*"
+    },
+    {
+      "local_name": "gmRm*"
+    },
+    {
+      "local_name": "gmrM*"
+    },
+    {
+      "local_name": "gmrm*"
+    },
+    {
       "local_name": "hhc*"
+    },
+    {
+      "local_name": "i0RM*"
+    },
+    {
+      "local_name": "i0Rm*"
+    },
+    {
+      "local_name": "i0rM*"
+    },
+    {
+      "local_name": "i0rm*"
+    },
+    {
+      "local_name": "i1RM*"
+    },
+    {
+      "local_name": "i1Rm*"
+    },
+    {
+      "local_name": "i1rM*"
+    },
+    {
+      "local_name": "i1rm*"
+    },
+    {
+      "local_name": "i2RM*"
+    },
+    {
+      "local_name": "i2Rm*"
+    },
+    {
+      "local_name": "i2rM*"
+    },
+    {
+      "local_name": "i2rm*"
+    },
+    {
+      "local_name": "i3RM*"
+    },
+    {
+      "local_name": "i3Rm*"
+    },
+    {
+      "local_name": "i3rM*"
+    },
+    {
+      "local_name": "i3rm*"
+    },
+    {
+      "local_name": "i4RM*"
+    },
+    {
+      "local_name": "i4Rm*"
+    },
+    {
+      "local_name": "i4rM*"
+    },
+    {
+      "local_name": "i4rm*"
+    },
+    {
+      "local_name": "i5RM*"
+    },
+    {
+      "local_name": "i5Rm*"
+    },
+    {
+      "local_name": "i5rM*"
+    },
+    {
+      "local_name": "i5rm*"
+    },
+    {
+      "local_name": "i6RM*"
+    },
+    {
+      "local_name": "i6Rm*"
+    },
+    {
+      "local_name": "i6rM*"
+    },
+    {
+      "local_name": "i6rm*"
+    },
+    {
+      "local_name": "i7RM*"
+    },
+    {
+      "local_name": "i7Rm*"
+    },
+    {
+      "local_name": "i7rM*"
+    },
+    {
+      "local_name": "i7rm*"
+    },
+    {
+      "local_name": "i8RM*"
+    },
+    {
+      "local_name": "i8Rm*"
+    },
+    {
+      "local_name": "i8rM*"
+    },
+    {
+      "local_name": "i8rm*"
+    },
+    {
+      "local_name": "i9RM*"
+    },
+    {
+      "local_name": "i9Rm*"
+    },
+    {
+      "local_name": "i9rM*"
+    },
+    {
+      "local_name": "i9rm*"
+    },
+    {
+      "local_name": "iARM*"
+    },
+    {
+      "local_name": "iARm*"
+    },
+    {
+      "local_name": "iArM*"
+    },
+    {
+      "local_name": "iArm*"
+    },
+    {
+      "local_name": "iBRM*"
+    },
+    {
+      "local_name": "iBRm*"
+    },
+    {
+      "local_name": "iBrM*"
+    },
+    {
+      "local_name": "iBrm*"
+    },
+    {
+      "local_name": "iCRM*"
+    },
+    {
+      "local_name": "iCRm*"
+    },
+    {
+      "local_name": "iCrM*"
+    },
+    {
+      "local_name": "iCrm*"
+    },
+    {
+      "local_name": "iDRM*"
+    },
+    {
+      "local_name": "iDRm*"
+    },
+    {
+      "local_name": "iDrM*"
+    },
+    {
+      "local_name": "iDrm*"
+    },
+    {
+      "local_name": "iERM*"
+    },
+    {
+      "local_name": "iERm*"
+    },
+    {
+      "local_name": "iErM*"
+    },
+    {
+      "local_name": "iErm*"
+    },
+    {
+      "local_name": "iFRM*"
+    },
+    {
+      "local_name": "iFRm*"
+    },
+    {
+      "local_name": "iFrM*"
+    },
+    {
+      "local_name": "iFrm*"
+    },
+    {
+      "local_name": "iGRM*"
+    },
+    {
+      "local_name": "iGRm*"
+    },
+    {
+      "local_name": "iGrM*"
+    },
+    {
+      "local_name": "iGrm*"
+    },
+    {
+      "local_name": "iHRM*"
+    },
+    {
+      "local_name": "iHRm*"
+    },
+    {
+      "local_name": "iHrM*"
+    },
+    {
+      "local_name": "iHrm*"
+    },
+    {
+      "local_name": "iIRM*"
+    },
+    {
+      "local_name": "iIRm*"
+    },
+    {
+      "local_name": "iIrM*"
+    },
+    {
+      "local_name": "iIrm*"
+    },
+    {
+      "local_name": "iJRM*"
+    },
+    {
+      "local_name": "iJRm*"
+    },
+    {
+      "local_name": "iJrM*"
+    },
+    {
+      "local_name": "iJrm*"
+    },
+    {
+      "local_name": "iKRM*"
+    },
+    {
+      "local_name": "iKRm*"
+    },
+    {
+      "local_name": "iKrM*"
+    },
+    {
+      "local_name": "iKrm*"
+    },
+    {
+      "local_name": "iLRM*"
+    },
+    {
+      "local_name": "iLRm*"
+    },
+    {
+      "local_name": "iLrM*"
+    },
+    {
+      "local_name": "iLrm*"
+    },
+    {
+      "local_name": "iMRM*"
+    },
+    {
+      "local_name": "iMRm*"
+    },
+    {
+      "local_name": "iMrM*"
+    },
+    {
+      "local_name": "iMrm*"
+    },
+    {
+      "local_name": "iNRM*"
+    },
+    {
+      "local_name": "iNRm*"
+    },
+    {
+      "local_name": "iNrM*"
+    },
+    {
+      "local_name": "iNrm*"
+    },
+    {
+      "local_name": "iORM*"
+    },
+    {
+      "local_name": "iORm*"
+    },
+    {
+      "local_name": "iOrM*"
+    },
+    {
+      "local_name": "iOrm*"
+    },
+    {
+      "local_name": "iPRM*"
+    },
+    {
+      "local_name": "iPRm*"
+    },
+    {
+      "local_name": "iPrM*"
+    },
+    {
+      "local_name": "iPrm*"
+    },
+    {
+      "local_name": "iQRM*"
+    },
+    {
+      "local_name": "iQRm*"
+    },
+    {
+      "local_name": "iQrM*"
+    },
+    {
+      "local_name": "iQrm*"
+    },
+    {
+      "local_name": "iRRM*"
+    },
+    {
+      "local_name": "iRRm*"
+    },
+    {
+      "local_name": "iRrM*"
+    },
+    {
+      "local_name": "iRrm*"
+    },
+    {
+      "local_name": "iSRM*"
+    },
+    {
+      "local_name": "iSRm*"
+    },
+    {
+      "local_name": "iSrM*"
+    },
+    {
+      "local_name": "iSrm*"
+    },
+    {
+      "local_name": "iaRM*"
+    },
+    {
+      "local_name": "iaRm*"
+    },
+    {
+      "local_name": "iarM*"
+    },
+    {
+      "local_name": "iarm*"
+    },
+    {
+      "local_name": "ibRM*"
+    },
+    {
+      "local_name": "ibRm*"
+    },
+    {
+      "local_name": "ibrM*"
+    },
+    {
+      "local_name": "ibrm*"
+    },
+    {
+      "local_name": "icRM*"
+    },
+    {
+      "local_name": "icRm*"
+    },
+    {
+      "local_name": "icrM*"
+    },
+    {
+      "local_name": "icrm*"
+    },
+    {
+      "local_name": "idRM*"
+    },
+    {
+      "local_name": "idRm*"
+    },
+    {
+      "local_name": "idrM*"
+    },
+    {
+      "local_name": "idrm*"
+    },
+    {
+      "local_name": "ieRM*"
+    },
+    {
+      "local_name": "ieRm*"
+    },
+    {
+      "local_name": "ierM*"
+    },
+    {
+      "local_name": "ierm*"
+    },
+    {
+      "local_name": "ifRM*"
+    },
+    {
+      "local_name": "ifRm*"
+    },
+    {
+      "local_name": "ifrM*"
+    },
+    {
+      "local_name": "ifrm*"
+    },
+    {
+      "local_name": "igRM*"
+    },
+    {
+      "local_name": "igRm*"
+    },
+    {
+      "local_name": "igrM*"
+    },
+    {
+      "local_name": "igrm*"
+    },
+    {
+      "local_name": "ihRM*"
+    },
+    {
+      "local_name": "ihRm*"
+    },
+    {
+      "local_name": "ihrM*"
+    },
+    {
+      "local_name": "ihrm*"
+    },
+    {
+      "local_name": "iiRM*"
+    },
+    {
+      "local_name": "iiRm*"
+    },
+    {
+      "local_name": "iirM*"
+    },
+    {
+      "local_name": "iirm*"
+    },
+    {
+      "local_name": "ijRM*"
+    },
+    {
+      "local_name": "ijRm*"
+    },
+    {
+      "local_name": "ijrM*"
+    },
+    {
+      "local_name": "ijrm*"
+    },
+    {
+      "local_name": "ikRM*"
+    },
+    {
+      "local_name": "ikRm*"
+    },
+    {
+      "local_name": "ikrM*"
+    },
+    {
+      "local_name": "ikrm*"
+    },
+    {
+      "local_name": "ilRM*"
+    },
+    {
+      "local_name": "ilRm*"
+    },
+    {
+      "local_name": "ilrM*"
+    },
+    {
+      "local_name": "ilrm*"
+    },
+    {
+      "local_name": "imRM*"
+    },
+    {
+      "local_name": "imRm*"
+    },
+    {
+      "local_name": "imrM*"
+    },
+    {
+      "local_name": "imrm*"
+    },
+    {
+      "local_name": "inRM*"
+    },
+    {
+      "local_name": "inRm*"
+    },
+    {
+      "local_name": "inrM*"
+    },
+    {
+      "local_name": "inrm*"
+    },
+    {
+      "local_name": "ioRM*"
+    },
+    {
+      "local_name": "ioRm*"
+    },
+    {
+      "local_name": "iorM*"
+    },
+    {
+      "local_name": "iorm*"
+    },
+    {
+      "local_name": "ipRM*"
+    },
+    {
+      "local_name": "ipRm*"
+    },
+    {
+      "local_name": "iprM*"
+    },
+    {
+      "local_name": "iprm*"
+    },
+    {
+      "local_name": "iqRM*"
+    },
+    {
+      "local_name": "iqRm*"
+    },
+    {
+      "local_name": "iqrM*"
+    },
+    {
+      "local_name": "iqrm*"
+    },
+    {
+      "local_name": "irRM*"
+    },
+    {
+      "local_name": "irRm*"
+    },
+    {
+      "local_name": "irrM*"
+    },
+    {
+      "local_name": "irrm*"
+    },
+    {
+      "local_name": "isRM*"
+    },
+    {
+      "local_name": "isRm*"
+    },
+    {
+      "local_name": "isrM*"
+    },
+    {
+      "local_name": "isrm*"
+    },
+    {
+      "local_name": "m3RM*"
+    },
+    {
+      "local_name": "m3Rm*"
+    },
+    {
+      "local_name": "m3rM*"
+    },
+    {
+      "local_name": "m3rm*"
+    },
+    {
+      "local_name": "m4RM*"
+    },
+    {
+      "local_name": "m4Rm*"
+    },
+    {
+      "local_name": "m4rM*"
+    },
+    {
+      "local_name": "m4rm*"
+    },
+    {
+      "local_name": "m5RM*"
+    },
+    {
+      "local_name": "m5Rm*"
+    },
+    {
+      "local_name": "m5rM*"
+    },
+    {
+      "local_name": "m5rm*"
+    },
+    {
+      "local_name": "m6RM*"
+    },
+    {
+      "local_name": "m6Rm*"
+    },
+    {
+      "local_name": "m6rM*"
+    },
+    {
+      "local_name": "m6rm*"
+    },
+    {
+      "local_name": "m7RM*"
+    },
+    {
+      "local_name": "m7Rm*"
+    },
+    {
+      "local_name": "m7rM*"
+    },
+    {
+      "local_name": "m7rm*"
+    },
+    {
+      "local_name": "m9RM*"
+    },
+    {
+      "local_name": "m9Rm*"
+    },
+    {
+      "local_name": "m9rM*"
+    },
+    {
+      "local_name": "m9rm*"
+    },
+    {
+      "local_name": "mARM*"
+    },
+    {
+      "local_name": "mARm*"
+    },
+    {
+      "local_name": "mArM*"
+    },
+    {
+      "local_name": "mArm*"
+    },
+    {
+      "local_name": "mLRM*"
+    },
+    {
+      "local_name": "mLRm*"
+    },
+    {
+      "local_name": "mLrM*"
+    },
+    {
+      "local_name": "mLrm*"
+    },
+    {
+      "local_name": "mMRM*"
+    },
+    {
+      "local_name": "mMRm*"
+    },
+    {
+      "local_name": "mMrM*"
+    },
+    {
+      "local_name": "mMrm*"
+    },
+    {
+      "local_name": "mRRM*"
+    },
+    {
+      "local_name": "mRRm*"
+    },
+    {
+      "local_name": "mRrM*"
+    },
+    {
+      "local_name": "mRrm*"
+    },
+    {
+      "local_name": "maRM*"
+    },
+    {
+      "local_name": "maRm*"
+    },
+    {
+      "local_name": "marM*"
+    },
+    {
+      "local_name": "marm*"
+    },
+    {
+      "local_name": "mlRM*"
+    },
+    {
+      "local_name": "mlRm*"
+    },
+    {
+      "local_name": "mlrM*"
+    },
+    {
+      "local_name": "mlrm*"
+    },
+    {
+      "local_name": "mmRM*"
+    },
+    {
+      "local_name": "mmRm*"
+    },
+    {
+      "local_name": "mmrM*"
+    },
+    {
+      "local_name": "mmrm*"
     },
     {
       "local_name": "motob*"
     },
     {
       "local_name": "motos*"
+    },
+    {
+      "local_name": "mrRM*"
+    },
+    {
+      "local_name": "mrRm*"
+    },
+    {
+      "local_name": "mrrM*"
+    },
+    {
+      "local_name": "mrrm*"
     },
     {
       "local_name": "my qms2*"
@@ -7727,6 +15281,138 @@
       "local_name": "n32 motionbed*"
     },
     {
+      "local_name": "o0RM*"
+    },
+    {
+      "local_name": "o0Rm*"
+    },
+    {
+      "local_name": "o0rM*"
+    },
+    {
+      "local_name": "o0rm*"
+    },
+    {
+      "local_name": "o1RM*"
+    },
+    {
+      "local_name": "o1Rm*"
+    },
+    {
+      "local_name": "o1rM*"
+    },
+    {
+      "local_name": "o1rm*"
+    },
+    {
+      "local_name": "o2RM*"
+    },
+    {
+      "local_name": "o2Rm*"
+    },
+    {
+      "local_name": "o2rM*"
+    },
+    {
+      "local_name": "o2rm*"
+    },
+    {
+      "local_name": "o3RM*"
+    },
+    {
+      "local_name": "o3Rm*"
+    },
+    {
+      "local_name": "o3rM*"
+    },
+    {
+      "local_name": "o3rm*"
+    },
+    {
+      "local_name": "o4RM*"
+    },
+    {
+      "local_name": "o4Rm*"
+    },
+    {
+      "local_name": "o4rM*"
+    },
+    {
+      "local_name": "o4rm*"
+    },
+    {
+      "local_name": "o5RM*"
+    },
+    {
+      "local_name": "o5Rm*"
+    },
+    {
+      "local_name": "o5rM*"
+    },
+    {
+      "local_name": "o5rm*"
+    },
+    {
+      "local_name": "o6RM*"
+    },
+    {
+      "local_name": "o6Rm*"
+    },
+    {
+      "local_name": "o6rM*"
+    },
+    {
+      "local_name": "o6rm*"
+    },
+    {
+      "local_name": "o7RM*"
+    },
+    {
+      "local_name": "o7Rm*"
+    },
+    {
+      "local_name": "o7rM*"
+    },
+    {
+      "local_name": "o7rm*"
+    },
+    {
+      "local_name": "o8RM*"
+    },
+    {
+      "local_name": "o8Rm*"
+    },
+    {
+      "local_name": "o8rM*"
+    },
+    {
+      "local_name": "o8rm*"
+    },
+    {
+      "local_name": "o9RM*"
+    },
+    {
+      "local_name": "o9Rm*"
+    },
+    {
+      "local_name": "o9rM*"
+    },
+    {
+      "local_name": "o9rm*"
+    },
+    {
+      "local_name": "oARM*"
+    },
+    {
+      "local_name": "oARm*"
+    },
+    {
+      "local_name": "oArM*"
+    },
+    {
+      "local_name": "oArm*"
+    },
+    {
       "local_name": "oKIN*"
     },
     {
@@ -7865,6 +15551,174 @@
     {
       "local_name": "oKin-ble*",
       "connectable": true
+    },
+    {
+      "local_name": "oMRM*"
+    },
+    {
+      "local_name": "oMRm*"
+    },
+    {
+      "local_name": "oMrM*"
+    },
+    {
+      "local_name": "oMrm*"
+    },
+    {
+      "local_name": "oNRM*"
+    },
+    {
+      "local_name": "oNRm*"
+    },
+    {
+      "local_name": "oNrM*"
+    },
+    {
+      "local_name": "oNrm*"
+    },
+    {
+      "local_name": "oORM*"
+    },
+    {
+      "local_name": "oORm*"
+    },
+    {
+      "local_name": "oOrM*"
+    },
+    {
+      "local_name": "oOrm*"
+    },
+    {
+      "local_name": "oQRM*"
+    },
+    {
+      "local_name": "oQRm*"
+    },
+    {
+      "local_name": "oQrM*"
+    },
+    {
+      "local_name": "oQrm*"
+    },
+    {
+      "local_name": "oRRM*"
+    },
+    {
+      "local_name": "oRRm*"
+    },
+    {
+      "local_name": "oRrM*"
+    },
+    {
+      "local_name": "oRrm*"
+    },
+    {
+      "local_name": "oSRM*"
+    },
+    {
+      "local_name": "oSRm*"
+    },
+    {
+      "local_name": "oSrM*"
+    },
+    {
+      "local_name": "oSrm*"
+    },
+    {
+      "local_name": "oTRM*"
+    },
+    {
+      "local_name": "oTRm*"
+    },
+    {
+      "local_name": "oTrM*"
+    },
+    {
+      "local_name": "oTrm*"
+    },
+    {
+      "local_name": "oURM*"
+    },
+    {
+      "local_name": "oURm*"
+    },
+    {
+      "local_name": "oUrM*"
+    },
+    {
+      "local_name": "oUrm*"
+    },
+    {
+      "local_name": "oVRM*"
+    },
+    {
+      "local_name": "oVRm*"
+    },
+    {
+      "local_name": "oVrM*"
+    },
+    {
+      "local_name": "oVrm*"
+    },
+    {
+      "local_name": "oWRM*"
+    },
+    {
+      "local_name": "oWRm*"
+    },
+    {
+      "local_name": "oWrM*"
+    },
+    {
+      "local_name": "oWrm*"
+    },
+    {
+      "local_name": "oXRM*"
+    },
+    {
+      "local_name": "oXRm*"
+    },
+    {
+      "local_name": "oXrM*"
+    },
+    {
+      "local_name": "oXrm*"
+    },
+    {
+      "local_name": "oYRM*"
+    },
+    {
+      "local_name": "oYRm*"
+    },
+    {
+      "local_name": "oYrM*"
+    },
+    {
+      "local_name": "oYrm*"
+    },
+    {
+      "local_name": "oZRM*"
+    },
+    {
+      "local_name": "oZRm*"
+    },
+    {
+      "local_name": "oZrM*"
+    },
+    {
+      "local_name": "oZrm*"
+    },
+    {
+      "local_name": "oaRM*"
+    },
+    {
+      "local_name": "oaRm*"
+    },
+    {
+      "local_name": "oarM*"
+    },
+    {
+      "local_name": "oarm*"
     },
     {
       "local_name": "okIN*"
@@ -8013,6 +15867,270 @@
       "connectable": true
     },
     {
+      "local_name": "omRM*"
+    },
+    {
+      "local_name": "omRm*"
+    },
+    {
+      "local_name": "omrM*"
+    },
+    {
+      "local_name": "omrm*"
+    },
+    {
+      "local_name": "onRM*"
+    },
+    {
+      "local_name": "onRm*"
+    },
+    {
+      "local_name": "onrM*"
+    },
+    {
+      "local_name": "onrm*"
+    },
+    {
+      "local_name": "ooRM*"
+    },
+    {
+      "local_name": "ooRm*"
+    },
+    {
+      "local_name": "oorM*"
+    },
+    {
+      "local_name": "oorm*"
+    },
+    {
+      "local_name": "oqRM*"
+    },
+    {
+      "local_name": "oqRm*"
+    },
+    {
+      "local_name": "oqrM*"
+    },
+    {
+      "local_name": "oqrm*"
+    },
+    {
+      "local_name": "orRM*"
+    },
+    {
+      "local_name": "orRm*"
+    },
+    {
+      "local_name": "orrM*"
+    },
+    {
+      "local_name": "orrm*"
+    },
+    {
+      "local_name": "osRM*"
+    },
+    {
+      "local_name": "osRm*"
+    },
+    {
+      "local_name": "osrM*"
+    },
+    {
+      "local_name": "osrm*"
+    },
+    {
+      "local_name": "otRM*"
+    },
+    {
+      "local_name": "otRm*"
+    },
+    {
+      "local_name": "otrM*"
+    },
+    {
+      "local_name": "otrm*"
+    },
+    {
+      "local_name": "ouRM*"
+    },
+    {
+      "local_name": "ouRm*"
+    },
+    {
+      "local_name": "ourM*"
+    },
+    {
+      "local_name": "ourm*"
+    },
+    {
+      "local_name": "ovRM*"
+    },
+    {
+      "local_name": "ovRm*"
+    },
+    {
+      "local_name": "ovrM*"
+    },
+    {
+      "local_name": "ovrm*"
+    },
+    {
+      "local_name": "owRM*"
+    },
+    {
+      "local_name": "owRm*"
+    },
+    {
+      "local_name": "owrM*"
+    },
+    {
+      "local_name": "owrm*"
+    },
+    {
+      "local_name": "oxRM*"
+    },
+    {
+      "local_name": "oxRm*"
+    },
+    {
+      "local_name": "oxrM*"
+    },
+    {
+      "local_name": "oxrm*"
+    },
+    {
+      "local_name": "oyRM*"
+    },
+    {
+      "local_name": "oyRm*"
+    },
+    {
+      "local_name": "oyrM*"
+    },
+    {
+      "local_name": "oyrm*"
+    },
+    {
+      "local_name": "ozRM*"
+    },
+    {
+      "local_name": "ozRm*"
+    },
+    {
+      "local_name": "ozrM*"
+    },
+    {
+      "local_name": "ozrm*"
+    },
+    {
+      "local_name": "p0RM*"
+    },
+    {
+      "local_name": "p0Rm*"
+    },
+    {
+      "local_name": "p0rM*"
+    },
+    {
+      "local_name": "p0rm*"
+    },
+    {
+      "local_name": "p1RM*"
+    },
+    {
+      "local_name": "p1Rm*"
+    },
+    {
+      "local_name": "p1rM*"
+    },
+    {
+      "local_name": "p1rm*"
+    },
+    {
+      "local_name": "p2RM*"
+    },
+    {
+      "local_name": "p2Rm*"
+    },
+    {
+      "local_name": "p2rM*"
+    },
+    {
+      "local_name": "p2rm*"
+    },
+    {
+      "local_name": "p3RM*"
+    },
+    {
+      "local_name": "p3Rm*"
+    },
+    {
+      "local_name": "p3rM*"
+    },
+    {
+      "local_name": "p3rm*"
+    },
+    {
+      "local_name": "p4RM*"
+    },
+    {
+      "local_name": "p4Rm*"
+    },
+    {
+      "local_name": "p4rM*"
+    },
+    {
+      "local_name": "p4rm*"
+    },
+    {
+      "local_name": "p5RM*"
+    },
+    {
+      "local_name": "p5Rm*"
+    },
+    {
+      "local_name": "p5rM*"
+    },
+    {
+      "local_name": "p5rm*"
+    },
+    {
+      "local_name": "p6RM*"
+    },
+    {
+      "local_name": "p6Rm*"
+    },
+    {
+      "local_name": "p6rM*"
+    },
+    {
+      "local_name": "p6rm*"
+    },
+    {
+      "local_name": "p9RM*"
+    },
+    {
+      "local_name": "p9Rm*"
+    },
+    {
+      "local_name": "p9rM*"
+    },
+    {
+      "local_name": "p9rm*"
+    },
+    {
+      "local_name": "qRRM*"
+    },
+    {
+      "local_name": "qRRm*"
+    },
+    {
+      "local_name": "qRrM*"
+    },
+    {
+      "local_name": "qRrm*"
+    },
+    {
       "local_name": "qms-i06*"
     },
     {
@@ -8043,7 +16161,79 @@
       "local_name": "qms4*"
     },
     {
+      "local_name": "qrRM*"
+    },
+    {
+      "local_name": "qrRm*"
+    },
+    {
+      "local_name": "qrrM*"
+    },
+    {
+      "local_name": "qrrm*"
+    },
+    {
+      "local_name": "r2RM*"
+    },
+    {
+      "local_name": "r2Rm*"
+    },
+    {
+      "local_name": "r2rM*"
+    },
+    {
+      "local_name": "r2rm*"
+    },
+    {
+      "local_name": "r5RM*"
+    },
+    {
+      "local_name": "r5Rm*"
+    },
+    {
+      "local_name": "r5rM*"
+    },
+    {
+      "local_name": "r5rm*"
+    },
+    {
+      "local_name": "r6RM*"
+    },
+    {
+      "local_name": "r6Rm*"
+    },
+    {
+      "local_name": "r6rM*"
+    },
+    {
+      "local_name": "r6rm*"
+    },
+    {
       "local_name": "s4-y-*"
+    },
+    {
+      "local_name": "s9RM*"
+    },
+    {
+      "local_name": "s9Rm*"
+    },
+    {
+      "local_name": "s9rM*"
+    },
+    {
+      "local_name": "s9rm*"
+    },
+    {
+      "local_name": "sARM*"
+    },
+    {
+      "local_name": "sARm*"
+    },
+    {
+      "local_name": "sArM*"
+    },
+    {
+      "local_name": "sArm*"
     },
     {
       "local_name": "sLEEP*"
@@ -8336,6 +16526,18 @@
     },
     {
       "local_name": "sTar*"
+    },
+    {
+      "local_name": "saRM*"
+    },
+    {
+      "local_name": "saRm*"
+    },
+    {
+      "local_name": "sarM*"
+    },
+    {
+      "local_name": "sarm*"
     },
     {
       "local_name": "sealymf*"
@@ -8634,6 +16836,3192 @@
     },
     {
       "local_name": "star*"
+    },
+    {
+      "local_name": "t0RM*"
+    },
+    {
+      "local_name": "t0Rm*"
+    },
+    {
+      "local_name": "t0rM*"
+    },
+    {
+      "local_name": "t0rm*"
+    },
+    {
+      "local_name": "t1RM*"
+    },
+    {
+      "local_name": "t1Rm*"
+    },
+    {
+      "local_name": "t1rM*"
+    },
+    {
+      "local_name": "t1rm*"
+    },
+    {
+      "local_name": "t2RM*"
+    },
+    {
+      "local_name": "t2Rm*"
+    },
+    {
+      "local_name": "t2rM*"
+    },
+    {
+      "local_name": "t2rm*"
+    },
+    {
+      "local_name": "t3RM*"
+    },
+    {
+      "local_name": "t3Rm*"
+    },
+    {
+      "local_name": "t3rM*"
+    },
+    {
+      "local_name": "t3rm*"
+    },
+    {
+      "local_name": "t4RM*"
+    },
+    {
+      "local_name": "t4Rm*"
+    },
+    {
+      "local_name": "t4rM*"
+    },
+    {
+      "local_name": "t4rm*"
+    },
+    {
+      "local_name": "t5RM*"
+    },
+    {
+      "local_name": "t5Rm*"
+    },
+    {
+      "local_name": "t5rM*"
+    },
+    {
+      "local_name": "t5rm*"
+    },
+    {
+      "local_name": "t6RM*"
+    },
+    {
+      "local_name": "t6Rm*"
+    },
+    {
+      "local_name": "t6rM*"
+    },
+    {
+      "local_name": "t6rm*"
+    },
+    {
+      "local_name": "t7RM*"
+    },
+    {
+      "local_name": "t7Rm*"
+    },
+    {
+      "local_name": "t7rM*"
+    },
+    {
+      "local_name": "t7rm*"
+    },
+    {
+      "local_name": "t8RM*"
+    },
+    {
+      "local_name": "t8Rm*"
+    },
+    {
+      "local_name": "t8rM*"
+    },
+    {
+      "local_name": "t8rm*"
+    },
+    {
+      "local_name": "t9RM*"
+    },
+    {
+      "local_name": "t9Rm*"
+    },
+    {
+      "local_name": "t9rM*"
+    },
+    {
+      "local_name": "t9rm*"
+    },
+    {
+      "local_name": "tARM*"
+    },
+    {
+      "local_name": "tARm*"
+    },
+    {
+      "local_name": "tArM*"
+    },
+    {
+      "local_name": "tArm*"
+    },
+    {
+      "local_name": "tBRM*"
+    },
+    {
+      "local_name": "tBRm*"
+    },
+    {
+      "local_name": "tBrM*"
+    },
+    {
+      "local_name": "tBrm*"
+    },
+    {
+      "local_name": "tHRM*"
+    },
+    {
+      "local_name": "tHRm*"
+    },
+    {
+      "local_name": "tHrM*"
+    },
+    {
+      "local_name": "tHrm*"
+    },
+    {
+      "local_name": "tLRM*"
+    },
+    {
+      "local_name": "tLRm*"
+    },
+    {
+      "local_name": "tLrM*"
+    },
+    {
+      "local_name": "tLrm*"
+    },
+    {
+      "local_name": "tWRM*"
+    },
+    {
+      "local_name": "tWRm*"
+    },
+    {
+      "local_name": "tWrM*"
+    },
+    {
+      "local_name": "tWrm*"
+    },
+    {
+      "local_name": "tZRM*"
+    },
+    {
+      "local_name": "tZRm*"
+    },
+    {
+      "local_name": "tZrM*"
+    },
+    {
+      "local_name": "tZrm*"
+    },
+    {
+      "local_name": "taRM*"
+    },
+    {
+      "local_name": "taRm*"
+    },
+    {
+      "local_name": "tarM*"
+    },
+    {
+      "local_name": "tarm*"
+    },
+    {
+      "local_name": "tbRM*"
+    },
+    {
+      "local_name": "tbRm*"
+    },
+    {
+      "local_name": "tbrM*"
+    },
+    {
+      "local_name": "tbrm*"
+    },
+    {
+      "local_name": "thRM*"
+    },
+    {
+      "local_name": "thRm*"
+    },
+    {
+      "local_name": "thrM*"
+    },
+    {
+      "local_name": "thrm*"
+    },
+    {
+      "local_name": "tlRM*"
+    },
+    {
+      "local_name": "tlRm*"
+    },
+    {
+      "local_name": "tlrM*"
+    },
+    {
+      "local_name": "tlrm*"
+    },
+    {
+      "local_name": "twRM*"
+    },
+    {
+      "local_name": "twRm*"
+    },
+    {
+      "local_name": "twrM*"
+    },
+    {
+      "local_name": "twrm*"
+    },
+    {
+      "local_name": "tzRM*"
+    },
+    {
+      "local_name": "tzRm*"
+    },
+    {
+      "local_name": "tzrM*"
+    },
+    {
+      "local_name": "tzrm*"
+    },
+    {
+      "local_name": "u0RM*"
+    },
+    {
+      "local_name": "u0Rm*"
+    },
+    {
+      "local_name": "u0rM*"
+    },
+    {
+      "local_name": "u0rm*"
+    },
+    {
+      "local_name": "u1RM*"
+    },
+    {
+      "local_name": "u1Rm*"
+    },
+    {
+      "local_name": "u1rM*"
+    },
+    {
+      "local_name": "u1rm*"
+    },
+    {
+      "local_name": "u2RM*"
+    },
+    {
+      "local_name": "u2Rm*"
+    },
+    {
+      "local_name": "u2rM*"
+    },
+    {
+      "local_name": "u2rm*"
+    },
+    {
+      "local_name": "u3RM*"
+    },
+    {
+      "local_name": "u3Rm*"
+    },
+    {
+      "local_name": "u3rM*"
+    },
+    {
+      "local_name": "u3rm*"
+    },
+    {
+      "local_name": "u4RM*"
+    },
+    {
+      "local_name": "u4Rm*"
+    },
+    {
+      "local_name": "u4rM*"
+    },
+    {
+      "local_name": "u4rm*"
+    },
+    {
+      "local_name": "u5RM*"
+    },
+    {
+      "local_name": "u5Rm*"
+    },
+    {
+      "local_name": "u5rM*"
+    },
+    {
+      "local_name": "u5rm*"
+    },
+    {
+      "local_name": "u6RM*"
+    },
+    {
+      "local_name": "u6Rm*"
+    },
+    {
+      "local_name": "u6rM*"
+    },
+    {
+      "local_name": "u6rm*"
+    },
+    {
+      "local_name": "u7RM*"
+    },
+    {
+      "local_name": "u7Rm*"
+    },
+    {
+      "local_name": "u7rM*"
+    },
+    {
+      "local_name": "u7rm*"
+    },
+    {
+      "local_name": "u8RM*"
+    },
+    {
+      "local_name": "u8Rm*"
+    },
+    {
+      "local_name": "u8rM*"
+    },
+    {
+      "local_name": "u8rm*"
+    },
+    {
+      "local_name": "u9RM*"
+    },
+    {
+      "local_name": "u9Rm*"
+    },
+    {
+      "local_name": "u9rM*"
+    },
+    {
+      "local_name": "u9rm*"
+    },
+    {
+      "local_name": "uARM*"
+    },
+    {
+      "local_name": "uARm*"
+    },
+    {
+      "local_name": "uArM*"
+    },
+    {
+      "local_name": "uArm*"
+    },
+    {
+      "local_name": "uCRM*"
+    },
+    {
+      "local_name": "uCRm*"
+    },
+    {
+      "local_name": "uCrM*"
+    },
+    {
+      "local_name": "uCrm*"
+    },
+    {
+      "local_name": "uDRM*"
+    },
+    {
+      "local_name": "uDRm*"
+    },
+    {
+      "local_name": "uDrM*"
+    },
+    {
+      "local_name": "uDrm*"
+    },
+    {
+      "local_name": "uERM*"
+    },
+    {
+      "local_name": "uERm*"
+    },
+    {
+      "local_name": "uErM*"
+    },
+    {
+      "local_name": "uErm*"
+    },
+    {
+      "local_name": "uFRM*"
+    },
+    {
+      "local_name": "uFRm*"
+    },
+    {
+      "local_name": "uFrM*"
+    },
+    {
+      "local_name": "uFrm*"
+    },
+    {
+      "local_name": "uGRM*"
+    },
+    {
+      "local_name": "uGRm*"
+    },
+    {
+      "local_name": "uGrM*"
+    },
+    {
+      "local_name": "uGrm*"
+    },
+    {
+      "local_name": "uHRM*"
+    },
+    {
+      "local_name": "uHRm*"
+    },
+    {
+      "local_name": "uHrM*"
+    },
+    {
+      "local_name": "uHrm*"
+    },
+    {
+      "local_name": "uIRM*"
+    },
+    {
+      "local_name": "uIRm*"
+    },
+    {
+      "local_name": "uIrM*"
+    },
+    {
+      "local_name": "uIrm*"
+    },
+    {
+      "local_name": "uJRM*"
+    },
+    {
+      "local_name": "uJRm*"
+    },
+    {
+      "local_name": "uJrM*"
+    },
+    {
+      "local_name": "uJrm*"
+    },
+    {
+      "local_name": "uKRM*"
+    },
+    {
+      "local_name": "uKRm*"
+    },
+    {
+      "local_name": "uKrM*"
+    },
+    {
+      "local_name": "uKrm*"
+    },
+    {
+      "local_name": "uLRM*"
+    },
+    {
+      "local_name": "uLRm*"
+    },
+    {
+      "local_name": "uLrM*"
+    },
+    {
+      "local_name": "uLrm*"
+    },
+    {
+      "local_name": "uMRM*"
+    },
+    {
+      "local_name": "uMRm*"
+    },
+    {
+      "local_name": "uMrM*"
+    },
+    {
+      "local_name": "uMrm*"
+    },
+    {
+      "local_name": "uNRM*"
+    },
+    {
+      "local_name": "uNRm*"
+    },
+    {
+      "local_name": "uNrM*"
+    },
+    {
+      "local_name": "uNrm*"
+    },
+    {
+      "local_name": "uORM*"
+    },
+    {
+      "local_name": "uORm*"
+    },
+    {
+      "local_name": "uOrM*"
+    },
+    {
+      "local_name": "uOrm*"
+    },
+    {
+      "local_name": "uPRM*"
+    },
+    {
+      "local_name": "uPRm*"
+    },
+    {
+      "local_name": "uPrM*"
+    },
+    {
+      "local_name": "uPrm*"
+    },
+    {
+      "local_name": "uQRM*"
+    },
+    {
+      "local_name": "uQRm*"
+    },
+    {
+      "local_name": "uQrM*"
+    },
+    {
+      "local_name": "uQrm*"
+    },
+    {
+      "local_name": "uRRM*"
+    },
+    {
+      "local_name": "uRRm*"
+    },
+    {
+      "local_name": "uRrM*"
+    },
+    {
+      "local_name": "uRrm*"
+    },
+    {
+      "local_name": "uTRM*"
+    },
+    {
+      "local_name": "uTRm*"
+    },
+    {
+      "local_name": "uTrM*"
+    },
+    {
+      "local_name": "uTrm*"
+    },
+    {
+      "local_name": "uURM*"
+    },
+    {
+      "local_name": "uURm*"
+    },
+    {
+      "local_name": "uUrM*"
+    },
+    {
+      "local_name": "uUrm*"
+    },
+    {
+      "local_name": "uVRM*"
+    },
+    {
+      "local_name": "uVRm*"
+    },
+    {
+      "local_name": "uVrM*"
+    },
+    {
+      "local_name": "uVrm*"
+    },
+    {
+      "local_name": "uWRM*"
+    },
+    {
+      "local_name": "uWRm*"
+    },
+    {
+      "local_name": "uWrM*"
+    },
+    {
+      "local_name": "uWrm*"
+    },
+    {
+      "local_name": "uXRM*"
+    },
+    {
+      "local_name": "uXRm*"
+    },
+    {
+      "local_name": "uXrM*"
+    },
+    {
+      "local_name": "uXrm*"
+    },
+    {
+      "local_name": "uYRM*"
+    },
+    {
+      "local_name": "uYRm*"
+    },
+    {
+      "local_name": "uYrM*"
+    },
+    {
+      "local_name": "uYrm*"
+    },
+    {
+      "local_name": "uZRM*"
+    },
+    {
+      "local_name": "uZRm*"
+    },
+    {
+      "local_name": "uZrM*"
+    },
+    {
+      "local_name": "uZrm*"
+    },
+    {
+      "local_name": "uaRM*"
+    },
+    {
+      "local_name": "uaRm*"
+    },
+    {
+      "local_name": "uarM*"
+    },
+    {
+      "local_name": "uarm*"
+    },
+    {
+      "local_name": "ucRM*"
+    },
+    {
+      "local_name": "ucRm*"
+    },
+    {
+      "local_name": "ucrM*"
+    },
+    {
+      "local_name": "ucrm*"
+    },
+    {
+      "local_name": "udRM*"
+    },
+    {
+      "local_name": "udRm*"
+    },
+    {
+      "local_name": "udrM*"
+    },
+    {
+      "local_name": "udrm*"
+    },
+    {
+      "local_name": "ueRM*"
+    },
+    {
+      "local_name": "ueRm*"
+    },
+    {
+      "local_name": "uerM*"
+    },
+    {
+      "local_name": "uerm*"
+    },
+    {
+      "local_name": "ufRM*"
+    },
+    {
+      "local_name": "ufRm*"
+    },
+    {
+      "local_name": "ufrM*"
+    },
+    {
+      "local_name": "ufrm*"
+    },
+    {
+      "local_name": "ugRM*"
+    },
+    {
+      "local_name": "ugRm*"
+    },
+    {
+      "local_name": "ugrM*"
+    },
+    {
+      "local_name": "ugrm*"
+    },
+    {
+      "local_name": "uhRM*"
+    },
+    {
+      "local_name": "uhRm*"
+    },
+    {
+      "local_name": "uhrM*"
+    },
+    {
+      "local_name": "uhrm*"
+    },
+    {
+      "local_name": "uiRM*"
+    },
+    {
+      "local_name": "uiRm*"
+    },
+    {
+      "local_name": "uirM*"
+    },
+    {
+      "local_name": "uirm*"
+    },
+    {
+      "local_name": "ujRM*"
+    },
+    {
+      "local_name": "ujRm*"
+    },
+    {
+      "local_name": "ujrM*"
+    },
+    {
+      "local_name": "ujrm*"
+    },
+    {
+      "local_name": "ukRM*"
+    },
+    {
+      "local_name": "ukRm*"
+    },
+    {
+      "local_name": "ukrM*"
+    },
+    {
+      "local_name": "ukrm*"
+    },
+    {
+      "local_name": "ulRM*"
+    },
+    {
+      "local_name": "ulRm*"
+    },
+    {
+      "local_name": "ulrM*"
+    },
+    {
+      "local_name": "ulrm*"
+    },
+    {
+      "local_name": "umRM*"
+    },
+    {
+      "local_name": "umRm*"
+    },
+    {
+      "local_name": "umrM*"
+    },
+    {
+      "local_name": "umrm*"
+    },
+    {
+      "local_name": "unRM*"
+    },
+    {
+      "local_name": "unRm*"
+    },
+    {
+      "local_name": "unrM*"
+    },
+    {
+      "local_name": "unrm*"
+    },
+    {
+      "local_name": "uoRM*"
+    },
+    {
+      "local_name": "uoRm*"
+    },
+    {
+      "local_name": "uorM*"
+    },
+    {
+      "local_name": "uorm*"
+    },
+    {
+      "local_name": "upRM*"
+    },
+    {
+      "local_name": "upRm*"
+    },
+    {
+      "local_name": "uprM*"
+    },
+    {
+      "local_name": "uprm*"
+    },
+    {
+      "local_name": "uqRM*"
+    },
+    {
+      "local_name": "uqRm*"
+    },
+    {
+      "local_name": "uqrM*"
+    },
+    {
+      "local_name": "uqrm*"
+    },
+    {
+      "local_name": "urRM*"
+    },
+    {
+      "local_name": "urRm*"
+    },
+    {
+      "local_name": "urrM*"
+    },
+    {
+      "local_name": "urrm*"
+    },
+    {
+      "local_name": "utRM*"
+    },
+    {
+      "local_name": "utRm*"
+    },
+    {
+      "local_name": "utrM*"
+    },
+    {
+      "local_name": "utrm*"
+    },
+    {
+      "local_name": "uuRM*"
+    },
+    {
+      "local_name": "uuRm*"
+    },
+    {
+      "local_name": "uurM*"
+    },
+    {
+      "local_name": "uurm*"
+    },
+    {
+      "local_name": "uvRM*"
+    },
+    {
+      "local_name": "uvRm*"
+    },
+    {
+      "local_name": "uvrM*"
+    },
+    {
+      "local_name": "uvrm*"
+    },
+    {
+      "local_name": "uwRM*"
+    },
+    {
+      "local_name": "uwRm*"
+    },
+    {
+      "local_name": "uwrM*"
+    },
+    {
+      "local_name": "uwrm*"
+    },
+    {
+      "local_name": "uxRM*"
+    },
+    {
+      "local_name": "uxRm*"
+    },
+    {
+      "local_name": "uxrM*"
+    },
+    {
+      "local_name": "uxrm*"
+    },
+    {
+      "local_name": "uyRM*"
+    },
+    {
+      "local_name": "uyRm*"
+    },
+    {
+      "local_name": "uyrM*"
+    },
+    {
+      "local_name": "uyrm*"
+    },
+    {
+      "local_name": "uzRM*"
+    },
+    {
+      "local_name": "uzRm*"
+    },
+    {
+      "local_name": "uzrM*"
+    },
+    {
+      "local_name": "uzrm*"
+    },
+    {
+      "local_name": "v0RM*"
+    },
+    {
+      "local_name": "v0Rm*"
+    },
+    {
+      "local_name": "v0rM*"
+    },
+    {
+      "local_name": "v0rm*"
+    },
+    {
+      "local_name": "v1RM*"
+    },
+    {
+      "local_name": "v1Rm*"
+    },
+    {
+      "local_name": "v1rM*"
+    },
+    {
+      "local_name": "v1rm*"
+    },
+    {
+      "local_name": "v2RM*"
+    },
+    {
+      "local_name": "v2Rm*"
+    },
+    {
+      "local_name": "v2rM*"
+    },
+    {
+      "local_name": "v2rm*"
+    },
+    {
+      "local_name": "v3RM*"
+    },
+    {
+      "local_name": "v3Rm*"
+    },
+    {
+      "local_name": "v3rM*"
+    },
+    {
+      "local_name": "v3rm*"
+    },
+    {
+      "local_name": "v4RM*"
+    },
+    {
+      "local_name": "v4Rm*"
+    },
+    {
+      "local_name": "v4rM*"
+    },
+    {
+      "local_name": "v4rm*"
+    },
+    {
+      "local_name": "v5RM*"
+    },
+    {
+      "local_name": "v5Rm*"
+    },
+    {
+      "local_name": "v5rM*"
+    },
+    {
+      "local_name": "v5rm*"
+    },
+    {
+      "local_name": "v6RM*"
+    },
+    {
+      "local_name": "v6Rm*"
+    },
+    {
+      "local_name": "v6rM*"
+    },
+    {
+      "local_name": "v6rm*"
+    },
+    {
+      "local_name": "v7RM*"
+    },
+    {
+      "local_name": "v7Rm*"
+    },
+    {
+      "local_name": "v7rM*"
+    },
+    {
+      "local_name": "v7rm*"
+    },
+    {
+      "local_name": "v8RM*"
+    },
+    {
+      "local_name": "v8Rm*"
+    },
+    {
+      "local_name": "v8rM*"
+    },
+    {
+      "local_name": "v8rm*"
+    },
+    {
+      "local_name": "v9RM*"
+    },
+    {
+      "local_name": "v9Rm*"
+    },
+    {
+      "local_name": "v9rM*"
+    },
+    {
+      "local_name": "v9rm*"
+    },
+    {
+      "local_name": "vARM*"
+    },
+    {
+      "local_name": "vARm*"
+    },
+    {
+      "local_name": "vArM*"
+    },
+    {
+      "local_name": "vArm*"
+    },
+    {
+      "local_name": "vBRM*"
+    },
+    {
+      "local_name": "vBRm*"
+    },
+    {
+      "local_name": "vBrM*"
+    },
+    {
+      "local_name": "vBrm*"
+    },
+    {
+      "local_name": "vCRM*"
+    },
+    {
+      "local_name": "vCRm*"
+    },
+    {
+      "local_name": "vCrM*"
+    },
+    {
+      "local_name": "vCrm*"
+    },
+    {
+      "local_name": "vDRM*"
+    },
+    {
+      "local_name": "vDRm*"
+    },
+    {
+      "local_name": "vDrM*"
+    },
+    {
+      "local_name": "vDrm*"
+    },
+    {
+      "local_name": "vERM*"
+    },
+    {
+      "local_name": "vERm*"
+    },
+    {
+      "local_name": "vErM*"
+    },
+    {
+      "local_name": "vErm*"
+    },
+    {
+      "local_name": "vFRM*"
+    },
+    {
+      "local_name": "vFRm*"
+    },
+    {
+      "local_name": "vFrM*"
+    },
+    {
+      "local_name": "vFrm*"
+    },
+    {
+      "local_name": "vGRM*"
+    },
+    {
+      "local_name": "vGRm*"
+    },
+    {
+      "local_name": "vGrM*"
+    },
+    {
+      "local_name": "vGrm*"
+    },
+    {
+      "local_name": "vHRM*"
+    },
+    {
+      "local_name": "vHRm*"
+    },
+    {
+      "local_name": "vHrM*"
+    },
+    {
+      "local_name": "vHrm*"
+    },
+    {
+      "local_name": "vIRM*"
+    },
+    {
+      "local_name": "vIRm*"
+    },
+    {
+      "local_name": "vIrM*"
+    },
+    {
+      "local_name": "vIrm*"
+    },
+    {
+      "local_name": "vJRM*"
+    },
+    {
+      "local_name": "vJRm*"
+    },
+    {
+      "local_name": "vJrM*"
+    },
+    {
+      "local_name": "vJrm*"
+    },
+    {
+      "local_name": "vKRM*"
+    },
+    {
+      "local_name": "vKRm*"
+    },
+    {
+      "local_name": "vKrM*"
+    },
+    {
+      "local_name": "vKrm*"
+    },
+    {
+      "local_name": "vLRM*"
+    },
+    {
+      "local_name": "vLRm*"
+    },
+    {
+      "local_name": "vLrM*"
+    },
+    {
+      "local_name": "vLrm*"
+    },
+    {
+      "local_name": "vMRM*"
+    },
+    {
+      "local_name": "vMRm*"
+    },
+    {
+      "local_name": "vMrM*"
+    },
+    {
+      "local_name": "vMrm*"
+    },
+    {
+      "local_name": "vNRM*"
+    },
+    {
+      "local_name": "vNRm*"
+    },
+    {
+      "local_name": "vNrM*"
+    },
+    {
+      "local_name": "vNrm*"
+    },
+    {
+      "local_name": "vORM*"
+    },
+    {
+      "local_name": "vORm*"
+    },
+    {
+      "local_name": "vOrM*"
+    },
+    {
+      "local_name": "vOrm*"
+    },
+    {
+      "local_name": "vPRM*"
+    },
+    {
+      "local_name": "vPRm*"
+    },
+    {
+      "local_name": "vPrM*"
+    },
+    {
+      "local_name": "vPrm*"
+    },
+    {
+      "local_name": "vQRM*"
+    },
+    {
+      "local_name": "vQRm*"
+    },
+    {
+      "local_name": "vQrM*"
+    },
+    {
+      "local_name": "vQrm*"
+    },
+    {
+      "local_name": "vRRM*"
+    },
+    {
+      "local_name": "vRRm*"
+    },
+    {
+      "local_name": "vRrM*"
+    },
+    {
+      "local_name": "vRrm*"
+    },
+    {
+      "local_name": "vSRM*"
+    },
+    {
+      "local_name": "vSRm*"
+    },
+    {
+      "local_name": "vSrM*"
+    },
+    {
+      "local_name": "vSrm*"
+    },
+    {
+      "local_name": "vTRM*"
+    },
+    {
+      "local_name": "vTRm*"
+    },
+    {
+      "local_name": "vTrM*"
+    },
+    {
+      "local_name": "vTrm*"
+    },
+    {
+      "local_name": "vURM*"
+    },
+    {
+      "local_name": "vURm*"
+    },
+    {
+      "local_name": "vUrM*"
+    },
+    {
+      "local_name": "vUrm*"
+    },
+    {
+      "local_name": "vVRM*"
+    },
+    {
+      "local_name": "vVRm*"
+    },
+    {
+      "local_name": "vVrM*"
+    },
+    {
+      "local_name": "vVrm*"
+    },
+    {
+      "local_name": "vWRM*"
+    },
+    {
+      "local_name": "vWRm*"
+    },
+    {
+      "local_name": "vWrM*"
+    },
+    {
+      "local_name": "vWrm*"
+    },
+    {
+      "local_name": "vXRM*"
+    },
+    {
+      "local_name": "vXRm*"
+    },
+    {
+      "local_name": "vXrM*"
+    },
+    {
+      "local_name": "vXrm*"
+    },
+    {
+      "local_name": "vYRM*"
+    },
+    {
+      "local_name": "vYRm*"
+    },
+    {
+      "local_name": "vYrM*"
+    },
+    {
+      "local_name": "vYrm*"
+    },
+    {
+      "local_name": "vZRM*"
+    },
+    {
+      "local_name": "vZRm*"
+    },
+    {
+      "local_name": "vZrM*"
+    },
+    {
+      "local_name": "vZrm*"
+    },
+    {
+      "local_name": "vaRM*"
+    },
+    {
+      "local_name": "vaRm*"
+    },
+    {
+      "local_name": "varM*"
+    },
+    {
+      "local_name": "varm*"
+    },
+    {
+      "local_name": "vbRM*"
+    },
+    {
+      "local_name": "vbRm*"
+    },
+    {
+      "local_name": "vbrM*"
+    },
+    {
+      "local_name": "vbrm*"
+    },
+    {
+      "local_name": "vcRM*"
+    },
+    {
+      "local_name": "vcRm*"
+    },
+    {
+      "local_name": "vcrM*"
+    },
+    {
+      "local_name": "vcrm*"
+    },
+    {
+      "local_name": "vdRM*"
+    },
+    {
+      "local_name": "vdRm*"
+    },
+    {
+      "local_name": "vdrM*"
+    },
+    {
+      "local_name": "vdrm*"
+    },
+    {
+      "local_name": "veRM*"
+    },
+    {
+      "local_name": "veRm*"
+    },
+    {
+      "local_name": "verM*"
+    },
+    {
+      "local_name": "verm*"
+    },
+    {
+      "local_name": "vfRM*"
+    },
+    {
+      "local_name": "vfRm*"
+    },
+    {
+      "local_name": "vfrM*"
+    },
+    {
+      "local_name": "vfrm*"
+    },
+    {
+      "local_name": "vgRM*"
+    },
+    {
+      "local_name": "vgRm*"
+    },
+    {
+      "local_name": "vgrM*"
+    },
+    {
+      "local_name": "vgrm*"
+    },
+    {
+      "local_name": "vhRM*"
+    },
+    {
+      "local_name": "vhRm*"
+    },
+    {
+      "local_name": "vhrM*"
+    },
+    {
+      "local_name": "vhrm*"
+    },
+    {
+      "local_name": "viRM*"
+    },
+    {
+      "local_name": "viRm*"
+    },
+    {
+      "local_name": "virM*"
+    },
+    {
+      "local_name": "virm*"
+    },
+    {
+      "local_name": "vjRM*"
+    },
+    {
+      "local_name": "vjRm*"
+    },
+    {
+      "local_name": "vjrM*"
+    },
+    {
+      "local_name": "vjrm*"
+    },
+    {
+      "local_name": "vkRM*"
+    },
+    {
+      "local_name": "vkRm*"
+    },
+    {
+      "local_name": "vkrM*"
+    },
+    {
+      "local_name": "vkrm*"
+    },
+    {
+      "local_name": "vlRM*"
+    },
+    {
+      "local_name": "vlRm*"
+    },
+    {
+      "local_name": "vlrM*"
+    },
+    {
+      "local_name": "vlrm*"
+    },
+    {
+      "local_name": "vmRM*"
+    },
+    {
+      "local_name": "vmRm*"
+    },
+    {
+      "local_name": "vmrM*"
+    },
+    {
+      "local_name": "vmrm*"
+    },
+    {
+      "local_name": "vnRM*"
+    },
+    {
+      "local_name": "vnRm*"
+    },
+    {
+      "local_name": "vnrM*"
+    },
+    {
+      "local_name": "vnrm*"
+    },
+    {
+      "local_name": "voRM*"
+    },
+    {
+      "local_name": "voRm*"
+    },
+    {
+      "local_name": "vorM*"
+    },
+    {
+      "local_name": "vorm*"
+    },
+    {
+      "local_name": "vpRM*"
+    },
+    {
+      "local_name": "vpRm*"
+    },
+    {
+      "local_name": "vprM*"
+    },
+    {
+      "local_name": "vprm*"
+    },
+    {
+      "local_name": "vqRM*"
+    },
+    {
+      "local_name": "vqRm*"
+    },
+    {
+      "local_name": "vqrM*"
+    },
+    {
+      "local_name": "vqrm*"
+    },
+    {
+      "local_name": "vrRM*"
+    },
+    {
+      "local_name": "vrRm*"
+    },
+    {
+      "local_name": "vrrM*"
+    },
+    {
+      "local_name": "vrrm*"
+    },
+    {
+      "local_name": "vsRM*"
+    },
+    {
+      "local_name": "vsRm*"
+    },
+    {
+      "local_name": "vsrM*"
+    },
+    {
+      "local_name": "vsrm*"
+    },
+    {
+      "local_name": "vtRM*"
+    },
+    {
+      "local_name": "vtRm*"
+    },
+    {
+      "local_name": "vtrM*"
+    },
+    {
+      "local_name": "vtrm*"
+    },
+    {
+      "local_name": "vuRM*"
+    },
+    {
+      "local_name": "vuRm*"
+    },
+    {
+      "local_name": "vurM*"
+    },
+    {
+      "local_name": "vurm*"
+    },
+    {
+      "local_name": "vvRM*"
+    },
+    {
+      "local_name": "vvRm*"
+    },
+    {
+      "local_name": "vvrM*"
+    },
+    {
+      "local_name": "vvrm*"
+    },
+    {
+      "local_name": "vwRM*"
+    },
+    {
+      "local_name": "vwRm*"
+    },
+    {
+      "local_name": "vwrM*"
+    },
+    {
+      "local_name": "vwrm*"
+    },
+    {
+      "local_name": "vxRM*"
+    },
+    {
+      "local_name": "vxRm*"
+    },
+    {
+      "local_name": "vxrM*"
+    },
+    {
+      "local_name": "vxrm*"
+    },
+    {
+      "local_name": "vyRM*"
+    },
+    {
+      "local_name": "vyRm*"
+    },
+    {
+      "local_name": "vyrM*"
+    },
+    {
+      "local_name": "vyrm*"
+    },
+    {
+      "local_name": "vzRM*"
+    },
+    {
+      "local_name": "vzRm*"
+    },
+    {
+      "local_name": "vzrM*"
+    },
+    {
+      "local_name": "vzrm*"
+    },
+    {
+      "local_name": "w0RM*"
+    },
+    {
+      "local_name": "w0Rm*"
+    },
+    {
+      "local_name": "w0rM*"
+    },
+    {
+      "local_name": "w0rm*"
+    },
+    {
+      "local_name": "w1RM*"
+    },
+    {
+      "local_name": "w1Rm*"
+    },
+    {
+      "local_name": "w1rM*"
+    },
+    {
+      "local_name": "w1rm*"
+    },
+    {
+      "local_name": "w2RM*"
+    },
+    {
+      "local_name": "w2Rm*"
+    },
+    {
+      "local_name": "w2rM*"
+    },
+    {
+      "local_name": "w2rm*"
+    },
+    {
+      "local_name": "w3RM*"
+    },
+    {
+      "local_name": "w3Rm*"
+    },
+    {
+      "local_name": "w3rM*"
+    },
+    {
+      "local_name": "w3rm*"
+    },
+    {
+      "local_name": "w4RM*"
+    },
+    {
+      "local_name": "w4Rm*"
+    },
+    {
+      "local_name": "w4rM*"
+    },
+    {
+      "local_name": "w4rm*"
+    },
+    {
+      "local_name": "w5RM*"
+    },
+    {
+      "local_name": "w5Rm*"
+    },
+    {
+      "local_name": "w5rM*"
+    },
+    {
+      "local_name": "w5rm*"
+    },
+    {
+      "local_name": "w6RM*"
+    },
+    {
+      "local_name": "w6Rm*"
+    },
+    {
+      "local_name": "w6rM*"
+    },
+    {
+      "local_name": "w6rm*"
+    },
+    {
+      "local_name": "w7RM*"
+    },
+    {
+      "local_name": "w7Rm*"
+    },
+    {
+      "local_name": "w7rM*"
+    },
+    {
+      "local_name": "w7rm*"
+    },
+    {
+      "local_name": "w8RM*"
+    },
+    {
+      "local_name": "w8Rm*"
+    },
+    {
+      "local_name": "w8rM*"
+    },
+    {
+      "local_name": "w8rm*"
+    },
+    {
+      "local_name": "w9RM*"
+    },
+    {
+      "local_name": "w9Rm*"
+    },
+    {
+      "local_name": "w9rM*"
+    },
+    {
+      "local_name": "w9rm*"
+    },
+    {
+      "local_name": "wARM*"
+    },
+    {
+      "local_name": "wARm*"
+    },
+    {
+      "local_name": "wArM*"
+    },
+    {
+      "local_name": "wArm*"
+    },
+    {
+      "local_name": "wBRM*"
+    },
+    {
+      "local_name": "wBRm*"
+    },
+    {
+      "local_name": "wBrM*"
+    },
+    {
+      "local_name": "wBrm*"
+    },
+    {
+      "local_name": "wCRM*"
+    },
+    {
+      "local_name": "wCRm*"
+    },
+    {
+      "local_name": "wCrM*"
+    },
+    {
+      "local_name": "wCrm*"
+    },
+    {
+      "local_name": "wDRM*"
+    },
+    {
+      "local_name": "wDRm*"
+    },
+    {
+      "local_name": "wDrM*"
+    },
+    {
+      "local_name": "wDrm*"
+    },
+    {
+      "local_name": "wERM*"
+    },
+    {
+      "local_name": "wERm*"
+    },
+    {
+      "local_name": "wErM*"
+    },
+    {
+      "local_name": "wErm*"
+    },
+    {
+      "local_name": "wGRM*"
+    },
+    {
+      "local_name": "wGRm*"
+    },
+    {
+      "local_name": "wGrM*"
+    },
+    {
+      "local_name": "wGrm*"
+    },
+    {
+      "local_name": "wHRM*"
+    },
+    {
+      "local_name": "wHRm*"
+    },
+    {
+      "local_name": "wHrM*"
+    },
+    {
+      "local_name": "wHrm*"
+    },
+    {
+      "local_name": "wIRM*"
+    },
+    {
+      "local_name": "wIRm*"
+    },
+    {
+      "local_name": "wIrM*"
+    },
+    {
+      "local_name": "wIrm*"
+    },
+    {
+      "local_name": "wJRM*"
+    },
+    {
+      "local_name": "wJRm*"
+    },
+    {
+      "local_name": "wJrM*"
+    },
+    {
+      "local_name": "wJrm*"
+    },
+    {
+      "local_name": "wKRM*"
+    },
+    {
+      "local_name": "wKRm*"
+    },
+    {
+      "local_name": "wKrM*"
+    },
+    {
+      "local_name": "wKrm*"
+    },
+    {
+      "local_name": "wLRM*"
+    },
+    {
+      "local_name": "wLRm*"
+    },
+    {
+      "local_name": "wLrM*"
+    },
+    {
+      "local_name": "wLrm*"
+    },
+    {
+      "local_name": "wMRM*"
+    },
+    {
+      "local_name": "wMRm*"
+    },
+    {
+      "local_name": "wMrM*"
+    },
+    {
+      "local_name": "wMrm*"
+    },
+    {
+      "local_name": "wNRM*"
+    },
+    {
+      "local_name": "wNRm*"
+    },
+    {
+      "local_name": "wNrM*"
+    },
+    {
+      "local_name": "wNrm*"
+    },
+    {
+      "local_name": "wORM*"
+    },
+    {
+      "local_name": "wORm*"
+    },
+    {
+      "local_name": "wOrM*"
+    },
+    {
+      "local_name": "wOrm*"
+    },
+    {
+      "local_name": "wPRM*"
+    },
+    {
+      "local_name": "wPRm*"
+    },
+    {
+      "local_name": "wPrM*"
+    },
+    {
+      "local_name": "wPrm*"
+    },
+    {
+      "local_name": "wQRM*"
+    },
+    {
+      "local_name": "wQRm*"
+    },
+    {
+      "local_name": "wQrM*"
+    },
+    {
+      "local_name": "wQrm*"
+    },
+    {
+      "local_name": "wRRM*"
+    },
+    {
+      "local_name": "wRRm*"
+    },
+    {
+      "local_name": "wRrM*"
+    },
+    {
+      "local_name": "wRrm*"
+    },
+    {
+      "local_name": "wSRM*"
+    },
+    {
+      "local_name": "wSRm*"
+    },
+    {
+      "local_name": "wSrM*"
+    },
+    {
+      "local_name": "wSrm*"
+    },
+    {
+      "local_name": "wTRM*"
+    },
+    {
+      "local_name": "wTRm*"
+    },
+    {
+      "local_name": "wTrM*"
+    },
+    {
+      "local_name": "wTrm*"
+    },
+    {
+      "local_name": "wURM*"
+    },
+    {
+      "local_name": "wURm*"
+    },
+    {
+      "local_name": "wUrM*"
+    },
+    {
+      "local_name": "wUrm*"
+    },
+    {
+      "local_name": "wVRM*"
+    },
+    {
+      "local_name": "wVRm*"
+    },
+    {
+      "local_name": "wVrM*"
+    },
+    {
+      "local_name": "wVrm*"
+    },
+    {
+      "local_name": "wWRM*"
+    },
+    {
+      "local_name": "wWRm*"
+    },
+    {
+      "local_name": "wWrM*"
+    },
+    {
+      "local_name": "wWrm*"
+    },
+    {
+      "local_name": "wXRM*"
+    },
+    {
+      "local_name": "wXRm*"
+    },
+    {
+      "local_name": "wXrM*"
+    },
+    {
+      "local_name": "wXrm*"
+    },
+    {
+      "local_name": "wYRM*"
+    },
+    {
+      "local_name": "wYRm*"
+    },
+    {
+      "local_name": "wYrM*"
+    },
+    {
+      "local_name": "wYrm*"
+    },
+    {
+      "local_name": "wZRM*"
+    },
+    {
+      "local_name": "wZRm*"
+    },
+    {
+      "local_name": "wZrM*"
+    },
+    {
+      "local_name": "wZrm*"
+    },
+    {
+      "local_name": "waRM*"
+    },
+    {
+      "local_name": "waRm*"
+    },
+    {
+      "local_name": "warM*"
+    },
+    {
+      "local_name": "warm*"
+    },
+    {
+      "local_name": "wbRM*"
+    },
+    {
+      "local_name": "wbRm*"
+    },
+    {
+      "local_name": "wbrM*"
+    },
+    {
+      "local_name": "wbrm*"
+    },
+    {
+      "local_name": "wcRM*"
+    },
+    {
+      "local_name": "wcRm*"
+    },
+    {
+      "local_name": "wcrM*"
+    },
+    {
+      "local_name": "wcrm*"
+    },
+    {
+      "local_name": "wdRM*"
+    },
+    {
+      "local_name": "wdRm*"
+    },
+    {
+      "local_name": "wdrM*"
+    },
+    {
+      "local_name": "wdrm*"
+    },
+    {
+      "local_name": "weRM*"
+    },
+    {
+      "local_name": "weRm*"
+    },
+    {
+      "local_name": "werM*"
+    },
+    {
+      "local_name": "werm*"
+    },
+    {
+      "local_name": "wgRM*"
+    },
+    {
+      "local_name": "wgRm*"
+    },
+    {
+      "local_name": "wgrM*"
+    },
+    {
+      "local_name": "wgrm*"
+    },
+    {
+      "local_name": "whRM*"
+    },
+    {
+      "local_name": "whRm*"
+    },
+    {
+      "local_name": "whrM*"
+    },
+    {
+      "local_name": "whrm*"
+    },
+    {
+      "local_name": "wiRM*"
+    },
+    {
+      "local_name": "wiRm*"
+    },
+    {
+      "local_name": "wirM*"
+    },
+    {
+      "local_name": "wirm*"
+    },
+    {
+      "local_name": "wjRM*"
+    },
+    {
+      "local_name": "wjRm*"
+    },
+    {
+      "local_name": "wjrM*"
+    },
+    {
+      "local_name": "wjrm*"
+    },
+    {
+      "local_name": "wkRM*"
+    },
+    {
+      "local_name": "wkRm*"
+    },
+    {
+      "local_name": "wkrM*"
+    },
+    {
+      "local_name": "wkrm*"
+    },
+    {
+      "local_name": "wlRM*"
+    },
+    {
+      "local_name": "wlRm*"
+    },
+    {
+      "local_name": "wlrM*"
+    },
+    {
+      "local_name": "wlrm*"
+    },
+    {
+      "local_name": "wmRM*"
+    },
+    {
+      "local_name": "wmRm*"
+    },
+    {
+      "local_name": "wmrM*"
+    },
+    {
+      "local_name": "wmrm*"
+    },
+    {
+      "local_name": "wnRM*"
+    },
+    {
+      "local_name": "wnRm*"
+    },
+    {
+      "local_name": "wnrM*"
+    },
+    {
+      "local_name": "wnrm*"
+    },
+    {
+      "local_name": "woRM*"
+    },
+    {
+      "local_name": "woRm*"
+    },
+    {
+      "local_name": "worM*"
+    },
+    {
+      "local_name": "worm*"
+    },
+    {
+      "local_name": "wpRM*"
+    },
+    {
+      "local_name": "wpRm*"
+    },
+    {
+      "local_name": "wprM*"
+    },
+    {
+      "local_name": "wprm*"
+    },
+    {
+      "local_name": "wqRM*"
+    },
+    {
+      "local_name": "wqRm*"
+    },
+    {
+      "local_name": "wqrM*"
+    },
+    {
+      "local_name": "wqrm*"
+    },
+    {
+      "local_name": "wrRM*"
+    },
+    {
+      "local_name": "wrRm*"
+    },
+    {
+      "local_name": "wrrM*"
+    },
+    {
+      "local_name": "wrrm*"
+    },
+    {
+      "local_name": "wsRM*"
+    },
+    {
+      "local_name": "wsRm*"
+    },
+    {
+      "local_name": "wsrM*"
+    },
+    {
+      "local_name": "wsrm*"
+    },
+    {
+      "local_name": "wtRM*"
+    },
+    {
+      "local_name": "wtRm*"
+    },
+    {
+      "local_name": "wtrM*"
+    },
+    {
+      "local_name": "wtrm*"
+    },
+    {
+      "local_name": "wuRM*"
+    },
+    {
+      "local_name": "wuRm*"
+    },
+    {
+      "local_name": "wurM*"
+    },
+    {
+      "local_name": "wurm*"
+    },
+    {
+      "local_name": "wvRM*"
+    },
+    {
+      "local_name": "wvRm*"
+    },
+    {
+      "local_name": "wvrM*"
+    },
+    {
+      "local_name": "wvrm*"
+    },
+    {
+      "local_name": "wwRM*"
+    },
+    {
+      "local_name": "wwRm*"
+    },
+    {
+      "local_name": "wwrM*"
+    },
+    {
+      "local_name": "wwrm*"
+    },
+    {
+      "local_name": "wxRM*"
+    },
+    {
+      "local_name": "wxRm*"
+    },
+    {
+      "local_name": "wxrM*"
+    },
+    {
+      "local_name": "wxrm*"
+    },
+    {
+      "local_name": "wyRM*"
+    },
+    {
+      "local_name": "wyRm*"
+    },
+    {
+      "local_name": "wyrM*"
+    },
+    {
+      "local_name": "wyrm*"
+    },
+    {
+      "local_name": "wzRM*"
+    },
+    {
+      "local_name": "wzRm*"
+    },
+    {
+      "local_name": "wzrM*"
+    },
+    {
+      "local_name": "wzrm*"
+    },
+    {
+      "local_name": "x1RM*"
+    },
+    {
+      "local_name": "x1Rm*"
+    },
+    {
+      "local_name": "x1rM*"
+    },
+    {
+      "local_name": "x1rm*"
+    },
+    {
+      "local_name": "x2RM*"
+    },
+    {
+      "local_name": "x2Rm*"
+    },
+    {
+      "local_name": "x2rM*"
+    },
+    {
+      "local_name": "x2rm*"
+    },
+    {
+      "local_name": "xCRM*"
+    },
+    {
+      "local_name": "xCRm*"
+    },
+    {
+      "local_name": "xCrM*"
+    },
+    {
+      "local_name": "xCrm*"
+    },
+    {
+      "local_name": "xFRM*"
+    },
+    {
+      "local_name": "xFRm*"
+    },
+    {
+      "local_name": "xFrM*"
+    },
+    {
+      "local_name": "xFrm*"
+    },
+    {
+      "local_name": "xGRM*"
+    },
+    {
+      "local_name": "xGRm*"
+    },
+    {
+      "local_name": "xGrM*"
+    },
+    {
+      "local_name": "xGrm*"
+    },
+    {
+      "local_name": "xLRM*"
+    },
+    {
+      "local_name": "xLRm*"
+    },
+    {
+      "local_name": "xLrM*"
+    },
+    {
+      "local_name": "xLrm*"
+    },
+    {
+      "local_name": "xcRM*"
+    },
+    {
+      "local_name": "xcRm*"
+    },
+    {
+      "local_name": "xcrM*"
+    },
+    {
+      "local_name": "xcrm*"
+    },
+    {
+      "local_name": "xfRM*"
+    },
+    {
+      "local_name": "xfRm*"
+    },
+    {
+      "local_name": "xfrM*"
+    },
+    {
+      "local_name": "xfrm*"
+    },
+    {
+      "local_name": "xgRM*"
+    },
+    {
+      "local_name": "xgRm*"
+    },
+    {
+      "local_name": "xgrM*"
+    },
+    {
+      "local_name": "xgrm*"
+    },
+    {
+      "local_name": "xlRM*"
+    },
+    {
+      "local_name": "xlRm*"
+    },
+    {
+      "local_name": "xlrM*"
+    },
+    {
+      "local_name": "xlrm*"
+    },
+    {
+      "local_name": "y0RM*"
+    },
+    {
+      "local_name": "y0Rm*"
+    },
+    {
+      "local_name": "y0rM*"
+    },
+    {
+      "local_name": "y0rm*"
+    },
+    {
+      "local_name": "y1RM*"
+    },
+    {
+      "local_name": "y1Rm*"
+    },
+    {
+      "local_name": "y1rM*"
+    },
+    {
+      "local_name": "y1rm*"
+    },
+    {
+      "local_name": "y2RM*"
+    },
+    {
+      "local_name": "y2Rm*"
+    },
+    {
+      "local_name": "y2rM*"
+    },
+    {
+      "local_name": "y2rm*"
+    },
+    {
+      "local_name": "y3RM*"
+    },
+    {
+      "local_name": "y3Rm*"
+    },
+    {
+      "local_name": "y3rM*"
+    },
+    {
+      "local_name": "y3rm*"
+    },
+    {
+      "local_name": "y4RM*"
+    },
+    {
+      "local_name": "y4Rm*"
+    },
+    {
+      "local_name": "y4rM*"
+    },
+    {
+      "local_name": "y4rm*"
+    },
+    {
+      "local_name": "y5RM*"
+    },
+    {
+      "local_name": "y5Rm*"
+    },
+    {
+      "local_name": "y5rM*"
+    },
+    {
+      "local_name": "y5rm*"
+    },
+    {
+      "local_name": "y6RM*"
+    },
+    {
+      "local_name": "y6Rm*"
+    },
+    {
+      "local_name": "y6rM*"
+    },
+    {
+      "local_name": "y6rm*"
+    },
+    {
+      "local_name": "y7RM*"
+    },
+    {
+      "local_name": "y7Rm*"
+    },
+    {
+      "local_name": "y7rM*"
+    },
+    {
+      "local_name": "y7rm*"
+    },
+    {
+      "local_name": "y8RM*"
+    },
+    {
+      "local_name": "y8Rm*"
+    },
+    {
+      "local_name": "y8rM*"
+    },
+    {
+      "local_name": "y8rm*"
+    },
+    {
+      "local_name": "y9RM*"
+    },
+    {
+      "local_name": "y9Rm*"
+    },
+    {
+      "local_name": "y9rM*"
+    },
+    {
+      "local_name": "y9rm*"
+    },
+    {
+      "local_name": "yARM*"
+    },
+    {
+      "local_name": "yARm*"
+    },
+    {
+      "local_name": "yArM*"
+    },
+    {
+      "local_name": "yArm*"
+    },
+    {
+      "local_name": "yBRM*"
+    },
+    {
+      "local_name": "yBRm*"
+    },
+    {
+      "local_name": "yBrM*"
+    },
+    {
+      "local_name": "yBrm*"
+    },
+    {
+      "local_name": "yCRM*"
+    },
+    {
+      "local_name": "yCRm*"
+    },
+    {
+      "local_name": "yCrM*"
+    },
+    {
+      "local_name": "yCrm*"
+    },
+    {
+      "local_name": "yDRM*"
+    },
+    {
+      "local_name": "yDRm*"
+    },
+    {
+      "local_name": "yDrM*"
+    },
+    {
+      "local_name": "yDrm*"
+    },
+    {
+      "local_name": "yERM*"
+    },
+    {
+      "local_name": "yERm*"
+    },
+    {
+      "local_name": "yErM*"
+    },
+    {
+      "local_name": "yErm*"
+    },
+    {
+      "local_name": "yFRM*"
+    },
+    {
+      "local_name": "yFRm*"
+    },
+    {
+      "local_name": "yFrM*"
+    },
+    {
+      "local_name": "yFrm*"
+    },
+    {
+      "local_name": "yGRM*"
+    },
+    {
+      "local_name": "yGRm*"
+    },
+    {
+      "local_name": "yGrM*"
+    },
+    {
+      "local_name": "yGrm*"
+    },
+    {
+      "local_name": "yHRM*"
+    },
+    {
+      "local_name": "yHRm*"
+    },
+    {
+      "local_name": "yHrM*"
+    },
+    {
+      "local_name": "yHrm*"
+    },
+    {
+      "local_name": "yIRM*"
+    },
+    {
+      "local_name": "yIRm*"
+    },
+    {
+      "local_name": "yIrM*"
+    },
+    {
+      "local_name": "yIrm*"
+    },
+    {
+      "local_name": "yJRM*"
+    },
+    {
+      "local_name": "yJRm*"
+    },
+    {
+      "local_name": "yJrM*"
+    },
+    {
+      "local_name": "yJrm*"
+    },
+    {
+      "local_name": "yKRM*"
+    },
+    {
+      "local_name": "yKRm*"
+    },
+    {
+      "local_name": "yKrM*"
+    },
+    {
+      "local_name": "yKrm*"
+    },
+    {
+      "local_name": "yMRM*"
+    },
+    {
+      "local_name": "yMRm*"
+    },
+    {
+      "local_name": "yMrM*"
+    },
+    {
+      "local_name": "yMrm*"
+    },
+    {
+      "local_name": "yNRM*"
+    },
+    {
+      "local_name": "yNRm*"
+    },
+    {
+      "local_name": "yNrM*"
+    },
+    {
+      "local_name": "yNrm*"
+    },
+    {
+      "local_name": "yORM*"
+    },
+    {
+      "local_name": "yORm*"
+    },
+    {
+      "local_name": "yOrM*"
+    },
+    {
+      "local_name": "yOrm*"
+    },
+    {
+      "local_name": "yPRM*"
+    },
+    {
+      "local_name": "yPRm*"
+    },
+    {
+      "local_name": "yPrM*"
+    },
+    {
+      "local_name": "yPrm*"
+    },
+    {
+      "local_name": "yaRM*"
+    },
+    {
+      "local_name": "yaRm*"
+    },
+    {
+      "local_name": "yarM*"
+    },
+    {
+      "local_name": "yarm*"
+    },
+    {
+      "local_name": "ybRM*"
+    },
+    {
+      "local_name": "ybRm*"
+    },
+    {
+      "local_name": "ybrM*"
+    },
+    {
+      "local_name": "ybrm*"
+    },
+    {
+      "local_name": "ycRM*"
+    },
+    {
+      "local_name": "ycRm*"
+    },
+    {
+      "local_name": "ycrM*"
+    },
+    {
+      "local_name": "ycrm*"
+    },
+    {
+      "local_name": "ydRM*"
+    },
+    {
+      "local_name": "ydRm*"
+    },
+    {
+      "local_name": "ydrM*"
+    },
+    {
+      "local_name": "ydrm*"
+    },
+    {
+      "local_name": "yeRM*"
+    },
+    {
+      "local_name": "yeRm*"
+    },
+    {
+      "local_name": "yerM*"
+    },
+    {
+      "local_name": "yerm*"
+    },
+    {
+      "local_name": "yfRM*"
+    },
+    {
+      "local_name": "yfRm*"
+    },
+    {
+      "local_name": "yfrM*"
+    },
+    {
+      "local_name": "yfrm*"
+    },
+    {
+      "local_name": "ygRM*"
+    },
+    {
+      "local_name": "ygRm*"
+    },
+    {
+      "local_name": "ygrM*"
+    },
+    {
+      "local_name": "ygrm*"
+    },
+    {
+      "local_name": "yhRM*"
+    },
+    {
+      "local_name": "yhRm*"
+    },
+    {
+      "local_name": "yhrM*"
+    },
+    {
+      "local_name": "yhrm*"
+    },
+    {
+      "local_name": "yiRM*"
+    },
+    {
+      "local_name": "yiRm*"
+    },
+    {
+      "local_name": "yirM*"
+    },
+    {
+      "local_name": "yirm*"
+    },
+    {
+      "local_name": "yjRM*"
+    },
+    {
+      "local_name": "yjRm*"
+    },
+    {
+      "local_name": "yjrM*"
+    },
+    {
+      "local_name": "yjrm*"
+    },
+    {
+      "local_name": "ykRM*"
+    },
+    {
+      "local_name": "ykRm*"
+    },
+    {
+      "local_name": "ykrM*"
+    },
+    {
+      "local_name": "ykrm*"
+    },
+    {
+      "local_name": "ymRM*"
+    },
+    {
+      "local_name": "ymRm*"
+    },
+    {
+      "local_name": "ymrM*"
+    },
+    {
+      "local_name": "ymrm*"
+    },
+    {
+      "local_name": "ynRM*"
+    },
+    {
+      "local_name": "ynRm*"
+    },
+    {
+      "local_name": "ynrM*"
+    },
+    {
+      "local_name": "ynrm*"
+    },
+    {
+      "local_name": "yoRM*"
+    },
+    {
+      "local_name": "yoRm*"
+    },
+    {
+      "local_name": "yorM*"
+    },
+    {
+      "local_name": "yorm*"
+    },
+    {
+      "local_name": "ypRM*"
+    },
+    {
+      "local_name": "ypRm*"
+    },
+    {
+      "local_name": "yprM*"
+    },
+    {
+      "local_name": "yprm*"
+    },
+    {
+      "local_name": "zQRM*"
+    },
+    {
+      "local_name": "zQRm*"
+    },
+    {
+      "local_name": "zQrM*"
+    },
+    {
+      "local_name": "zQrm*"
+    },
+    {
+      "local_name": "zR00*"
+    },
+    {
+      "local_name": "zR01*"
+    },
+    {
+      "local_name": "zR10*"
+    },
+    {
+      "local_name": "zR11*"
+    },
+    {
+      "local_name": "zR12*"
+    },
+    {
+      "local_name": "zR20*"
+    },
+    {
+      "local_name": "zR21*"
+    },
+    {
+      "local_name": "zR30*"
+    },
+    {
+      "local_name": "zR40*"
+    },
+    {
+      "local_name": "zR50*"
+    },
+    {
+      "local_name": "zR51*"
+    },
+    {
+      "local_name": "zR60*"
+    },
+    {
+      "local_name": "zR70*"
+    },
+    {
+      "local_name": "zR80*"
+    },
+    {
+      "local_name": "zR90*"
+    },
+    {
+      "local_name": "zRA0*"
+    },
+    {
+      "local_name": "zRA1*"
+    },
+    {
+      "local_name": "zRA2*"
+    },
+    {
+      "local_name": "zRI0*"
+    },
+    {
+      "local_name": "zRa0*"
+    },
+    {
+      "local_name": "zRa1*"
+    },
+    {
+      "local_name": "zRa2*"
+    },
+    {
+      "local_name": "zRi0*"
+    },
+    {
+      "local_name": "zqRM*"
+    },
+    {
+      "local_name": "zqRm*"
+    },
+    {
+      "local_name": "zqrM*"
+    },
+    {
+      "local_name": "zqrm*"
+    },
+    {
+      "local_name": "zr00*"
+    },
+    {
+      "local_name": "zr01*"
+    },
+    {
+      "local_name": "zr10*"
+    },
+    {
+      "local_name": "zr11*"
+    },
+    {
+      "local_name": "zr12*"
+    },
+    {
+      "local_name": "zr20*"
+    },
+    {
+      "local_name": "zr21*"
+    },
+    {
+      "local_name": "zr30*"
+    },
+    {
+      "local_name": "zr40*"
+    },
+    {
+      "local_name": "zr50*"
+    },
+    {
+      "local_name": "zr51*"
+    },
+    {
+      "local_name": "zr60*"
+    },
+    {
+      "local_name": "zr70*"
+    },
+    {
+      "local_name": "zr80*"
+    },
+    {
+      "local_name": "zr90*"
+    },
+    {
+      "local_name": "zrA0*"
+    },
+    {
+      "local_name": "zrA1*"
+    },
+    {
+      "local_name": "zrA2*"
+    },
+    {
+      "local_name": "zrI0*"
+    },
+    {
+      "local_name": "zra0*"
+    },
+    {
+      "local_name": "zra1*"
+    },
+    {
+      "local_name": "zra2*"
+    },
+    {
+      "local_name": "zri0*"
     }
   ],
   "categories": [

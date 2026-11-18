@@ -2074,6 +2074,9 @@
       "richmat_mh_toggle_smart_set_lock": {
         "name": "Toggle smart set lock"
       },
+      "richmat_cluster022_smart_light_lock": {
+        "name": "Toggle smart light lock"
+      },
       "richmat_mh_start_detection": {
         "name": "Start detection"
       },
@@ -4490,7 +4493,8 @@
         "name": "Alarm",
         "state": {
           "set": "Set",
-          "cancelled": "Cancelled"
+          "cancelled": "Cancelled",
+          "reported": "Reported"
         }
       },
       "richmat_mh_memory_arrival": {
@@ -5020,6 +5024,15 @@
       },
       "ruf_richmat_sleep_left_heart_rate": {
         "name": "Left heart rate"
+      },
+      "richmat_cluster022_sleep_left_state": {
+        "name": "Left sleep state"
+      },
+      "richmat_cluster022_last_reply": {
+        "name": "Last bed reply"
+      },
+      "richmat_cluster022_sleep_right_state": {
+        "name": "Right sleep state"
       },
       "ruf_richmat_sleep_left_breathing_rate": {
         "name": "Left breathing rate"
@@ -6044,6 +6057,14 @@
           "anti_snore": "Anti-snore"
         }
       },
+      "richmat_cluster022_transmit_mode": {
+        "name": "Transmit mode",
+        "state": {"0": "Mode 0", "1": "Mode 1", "2": "Mode 2"}
+      },
+      "richmat_cluster022_group_type": {
+        "name": "Motor group",
+        "state": {"SINGLE": "Single", "GROUP_SYNC": "Synchronized group", "GROUP_SPLIT": "Split group"}
+      },
       "richmat_mh_waist_mode": {
         "name": "Waist mattress mode",
         "state": {
@@ -6073,7 +6094,8 @@
         "state": {
           "level_1": "Level 1",
           "level_2": "Level 2",
-          "level_3": "Level 3"
+          "level_3": "Level 3",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_left_duration": {
@@ -6081,7 +6103,8 @@
         "state": {
           "15_minutes": "15 minutes",
           "20_minutes": "20 minutes",
-          "30_minutes": "30 minutes"
+          "30_minutes": "30 minutes",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_right_heat": {
@@ -6098,7 +6121,8 @@
         "state": {
           "level_1": "Level 1",
           "level_2": "Level 2",
-          "level_3": "Level 3"
+          "level_3": "Level 3",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_right_duration": {
@@ -6106,7 +6130,8 @@
         "state": {
           "15_minutes": "15 minutes",
           "20_minutes": "20 minutes",
-          "30_minutes": "30 minutes"
+          "30_minutes": "30 minutes",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_both_heat": {
@@ -6123,7 +6148,8 @@
         "state": {
           "level_1": "Level 1",
           "level_2": "Level 2",
-          "level_3": "Level 3"
+          "level_3": "Level 3",
+          "off": "Off"
         }
       },
       "richmat_mh_waist_both_duration": {
@@ -6131,7 +6157,8 @@
         "state": {
           "15_minutes": "15 minutes",
           "20_minutes": "20 minutes",
-          "30_minutes": "30 minutes"
+          "30_minutes": "30 minutes",
+          "off": "Off"
         }
       },
       "ore_comfort_massage_timer": {
@@ -6390,7 +6417,8 @@
         "state": {
           "low": "Low",
           "medium": "Medium",
-          "high": "High"
+          "high": "High",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_left_heat_level": {
@@ -6408,7 +6436,8 @@
           "2_hours": "2 hours",
           "4_hours": "4 hours",
           "6_hours": "6 hours",
-          "8_hours": "8 hours"
+          "8_hours": "8 hours",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_left_heat_area": {
@@ -6435,7 +6464,8 @@
         "state": {
           "20_minutes": "20 minutes",
           "40_minutes": "40 minutes",
-          "60_minutes": "60 minutes"
+          "60_minutes": "60 minutes",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_left_sleep_duration": {
@@ -6451,7 +6481,8 @@
         "state": {
           "low": "Low",
           "medium": "Medium",
-          "high": "High"
+          "high": "High",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_right_heat_level": {
@@ -6469,7 +6500,8 @@
           "2_hours": "2 hours",
           "4_hours": "4 hours",
           "6_hours": "6 hours",
-          "8_hours": "8 hours"
+          "8_hours": "8 hours",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_right_heat_area": {
@@ -6496,7 +6528,8 @@
         "state": {
           "20_minutes": "20 minutes",
           "40_minutes": "40 minutes",
-          "60_minutes": "60 minutes"
+          "60_minutes": "60 minutes",
+          "off": "Off"
         }
       },
       "ruf_richmat_mattress_right_sleep_duration": {
@@ -8052,6 +8085,38 @@
         "side": {
           "name": "Side"
         }
+      }
+    },
+    "richmat_cluster022_control": {
+      "name": "Nisco / MLILY Supreme control",
+      "description": "Run a control declared by the selected app/model, or query one physical receiver.",
+      "fields": {
+        "device_id": {"name": "Device"},
+        "side": {"name": "Side"},
+        "action": {"name": "Action"},
+        "opcode": {"name": "Declared control opcode", "description": "Decimal byte value from this app/model's control table."},
+        "query": {"name": "Query"}
+      }
+    },
+    "richmat_cluster022_mode_alarm": {
+      "name": "Nisco mode-page alarm",
+      "description": "Set or cancel Nisco's separate mode-page alarm using its 150 ms two-phase caller.",
+      "fields": {
+        "device_id": {"name": "Device"},
+        "side": {"name": "Side"},
+        "enabled": {"name": "Enabled"},
+        "time": {"name": "Local alarm time"},
+        "position": {"name": "Declared alarm position"},
+        "massage": {"name": "Declared alarm massage choices"}
+      }
+    },
+    "richmat_cluster022_sleep_mode": {
+      "name": "Nisco direct sleep user mode",
+      "description": "Select the separate sleep receiver's user mode through Nisco's direct mode-selection caller.",
+      "fields": {
+        "device_id": {"name": "Device"},
+        "side": {"name": "Side"},
+        "mode": {"name": "User mode"}
       }
     },
     "richmat_mh_alarm": {
