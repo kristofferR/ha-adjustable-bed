@@ -16,7 +16,7 @@ import ast
 import asyncio
 import copy
 import json
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import fields, replace
 from itertools import chain
 from pathlib import Path
@@ -147,7 +147,9 @@ class Placed(NamedTuple):
     card: CardPlacement
 
     def build(self, runtime: MagicMock) -> Entity:
-        return self.cls(runtime, *self.args)
+        # Each entity class takes the runtime and its spec or description.
+        factory: Callable[..., Entity] = self.cls
+        return factory(runtime, *self.args)
 
 
 def motor_entities(specs: Iterable[MotorControlSpec]) -> Iterator[Placed]:
