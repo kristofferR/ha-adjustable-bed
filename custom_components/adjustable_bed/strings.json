@@ -3080,52 +3080,37 @@
         "name": "Middle controls (lumbar icon) down"
       },
       "comfy_zero": {
-        "name": "Zero (app preset)"
+        "name": "Zero"
       },
       "comfy_h_increase": {
-        "name": "H increase (app step)"
+        "name": "Head increase"
       },
       "comfy_h_decrease": {
-        "name": "H decrease (app step)"
+        "name": "Head decrease"
       },
       "comfy_f_increase": {
-        "name": "F increase (app step)"
+        "name": "Foot increase"
       },
       "comfy_f_decrease": {
-        "name": "F decrease (app step)"
-      },
-      "comfy_timer_start": {
-        "name": "App timer start"
-      },
-      "comfy_timer_stop": {
-        "name": "App timer stop"
-      },
-      "comfy_lock": {
-        "name": "Lock controls"
-      },
-      "comfy_unlock": {
-        "name": "Unlock controls"
-      },
-      "comfy_query": {
-        "name": "Query lock status"
+        "name": "Foot decrease"
       },
       "comfy_head_up": {
-        "name": "Head up (app control)"
+        "name": "Head up"
       },
       "comfy_head_down": {
-        "name": "Head down (app control)"
+        "name": "Head down"
       },
       "comfy_foot_up": {
-        "name": "Foot up (app control)"
+        "name": "Foot up"
       },
       "comfy_foot_down": {
-        "name": "Foot down (app control)"
+        "name": "Foot down"
       },
       "comfy_waist_up": {
-        "name": "Waist up (app control)"
+        "name": "Waist up"
       },
       "comfy_waist_down": {
-        "name": "Waist down (app control)"
+        "name": "Waist down"
       },
       "smart_sleep_refresh": {
         "name": "Refresh bed state"
@@ -3619,13 +3604,13 @@
         "name": "Middle controls (lumbar icon)"
       },
       "comfy_head": {
-        "name": "Head (app control)"
+        "name": "Head"
       },
       "comfy_foot": {
-        "name": "Foot (app control)"
+        "name": "Foot"
       },
       "comfy_waist": {
-        "name": "Waist (app control)"
+        "name": "Waist"
       },
       "smart_sleep_head": {
         "name": "Head (app)"
@@ -5130,15 +5115,15 @@
         "name": "Massage mode"
       },
       "comfy_lock_status": {
-        "name": "App control lock",
+        "name": "Control lock owner",
         "state": {
           "unlocked": "Unlocked",
-          "local": "Locally owned",
-          "other": "Owned by another controller"
+          "local": "Home Assistant",
+          "other": "Another controller"
         }
       },
       "comfy_timer_remaining": {
-        "name": "Local app timer remaining"
+        "name": "Timer remaining (estimated)"
       },
       "smart_sleep_model": {
         "name": "App model ID"
@@ -5260,6 +5245,12 @@
       },
       "automatic_light": {
         "name": "Automatic under-bed light"
+      },
+      "comfy_control_lock": {
+        "name": "Control lock"
+      },
+      "comfy_timer": {
+        "name": "Timer"
       }
     },
     "binary_sensor": {
@@ -6610,16 +6601,8 @@
           "speak": "Speech"
         }
       },
-      "comfy_selected_side": {
-        "name": "App bed side",
-        "state": {
-          "left": "Left",
-          "both": "Both",
-          "right": "Right"
-        }
-      },
       "comfy_timer_selection": {
-        "name": "App timer selection",
+        "name": "Timer duration",
         "state": {
           "10": "10 minutes",
           "20": "20 minutes",
