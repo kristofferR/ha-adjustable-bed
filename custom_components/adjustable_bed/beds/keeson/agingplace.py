@@ -628,6 +628,7 @@ class AgingPlaceController(KeesonController):
                 NUMBERS["heart_rate"],
                 "mdi:heart-pulse",
                 native_unit_of_measurement="bpm",
+                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
                 "agingplace_breathing_rate",
@@ -635,6 +636,7 @@ class AgingPlaceController(KeesonController):
                 NUMBERS["breathing_rate"],
                 "mdi:lungs",
                 native_unit_of_measurement="breaths/min",
+                entity_registry_enabled_default=True,
             ),
             *(
                 ControllerStateSensorSpec(
@@ -643,6 +645,7 @@ class AgingPlaceController(KeesonController):
                     NUMBERS[f"{name}_remaining"],
                     "mdi:timer-outline",
                     native_unit_of_measurement="s",
+                    entity_registry_enabled_default=True,
                 )
                 for name in ("circulation", "sleep", "relax_cycle")
             ),
@@ -652,6 +655,7 @@ class AgingPlaceController(KeesonController):
                 TEXT["diagnostic_status"],
                 "mdi:clipboard-check-outline",
                 attribute_keys=self_check,
+                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
                 "agingplace_version",
@@ -667,7 +671,11 @@ class AgingPlaceController(KeesonController):
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (
             ControllerStateBinarySensorSpec(
-                "agingplace_occupancy", "agingplace_occupancy", OCCUPIED, "mdi:bed"
+                "agingplace_occupancy",
+                "agingplace_occupancy",
+                OCCUPIED,
+                "mdi:bed",
+                entity_registry_enabled_default=True,
             ),
         )
 
