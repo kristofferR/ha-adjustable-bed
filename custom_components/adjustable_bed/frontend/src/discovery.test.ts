@@ -64,8 +64,9 @@ test("OKIN Motion Bed keeps neutral middle holds and its bed light switch reacha
   });
   expect(bed.presets).toEqual(["button.preset_stop"]);
   expect(bed.memory).toEqual([{ slot: 1, goto: "button.recall_a", save: "button.save_a" }]);
-  // An app light switch sits beside the floor light, with explicit On and Off.
-  expect(bed.lights.switches).toEqual(["switch.light"]);
+  // Without a floor light, the app light switch is the main light.
+  expect(bed.lights.switch).toBe("switch.light");
+  expect(bed.lights.switches).toBeUndefined();
 });
 
 test("GM product controls and raw session state stay with their physical device", () => {

@@ -348,6 +348,12 @@ export function bedEntitiesForDevice(
     .map((k) => motorMap.get(k)!)
     .filter((m) => m.cover || m.up || m.down || m.angle || m.position);
 
+  // A single app light switch without a floor light is the bed's main light.
+  if (!lights.light && !lights.switch && lights.switches?.length === 1) {
+    lights.switch = lights.switches[0];
+    lights.switches = undefined;
+  }
+
   // Order presets: known order first, then the rest by key (then entity_id,
   // for app-labelled presets that share one key).
   const rank = (key: string): number => {

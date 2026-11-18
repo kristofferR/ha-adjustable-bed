@@ -762,3 +762,14 @@ async def test_sleep_switch_toggles_only_when_the_fresh_status_differs():
         await sleep.set_fn(c, False)
     sent = [call.args[0] for call in c.write_command.call_args_list]
     assert sent[0] == frame("P4", "toggleSleeping", sleeping=True)
+
+
+async def test_anti_snore_off_after_a_demonstration_publishes_no_setting():
+    c = await ready("P4")
+    c.write_command = AsyncMock()
+    c.state.demonstration = True
+    await c.set_setting("snore_control", "off")
+    assert not any(
+        call.args[0] == "adjustamattress_snore_enabled"
+        for call in c._coordinator.handle_controller_state_update.call_args_list
+    )

@@ -1473,7 +1473,7 @@ export class AdjustableBedCard extends LitElement {
     return html`
       ${this._heading("section.lighting")}
       ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
-      ${main ? this._toggleRow(main) : nothing}
+      ${main ? (main === l.switch ? this._switchRow(main) : this._toggleRow(main)) : nothing}
       ${l.switches?.map((id) => this._switchRow(id))}
       ${l.state ? this._moreInfoRow(l.state) : nothing}
       ${l.states?.map((id) => this._moreInfoRow(id))}
@@ -1623,27 +1623,21 @@ export class AdjustableBedCard extends LitElement {
     if (st?.attributes.assumed_state !== true && (st?.state === "on" || st?.state === "off"))
       return this._toggleRow(entityId);
     const name = entityLabel(this.hass, entityId);
-    const set = (service: "turn_on" | "turn_off") => (e: Event) => {
-      e.stopPropagation();
-      this._call("switch", service, entityId);
-    };
+    const off = this._t("action.off");
+    const on = this._t("action.on");
     return html`
-      <div
-        class="entity-row"
-        role="button"
-        tabindex="0"
-        aria-label=${name}
-        @click=${() => this._moreInfo(entityId)}
-        @keydown=${(e: KeyboardEvent) =>
-          this._onRowKey(e, () => this._moreInfo(entityId))}
-      >
-        ${this._icon(entityId)}
-        <div class="entity-row-text">
-          <span>${name}</span>
-          <span class="secondary">${this._stateText(entityId)}</span>
-        </div>
-        <button class="dialog-btn" @click=${set("turn_off")}>${this._t("action.off")}</button>
-        <button class="dialog-btn" @click=${set("turn_on")}>${this._t("action.on")}</button>
+      <div class="entity-row" role="group" aria-label=${name}>
+        <button class="entity-row-details" aria-label=${name} @click=${() => this._moreInfo(entityId)}>
+          ${this._icon(entityId)}
+          <span class="entity-row-text">
+            <span>${name}</span>
+            <span class="secondary">${this._stateText(entityId)}</span>
+          </span>
+        </button>
+        <button class="dialog-btn" aria-label=${`${name}: ${off}`}
+          @click=${() => this._call("switch", "turn_off", entityId)}>${off}</button>
+        <button class="dialog-btn" aria-label=${`${name}: ${on}`}
+          @click=${() => this._call("switch", "turn_on", entityId)}>${on}</button>
       </div>
     `;
   }
@@ -3279,6 +3273,19 @@ export class AdjustableBedCard extends LitElement {
       display: flex;
       flex-direction: column;
       flex: 1;
+    }
+    .entity-row-details {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      padding: 0;
+      border: none;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: start;
+      cursor: pointer;
     }
     .entity-row-text .secondary,
     .value {
