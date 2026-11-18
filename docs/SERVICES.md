@@ -83,7 +83,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`doublesleep_configure`](#doublesleep_configure) | OKIN SleepEase: settings | Alarm, anti-snore, sensor settings, report retrieval and named preset programming for the SleepEase app profile. Reports remain on the selected physical bed's report sensors. |
 | [`octo_enroll_pin`](#octo_enroll_pin) | Octo: set PIN | Set a new four-digit PIN on one unlocked OCTO Smart Control receiver. Enter the same PIN twice. Home Assistant saves it for reconnects after sending the command. |
 | [`octo_reset_defaults`](#octo_reset_defaults) | Octo: reset receiver | Restore receiver defaults after explicit confirmation. The receiver disconnects five seconds after the reset command. |
-| [`okimiki`](#okimiki) | Okimiki: control | Press or save a control, set the light, or sync the clock of the selected Okimiki product. Alarms use Set alarm. |
+| [`okimiki`](#okimiki) | Okimiki: controls and alarms | Press or save a control, set the light or clock, or read and set the selected Okimiki product's alarms. |
 | [`rmcontrol_anti_snore`](#rmcontrol_anti_snore) | RMControl: anti-snore | Turns anti-snore on or off, or sets how it responds to snoring. |
 | [`reverie_pairlink_alarm_comfort`](#reverie_pairlink_alarm_comfort) | Reverie: set alarm comfort | Send the complete Pairlink alarm comfort sequence, including unchanged values. |
 | [`reverie_run_routine`](#reverie_run_routine) | Reverie: run routine | Replace the selected Reverie target's Composer routine queue and execute its direct bed actions. |
@@ -1394,17 +1394,22 @@ data:
 ## Okimiki
 
 <a id="okimiki"></a>
-**`okimiki`**: Press or save a control, set the light, or sync the clock of the selected Okimiki product. Alarms use Set alarm.
+**`okimiki`**: Press or save a control, set the light or clock, or read and set the selected Okimiki product's alarms.
 
 | Field | Name | Meaning |
 |-------|------|---------|
 | `operation` | Operation |  |
 | `control` | Control |  |
 | `duration_ms` | Press duration |  |
+| `datetime` | Alarm time |  |
+| `alarm_id` | Alarm slot | Choose 1 through 7 explicitly when creating an alarm. Read the alarms before editing, turning on or off, or deleting one. |
+| `mode` | Wake action |  |
+| `weekdays` | Weekdays | Leave empty for a one-time alarm. |
+| `enabled` | Enabled |  |
 | `seconds` | Light duration | Zero keeps the light on. |
 | `rgb_color` | RGB color |  |
 
-### Okimiki controls
+### Okimiki controls and alarms
 
 
 Use `adjustable_bed.okimiki` with `device_id` (one or several physical beds or
@@ -1417,13 +1422,17 @@ Lighting operations are `light_color` (`rgb_color`), `light_duration` (`seconds`
 0 to 900, zero always on), and `light_off`, after a light capability reply.
 `sync` sends the product's clock frames.
 
-Alarms use [`set_alarm`](#set_alarm). IQRM has one lounge alarm set from the
-time as a minute countdown; turning it off cancels it. KWRN has slots 1 to 7
-with lounge, zero G, memory 1 or memory 2 as the wake action and optional
-weekdays (none means once). Turning a KWRN alarm off clears its enabled bit and
-keeps the rest of the received record; a known slot is read fresh first so its
-reserved byte is kept. Both wait for the session's alarm capability reply and
+IQRM offers `single` (`datetime`, lounge) and `cancel_single`. KWRN offers
+`alarms`, `repeat` (`datetime`, `mode`, optional `weekdays` and `enabled`),
+`enable` and `delete`. Read the list with `alarms` before editing a slot with
+`alarm_id`; the received records are in the bed's diagnostics. An edit keeps
+omitted received fields and the reserved byte. Empty `weekdays` means once.
+Alarm operations require the current session's clock capability reply. These
 are direct bed requests, not confirmed firmware schedules.
+
+Okimiki alarms are not on [`set_alarm`](#set_alarm) yet. That action does not yet
+have the safeguards this bed's record edits need across a paired hand-over,
+between the check and the write, and when Stop interrupts the check.
 
 ## RMControl
 

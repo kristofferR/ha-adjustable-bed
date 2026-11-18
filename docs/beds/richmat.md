@@ -8757,20 +8757,23 @@ RGB/duration requests may restore, but are never replayed on reconnect.
 
 #### Services
 
-`adjustable_bed.okimiki` exposes bounded presses, explicit saves, lighting and
-clock synchronization. Alarms use the shared `set_alarm` action: IQRM's one-shot
-lounge alarm and KWRN's recurring slots 1 to 7. Both require the session's clock
-capability reply. HCRN and IPRM have no alarm page.
+`adjustable_bed.okimiki` exposes bounded presses, explicit saves, lighting,
+clock synchronization, IQRM's one-shot lounge alarm and KWRN's recurring list,
+add/edit, enable and delete operations. Alarm actions require the clock
+capability reply. HCRN and IPRM have no alarm page. These alarms stay on this
+action rather than the shared `set_alarm`: that action does not yet keep the
+safeguards these record edits need across a paired hand-over, between check and
+write, and when Stop interrupts the check.
 
-A KWRN alarm takes an explicit slot, a wake action (lounge, zero G, memory 1 or
-memory 2) and optional weekdays; none means once. A slot this session has seen
-is read fresh first, so the rewrite keeps the returned reserved byte. Turning an
-alarm off clears only its enabled bit in the received record. If a slot's record
-changes between the check of every target and the write, nothing is written to
-that bed. The list has no completion marker, so Home Assistant does not infer a
-free slot from missing or delayed replies. The app's delete frame and exhausted
-allocator (which serializes FF) stay in codec tests; Home Assistant requires an
-explicit slot instead.
+Read KWRN's list before editing or deleting by ID; the received records are in
+diagnostics. An edit retains the returned reserved byte; omitted fields retain
+the received values. Weekdays are names, Monday to Sunday; an empty list means
+once. The four modes are lounge, zero gravity, memory 1 and memory 2. Choose an
+explicit `alarm_id` from 1 through 7 when creating a recurring alarm. The list
+has no completion marker, so Home Assistant does not infer a free slot from
+missing or delayed replies. The app's exhausted allocator serializes FF; that
+evidence is retained in codec tests, but Home Assistant requires an explicit
+slot instead.
 
 A one-shot alarm uses the selected local time and a minute countdown; a positive
 subminute interval rolls to the next day. Clock sync sends epoch seconds with

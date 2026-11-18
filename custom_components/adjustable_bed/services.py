@@ -2313,15 +2313,10 @@ async def handle_set_alarm(call: ServiceCall) -> None:
     try:
         for command in (check_step, write_step):
             for (coordinator, side), captured in zip(targets, admissions, strict=True):
-                current = _command_targets(coordinator, side)
-                if any(target.operation_identity not in scheduling for target in current):
-                    # A bed replaced after the check was never validated.
-                    raise ServiceValidationError(
-                        "A bed changed while its alarm was being set; try again",
-                        translation_domain=DOMAIN,
-                        translation_key="alarm_target_changed",
-                    )
-                physical = [scheduling[target.operation_identity] for target in current]
+                physical = [
+                    scheduling[target.operation_identity]
+                    for target in _command_targets(coordinator, side)
+                ]
                 capability = physical[0]
                 if command is check_step and not any(item.live_check for item in physical):
                     continue

@@ -8373,8 +8373,8 @@
       }
     },
     "okimiki": {
-      "name": "Okimiki: control",
-      "description": "Press or save a control, set the light, or sync the clock of the selected Okimiki product. Alarms use Set alarm.",
+      "name": "Okimiki: controls and alarms",
+      "description": "Press or save a control, set the light or clock, or read and set the selected Okimiki product's alarms.",
       "fields": {
         "device_id": {
           "name": "Bed",
@@ -8391,6 +8391,23 @@
         },
         "duration_ms": {
           "name": "Press duration"
+        },
+        "datetime": {
+          "name": "Alarm time"
+        },
+        "alarm_id": {
+          "name": "Alarm slot",
+          "description": "Choose 1 through 7 explicitly when creating an alarm. Read the alarms before editing, turning on or off, or deleting one."
+        },
+        "mode": {
+          "name": "Wake action"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Leave empty for a one-time alarm."
+        },
+        "enabled": {
+          "name": "Enabled"
         },
         "seconds": {
           "name": "Light duration",
@@ -8513,9 +8530,6 @@
     },
     "alarm_time_required": {
       "message": "Choose an alarm time to turn the alarm on."
-    },
-    "alarm_target_changed": {
-      "message": "A bed changed while its alarm was being set; try again."
     },
     "alarm_time_whole_minutes": {
       "message": "Alarm times are set in whole minutes. Remove the seconds."
@@ -10419,6 +10433,12 @@
         "light_color": "Light color",
         "light_duration": "Light duration",
         "light_off": "Light off",
+        "single": "Set one-time alarm",
+        "cancel_single": "Cancel one-time alarm",
+        "alarms": "Read alarms",
+        "repeat": "Set alarm",
+        "enable": "Turn alarm on or off",
+        "delete": "Delete alarm",
         "sync": "Sync clock"
       }
     },
@@ -10435,6 +10455,14 @@
         "memory_2": "Memory 2",
         "lounge": "Lounge",
         "zero_gravity": "Zero gravity"
+      }
+    },
+    "okimiki_alarm_mode": {
+      "options": {
+        "lounge": "Lounge",
+        "zero_gravity": "Zero gravity",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2"
       }
     }
   }

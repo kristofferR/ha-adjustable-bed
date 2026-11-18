@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import CARD_HIDDEN, CARD_PRESETS, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import current_command_context
@@ -40,14 +39,6 @@ if TYPE_CHECKING:
     from .services import Request
 
 DURATION: Final = StateKey[int | None]("okimiki_light_seconds")
-# Shared wake actions -> the app's alarm modes.
-_WAKE_MODES: Final = {"lounge": "lounge", "zero_g": "zero_gravity", "memory_1": "memory_1", "memory_2": "memory_2"}
-# Budget for the bed's capability and alarm-record replies, not a bed timing.
-ALARM_REPLY_TIMEOUT_S: Final = 3.0
-# The record each receiver's slot had when one set_alarm call checked it. A
-# sequential pair replaces the controller between check and write, so this is
-# keyed by receiver and call (the call's reference time), not kept per instance.
-_CHECKED_ALARMS: dict[tuple[str, object, int], p.Alarm | None] = {}
 _SAVE_LABELS: Final = {"lounge": "Save lounge position", "zero_gravity": "Save zero-gravity position"}
 _SCOPE: ContextVar[tuple[object, Link, float | None, list[BleakError]] | None] = ContextVar(
     "okimiki_session", default=None
@@ -205,91 +196,6 @@ class OkimikiController(GoodVibeController):
 
     def menu_available(self, menu: str) -> bool:
         return menu in self._menus
-
-    @property
-    def alarm_capability(self) -> AlarmCapability | None:
-        # Both alarm pages need the session's clock capability reply first.
-        if self.model.alarm == "single":
-            return AlarmCapability(wake_actions=("lounge",), live_check=True)
-        if self.model.alarm == "repeat":
-            return AlarmCapability(
-                wake_actions=tuple(_WAKE_MODES), weekdays=True, slots=7,
-                requires_wake_action=True, live_check=True,
-            )
-        return None
-
-    def _alarm_request(self, alarm: AlarmRequest) -> Request:
-        from .services import Request
-
-        if self.model.alarm == "single":
-            if not alarm.enabled:
-                return Request("cancel_single")
-            return Request("single", when=alarm.occurrence())
-        if not alarm.enabled:
-            # Turning off keeps the received record, as the app's enable switch does.
-            return Request("enable", alarm_id=alarm.slot, enabled=False)
-        return Request(
-            "repeat", alarm_id=alarm.slot, when=alarm.occurrence(),
-            mode=_WAKE_MODES[alarm.wake_action], days=alarm.weekdays, enabled=True,
-        )
-
-    def validate_alarm(self, alarm: AlarmRequest) -> None:
-        if self.model.alarm == "repeat" and alarm.enabled and alarm.wake_action not in _WAKE_MODES:
-            raise AlarmError("alarm_wake_action_required", "Choose a wake action for this alarm")
-
-    async def _prepared_alarm(self, alarm: AlarmRequest) -> Request:
-        """Wait for this session's alarm page and the slot's fresh record, then plan."""
-        request = self._alarm_request(alarm)
-        link = self._current_link()
-        slot = request.alarm_id
-        # An edit keeps the received reserved byte, so a known slot is read fresh.
-        need_record = request.operation == "enable" or (
-            request.operation == "repeat"
-            and (slot in self._stale_alarm_ids or any(row.id == slot for row in self._alarms))
-        )
-
-        def record() -> p.Alarm | None:
-            return next((row for row in reversed(self._alarms) if row.id == slot), None)
-
-        async def changed() -> None:
-            if self._current_link() is not link:
-                raise ValueError("The Okimiki session changed while waiting for alarm data")
-            self._menus_changed.clear()
-            await self._menus_changed.wait()
-
-        try:
-            async with asyncio.timeout(ALARM_REPLY_TIMEOUT_S):
-                while not self.menu_available("alarm"):
-                    await changed()
-                if need_record:
-                    if record() is None or slot in self._stale_alarm_ids:
-                        from .services import Request
-
-                        await self.execute_request(Request("alarms"))
-                    while record() is None or slot in self._stale_alarm_ids:
-                        await changed()
-        except TimeoutError:
-            raise ValueError("The bed did not report current Okimiki alarm data") from None
-        if self._current_link() is not link:
-            raise ValueError("The Okimiki session changed while waiting for alarm data")
-        return request.plan(self)
-
-    async def check_alarm(self, alarm: AlarmRequest) -> None:
-        request = await self._prepared_alarm(alarm)
-        if request.alarm_id is not None:
-            while len(_CHECKED_ALARMS) >= 32:  # calls that never reached their write
-                del _CHECKED_ALARMS[next(iter(_CHECKED_ALARMS))]
-            _CHECKED_ALARMS[(self._address.upper(), alarm.reference_time, request.alarm_id)] = request.record
-
-    async def configure_alarm(self, alarm: AlarmRequest) -> None:
-        # Plan again on the live link; a record that changed since every target
-        # was checked is never overwritten.
-        request = await self._prepared_alarm(alarm)
-        slot = request.alarm_id
-        key = (self._address.upper(), alarm.reference_time, slot)
-        if slot is not None and request.record != _CHECKED_ALARMS.pop(key, request.record):
-            raise ValueError("The Okimiki alarm record changed after validation")
-        await self.execute_request(request)
 
     @property
     def persisted_app_state(self) -> Mapping[str, object]:

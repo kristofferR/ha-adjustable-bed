@@ -18,9 +18,9 @@ from custom_components.adjustable_bed import (
     _async_ensure_paired_device_registry,
     _build_paired_children,
     const,
-    services,
 )
 from custom_components.adjustable_bed.beds.okimiki import protocol as p
+from custom_components.adjustable_bed.beds.okimiki import services as app
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
@@ -169,16 +169,23 @@ async def record_pair(
 
 
 async def call(hass, state, operation):
-    """Turn slot 1 off ("enable") or rewrite it ("repeat") through set_alarm."""
     fields = (
         {"enabled": False}
         if operation == "enable"
-        else {"enabled": True, "time": "06:15:00", "wake_action": "memory_2", "weekdays": ["monday"]}
+        else {"mode": "memory_2"}
+        if operation == "repeat"
+        else {}
     )
     await hass.services.async_call(
         const.DOMAIN,
-        "set_alarm",
-        {"device_id": state.parent.id, "side": "both", "slot": 1, **fields},
+        "okimiki",
+        {
+            "device_id": state.parent.id,
+            "side": "both",
+            "operation": operation,
+            "alarm_id": 1,
+            **fields,
+        },
         blocking=True,
     )
 
@@ -188,7 +195,7 @@ def edits(state, address):
 
 
 @pytest.mark.parametrize("mode", ("sequential", "concurrent"))
-@pytest.mark.parametrize("operation", ("enable", "repeat"))
+@pytest.mark.parametrize("operation", ("enable", "delete", "repeat"))
 @pytest.mark.parametrize("deferred", (False, True))
 async def test_registered_both_record_actions_rebuild_from_matching_live_receivers(
     hass, record_pair, mode, operation, deferred
@@ -198,26 +205,29 @@ async def test_registered_both_record_actions_rebuild_from_matching_live_receive
     for address, row in state.records.items():
         writes = edits(state, address)
         assert len(writes) == 1
-        # Turning off keeps the received record; a complete alarm for a slot this
-        # session never read is written whole, with a zero reserved byte.
-        expected = (
-            (row.id, row.reserved, row.hour, row.minute, row.opcode, row.mask & 0xFE)
-            if operation == "enable"
-            else (row.id, 0, 6, 15, 0x2F, p.repeat_mask((0,), True))
-        )
-        assert writes[0][6:-1] == bytes(expected)
+        if operation == "delete":
+            assert writes[0][6:-1] == bytes((row.id,))
+        else:
+            assert writes[0][6:-1] == bytes(
+                (
+                    row.id,
+                    row.reserved,
+                    row.hour,
+                    row.minute,
+                    0x2F if operation == "repeat" else row.opcode,
+                    row.mask & 0xFE if operation == "enable" else row.mask,
+                )
+            )
         expected_sessions = 2 if mode == "sequential" else 1
         assert len(state.sessions[address]) == expected_sessions
-        # Turning off reads each session's record first; a complete new alarm does not.
-        assert [session for owner, session in state.queries if owner == address] == (
-            list(range(1, expected_sessions + 1)) if operation == "enable" else []
+        assert [session for owner, session in state.queries if owner == address] == list(
+            range(1, expected_sessions + 1)
         )
     assert state.sessions[LEFT_ADDR][0].client is not state.sessions[RIGHT_ADDR][0].client
 
 
 def after_preflight(monkeypatch, effect):
-    """Run ``effect`` after set_alarm checked every target, before any write."""
-    original = services._execute_sided
+    original = app._execute_preflighted
     phases = 0
 
     async def execute(*args, **kwargs):
@@ -227,7 +237,7 @@ def after_preflight(monkeypatch, effect):
         if phases == 1:
             await effect()
 
-    monkeypatch.setattr(services, "_execute_sided", execute)
+    monkeypatch.setattr(app, "_execute_preflighted", execute)
 
 
 @pytest.mark.parametrize("side", ("left", "right"))
@@ -277,7 +287,7 @@ async def test_all_target_barrier_and_admission_keep_requested_mutations_zero(
     assert not edits(state, LEFT_ADDR) and not edits(state, RIGHT_ADDR)
 
 
-async def test_reconnect_after_check_rereads_the_record_before_writing(
+async def test_unrelated_concurrent_reconnect_does_not_get_sequential_exemption(
     hass, record_pair, monkeypatch
 ):
     state = await record_pair("concurrent")
@@ -288,11 +298,15 @@ async def test_reconnect_after_check_rereads_the_record_before_writing(
         assert await child.async_connect()
 
     after_preflight(monkeypatch, reconnect)
-    await call(hass, state, "enable")
-    # The new session's own list reply supplies the record; no old bytes are reused.
-    assert [session for owner, session in state.queries if owner == LEFT_ADDR] == [1, 2]
-    row = state.records[LEFT_ADDR]
-    assert edits(state, LEFT_ADDR) == [replace(row, mask=row.mask & 0xFE).frame()]
+    with pytest.raises(PairedSideError) as failure:
+        await call(hass, state, "delete")
+    assert failure.value.side_errors
+    assert all(
+        isinstance(error, ServiceValidationError)
+        and str(error) == "The physical Okimiki controller changed after validation"
+        for error in failure.value.side_errors.values()
+    )
+    assert not edits(state, LEFT_ADDR) and not edits(state, RIGHT_ADDR)
 
 
 async def test_old_subscription_cannot_supply_record_after_sequential_handoff(
@@ -310,6 +324,6 @@ async def test_old_subscription_cannot_supply_record_after_sequential_handoff(
     assert isinstance(failure.value.side_errors["left"], ServiceValidationError)
     assert (
         str(failure.value.side_errors["left"])
-        == "The bed did not report current Okimiki alarm data"
+        == "The bed did not report current Okimiki support or alarm data"
     )
     assert not edits(state, LEFT_ADDR) and not edits(state, RIGHT_ADDR)

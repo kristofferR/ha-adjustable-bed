@@ -101,9 +101,7 @@ async def test_registered_runtime_entities_alarm_light_and_timed_callers(hass, r
     notify(target, "6e09010078")
     notify(target, "6e200d0501020100071e5989ab")
     client.write_gatt_char.reset_mock()
-    await hass.services.async_call(
-        const.DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False, "slot": 1}, blocking=True
-    )
+    await invoke(hass, "enable", alarm_id=1, enabled=False)
     assert written(client) == ["6e0d200501010100071e5988a9"]
     client.write_gatt_char.reset_mock()
     await invoke(hass, "light_color", rgb_color=[1, 2, 3])
@@ -189,10 +187,17 @@ async def test_all_target_preflight_rejects_before_first_settings_write(
         ("light_off", {}, "6e010075e4"),
         ("light_color", {"rgb_color": [1, 2, 3]}, "6e0cff017a6e0d020380"),
         ("light_duration", {"seconds": 300}, "6e0b012ca6"),
+        ("alarms", {}, "6e0820050100009c"),
         (
-            "set_alarm",
-            {"enabled": True, "slot": 1, "time": "07:30:00", "wake_action": "lounge"},
+            "repeat",
+            {"alarm_id": 1, "datetime": "2026-11-18T07:30:00+00:00", "mode": "lounge"},
             bed.p.Alarm(1, 0, 7, 30, 0x59, 1).frame().hex(),
+        ),
+        (
+            "repeat",
+            {"alarm_id": 1, "datetime": "2026-11-18T07:30:00+00:00", "mode": "lounge",
+             "weekdays": ["monday", "sunday"]},
+            bed.p.Alarm(1, 0, 7, 30, 0x59, bed.p.repeat_mask((0, 6), True)).frame().hex(),
         ),
     ),
 )
@@ -227,12 +232,7 @@ async def test_settings_service_reconnects_before_session_validation(
             await deliver()
 
     client.write_gatt_char.side_effect = reply
-    if operation == "set_alarm":
-        await hass.services.async_call(
-            const.DOMAIN, "set_alarm", {"device_id": "bed", **fields}, blocking=True
-        )
-    else:
-        await invoke(hass, operation, **fields)
+    await invoke(hass, operation, **fields)
     assert target.is_connected
     assert written(client)[-1] == expected
 
@@ -497,21 +497,18 @@ async def test_native_paired_child_target_keeps_physical_bed_and_side_owned_prod
     resolve.side_effect = None
     resolve.side_effect = REAL_RESOLVE
     try:
-        device_id = right.id if target_side == "right" else parent.id
-        if operation == "enable":
-            # Turning a received alarm off runs through the shared set_alarm action.
-            await hass.services.async_call(
-                const.DOMAIN, "set_alarm",
-                {"device_id": device_id, "enabled": False, "slot": 1}, blocking=True,
-            )
-        else:
-            fields = {"control": "head_up", "duration_ms": 250} if operation == "press" else {}
-            await hass.services.async_call(
-                const.DOMAIN,
-                "okimiki",
-                {"device_id": device_id, "operation": operation, **fields},
-                blocking=True,
-            )
+        fields = (
+            {"control": "head_up", "duration_ms": 250}
+            if operation == "press"
+            else {"alarm_id": 1, "enabled": False} if operation == "enable" else {}
+        )
+        await hass.services.async_call(
+            const.DOMAIN,
+            "okimiki",
+            {"device_id": right.id if target_side == "right" else parent.id,
+             "operation": operation, **fields},
+            blocking=True,
+        )
         if target_side == "right":
             left.async_connect.assert_not_awaited()
         if operation == "press":

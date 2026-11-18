@@ -2341,7 +2341,7 @@ okimiki:
       required: true
       selector:
         select:
-          options: [press, save, light_color, light_duration, light_off, sync]
+          options: [press, save, light_color, light_duration, light_off, single, cancel_single, alarms, repeat, enable, delete, sync]
           translation_key: okimiki_operation
     control:
       selector:
@@ -2356,6 +2356,29 @@ okimiki:
           max: 60000
           unit_of_measurement: ms
           mode: box
+    datetime:
+      selector:
+        datetime:
+    alarm_id:
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    mode:
+      selector:
+        select:
+          options: [lounge, zero_gravity, memory_1, memory_2]
+          translation_key: okimiki_alarm_mode
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+          translation_key: weekday
+    enabled:
+      selector:
+        boolean:
     seconds:
       selector:
         number:
