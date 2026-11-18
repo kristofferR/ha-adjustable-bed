@@ -321,7 +321,7 @@ Configure the PIN in the integration's options.
 
 **Solutions:**
 1. **Improve signal:** Move Bluetooth adapter/proxy closer to the bed
-2. **Compare connected and cold commands:** A cold connection may need authentication and several proxy attempts. With Disconnect After Command enabled, commands within the one-second handoff window reuse the link.
+2. **Compare connected and cold commands:** A cold connection may need authentication and several proxy attempts. With **Bluetooth connection** set to "Release right after each command", commands within the one-second handoff window reuse the link.
 3. **Use Stop All when movement must end:** STOP invalidates queued movement and interrupts active movement and position reads. A replacement movement for the same motor supersedes the older request; independent motor commands are serialized.
 4. **Inspect connection diagnostics:** Repeated failures on the strongest proxy can delay access to a working alternative. Multiple paths receive a bounded extra retry budget; this cannot repair an unusable proxy or an unreachable bed.
 
@@ -358,8 +358,8 @@ up. Motor pulse settings cannot bridge that gap.
 3. Notification subscription failed
 
 **Solutions:**
-1. **Check settings:** The initial "Disable angle sensing" value depends on bed type and setup route. Check the saved value rather than assuming feedback is enabled or disabled.
-2. **Enable angle sensing:** If you want position data, disable "Disable angle sensing" in options
+1. **Check settings:** **Read bed position** is on by default for beds that report a position, and shown only for them.
+2. **Turn on Read bed position:** If you want position data, turn it on in **Configure**
 3. **Check the controller:** Feedback is available on supported Linak, Okimat, Reverie, Keeson/Ergomotion, Jensen, Limoss, Vibradorm, Sleep Number, BOX25, and SleepSpa profiles. Availability and units depend on the actual controller; see its [protocol guide](SUPPORTED_ACTUATORS.md).
 
 ### Position values seem incorrect
@@ -381,17 +381,18 @@ up. Motor pulse settings cannot bridge that gap.
 **This is expected behavior.** Most BLE beds only support one connection at a time.
 
 **Solutions:**
-1. **Enable "Disconnect after each command" where supported:** The connection is released one second after operations finish; rapid commands reuse that window
-2. **Disable position monitoring if necessary:** Enable "Disable angle sensing"; Linak's "Refresh positions while idle" can also be turned off
+1. **Set Bluetooth connection to "Release right after each command" where it is offered:** The connection is released one second after operations finish; rapid commands reuse that window
+2. **Disable position monitoring if necessary:** Turn off **Read bed position**; Linak's "Refresh positions while idle" can also be turned off
 3. **Press "Disconnect" button:** Manually disconnect HA to use the physical remote
-4. **Idle timeout:** When quick handoff is off, the configured idle timeout applies (default 40 seconds). An idle timeout of `0` and controllers requiring persistent connections hold the link instead.
+4. **Stay connected for a while:** This mode keeps the link for its seconds (default 40). "Always stay connected" and controllers requiring persistent connections hold the link instead.
 
 ### BLE connection shows "Disconnected" shortly after adding the bed
 
 **This is normal for beds that release their connection while idle.** With
-Disconnect After Command enabled, the link is released one second after the
-last operation finishes. Otherwise the configured idle timeout applies (default
-40 seconds), except for controllers requiring a persistent connection. The next
+**Bluetooth connection** set to "Release right after each command", the link is
+released one second after the last operation finishes. "Stay connected for a
+while" keeps it for its seconds (default 40); controllers requiring a
+persistent connection keep it. The next
 Home Assistant command reconnects automatically.
 
 - The connection sensor reports `state_detail: idle` (and a `disconnect_reason`

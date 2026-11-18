@@ -10,7 +10,7 @@ newer.
 - [Basic Settings](#basic-settings)
 - [Toggle-Only Under-Bed Lights](#toggle-only-under-bed-lights)
 - [Advanced Settings](#advanced-settings)
-- [Motor Pulse Settings](#motor-pulse-settings)
+- [Movement per tap](#movement-per-tap)
 - [Protocol Variants](#protocol-variants)
 - [Bed-Specific Settings](#bed-specific-settings)
 - [Single-Address Left / Right Controls](#single-address-left--right-controls)
@@ -57,14 +57,15 @@ The app or remote you choose then asks its own questions, such as a layout,
 handset ID or remote style. The final settings come last, drawn for the route
 you chose:
 
-- **Name**, **Bluetooth adapter** and **Disconnect after each command**;
-- the settings the app or remote does not set itself, such as the motor count
-  or massage, and a bed type's own fields, such as the Octo PIN;
+- **Name**, **Bluetooth adapter** and **Bluetooth connection** (with its
+  seconds when it stays connected for a while);
+- the settings the app or remote does not set itself, such as the motor count,
+  massage or **Read bed position**, and a bed type's own fields, such as the
+  Octo PIN. A setting the bed ignores is not shown;
 - **Advanced: receiver route**, collapsed, for a bed type with several receiver
   routes (see [Protocol Variants](#protocol-variants)). An app sets its own
   route;
-- **Advanced connection and timing**, collapsed: the motor pulse count and
-  delay and the idle disconnect timeout.
+- **Movement**, collapsed: **Movement per tap**.
 
 **Glideaway Motion / Montion app:** Select the explicit MOTION 400, 450, 500 or
 600 app entry matching the app's model selection. Layout, massage and light
@@ -91,18 +92,22 @@ To adjust settings after setup:
 
 ![Configuration options location](https://github.com/user-attachments/assets/8d6dc2b9-7df2-48dc-9ea5-61aaadce6c63)
 
+Configure changes the settings of the bed type and app the entry already runs.
+To change the bed type, app or route, use **Reconfigure** (below).
+
 Beds that support [estimated positions](ESTIMATED_POSITIONS.md) also show
 **Estimated positions** in this menu, or one entry per side on a paired bed with
 two addresses. It enables and calibrates travel-time estimates for beds without
 position feedback. Single-address paired beds do not support estimates yet; see
 [Supported Beds](ESTIMATED_POSITIONS.md#supported-beds) for why.
 
-### Changing the app or layout of an existing bed
+### Changing the bed type, app or layout of an existing bed
 
-Some families have a guided change: Configure shows **Change app or layout**
-with the bed's current setup. Home Assistant cannot open the guided change from
-Configure itself, so start it from the entry's three-dot menu, **Reconfigure**,
-or from the bed's repair. Today this covers the
+Every bed changes its bed type, app or layout from the entry's three-dot menu,
+**Reconfigure**, or from the bed's repair. A bed in a family with a guided
+change gets that family's question; any other bed chooses from the full
+bed-type list, then its route where the bed type has several, then the
+questions a new bed of that type would answer. Guided changes cover the
 [Vibradorm family](beds/vibradorm.md#guided-setup-and-migration), the
 [Jiecang family](beds/jiecang.md#home-assistant-setup), the
 [Okin family](beds/okin-nframe.md#home-assistant-setup), the
@@ -117,7 +122,7 @@ or from the bed's repair. Today this covers the
 [Limoss family](beds/limoss.md#home-assistant-setup). Reconfigure also asks
 the Okin question for an Okin CST entry, and the L&P question for an L&P
 legacy app entry or a Richmat entry on the L&P QRRM remote, so they can move
-to that family's other routes; Configure still changes their own settings.
+to that family's other routes.
 
 1. Choose the app you use, then the layout or remote the app shows. The
    question's keep answer leaves the entry exactly as it is. Its label depends
@@ -146,8 +151,8 @@ the saved setup changes nothing. A passed check does not prove the bed's
 physical layout or presets, so test the controls after applying a change.
 
 A paired bed is split first, because an app belongs to one physical bed.
-Splitting keeps the Bluetooth adapter or proxy, idle disconnect and disconnect
-after each command that you chose while combined, and restores the bed type,
+Splitting keeps the Bluetooth adapter or proxy and Bluetooth connection that
+you chose while combined, and restores the bed type,
 app profile and side settings from before the beds were combined.
 
 ---
@@ -286,88 +291,100 @@ feedback or change which commands a bed supports.
 
 | Setting | Range | Default | Description |
 |---------|-------|---------|-------------|
-| **Disable Angle Sensing** | On/Off | Depends on bed type and setup route | Disables position sensors and position controls |
-| **Position Mode** | Speed / Accuracy | Speed | How position updates after commands |
+| **Read bed position** | On/Off, beds that report a position | On | Shows the position and allows moving to a set position |
 | **Refresh Positions While Idle** | On/Off, Linak only | On | Periodically reconcile positions when idle polling is allowed |
-| **Connection Profile** | Balanced / Reliable | Balanced | Connection timeout and retry behavior |
-| **Disconnect After Command** | On/Off | Bed/variant-specific | Release the connection promptly after commands |
-| **Idle Disconnect Seconds** | 0-300 | 40 | Auto-disconnect timeout when idle; 0 keeps the bed connected |
-| **Stop Discovering New Bluetooth Devices** | On/Off | Off | Suppress automatic discovery of new beds (integration-wide) |
+| **Bluetooth connection** | Release right after each command / Stay connected for a while / Always stay connected | Bed-specific | How long the link stays open after a command |
+| **Seconds to stay connected** | 1-300 | 40 | Shown for "Stay connected for a while" |
+| **Movement per tap** | 1-100 | Bed-specific | How many times a tap repeats its command |
 | **Maximum Back Angle** | Greater than 0, up to 180° | 68° | Back/head range for controllers reporting angles |
 | **Maximum Legs Angle** | Greater than 0, up to 180° | 45° | Legs/feet range for controllers reporting angles |
 
+A form shows only the settings the bed uses. **Has massage feature** is left
+out for beds with no massage commands or that turn massage on themselves; the
+maximum angles are left out where the frame's travel is fixed (for example
+Paramount, Serta MP Remote, SBI and BedJet); a motor count with only one
+choice is left out; and **Bluetooth connection** is left out for beds that
+must stay connected (DoubleSleep, GM Sleep, Okin RF Eco BT, Richmat sleep
+receivers and Sleep Number MCR).
+
 ### Setting Details
 
-**Disable Angle Sensing**
+**Read bed position**
 
-- Turn this off to enable position feedback and sliders on supported controllers.
-- Turn it on if position monitoring interferes with the physical remote. The controller can still require notifications for authentication or other state.
-- Setup and Configure show it only for beds that can report positions.
-- Releasing the BLE link is separate: use Disconnect After Command or the Disconnect button to let a remote or app reconnect.
-
-**Position Mode**
-
-- **Speed** (default): Faster response without the extra accuracy-mode read
-- **Accuracy**: Reads actual position after each command, slightly slower
-- Neither mode treats an accepted target as a measured position. Missing or stale feedback can prevent a seek; see [position troubleshooting](TROUBLESHOOTING.md#position-commands-and-reported-state).
+- On by default for beds that report their position. Turn it off if position
+  monitoring interferes with the physical remote. The controller can still
+  require notifications for authentication or other state.
+- Shown only for beds that can report positions. A bed that reports none
+  stores nothing.
+- Releasing the BLE link is separate: use **Bluetooth connection** or the
+  Disconnect button to let a remote or app reconnect.
+- After a command, the position is read in the background so the next command
+  is not delayed. An accepted target is never treated as a measured position;
+  missing or stale feedback can prevent a seek, see
+  [position troubleshooting](TROUBLESHOOTING.md#position-commands-and-reported-state).
 
 **Refresh Positions While Idle**
 
 - Linak can periodically reconnect to catch up with moves made using the physical remote.
-- This requires angle sensing to be enabled and Disconnect After Command to be off. Quick handoff suppresses periodic polling even when this option is selected.
+- This requires **Read bed position** and a **Bluetooth connection** other than
+  "Release right after each command". Quick handoff suppresses periodic polling
+  even when this option is selected.
 - Turn it off to avoid background position connections. Positions still refresh during supported Home Assistant operations.
 
-**Connection Profile**
+**Bluetooth connection**
 
-- **Balanced** uses a 20-second connection timeout and shorter retry delays.
-- **Reliable** uses a 25-second timeout and longer delays for less reliable connections.
-- Both normally allow three attempts. Multiple usable Bluetooth paths receive a larger bounded retry budget; see [connection routing](CONNECTION_GUIDE.md#multiple-adapters-and-proxies).
+Most beds accept one Bluetooth connection at a time, so the link Home
+Assistant holds blocks the physical Bluetooth remote and the bed's app.
+
+- **Release right after each command**: keeps the link for one second between
+  rapid commands, then releases it. New commands restart that window. This is
+  the default for most beds. Periodic position polling stays off while idle,
+  and initial position and light-state hydration get one attempt.
+- **Stay connected for a while**: keeps the link for **Seconds to stay
+  connected** after the last command (40 by default), so commands in that
+  window respond without reconnecting. This is the default for beds whose
+  controls keep state on the connection, and for LP Comfort Connect (Leggett
+  & Platt Gen2), whose reconnects need its bond. LP Comfort Connect holds the
+  link for the rest of the session once a reconnect stalls.
+- **Always stay connected**: keeps the link while Home Assistant runs. Use it
+  only for mains-powered beds: it blocks the vendor app and any Bluetooth
+  remote (RF remotes are unaffected) and keeps the bed's radio active. If the
+  link drops, the next command reconnects it.
+- Concurrent combined-bed actions retain both links until both sides finish,
+  including STOP cleanup, then start the handoff window together. Sequential
+  pairs still release one side before connecting the other.
+- The explicit Disconnect button releases the link immediately.
+
+Connection attempts use one timing for every bed: a 25-second connect timeout
+and three attempts with 3 and 6 second backoff. Multiple usable Bluetooth paths
+receive a larger bounded retry budget; see
+[connection routing](CONNECTION_GUIDE.md#multiple-adapters-and-proxies).
 
 **Maximum Angles**
 
-- These fields appear only for controllers using degree-based feedback, not percentage-based controllers.
+- These fields appear only for controllers using degree-based feedback, not percentage-based controllers, and not where the frame's travel is fixed.
 - Match the range supported by your bed. They control position conversion and validation, not the hardware's mechanical limits.
-
-**Disconnect After Command**
-
-- Enabled by default for selected bed types: freeing the BLE link lets the physical remote or vendor app reconnect.
-- Off by default for beds whose protocol needs the link held open or whose controller must retain connection-scoped state between commands
-- Retains the link for one second between rapid commands, then releases it for the physical remote. New commands restart that window. The explicit Disconnect button releases it immediately.
-- Concurrent combined-bed actions retain both links until both sides finish, including STOP cleanup, then start the handoff window together. Sequential pairs still release one side before connecting the other.
-- Skips periodic position polling to leave the remote's connection available while idle. Position feedback still refreshes during HA operations, and slow reads yield to STOP or replacement commands.
-- Initial position and light-state hydration get one attempt with this option enabled. Missing feedback does not keep the link open through repeated background retries; later HA operations can refresh it.
-- Turn it off to reuse the connection across longer pauses, up to the configured idle timeout. Controllers that require persistent connections retain their existing behavior.
-- Changing it later only affects the bed whose options you edit; beds added before this became the default keep whatever they were set up with
-
-**Idle Disconnect Seconds**
-- How long to wait before automatically disconnecting when idle
-- Lower values free the connection faster for physical remotes
-- Higher values reduce reconnection overhead for frequent Home Assistant use
-- `0` keeps the bed connected while Home Assistant runs, so commands respond without reconnecting. Use it only for mains-powered beds: the held link blocks the vendor app and any Bluetooth remote (RF remotes are unaffected), and it keeps the bed's Bluetooth radio active.
-- `0` applies only while Disconnect After Command is off; when that option is on, its one-second handoff wins.
-- If a kept link drops, the next command reconnects it. Most beds get no background reconnect timer, because some receivers drop idle links and stop advertising after repeated reconnects. Bed types that already reconnect automatically after a drop keep doing so.
 
 **Timed Move**
 - `adjustable_bed.timed_move` treats the requested milliseconds as an elapsed movement ceiling, starting after connection and movement preparation. Linak completes its readiness handshake before this timer starts. Bluetooth write latency counts toward the ceiling instead of extending it.
 - Each controller keeps its existing repeat cadence and release sequence. Some controllers finish sooner; controller setup within the movement also consumes the budget. The service waits for STOP/release cleanup, so its total duration can include connection setup and cleanup in addition to the movement limit.
 - Transport errors and failed cleanup remain errors. Reaching the requested movement limit is normal completion.
 
-**Stop Discovering New Bluetooth Devices** (Default: Off)
-- Turn on once all your beds are added to stop Home Assistant suggesting new Bluetooth devices as adjustable beds
-- This is a global setting that applies to the whole integration, not just the bed whose options you are editing — so you only need to set it on one bed
-- You can still add a bed at any time with **Settings → Devices & Services → Add Integration → Adjustable Bed**; only the automatic discovery notifications are suppressed
-- To turn discovery back on, uncheck this option in any bed's settings
+### Finding new beds automatically
+
+Home Assistant suggests nearby beds as it sees them. To stop that once all your
+beds are added, go to **Settings → Devices & Services → Add Integration →
+Adjustable Bed**, choose **Find new beds automatically** and turn off
+**Suggest newly found beds**. It applies to the whole integration. Adding a bed
+from that list still works either way.
 
 ---
 
-## Motor Pulse Settings
+## Movement per tap
 
-These settings control how motor movement commands are sent. Adjusting them can help if motors move too briefly or commands are dropped.
-
-| Setting | Range | Default | Description |
-|---------|-------|---------|-------------|
-| **Motor Pulse Count** | 1-100 | Bed-specific | Number of command repeats sent for motor movement |
-| **Motor Pulse Delay (ms)** | 10-500 | Bed-specific | Delay between command pulses |
+A tap on a movement control repeats its command a number of times, a fixed
+interval apart. **Movement per tap** (1-100) sets the number of repeats; the
+interval is each bed's own and is not a setting.
 
 ### Default Values by Bed Type
 
@@ -431,9 +448,8 @@ profiles. Its cadence is not controlled by the generic motor pulse settings.
 
 | Symptom | Solution |
 |---------|----------|
-| Motors stop moving too soon | Increase pulse count |
-| Movement is choppy or jerky | Decrease pulse delay |
-| Commands are getting dropped | Increase pulse delay |
+| Motors stop moving too soon | Increase Movement per tap |
+| A tap moves in several short bursts | Decrease Movement per tap |
 
 ---
 
@@ -749,9 +765,9 @@ safely on its own.
 This is expected when Home Assistant is connected. Most beds only support one BLE connection.
 
 **Solutions:**
-1. Enable "Disconnect after each command" where supported, or press Disconnect
-2. Reduce "Idle disconnect seconds" for faster automatic disconnection (and avoid `0`, which keeps the bed connected)
-3. Enable "Disable angle sensing" if position monitoring causes conflicts
+1. Set **Bluetooth connection** to "Release right after each command" where it is offered, or press Disconnect
+2. With "Stay connected for a while", lower **Seconds to stay connected** to free the link sooner
+3. Turn off **Read bed position** if position monitoring causes conflicts
 
 ### Commands Are Slow or Unresponsive
 
@@ -761,11 +777,7 @@ This is expected when Home Assistant is connected. Most beds only support one BL
 
 ### Motors Move Too Briefly
 
-Increase the "Motor pulse count" setting. Start with +10 and test.
-
-### Commands Are Being Dropped
-
-Increase the "Motor pulse delay" setting. Try 100ms, then 150ms if needed.
+Increase **Movement per tap**. Start with +10 and test.
 
 ### Wrong Features Showing
 
@@ -785,8 +797,8 @@ used by two-address beds.
 
 This conversion keeps the existing config entry, Bluetooth address, device,
 and standalone entity history. It is reversible through **Restore standalone
-controls**, which keeps the Bluetooth adapter, idle disconnect and disconnect
-after each command chosen while combined. Existing entries do not change
+controls**, which keeps the Bluetooth adapter and Bluetooth connection chosen
+while combined. Existing entries do not change
 automatically.
 
 Routing remains protocol-native:
@@ -849,13 +861,11 @@ Left and Right. The resulting parent device provides
 combined controls; the child devices provide side-specific controls. The card
 also offers Left/Both/Right selection. This does not require Controller Sync.
 
-Automatic connection mode keeps each receiver's own connection settings, including
-its idle timeout and Disconnect After Command choice. Selecting one side does not
-disconnect the other, and Both can operate the two receivers concurrently. This
-also applies to OCTO/Star2 pairs. Existing automatic pairs pick up this behavior
-on reload. If the active adapter reports that the second link exhausted its
-connection slots, automatic mode falls back to sequential switching for that
-runtime. Explicit concurrent or sequential modes are retained.
+Each receiver keeps its own **Bluetooth connection** setting. Selecting one
+side does not disconnect the other, and Both can operate the two receivers
+concurrently. This also applies to OCTO/Star2 pairs. If the active adapter
+reports that the second link exhausted its connection slots, the pair falls
+back to switching between the receivers one at a time for that runtime.
 
 The wizard checks protocol and motor-layout compatibility. Some controllers need
 a successful connection first to discover their capabilities. One-motor OCTO
@@ -863,8 +873,8 @@ TV/bed lifts remain standalone. Combined controls use capabilities shared by bot
 sides; side-specific controls retain each side's own features.
 
 For two receivers, open **Configure → Change left receiver settings** or
-**Change right receiver settings** to adjust its adapter, connection profile,
-motor pulses, Disconnect After Command, idle timeout and its own app's settings.
+**Change right receiver settings** to adjust its adapter, Bluetooth connection, Movement per tap and its own app's
+settings.
 These changes apply only to the selected receiver, without splitting the bed. **Change settings**
 retains the shared form; changed values there apply to both receivers.
 The card's **Both** view also offers each receiver's Connect and Disconnect
