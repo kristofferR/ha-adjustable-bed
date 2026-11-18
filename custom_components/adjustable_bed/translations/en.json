@@ -3190,6 +3190,9 @@
       "sonicsleep_action": {
         "name": "{action}"
       },
+      "sonicsleep_save": {
+        "name": "{action}"
+      },
       "starcode_abm5_4_light_on": {
         "name": "Turn floor light on"
       },

@@ -1852,6 +1852,10 @@
  "button:sonicsleep_action": {
   "card_section": "presets"
  },
+ "button:sonicsleep_save": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:stair_down": {
   "card_section": "motors",
   "card_role": "down",
