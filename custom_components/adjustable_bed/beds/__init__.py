@@ -59,8 +59,8 @@ if TYPE_CHECKING:
     from .kaidi.comfy import ComfyController as ComfyController
     from .kaidi.controller import KaidiController as KaidiController
     from .kaidi.rize import RizeController as RizeController
-    from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
     from .keeson.agingplace import AgingPlaceController as AgingPlaceController
+    from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.jalon import JalonController as JalonController
     from .keeson.ormatek import OrmatekController as OrmatekController
