@@ -1,4 +1,4 @@
-"""Rize Remedy II 1.0.1 (2), row180, over the shared OKIN Bedding controller.
+"""Rize Remedy II 1.0.1 (2), over the shared OKIN Bedding controller.
 
 The source's A0/positive-byte notification acknowledges local save intent;
 there is no position, lighting, massage or persistent-memory telemetry.

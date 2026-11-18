@@ -1,6 +1,6 @@
 """Resident Adjustable Base's fixed 36_33_01a profile and BLE session.
 
-APK Protocol Audit unit160, com.okin.resident.release 1.0.0 (1).
+Based on com.okin.resident.release 1.0.0 (1).
 Hardware remains unverified. The similarly named Rize Resident app is separate.
 """
 

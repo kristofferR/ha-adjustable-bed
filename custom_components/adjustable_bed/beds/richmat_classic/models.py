@@ -386,7 +386,7 @@ MODEL_CHOICES['powercool'] = (
 )
 MANUAL_ALIASES['powercool'] = {'B6RU': 'B6RM', 'ZR90': 'S9RM', '200I': 'A8RM', '400I': 'A0RM', '800I': 'A1RM', 'COOL': 'QRRM'}
 
-# Cluster-017 has one independently accepted, identical layout/alias domain.
+# The four resource apps share one identical layout/alias domain.
 for _app in APPS:
     MODEL_CHOICES[_app] = LAYOUTS
     MANUAL_ALIASES[_app] = {key: value for key, value in ALIASES.items() if len(key) == 4}

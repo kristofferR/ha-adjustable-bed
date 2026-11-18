@@ -1156,7 +1156,7 @@ def refine_okin_shared_uuid_protocol_from_gatt(
             return bed_type
         if gatt_detection.bed_type == BED_TYPE_OKIN_CST:
             # CSS plus Nordic DFU is only a hint. No CST app identifies its
-            # product from GATT, names or Device Information (cluster 011), and
+            # product from GATT, names or Device Information in the Rize apps, and
             # OKIMAT beds expose the same services (#555). CST stays opt-in.
             return bed_type
         if gatt_detection.bed_type != bed_type and _log_correction:

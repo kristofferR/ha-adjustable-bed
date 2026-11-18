@@ -8,7 +8,7 @@
 > For **Rize Beds 1.4.2**, choose the explicit [Rize Beds profile](#rize-beds).
 > Existing Kaidi entries retain their legacy route until reconfigured.
 > For **ISleep com.kaidi_test4**, choose the explicit [ISleep profile](#isleep).
-> Its accepted row064 audit corrects movement lifecycle, side routing, massage
+> Its profile corrects movement lifecycle, side routing, massage
 > strengths and memory capacity independently of the legacy Kaidi route.
 > Existing entries do not change automatically. Reconfigure or add the explicit
 > ISleep profile and confirm product, actuator descriptor and room ID.
@@ -39,7 +39,7 @@
 
 - The original Rize/Floyd/ISleep apps use only the Seat command values; the legacy Bed values in the
   shared library are not used by any of them.
-- Rize Beds 1.4.2, Floyd Home and ISleep each have a separately audited profile. Their
+- Rize Beds 1.4.2, Floyd Home and ISleep each have their own profile. Their
   capabilities and control behavior come from their own accepted artifacts, not
   from other apps sharing this transport. Rize/Floyd and existing Kaidi entries
   retain their own route; selecting a shared transport does not identify which
@@ -237,7 +237,7 @@ service UUIDs.
 > accepts that payload too and filters on mesh room-ID membership, which the
 > integration cannot replicate. Detection therefore requires a corroborating
 > Kaidi signal (the `Mouselet` name, the FFC0/mesh service UUID, or a known
-> Kaidi MAC OUI) alongside a parseable payload. The separately audited Floyd
+> Kaidi MAC OUI) alongside a parseable payload. The Floyd
 > product 139 signature can also admit a bed without those shared signals.
 
 | Signal | Value |
@@ -598,8 +598,7 @@ event replies; see [Responses](#responses).
 
 #### Evidence
 
-The accepted row117 report for Floyd Home 1.0.7, product 139 (see
-[Analysis provenance](#analysis-provenance)); Floyd Home sends only its frozen
+Floyd Home 1.0.7, product 139; Floyd Home sends only its frozen
 payloads. Its capabilities and commands come from this app's reachable paths;
 only the transport is shared with the Seat profiles.
 
@@ -607,7 +606,7 @@ only the transport is shared with the Seat profiles.
 
 **App:** [ISleep](https://play.google.com/store/apps/details?id=com.kaidi_test4) 1.6.3 (45), `com.kaidi_test4`
 
-**Status:** ❓ Needs testing (accepted APK audit, hardware **UNVERIFIED**)
+**Status:** ❓ Needs testing (hardware unverified)
 
 #### Setup
 
@@ -831,8 +830,7 @@ see [Responses](#responses).
 
 #### Evidence
 
-The accepted standalone ISleep 1.6.3 (45) APK audit (row064, see
-[Analysis provenance](#analysis-provenance)); ISleep sends only its frozen
+ISleep 1.6.3 (45); ISleep sends only its frozen
 payloads. HA never resets an existing room.
 
 ### Rize Beds
@@ -1019,8 +1017,8 @@ the app's phone alarms introduce no on-bed alarm protocol.
 
 #### Evidence
 
-Accepted unit149, Rize Beds1.4.2(57), with225 frozen vectors, including the48
-repaired topology/confirmation branch probes. The codec reproduces these
+Rize Beds 1.4.2 (57), with 225 frozen vectors, including the 48
+topology/confirmation branch probes. The codec reproduces these
 literals byte for byte. This profile uses its own product gates and command
 table. Physical validation belongs to beta/release users; no maintainer hardware
 test is implied by static support.
@@ -1208,7 +1206,7 @@ by STOP; there is no asserted emergency or memory halt guarantee.
 
 #### Evidence
 
-Accepted row084 / cluster-016. Every KomfyD literal matches the existing Kaidi
+Every KomfyD literal matches the existing Kaidi
 codec; app-specific routing and caller guards remain separate. Hardware
 validation belongs to external beta/release reports.
 
@@ -1258,7 +1256,7 @@ The same named actions use ComfyDS's table and per-target preflight.
 
 #### Evidence
 
-Accepted row084 sibling and cluster-016 reconciliation. All102 fixture records
+All 102 fixture records
 are retained, including the signed-sentinel command, advertisements and replies.
 No hardware confirmation or app equivalence is claimed.
 
@@ -1282,37 +1280,6 @@ No hardware confirmation or app equivalence is claimed.
 
 ### Analysis provenance
 
-Floyd Home 1.0.7, `com.kaidi_test4.floyd` (row117):
-
-| Seal | SHA-256 |
-| --- | --- |
-| Artifact set | `09001ded373f0b659c6645e7fd94aa963b2cc91a4eb3d2de22d1a0883f177c8f` |
-| Accepted REPORT.SHA256 | `455f487d3987a5661124f4f565ae3a99dc29853678f78a6fa7d39baffe2565a4` |
-| Independent AUDIT.SHA256 | `be869ca014a1e5cb3f7928d02a103cf1acabcd888f3c115e0ce015b93dab01cf` |
-
-ISleep 1.6.3 (45), `com.kaidi_test4` (row064):
-
-| Seal | SHA-256 |
-| --- | --- |
-| Artifact set | `6102a03e00d45ac1c12a5c9effb2eb7255128d8dfd5e5c24c5af7f9929e2d897` |
-| Accepted report (`report-revision-sol-002`) | `d00ec6709a9cfd53c7e254590e95fb9ee21151db47e35eb1a10ceeb47a2198f1` |
-| Independent audit (`audit-sol-round03`, ACCEPT) | `fe33a01ce0a19ee55c172310f5344b5d5c5e18befcd65cd91bacad992d751fde` |
-
-The machine-local row117 and row064 comparison ledgers record every command,
-variant, session path and exclusion, and the focused artifact tests.
-
-Rize Beds 1.4.2 (57), `com.kaidi_test4.rize` (unit149):
-
-| Seal | SHA-256 |
-| --- | --- |
-| Artifact set | `4a774ab1a19a618bfdfbbc2591eaabc5852198ca63c0c0dfb6b26481bbcde0b7` |
-| Accepted REPORT.SHA256 | `f1138b823b30bb37708a652c2065ddd3326590298446b3e32d7b8cae130feb44` |
-
-The independent audit002 accepts the repaired topology-dependent layout9
-movement/STOP mapping and default-program confirmation target/count. No static
-gap remains. Hardware behavior remains unverified.
-
-- KomfyD 1.0.9 (8), `com.pairlink.kaidi.komfyD`, artifact SHA-256
-  `f60e33c7a79b491d8b528ea10bb3b42758ee631f2eeb138a5f4ef9f43995fb9b`.
-- ComfyDS 1.0.0 (1), `com.pairlink.kaidi.ComfyDS`, artifact SHA-256
-  `114ad8d9a2c7008a115a36574f9e2321d874db682ad73e4c205c9611ce00171b`.
+Based on Floyd Home 1.0.7 (`com.kaidi_test4.floyd`), ISleep 1.6.3
+(`com.kaidi_test4`), Rize Beds 1.4.2 (`com.kaidi_test4.rize`), KomfyD 1.0.9
+(`com.pairlink.kaidi.komfyD`) and ComfyDS 1.0.0 (`com.pairlink.kaidi.ComfyDS`).

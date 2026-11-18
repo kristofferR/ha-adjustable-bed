@@ -1,4 +1,4 @@
-"""Direct BLE primitives recovered from the five accepted cluster-018 apps.
+"""Direct BLE primitives recovered from the five classic Richmat apps.
 
 These are the older resource-driven apps, not RMControl 21.3.7. Model data
 selects operands and gestures; a transport match never selects a product.

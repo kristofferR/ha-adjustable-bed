@@ -47,12 +47,11 @@
   setup stages, GATT rules and accessory conversion values, and does not inherit
   the Caresse and Werkmeister protocol defaults merely because transport
   identifiers match. Caresse / Werkmeister and V-MAT Basic have their own
-  independent feature gates, vectors and dispositions.
+  feature gates and vectors.
 - The [issue #403 reconciliation](#issue-403-reconciliation) explains which
-  parts of the original parity request shipped and which were ruled out by the
-  accepted app audits. Those audits do not establish live position or EEPROM
-  support for the Caresse, Werkmeister or VMAT app profiles.
-- APK hashes and seals are under [Analysis provenance](#analysis-provenance).
+  parts of the original parity request shipped and which the apps rule out.
+  The apps have no live position or EEPROM support for the Caresse,
+  Werkmeister or VMAT profiles.
 
 ## Features
 
@@ -418,7 +417,7 @@ on hardware.
 
 **App:** [Caresse Remote](https://play.google.com/store/apps/details?id=de.vibradorm.diamant) 0.3, code 3, `de.vibradorm.diamant`; [Werkmeister Unterfederung](https://play.google.com/store/apps/details?id=de.vibradorm.werkmeister) 0.2, code 2, `de.vibradorm.werkmeister`
 
-**Status:** ❓ Needs testing (static artifact behavior verified; hardware unverified)
+**Status:** ❓ Needs testing (hardware unverified)
 
 The bed type is `vibradorm_app` with app profile `caresse` or `werkmeister`. The
 independently verified [VMAT](#vmat) profile shares the explicit app configuration
@@ -620,8 +619,7 @@ Native bond evidence and legacy boundary:
 
 #### Controls
 
-The profile matrix and the complete source-driven discovery dispositions
-determine each reachable command and its preconditions. Eight normal
+The profile matrix determines each reachable command and its preconditions. Eight normal
 motor-direction opcodes, all-up/all-down, exact six memory opcode choices, fixed
 save tails, dedicated light paths, mood group bit, massage group bit and article
 literal requests require profile-specific vectors.
@@ -809,7 +807,7 @@ Group `0000` for basic, `1000` for nonbasic.
 - Preserve three requests and parser results, and test unrelated/late/malformed
   callbacks, missing notify, failed read/write, cancellation, bounded deadline and
   no writes after completion.
-- No parser-reachable measured angle/motor position exists in row031.
+- No parser-reachable measured angle/motor position exists in these apps.
 
 ##### Sync replies
 
@@ -968,10 +966,6 @@ the last column.
 
 #### Evidence
 
-- Accepted row031 audit: the static protocol/profile behavior is implemented with
-  concrete code and executed-test bindings. The complete artifact sets,
-  independent package audits and whole-cluster reconciliation are accepted static
-  evidence; the row031 audit lists all 356 exact exclusions.
 - Caresse and Werkmeister send only their frozen frames
   (`caresse` and `werkmeister` in `tests/vibradorm_vectors.py`).
 - Hardware operation, on-air packet delivery, peripheral security and physical
@@ -986,8 +980,7 @@ the last column.
 
 The bed type is `vibradorm_app` with app profile `vmat`. Generic entries keep
 their existing controller. [Caresse / Werkmeister](#caresse-and-werkmeister) and
-[V-MAT Basic](#v-mat-basic) have their own independent feature gates, vectors and
-dispositions.
+[V-MAT Basic](#v-mat-basic) have their own feature gates and vectors.
 
 #### Setup
 
@@ -1273,35 +1266,24 @@ physical operation remains unverified.
 #### Issue #403 reconciliation
 
 The original [parity request](https://github.com/kristofferR/ha-adjustable-bed/issues/403)
-predates the accepted independent app audits. Its assumption that Caresse,
-Werkmeister, VMAT and V-MAT Basic expose one interchangeable contract is
-superseded by their explicit profiles. The VMAT profile shipped in
+assumed that Caresse, Werkmeister, VMAT and V-MAT Basic share one
+interchangeable contract. Each app has its own profile instead. The VMAT
+profile shipped in
 [v4.1.0](https://github.com/kristofferR/ha-adjustable-bed/releases/tag/v4.1.0).
-The outcomes below describe existing implementation and accepted exclusions;
-they do not change the frozen audit ledger.
 
-| Original request | Current outcome | Existing evidence |
-| --- | --- | --- |
-| Live positions, initialization flags and raw motor counts | EXCLUDED as a VMAT app feature: no reachable live position parser is proven. The generic controller retains its separate historical parser and angle estimates. | `VibradormAppController.supports_position_feedback`; `test_remote_contract_and_no_guessed_capabilities`; [generic controller](#position-feedback) |
-| Full EEPROM collection and diagnostic field sensors | EXCLUDED as a supported app operation: unsolicited EEPROM/log recognition does not establish a reachable collector or query. | Accepted VMAT notification/capability dispositions; Caresse dead parser routes `R031-0548`–`R031-0550` in the row031 audit |
-| Memory recall M1–M6 and store handshake | ALREADY_IMPLEMENTED where the selected remote enables memory, with the exact nine-frame save sequence. | `hold_control`, `program_memory`; `test_every_reachable_held_control_releases`, `test_complete_nine_frame_save_sequence` |
-| Status request and sync | ALREADY_IMPLEMENTED for the VMAT sync remotes as a reply-gated held action. The observed sync flag is exposed; it is not a position measurement. | `hold_control`, `_notification`, `controller_state_sensor_specs`; `test_sync_only_streams_while_response_is_pending_and_held`, `test_registered_notifications_are_bound_to_live_role_and_generation` |
-| Floor light, level and timer | ALREADY_IMPLEMENTED for selectable floor remotes, with their exact LIGHT or CBI route and pending timer state. | `_floor`, `set_pending_floor_timer`; `test_floor_delivery_full_shipped_range` |
-| Mood color, effects, speed and toggle | ALREADY_IMPLEMENTED for remotes 12/13, using the shipped palette and effect choices. | `_mood`, `set_mood_palette`, `set_mood_effect`, `set_mood_speed`; `test_all_shipped_palette_packets`, `test_all_mood_speed_positions` |
-| Unrestricted RGB color | EXCLUDED from app parity: the shipped UI supplies palette choices, not an arbitrary RGB control. | Accepted VMAT light/profile contract and palette vectors |
-| Massage modes, speed and two intensity zones | ALREADY_IMPLEMENTED for remotes 12/13, with full current/saved state and exact mode/off/restore ordering. | `_plan_massage_mode`, `_write_massage_packets`; `test_full_massage_state_packets_from_frozen_builder_vectors`, `test_automatic_individual_restore_clamps_and_exact_off_restore_order` |
-| Massage timer and OFF-command payload `01` | EXCLUDED from app parity: neither is exposed by a reachable shipped control. | Accepted VMAT massage contract and disabled-action gates |
-| Toggle, accessory bus selection, refresh and STOP | ALREADY_IMPLEMENTED per selected remote. Logical construction advances the toggle; held repeats reuse the packet. | `_header`, `_write`, `_release`; `test_every_reachable_held_control_releases`, `test_single_shots_wait_after_success_completion_and_stop_bypasses_delay` |
-| Automatic generic layout from control-version metadata | EXCLUDED: shared metadata does not select the app's remote or establish physical actuator identity. All fourteen shipped VMAT selections are explicitly available. | `VMAT_REMOTES`; `test_remote_contract_and_no_guessed_capabilities`, `test_remote_flags_cannot_be_spoofed` |
-
-Code references above are in
-[`vibradorm_app.py`](../../custom_components/adjustable_bed/beds/vibradorm/app.py)
-and [`profiles/vibradorm.py`](../../custom_components/adjustable_bed/profiles/vibradorm.py).
-Test references are in
-[`test_vibradorm_vmat.py`](../../tests/test_vibradorm_vmat.py); the
-machine-local VMAT audit ledger retains the exact accepted source bindings.
-[Caresse / Werkmeister](#caresse-and-werkmeister) and [V-MAT Basic](#v-mat-basic)
-have their own independent feature gates, vectors and dispositions.
+| Original request | Outcome |
+| --- | --- |
+| Live positions, initialization flags and raw motor counts | Not supported on the VMAT profile: the app has no live position parser. The generic controller keeps its historical parser and angle estimates. |
+| Full EEPROM collection and diagnostic field sensors | Not supported: the app never queries or collects them. |
+| Memory recall M1–M6 and store handshake | Supported where the selected remote has memory, with the nine-frame save sequence. |
+| Status request and sync | Supported on the VMAT sync remotes as a reply-gated held action. The sync flag is exposed; it is not a position. |
+| Floor light, level and timer | Supported on floor remotes, with their LIGHT or CBI route and pending timer state. |
+| Mood color, effects, speed and toggle | Supported on remotes 12/13, with the app's palette and effect choices. |
+| Unrestricted RGB color | Not supported: the app offers palette choices, not arbitrary RGB. |
+| Massage modes, speed and two intensity zones | Supported on remotes 12/13, with current/saved state and the app's mode/off/restore order. |
+| Massage timer and OFF-command payload `01` | Not supported: no app control sends them. |
+| Toggle, accessory bus selection, refresh and STOP | Supported per selected remote. Building a command advances the toggle; held repeats reuse the packet. |
+| Automatic generic layout from control-version metadata | Not supported: the metadata does not identify the app's remote. All fourteen VMAT remotes are selectable. |
 
 The requested MC4-MD08 retest remains deferred physical validation for its
 owner after release. The accepted app implementation does not prove that
@@ -1596,43 +1578,9 @@ cover the accepted behavior. Hardware status: **UNVERIFIED**.
 
 - [GitHub Issue #162](https://github.com/kristofferR/ha-adjustable-bed/issues/162)
 - [GitHub Issue #403](https://github.com/kristofferR/ha-adjustable-bed/issues/403)
-- Accepted Caresse / Werkmeister audit (row031), VMAT audit and V-MAT Basic audit
-  (row037)
 
 ### Analysis provenance
 
-Caresse and Werkmeister (row031):
-
-| Accepted artifact | Version | APK SHA-256 |
-|---|---|---|
-| `de.vibradorm.diamant` (Caresse Remote) | 0.3, code 3 | `61073fa141df96bc40cbdd5820e64e2fb19c53cb88334baeaf6772493cfd97c2` |
-| `de.vibradorm.werkmeister` (Werkmeister Unterfederung) | 0.2, code 2 | `36306b6ac6ee3fd66bef5a71e3626c44e2befccb3d2e135031747bcd5c7f9635` |
-
-| Seal | SHA-256 |
-|------|---------|
-| Accepted representative report seal | `3a57621a4a4e689b06ec9bd6d471807d3b184c10520f129f342eebb442deae2c` |
-| Accepted sibling report seal | `2c8b210bf8942c689bd62ae555557283298f895c75c246c5f00e57b755e97c9a` |
-| Whole-cluster reconciliation seal | `fcdaaf8728e27bbd04b47849201ea46dea1cf790f93ac5ce01c2968c325bfffc` |
-| Independent reconciliation audit seal (ACCEPT, zero material findings) | `f91c5b9efcf2eb85bdf0e80f81717ecd0b92d6059463b4a90ea4b807a3f5224d` |
-| Post-freeze comparison seal | `a59b50bb11a14660b737482066f4b6609f9e775e0170e97248a394c821ca7fc2` |
-
-The row031 audit lists all 356 exact exclusions. Raw artifacts, decompilation,
-packet reproducers and independent audit reports remain machine-local.
-
-VMAT (`de.vibradorm.vmat` 1.11 (49)):
-
-- The machine-local VMAT audit ledger binds all 282 comparison items: 240
-  IMPLEMENTED, 0 ALREADY_IMPLEMENTED and 42 EXCLUDED.
-- Its exact exclusions cover 26 unreachable selectors, Android
-  scanner/permission/bond APIs, phone presentation and unsafe
-  queue/parser/cancellation behavior.
-
-V-MAT Basic (`com.vibradorm.vmatbasic` 2.4.3, version code 14):
-
-- Artifact-set SHA-256: `5d266015494edf9ad595c5b4c6d11fcde3ea53fc78e008b4990e4ce834a31980`
-- Accepted repair report manifest: `5d73627f5b010b372b3cdec39091faa817a4a596ead49db9ec507ee6025a5d0d`
-- Independent audit manifest: `7892663c50ea99a3174bfa1fd86cd27ed276ef4be1270bf256ac13133a0c155b`
-- All package evidence stays machine-local, including the row037 disposition
-  ledger that records the separate implementation comparison.
-- Workflow progress is recorded in the canonical APK audit trackers and published
-  queue plan.
+Based on Caresse Remote 0.3 (`de.vibradorm.diamant`), Werkmeister
+Unterfederung 0.2 (`de.vibradorm.werkmeister`), VMAT 1.11 (`de.vibradorm.vmat`)
+and V-MAT Basic 2.4.3 (`com.vibradorm.vmatbasic`).

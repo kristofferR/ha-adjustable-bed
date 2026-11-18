@@ -83,8 +83,8 @@ pairing changes keep them current.
 A v5 beta entry already at 5.1 or later runs only the steps after it, and gains
 a `profile_migration` record only if one of them drops a key, turns Massage
 off or writes an Octo motor layout. Like the rest of schema 5, these steps are one way. The
-[config key audit](design/config-keys.md) records every saved key, why the two
-dropped keys are obsolete and why the 5.3 step turns Massage off.
+[profile id migration notes](design/profile-id.md#migration-51-to-52) explain why
+the two dropped keys are obsolete and why the 5.3 step turns Massage off.
 
 The migration record appears in two places:
 
@@ -199,10 +199,8 @@ hold after 10 s, however often it is renewed. The ceiling runs on the clock
 from the hold's start, so latency no longer adds up across refreshes; a write
 already in flight at the ceiling completes before the release
 ([#865](https://github.com/kristofferR/ha-adjustable-bed/pull/865)). See
-[Renewable holds](SERVICES.md#renewable-holds), the
-[command lifecycle](COMMAND_LIFECYCLE.md#renewable-hold-leases) and the
-[evidence matrix](design/execution-capabilities.md#evidence-matrix) for each
-row's evidence.
+[Renewable holds](SERVICES.md#renewable-holds) and the
+[command lifecycle](COMMAND_LIFECYCLE.md#renewable-hold-leases).
 
 | Hold | Beds |
 |------|------|

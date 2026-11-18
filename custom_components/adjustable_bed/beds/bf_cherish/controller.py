@@ -1,4 +1,4 @@
-"""Explicit BF 1.2.3 and Cherish 1.0.4 profiles (accepted row063).
+"""Explicit BF 1.2.3 and Cherish 1.0.4 profiles.
 
 These apps share framing, not their command tables or alarm format. No
 advertisement identifies either app.

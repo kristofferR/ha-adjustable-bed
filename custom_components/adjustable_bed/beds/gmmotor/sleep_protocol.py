@@ -1,4 +1,4 @@
-"""GM Control 4.6.6 sleep-module requests and receive assembly (accepted row102 protocol P2).
+"""GM Control 4.6.6 sleep-module requests and receive assembly (protocol P2).
 
 The MM and SXB branches are distinct from the P1 bed transport; their frames are
 the sleep-sensor JSON envelope (``codec/sleep_envelope.py``). Their receive

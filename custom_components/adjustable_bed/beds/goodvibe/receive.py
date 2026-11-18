@@ -1,6 +1,5 @@
 """Good Vibe Sleep binary leaf parsers, transcribed from this package only.
 
-Source 733bb4/737f54 and accepted formula vectors are bound in the row116 ledger.
 Malformed artifact bounds errors are rejected; no invented state fills a missing field.
 """
 

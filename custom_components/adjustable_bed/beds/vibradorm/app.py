@@ -1,4 +1,4 @@
-"""Explicit Caresse/Werkmeister app paths from the accepted row031 artifacts.
+"""Explicit Caresse/Werkmeister app paths.
 
 Published feature state is local intent, never a device acknowledgment. The
 legacy Vibradorm controller remains independent of these app-selected layouts.

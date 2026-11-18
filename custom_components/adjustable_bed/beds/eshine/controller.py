@@ -1,4 +1,4 @@
-"""Explicit Eshine E6000 profile (com.richmat.eshinesleep 1.0.1, row106), over the Richmat codec."""
+"""Explicit Eshine E6000 profile (com.richmat.eshinesleep 1.0.1), over the Richmat codec."""
 
 from __future__ import annotations
 

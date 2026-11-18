@@ -14,6 +14,12 @@ it.
 Imports point one way: controllers use profiles and codecs, profiles use the
 codec, and the codec imports neither.
 
+A family is proven by encoding: its framing rule holds byte for byte for the
+command writes of every route in it, never because apps share a name, UUID or
+vendor. Bed types that send identical bytes stay separate bed types so existing
+entries keep their identities; the wire snapshot (`tests/test_wire_snapshot.py`)
+captures every route's writes and shows the equality.
+
 The independently audited OkinComfortBed Ⅱ (Jalon) profile reproduces all of its
 control, current-time and alarm literals through `codec/keeson.py`. Its model
 byte stays zero and establishes no side addressing; its session and gesture
@@ -246,6 +252,35 @@ To add a profile, add its literals to the vector file and its entry to the
 census in the test. A profile whose literals the codec cannot reproduce gets
 its own codec, with the reason recorded here.
 
+## Execution capabilities
+
+Held motion and concurrent motors are declared in `execution.py`'s
+`ExecutionCapabilities`: a family profile's `execution` field,
+or an `execution` override on a standalone controller. The codec states what
+the wire can express; the profile states what its own app is proven to do.
+Nothing is declared by analogy with another app, family or shared codec. The
+Okin N-frame codec can OR any motor words, but only the profiles whose apps
+compose two axes and release one without stopping the other declare
+`concurrent`. Prodigy 2 composes keys but its release clears them all, so it
+stays serialized.
+
+- **Hold** is `stream` (the app refreshes a held frame until release) or
+  `latched` (one start frame and an explicit stop). `hold_controls` scopes it to
+  the held controls whose gesture is a sustained press, for controllers whose
+  buttons also carry other gestures (Good Vibe Sleep and the classic Richmat
+  apps, recomputed from their mode selectors on every read). Leases, renewal and
+  STOP pre-emption are in the [command lifecycle](../COMMAND_LIFECYCLE.md#renewable-hold-leases).
+- **Concurrent motors** run as one streamer per device that writes the composed
+  frame each tick, so there is never extra BLE concurrency. A combined control
+  of a pair uses the intersection of both sides' capabilities.
+- **Motor speed** has no field: no app is proven to offer a selectable speed.
+
+Linak keeps its conservative reversal: a seek refreshes the held movement
+without an intermediate release and sends STOP on cleanup, and no extra
+reversal packet or settle delay is added between seeks. A replacement waits
+for the previous STOP; the physical pause users once reported is unverified on
+current firmware.
+
 ## Route decisions
 
 - **Comfort Motion keeps two routes.** The UUID-detected `comfort_motion` bed
@@ -270,7 +305,7 @@ its own codec, with the reason recorded here.
 - The legacy route no longer defines the unused `BOTH`, `HEAD_ALT`, `WAIST`,
   `TIMER` and right-side split constants. It never sent them.
 
-ComfortBaseForBluetooth 1.1.2 (6), row161, reuses Keeson K1 only after all
+ComfortBaseForBluetooth 1.1.2 (6) reuses Keeson K1 only after all
 43 frozen builders reproduce literally through `frame`, `clock_fields` and
 `alarm_table`. Its product catalog is UI data over one `comfortbase` profile.
 The Keeson controller supplies hold/release and recall; its ComfortBase extension

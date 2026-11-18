@@ -1,6 +1,6 @@
 """N32 Motion Bed: a fixed Okin N-frame profile with three persistent alarms.
 
-Accepted com.okin.simmonskorea 1.1.14 (38), row080. The inherited family
+Based on com.okin.simmonskorea 1.1.14 (38). The inherited family
 controller supplies the named motor/preset dispatch; this app owns its GATT
 session, 200 ms held schedule, three UI groups and alarm callback semantics.
 """

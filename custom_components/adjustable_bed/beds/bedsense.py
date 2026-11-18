@@ -1,6 +1,6 @@
 """BedSense 1.8 (com.fenmenbielei.bedsense), separate from Bedsense Bases.
 
-All wire literals and layout gates come from the accepted row108 report.
+All wire literals and layout gates come from BedSense 1.8.
 Memory flags and massage bars reproduce app indicators, not measured positions.
 """
 

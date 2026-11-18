@@ -557,7 +557,7 @@ BED_TYPE_RIZE_HOME: Final = "rize_home"
 BED_TYPE_OKIN_MOTIONBED: Final = "okin_motionbed"
 BED_TYPE_COMFORT_ENHANCEMENT3: Final = "comfort_enhancement3"
 BED_TYPE_N32_MOTION_BED: Final = "n32_motion_bed"
-# Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
+# Explicit Richmat MH app profiles: one shared library, five catalogs.
 BED_TYPE_LUUNA: Final = "luuna"
 BED_TYPE_MLINE: Final = "mline"
 CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
@@ -1762,7 +1762,7 @@ SBI_VARIANTS: Final = {
 }
 
 # Remacro (SynData) UUIDs, shared by the Slumberland, The Brick and Jerome's
-# apps (row 050). Frames are 8 bytes: [serial, PID, LE16 code, LE32 parameter].
+# apps. Frames are 8 bytes: [serial, PID, LE16 code, LE32 parameter].
 REMACRO_SERVICE_UUID: Final = "6e403587-b5a3-f393-e0a9-e50e24dcca9e"
 REMACRO_WRITE_CHAR_UUID: Final = "6e403588-b5a3-f393-e0a9-e50e24dcca9e"
 REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
@@ -2156,7 +2156,7 @@ RICHMAT_REMOTE_BT6500: Final = "BT6500"
 RICHMAT_REMOTE_LP_QRRM: Final = "LP-QRRM"
 # Printed and QR-encoded on the HJH89 handset of a QRRM receiver (#695). The
 # features come from the generated table; the Revive Control, Blvd Home and
-# HARMONY catalogs (row055) define the same GGRM controls.
+# HARMONY catalogs define the same GGRM controls.
 RICHMAT_REMOTE_GGRM: Final = "GGRM"
 
 # Richmat WiLinke stop-byte compatibility.

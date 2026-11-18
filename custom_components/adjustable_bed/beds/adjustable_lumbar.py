@@ -1,6 +1,6 @@
 """Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar 1.2.2).
 
-Accepted as APK audit row054. The app ships three command tables and picks one
+Based on Adjustable bed (Lumbar) 1.2.2. The app ships three command tables and picks one
 from the lowercase Bluetooth name: ``okin`` selects ``36_33_04a`` (OKIN service,
 write with response); ``star`` selects ``25_42_02`` (Nordic UART, write without
 response), upgraded to ``35_22_01`` when the Device Information manufacturer
@@ -622,7 +622,7 @@ class AdjustableLumbarController(
 
 
 class AdjustableBedAppController(AdjustableLumbarController):
-    """Unit087 app route, sharing the proven transport, gestures and release."""
+    """Adjustable bed 1.2.1 app route, sharing the proven transport, gestures and release."""
 
     def __init__(
         self,
