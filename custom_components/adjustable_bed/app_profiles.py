@@ -149,7 +149,7 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
-    "agingplace": SideProfile("Aging in Place / Dawn House", frozenset({CONF_BLE_DEVICE_NAME})),
+    "agingplace": SideProfile("Aging in Place / Dawn House"),
     "smart_sleep": SideProfile("OKIN Smart Sleep", variant_owned=True),
     "bedtech": SideProfile("BedTech model", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     "gmmotor": SideProfile("GM Control product", frozenset({CONF_BLE_DEVICE_NAME})),

@@ -6,16 +6,23 @@ import asyncio
 import json
 import logging
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ...app_session import app_session
 from ...card import CARD_LIGHTING, CARD_MASSAGE_TIMER, CARD_PRESETS, CARD_UTILITY
 from ...codec import keeson as codec
 from ...command_scheduler import CommandContext, current_command_context
-from ...const import CONF_BLE_DEVICE_NAME
+from ...const import (
+    CONF_AGINGPLACE_BED_MODE,
+    CONF_AGINGPLACE_BED_SIDE,
+    CONF_AGINGPLACE_SELECTED_SIDE,
+    CONF_BLE_DEVICE_NAME,
+)
 from ...profiles import agingplace as app
 from ..base import BedController
 from ..builder import BuildContext
@@ -37,6 +44,25 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(slots=True)
+class _AutomaticIntent:
+    """An admitted start's Flat obligation, never a live device capability."""
+
+    generation: int = 0
+    action: str | None = None
+
+    def start(self, action: str) -> int:
+        self.generation += 1
+        self.action = action
+        return self.generation
+
+    def clear(self, generation: int) -> bool:
+        if generation != self.generation:
+            return False
+        self.action = None
+        return True
 
 
 async def _drain(operation: Awaitable[None]) -> None:
@@ -86,10 +112,17 @@ class AgingPlaceController(KeesonController):
         self._epoch = 0
         self._ready_client: BleakClient | None = None
         self._indicate: BleakGATTCharacteristic | None = None
-        self._flat_cancel_active = False
+        self._automatic = app_session(
+            coordinator.hass, coordinator.address, ("agingplace", app.PROFILE.key), _AutomaticIntent
+        )
+        self._diagnostic_generation: int | None = None
         self._diagnostic_timeout: asyncio.TimerHandle | None = None
         self._diagnostic_quiet: asyncio.TimerHandle | None = None
         self._cleanup: tuple[BleakClient, int, CommandContext] | None = None
+
+    @property
+    def _flat_cancel_active(self) -> bool:
+        return self._automatic.action is not None
 
     @property
     def supports_single_address_pairing(self) -> bool:
@@ -180,6 +213,9 @@ class AgingPlaceController(KeesonController):
         self._epoch += 1
         epoch = self._epoch
         self._ready_client = None
+        self._diagnostic_generation = (
+            self._automatic.generation if self._automatic.action == "diagnostic" else None
+        )
         # Bleak has no portable requestMtu(260). BlueZ exposes acquisition;
         # proxy/platform backends negotiate themselves. Never invent ATT bytes.
         backend = getattr(client, "_backend", None)
@@ -213,6 +249,7 @@ class AgingPlaceController(KeesonController):
         char, self._indicate = self._indicate, None
         client, self._ready_client = self._ready_client, None
         self._epoch += 1
+        self._diagnostic_generation = None
         self._clear_timers()
         if char is not None and client is not None and client.is_connected:
             await client.stop_notify(char)
@@ -227,7 +264,7 @@ class AgingPlaceController(KeesonController):
         self._ready_client = None
         self._indicate = None
         self._epoch += 1
-        self._flat_cancel_active = False
+        self._diagnostic_generation = None
         self._cleanup = None
         self._clear_timers()
         self.observations = Observations(
@@ -367,28 +404,35 @@ class AgingPlaceController(KeesonController):
             raise ConnectionError("Dawn House indication session is not ready")
         self._current(client, epoch)
         self._cleanup = None
+        generation = self._automatic.generation
         if name in ("circulation", "sleep", "relax_cycle", "diagnostic"):
             # An admitted start may transmit before cancellation is delivered.
             # Its STOP must still use Flat after the in-flight write drains.
-            self._flat_cancel_active = True
-        await self.write_command(action.frame(self.device_id))
-        self._current(client, epoch)
-        if name == "flat":
-            self._flat_cancel_active = False
-            self._clear_timers()
+            generation = self._automatic.start(name)
         if name == "diagnostic":
             self._clear_timers()
             self.observations.maxima = dict.fromkeys(self.observations.maxima, 0)
+            self._diagnostic_generation = generation
             self.forward_controller_state_updates(TEXT["diagnostic_status"]("waiting"))
-            epoch = self._epoch
 
             def timeout() -> None:
-                if self._epoch == epoch:
+                if (
+                    self._epoch == epoch
+                    and self._ready_client is client
+                    and self._automatic.generation == generation
+                    and self._automatic.action == "diagnostic"
+                ):
+                    self._diagnostic_timeout = None
                     self.forward_controller_state_updates(TEXT["diagnostic_status"]("timeout"))
 
             self._diagnostic_timeout = asyncio.get_running_loop().call_later(
                 app.SELF_CHECK_TIMEOUT, timeout
             )
+        await self.write_command(action.frame(self.device_id))
+        self._current(client, epoch)
+        if name == "flat" and self._automatic.clear(generation):
+            self._diagnostic_generation = None
+            self._clear_timers()
 
     async def stop_all(self) -> None:
         context = current_command_context()
@@ -397,6 +441,7 @@ class AgingPlaceController(KeesonController):
             if (
                 client is self._ready_client
                 and epoch == self._epoch
+                and not self._flat_cancel_active
                 and owner.cleanup_stop_sent
                 and (owner is context or any(owner is old for old in context.preempted_contexts))
             ):
@@ -404,11 +449,18 @@ class AgingPlaceController(KeesonController):
                 self._cleanup = None
                 return
         name = "flat" if self._flat_cancel_active else "release"
+        client, epoch = self._ready_client, self._epoch
+        if client is None:
+            raise ConnectionError("Dawn House indication session is not ready")
+        self._current(client, epoch)
+        generation = self._automatic.generation
         await self.write_command(
             app.ACTIONS[name].frame(self.device_id), cancel_event=asyncio.Event()
         )
-        self._flat_cancel_active = False
-        self._clear_timers()
+        self._current(client, epoch)
+        if self._automatic.clear(generation):
+            self._diagnostic_generation = None
+            self._clear_timers()
 
     async def _preset(self, preset: str) -> None:
         if preset not in self.profile.presets:
@@ -457,12 +509,15 @@ class AgingPlaceController(KeesonController):
             flag = integer(payload, "chkStatu")
             if flag >= 49152:
                 self._clear_timers()
-                self._flat_cancel_active = False
+                if self._diagnostic_generation is not None:
+                    self._automatic.clear(self._diagnostic_generation)
+                    self._diagnostic_generation = None
             elif flag >= 1:
                 epoch = self._epoch
+                generation = self._automatic.generation
 
                 def aggregate() -> None:
-                    if self._epoch == epoch:
+                    if self._epoch == epoch and self._automatic.generation == generation:
                         self.forward_controller_state_updates(TEXT["diagnostic_status"]("observed"))
 
                 self._diagnostic_quiet = asyncio.get_running_loop().call_later(
@@ -561,7 +616,7 @@ class AgingPlaceController(KeesonController):
         return tuple(
             ControllerStateSensorSpec(
                 f"agingplace_{name}",
-                f"agingplace_{name}",
+                f"agingplace_{name.lower()}",
                 key,
                 "mdi:bed",
                 attribute_keys=tuple(TEXT.values()) if name == "version" else (),
@@ -571,7 +626,7 @@ class AgingPlaceController(KeesonController):
         ) + tuple(
             ControllerStateSensorSpec(
                 f"agingplace_{name}",
-                f"agingplace_{name}",
+                f"agingplace_{name.lower()}",
                 key,
                 "mdi:information-outline",
                 attribute_keys=(TEXT["diagnostic_raw"],) if name == "diagnostic_status" else (),
@@ -599,9 +654,9 @@ class AgingPlaceController(KeesonController):
 
 
 async def build_controller(ctx: BuildContext) -> BedController:
-    mode = ctx.data.get("agingplace_bed_mode", "auto")
-    bed_side = ctx.data.get("agingplace_bed_side", 0)
-    selected_side = ctx.data.get("agingplace_selected_side", 0)
+    mode = ctx.data.get(CONF_AGINGPLACE_BED_MODE, "auto")
+    bed_side = ctx.data.get(CONF_AGINGPLACE_BED_SIDE, 0)
+    selected_side = ctx.data.get(CONF_AGINGPLACE_SELECTED_SIDE, 0)
     if (
         str(mode) not in ("auto", "0", "1", "2")
         or type(bed_side) is not int

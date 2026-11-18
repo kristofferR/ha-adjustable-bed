@@ -7,6 +7,11 @@ from types import MappingProxyType
 from typing import Final
 
 from ..codec import keeson as codec
+from ..const import (
+    CONF_AGINGPLACE_BED_MODE,
+    CONF_AGINGPLACE_BED_SIDE,
+    CONF_AGINGPLACE_SELECTED_SIDE,
+)
 from ..execution import STREAM_HOLD
 from .keeson import KeesonProfile, Release
 
@@ -18,7 +23,7 @@ INDICATION_WAIT: Final = 0.1
 SELF_CHECK_TIMEOUT: Final = 20.0
 DIAGNOSTIC_QUIET: Final = 2.0
 CONFIG_KEYS: Final = frozenset(
-    {"agingplace_bed_mode", "agingplace_bed_side", "agingplace_selected_side"}
+    {CONF_AGINGPLACE_BED_MODE, CONF_AGINGPLACE_BED_SIDE, CONF_AGINGPLACE_SELECTED_SIDE}
 )
 NAMES: Final = ("KSWF07S", "KSWF19S")
 

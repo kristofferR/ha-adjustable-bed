@@ -1,6 +1,7 @@
 """App-scoped metadata contracts, independent of the row069 runtime receipts."""
 
 import json
+import re
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -24,6 +25,16 @@ async def test_app_entities_and_service_fields_have_translations():
     coordinator.entry.data = {"bed_type": "agingplace", "ble_device_name": "KSWF07S123456789"}
     controller = await create_controller(coordinator, "agingplace", "auto", None)
     keys = _spec_keys([controller])
+    for platform, required in keys.items():
+        assert all(re.fullmatch(r"[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?", key) for key in required), (
+            platform,
+            required,
+        )
+    sensor_ids = {spec.key for spec in controller.controller_state_sensor_specs}
+    assert {
+        f"agingplace_{name}"
+        for name in ("chkStatu", "headPlus", "footPlus", "tiltPlus", "lumbPlus", "MAC")
+    } <= sensor_ids
     for path in TRANSLATION_FILES:
         strings = json.loads(path.read_text())
         for platform, required in keys.items():
@@ -54,6 +65,24 @@ def test_questions_own_every_side_setting_and_have_explanations():
             assert question.key in labels["data"]
             assert question.key in labels["data_description"]
             assert question.key in configured
+
+
+def test_app_single_profile_defaults_to_a_saveable_auto_route():
+    from custom_components.adjustable_bed.config_flow import _default_setup_route
+    from custom_components.adjustable_bed.const import VARIANT_REQUIRED_BED_TYPES
+    from custom_components.adjustable_bed.validators import (
+        get_variants_for_bed_type,
+        is_valid_variant_for_bed_type,
+    )
+
+    route = _default_setup_route("agingplace")
+    assert route == "auto"
+    assert "agingplace" not in VARIANT_REQUIRED_BED_TYPES
+    assert get_variants_for_bed_type("agingplace") is None
+    assert is_valid_variant_for_bed_type("agingplace", route)
+    profile = setup_profile_for({"bed_type": "agingplace"})
+    assert profile is not None
+    assert profile.settled({"bed_type": "agingplace"})["protocol_variant"] == route
 
 
 @pytest.mark.parametrize("name", ("KSWF07S123456789", "prefixKSWF19Ssuffix"))

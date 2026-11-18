@@ -530,7 +530,6 @@ ZSERIES_VARIANTS: Final = {
 # Bed types whose variant is a user choice with no automatic default.
 BED_TYPE_YAMADA: Final = "yamada"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
-BED_TYPE_AGINGPLACE: Final = "agingplace"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc2": "MC2: AC-1/BC3, Massage Plus / Comfort Position",
@@ -539,8 +538,13 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_AGINGPLACE, BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 )
+# Aging in Place / Dawn House has one fixed profile; these filter observations.
+BED_TYPE_AGINGPLACE: Final = "agingplace"
+CONF_AGINGPLACE_BED_MODE: Final = "agingplace_bed_mode"
+CONF_AGINGPLACE_BED_SIDE: Final = "agingplace_bed_side"
+CONF_AGINGPLACE_SELECTED_SIDE: Final = "agingplace_selected_side"
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
     {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}

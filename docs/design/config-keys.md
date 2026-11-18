@@ -117,6 +117,9 @@ original data and options keep them under `origin_data` and `origin_options`.
 | `rmcontrol_product` | Profile | A question of `richmat`; the Richmat question's RMControl answer requires one | `beds/richmat/controller.py` |
 | `rmcontrol_side` | Profile | A question of `richmat` with an RMControl product | `beds/richmat/controller.py` |
 | `symphony_side` | Profile | Symphony Sleep Sense product questions and Configure; paired child targets bind their own side | `beds/symphony/controller.py`, `app_profiles.py` |
+| `agingplace_bed_mode` | Profile | Aging in Place / Dawn House setup and Configure questions, independently per paired receiver | `beds/keeson/agingplace.py`, `beds/keeson/agingplace_state.py`; local observed sensor display mode, no command selector |
+| `agingplace_bed_side` | Profile | Aging in Place / Dawn House setup and Configure questions, independently per paired receiver | `beds/keeson/agingplace.py`, `beds/keeson/agingplace_state.py`; incoming sensor-side filter only |
+| `agingplace_selected_side` | Profile | Conditional Aging in Place / Dawn House setup and Configure question when the stored sensor side is selectable | `beds/keeson/agingplace.py`, `beds/keeson/agingplace_state.py`; incoming sensor-side filter only |
 | `cb24_bed_selection` | User | A question of `okin_cb24` | `beds/okin_cb24.py` |
 | `gmmotor_side` | Profile | A question of `gmmotor` | bed builders |
 | `starcode_abm5_4_command_selector` | User | A question of `starcode_abm5_4` | bed builders |

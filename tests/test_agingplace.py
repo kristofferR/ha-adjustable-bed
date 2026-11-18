@@ -16,6 +16,7 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_profiles import per_side_profile
+from custom_components.adjustable_bed.app_session import app_session
 from custom_components.adjustable_bed.beds.keeson.agingplace import AgingPlaceController
 from custom_components.adjustable_bed.beds.keeson.agingplace_state import (
     NUMBERS,
@@ -716,6 +717,8 @@ async def test_retired_write_cannot_publish_state_or_arm_diagnostic_timer(
     try:
         async with asyncio.timeout(3):
             await transmitted.wait()
+            timer = controller._diagnostic_timeout
+            retired_timeout = timer._callback if timer is not None else None
             controller.on_disconnect()
             if retirement == "replacement":
                 replacement = await create_controller(coordinator, "agingplace", "auto", client)
@@ -727,13 +730,275 @@ async def test_retired_write_cannot_publish_state_or_arm_diagnostic_timer(
                     NUMBERS["brightness" if action == "diagnostic" else action](11),
                 )
             expected = dict(coordinator.controller_state)
+            if retired_timeout is not None:
+                retired_timeout()
+                assert coordinator.controller_state == expected
             complete.set()
             with pytest.raises(ConnectionError, match="retired session"):
                 await task
         assert coordinator.controller_state == expected
         assert controller._diagnostic_timeout is None
         assert controller._diagnostic_quiet is None
+        assert controller._flat_cancel_active is (action == "diagnostic")
+    finally:
+        complete.set()
+        if not task.done():
+            task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+async def reconnect_target(coordinator, previous):
+    """Build a new factory controller on a new fake BLE link, with real HA clocks."""
+    receivers = []
+    client = SimpleNamespace(
+        **{
+            **previous.__dict__,
+            "is_connected": True,
+            "write_gatt_char": AsyncMock(),
+            "start_notify": AsyncMock(side_effect=lambda char, fn, **kwargs: receivers.append(fn)),
+            "stop_notify": AsyncMock(),
+        }
+    )
+
+    async def disconnect():
+        client.is_connected = False
+
+    client.disconnect = AsyncMock(side_effect=disconnect)
+    coordinator._client = client
+    controller = await create_controller(coordinator, "agingplace", "auto", client)
+    coordinator._controller, coordinator._ready = controller, True
+    with virtual_clock():
+        await controller.start_notify()
+    return controller, client, receivers
+
+
+async def idle_target(coordinator, client):
+    async def disconnect():
+        client.is_connected = False
+        coordinator._on_disconnect(client)
+
+    client.disconnect = AsyncMock(side_effect=disconnect)
+    coordinator._cancel_disconnect_timer()
+    await coordinator._async_idle_disconnect()
+    assert coordinator.controller is None
+    assert coordinator.client is None
+
+
+@pytest.mark.parametrize("action", ("circulation", "sleep", "relax_cycle", "diagnostic"))
+@pytest.mark.parametrize("release", ("idle", "unexpected"))
+async def test_registered_stop_retains_automatic_intent_across_reconnect(
+    hass, monkeypatch, action, release
+):
+    coordinator, old, client, _, device = await target(hass, monkeypatch)
+    await async_register_services(hass)
+    await hass.services.async_call(
+        DOMAIN, "agingplace_action", {"device_id": [device], "action": action}, blocking=True
+    )
+    if release == "idle":
+        await idle_target(coordinator, client)
+    else:
+        client.is_connected = False
+        coordinator._on_disconnect(client)
+        assert coordinator.controller is None
+    replacement, fresh, _ = await reconnect_target(coordinator, client)
+    assert replacement is not old
+    assert replacement._flat_cancel_active
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device]}, blocking=True)
+    assert packets(fresh) == [app.ACTIONS["flat"].frame(IDENTITY)]
+    assert not replacement._flat_cancel_active
+    await idle_target(coordinator, fresh)
+    _, newest, _ = await reconnect_target(coordinator, fresh)
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device]}, blocking=True)
+    assert packets(newest) == [app.ACTIONS["release"].frame(IDENTITY)]
+
+
+async def test_automatic_intent_isolated_by_physical_address_and_app_profile(hass, monkeypatch):
+    first = await target(hass, monkeypatch)
+    second = await target(hass, monkeypatch)
+    await async_register_services(hass)
+    await hass.services.async_call(
+        DOMAIN,
+        "agingplace_action",
+        {"device_id": [first[4]], "action": "circulation"},
+        blocking=True,
+    )
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [second[4]]}, blocking=True)
+    assert packets(second[2]) == [app.ACTIONS["release"].frame(IDENTITY)]
+    assert first[1]._flat_cancel_active
+    await idle_target(first[0], first[2])
+    # The existing exclusive app-session contract forgets the prior profile.
+    app_session(hass, first[0].address, ("other-app", "other-profile"), dict)
+    replacement, fresh, _ = await reconnect_target(first[0], first[2])
+    assert not replacement._flat_cancel_active
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [first[4]]}, blocking=True)
+    assert packets(fresh) == [app.ACTIONS["release"].frame(IDENTITY)]
+
+
+@pytest.mark.parametrize("clear", ("flat", "stop", "completion"))
+async def test_owned_automatic_intent_clear_survives_controller_replacement(
+    hass, monkeypatch, clear
+):
+    coordinator, controller, client, receivers, device = await target(hass, monkeypatch)
+    await async_register_services(hass)
+    await hass.services.async_call(
+        DOMAIN, "agingplace_action", {"device_id": [device], "action": "diagnostic"}, blocking=True
+    )
+    if clear == "completion":
+        receivers[-1](None, bytearray(b'{"chkStatu":49152}'))
+    else:
+        service = "agingplace_action" if clear == "flat" else "stop_all"
+        data = {"device_id": [device], **({"action": "flat"} if clear == "flat" else {})}
+        await hass.services.async_call(DOMAIN, service, data, blocking=True)
+    assert not controller._flat_cancel_active
+    await idle_target(coordinator, client)
+    _, fresh, _ = await reconnect_target(coordinator, client)
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device]}, blocking=True)
+    assert packets(fresh) == [app.ACTIONS["release"].frame(IDENTITY)]
+
+
+@pytest.mark.parametrize("clear", ("flat", "stop"))
+async def test_failed_flat_cannot_forget_automatic_intent(hass, monkeypatch, clear):
+    coordinator, controller, client, _, device = await target(hass, monkeypatch)
+    await async_register_services(hass)
+    await hass.services.async_call(
+        DOMAIN, "agingplace_action", {"device_id": [device], "action": "sleep"}, blocking=True
+    )
+    client.write_gatt_char.side_effect = BleakError("Flat failed")
+    service = "agingplace_action" if clear == "flat" else "stop_all"
+    data = {"device_id": [device], **({"action": "flat"} if clear == "flat" else {})}
+    with pytest.raises((BleakError, ServiceValidationError)):
+        await hass.services.async_call(DOMAIN, service, data, blocking=True)
+    assert controller._flat_cancel_active
+    await idle_target(coordinator, client)
+    _, fresh, _ = await reconnect_target(coordinator, client)
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device]}, blocking=True)
+    assert packets(fresh) == [app.ACTIONS["flat"].frame(IDENTITY)]
+
+
+async def test_obsolete_diagnostic_completion_cannot_clear_new_cycle_intent(hass, monkeypatch):
+    coordinator, _, client, receivers, device = await target(hass, monkeypatch)
+    await async_register_services(hass)
+    await hass.services.async_call(
+        DOMAIN, "agingplace_action", {"device_id": [device], "action": "diagnostic"}, blocking=True
+    )
+    old_receiver = receivers[-1]
+    await idle_target(coordinator, client)
+    replacement, fresh, new_receivers = await reconnect_target(coordinator, client)
+    await hass.services.async_call(
+        DOMAIN,
+        "agingplace_action",
+        {"device_id": [device], "action": "circulation"},
+        blocking=True,
+    )
+    old_receiver(None, bytearray(b'{"chkStatu":49152}'))
+    new_receivers[-1](None, bytearray(b'{"chkStatu":49152}'))
+    assert replacement._flat_cancel_active
+    await hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device]}, blocking=True)
+    assert packets(fresh)[-1] == app.ACTIONS["flat"].frame(IDENTITY)
+
+
+async def test_held_zero_cleanup_cannot_discharge_an_automatic_flat_obligation(hass, monkeypatch):
+    coordinator, controller, client, _, device = await target(hass, monkeypatch)
+    await async_register_services(hass)
+    await hass.services.async_call(
+        DOMAIN, "agingplace_action", {"device_id": [device], "action": "sleep"}, blocking=True
+    )
+    transmitted, complete = asyncio.Event(), asyncio.Event()
+    first = app.ACTIONS["head_up"].frame(IDENTITY)
+
+    async def write(_char, frame, **_kwargs):
+        if frame == first:
+            transmitted.set()
+            await complete.wait()
+
+    client.write_gatt_char.side_effect = write
+    task = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "hold_control",
+            {"device_id": [device], "control": "head_up", "duration": 10},
+            blocking=True,
+        )
+    )
+    stopping = None
+    try:
+        async with asyncio.timeout(3):
+            await transmitted.wait()
+            stopping = asyncio.create_task(
+                hass.services.async_call(DOMAIN, "stop_all", {"device_id": [device]}, blocking=True)
+            )
+            await coordinator.cancel_command.wait()
+            complete.set()
+            await stopping
+            await task
+        assert packets(client) == [
+            app.ACTIONS["sleep"].frame(IDENTITY),
+            first,
+            app.ACTIONS["release"].frame(IDENTITY),
+            app.ACTIONS["flat"].frame(IDENTITY),
+        ]
         assert not controller._flat_cancel_active
+    finally:
+        complete.set()
+        pending = [operation for operation in (task, stopping) if operation is not None]
+        for operation in pending:
+            if not operation.done():
+                operation.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+
+
+@pytest.mark.parametrize("flag", (1, 49152))
+async def test_diagnostic_indications_during_start_write_keep_maxima_and_status(
+    hass, monkeypatch, flag
+):
+    coordinator, controller, client, receivers, device = await target(hass, monkeypatch)
+    await async_register_services(hass)
+    transmitted, complete = asyncio.Event(), asyncio.Event()
+    first = app.ACTIONS["diagnostic"].frame(IDENTITY)
+
+    async def write(_char, frame, **_kwargs):
+        if frame == first:
+            transmitted.set()
+            await complete.wait()
+
+    client.write_gatt_char.side_effect = write
+    task = asyncio.create_task(
+        hass.services.async_call(
+            DOMAIN,
+            "agingplace_action",
+            {"device_id": [device], "action": "diagnostic"},
+            blocking=True,
+        )
+    )
+    try:
+        async with asyncio.timeout(3):
+            await transmitted.wait()
+            timer = controller._diagnostic_timeout
+            assert timer is not None
+            timeout = timer._callback
+            assert timeout is not None
+            receivers[-1](None, bytearray(b'{"chkStatu":1,"headPlus":8}'))
+            receivers[-1](
+                None,
+                bytearray(json.dumps({"chkStatu": flag, "headPlus": 2, "footPlus": 9}).encode()),
+            )
+            status = "complete" if flag == 49152 else "running"
+            assert coordinator.controller_state[TEXT["diagnostic_status"]] == status
+            complete.set()
+            await task
+        assert coordinator.controller_state[NUMBERS["headPlus"]] == 8
+        assert coordinator.controller_state[NUMBERS["footPlus"]] == 9
+        assert coordinator.controller_state[TEXT["diagnostic_status"]] == status
+        if flag == 49152:
+            assert timer.cancelled()
+            assert controller._diagnostic_timeout is None
+            assert controller._diagnostic_quiet is None
+            timeout()
+            assert coordinator.controller_state[TEXT["diagnostic_status"]] == "complete"
+            assert not controller._flat_cancel_active
+        else:
+            assert controller._diagnostic_timeout is timer
+            assert controller._flat_cancel_active
     finally:
         complete.set()
         if not task.done():
