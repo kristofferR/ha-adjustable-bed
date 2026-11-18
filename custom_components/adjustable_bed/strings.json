@@ -4320,47 +4320,14 @@
       "innova_massage_timer": {
         "name": "Massage timer"
       },
-      "fsm_relax_key_count": {
-        "name": "FSM Relax key count"
-      },
-      "fsm_relax_vibration_count": {
-        "name": "FSM Relax vibration count"
-      },
-      "fsm_relax_reported_memory_count": {
-        "name": "FSM Relax reported memory count"
-      },
       "fsm_relax_hardware_version": {
-        "name": "FSM Relax hardware version"
+        "name": "Hardware version"
       },
       "fsm_relax_software_version": {
-        "name": "FSM Relax software version"
+        "name": "Software version"
       },
       "fsm_relax_serial": {
-        "name": "FSM Relax serial"
-      },
-      "fsm_relax_acknowledgement": {
-        "name": "FSM Relax acknowledgement"
-      },
-      "fsm_relax_calibration_observed": {
-        "name": "FSM Relax calibration observed"
-      },
-      "fsm_relax_memory_quarantined": {
-        "name": "FSM Relax memory quarantined"
-      },
-      "fsm_relax_optional_information": {
-        "name": "FSM Relax optional information"
-      },
-      "fsm_relax_motor_1_raw": {
-        "name": "FSM Relax motor 1 raw"
-      },
-      "fsm_relax_motor_2_raw": {
-        "name": "FSM Relax motor 2 raw"
-      },
-      "fsm_relax_motor_3_raw": {
-        "name": "FSM Relax motor 3 raw"
-      },
-      "fsm_relax_motor_4_raw": {
-        "name": "FSM Relax motor 4 raw"
+        "name": "Serial number"
       },
       "svane_head_raw": {
         "name": "Observed head bytes"
