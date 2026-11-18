@@ -4245,10 +4245,7 @@
         "name": "Kneading mode"
       },
       "app_timer_status": {
-        "name": "App timer status"
-      },
-      "app_memory_request": {
-        "name": "App memory request"
+        "name": "Massage timer"
       },
       "sleepys_app_position_axis_0": {
         "name": "Head position"
