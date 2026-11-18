@@ -432,3 +432,14 @@ async def test_jalon_programming_hold_is_rejected_before_an_earlier_target_moves
         )
     first_controller.hold_control.assert_not_awaited()
     second_controller.hold_control.assert_not_awaited()
+
+
+def test_service_error_keys_have_translated_messages() -> None:
+    import re
+
+    strings = json.loads((ROOT / "strings.json").read_text())["exceptions"]
+    assert all(isinstance(entry, dict) and "message" in entry for entry in strings.values())
+    source = (ROOT / "services.py").read_text()
+    used = set(re.findall(r'translation_key="([a-z_]+)"', source))
+    used |= set(re.findall(r'_invalid\(\s*"([a-z_]+)"', source))
+    assert used <= set(strings)
