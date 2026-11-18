@@ -1,13 +1,13 @@
-"""Resident 1.0.0's case-insensitive admitted device-name prefixes.
+"""Resident 1.0.0's admitted device-name prefixes, which the app reads in any case.
 
 Names offer an app candidate, never a protocol assertion for another Okin app.
 Home Assistant gates on advertised local name; the app reads platform name.
 """
 
 from ..const import BED_TYPE_RESIDENT
-from ._hints import Case, names
+from ._hints import SMARTBED, Case, names
 
 HINTS = (
-    names("okin", bed_types={BED_TYPE_RESIDENT}, case=Case.ANY),
-    names("smartbed", bed_types={BED_TYPE_RESIDENT}, case=Case.ANY, connectable=True),
+    names("OKIN", bed_types={BED_TYPE_RESIDENT}, case=Case.FOLD),
+    names(*SMARTBED, bed_types={BED_TYPE_RESIDENT}, connectable=True),
 )

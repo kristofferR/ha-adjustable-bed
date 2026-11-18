@@ -348,6 +348,10 @@ MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 # Or: "ZR" + 2 alphanumeric chars (like ZR10, ZR60, ZRA2, ZRS3)
 # Case-insensitive via re.IGNORECASE
 RICHMAT_CODE_PATTERN = re.compile(r"^([a-z0-9]{2}r[mn]|zr[a-z0-9]{2})", re.IGNORECASE)
+# Beds advertise the code in upper case (UaRM is the one catalog code with a
+# lower-case letter). Read without regard to case, words such as "Firmware",
+# "Warm" or "Terminal" would look like codes.
+_RICHMAT_ADVERTISED_CODE = re.compile(r"^(?:[A-Z0-9]{2}R[MN]|ZR[A-Z0-9]{2}|UaRM)")
 
 KEESON_FALLBACK_SERVICE_UUIDS: frozenset[str] = frozenset(
     service_uuid.lower() for service_uuid, _ in KEESON_FALLBACK_GATT_PAIRS
@@ -1774,7 +1778,7 @@ def _detect_bed_type_detailed(
         device_name.startswith(pattern) for pattern in LEGGETT_RICHMAT_NAME_PATTERNS
     )
     is_richmat_named = (
-        bool(detected_remote)
+        _RICHMAT_ADVERTISED_CODE.match(service_info.name or "") is not None
         or any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS)
     ) and not is_leggett_mlrm_name
 
