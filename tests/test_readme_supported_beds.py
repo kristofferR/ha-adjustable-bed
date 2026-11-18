@@ -43,9 +43,16 @@ _GENERIC = frozenset(
 )
 
 
+# App versions ("1.4.2", "v2.7.0", "3.x") stay in the guides. A product name
+# such as "Ergomotion 4.0" is not a version.
+_VERSION = re.compile(r"v\d+(?:\.\d+)+|\d+(?:\.\d+){2,}|\d+\.x")
+
+
 def _tokens(text: str) -> frozenset[str]:
     words = (word.strip(".-/'") for word in _TOKEN.findall(text.lower()))
-    return frozenset(word for word in words if re.search(r"\w", word))
+    return frozenset(
+        word for word in words if re.search(r"\w", word) and not _VERSION.fullmatch(word)
+    )
 
 
 def _rows() -> list[frozenset[str]]:
@@ -96,6 +103,18 @@ def test_every_setup_label_has_a_row() -> None:
         "Add these setup names to the README's Supported Beds table, in their family's row: "
         f"{missing}"
     )
+
+
+def test_rows_name_no_app_versions() -> None:
+    text = README.read_text(encoding="utf-8")
+    section = text.split("\n## Supported Beds\n", 1)[1].split("\n## ", 1)[0]
+    versions = [
+        version
+        for line in section.splitlines()
+        if line.startswith("| ")
+        for version in _VERSION.findall(re.sub(r"\]\([^)]*\)", "]", line))
+    ]
+    assert not versions, f"Keep app versions in the bed guides, not this table: {versions}"
 
 
 def test_every_app_has_one_status_mark() -> None:

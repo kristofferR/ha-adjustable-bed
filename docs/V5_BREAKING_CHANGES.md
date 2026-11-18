@@ -121,8 +121,11 @@ actions:
   `minutes` and `seconds` are gone.
 - Motion Bed: `hour` and `minute` become one `time`. The numeric `sound` and
   the `audio` switch become a named `sound`: `none` on every bed, `alarm` on
-  beds without audio, or `music_1` to `music_5` on beds with audio. `repeat`
-  is gone: where it was `false`, leave `weekdays` out, or the alarm repeats.
+  beds without audio, or `music_1` to `music_5` on beds with audio. Leaving
+  `sound` out now plays the alarm tone (or `music_1`), where 4.x stayed
+  silent: set `sound: none` to keep an alarm silent. `repeat` is gone: any
+  `weekdays` make the alarm repeat, so where `repeat` was `false`, leave
+  `weekdays` out or pass an empty list.
 - Keeson app layouts (`configure_alarm_schedule`): one `set_alarm` call sets
   one alarm. With `weekdays` it writes the weekly alarm, without them the
   one-time alarm. A call that wrote both tables becomes two calls; `weekly`,
