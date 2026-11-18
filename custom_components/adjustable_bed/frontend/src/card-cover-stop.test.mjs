@@ -445,9 +445,11 @@ test("combined light of unconfirmed switches offers On and Off instead of a togg
   assert.ok(template.strings.join("").includes('role="group"'), "expected an On/Off group");
   assert.ok(!template.strings.join("").includes('role="switch"'), "no toggle for unsure lights");
   const handlers = template.values.filter((value) => typeof value === "function");
+  handlers.at(-2)();
   handlers.at(-1)();
-  assert.deepEqual(calls, [{
-    domain: "homeassistant", service: "turn_on",
-    data: { entity_id: ["switch.left_light", "switch.right_light"] },
-  }]);
+  const both = { entity_id: ["switch.left_light", "switch.right_light"] };
+  assert.deepEqual(calls, [
+    { domain: "homeassistant", service: "turn_off", data: both },
+    { domain: "homeassistant", service: "turn_on", data: both },
+  ]);
 });
