@@ -305,6 +305,7 @@ def entry_data(layout="standard_2", transport="g1"):
 
 @pytest.mark.parametrize("options", [False, True])
 async def test_profile_setup_and_options_reject_other_layouts(hass, options):
+    entry = None
     if options:
         entry = MockConfigEntry(domain=DOMAIN, data=entry_data())
         entry.add_to_hass(hass)
@@ -324,15 +325,15 @@ async def test_profile_setup_and_options_reject_other_layouts(hass, options):
             CONF_JIECANG_APP_TRANSPORT: "g3",
         }
     )
-    # Configure sends a layout change to the guided change before validating it.
-    assert result["errors"] == (
-        {"base": "migration_reconfigure_required"}
-        if options
-        else {
-            CONF_JIECANG_APP_LAYOUT: "comfort_motion_selection",
-            CONF_JIECANG_APP_TRANSPORT: "comfort_motion_selection",
-        }
-    )
+    if entry is not None:
+        # Configure does not show the layout, so it stays as saved.
+        assert result["type"] == "create_entry"
+        assert entry.data[CONF_JIECANG_APP_LAYOUT] == entry_data()[CONF_JIECANG_APP_LAYOUT]
+        return
+    assert result["errors"] == {
+        CONF_JIECANG_APP_LAYOUT: "comfort_motion_selection",
+        CONF_JIECANG_APP_TRANSPORT: "comfort_motion_selection",
+    }
 
 
 @pytest.mark.parametrize("layout", COMFORT_MOTION.layouts)

@@ -45,7 +45,7 @@ def physical_target(hass: HomeAssistant, address: str, transport: str = "BOX1220
             const.CONF_STARCODE_UI_SELECTOR: "BOX25",
             const.CONF_STARCODE_TRANSPORT_SELECTOR: transport,
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)

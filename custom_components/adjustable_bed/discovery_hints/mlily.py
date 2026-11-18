@@ -1,4 +1,4 @@
-"""MLILY Control row159, shared GATT never selects a product or app by itself."""
+"""MLILY Control 5.0.2: shared GATT never selects a product or app by itself."""
 
 from ..const import BED_TYPE_MLILY
 from ..profiles.mlily_choices import PROFILE_CHOICES

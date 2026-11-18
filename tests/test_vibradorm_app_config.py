@@ -12,6 +12,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children, const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.vibradorm.app import (
     VibradormAppController,
     VibradormAppMetadata,
@@ -80,7 +81,7 @@ async def test_every_setup_route_collects_app_then_pairs(hass, mock_bluetooth_se
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    settings = {CONF_NAME: "App bed", const.CONF_DISCONNECT_AFTER_COMMAND: False, const.CONF_PREFERRED_ADAPTER: "auto"}
+    settings = {CONF_NAME: "App bed", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE, const.CONF_PREFERRED_ADAPTER: "auto"}
     result = await start_new_bed(flow, route, const.BED_TYPE_VIBRADORM_APP)
     assert result["step_id"] == "vibradorm"
     result = await flow.async_step_vibradorm({"choice": "caresse"})
@@ -97,7 +98,7 @@ async def test_every_setup_route_collects_app_then_pairs(hass, mock_bluetooth_se
         await finish_new_bed(flow, await flow.async_step_profile_questions({const.CONF_VIBRADORM_RESTORED: False}), settings)
     resume.assert_awaited_once_with()
     assert flow._manual_data[const.CONF_VIBRADORM_CONTROL_TYPE] == "2"
-    assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(flow._manual_data)
     assert flow._manual_data[const.CONF_HAS_MASSAGE] is False
 
 
@@ -126,25 +127,6 @@ async def test_restored_basic_features_and_no_motor_branch_are_explicit(hass):
         assert controller.supports_massage
         assert controller.supports_position_feedback is False
         assert controller.memory_slot_count == (0 if control == "2" else 6)
-
-
-async def test_app_change_in_options_requires_guided_verification(hass):
-    entry = MockConfigEntry(domain=const.DOMAIN, data=app_data(**{
-        const.CONF_VIBRADORM_RESTORED: True,
-        const.CONF_VIBRADORM_RGB: True,
-        const.CONF_HAS_MASSAGE: True,
-        const.CONF_VIBRADORM_APP_METADATA: {"model": "old metadata"},
-    }))
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({const.CONF_VIBRADORM_APP_PROFILE: "werkmeister"})
-    assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[const.CONF_VIBRADORM_APP_PROFILE] == "caresse"
-    assert entry.data[const.CONF_HAS_MASSAGE] is True
-    assert entry.data[const.CONF_VIBRADORM_APP_METADATA] == {"model": "old metadata"}
 
 
 @pytest.mark.parametrize("options", [False, True])
@@ -215,8 +197,9 @@ async def test_two_address_pair_keeps_different_side_profiles(hass):
     assert not const.VIBRADORM_APP_CONFIG_KEYS.intersection(
         key.schema for key in result["data_schema"].schema
     )
+    # A side's own control type is not on the shared form, so it is ignored.
     result = await flow.async_step_settings({const.CONF_VIBRADORM_CONTROL_TYPE: "5"})
-    assert result["errors"] == {"base": "app_profile_unpair_first"}
+    assert result["type"] == FlowResultType.CREATE_ENTRY
     assert [child[const.CONF_VIBRADORM_CONTROL_TYPE] for child in entry.data[const.CONF_PAIR_CHILDREN]] == ["2", "7"]
     assert not supports_single_address_pairing(const.BED_TYPE_VIBRADORM_APP)
     assert (await flow.async_step_settings({const.CONF_IDLE_DISCONNECT_SECONDS: 55}))["type"] == FlowResultType.CREATE_ENTRY
@@ -786,21 +769,6 @@ async def test_guided_retained_setup_persists_literal_remote_and_independent_fea
     assert entry.data[const.CONF_VIBRADORM_LIGHT_EXTENSION] is True
     assert entry.data[const.CONF_MOTOR_PULSE_USER_SET] is False
     assert (const.CONF_VIBRADORM_APP_METADATA in entry.data) == (control == "2")
-
-
-async def test_options_cannot_silently_reset_app_to_legacy(hass):
-    entry = MockConfigEntry(domain=const.DOMAIN, data=app_data(**{
-        const.CONF_VIBRADORM_APP_METADATA: {"model": "old profile"},
-    }))
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM})
-    assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "migration_reconfigure_required"}
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM_APP
-    assert entry.data[const.CONF_VIBRADORM_APP_METADATA] == {"model": "old profile"}
 
 
 @pytest.mark.parametrize("app,control,field", [

@@ -1,8 +1,8 @@
 """Remacro (SynData) frames, counters and per-model layouts.
 
-Every value here comes from the accepted cluster-002 / row 050 artifacts:
+Every value here comes from the apps
 ``com.cheers.slumber`` 1.0 (2), ``com.cheers.brick`` 1.0 (3) and
-``com.cheers.jewmes`` 1.202112141512 (20), APK Protocol Audit row 050.
+``com.cheers.jewmes`` 1.202112141512 (20).
 Hardware is unverified.
 
 The apps select a model only by the lowest manufacturer-specific-data company

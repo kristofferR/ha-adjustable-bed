@@ -1,4 +1,4 @@
-"""Explicit cluster-018 service selection on the current physical session."""
+"""Explicit classic Richmat service selection on the current physical session."""
 
 from __future__ import annotations
 

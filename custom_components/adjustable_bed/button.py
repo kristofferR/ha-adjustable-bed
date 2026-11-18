@@ -48,6 +48,7 @@ from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace, hold_leas
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope
 from .entity_sweep import PlatformEntities, records_entities
+from .labels import display_label
 from .paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
@@ -443,7 +444,9 @@ BUTTON_DESCRIPTIONS: tuple[AdjustableBedButtonEntityDescription, ...] = (
         key="wake_controller",
         translation_key="wake_controller",
         icon="mdi:power",
-        entity_category=EntityCategory.CONFIG,
+        # A maintenance action normal control does not need.
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
         press_fn=lambda ctrl: ctrl.wake(),
         is_supported=lambda c: c.supports_wake_control,
     ),
@@ -1169,7 +1172,7 @@ class AdjustableBedProductButton(AdjustableBedEntity, ButtonEntity):
         self._spec = spec
         self._attr_unique_id = coordinator.entity_unique_id(f"product_action_{spec.key}")
         self._attr_translation_key = "product_action"
-        self._attr_translation_placeholders = {"action": spec.name}
+        self._attr_translation_placeholders = {"action": display_label(spec.name)}
         self._attr_icon = spec.icon
         self._attr_entity_registry_enabled_default = spec.entity_registry_enabled_default
 
@@ -1337,16 +1340,26 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         if spec.diagnostic:
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
             self._attr_entity_registry_enabled_default = False
+        if spec.release_only or spec.key == "hjbed_release":
+            # The card presses it to end a held gesture, so it stays enabled
+            # but is not a control a person picks from a dashboard.
+            self._attr_entity_registry_visible_default = False
         # Home Assistant prefers any _attr_name, even None, over the translation,
         # so only set it when the name is not translated.
         if spec.translation_key is None or spec.key.startswith(
             ("preset_memory_", "program_memory_")
         ):
-            self._attr_name = spec.name
+            # A memory carries the name its user gave it; others an artifact label.
+            self._attr_name = (
+                spec.name if spec.translation_key is not None else display_label(spec.name)
+            )
         if spec.translation_key is not None:
             self._attr_translation_key = spec.translation_key
             if spec.translation_placeholders is not None:
-                self._attr_translation_placeholders = dict(spec.translation_placeholders)
+                self._attr_translation_placeholders = {
+                    name: display_label(value)
+                    for name, value in spec.translation_placeholders.items()
+                }
 
     async def async_added_to_hass(self) -> None:
         """Refresh availability when the controller publishes new state."""

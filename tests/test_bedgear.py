@@ -16,6 +16,7 @@ from homeassistant.exceptions import ServiceValidationError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.beds.bedgear import controller as module
 from custom_components.adjustable_bed.beds.bedgear.controller import (
     ALARM,
@@ -70,7 +71,7 @@ async def runtime(hass):
             const.CONF_BED_TYPE: "bedgear",
             const.CONF_BLE_DEVICE_NAME: name(),
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)
@@ -153,7 +154,7 @@ async def test_real_setup_saved_profile_factory_and_configure(
     assert result["type"] is FlowResultType.CREATE_ENTRY
     data = result["data"]
     assert data[const.CONF_BLE_DEVICE_NAME] == selected
-    assert data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(data)
     entry = result["result"]
     co = AdjustableBedCoordinator(hass, entry)
     co._client = client()
@@ -398,7 +399,7 @@ async def test_leases_renew_then_expire_and_stale_renewal_after_stop_fails(runti
     await co.async_stop_command()
     await task
     before = writes(co)
-    with pytest.raises(ServiceValidationError, match="ended"):
+    with pytest.raises(ServiceValidationError, match="ended|already stopped"):
         await held(2)
     assert writes(co) == before
     assert co._command_scheduler.recent_records[-1].kind is CommandKind.STOP

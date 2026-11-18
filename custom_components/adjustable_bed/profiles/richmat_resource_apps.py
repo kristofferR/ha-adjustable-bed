@@ -1,4 +1,4 @@
-"""The four independently accepted resource apps in cluster-017.
+"""The four Richmat resource apps.
 
 The shared 243-layout binding domain is byte-identical. These product scopes
 are app-specific; an advertisement never selects an app or physical layout.

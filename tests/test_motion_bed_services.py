@@ -106,11 +106,6 @@ async def invoke(
 
 _VALID_PUBLIC_CASES: tuple[tuple[str, str, dict[str, object]], ...] = (
     ("motion_bed_action", "QMS4", {"action": "home_activity_bed_status"}),
-    (
-        "motion_bed_alarm",
-        "QMS4",
-        {"enabled": True, "hour": 6, "minute": 30, "audio": True, "confirmed": True},
-    ),
     ("motion_bed_clock", "QMS4", {"timestamp": "2026-09-30T07:45:00"}),
     (
         "motion_bed_sleep_angles",
@@ -194,9 +189,6 @@ async def test_module_rebinding_and_deletion_are_confirmed(
 @pytest.mark.parametrize(
     "service, profile, data",
     (
-        ("motion_bed_alarm", "QMS4", {"enabled": True, "hour": 24, "minute": 0}),
-        ("motion_bed_alarm", "QMS4", {"enabled": True, "hour": 1, "minute": 0, "weekdays": [0]}),
-        ("motion_bed_alarm", "QMS4", {"enabled": True, "hour": 1, "minute": 0, "mode": 7}),
         ("motion_bed_clock", "QMS4", {"timestamp": "not-a-date"}),
         (
             "motion_bed_sleep_angles",
@@ -267,36 +259,6 @@ async def test_day_report_offset_is_not_graph_viewport_offset(hass: HomeAssistan
         assert target.writes[-1][8] == offset
         assert target.controller._route.day_window_offset == 0
         assert target.controller._route.historical_day
-
-
-async def test_alarm_preserves_disabled_map_repeat_and_modular_first_switch(
-    hass: HomeAssistant,
-) -> None:
-    home = make_target(hass, audio=False)
-    await invoke(
-        hass,
-        [home],
-        "motion_bed_alarm",
-        {
-            "enabled": False,
-            "hour": 6,
-            "minute": 30,
-            "repeat": True,
-            "weekdays": [],
-            "confirmed": True,
-        },
-    )
-    assert home.writes[0][12:14] == b"\x00\x01"
-    motor = make_target(hass, "TL-B", address="01:23:45:67:89:AC", audio=False)
-    await invoke(
-        hass,
-        [motor],
-        "motion_bed_alarm",
-        {"enabled": False, "hour": 6, "minute": 30, "switch": 0, "confirmed": True},
-    )
-    assert motor.writes[0][8] == 0
-
-
 
 
 @pytest.mark.parametrize("service, profile, data", _VALID_PUBLIC_CASES)
@@ -412,18 +374,6 @@ async def test_audio_requires_current_physical_capability(
     assert not target.writes
 
 
-async def test_home_alarm_cannot_force_modular_initial_switch(hass: HomeAssistant) -> None:
-    target = make_target(hass, audio=False)
-    with pytest.raises(ServiceValidationError):
-        await invoke(
-            hass,
-            [target],
-            "motion_bed_alarm",
-            {"enabled": True, "hour": 0, "minute": 0, "switch": 0, "confirmed": True},
-        )
-    assert not target.writes
-
-
 @pytest.mark.parametrize(
     "action",
     (
@@ -465,22 +415,6 @@ _BUILDER_EXPECTED.update(
     {"audio-track-1": "FFFFFFFF0100130B011C04", "audio-volume-1": "FFFFFFFF0100140B011D04"}
 )
 _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None], ...] = (
-    (
-        "AlarmActivity:371",
-        "motion_bed_alarm",
-        {
-            "enabled": True,
-            "hour": 6,
-            "minute": 30,
-            "weekdays": [],
-            "mode": 1,
-            "massage": True,
-            "sound": 17,
-            "audio": True,
-        },
-        "alarm-True-{}",
-        None,
-    ),
     (
         "AnmoSetActivity:188",
         "motion_bed_air_setting",
@@ -535,24 +469,6 @@ _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None
         "motion_bed_clock",
         {"timestamp": "2026-09-30T07:45:00", "thermal": False},
         "clock-0",
-        None,
-    ),
-    (
-        "DianDongSetActivity:881",
-        "motion_bed_alarm",
-        {
-            "enabled": False,
-            "hour": 6,
-            "minute": 30,
-            "weekdays": [1, 7],
-            "mode": 1,
-            "massage": True,
-            "sound": 17,
-            "audio": True,
-            "switch": 161,
-            "repeat": True,
-        },
-        "alarm-False-{'1': True, '7': True}",
         None,
     ),
     (
@@ -633,22 +549,6 @@ _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None
         None,
     ),
     (
-        "DiandongFragment:302",
-        "motion_bed_alarm",
-        {
-            "enabled": True,
-            "hour": 6,
-            "minute": 30,
-            "weekdays": [],
-            "mode": 1,
-            "massage": True,
-            "sound": 17,
-            "audio": True,
-        },
-        "alarm-True-{}",
-        None,
-    ),
-    (
         "DiandongFragment:340",
         "motion_bed_clock",
         {"timestamp": "2026-09-30T07:45:00", "thermal": False},
@@ -706,4 +606,50 @@ async def test_every_dynamic_source_builder_is_bound_to_public_request(
 
 
 def test_all_ble_dynamic_source_rows_are_covered() -> None:
-    assert len(_DYNAMIC_SOURCE_ROUTES) == len({row[0] for row in _DYNAMIC_SOURCE_ROUTES}) == 26
+    assert len(_DYNAMIC_SOURCE_ROUTES) == len({row[0] for row in _DYNAMIC_SOURCE_ROUTES}) == 23
+
+
+@pytest.mark.parametrize(
+    ("profile", "data", "vector_id"),
+    [
+        (
+            "QMS4",
+            {
+                "enabled": True,
+                "time": "06:30:00",
+                "wake_action": "zero_g",
+                "massage": True,
+                "sound": "music_1",
+            },
+            "alarm-True-{}",
+        ),
+        (
+            "TL-B",
+            {
+                "enabled": False,
+                "time": "06:30:00",
+                "weekdays": ["monday", "sunday"],
+                "wake_action": "zero_g",
+                "massage": True,
+                "sound": "music_1",
+            },
+            "alarm-False-{'1': True, '7': True}",
+        ),
+    ],
+)
+async def test_set_alarm_writes_the_app_alarm_vectors(
+    hass: HomeAssistant, profile: str, data: dict[str, object], vector_id: str
+) -> None:
+    """Home and motor-module alarms (AlarmActivity:371, DianDongSetActivity:881)."""
+    target = make_target(hass, profile)
+    await invoke(hass, [target], "set_alarm", data)
+    assert target.writes[0].hex().upper() == _BUILDER_EXPECTED[vector_id]
+
+
+async def test_set_alarm_offers_music_only_with_audio(hass: HomeAssistant) -> None:
+    target = make_target(hass, audio=False)
+    with pytest.raises(ServiceValidationError):
+        await invoke(
+            hass, [target], "set_alarm", {"enabled": True, "time": "06:30", "sound": "music_1"}
+        )
+    assert not target.writes

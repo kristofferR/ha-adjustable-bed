@@ -8,7 +8,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import voluptuous as vol
 import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
@@ -301,23 +300,6 @@ async def test_hold_control_cannot_mix_live_session_profiles(
     assert raised.value.translation_key == "mixed_profile_targets"
 
 
-async def test_released_leggett_alias_keeps_its_control_list(
-    hass: HomeAssistant, resolve
-) -> None:
-    coordinator, controller = target(held_control_options=("flat", "head_up"))
-    select(resolve, (coordinator, controller))
-    with pytest.raises(vol.Invalid):
-        await hass.services.async_call(
-            DOMAIN, "leggett_hold_control",
-            {"device_id": "bed", "control": "head_up", "duration": 1}, blocking=True,
-        )
-    await hass.services.async_call(
-        DOMAIN, "leggett_hold_control",
-        {"device_id": "bed", "control": "flat", "duration": 0.5}, blocking=True,
-    )
-    controller.hold_control.assert_awaited_once_with("flat", 500)
-
-
 async def test_rename_validates_every_target_before_writing(
     hass: HomeAssistant, resolve
 ) -> None:
@@ -344,7 +326,7 @@ async def test_rename_rejects_unsupported_bed(hass: HomeAssistant, resolve) -> N
     assert raised.value.translation_key == "device_rename_not_supported"
 
 
-@pytest.mark.parametrize(("service", "disconnects"), [("rename", False), ("linak_rename", True)])
+@pytest.mark.parametrize(("service", "disconnects"), [("rename", False), ("rename", True)])
 async def test_rename_disconnects_only_where_the_controller_asks(
     hass: HomeAssistant, resolve, service, disconnects
 ) -> None:
@@ -362,15 +344,7 @@ async def test_rename_disconnects_only_where_the_controller_asks(
     assert coordinator.async_disconnect.await_count == int(disconnects)
 
 
-async def test_released_jiecang_alias_keeps_its_name_rule(hass: HomeAssistant, resolve) -> None:
-    select(resolve, target(supports_device_rename=True))
-    with pytest.raises(vol.Invalid):
-        await hass.services.async_call(
-            DOMAIN, "jiecang_rename", {"device_id": "bed", "name": "Bed room"}, blocking=True,
-        )
-
-
-@pytest.mark.parametrize("service", ["sync_clock", "malouf_sync_clock"])
+@pytest.mark.parametrize("service", ["sync_clock"])
 async def test_sync_clock_writes_through_configuration_lane(
     hass: HomeAssistant, resolve, service
 ) -> None:
@@ -458,3 +432,40 @@ async def test_jalon_programming_hold_is_rejected_before_an_earlier_target_moves
         )
     first_controller.hold_control.assert_not_awaited()
     second_controller.hold_control.assert_not_awaited()
+
+
+def test_service_error_keys_have_translated_messages() -> None:
+    import re
+
+    strings = json.loads((ROOT / "strings.json").read_text())["exceptions"]
+    assert all(isinstance(entry, dict) and "message" in entry for entry in strings.values())
+    source = (ROOT / "services.py").read_text()
+    used = set(re.findall(r'translation_key="([a-z_]+)"', source))
+    used |= set(re.findall(r'_invalid\(\s*"([a-z_]+)"', source))
+    assert used <= set(strings)
+
+
+@pytest.mark.parametrize("slot", [2.9, True, "two"])
+async def test_set_alarm_rejects_a_slot_that_is_not_a_whole_number(
+    hass: HomeAssistant, resolve, slot
+) -> None:
+    with pytest.raises(ServiceValidationError) as raised:
+        await hass.services.async_call(
+            DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False, "slot": slot}, blocking=True
+        )
+    assert raised.value.translation_key == "whole_number_required"
+    resolve.assert_not_called()
+
+
+def test_selector_option_keys_are_valid_translation_keys() -> None:
+    import re
+
+    selectors = json.loads((ROOT / "strings.json").read_text())["selector"]
+    pattern = re.compile(r"[a-z0-9]([a-z0-9_-]*[a-z0-9])?")
+    bad = {
+        key: option
+        for key, spec in selectors.items()
+        for option in spec.get("options", {})
+        if not pattern.fullmatch(option)
+    }
+    assert not bad

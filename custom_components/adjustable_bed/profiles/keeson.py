@@ -492,11 +492,11 @@ MAXCOIL_UNA: Final = replace(_ORE, key="maxcoil_una", execution=STREAM_HOLD)
 # Bed types whose controllers keep their key tables, sessions and timing, over the
 # nine-byte E6 frame. Only the frame is profile data here.
 _E6: Final = KeesonProfile(key="e6", header=0xE6, side=0, hold=None)
-GLIDEAWAY_MOTION: Final = replace(_E6, key="glideaway_motion", execution=STREAM_HOLD)  # row068
+GLIDEAWAY_MOTION: Final = replace(_E6, key="glideaway_motion", execution=STREAM_HOLD)
 MALOUF_LEGACY_OKIN: Final = replace(_E6, key="malouf_legacy_okin", execution=STREAM_HOLD)
 SLEEPYS_BOX15: Final = replace(_E6, key="sleepys_box15")
 SCOTT_LIVING: Final = replace(_E6, key="scott_living", side=1)
-# AdjustaMattress (row067): model P1 sends E6 frames, P2 big-endian E5 frames.
+# AdjustaMattress 1.6.0: model P1 sends E6 frames, P2 big-endian E5 frames.
 ADJUSTAMATTRESS: Final = replace(_E6, key="adjustamattress", execution=STREAM_HOLD)
 ADJUSTAMATTRESS_P2: Final = KeesonProfile(
     key="adjustamattress_p2", execution=STREAM_HOLD, order="big", hold=None
@@ -513,7 +513,7 @@ CHERISH: Final = KeesonProfile(key="cherish", execution=STREAM_HOLD, order="big"
 COMFORT_ENHANCEMENTS: Final = KeesonProfile(
     key="comfort_enhancements", execution=STREAM_HOLD, order="big", hold=None
 )
-# com.ore.yorkfeng.comfortbaseble2 1.1.2 (6), row161. Product layouts live
+# com.ore.yorkfeng.comfortbaseble2 1.1.2 (6). Product layouts live
 # in comfortbase.py; neither product nor Memory A/B is a wire-side selector.
 COMFORTBASE: Final = KeesonProfile(
     key="comfortbase", execution=STREAM_HOLD, header=0xE6, side=0,
@@ -525,7 +525,7 @@ COMFORTBASE: Final = KeesonProfile(
     massage="none", tilt=False, lumbar=False,
 )
 
-# OkinComfortBed II 2.0.2 (9), unit132. Each variant is independently frozen.
+# OkinComfortBed II 2.0.2 (9). Each variant is independently frozen.
 JALON_13: Final = KeesonProfile(
     key="jalon_13", execution=STREAM_HOLD, header=0xE6, side=0,
     release=Release(steps=((0, 0), (300, 0))),
@@ -552,7 +552,7 @@ JALON_BED: Final = KeesonProfile(
     memory={1: 0x10000, 2: 0x40000}, memory_slots=2,
 )
 
-# アシステック, com.okin.yamada 1.0.1 (6), row178. All 35 frozen
+# アシステック, com.okin.yamada 1.0.1 (6). All 35 frozen
 # literals match Keeson / Okin N-frame encoders. The fifth control byte is
 # always zero, not a proven side selector. No lounge or second memory exists.
 YAMADA_P1: Final = KeesonProfile(

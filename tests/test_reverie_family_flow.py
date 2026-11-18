@@ -38,7 +38,7 @@ def setup_flow(hass, bed_type: str, services: list[str] | None) -> AdjustableBed
 def test_one_row_for_both_receivers_and_pairlink_keeps_its_own():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
     label = rows[const.BED_TYPE_REVERIE_NIGHTSTAND]
-    assert all(name in label for name in ("Nightstand", "Protocol 110", "Protocol 108"))
+    assert all(name in label for name in ("Nightstand", "Reverie apps"))
     assert const.BED_TYPE_REVERIE not in rows
     assert const.BED_TYPE_REVERIE_PAIRLINK in rows
     # The brand opens the same question instead of a try-this-first list.
@@ -46,7 +46,7 @@ def test_one_row_for_both_receivers_and_pairlink_keeps_its_own():
     # A detected Protocol 108 bed shows the family row; a saved one keeps its label.
     shown = _bed_type_selector(const.BED_TYPE_REVERIE).shown(const.BED_TYPE_REVERIE)
     assert shown == label
-    assert bed_type_label(const.BED_TYPE_REVERIE) == "Reverie (Protocol 108)"
+    assert bed_type_label(const.BED_TYPE_REVERIE) == "Reverie app"
 
 
 @pytest.mark.parametrize(

@@ -1,8 +1,10 @@
 // Native Lovelace card for the Adjustable Bed integration. Generic across all
-// supported bed types: it discovers a device's entities (by translation_key) and
-// renders only the sections that exist. Styling comes entirely from Home
+// supported bed types: it discovers a device's entities (by each entity's card
+// placement) and renders only the sections that exist. Styling comes entirely from Home
 // Assistant theme variables so it inherits the user's theme.
 import { defineElement } from "./registration";
+import { climateEntities, lightingPresent, massagePresent, motorHasControls, motorsPresent,
+  positionOnlyMotors, presentSections, presetsPresent, utilityPresent } from "./sections";
 import {
   LitElement,
   type PropertyValues,
@@ -49,7 +51,7 @@ import {
   registerHoldFocusLoss,
   stopCardMotorHold,
 } from "./hold";
-import { cardNavigationPath, compactActions, compactStopEntities, fullCardDialogConfig } from "./compact";
+import { cardNavigationPath, compactActions, compactTargets, compactStopEntities, fullCardDialogConfig } from "./compact";
 import {
   type MotorEstimate,
   type SavedPosition,
@@ -65,7 +67,7 @@ import {
   savedPositions,
 } from "./estimates";
 import { localize } from "./localize";
-import { deviceName, entityLabel } from "./names";
+import { deviceName, entityLabel, sideName } from "./names";
 import {
   type AdjustableBedCardConfig,
   type BedEntities,
@@ -95,6 +97,8 @@ interface EstimateContext {
 }
 
 type EstimateDialog =
+  // A preset that overwrites a saved position asks first.
+  | { kind: "confirm"; entityId: string }
   // "lowering" only while lower_to_flat runs; "lowered" once it succeeded.
   | { kind: "reference"; ctx: EstimateContext; choice: string; phase: "choose" | "lowering" | "lowered" }
   | { kind: "save"; ctx: EstimateContext; name: string; button: boolean }
@@ -103,6 +107,8 @@ type EstimateDialog =
 interface PairedPane {
   key: string;
   label: string;
+  // The side's own part of a name that repeats the parent's, for tight spots.
+  shortLabel?: string;
   bed: BedEntities;
   estimate?: EstimateContext;
   graphicTone?: BedGraphicTone;
@@ -230,7 +236,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   public getCardSize(): number {
-    if (this._config?.layout !== "compact") return 8;
+    if (this._config?.layout !== "compact") return this._fullCardSize();
     const c = this._config;
     return Math.ceil((24 + (c.show_header !== false ? 36 : 0) +
       (c.show_graphic !== false ? 150 : 0) +
@@ -239,6 +245,21 @@ export class AdjustableBedCard extends LitElement {
       (c.show_motors === true ? 180 : 0) +
       (c.show_lighting === true ? 70 : 0) +
       (c.show_connection === true ? 50 : 0)) / 50);
+  }
+
+  // One unit is about 50 px: a header or a row of controls.
+  private _fullCardSize(): number {
+    const c = this._config;
+    const hass = this.hass;
+    if (!c || !hass) return 8;
+    const beds = compactTargets(hass, c.device_id).map((target) => target.bed);
+    // A paired card shows one side's tab at a time: size it for the tallest.
+    const paneSize = (bed: BedEntities): number => SECTION_ORDER
+      .filter((key) => (c as unknown as Record<string, unknown>)[`show_${key}`] !== false &&
+        presentSections(bed, hass, c)[key])
+      .reduce((size, key) =>
+        size + (key === "graphic" ? 3 : key === "motors" ? 1 + bed.motors.length : 2), 0);
+    return (beds.length > 1 ? 2 : 1) + Math.max(0, ...beds.map(paneSize));
   }
 
   public getGridOptions() {
@@ -386,6 +407,7 @@ export class AdjustableBedCard extends LitElement {
     const sides = childIds.map((id, index) => ({
       key: id,
       label: deviceName(hass, id) ?? id,
+      shortLabel: sideName(deviceName(hass, id) ?? id, deviceName(hass, parentId)),
       bed: bedEntitiesForDevice(hass, id),
       graphicTone: index === 0 ? ("left" as const) : ("right" as const),
       // Target the selected child device instead of inferring its backend side
@@ -506,22 +528,28 @@ export class AdjustableBedCard extends LitElement {
           class="pane-tabs"
           role="tablist"
           style=${`--pane-count:${panes.length}`}
+          @keydown=${(e: KeyboardEvent) => this._paneTabKey(e, panes, active.key)}
         >
           ${panes.map(
-            (pane) => html`
+            (pane, index) => html`
               <button
                 class="pane-tab side-${pane.graphicTone ?? "theme"} ${pane.key === active.key ? "active" : ""}"
                 role="tab"
+                id=${`pane-tab-${index}`}
+                aria-controls="pane-panel"
                 aria-selected=${pane.key === active.key ? "true" : "false"}
+                aria-label=${pane.label}
+                tabindex=${pane.key === active.key ? "0" : "-1"}
                 @click=${() => this._selectPairedPane(pane.key)}
               >
                 ${pane.graphicTone ? html`<span class="dual-swatch" aria-hidden="true"></span>` : nothing}
-                <span>${pane.key === "both" ? localize(this.hass, "card.both") : pane.label}</span>
+                <span>${this._paneTabLabel(pane)}</span>
               </button>
             `,
           )}
         </div>
-        <div class="pane" role="tabpanel" aria-label=${active.label}>
+        <div class="pane" role="tabpanel" id="pane-panel"
+          aria-labelledby=${`pane-tab-${panes.indexOf(active)}`}>
           ${this._renderSections(
             active.bed,
             active.graphicTone,
@@ -540,6 +568,24 @@ export class AdjustableBedCard extends LitElement {
         ${this._estimateDialogTemplate()}
       </ha-card>
     `;
+  }
+
+  private _paneTabLabel(pane: PairedPane): string {
+    return pane.key === "both" ? localize(this.hass, "card.both") : pane.shortLabel ?? pane.label;
+  }
+
+  // Arrow keys, Home and End move between side tabs, as in any tab list.
+  private _paneTabKey(e: KeyboardEvent, panes: PairedPane[], activeKey: string): void {
+    const index = panes.findIndex((pane) => pane.key === activeKey);
+    const rtl = getComputedStyle(this).direction === "rtl";
+    const step = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 }[e.key];
+    const next = step !== undefined ? (index + step + panes.length) % panes.length
+      : e.key === "Home" ? 0 : e.key === "End" ? panes.length - 1 : undefined;
+    if (next === undefined) return;
+    e.preventDefault();
+    this._selectPairedPane(panes[next].key);
+    void this.updateComplete.then(() =>
+      this.renderRoot.querySelector<HTMLElement>(`#pane-tab-${next}`)?.focus());
   }
 
   private _renderCompact(
@@ -578,13 +624,15 @@ export class AdjustableBedCard extends LitElement {
             ${panes.filter((pane) => !bedIsEmpty(pane.bed)).map((pane) => html`
               <button class="pane-tab side-${pane.graphicTone ?? "theme"} ${pane.key === active?.key ? "active" : ""}"
                 aria-pressed=${pane.key === active?.key ? "true" : "false"}
+                aria-label=${pane.label}
                 title=${pane.label}
                 @click=${() => this._selectPairedPane(pane.key)}>
                 ${pane.graphicTone ? html`<span class="dual-swatch" aria-hidden="true"></span>` : nothing}
-                <span class="compact-tab-label">${pane.key === "both" ? localize(this.hass, "card.both") : pane.label}</span>
+                <span class="compact-tab-label">${this._paneTabLabel(pane)}</span>
               </button>`)}
           </div>` : html`<div class="compact-target">
-            ${localize(this.hass, "compact.target")}: ${active?.label ?? localize(this.hass, "compact.target_missing")}
+            ${active ? localize(this.hass, "compact.target_fixed", { side: active.label })
+              : localize(this.hass, "compact.target_missing")}
           </div>` : nothing}
         ${c.show_graphic !== false ? this._compactGraphic(sides) : nothing}
         ${this._compactReadouts(sides)}
@@ -624,6 +672,7 @@ export class AdjustableBedCard extends LitElement {
         ${!hasControls && c.show_graphic === false && c.compact_labels === "none" &&
             c.show_header === false && c.show_connection !== true
           ? html`<div class="hint">${this._title(titleDeviceId)}</div>` : nothing}
+        ${this._estimateDialogTemplate()}
       </ha-card>
       ${this._detailsOpen ? html`<dialog class="bed-details-dialog" aria-label=${this._title(titleDeviceId)}
         @close=${this._closeDetails} @click=${this._detailsBackdrop}>
@@ -671,8 +720,8 @@ export class AdjustableBedCard extends LitElement {
       ${sides.map((pane) => html`<div class="side-${pane.graphicTone ?? "theme"}">
         <span class="compact-side-name" title=${pane.label}>
           <span class="dual-swatch" aria-hidden="true"></span>
-          <span aria-label=${pane.label}>${mode === "angles" && sides.length > 1
-            ? [...pane.label][0] : pane.label}</span>
+          <span class="compact-side-label" aria-hidden="true">${pane.shortLabel ?? pane.label}</span>
+          <span class="visually-hidden">${pane.label}</span>
         </span>
         ${mode === "angles" ? html`<span class="compact-position"
           title=${bedGraphicMotorOrder(pane.bed.motors, this._config?.show_lumbar_graphic === true).map((m) => `${this._motorName(m)} ${this._compactReadout(m) ?? "?"}`).join(" · ")}
@@ -992,6 +1041,29 @@ export class AdjustableBedCard extends LitElement {
         ? "combined.mixed"
         : "combined.off";
     const label = localize(this.hass, "combined.lights");
+    // A light the bed cannot confirm reads unknown as off, so a toggle could
+    // only ever send On: offer both commands instead.
+    const unconfirmed = lights.some((id) => {
+      const st = this._state(id);
+      return st?.attributes.assumed_state === true || (st?.state !== "on" && st?.state !== "off");
+    });
+    if (unconfirmed) {
+      const off = this._t("action.off");
+      const on = this._t("action.on");
+      return html`
+        ${this._heading("section.lighting")}
+        <div class="entity-row combined-entity-row" role="group" aria-label=${label}>
+          <ha-icon class="icon" icon="mdi:lightbulb-group-outline"></ha-icon>
+          <div class="entity-row-text">
+            <span>${label}</span>
+          </div>
+          <button class="dialog-btn" aria-label=${`${label}: ${off}`}
+            @click=${() => this._setEntities(lights, false)}>${off}</button>
+          <button class="dialog-btn" aria-label=${`${label}: ${on}`}
+            @click=${() => this._setEntities(lights, true)}>${on}</button>
+        </div>
+      `;
+    }
     return html`
       ${this._heading("section.lighting")}
       <div class="entity-row combined-entity-row">
@@ -1112,6 +1184,7 @@ export class AdjustableBedCard extends LitElement {
                   class="conn ${CONN_META[conn].cls}"
                   @click=${() => this._moreInfo(bed.connectivity!)}
                   title=${localize(this.hass, CONN_META[conn].key)}
+                  aria-label=${localize(this.hass, CONN_META[conn].key)}
                 >
                   <ha-icon icon=${CONN_META[conn].icon}></ha-icon>
                 </button>
@@ -1186,19 +1259,10 @@ export class AdjustableBedCard extends LitElement {
     estimate?: EstimateContext,
   ): typeof nothing | TemplateResult {
     const routedStopScope = stopScope ?? (bed.stop ? [bed.stop] : []);
-    const motors = bedGraphicMotorOrder(bed.motors, this._config?.show_lumbar_graphic === true).filter((m) => m.cover || m.up || m.down);
+    if (!motorsPresent(bed)) return nothing;
+    const motors = bedGraphicMotorOrder(bed.motors, this._config?.show_lumbar_graphic === true).filter(motorHasControls);
     // Motors with movement controls open their position setter from the label.
-    const positionRows = bed.motors.filter(
-      (m) => m.position && !m.cover && !m.up && !m.down,
-    );
-    if (
-      motors.length === 0 &&
-      positionRows.length === 0 &&
-      !bed.synchro &&
-      !bed.controlSide &&
-      !bed.stop
-    )
-      return nothing;
+    const positionRows = positionOnlyMotors(bed);
     const hasRows =
       motors.length > 0 || positionRows.length > 0 || !!bed.synchro || !!bed.controlSide;
     const estimates = estimate ? this._contextEstimates(estimate) : [];
@@ -1281,7 +1345,7 @@ export class AdjustableBedCard extends LitElement {
           ${this._motorDirection(m, "up", stopId, stopScope, remainingStopIds)}
           ${compact ? nothing : html`<button
             class="cg-btn"
-            aria-label=${localize(this.hass, "action.stop")}
+            aria-label=${localize(this.hass, "action.motor_stop", { motor: this._motorName(m) })}
             @click=${() => this._motorStop(m, stopId, stopScope)}
             ?disabled=${!canStop}
           >
@@ -1310,7 +1374,7 @@ export class AdjustableBedCard extends LitElement {
       const moving = this._hold.tapDirection(m) === direction;
       return html`
         <button class="cg-btn tap ${moving ? "moving" : ""}"
-          aria-label=${localize(this.hass, `action.${direction}`)}
+          aria-label=${localize(this.hass, `action.motor_${direction}`, { motor: this._motorName(m) })}
           aria-pressed=${moving ? "true" : "false"}
           @keydown=${(e: KeyboardEvent) => {
             // A held Enter repeats native clicks; one keypress is one tap.
@@ -1322,7 +1386,7 @@ export class AdjustableBedCard extends LitElement {
     }
     return html`
       <button class="cg-btn"
-        aria-label=${localize(this.hass, `action.${direction}`)}
+        aria-label=${localize(this.hass, `action.motor_${direction}`, { motor: this._motorName(m) })}
         @pointerdown=${(e: PointerEvent) => this._startHold(
           e, m, direction, stopId, stopScope, remainingStopIds,
         )}
@@ -1339,28 +1403,24 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _presets(bed: BedEntities): typeof nothing | TemplateResult {
-    if (bed.presets.length === 0) return nothing;
+    if (!presetsPresent(bed)) return nothing;
     return html`
       ${this._heading("section.presets")}
       <div class="tiles">
         ${bed.presets.map((id) => this._actionTile(id, bed.stop))}
+        ${bed.presetSaves.map((id) => this._actionTile(id))}
       </div>
     `;
   }
 
   private _utility(bed: BedEntities): typeof nothing | TemplateResult {
-    if (bed.utility.length === 0 && !bed.utilityNumbers?.length && !bed.utilitySelects?.length && !bed.utilityStates?.length) return nothing;
+    if (!utilityPresent(bed)) return nothing;
     return html`
       ${this._heading("section.utility")}
       <div class="tiles">
-        ${bed.utility.map((id) =>
-          this._actionTile(id, bed.stop, () =>
-            id.startsWith("switch.")
-              ? this._call("switch", "toggle", id)
-              : this._press(id),
-          ),
-        )}
+        ${bed.utility.map((id) => this._actionTile(id, bed.stop))}
       </div>
+      ${bed.utilitySwitches?.map((id) => this._switchRow(id))}
       ${bed.utilitySelects?.map((id) => this._moreInfoRow(id))}
       ${bed.utilityNumbers?.map((id) => this._moreInfoRow(id))}
       ${bed.utilityStates?.map((id) => this._moreInfoRow(id))}
@@ -1472,12 +1532,13 @@ export class AdjustableBedCard extends LitElement {
   private _lighting(bed: BedEntities): typeof nothing | TemplateResult {
     const l = bed.lights;
     const main = l.light ?? l.switch;
-    if (!hasLightingControls(l) && !l.state) return nothing;
+    if (!lightingPresent(bed)) return nothing;
     const floor = main || l.state || l.level || l.numbers?.length || l.timer || l.toggle || l.cycle || l.timerMinutes || l.timerToggle || l.buttons?.length;
     return html`
       ${this._heading("section.lighting")}
       ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
-      ${main ? this._toggleRow(main) : nothing}
+      ${main ? (main === l.switch ? this._switchRow(main) : this._toggleRow(main)) : nothing}
+      ${l.switches?.map((id) => this._switchRow(id))}
       ${l.state ? this._moreInfoRow(l.state) : nothing}
       ${l.states?.map((id) => this._moreInfoRow(id))}
       ${l.level ? this._moreInfoRow(l.level) : nothing}
@@ -1511,8 +1572,7 @@ export class AdjustableBedCard extends LitElement {
 
   private _massage(bed: BedEntities): typeof nothing | TemplateResult {
     const m = bed.massage;
-    if (m.buttons.length === 0 && m.numbers.length === 0 && !m.selects?.length && !m.states?.length && !m.timer)
-      return nothing;
+    if (!massagePresent(bed)) return nothing;
     return html`
       ${this._heading("section.massage")}
       ${
@@ -1522,6 +1582,7 @@ export class AdjustableBedCard extends LitElement {
             </div>`
           : nothing
       }
+      ${m.switches?.map((id) => this._switchRow(id))}
       ${m.numbers.map((id) => this._moreInfoRow(id))}
       ${m.selects?.map((id) => this._moreInfoRow(id))}
       ${m.states?.map((id) => this._moreInfoRow(id))}
@@ -1530,7 +1591,7 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _climate(bed: BedEntities): typeof nothing | TemplateResult {
-    const items = [...bed.climate.entities, ...bed.climate.selects, ...bed.climate.numbers];
+    const items = climateEntities(bed);
     if (items.length === 0) return nothing;
     return html`
       ${this._heading("section.climate")}
@@ -1587,21 +1648,20 @@ export class AdjustableBedCard extends LitElement {
     const st = this._state(entityId);
     const on = st?.state === "on";
     const name = entityLabel(this.hass, entityId);
+    // The switch sits beside the details button, never inside it, so each
+    // control has its own role and name.
     return html`
-      <div
-        class="entity-row"
-        role="button"
-        tabindex="0"
-        aria-label=${name}
-        @click=${() => this._moreInfo(entityId)}
-        @keydown=${(e: KeyboardEvent) =>
-          this._onRowKey(e, () => this._moreInfo(entityId))}
-      >
-        ${this._icon(entityId)}
-        <div class="entity-row-text">
-          <span>${name}</span>
-          <span class="secondary">${this._stateText(entityId)}</span>
-        </div>
+      <div class="entity-row" @click=${() => this._moreInfo(entityId)}>
+        <button class="entity-row-details" @click=${(e: Event) => {
+          e.stopPropagation();
+          this._moreInfo(entityId);
+        }}>
+          ${this._icon(entityId)}
+          <div class="entity-row-text">
+            <span>${name}</span>
+            <span class="secondary">${this._stateText(entityId)}</span>
+          </div>
+        </button>
         <button
           class="toggle ${on ? "on" : ""}"
           role="switch"
@@ -1614,6 +1674,32 @@ export class AdjustableBedCard extends LitElement {
         >
           <span class="knob"></span>
         </button>
+      </div>
+    `;
+  }
+
+  // A switch whose state the bed cannot confirm gets separate On and Off
+  // controls: a toggle would read unknown as off and only ever send On.
+  private _switchRow(entityId: string): TemplateResult {
+    const st = this._state(entityId);
+    if (st?.attributes.assumed_state !== true && (st?.state === "on" || st?.state === "off"))
+      return this._toggleRow(entityId);
+    const name = entityLabel(this.hass, entityId);
+    const off = this._t("action.off");
+    const on = this._t("action.on");
+    return html`
+      <div class="entity-row" role="group" aria-label=${name}>
+        <button class="entity-row-details" aria-label=${name} @click=${() => this._moreInfo(entityId)}>
+          ${this._icon(entityId)}
+          <span class="entity-row-text">
+            <span>${name}</span>
+            <span class="secondary">${this._stateText(entityId)}</span>
+          </span>
+        </button>
+        <button class="dialog-btn" aria-label=${`${name}: ${off}`}
+          @click=${() => this._call("switch", "turn_off", entityId)}>${off}</button>
+        <button class="dialog-btn" aria-label=${`${name}: ${on}`}
+          @click=${() => this._call("switch", "turn_on", entityId)}>${on}</button>
       </div>
     `;
   }
@@ -1737,7 +1823,7 @@ export class AdjustableBedCard extends LitElement {
         values: this._estimateValues(alert.estimates),
       });
       actions = html`<button class="set-btn" @click=${() =>
-        void this._estimateService("confirm_position_unchanged", ctx).catch(() => undefined)}>
+        void this._estimateService("estimate_confirm_unchanged", ctx).catch(() => undefined)}>
         ${this._t("estimate.unchanged")}</button>${reference}`;
     } else {
       const reasonKey = `estimate.reason_${alert.reason ?? "not_referenced"}`;
@@ -1824,7 +1910,7 @@ export class AdjustableBedCard extends LitElement {
 
   private _recall(ctx: EstimateContext, position: SavedPosition): void {
     this._hold.abandon();
-    void this._estimateService("recall_position", { ...ctx, side: undefined }, { position: position.id })
+    void this._estimateService("estimate_recall_position", { ...ctx, side: undefined }, { position: position.id })
       .then(() => this._toast(this._t("estimate.recalled", { name: position.name })))
       .catch(() => undefined);
   }
@@ -1846,6 +1932,11 @@ export class AdjustableBedCard extends LitElement {
   };
 
   private _closeEstimateDialog = (): void => {
+    // Closing the element itself lets the browser return focus to the control
+    // that opened it. Its close event comes back here once the state is gone.
+    const element = this.renderRoot?.querySelector?.("dialog.estimate-dialog") as
+      | HTMLDialogElement | null | undefined;
+    if (element?.open) element.close();
     const dialog = this._estimateDialog;
     // Closing never leaves a lowering running: the dialog covers the Stop controls.
     if (dialog?.kind === "reference" && dialog.phase === "lowering") this._stopEstimate(dialog.ctx);
@@ -1871,7 +1962,9 @@ export class AdjustableBedCard extends LitElement {
     const dialog = this._estimateDialog;
     if (!dialog) return nothing;
     const body =
-      dialog.kind === "reference"
+      dialog.kind === "confirm"
+        ? this._confirmDialog(dialog.entityId)
+        : dialog.kind === "reference"
         ? this._referenceDialog(dialog)
         : dialog.kind === "save"
           ? this._saveDialog(dialog)
@@ -1879,6 +1972,19 @@ export class AdjustableBedCard extends LitElement {
     return html`<dialog class="estimate-dialog" @close=${this._closeEstimateDialog}>
       ${body}
     </dialog>`;
+  }
+
+  private _confirmDialog(entityId: string): TemplateResult {
+    const action = entityLabel(this.hass, entityId);
+    return html`
+      <p>${this._t("action.confirm", { action })}</p>
+      <div class="dialog-actions">
+        <button class="dialog-btn" @click=${this._closeEstimateDialog}>${this._t("memory.cancel")}</button>
+        <button class="dialog-btn primary" @click=${() => {
+          this._closeEstimateDialog();
+          this._sendPress(entityId);
+        }}>${action}</button>
+      </div>`;
   }
 
   private _dialogMotors(ctx: EstimateContext): string[] {
@@ -1894,7 +2000,7 @@ export class AdjustableBedCard extends LitElement {
     const motors = this._dialogMotors(dialog.ctx);
     const names = motors.map((m) => this._motorName({ key: m })).join(", ");
     const choices = [
-      { value: "flat", title: this._t("estimate.ref_flat"), detail: this._t("estimate.ref_flat_detail", { motors: names }) },
+      { value: "flat", title: this._t("estimate.ref_flat"), detail: this._t(motors.length === 1 ? "estimate.ref_flat_detail_one" : "estimate.ref_flat_detail", { motors: names }) },
       { value: "lower", title: this._t("estimate.ref_lower"), detail: this._t("estimate.ref_lower_detail") },
       ...(motors.length > 1 ? motors.map((m) => ({
         value: `only:${m}`,
@@ -1920,7 +2026,7 @@ export class AdjustableBedCard extends LitElement {
         );
         return;
       }
-      void this._estimateService("set_position_reference", dialog.ctx, { motors: selected })
+      void this._estimateService("estimate_set_reference", dialog.ctx, { motors: selected })
         .catch(() => undefined);
       this._estimateDialog = undefined;
     };
@@ -1962,7 +2068,7 @@ export class AdjustableBedCard extends LitElement {
     const name = dialog.name.trim();
     const save = (): void => {
       if (!name) return;
-      void this._estimateService("save_position", dialog.ctx, {
+      void this._estimateService("estimate_save_position", dialog.ctx, {
         name, create_button: dialog.button,
       }).catch(() => undefined);
       this._estimateDialog = undefined;
@@ -2028,10 +2134,10 @@ export class AdjustableBedCard extends LitElement {
       </label>
       ${canUpdate ? nothing : html`<p class="dialog-text">${this._t("estimate.update_blocked")}</p>`}
       <div class="dialog-actions">
-        <button class="dialog-btn danger" @click=${() => run("delete_position")}>${this._t("estimate.delete")}</button>
-        <button class="dialog-btn" ?disabled=${!canUpdate} @click=${() => run("update_position")}>${this._t("estimate.update")}</button>
+        <button class="dialog-btn danger" @click=${() => run("estimate_delete_position")}>${this._t("estimate.delete")}</button>
+        <button class="dialog-btn" ?disabled=${!canUpdate} @click=${() => run("estimate_update_position")}>${this._t("estimate.update")}</button>
         <button class="dialog-btn primary" ?disabled=${!name}
-          @click=${() => run("rename_position", { name, create_button: dialog.button })}>${this._t("estimate.save_confirm")}</button>
+          @click=${() => run("estimate_rename_position", { name, create_button: dialog.button })}>${this._t("estimate.save_confirm")}</button>
       </div>`;
   }
 
@@ -2102,7 +2208,7 @@ export class AdjustableBedCard extends LitElement {
       );
     }
     [bed.estimateRemote, bed.savedPositions].forEach((x) => x && ids.add(x));
-    bed.presets.forEach((x) => ids.add(x));
+    [...bed.presets, ...bed.presetSaves].forEach((x) => ids.add(x));
     for (const s of bed.memory) {
       [s.goto, s.save].forEach((x) => x && ids.add(x));
     }
@@ -2133,6 +2239,8 @@ export class AdjustableBedCard extends LitElement {
     bed.massage.numbers.forEach((x) => ids.add(x));
     bed.massage.selects?.forEach((x) => ids.add(x));
     bed.massage.states?.forEach((x) => ids.add(x));
+    bed.massage.switches?.forEach((x) => ids.add(x));
+    bed.lights.switches?.forEach((x) => ids.add(x));
     bed.lights.mood?.selects.forEach((x) => ids.add(x));
     bed.lights.mood?.numbers.forEach((x) => ids.add(x));
     bed.lights.mood?.buttons?.forEach((x) => ids.add(x));
@@ -2140,6 +2248,7 @@ export class AdjustableBedCard extends LitElement {
     bed.utilityNumbers?.forEach((x) => ids.add(x));
     bed.utilitySelects?.forEach((x) => ids.add(x));
     bed.utilityStates?.forEach((x) => ids.add(x));
+    bed.utilitySwitches?.forEach((x) => ids.add(x));
     bed.climate.entities.forEach((x) => ids.add(x));
     bed.climate.selects.forEach((x) => ids.add(x));
     bed.climate.numbers.forEach((x) => ids.add(x));
@@ -2332,8 +2441,14 @@ export class AdjustableBedCard extends LitElement {
   }
 
   private _press(entityId: string): void {
-    if (this.hass?.states[entityId]?.attributes.requires_confirmation === true &&
-        !window.confirm(this._t("action.confirm", { action: entityLabel(this.hass, entityId) }))) return;
+    if (this.hass?.states[entityId]?.attributes.requires_confirmation === true) {
+      this._estimateDialog = { kind: "confirm", entityId };
+      return;
+    }
+    this._sendPress(entityId);
+  }
+
+  private _sendPress(entityId: string): void {
     // A preset or other command replaces a tap move; a STOP could cancel it.
     this._hold.retireTap();
     this._call("button", "press", entityId);
@@ -2420,7 +2535,10 @@ export class AdjustableBedCard extends LitElement {
     .compact-readouts { display: flex; justify-content: space-between; gap: 8px;
       padding: 0 2px 12px; font-size: 11px; line-height: 17px; color: var(--secondary-text-color); }
     .compact-readouts > div { min-width: 0; display: flex; align-items: center; gap: 5px; }
-    .compact-side-name { display: inline-flex; align-items: center; gap: 5px; }
+    .compact-side-name { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+    .compact-side-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden;
+      clip-path: inset(50%); white-space: nowrap; }
     .compact-names { justify-content: center; flex-wrap: wrap; gap: 19px; padding: 4px 0 3px; }
     .compact-position { font-weight: 500; overflow-wrap: anywhere; }
     .side-theme .dual-swatch { background: var(--primary-color); }
@@ -2454,6 +2572,7 @@ export class AdjustableBedCard extends LitElement {
     }
     @media (prefers-reduced-motion: reduce) {
       :host .bed-panel, :host .dual-bed-panel { transition: none; }
+      :host .pane { animation: none; }
     }
 
     :host {
@@ -3248,6 +3367,20 @@ export class AdjustableBedCard extends LitElement {
       display: flex;
       flex-direction: column;
       flex: 1;
+    }
+    .entity-row-details {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+      padding: 0;
+      border: none;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: start;
+      cursor: pointer;
     }
     .entity-row-text .secondary,
     .value {

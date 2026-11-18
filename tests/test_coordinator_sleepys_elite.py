@@ -17,6 +17,9 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
+# The hold action imports this on demand in the executor; loading it up front
+# keeps virtual time from racing a real import thread.
+import custom_components.adjustable_bed.beds.vmatbasic.services  # noqa: F401
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
 from custom_components.adjustable_bed.beds.sleepys.app_routes import ROUTES
@@ -31,8 +34,8 @@ from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_ELITE_APP,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_SLEEPYS_ELITE_SELECTOR,
     DEVICE_INFO_CHARS,
     DEVICE_INFO_SERVICE_UUID,
@@ -49,6 +52,7 @@ from custom_components.adjustable_bed.number import (
 )
 from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
 
 from .conftest import TEST_ADDRESS, TEST_NAME
 
@@ -127,9 +131,15 @@ class _VirtualClock:
             self._sleepers.remove(sleeper)
 
     async def run_until(self, task: asyncio.Task[_T]) -> _T:
+        loop = asyncio.get_running_loop()
         for _ in range(1_000):
-            for _ in range(12):
+            # Virtual time may only pass once nothing else can run: a fixed
+            # number of yields raced on-demand imports finishing in the
+            # executor, which let a write's deadline fire before the write.
+            for _ in range(10_000):
                 await asyncio.sleep(0)
+                if not loop._ready:  # type: ignore[attr-defined]
+                    break
             if task.done():
                 return task.result()
             pending = [deadline for deadline, future in self._sleepers if not future.done()]
@@ -230,7 +240,7 @@ async def sleepys_runtime(
             CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
             CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     entry.add_to_hass(hass)
@@ -598,14 +608,6 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         )
         await clock.run_until(asyncio.create_task(level.async_set_native_value(0)))
         await clock.run_until(asyncio.create_task(level.async_set_native_value(6)))
-        brightness_up = next(
-            spec
-            for spec in controller.controller_button_specs
-            if spec.key == "sleepys_app_voice_brightness_up"
-        )
-        await clock.run_until(
-            asyncio.create_task(ControllerActionButton(coordinator, brightness_up).async_press())
-        )
 
         massage = AdjustableBedMassageNumber(
             coordinator,
@@ -620,14 +622,7 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         )
         position = AdjustableBedControllerNumber(coordinator, position_spec)
         await clock.run_until(asyncio.create_task(position.async_set_native_value(100)))
-        voice_target = next(
-            spec
-            for spec in controller.controller_button_specs
-            if spec.key == "sleepys_app_voice_axis_1_0"
-        )
-        await clock.run_until(
-            asyncio.create_task(ControllerActionButton(coordinator, voice_target).async_press())
-        )
+        await clock.run_until(asyncio.create_task(position.async_set_native_value(0)))
 
     stop = controller._route("stop").payload
     memory = ROUTES[("m1", "BOX25")].payload
@@ -640,18 +635,17 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
     voice_position = controller._value_route("position_axis_1", 0).payload
     assert [payload for _, payload in trace[:4]] == [memory, memory, memory, stop]
     assert sum(payload == stop for _, payload in trace) == 2
-    assert len(trace) == 16
+    assert len(trace) == 15
     assert trace[8][1] == palette
     assert trace[9][1] == timer
     assert trace[10][1] == light_off
     assert trace[11][1] == light_level
-    assert trace[12][1] == light_level
-    assert trace[13][1] == intensity
-    assert trace[14][1] == position_target
-    assert trace[15][1] == voice_position
+    assert trace[12][1] == intensity
+    assert trace[13][1] == position_target
+    assert trace[14][1] == voice_position
     assert sum(payload == palette for _, payload in trace) == 1
     assert sum(payload == timer for _, payload in trace) == 1
-    assert sum(payload == light_level for _, payload in trace) == 2
+    assert sum(payload == light_level for _, payload in trace) == 1
     assert sum(payload == intensity for _, payload in trace) == 1
     assert sum(payload == position_target for _, payload in trace) == 1
     assert sum(payload == voice_position for _, payload in trace) == 1
@@ -676,11 +670,12 @@ async def test_motion_sensor_refresh_is_bounded_and_has_no_stop(
     ):
         spec = next(
             spec
-            for spec in controller.controller_button_specs
-            if spec.key == "sleepys_app_motion_sensor_on"
+            for spec in controller.controller_switch_specs
+            if spec.key == "sleepys_app_motion_sensor"
         )
-        button = ControllerActionButton(coordinator, spec)
-        await clock.run_until(asyncio.create_task(button.async_press()))
+        switch = AdjustableBedControllerSwitch(coordinator, spec)
+        with patch.object(switch, "async_write_ha_state"):
+            await clock.run_until(asyncio.create_task(switch.async_turn_on()))
 
     route = controller._route("motionSensorOn")
     assert len(trace) == 50, trace[-3:]
@@ -717,7 +712,7 @@ async def test_sequential_both_button_is_finite_and_drops_stale_hold_metadata(
             CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
             CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     right_entry.add_to_hass(hass)
@@ -881,7 +876,7 @@ async def test_stale_both_hold_preflight_preserves_new_left_hold(
             CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
             CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     right_entry.add_to_hass(hass)

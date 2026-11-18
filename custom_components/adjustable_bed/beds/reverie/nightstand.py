@@ -356,6 +356,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        # The massage wave number shows the wave; the strengths have no setter.
         if not self.model.massage:
             return ()
         return (
@@ -364,6 +365,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                 translation_key="reverie_head_massage_intensity",
                 state_key=MASSAGE_HEAD_INTENSITY,
                 icon="mdi:vibrate",
+                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE,
             ),
             ControllerStateSensorSpec(
@@ -371,13 +373,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                 translation_key="reverie_foot_massage_intensity",
                 state_key=MASSAGE_FOOT_INTENSITY,
                 icon="mdi:vibrate",
-                card=CARD_MASSAGE,
-            ),
-            ControllerStateSensorSpec(
-                key="reverie_massage_wave",
-                translation_key="reverie_massage_wave",
-                state_key=MASSAGE_WAVE,
-                icon="mdi:vibrate",
+                entity_registry_enabled_default=True,
                 card=CARD_MASSAGE,
             ),
         )

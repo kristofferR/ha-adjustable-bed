@@ -31,7 +31,7 @@ async def test_hidden_artifact_cadence_remains_generated_on_repeated_options_sav
             CONF_NAME: "App receiver",
             const.CONF_BED_TYPE: const.BED_TYPE_VMATBASIC,
             const.CONF_VMATBASIC_PROFILE: profile,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             const.CONF_DISABLE_ANGLE_SENSING: True,
             const.CONF_MOTOR_PULSE_COUNT: 34,
             const.CONF_MOTOR_PULSE_DELAY_MS: 30,
@@ -69,12 +69,11 @@ async def test_displayed_explicit_pulse_values_are_user_owned(hass: HomeAssistan
     rendered = await flow.async_step_settings()
     schema = rendered["data_schema"]
     assert isinstance(schema, vol.Schema)
-    submitted = schema({const.CONF_MOTOR_PULSE_COUNT: "17", const.CONF_MOTOR_PULSE_DELAY_MS: "90"})
+    submitted = schema({const.CONF_MOTOR_PULSE_COUNT: 17})
     assert isinstance(submitted, dict)
     result = await flow.async_step_settings(submitted)
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert flow.config_entry.data[const.CONF_MOTOR_PULSE_COUNT] == 17
-    assert flow.config_entry.data[const.CONF_MOTOR_PULSE_DELAY_MS] == 90
     assert flow.config_entry.data[const.CONF_MOTOR_PULSE_USER_SET] is True
 
 
@@ -131,11 +130,12 @@ async def test_paired_displayed_pulse_override_updates_both_children(hass: HomeA
     rendered = await flow.async_step_settings()
     schema = rendered["data_schema"]
     assert isinstance(schema, vol.Schema)
-    submitted = schema({const.CONF_MOTOR_PULSE_COUNT: "17", const.CONF_MOTOR_PULSE_DELAY_MS: "90"})
+    submitted = schema({const.CONF_MOTOR_PULSE_COUNT: 17})
     assert isinstance(submitted, dict)
     result = await flow.async_step_settings(submitted)
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert flow.config_entry.data[const.CONF_MOTOR_PULSE_USER_SET] is True
     for child in flow.config_entry.data[const.CONF_PAIR_CHILDREN]:
         assert child[const.CONF_MOTOR_PULSE_COUNT] == 17
-        assert child[const.CONF_MOTOR_PULSE_DELAY_MS] == 90
+        # The repeat delay is the bed's own; only Movement per tap is shown.
+        assert child[const.CONF_MOTOR_PULSE_DELAY_MS] == 100

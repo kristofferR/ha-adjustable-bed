@@ -28,10 +28,7 @@ def _report_frames() -> tuple[set[str], set[int]]:
     builders = json.loads((FIXTURES / "builders.json").read_text())
     literals = {v["expected_bytes"] for v in builders if v["protocol"] in ("P1", "P2")}
     templated: set[int] = set()
-    for entry in json.loads((FIXTURES / "ledger.json").read_text())["entries"]:
-        if entry["domain"] != "command" or entry["evidence"]["protocol"] not in ("P1", "P2"):
-            continue
-        text = entry["behavior"]["bytes"]
+    for text in json.loads((FIXTURES / "command_bytes.json").read_text()):
         if re.fullmatch(r"(?:[0-9a-f]{2} ?)+", text):
             literals.add(text.replace(" ", ""))
         elif match := re.fullmatch(r"6e 01 s ([0-9a-f]{2}) sum8\(6e,01,s,\1\)", text):

@@ -8,7 +8,6 @@ import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import config_validation as cv
 from homeassistant.util.json import JsonValueType
 
 from ...const import DOMAIN
@@ -100,25 +99,6 @@ async def handle_command(call: ServiceCall) -> ServiceResponse:
 def register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN,
-        "mline_set_alarm",
-        handle_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-                vol.Required("enabled"): cv.boolean,
-                vol.Optional("time"): cv.time,
-                vol.Optional("weekdays", default=[]): [
-                    vol.All(vol.Coerce(int), vol.Range(min=0, max=6))
-                ],
-                vol.Optional("wake_mode", default="zg"): vol.In(
-                    ("zg", "flat", "m1", "m2", "vibration", "antisnore")
-                ),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
         "mline_command",
         handle_command,
         schema=vol.Schema(
@@ -137,43 +117,3 @@ def register_services(hass: HomeAssistant) -> None:
     )
 
 
-async def handle_alarm(call: ServiceCall) -> None:
-    targets = _call_targets(call)
-    admissions = [_capture_command_admission(parent, side) for parent, side in targets]
-    await async_import_modules(call.hass, "beds.mline.controller")
-    from homeassistant.util import dt as dt_util
-
-    from ...codec import mline as codec
-    from .controller import MLineController
-
-    enabled, time = call.data["enabled"], call.data.get("time")
-    if enabled and time is None:
-        raise ServiceValidationError("Choose an M Line alarm time")
-    if time is not None and (time.second or time.microsecond):
-        raise ServiceValidationError("M Line alarms use minute precision")
-    hour, minute = (time.hour, time.minute) if time else (0, 0)
-    weekdays = tuple(call.data["weekdays"])
-    preset = call.data["wake_mode"]
-
-    def validate(c: MLineController) -> None:
-        c.validate_action("alarm")
-        codec.alarm(
-            c.profile.key,
-            hour,
-            minute,
-            codec.wake_mask(weekdays, hour, minute, dt_util.now()),
-            preset,
-        )
-
-    await _preflight_and_execute(
-        targets,
-        MLineController,
-        "M Line alarm",
-        lambda c: c.configure_clock_alarm(
-            enabled=enabled, weekdays=weekdays, hour=hour, minute=minute, preset=preset
-        ),
-        validate=validate,
-        resource="*",
-        admit=True,
-        admissions=admissions,
-    )
