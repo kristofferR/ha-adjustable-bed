@@ -24,7 +24,6 @@ from custom_components.adjustable_bed.beds.bf_cherish.controller import (
     control_frame,
     query_frame,
 )
-from custom_components.adjustable_bed.beds.bf_cherish.services import register_services
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BF,
@@ -34,6 +33,8 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import _create_from_registry
 from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.services import async_register_services
+from tests.alarm_helpers import call_set_alarm
 from tests.state_helpers import state_writer
 
 NOW = datetime(2026, 11, 1, 7, 5, 9, tzinfo=UTC)  # Sunday
@@ -357,18 +358,11 @@ async def test_profile_entities_findability_and_light_collision(hass):
             assert not client.write_gatt_char.called
 
 
-async def test_alarm_service_preflight_and_invalid_target_no_write(hass):
-    register_services(hass)
+async def test_set_alarm_requires_time_before_resolving_targets(hass):
+    await async_register_services(hass)
     with pytest.raises(ServiceValidationError, match="Choose an alarm time"):
         await hass.services.async_call(
-            DOMAIN, "bf_cherish_set_alarm", {"device_id": "missing", "enabled": True}, blocking=True
-        )
-    with pytest.raises(ServiceValidationError):
-        await hass.services.async_call(
-            DOMAIN,
-            "bf_cherish_set_alarm",
-            {"device_id": "missing", "enabled": False},
-            blocking=True,
+            DOMAIN, "set_alarm", {"device_id": "missing", "enabled": True}, blocking=True
         )
 
 
@@ -431,48 +425,35 @@ async def test_repeated_cancellation_waits_for_release_before_return(hass):
     assert frames(client)[-1] == "E5FE160000000006"
 
 
-async def test_alarm_service_validates_all_profiles_before_serialized_write(hass):
+async def test_set_alarm_writes_cherish_vector(hass):
     ctrl, owner, client = make_controller(hass, True)
-    target = MagicMock(bed_type=BED_TYPE_CHERISH)
-    register_services(hass)
-
-    async def execute(coordinator, side, command, **kwargs):
-        assert kwargs["cancel_running"] is False
-        assert kwargs["resource"] == "configuration"
-        with ctrl.side_scope(side):
-            await command(ctrl)
-
-    async def preflight(targets, interface, label, supported, validate):
-        assert isinstance(ctrl, interface) and supported(ctrl)
-        validate(ctrl)
-        return []
-
-    with (
-        patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
-            return_value=([(owner, "right")], []),
-        ),
-        patch("custom_components.adjustable_bed.services._command_targets", return_value=[target]),
-        patch(
-            "custom_components.adjustable_bed.services._preflight_capability", side_effect=preflight
-        ),
-        patch("custom_components.adjustable_bed.services._execute_sided", side_effect=execute),
-        patch("custom_components.adjustable_bed.beds.bf_cherish.controller.dt_util.now", return_value=NOW),
+    with patch(
+        "custom_components.adjustable_bed.beds.bf_cherish.controller.dt_util.now", return_value=NOW
     ):
-        register_services(hass)
-        await hass.services.async_call(
-            DOMAIN,
-            "bf_cherish_set_alarm",
-            {
-                "device_id": "bed",
-                "side": "right",
-                "enabled": True,
-                "time": "08:30:00",
-                "memory": "memory_1",
-            },
-            blocking=True,
+        scheduled = await call_set_alarm(
+            hass,
+            ctrl,
+            {"side": "right", "enabled": True, "time": "08:30:00", "wake_action": "memory_1"},
+            owner=owner,
+            side="right",
+            bed_type=BED_TYPE_CHERISH,
         )
+    assert scheduled[0]["cancel_running"] is False
+    assert scheduled[0]["resource"] == "configuration"
     assert frames(client) == ["EAFE160905071E08FFFFFF04C5"]
+
+
+async def test_set_alarm_rejects_options_this_bed_lacks(hass):
+    ctrl, owner, client = make_controller(hass, True)
+    with pytest.raises(ServiceValidationError, match="no alarm option 'weekdays'"):
+        await call_set_alarm(
+            hass, ctrl, {"enabled": True, "time": "08:30:00", "weekdays": ["monday"]}, owner=owner
+        )
+    with pytest.raises(ServiceValidationError, match="cannot wake with 'zero_g'"):
+        await call_set_alarm(
+            hass, ctrl, {"enabled": True, "time": "08:30:00", "wake_action": "zero_g"}, owner=owner
+        )
+    assert not client.write_gatt_char.called
 
 
 @pytest.mark.parametrize(

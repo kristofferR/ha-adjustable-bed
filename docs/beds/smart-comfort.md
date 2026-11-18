@@ -84,7 +84,7 @@ RGB: `E5 FE 16 blue green red (mask | 10) checksum`.
 
 Rename is raw, without checksum, padding, terminator or framing. The Java app
 uses its default charset; only ASCII is portable enough to expose here. Use the
-standard `adjustable_bed.rename_device` action.
+standard `adjustable_bed.rename` action.
 
 ### Write Mode
 
@@ -279,11 +279,4 @@ outside this integration's product boundary.
 
 ### Analysis provenance
 
-- `com.synargy.okin` 1.1.0 (12), frozen XAPK SHA-256
-  `7d22e1d82733136ae282ce27ba149fae28d7f20c7ca7beec5a9637d67fe28086`.
-- `com.synergy.okin` 2.2.0 (16), frozen XAPK SHA-256
-  `8ce8d5dc933d5ab2223f66e7dde1199e42f29e544c8a02d9bba54393a3d571a5`.
-- Accepted cluster-024 reconciliation, unit089; all command and model outcomes
-  agree within static evidence. The nine asymmetric evidence gaps do not prove
-  binary or firmware differences. Frozen acquisition date: 2026-07-14; no fresh
-  latest-version attestation is claimed.
+Based on Smart Comfort 1.1.0 (`com.synargy.okin`) and 2.2.0 (`com.synergy.okin`).

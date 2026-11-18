@@ -1,4 +1,4 @@
-"""Cluster-017's direct builders over the literal-verified Richmat codec."""
+"""The resource apps' direct builders over the literal-verified Richmat codec."""
 
 from dataclasses import dataclass
 from datetime import time

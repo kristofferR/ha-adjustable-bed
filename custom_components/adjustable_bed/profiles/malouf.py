@@ -2,7 +2,7 @@
 
 ``NEW_OKIN`` serves the ``malouf_new_okin`` bed type; it has no accepted report,
 so it holds the frames its pre-v5 controller sent. ``MALOUF`` and ``LUCID`` serve
-the ``malouf_app`` bed type from the accepted row023 reports: Malouf Base 2.4.3
+the ``malouf_app`` bed type from Malouf Base 2.4.3
 (``com.malouf.bedbase``) and Lucid Base 1.3.3 (``com.lucid.bedbase``), with the
 accepted write-mode and routing amendments. Retail models, GATT transport and
 the physical role are independent choices of an app profile.
@@ -281,7 +281,7 @@ MALOUF: Final = MaloufAppProfile(
 )
 # Both apps embed the same com.malouf.adjustablebasebluetooth SDK. Each report
 # independently proves its transports, tables and timing, and the accepted
-# cluster007 reconciliation finds them equal; Lucid differs only in its app gates.
+# The two apps are equal; Lucid differs only in its app gates.
 LUCID: Final = replace(
     MALOUF,
     key="lucid",

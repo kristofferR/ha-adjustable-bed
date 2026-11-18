@@ -88,7 +88,7 @@ or a bed detected as Solace, asks which app you use:
 The **Woosa Sleep app** row in the bed-type list answers the question itself and
 shows the same note. For an existing bed, open the entry's three-dot menu and
 **Reconfigure** (see
-[Changing the app or layout](../CONFIGURATION.md#changing-the-app-or-layout-of-an-existing-bed));
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
 **Keep** leaves the entry as it is. A Solace entry from before v5 on the name
 routes is asked once, through a repair, whether it uses Woosa Sleep. A Solace
 route change has nothing to check:
@@ -478,7 +478,7 @@ trailers. Each profile section names the replies it consumes:
 ### Vectors
 
 `tests/ff_frame_vectors.py` lists each profile's frozen frames: every complete
-written frame in the accepted report (its command table and write-builder
+written frame in the app (its command table and write-builder
 vectors) for the app profiles, and the pre-v5 controller's frames for the
 Legacy S4-Y and Unverified routes. `tests/test_ff_frame_vectors.py` proves that
 every literal round-trips through the codec byte for byte (the BedSense C018
@@ -562,14 +562,13 @@ See [Timing](#timing). Presets are single writes without STOP.
 
 - `adjustable_bed.solace_audio` (MotionFlex) selects or previews tracks 1-5,
   queries the volume and sets volume 1-5.
-- `adjustable_bed.solace_set_alarm` (MotionFlex) programs enabled state, time,
+- `adjustable_bed.set_alarm` (MotionFlex) programs enabled state, time,
   weekdays, bed action, massage and sound ([Clock and alarm](#clock-and-alarm)).
 
 #### Evidence
 
 MotionFlex, HomeKobo and Sweet Night send only their frozen frames; Legacy S4-Y
-and Unverified send exactly the pre-v5 controller's frames. The cluster 008
-audit holds the dispositions. Useful
+and Unverified send exactly the pre-v5 controller's frames. Useful
 captures after release: one movement start and STOP per route, the five startup
 status replies, Flat and one named preset per route, and Sweet Night's Memory 2
 short press.
@@ -629,18 +628,18 @@ Flat sends its frame alone; every other preset uses the STOP preamble.
 
 #### Services
 
-`adjustable_bed.solace_set_alarm` programs the controller alarm, then sends the
+`adjustable_bed.set_alarm` programs the controller alarm, then sends the
 alarm query. Modes are `memory_1` (Favourite), `zero_g` and `no_action`; sound
 is `none` or `alarm`. Save the Favourite position before choosing `memory_1`.
 
 ```yaml
-action: adjustable_bed.solace_set_alarm
+action: adjustable_bed.set_alarm
 data:
   device_id: YOUR_BED_DEVICE_ID
   enabled: true
   time: "07:30:00"
   weekdays: [monday, tuesday, wednesday, thursday, friday]
-  mode: zero_g
+  wake_action: zero_g
   massage: false
   sound: alarm
 ```
@@ -650,8 +649,7 @@ prove the hardware executed it.
 
 #### Evidence
 
-Woosa Sleep sends only its frozen frames. Its audit (issue #606) holds the
-dispositions. Useful captures after release: leg down versus Flat, the
+Woosa Sleep sends only its frozen frames. Useful captures after release: leg down versus Flat, the
 four preset save and recall paths, brightness, clock and alarm, and runtime GATT
 properties.
 
@@ -822,8 +820,8 @@ See [Timing](#timing). Memory queries go in slot order 3, 4, 1, 2, 5
 
 #### Evidence
 
-BedSense sends exactly its frozen command table, including the C018 anomaly. The
-row108 audit holds the dispositions. Useful captures after release: GATT roles and properties, memory
+BedSense sends exactly its frozen command table, including the C018 anomaly.
+Useful captures after release: GATT roles and properties, memory
 replies, lift hold versus click, background taps, massage and light durations.
 
 ### Motion Bed
@@ -1010,7 +1008,7 @@ before any write; persistent changes need `confirmed: true`.
 | Action | Main fields |
 |---|---|
 | `motion_bed_action` | `action` from diagnostics; `branch` app/save/clear; movement `duration` in seconds |
-| `motion_bed_alarm` | `enabled`, `hour`, `minute`, weekdays 1-7, `repeat`, modes 1-6, `massage`, `sound`, the target's `audio`; modular initial `switch` 00/01/A1 |
+| [`set_alarm`](../SERVICES.md#set_alarm) | `enabled`, `time`, `weekdays`, `wake_action` (`zero_g`, `memory_1`, `none`), `massage`, `sound` (music only on targets with audio). No `confirmed` needed |
 | `motion_bed_clock` | ISO `timestamp`, `thermal` for the thermal clock |
 | `motion_bed_sleep_angles` | page 2/3/4, four `flat` and four `side_positions` raw values |
 | `motion_bed_calibration` | integer `flat`, `side_position`; odd-width encodings are rejected before I/O |
@@ -1037,18 +1035,14 @@ before any write; persistent changes need `confirmed: true`.
 
 #### Evidence
 
-Motion Bed sends only its frozen frames. The unit 032 audit holds the
-dispositions, including the excluded Wi-Fi provisioning and cloud controls.
+Motion Bed sends only its frozen frames. Its Wi-Fi provisioning and cloud
+controls are out of scope.
 
 ## Notes
 
 ### Analysis provenance
 
-| Profile | Report | Audit |
-|---------|--------|-------|
-| Solace MotionFlex, HomeKobo, Sweet Night | Accepted APK Protocol Audit reports, cluster 008 | cluster 008 |
-| Woosa Sleep | `com.sn.woosa` 1.1.9 (13), artifact-set SHA-256 `21778ac636d9fed83d7809d0dd47521deb2b2e25d24867bf3e2458740c47b217`, accepted `REPORT.SHA256` digest `995677ce2204b2f8255b5a47f9b7c597928255d636e2f50ba1aff3cdfcf70851` ([issue #606](https://github.com/kristofferR/ha-adjustable-bed/issues/606)) | Woosa Sleep |
-| BedSense | `com.fenmenbielei.bedsense` 1.8 (18), row108 | row108 |
-| Motion Bed | `com.sn.blackdianqi` 1.24 (34), XAPK SHA-256 `76449cb37440907b6933c5dfb36a1a5ec5b737756f44db5a9629a654f9f3e6a3` | unit 032 |
-
-Raw APKs, decompilation and reports stay machine-local.
+- Solace MotionFlex, HomeKobo and Sweet Night: based on their apps.
+- Woosa Sleep: based on Woosa Sleep 1.1.9 (`com.sn.woosa`), [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606).
+- BedSense: based on BedSense 1.8 (`com.fenmenbielei.bedsense`).
+- Motion Bed: based on Motion Bed 1.24 (`com.sn.blackdianqi`).

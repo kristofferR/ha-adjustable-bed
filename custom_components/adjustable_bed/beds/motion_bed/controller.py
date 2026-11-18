@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...const import (
     CONF_BLE_DEVICE_NAME,
     CONF_MOTION_BED_MOVEMENT,
@@ -35,7 +36,15 @@ from ..entity_specs import (
 from ..family_actions import MotionBedModuleActions
 from .actions import ACTION_BY_KEY, MOTION_BED_ACTIONS, MotionBedAction
 from .models import MotionBedSelection
-from .protocol import SOURCE_COMMANDS, build_clock, build_thermal_clock
+from .protocol import (
+    SOURCE_COMMANDS,
+    AlarmMode,
+    AlarmSound,
+    AlarmSwitch,
+    build_alarm,
+    build_clock,
+    build_thermal_clock,
+)
 from .requests import MotionBedWrite
 from .state import (
     MotionBedContext,
@@ -238,6 +247,22 @@ ACTIVE_MODULE: Final = StateKey[str | None]("motion_bed_active_module")
 
 def _field_key(name: str) -> StateKey[ScalarState]:
     return StateKey[ScalarState]("motion_bed_" + name)
+
+
+# Without a chosen wake action the alarm only rings; the bed does not move.
+_ALARM_MODES: Final = {
+    "none": AlarmMode.NO_ACTION,
+    "zero_g": AlarmMode.ZERO_GRAVITY,
+    "memory_1": AlarmMode.MEMORY_1,
+}
+# Music tracks, offered only on targets that report an audio module.
+_AUDIO_SOUNDS: Final = {
+    "music_1": AlarmSound.MUSIC_1,
+    "music_2": AlarmSound.MUSIC_2,
+    "music_3": AlarmSound.MUSIC_3,
+    "music_4": AlarmSound.MUSIC_4,
+    "music_5": AlarmSound.MUSIC_5,
+}
 
 
 # Reported values worth an entity: (state field, enabled by default, attribute fields).
@@ -998,6 +1023,55 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             except TimeoutError:
                 if sleep_adjust and asyncio.get_running_loop().time() < deadline:
                     await self.write_command(SOURCE_COMMANDS["SleepAdjustActivity:281"])
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        surface = self.selection.surface
+        if not (
+            surface in ("home", "motor") or (surface == "hub" and self._module_present("motor"))
+        ):
+            return None
+        return AlarmCapability(
+            wake_actions=tuple(_ALARM_MODES),
+            weekdays=True,
+            massage=True,
+            # The first sound is the default, so an alarm rings unless set to none.
+            sounds=(*_AUDIO_SOUNDS, "none") if self._has_audio else ("alarm", "none"),
+            cancel_running=True,
+            resource="*",
+        )
+
+    def _alarm_write(self, alarm: AlarmRequest) -> MotionBedWrite:
+        home = self.selection.surface == "home"
+        switch = None if home else AlarmSwitch.ENABLED if alarm.enabled else AlarmSwitch.DISABLED
+        sound = {"none": AlarmSound.NONE, "alarm": AlarmSound.BUZZER, **_AUDIO_SOUNDS}[alarm.sound]
+        frame = build_alarm(
+            enabled=alarm.enabled,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            weekdays={day + 1: True for day in alarm.weekdays},
+            mode=_ALARM_MODES[alarm.wake_action],
+            massage=alarm.massage,
+            sound=sound,
+            switch=switch,
+            audio=self._has_audio,
+        )
+        # Setting an alarm through this action is the explicit confirmation.
+        return MotionBedWrite(
+            "alarm",
+            (frame,),
+            "home" if home else "motor_settings",
+            confirmed=True,
+            persistent=True,
+            alarm_audio=self._has_audio,
+            alarm_switch=None if switch is None else int(switch),
+        )
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_motion_bed_write(self._alarm_write(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.async_execute_motion_bed_write(self._alarm_write(alarm))
 
     def validate_motion_bed_write(self, request: MotionBedWrite) -> None:
         available: set[str] = set()

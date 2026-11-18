@@ -1,6 +1,6 @@
 """Richmat MH app profiles: Revive Control, Best Mattress, Blvd Home, HARMONY, Idealbed.
 
-Accepted as APK audit row055 (formal cluster-020). All five apps ship one BLE
+All five apps ship one BLE
 library; their per-model catalogs, version-dependent pages and a few callbacks
 differ. The app selects the model from the first four characters of the raw
 Bluetooth name (``qrrm`` asks the user), or from its own model picker.
@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...card import (
     CARD_MASSAGE,
     CARD_PRESET_SAVE,
@@ -432,6 +433,34 @@ class SessionFlags:
     dev: dict[str, bool] = field(default_factory=dict)
     detection: bool = False
     waist: bool = False
+
+
+# Shared wake actions and the alarm page options they select.
+_ALARM_POSITIONS: Final = {
+    "tv": "tv",
+    "zero_g": "zero_g",
+    "anti_snore": "anti_snore",
+    "lounge": "lounge",
+    "memory_1": "memory_1",
+    "memory_2": "memory_2",
+    "memory_3": "memory_3",
+    "memory_4": "memory_4",
+    "memory_5": "memory_5",
+    "yoga": "yoga",
+    "wake_mode_1": "alarm_mode_1",
+    "wake_mode_2": "alarm_mode_2",
+    "head_massage": "head_massage",
+    "foot_massage": "foot_massage",
+    "massage": "head_foot_massage",
+    "heat": "heat",
+    "sleep_aid": "sleep_aid",
+}
+# Wake massage zones and the legacy alarm page's massage options.
+_ALARM_MASSAGE_ZONES: Final = {
+    "head": ("head_massage",),
+    "feet": ("foot_massage",),
+    "both": ("head_foot_massage",),
+}
 
 
 class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaPresetActions):
@@ -1077,6 +1106,101 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if f is None or self.route != "L" or not self._alarm_page():
             return ()
         return tuple(ALARM_OPTIONS[c] for c in f.alarm if c in ALARM_MASSAGE_CODES)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        alarm, waist = self._alarm_page(), self._waist
+        if not alarm and not waist:
+            return None
+        positions = self.richmat_mh_alarm_positions
+        zones = tuple(zone for zone in _ALARM_MASSAGE_ZONES if self._massage_options(zone))
+        wake_actions = tuple(a for a, option in _ALARM_POSITIONS.items() if option in positions)
+        return AlarmCapability(
+            wake_actions=("none", *wake_actions) if wake_actions else (),
+            slots=len(MULTI_ALARM_SLOTS) if self._multi_alarm() else 1,
+            massage=bool(zones),
+            massage_zones=zones,
+            # The waist mattress repeats once or every day.
+            weekdays=waist,
+            massage_intensities=3 if waist else 0,
+            mattress_sides=tuple(WAIST_SIDES) if waist else (),
+        )
+
+    def _alarm_fields(self, alarm: AlarmRequest) -> dict[str, Any]:
+        position = None if alarm.wake_action == "none" else _ALARM_POSITIONS[alarm.wake_action]
+        massage = (
+            self._massage_options(alarm.massage_zone)
+            if alarm.massage and alarm.massage_zone
+            else ()
+        )
+        if alarm.weekdays:
+            raise AlarmError(
+                "alarm_runs_once", "The bed alarm runs once; repeating days apply to the mattress alarm"
+            )
+        return {
+            "enabled": alarm.enabled,
+            "position": position,
+            "massage": massage,
+            "slot": alarm.slot if self._multi_alarm() else None,
+        }
+
+    def _massage_options(self, zone: str) -> tuple[str, ...]:
+        """The page options that run ``zone``; both may be head and foot together."""
+        massages = self.richmat_mh_alarm_massages
+        options = _ALARM_MASSAGE_ZONES[zone]
+        if all(option in massages for option in options):
+            return options
+        if zone == "both" and {"head_massage", "foot_massage"} <= set(massages):
+            return ("head_massage", "foot_massage")
+        return ()
+
+    @staticmethod
+    def _waist_repeat(alarm: AlarmRequest) -> str:
+        if not alarm.weekdays:
+            return "once"
+        if len(alarm.weekdays) == 7:
+            return "daily"
+        raise AlarmError(
+            "alarm_once_or_daily",
+            "The mattress alarm runs once or every day; select no days or all seven",
+        )
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if alarm.mattress_side is not None:
+            if alarm.wake_action != "none" or alarm.massage:
+                raise AlarmError(
+                    "alarm_mattress_vibrates_only",
+                    "The mattress alarm only vibrates; remove the wake action and massage",
+                )
+            self._waist_repeat(alarm)
+            return
+        if alarm.massage_intensity != 1:
+            raise AlarmError(
+                "alarm_option_not_supported",
+                "The bed alarm has no massage intensity; it applies to the mattress alarm",
+                device_name="This bed",
+                option="massage_intensity",
+            )
+        self.validate_richmat_mh_alarm(**self._alarm_fields(alarm))
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        # The app reads the phone clock when it builds each frame.
+        now = dt_util.now()
+        if alarm.mattress_side is not None:
+            await self.richmat_mh_waist_alarm(
+                enabled=alarm.enabled,
+                waist_side=alarm.mattress_side,
+                hour=alarm.hour,
+                minute=alarm.minute,
+                now_hour=now.hour,
+                now_minute=now.minute,
+                repeat=self._waist_repeat(alarm),
+                intensity=alarm.massage_intensity,
+            )
+            return
+        # The bed counts down to the occurrence selected when the call arrived.
+        minutes = alarm.minutes_until(now) if alarm.enabled else 0
+        await self.richmat_mh_alarm(minutes=minutes, **self._alarm_fields(alarm))
 
     def validate_richmat_mh_alarm(
         self,

@@ -58,7 +58,7 @@ async def test_all_profile_factory_and_setup_contracts(hass, coordinator):
         hidden_generic_fields,
         per_side_profile,
     )
-    from custom_components.adjustable_bed.bed_traits import disconnect_after_command_default_enabled
+    from custom_components.adjustable_bed.bed_traits import default_connection_mode
     from custom_components.adjustable_bed.const import (
         BED_TYPE_GOODVIBE,
         CONF_MOTOR_COUNT,
@@ -90,7 +90,7 @@ async def test_all_profile_factory_and_setup_contracts(hass, coordinator):
         obj = await create_controller(coordinator, BED_TYPE_GOODVIBE, profile, None)
         assert isinstance(obj, bed.GoodVibeController)
         assert obj.profile is GOODVIBE and obj.product_key == profile
-        assert disconnect_after_command_default_enabled(BED_TYPE_GOODVIBE, profile) == (
+        assert (default_connection_mode(BED_TYPE_GOODVIBE, profile) == "release") == (
             profile not in ("sleep_rm", "sleep_hj")
         )
     assert not is_valid_variant_for_bed_type(BED_TYPE_GOODVIBE, "auto")

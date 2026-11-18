@@ -13,7 +13,7 @@ from custom_components.adjustable_bed.beds.svane.controller import SvaneControll
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PROTOCOL_VARIANT,
@@ -49,7 +49,7 @@ async def sequential_pair(hass, request, monkeypatch):
         entry = MockConfigEntry(domain=DOMAIN, data={
             CONF_ADDRESS: address, CONF_NAME: side, CONF_BED_TYPE: BED_TYPE_SVANE,
             CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC if profile == "jmc" else SVANE_VARIANT_MULTI,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         })
         entry.add_to_hass(hass)
         child = AdjustableBedCoordinator(hass, entry)

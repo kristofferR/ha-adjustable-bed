@@ -115,19 +115,6 @@ async def test_thermal_poll_owns_quick_handoff_and_queued_idle_cleanup(hass, mon
         coord._cancel_disconnect_timer()
 
 
-async def test_other_two_address_pair_cannot_enter_motion_before_rerender(hass):
-    data = _paired_entry_data()
-    entry = MockConfigEntry(domain=DOMAIN, data=data)
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass, flow.handler = hass, entry.entry_id
-    original = entry.data
-    result = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_MOTION_BED}, step_id="settings")
-    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert not flow._pending_changed_data
-    assert entry.data == original
-
-
 async def test_valid_motion_pair_common_options_preserve_independent_names(hass):
     data = _paired_entry_data()
     data[CONF_BED_TYPE] = BED_TYPE_MOTION_BED

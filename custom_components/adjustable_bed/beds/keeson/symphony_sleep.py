@@ -12,6 +12,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...app_session import app_session
 from ...card import CARD_MASSAGE_TIMER, CARD_UTILITY
 from ...codec import keeson as codec
@@ -405,6 +406,20 @@ class SymphonySleepController(KeesonController):
         started = asyncio.get_running_loop().time()
         await self._send(link, packet, self._coordinator.cancel_command)
         self._queries(link, packet, (0.2,), start=started)
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(wake_actions=tuple(app.WAKE), cancel_running=True, resource=None)
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        app.alarm(
+            self.route,
+            enabled=alarm.enabled,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            wake=alarm.wake_action,
+        )
+        self.validate_clock_sync()
 
     async def configure_clock_alarm(self, *, enabled: bool, weekdays: Sequence[int], hour: int,
                                     minute: int, preset: str, head_level: int = 0, foot_level: int = 0) -> None:

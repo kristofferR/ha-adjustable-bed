@@ -15,7 +15,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.bed_traits import bed_traits, reads_positions
 from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -48,21 +48,22 @@ async def test_every_setup_route_collects_processor_profile(
     result = await start_new_bed(flow, route, const.BED_TYPE_SLEEPTRACKER, "AA:BB:CC:01:02:03")
     assert result["step_id"] == "profile_questions"
     values = result["data_schema"](
-        {"product_type": "activebreeze_small", "sleeptracker_unit_number": 2}
+        {"product_type": "activebreeze_small", "advanced": {"sleeptracker_unit_number": 2}}
     )
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await finish_new_bed(
             flow,
             await flow.async_step_profile_questions(values),
-            {"name": "Processor", "disconnect_after_command": False, "preferred_adapter": "auto"},
+            {"name": "Processor", "connection_mode": "idle", "preferred_adapter": "auto"},
         )
     data = finish.call_args.args[0]
     assert data["product_type"] == "activebreeze_small"
     assert data["sleeptracker_unit_number"] == 2
     assert data["sleeptracker_restricted"] is False
-    assert data["has_massage"] is True and data["disable_angle_sensing"] is True
+    assert data["has_massage"] is True and not reads_positions(data)
     assert data["motor_count"] == 3
-    assert data["sleeptracker_foundation"] == "Unspecified"
+    # The app's foundation size is not asked: it never changed a command.
+    assert "sleeptracker_foundation" not in data
     assert bed_traits(const.BED_TYPE_SLEEPTRACKER).no_angle_feedback
     assert "Sleeptracker" in BED_TYPE_DISPLAY_NAMES[const.BED_TYPE_SLEEPTRACKER]
 
@@ -216,7 +217,7 @@ async def test_wave_entities_keep_shared_settings_across_reconnect_and_restart(h
     entry = MockConfigEntry(domain=const.DOMAIN, data={
         "address": "AA:BB:CC:01:02:03", "name": "Processor",
         "bed_type": const.BED_TYPE_SLEEPTRACKER, "product_type": "ergo_prosmart",
-        "disconnect_after_command": True,
+        "connection_mode": "release",
     })
     entry.add_to_hass(hass)
     runtime = AdjustableBedCoordinator(hass, entry)

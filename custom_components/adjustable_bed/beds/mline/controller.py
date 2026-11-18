@@ -14,6 +14,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 from homeassistant.util.json import JsonValueType
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...codec import mline as codec
 from ...command_scheduler import current_command_context
@@ -73,6 +74,17 @@ async def settled[T](operation: Coroutine[object, object, T]) -> T:
     if cancelled:
         raise asyncio.CancelledError
     return result
+
+
+# Shared wake actions and the app's own mode names, default first.
+_ALARM_MODES: Final = {
+    "zero_g": "zg",
+    "flat": "flat",
+    "memory_1": "m1",
+    "memory_2": "m2",
+    "massage": "vibration",
+    "anti_snore": "antisnore",
+}
 
 
 class MLineController(ProfileExecution[app.MLineProfile], BedController):
@@ -481,6 +493,29 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
     async def _query_alarm(self) -> None:
         await self.write_command(
             codec.AUXILIARY[f"checkAlarm.{'P2' if self.profile.key == 'okin' else 'P1'}"]
+        )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(wake_actions=tuple(_ALARM_MODES), weekdays=True, resource="*")
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_action("alarm")
+        codec.alarm(
+            self.profile.key,
+            alarm.hour,
+            alarm.minute,
+            codec.wake_mask(alarm.weekdays, alarm.hour, alarm.minute, alarm.reference_time),
+            _ALARM_MODES[alarm.wake_action],
+        )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        await self.configure_clock_alarm(
+            enabled=alarm.enabled,
+            weekdays=alarm.weekdays,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            preset=_ALARM_MODES[alarm.wake_action],
         )
 
     async def configure_clock_alarm(

@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability
 from ...card import CARD_LIGHTING, CARD_MASSAGE
 from ...codec import jiecang as codec
 from ...const import (
@@ -602,6 +603,16 @@ class LogicdataAppController(ProfileExecution[LogicdataProfile], BedController):
         await self._schedule(
             profiles.rename_schedule(self.profile, rename_transport, name),
             uuid=TRANSPORTS[rename_transport].name_uuid,
+        )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if not self.supports_clock_alarm:
+            return None
+        return AlarmCapability(
+            wake_actions=("flat", "zero_g", "anti_snore", "memory_1", "memory_2"),
+            weekdays=True,
+            massage_levels=3,
         )
 
     async def configure_clock_alarm(

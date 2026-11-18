@@ -1,4 +1,4 @@
-"""Complete direct BLE profile for com.okin.adjustamattress 1.6.0 (row067)."""
+"""Complete direct BLE profile for com.okin.adjustamattress 1.6.0."""
 
 from __future__ import annotations
 

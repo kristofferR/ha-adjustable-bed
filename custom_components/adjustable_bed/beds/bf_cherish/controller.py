@@ -1,4 +1,4 @@
-"""Explicit BF 1.2.3 and Cherish 1.0.4 profiles (accepted row063).
+"""Explicit BF 1.2.3 and Cherish 1.0.4 profiles.
 
 These apps share framing, not their command tables or alarm format. No
 advertisement identifies either app.
@@ -16,6 +16,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability, AlarmRequest
 from ...app_session import app_session
 from ...card import CARD_MASSAGE, CardRole, motor_card
 from ...codec import keeson as codec
@@ -667,6 +668,20 @@ class BfCherishController(ProfileExecution[keeson_profiles.KeesonProfile], BedCo
     @property
     def supports_clock_alarm(self) -> bool:
         return True
+
+    @property
+    def alarm_capability(self) -> AlarmCapability:
+        return AlarmCapability(wake_actions=("none", "memory_1", "memory_2"))
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        alarm_frame(
+            self.cherish,
+            alarm.reference_time,
+            enabled=alarm.enabled,
+            hour=alarm.hour,
+            minute=alarm.minute,
+            memory=alarm.wake_action,
+        )
 
     async def configure_clock_alarm(
         self,

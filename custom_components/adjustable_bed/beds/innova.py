@@ -1,6 +1,6 @@
 """INNOVA app profile (com.ore.sfm 2.0 (3)).
 
-Accepted clean-room audit, APK Protocol Audit cluster-015 / row059. Its sibling,
+Its sibling,
 Bedsense Bases, shares the ORE comfort-bed behavior in ``ore_comfort_bed.py``.
 INNOVA differs materially: the frame ``E5 FE 16 k0 k1 k2 k3 ~sum`` carries the
 standard Keeson 32-bit key in little-endian order, Memory A/B and the

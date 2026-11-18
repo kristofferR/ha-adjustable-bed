@@ -1,8 +1,8 @@
 """Explicit OKIN Bedding app profiles that share one OREBleDeviceManager core.
 
-Jordan's Serenity 1.0.1 (S01), Jordan's Tranquil 1.0.2 and the Customatic
-Z-Series 1.0.4 Z-230/Z-280 pages (row 052, cluster 010) were each frozen and
-accepted independently. They reuse the same CST frame, refresh/release
+Jordan's Serenity 1.0.1, Jordan's Tranquil 1.0.2 and the Customatic
+Z-Series 1.0.4 Z-230/Z-280 pages were each frozen
+independently. They reuse the same CST frame, refresh/release
 lifecycle and notification parser, but every action table, save code, button
 and alarm capability below comes from its own app. Nothing is inherited from
 another app's capabilities.
@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Final, cast
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
+from ...alarm import AlarmCapability
 from ...card import CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...const import (
@@ -694,6 +695,13 @@ class ZSeriesController(OkinBeddingAppController):
     @property
     def clock_alarm_preset_options(self) -> tuple[str, ...]:
         return tuple(_ALARM_WAKE) if self.alarm_state is True else ()
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        if not self.alarm_not_ruled_out:
+            return None
+        # The app will not turn an alarm on until a wake action is chosen.
+        return AlarmCapability(wake_actions=tuple(_ALARM_WAKE), requires_wake_action=True)
 
     async def resolve_alarm_state(self) -> bool | None:
         """Read the manufacturer again while the state is unknown; never downgrade on failure."""

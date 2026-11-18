@@ -1823,7 +1823,7 @@ export class AdjustableBedCard extends LitElement {
         values: this._estimateValues(alert.estimates),
       });
       actions = html`<button class="set-btn" @click=${() =>
-        void this._estimateService("confirm_position_unchanged", ctx).catch(() => undefined)}>
+        void this._estimateService("estimate_confirm_unchanged", ctx).catch(() => undefined)}>
         ${this._t("estimate.unchanged")}</button>${reference}`;
     } else {
       const reasonKey = `estimate.reason_${alert.reason ?? "not_referenced"}`;
@@ -1910,7 +1910,7 @@ export class AdjustableBedCard extends LitElement {
 
   private _recall(ctx: EstimateContext, position: SavedPosition): void {
     this._hold.abandon();
-    void this._estimateService("recall_position", { ...ctx, side: undefined }, { position: position.id })
+    void this._estimateService("estimate_recall_position", { ...ctx, side: undefined }, { position: position.id })
       .then(() => this._toast(this._t("estimate.recalled", { name: position.name })))
       .catch(() => undefined);
   }
@@ -2026,7 +2026,7 @@ export class AdjustableBedCard extends LitElement {
         );
         return;
       }
-      void this._estimateService("set_position_reference", dialog.ctx, { motors: selected })
+      void this._estimateService("estimate_set_reference", dialog.ctx, { motors: selected })
         .catch(() => undefined);
       this._estimateDialog = undefined;
     };
@@ -2068,7 +2068,7 @@ export class AdjustableBedCard extends LitElement {
     const name = dialog.name.trim();
     const save = (): void => {
       if (!name) return;
-      void this._estimateService("save_position", dialog.ctx, {
+      void this._estimateService("estimate_save_position", dialog.ctx, {
         name, create_button: dialog.button,
       }).catch(() => undefined);
       this._estimateDialog = undefined;
@@ -2134,10 +2134,10 @@ export class AdjustableBedCard extends LitElement {
       </label>
       ${canUpdate ? nothing : html`<p class="dialog-text">${this._t("estimate.update_blocked")}</p>`}
       <div class="dialog-actions">
-        <button class="dialog-btn danger" @click=${() => run("delete_position")}>${this._t("estimate.delete")}</button>
-        <button class="dialog-btn" ?disabled=${!canUpdate} @click=${() => run("update_position")}>${this._t("estimate.update")}</button>
+        <button class="dialog-btn danger" @click=${() => run("estimate_delete_position")}>${this._t("estimate.delete")}</button>
+        <button class="dialog-btn" ?disabled=${!canUpdate} @click=${() => run("estimate_update_position")}>${this._t("estimate.update")}</button>
         <button class="dialog-btn primary" ?disabled=${!name}
-          @click=${() => run("rename_position", { name, create_button: dialog.button })}>${this._t("estimate.save_confirm")}</button>
+          @click=${() => run("estimate_rename_position", { name, create_button: dialog.button })}>${this._t("estimate.save_confirm")}</button>
       </div>`;
   }
 

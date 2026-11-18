@@ -118,7 +118,7 @@ test("tapping a tracking saved position recalls it by id", async () => {
     .slice(1); // the section template itself owns the Save tile handler
   recall();
   await Promise.resolve();
-  expect(calls).toEqual([{ service: "recall_position", data: { device_id: "bed", position: "p1" } }]);
+  expect(calls).toEqual([{ service: "estimate_recall_position", data: { device_id: "bed", position: "p1" } }]);
 });
 
 test("TV lift estimated height and saved heights use the lift motor", async () => {
@@ -140,13 +140,13 @@ test("TV lift estimated height and saved heights use the lift motor", async () =
   recall();
   await Promise.resolve();
   expect(calls.at(-1)).toEqual({
-    service: "recall_position", data: { device_id: "bed", position: "p1" },
+    service: "estimate_recall_position", data: { device_id: "bed", position: "p1" },
   });
   card._estimateDialog = { kind: "reference", ctx, choice: "flat", phase: "choose" };
   expect(text(card._estimateDialogTemplate())).toContain("Fully lowered now");
   clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
   expect(calls.at(-1)).toEqual({
-    service: "set_position_reference", data: { device_id: "bed", motors: ["tv_lift"] },
+    service: "estimate_set_reference", data: { device_id: "bed", motors: ["tv_lift"] },
   });
 });
 
@@ -165,7 +165,7 @@ test("lower to flat moves first, then the user confirms flat", async () => {
   primary = clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!;
   primary();
   expect(calls.at(-1)).toEqual({
-    service: "set_position_reference", data: { device_id: "bed", motors: ["back", "legs"] },
+    service: "estimate_set_reference", data: { device_id: "bed", motors: ["back", "legs"] },
   });
   expect(card._estimateDialog).toBeUndefined();
 });
@@ -209,7 +209,7 @@ test("saving names the current position and keeps the button choice", () => {
   card._estimateDialog = { kind: "save", ctx, name: " Reading ", button: false };
   clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
   expect(calls).toEqual([{
-    service: "save_position", data: { device_id: "bed", name: "Reading", create_button: false },
+    service: "estimate_save_position", data: { device_id: "bed", name: "Reading", create_button: false },
   }]);
 });
 

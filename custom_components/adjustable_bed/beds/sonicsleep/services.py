@@ -21,6 +21,7 @@ async def handle_request(call: ServiceCall) -> None:
         _command_targets,
         _execute_preflighted,
         _family_command,
+        _invalid,
         _release_preflighted,
     )
 
@@ -31,8 +32,13 @@ async def handle_request(call: ServiceCall) -> None:
     from .controller import PreparedRequest, Request, SonicSleepController
 
     request = Request(
-        call.data["operation"], call.data.get("alarm_id"), call.data["hour"],
-        call.data["minute"], call.data["mode"], tuple(call.data["weekdays"]), call.data["enabled"],
+        call.data["operation"],
+        call.data.get("alarm_id"),
+        call.data["hour"],
+        call.data["minute"],
+        call.data["mode"],
+        tuple(call.data["weekdays"]),
+        call.data["enabled"],
     )
     for parent, side in targets:
         for child in _command_targets(parent, side):
@@ -49,9 +55,13 @@ async def handle_request(call: ServiceCall) -> None:
     try:
         for parent, side in targets:
             for child in _command_targets(parent, side):
+
                 async def query(controller):
                     if not isinstance(controller, SonicSleepController):
-                        raise ServiceValidationError("SonicSleep controller ownership changed")
+                        raise _invalid(
+                            "bed_changed",
+                            "The bed changed while the action was being checked; try again",
+                        )
                     try:
                         plans[controller] = await controller.prepare_plan(request)
                     except ValueError as error:
@@ -63,8 +73,12 @@ async def handle_request(call: ServiceCall) -> None:
                         raise ServiceValidationError("SonicSleep preflight was interrupted")
 
                 if isinstance(parent, PairedBedCoordinator):
-                    child_side = next(key for key, value in parent.children.items() if value is child)
-                    await parent.async_run_child_operation("SonicSleep preflight", inspect, side=child_side, cancel_running=False)
+                    child_side = next(
+                        key for key, value in parent.children.items() if value is child
+                    )
+                    await parent.async_run_child_operation(
+                        "SonicSleep preflight", inspect, side=child_side, cancel_running=False
+                    )
                 else:
                     await inspect(child)
                 preflighted.append((parent, child))
@@ -79,7 +93,8 @@ async def handle_request(call: ServiceCall) -> None:
             await controller.execute_prepared(plans[controller])
 
         await _execute_preflighted(
-            targets, preflighted,
+            targets,
+            preflighted,
             _family_command(SonicSleepController, "SonicSleep", execute),
             admissions=admissions,
         )
@@ -91,16 +106,26 @@ def async_register_sonicsleep_services(hass: HomeAssistant) -> None:
     from ...services import DEVICE_IDS, SIDE_FIELD
 
     hass.services.async_register(
-        DOMAIN, "sonicsleep", handle_request,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
-            vol.Required("operation"): vol.In(("list", "new", "edit", "toggle", "delete", "link_name", "sync_clock")),
-            vol.Optional("alarm_id"): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-            vol.Optional("hour", default=6): vol.All(vol.Coerce(int), vol.Range(min=0, max=23)),
-            vol.Optional("minute", default=30): vol.All(vol.Coerce(int), vol.Range(min=0, max=59)),
-            vol.Optional("mode", default="zero_gravity"): vol.In(PRESETS),
-            vol.Optional("weekdays", default=[]): [vol.All(vol.Coerce(int), vol.Range(min=0, max=6))],
-            vol.Optional("enabled", default=True): cv.boolean,
-            **SIDE_FIELD,
-        }),
+        DOMAIN,
+        "sonicsleep",
+        handle_request,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+                vol.Required("operation"): vol.In(
+                    ("list", "new", "edit", "toggle", "delete", "link_name", "sync_clock")
+                ),
+                vol.Optional("alarm_id"): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
+                vol.Optional("hour", default=6): vol.All(vol.Coerce(int), vol.Range(min=0, max=23)),
+                vol.Optional("minute", default=30): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=59)
+                ),
+                vol.Optional("mode", default="zero_gravity"): vol.In(PRESETS),
+                vol.Optional("weekdays", default=[]): [
+                    vol.All(vol.Coerce(int), vol.Range(min=0, max=6))
+                ],
+                vol.Optional("enabled", default=True): cv.boolean,
+                **SIDE_FIELD,
+            }
+        ),
     )
