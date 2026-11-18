@@ -396,11 +396,13 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
     def validate_alarm_bank(self, bank: tuple[app.Alarm, app.Alarm, app.Alarm]) -> None:
         if self.profile.key == "p1" or len(bank) != 3:
             raise ValueError("Nerum P2/P3 requires exactly three alarm records")
+        # A reported wake type round-trips: P2 stores its byte, P3 its wake code.
+        kinds = range(256) if self.profile.key == "p2" else {0, *app.WAKE_CODES}
         if any(
             not 0 <= a.hour <= 23
             or not 0 <= a.minute <= 59
             or not 0 <= a.repeat <= 255
-            or a.kind not in app.WAKE.values()
+            or a.kind not in kinds
             for a in bank
         ):
             raise ValueError("Invalid Nerum alarm fields")
@@ -454,10 +456,31 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
         )
 
     async def check_alarm(self, alarm: AlarmRequest) -> None:
-        await self._reported_bank()
+        # Read a fresh, complete bank for every change.
+        link = self._live()
+        self._reported = [None, None, None]
+        self._alarm_reply.clear()
+        await self._query_alarms(link)
+        try:
+            async with asyncio.timeout(ALARM_REPLY_TIMEOUT_S):
+                while None in self._reported:
+                    await self._alarm_reply.wait()
+                    self._alarm_reply.clear()
+        except TimeoutError:
+            pass
+        self.validate_alarm_bank(self._planned_bank(alarm))
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
-        bank = list(await self._reported_bank())
+        bank = self._planned_bank(alarm)
+        # The next change reads the bed again instead of trusting this write.
+        self._reported = [None, None, None]
+        await self.set_alarms(bank)
+
+    def _planned_bank(self, alarm: AlarmRequest) -> tuple[app.Alarm, app.Alarm, app.Alarm]:
+        """Return the bed's reported bank with the requested slot replaced."""
+        if None in self._reported:
+            raise AlarmError("alarm_refresh_needed", "The bed did not report its alarms; try again")
+        bank = [a for a in self._reported if a is not None]
         if alarm.enabled:
             # Bits 0-6 are Sunday-Saturday, bit 7 repeats; a one-shot alarm
             # carries only its next day's bit.
@@ -472,26 +495,7 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
             )
         else:
             bank[alarm.slot - 1] = replace(bank[alarm.slot - 1], on=False)
-        # The next change reads the bed again instead of trusting this write.
-        self._reported = [None, None, None]
-        await self.set_alarms((bank[0], bank[1], bank[2]))
-
-    async def _reported_bank(self) -> tuple[app.Alarm, app.Alarm, app.Alarm]:
-        link = self._live()
-        if None in self._reported:
-            self._alarm_reply.clear()
-            await self._query_alarms(link)
-            try:
-                async with asyncio.timeout(ALARM_REPLY_TIMEOUT_S):
-                    while None in self._reported:
-                        await self._alarm_reply.wait()
-                        self._alarm_reply.clear()
-            except TimeoutError:
-                pass
-        first, second, third = self._reported
-        if first is None or second is None or third is None:
-            raise AlarmError("alarm_refresh_needed", "The bed did not report its alarms; try again")
-        return first, second, third
+        return bank[0], bank[1], bank[2]
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback

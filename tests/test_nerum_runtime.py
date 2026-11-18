@@ -33,9 +33,29 @@ BANK = (
 )
 
 
-def seed(co):
-    """Give a receiver the bank its bed reported on this connection."""
-    co.controller._reported = list(BANK)
+P3_SLOTS = {
+    1: bytes.fromhex("000c00008205061e0001"),
+    2: bytes.fromhex("000d00000006082d0000"),
+    3: bytes.fromhex("000e0000ff07173b0001"),
+}
+
+
+def answer_alarm_queries(co, client, then=None):
+    """Make a receiver's bed answer its alarm queries with BANK, then run ``then``."""
+    ctrl, protocol = co.controller, co.controller.profile.key
+    replies = (
+        {app.query("p2", 1): [P2_BANK]}
+        if protocol == "p2"
+        else {app.query("p3", slot): [frame] for slot, frame in P3_SLOTS.items()}
+    )
+
+    async def write(char, data, **kwargs):
+        for reply in replies.get(bytes(data), ()):
+            ctrl._receive(ctrl._live(), ctrl._live().notify, reply)
+        if then is not None and bytes(data) not in replies:
+            await then(char, data, **kwargs)
+
+    client.write_gatt_char.side_effect = write
 
 
 async def receiver(hass, protocol="p2", address="AA:BB:CC:DD:01:03", layout="4"):
@@ -254,7 +274,7 @@ async def test_renewable_hold_expiry_and_stop_drain(hass, monkeypatch):
 async def test_set_alarm_rejects_a_batch_with_an_alarmless_receiver(hass, monkeypatch):
     left, lc = await receiver(hass)
     right, rc = await receiver(hass, "p1", "AA:BB:CC:DD:01:04")
-    seed(left)
+    answer_alarm_queries(left, lc)
     await async_register_services(hass)
     monkeypatch.setattr(
         "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -273,13 +293,7 @@ async def test_set_alarm_rejects_a_batch_with_an_alarmless_receiver(hass, monkey
 
 async def test_set_alarm_reads_the_bank_then_rewrites_it_whole(hass, monkeypatch):
     co, client = await receiver(hass)
-    ctrl = co.controller
-
-    async def reply(_char, data, **_kwargs):
-        if data == app.query("p2", 1):
-            ctrl._receive(ctrl._live(), ctrl._live().notify, P2_BANK)
-
-    client.write_gatt_char.side_effect = reply
+    answer_alarm_queries(co, client)
     await async_register_services(hass)
     monkeypatch.setattr(
         "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -320,14 +334,15 @@ async def test_paired_bank_and_movement_keep_physical_side(hass, monkeypatch):
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         lambda *_: ([(pair, "right")], []),
     )
-    seed(right)
+    answer_alarm_queries(right, rc)
     try:
         with virtual_clock():
             await hass.services.async_call(
                 const.DOMAIN, "set_alarm", {"device_id": "pair", **ALARM}, blocking=True
             )
             assert not frames(lc)
-            assert len(frames(rc)) == 7
+            # Three queries read the bank, then the clock, three slots and three queries.
+            assert len(frames(rc)) == 10
             rc.write_gatt_char.reset_mock()
             await hass.services.async_call(
                 const.DOMAIN,
@@ -403,16 +418,18 @@ async def test_stop_of_later_batch_target_during_first_target_prevents_alarm_wri
             stopped = True
             await right.async_stop_command()
 
-    seed(left)
-    seed(right)
-    lc.write_gatt_char.side_effect = first_write
+    answer_alarm_queries(left, lc, then=first_write)
+    answer_alarm_queries(right, rc)
     try:
         with virtual_clock():
             await hass.services.async_call(
                 const.DOMAIN, "set_alarm", {"device_id": ["left", "right"], **ALARM}, blocking=True
             )
-        assert len(frames(lc)) == 2
-        assert frames(rc) == [app.build("p3", 6)] * 2
+        # Both banks are read first; STOP on the right then leaves only the left's write.
+        assert len(frames(lc)) == 3
+        assert (
+            frames(rc) == [app.query("p3", slot) for slot in (1, 2, 3)] + [app.build("p3", 6)] * 2
+        )
     finally:
         await left.async_shutdown()
         await right.async_shutdown()
