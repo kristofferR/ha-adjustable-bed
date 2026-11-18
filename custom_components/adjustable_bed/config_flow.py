@@ -2274,6 +2274,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return await self.async_step_migration_split(user_input)
         if family is None:
             return await self.async_step_reconfigure_bed_type()
+        # The family question also offers every other bed type and app.
+        self._another_app_step = family.step
         return await getattr(self, f"async_step_{family.step}")(user_input)
 
     async def async_step_reconfigure_bed_type(
@@ -3814,6 +3816,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         answer = (user_input or {}).get("choice")
         if self._another_app_step is None or answer != _ANOTHER_APP:
             return None
+        if self._migration is not None:
+            # Reconfigure leaves the family for the full bed-type list.
+            self._another_app_step = None
+            self._migration_family = None
+            return await self.async_step_reconfigure_bed_type()
         return await self._async_search_every_app()
 
     async def _async_search_every_app(self) -> ConfigFlowResult:
@@ -7627,6 +7634,11 @@ class AdjustableBedOptionsFlow(
         # The bed type and route change only through Reconfigure; this form
         # shows the settings the saved route reads.
         unused = _unused_generic_fields(bed_type, form_variant)
+        if _is_leggett_app_type(bed_type, form_variant) and current_data.get(
+            CONF_LEGGETT_APP_PROFILE
+        ):
+            # The saved Leggett app fixes the motor count.
+            unused.add(CONF_MOTOR_COUNT)
 
         def fields(*keys: str) -> dict[vol.Marker, Any]:
             return _settings_fields(
@@ -7656,6 +7668,8 @@ class AdjustableBedOptionsFlow(
             if marker.schema in hidden_generic_fields(bed_type, form_variant)
         }
         # A two-address pair's shared form never shows one side's app settings.
+        # The declared questions this form asks, which keep their fields.
+        question_keys: set[str] = set()
         # The Leggett app is chosen in Reconfigure's guided change.
         if not separate_address_pair and not _is_leggett_app_type(bed_type, form_variant):
             if (
@@ -7664,13 +7678,15 @@ class AdjustableBedOptionsFlow(
                     self.config_entry.data.get(CONF_BED_TYPE),
                 )
             ) is not None:
-                schema_dict.update(
-                    _profile_question_schema(
-                        questions, current_data, context, advanced_section=False
-                    )
+                rendered = _profile_question_schema(
+                    questions, current_data, context, advanced_section=False
                 )
+                schema_dict.update(rendered)
+                question_keys = {marker.schema for marker in rendered}
 
-        asked = {marker.schema for marker in schema_dict} & {marker.schema for marker in held}
+        asked = (
+            {marker.schema for marker in schema_dict} & {marker.schema for marker in held}
+        ) | question_keys
         schema_dict.update(
             {marker: validator for marker, validator in held.items() if marker.schema not in asked}
         )

@@ -574,6 +574,7 @@ def _v5_6_settings(
     *,
     paired: bool = False,
     inherited_after: bool | None = None,
+    side_overrides: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return one stored settings mapping in the 5.6 shape.
 
@@ -591,7 +592,8 @@ def _v5_6_settings(
         shared = {key: new[key] for key in _V5_6_INHERITED_KEYS if key in new}
         new[CONF_PAIR_CHILDREN] = [
             _v5_6_settings(
-                {**shared, **child},
+                # In the order a side reads them: parent, side, then options.
+                {**shared, **child, **(side_overrides or {})},
                 {**route, **_route_of(child)},
                 f"{location}.{child.get(CONF_SIDE, index)}",
                 changed,
@@ -649,7 +651,7 @@ def _v5_6_settings(
                 changed,
             )
     if notes:
-        changed[location] = notes
+        changed.setdefault(location, []).extend(notes)
     return new
 
 
@@ -674,9 +676,25 @@ def migrate_v5_6_entry(
     to its route's default is dropped, since the route now decides it. The
     migration record lists each change by where it was stored.
     """
+    paired = isinstance(data.get(CONF_PAIR_CHILDREN), list)
+    side_overrides: dict[str, Any] = {}
+    if paired and (
+        _LEGACY_DISCONNECT_AFTER_COMMAND in options
+        or options.get(CONF_IDLE_DISCONNECT_SECONDS) == IDLE_DISCONNECT_KEEP_CONNECTED
+    ):
+        # A pair's connection options win over each side's own settings, so
+        # each side's mode is derived with them and the options lose them.
+        side_overrides = {
+            key: options[key]
+            for key in (_LEGACY_DISCONNECT_AFTER_COMMAND, CONF_IDLE_DISCONNECT_SECONDS)
+            if key in options
+        }
+        options = {key: value for key, value in options.items() if key not in side_overrides}
     changed: dict[str, list[str]] = {}
+    if side_overrides:
+        changed["options"] = [f"{key} (moved to each side)" for key in sorted(side_overrides)]
     route = _route_of(data)
-    new_data = _v5_6_settings(data, route, "data", changed)
+    new_data = _v5_6_settings(data, route, "data", changed, side_overrides=side_overrides)
     legacy_after = data.get(_LEGACY_DISCONNECT_AFTER_COMMAND)
     new_options = _v5_6_settings(
         options,
@@ -684,7 +702,7 @@ def migrate_v5_6_entry(
         "options",
         changed,
         # A pair's options reach its sides, which keep their angle choices.
-        paired=isinstance(data.get(CONF_PAIR_CHILDREN), list),
+        paired=paired,
         inherited_after=legacy_after if isinstance(legacy_after, bool) else None,
     )
     if changed:

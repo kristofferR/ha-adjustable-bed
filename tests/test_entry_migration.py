@@ -738,3 +738,30 @@ async def test_a_5_5_entry_moves_to_5_6(hass: HomeAssistant) -> None:
         "connection_profile",
         f"{CONF_CONNECTION_MODE}={CONNECTION_MODE_RELEASE}",
     ]
+
+
+def test_schema_5_6_applies_pair_options_to_each_side_first() -> None:
+    """A pair's options win over its sides, so each side's mode is derived with them."""
+    data = {
+        CONF_PAIR_ID: "pair_opts",
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        "disconnect_after_command": True,
+        CONF_PAIR_CHILDREN: [
+            {CONF_SIDE: "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:38", CONF_BED_TYPE: BED_TYPE_KEESON},
+            {
+                CONF_SIDE: "right",
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:39",
+                CONF_BED_TYPE: BED_TYPE_KEESON,
+                "disconnect_after_command": False,
+            },
+        ],
+    }
+
+    migrated, options = migrate_v5_6_entry(
+        data, {"idle_disconnect_seconds": 0}, from_version=5, from_minor_version=5
+    )
+
+    left, right = migrated[CONF_PAIR_CHILDREN]
+    assert left[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
+    assert right[CONF_CONNECTION_MODE] == CONNECTION_MODE_ALWAYS
+    assert options == {}

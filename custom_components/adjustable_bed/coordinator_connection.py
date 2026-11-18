@@ -1138,7 +1138,6 @@ class CoordinatorConnectionMixin:
                 attempt_details["connect_elapsed_seconds"] = round(connect_elapsed, 3)
                 attempt_details["total_elapsed_seconds"] = round(total_elapsed, 3)
                 attempt_details["result"] = "connected"
-                self._connect_failure_logged = False
                 connect_log(
                     "Connected to %s in %.1fs (GATT: %.1fs) via adapter: %s",
                     self._address,
@@ -1513,6 +1512,8 @@ class CoordinatorConnectionMixin:
                     self._last_bond_evidence = None
                 await self.async_clear_obsolete_pairing_state()
 
+                # Ready for commands: the next outage warns again.
+                self._connect_failure_logged = False
                 return True
 
             except asyncio.CancelledError:
