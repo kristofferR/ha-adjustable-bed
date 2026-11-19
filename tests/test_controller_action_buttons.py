@@ -172,7 +172,7 @@ async def test_legacy_profile_exposes_app_actions_without_guessed_covers(
     await hass.async_block_till_done()
 
     entries = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
-    actions = [entity for entity in entries if entity.translation_key == "remote_action"]
+    actions = [entity for entity in entries if "6brm_framed" in entity.unique_id]
     assert len(actions) == 6
     assert all("6brm_framed" in entity.unique_id for entity in actions)
     assert not any(entity.domain == "cover" for entity in entries)
@@ -262,7 +262,7 @@ async def test_translated_action_names_come_from_the_translation(
                 "motor_reset",
                 "MotorReset",
                 press,
-                translation_key="hush_base_action",
+                translation_key="catalog_action",
                 translation_placeholders={"action": "Motor Reset"},
             ),
         ),

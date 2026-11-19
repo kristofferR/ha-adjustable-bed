@@ -28,7 +28,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "comfortfurniture": frozenset(v["expected_bytes"] for v in json.loads(
         (Path(__file__).parent / "fixtures/comfortfurniture/vectors.json").read_text()
     ) if v["kind"] == "command"),
-    # com.ore.okincomfortbed 1.1.6 (8), unit152 frozen vectors.json.
+    # com.ore.okincomfortbed 1.1.6 (8) frozen vectors.json.
     "okin_comfort_bed": frozenset(
         {
             "e5fe160000000006",
@@ -1384,7 +1384,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "ef0242656400000000000000000000000003",
         }
     ),
-    # com.ore.bedding.glideawaymontion 1.0.3 (row068): report vectors
+    # com.ore.bedding.glideawaymontion 1.0.3: report vectors
     "glideaway_motion": frozenset(
         {
             "e28003009a",
@@ -1486,7 +1486,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e6fe16800000000184",
         }
     ),
-    # com.okin.adjustamattress 1.6.0 (row067), model P1: tests/fixtures/adjustamattress vectors
+    # com.okin.adjustamattress 1.6.0, model P1: tests/fixtures/adjustamattress vectors
     "adjustamattress": frozenset(
         {
             "e6fe16000000000005",
@@ -1527,7 +1527,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e5fe1611000013e2",
         }
     ),
-    # com.okin.adjustamattress 1.6.0 (row067), model P2: tests/fixtures/adjustamattress vectors
+    # com.okin.adjustamattress 1.6.0, model P2: tests/fixtures/adjustamattress vectors
     "adjustamattress_p2": frozenset(
         {
             "e5fe160000000006",
@@ -1696,7 +1696,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e6fe16800000000283",
         }
     ),
-    # com.keeson.coolbase 1.0.0 (row047): report vectors
+    # com.keeson.coolbase 1.0.0: report vectors
     "coolbase": frozenset(
         {
             "e5fe160000000006",
@@ -1718,7 +1718,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e5fe1608000000fe",
         }
     ),
-    # com.BF 1.2.3 (row063): report vectors
+    # com.BF 1.2.3: report vectors
     "bf": frozenset(
         {
             "e2fe160000000009",
@@ -1748,7 +1748,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "ebfe163a3b17010006010000f973",
         }
     ),
-    # com.okin.ore.cherish 1.0.4 (row063): report vectors
+    # com.okin.ore.cherish 1.0.4: report vectors
     "cherish": frozenset(
         {
             "e5fe160000000006",
@@ -1787,7 +1787,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "eafe163b3b17ffffffffffff7a",
         }
     ),
-    # com.okin.enhancements 1.0.3 (row110): report vectors
+    # com.okin.enhancements 1.0.3: report vectors
     "comfort_enhancements": frozenset(
         {
             "e2fe160000000009",
@@ -1999,7 +1999,7 @@ ERGOMOTION_4_P1_SIDE_VECTORS: dict[str | None, tuple[int, str]] = {
     "right": (1, "e6fe16010000000103"),
 }
 
-# Unit132, com.ore.jalon.neworebeding 2.0.2 (9): literal commands only.
+# com.ore.jalon.neworebeding 2.0.2 (9): literal commands only.
 _JALON_VECTORS = json.loads(
     (Path(__file__).parent / "fixtures/jalon/vectors.json").read_text()
 )
@@ -2009,14 +2009,14 @@ FROZEN_FRAMES.update({
     for protocol, key in (("P1", "jalon_13"), ("P2", "jalon_15"), ("P3", "jalon_24"))
 })
 
-# Row161, com.ore.yorkfeng.comfortbaseble2 1.1.2 (6), accepted literal builders.
+# com.ore.yorkfeng.comfortbaseble2 1.1.2 (6), accepted literal builders.
 FROZEN_FRAMES["comfortbase"] = frozenset(
     row["expected_bytes"] for row in _json.loads(
         (_Path(__file__).parent / "fixtures/comfortbase/vectors.json").read_text()
     )["builders"]
 )
 
-# row135, exact frozen Java outputs (393-case fixture also covers parser boundaries).
+# Jalon app, exact frozen Java outputs (393-case fixture also covers parser boundaries).
 FROZEN_FRAMES["jalon_bed"] = frozenset(
     [
         "e6fe16000000000005",
@@ -2080,7 +2080,7 @@ for _wire in ("P1", "P2", "P3"):
             if row["protocol"] == _wire and row["kind"] in ("command", "clock", "time", "query")
         )
 
-# com.okin.yamada 1.0.1 (6), row178. Frozen literals, no report-helper code.
+# com.okin.yamada 1.0.1 (6). Frozen literals, no report-helper code.
 _YAMADA = json.loads((Path(__file__).parent / "fixtures/yamada_vectors.json").read_text())
 for _version in (1, 2):
     FROZEN_FRAMES[f"yamada_p{_version}"] = frozenset(

@@ -87,8 +87,8 @@ async def test_legacy_page_entities(hass) -> None:
             "richmat_mh_stop_detection", "preset_flat"} <= buttons
     assert "toggle_light" not in buttons  # the colour light owns the light icon
     taps = [e for e in _button_entities_for(hass, runtime)
-            if str(getattr(e, "_attr_translation_key", "")).startswith("richmat_mh_")
-            and getattr(e, "_attr_translation_placeholders", None)]
+            if str(getattr(e, "_attr_translation_key", "")).startswith("catalog_")
+            and "action" in (getattr(e, "_attr_translation_placeholders", None) or {})]
     assert taps and all(
         e._attr_translation_placeholders == {"action": display_label(e._spec.name)} for e in taps
     )

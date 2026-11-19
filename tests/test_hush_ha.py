@@ -140,14 +140,14 @@ async def test_service_preflight_and_public_buttons(hass):
     assert bytes(c.client.write_gatt_char.await_args.args[1]).hex() == "6e20090404010001a1"
     entities = []
     await button.async_setup_entry(hass, entry, entities.extend)
-    assert any(e.translation_key == "hush_base_action" for e in entities)
+    assert any((e.translation_key or "").startswith("catalog_") for e in entities)
     # Preflight capability is exposed separately from the Casper service.
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN, "hush_base", {"device_id": ["missing"], "operation": "rgb_power"}, blocking=True
         )
     c.client.write_gatt_char.reset_mock()
-    entity = next(e for e in entities if e.translation_key == "hush_base_action")
+    entity = next(e for e in entities if (e.translation_key or "").startswith("catalog_"))
     with patch.object(c, "async_connect", AsyncMock(return_value=True)):
         await entity.async_press()
     assert c.client.write_gatt_char.await_count

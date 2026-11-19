@@ -1,6 +1,6 @@
 # Sleep Number
 
-**Status:** ✅ Tested on Climate 360 (Fuzion) beds in [#318](https://github.com/kristofferR/ha-adjustable-bed/issues/318), [#574](https://github.com/kristofferR/ha-adjustable-bed/issues/574) and [#623](https://github.com/kristofferR/ha-adjustable-bed/issues/623), and i8 / FlexFit 2 (BAM/MCR) beds in [#322](https://github.com/kristofferR/ha-adjustable-bed/issues/322) and [#565](https://github.com/kristofferR/ha-adjustable-bed/issues/565); the expanded BLE controls below are based on the SleepIQ 5.4.11 application, and physical validation of the new behavior remains pending
+**Status:** Tested on Climate 360 (Fuzion) beds in [#318](https://github.com/kristofferR/ha-adjustable-bed/issues/318), [#574](https://github.com/kristofferR/ha-adjustable-bed/issues/574) and [#623](https://github.com/kristofferR/ha-adjustable-bed/issues/623), and i8 / FlexFit 2 (BAM/MCR) beds in [#322](https://github.com/kristofferR/ha-adjustable-bed/issues/322) and [#565](https://github.com/kristofferR/ha-adjustable-bed/issues/565); the controls added from SleepIQ 5.4.11 need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) with protocol detail and field testing from [@homer-aty](https://github.com/homer-aty) and [@JonGilmore](https://github.com/JonGilmore)
 
@@ -191,7 +191,7 @@ pair a connection whose bond is still usable.
 
 ## Detection
 
-Auto-detection uses the unique Sleep Number service UUID for each protocol family:
+Detection uses the unique Sleep Number service UUID for each protocol family:
 
 - `09d23fae-90e6-44c2-95b6-0b3d0f1abf25` (Fuzion)
 - `ffffd1fd-388d-938b-344a-939d1f6efee0` (MCR)
@@ -326,7 +326,7 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 | `Under Bed Lights` switch | Fuzion, MCR | |
 | `Light Level` number | Fuzion | Values `0-3` |
 | `Light Timer` select | Fuzion | `Off`, `15 min`, `30 min`, `45 min`, `1 hr`, `2 hr`, and `3 hr` |
-| `Left Bed Presence` / `Right Bed Presence` binary sensors | Fuzion | Disabled by default because they require active polling over BLE |
+| `Left Bed Presence` / `Right Bed Presence` binary sensors | Fuzion | Disabled by default. They update only while the bed is connected and never keep it connected |
 | `Sleep Number Setting` number | Fuzion | Configured side |
 | `Sleep Number Setting Left` / `Sleep Number Setting Right` numbers | MCR | |
 | `Foundation Preset Left` / `Foundation Preset Right` selects | MCR | `Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G`, `Snore`, as supported |
@@ -336,7 +336,9 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 | `Footwarming Timer` select | Fuzion | `30 min` through `6 hr` |
 
 - Occupancy polling sends a grouped `BAMG` request for both sides in one call,
-  then publishes separate left/right binary sensors.
+  then publishes separate left/right binary sensors. The poll runs only over
+  an open link and does not extend **Seconds to stay connected**; choose
+  "Always stay connected" for continuous occupancy.
   The former single `Bed Presence` alias is removed once the per-side sensors
   exist.
 - Implemented BAM/MCR operations include the init handshake, reading and setting

@@ -316,6 +316,7 @@ from .discovery_hints import (
 from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
+from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.motomotion import eligible as motomotion_eligible
@@ -349,6 +350,10 @@ MAC_ADDRESS_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$")
 # Or: "ZR" + 2 alphanumeric chars (like ZR10, ZR60, ZRA2, ZRS3)
 # Case-insensitive via re.IGNORECASE
 RICHMAT_CODE_PATTERN = re.compile(r"^([a-z0-9]{2}r[mn]|zr[a-z0-9]{2})", re.IGNORECASE)
+# Beds advertise the code in upper case (UaRM is the one catalog code with a
+# lower-case letter). Read without regard to case, words such as "Firmware",
+# "Warm" or "Terminal" would look like codes.
+_RICHMAT_ADVERTISED_CODE = re.compile(r"^(?:[A-Z0-9]{2}R[MN]|ZR[A-Z0-9]{2}|UaRM)")
 
 KEESON_FALLBACK_SERVICE_UUIDS: frozenset[str] = frozenset(
     service_uuid.lower() for service_uuid, _ in KEESON_FALLBACK_GATT_PAIRS
@@ -565,10 +570,11 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "smart_sleep": "OKIN Smart Sleep app",
     "onlysnore": "Snore Monitor app",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY app",
-    "smart_comfort_synergy": "Smart Comfort app (SYNERGY)",
+    "smart_comfort_synergy": "Smart Comfort app",
     # v5 names the RUF and Richmat apps like the other Richmat MH apps.
     **{
-        bed_type: f"{name} app" + (" (Richmat)" if name == "AMERICANSTAR" else "")
+        bed_type: f"{name} app"
+        + {"AMERICANSTAR": " (Richmat)", "W.Silver Products": " (newer version)"}.get(name, "")
         for bed_type, name in (
             ("ruf_betten", "RUF | Betten (Motor 2)"),
             ("wsilver_products", "W.Silver Products"),
@@ -581,34 +587,35 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     },
     "richmat_sleep_receiver": "W.Silver / AMERICANSTAR / Bailey / TX sleep receiver",
     "gmmotor": "GM Control app",
-    "gmmotor_sleep_mm": "GM Control sleep module (MM)",
-    "gmmotor_sleep_sxb": "GM Control sleep module (SXB)",
-    'tempur_curve': 'Tempur Curve',
-    'qplus_app': 'Q-Plus Adjustable Remote',
-    'serta_mp_remote': 'Serta MP Remote',
-    'omazz_adjusto_iii': 'Omazz Adjusto III',
+    "gmmotor_sleep_mm": "GM Control sleep module (name starts with RM-)",
+    "gmmotor_sleep_sxb": "GM Control sleep module (name starts with HJ-)",
+    'tempur_curve': 'Tempur Curve app',
+    'qplus_app': 'Q-Plus Adjustable Remote app',
+    'serta_mp_remote': 'Serta MP Remote app',
+    'omazz_adjusto_iii': 'Omazz Adjusto III app',
     'ergomotion_app': 'Ergomotion app',
-    'row_control': 'ROW Control',
-    'ergo_slim': 'Ergo Slim',
-    'tempur_au': 'TEMPUR AU',
+    'row_control': 'ROW Control app',
+    'ergo_slim': 'Ergo Slim app',
+    'tempur_au': 'TEMPUR AU app',
     BED_TYPE_BEDSENSE: "BedSense app",
     BED_TYPE_BF: "BF app",
     BED_TYPE_CHERISH: "Cherish app",
     "casper_remote": "Casper Base remote finder",
     "casper_base": "Casper Base app",
     "hush_base": "Hush Base app",
+    "majestichome": "Majestic Home app",
     "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
-    "personal_comfort": "Personal Comfort",
+    "personal_comfort": "Personal Comfort app",
     "mline": "M Line app",
     "luniosmart": "Lunio Smart+ app",
     "sleep_evolution": "SleepEvolution app",
-    "wsilver_legacy": "W.Silver Products 3.x app",
+    "wsilver_legacy": "W.Silver Products app (older version)",
     "sonicsleep": "SonicSleep / 소닉슬립 app",
     "hush_remote": "Hush Base remote finder",
-    "hush_sleep_mm": "Hush Base sleep sensor (MM)",
-    "hush_sleep_sxb": "Hush Base sleep sensor (SXB)",
-    "casper_sleep_mm": "Casper Base sleep sensor (MM)",
-    "casper_sleep_sxb": "Casper Base sleep sensor (SXB)",
+    "hush_sleep_mm": "Hush Base sleep sensor (name starts with RM-)",
+    "hush_sleep_sxb": "Hush Base sleep sensor (name starts with HJ-)",
+    "casper_sleep_mm": "Casper Base sleep sensor (name starts with RM-)",
+    "casper_sleep_sxb": "Casper Base sleep sensor (name starts with HJ-)",
 
     BED_TYPE_FSM_RELAX: "FSM Relax app",
 
@@ -632,7 +639,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_BETTERLIVING2: "BetterLiving / BetterLiving2 app",
     BED_TYPE_LINX: "Linx app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",
-    BED_TYPE_COMFORTBASE: "ComfortBase app (ComfortBaseForBluetooth)",
+    BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth app",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app",
     BED_TYPE_ESHINE_OKIN: "eShine app (E2000 to E5000)",
     BED_TYPE_ESHINE: "eShine app (E6000)",
@@ -646,14 +653,14 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
     BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app (Rize Remedy)",
     # Protocol-based types (Okin family)
-    BED_TYPE_OKIN_HANDLE: "Okin Handle (DewertOkin, A H Beard)",
-    BED_TYPE_OKIN_UUID: "Okin UUID (Okimat, Lucid)",
-    BED_TYPE_OKIN_7BYTE: "Okin 7-Byte (Nectar)",
-    BED_TYPE_OKIN_NORDIC: "Okin Nordic (Mattress Firm 900, iFlex)",
-    BED_TYPE_OKIN_CB24: "Okin CB24 (SmartBed by Okin, Amada)",
-    BED_TYPE_OKIN_DOT: "Okin DOT (RF1058, RF34 and RF6707 remotes)",
-    BED_TYPE_OKIN_FFE: "Okin FFE (13/15 series)",
-    BED_TYPE_OKIN_ORE: "Okin ORE (older remotes)",
+    BED_TYPE_OKIN_HANDLE: "Okin receiver (DewertOkin and A H Beard beds)",
+    BED_TYPE_OKIN_UUID: "Okin receiver (Okimat and Lucid remotes)",
+    BED_TYPE_OKIN_7BYTE: "Okin receiver (Nectar beds)",
+    BED_TYPE_OKIN_NORDIC: "Okin receiver (Mattress Firm 900 and iFlex beds)",
+    BED_TYPE_OKIN_CB24: "Okin receiver (SmartBed by Okin and Amada beds)",
+    BED_TYPE_OKIN_DOT: "Okin DOT remotes (RF1058, RF34 and RF6707)",
+    BED_TYPE_OKIN_FFE: "Okin receiver (13 and 15 series)",
+    BED_TYPE_OKIN_ORE: "Okin receiver (older ORE remotes)",
     BED_TYPE_GALAXY: "Galaxy Bed Control app",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app",
     BED_TYPE_MLILY: "MLILY Control app",
@@ -663,22 +670,22 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: "Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior",
     BED_TYPE_MOTOMOTION: "MotoMotion app",
     BED_TYPE_HJBED: "HJBed app",
-    BED_TYPE_JALON: "OkinComfortBed II N app (Jalon)",
+    BED_TYPE_JALON: "OkinComfortBed II N app",
     BED_TYPE_SYMPHONY_SLEEP: "Symphony Sleep app",
-    BED_TYPE_JALON_BED: "OkinComfortBed II app (Jalon)",
+    BED_TYPE_JALON_BED: "OkinComfortBed II app",
     BED_TYPE_SYMPHONY: "Symphony Sleep Sense app",
-    BED_TYPE_ORMATEK: "OrmatekTechnoSmart",
+    BED_TYPE_ORMATEK: "OrmatekTechnoSmart app",
     BED_TYPE_RICHMAT_APP: "Richmat app",
     BED_TYPE_RICHMAT_APP_SLEEP: "Richmat app sleep sensor",
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion app",
-    BED_TYPE_OKIN_64BIT: "Okin 64-Bit (older remotes)",
-    BED_TYPE_OKIN_CB35: "Okin CB35 (Sealy Posturematic, DewertOkin Star)",
+    BED_TYPE_OKIN_64BIT: "Okin receiver (NORA_CON or NORACON)",
+    BED_TYPE_OKIN_CB35: "Okin receiver (Sealy Posturematic and DewertOkin Star beds)",
     # Each app is its own row; this row asks which one.
-    BED_TYPE_OKIN_CST: "Okin CST (Rize, Jordan's and other apps)",
+    BED_TYPE_OKIN_CST: "Rize and Jordan's apps (and other Okin apps)",
     BED_TYPE_OKIN_RF_ECO_BT: "OKIN RF ECO BT stair lift",
     # Protocol-based types (Leggett & Platt family)
     BED_TYPE_LEGGETT_GEN2: "LP Control and LP Comfort Connect (Leggett & Platt Gen2)",
-    BED_TYPE_LEGGETT_LP_LEGACY: "L&P Adjustable Base app",
+    BED_TYPE_LEGGETT_LP_LEGACY: "L&P Adjustable Base app (older version)",
     BED_TYPE_LEGGETT_OKIN: (
         "Leggett & Platt Okin (Prodigy CE, Prodigy 2, Prodigy 2L, U Series and LP Control apps, "
         "requires pairing)"
@@ -703,12 +710,12 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ISLEEP: "ISleep app",
     BED_TYPE_KOMFYD: "KomfyD app",
     BED_TYPE_COMFYDS: "ComfyDS app",
-    BED_TYPE_KAIDI: "Rize app (older version, Kaidi)",
+    BED_TYPE_KAIDI: "Rize app (older version)",
     BED_TYPE_LINAK: "Linak (Bed Control, Bed Connect and Performance Series apps)",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf remote, older receiver",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
-    "l2motion": "L2 Motion",
+    "l2motion": "L2 Motion app",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie app",
@@ -734,7 +741,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEPYS_BOX24: "Sleepy's Elite BOX24 receiver",
     BED_TYPE_SLEEPYS_BOX25: "Sleepy's Elite BOX25 receiver",
     BED_TYPE_SLEEPYS_ELITE_APP: "MFRM Sleepy's Elite app",
-    BED_TYPE_STAR_ELEVATE: "DewertOkin ELEVATE (two-actuator lift)",
+    BED_TYPE_STAR_ELEVATE: "DewertOkin Elevate lift (two motors)",
     BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
     BED_TYPE_SUTA: "SUTA Smart Home app",
     "paramount": "Paramount Bed Operation (ベッド操作)",
@@ -765,6 +772,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    **{("majestichome", profile): f"Majestic Home ({label})" for profile, label in MAJESTICHOME_PROFILES.items()},
     **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"
        for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),
                           ("bailey2", "Bailey's Bed Control"), ("tx", "TX"))},
@@ -779,7 +787,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{(BED_TYPE_RICHMAT_APP_SLEEP, profile): f"Richmat app sleep sensor ({label})" for profile, label in RICHMAT_SLEEP_CHOICES.items()},
     **{(BED_TYPE_RICHMAT_APP, profile): f"Richmat app ({label})" for profile, label in RICHMAT_APP_PRODUCTS.items()},
     **{(BED_TYPE_HJBED, profile): f"HJBed app ({label})" for profile, label in HJBED_PROFILES.items()},
-    **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion app ({label})"
+    **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion app ({label.replace(' (', ', ').rstrip(')')})"
        for model, label in GLIDEAWAY_MOTION_MODELS.items()},
     (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): "Floyd Home app",
     (BED_TYPE_KEESON, KEESON_VARIANT_ADJUSTABLE_LITE): "Adjustable Lite app",
@@ -789,7 +797,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): "Avanti Bases app",
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_COMFORT_BED): "OKIN Comfort Bed app",
     (BED_TYPE_KEESON, KEESON_VARIANT_COMFORTFURNITURE): "ComfortFurniture app",
-    (BED_TYPE_KEESON, KEESON_VARIANT_ORE_ULTRAMATIC): "Ultramatic app (ORE)",
+    (BED_TYPE_KEESON, KEESON_VARIANT_ORE_ULTRAMATIC): "Ultramatic app",
     (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): "AMERICANSTAR app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): "Bedsense Bases app",
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): "INNOVA app",
@@ -807,7 +815,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     },
     (BED_TYPE_SVANE, SVANE_VARIANT_JMC): "Svane Remote app (JMC400)",
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): "Jensen Adjustable Sleep app (LinOn)",
-    (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): "Adjustable Comfort M1X12 ELEVATE",
+    (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): "Adjustable Comfort M1X12 app, Elevate lift",
     (BED_TYPE_REMACRO, REMACRO_VARIANT_THE_BRICK): "The Brick app (Remacro)",
     (BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES): "Jerome's app (Remacro)",
     (BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230): "Customatic Z-Series app (Z-230)",
@@ -891,6 +899,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         *((BED_TYPE_GALAXY, product) for product in GALAXY_PROFILES),
         *((BED_TYPE_GOODVIBE, product) for product in GOODVIBE_PROFILES),
         *((BED_TYPE_MLILY, product) for product in MLILY_PROFILES),
+        *(("majestichome", product) for product in MAJESTICHOME_PROFILES),
         *((BED_TYPE_OKIMIKI, product) for product in OKIMIKI_PROFILES),
         *(("bobpowerbase", product) for product in BOB_PROFILES),
         *((BED_TYPE_MLILY_REMOTE, product) for product in MLILY_REMOTE_PROFILES),
@@ -903,7 +912,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy"}
+    {"majestichome", BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort"}
 ).union({BED_TYPE_BETTERLIVING2})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1783,7 +1792,7 @@ def _detect_bed_type_detailed(
         device_name.startswith(pattern) for pattern in LEGGETT_RICHMAT_NAME_PATTERNS
     )
     is_richmat_named = (
-        bool(detected_remote)
+        _RICHMAT_ADVERTISED_CODE.match(service_info.name or "") is not None
         or any(device_name.startswith(pattern) for pattern in RICHMAT_NAME_PATTERNS)
     ) and not is_leggett_mlrm_name
 

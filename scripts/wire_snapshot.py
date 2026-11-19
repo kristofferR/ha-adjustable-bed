@@ -1276,7 +1276,7 @@ KAIDI_BROADCAST = "c0ff0278563412ffeeddccbbaa0000%s0100a004030201"
 # A node ping answer from AA:BB:CC:DD:EE:FF with vaddr 0x01020304.
 KAIDI_PING_REPLY = "0300000000ffffeeddccbbaa04030201"
 
-# Row176 accepted records: massage and both distinct alarm headers. The default
+# Ultramatic Smart Bed accepted records: massage and both distinct alarm headers. The default
 # is AB/notify/ED, retained alongside every explicit selector/property/layout.
 ULTRAMATIC_MASSAGE = "a50b0e010258030201000204b001030200"
 ULTRAMATIC_ALARM_BODY = "017f010630000102020322450000"
@@ -1323,6 +1323,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
         const.BED_TYPE_RICHMAT: const.RICHMAT_VARIANT_WILINKE,
         const.BED_TYPE_GALAXY: "6BRM",
+        const.BED_TYPE_MAJESTICHOME: "FARM",
         const.BED_TYPE_OKIMIKI: "HCRN",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_COMFORTBASE: "accord",
@@ -1555,7 +1556,7 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(Scenario(id=f"personal_comfort:{key}", bed_type="personal_comfort",
                          protocol_variant=key, entry_data={const.CONF_PRODUCT_TYPE: "pf4"},
                          layout_id=f"personal_comfort:{key}", replies=replies))
-    # Row158: actual user layouts on both live transport-dependent builders.
+    # ORE Ultramatic: actual user layouts on both live transport-dependent builders.
     for route in ("P1", "P2"):
         for motors in (2, 3, 4):
             scenarios.append(Scenario(
@@ -1611,7 +1612,7 @@ def route_scenarios() -> list[Scenario]:
             replies={"write:ffffffff01000a0b0f": "ffffffff01000a0b01",
                      "*": "ffffffff010004130f0730008a01020100"},
         ))
-    # Every row084 bed type/alias, without sampling the product inventory.
+    # Every Comfy bed type/alias, without sampling the product inventory.
     for bed_type in (const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
         base = default_scenario(bed_type)
         for raw in (129, 130, 131):
@@ -1620,6 +1621,7 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed.profiles.comfort_enhancement3 import (
         PROFILES as APEX_PROFILES,
     )
+
     for profile in APEX_PROFILES:
         scenarios.append(dataclasses.replace(
             default_scenario("comfort_enhancement3"), id=f"comfort_enhancement3:{profile}",
@@ -1673,7 +1675,7 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=f"{MODEL_VARIANT_PREFIX}{model}",
                 )
             )
-    # Nerum selectors and layouts are independent, accepted row103 axes.
+    # Nerum selectors and layouts are independent, accepted Nerum app axes.
     for protocol in ("p1", "p2", "p3"):
         for layout in ("nerum", "2", "3", "4"):
             scenarios.append(Scenario(id=f"nerum:{protocol}:{layout}", bed_type="nerum",
@@ -1811,6 +1813,20 @@ def route_scenarios() -> list[Scenario]:
                     layout_id=layout,
                 )
             )
+    # Majestic Home's product selection is independent of its six GATT routes.
+    if const.BED_TYPE_MAJESTICHOME in const.SUPPORTED_BED_TYPES:
+        for product in ("FARM", "JLRM", "JGRN", "JHRN", "none"):
+            for transport in ("n1", "w1", "w2", "w3", "w4", "w5"):
+                scenarios.append(
+                    Scenario(
+                        id=f"majestichome:{product}:{transport}",
+                        bed_type=const.BED_TYPE_MAJESTICHOME,
+                        protocol_variant=product,
+                        layout_id="majestichome"
+                        if transport == "w1"
+                        else f"majestichome:{transport}",
+                    )
+                )
     if const.BED_TYPE_MLILY in const.SUPPORTED_BED_TYPES:
         for profile, layout in (("6brm", "mlily_nordic"), ("brrm", "mlily"),
                                 ("e3rm", "mlily"), ("l3rm", "mlily"), ("mdrn", "mlily"),
@@ -1878,7 +1894,7 @@ CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
     ("luunarise2", "AHRM", "richmat_classic_apps_nordic"),
     ("powercool", "AHRM", "richmat_classic_apps"),
     ("powercool", "E3RM", "richmat_classic_apps_nordic"),
-    # Independent accepted cluster-017 apps, both GATT-selected wire formats.
+    # Independent accepted Richmat resource apps, both GATT-selected wire formats.
     *((app, "6BRM", wire) for app in ("lady_americana", "acaa", "sta2", "zerogravity")
       for wire in ("richmat_classic_apps", "richmat_classic_apps_nordic")),
 )
@@ -2045,7 +2061,7 @@ def mh_app_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed.const import RICHMAT_MH_APP_CATALOGS
     from custom_components.adjustable_bed.profiles.richmat_mh_apps import models
 
-    fixtures = REPO_ROOT / "tests/fixtures/richmat_cluster022"
+    fixtures = REPO_ROOT / "tests/fixtures/richmat_nisco_supreme"
     mlily = json.loads((fixtures / "mlily_supreme_vectors.json").read_text())
     inputs = {row["id"]: row["inputs"]["args"][0] for row in mlily if row["builder"].startswith("parse_")}
     routes = []

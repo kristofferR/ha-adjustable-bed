@@ -1,4 +1,4 @@
-"""Generate compact GM Control sleep DTO layouts from accepted row102 evidence.
+"""Generate compact GM Control sleep DTO layouts from accepted GM Control evidence.
 
 The output is executable protocol schema data only. Audit fixtures, source,
 provenance payloads and raw APK material remain machine-local.

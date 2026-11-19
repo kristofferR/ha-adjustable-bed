@@ -256,6 +256,7 @@ from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
+from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
@@ -323,6 +324,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_GALAXY: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "majestichome": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY_REMOTE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
@@ -340,7 +342,9 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_BEDSENSE: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     BED_TYPE_SERENITY: _FIXED_LAYOUT,
     BED_TYPE_TRANQUIL: _FIXED_LAYOUT,
-    BED_TYPE_RIZE_REMEDY_II: _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING, CONF_PROTOCOL_VARIANT},
+    BED_TYPE_RIZE_REMEDY_II: _FIXED_LAYOUT
+    | _ALWAYS_MASSAGE
+    | {CONF_DISABLE_ANGLE_SENSING, CONF_PROTOCOL_VARIANT},
     BED_TYPE_ZSERIES: _FIXED_LAYOUT,
     BED_TYPE_SIMMONS: _FIXED_LAYOUT,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
@@ -405,8 +409,6 @@ _OWNED_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
         )
     },
 }
-
-
 
 
 class _SetByProfile:
@@ -2254,7 +2256,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True},
         questions=(Question(CONF_PRODUCT_TYPE, {"new": "Techno Smart New", "lite": "Techno Smart Lite"}, "new"),
-                   Question(CONF_PROTOCOL_VARIANT, {"okin15": "Okin", "okin24": "SmartBed"}, "okin15")),
+                   Question(CONF_PROTOCOL_VARIANT, {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"}, "okin15")),
         derive=lambda data: {CONF_HAS_MASSAGE: data.get(CONF_PRODUCT_TYPE, "new") == "new"},
         title=lambda _data: "OrmatekTechnoSmart",
     ),
@@ -2751,6 +2753,18 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PROTOCOL_VARIANT, MLILY_PROFILES, searchable=True),),
         seed=_mlily_seed,
     ),
+    "majestichome": _asking(
+        "majestichome",
+        # A shared Richmat route cannot suggest this app's product.
+        questions=(Question(CONF_PROTOCOL_VARIANT, MAJESTICHOME_PROFILES, lambda _data: REQUIRED),),
+        derive=lambda data: {
+            CONF_MOTOR_COUNT: 3 if data.get(CONF_PROTOCOL_VARIANT) == "JLRM" else 2,
+            CONF_HAS_MASSAGE: data.get(CONF_PROTOCOL_VARIANT) in ("FARM", "JLRM"),
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 100,
+        },
+        imports=("profiles.majestichome",),
+    ),
     BED_TYPE_OKIMIKI: _asking(
         BED_TYPE_OKIMIKI,
         owns={**_BASE[BED_TYPE_OKIMIKI].owns, CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
@@ -2840,7 +2854,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             validate=_legacy_errors,
             # The prefix names the layout, so a prefix change shows in the review.
             title=lambda data: (
-                "SleepEvolution" if data[CONF_BED_TYPE] == "sleep_evolution" else "W.Silver Products 3.x"
+                "SleepEvolution" if data[CONF_BED_TYPE] == "sleep_evolution" else "W.Silver Products (older version)"
             ) + (f" {data[CONF_PROTOCOL_VARIANT]}" if data.get(CONF_PROTOCOL_VARIANT) else ""),
             imports=("profiles.richmat_legacy",),
         )

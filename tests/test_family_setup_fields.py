@@ -289,9 +289,9 @@ async def test_angle_sensing_starts_at_the_routes_own_default(hass):
     sensing = next(
         marker
         for marker in result["data_schema"].schema
-        if marker.schema == const.CONF_DISABLE_ANGLE_SENSING
+        if marker.schema == const.CONF_READ_POSITIONS
     )
-    assert sensing.default() is False
+    assert sensing.default() is True
 
 
 def _route(data: dict[str, Any]) -> str:

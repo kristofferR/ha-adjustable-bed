@@ -152,13 +152,13 @@ A new bed is set up in one order (#676 direction A):
 2. **The app's questions.** The family step and the profile's declared
    questions, exactly as Reconfigure asks them.
 3. **The final settings** (`finish_settings`), drawn for the one route the
-   journey staged: the name, the Bluetooth adapter and disconnect after each
-   command; the generic fields the profile neither sets nor asks, and that no
+   journey staged: the name, the Bluetooth adapter and the Bluetooth
+   connection; the generic fields the profile neither sets nor asks, and that no
    family step set itself (`_journey_set`); the declared questions of a route
    without an app step, such as the Octo PIN and motor layout or the CB24
    side; the route's labelled routes, when it has several, in a collapsed
-   Advanced section; and the pulse count and delay and the idle timeout,
-   collapsed under "Advanced connection and timing". A client that submits a
+   Advanced section ("Advanced: bed model or remote"); and the pulse count,
+   collapsed under "Movement". A client that submits a
    field the form does not show cannot set it.
 4. Pairing, then the connection check.
 
@@ -171,7 +171,7 @@ pulse delay and angle limits with one parser (`_parse_settings`): a blank value
 takes the route's default, anything else must be a whole number of at least 1
 (an angle more than 0 and at most 180), and an error names its field. Each
 field defaults to the saved value, else the route's own default, including the
-per-bed disconnect-after-command default.
+per-bed Bluetooth connection default.
 
 **Disable angle sensing** shows only where a route of the staged bed type
 reports positions, and starts off (positions are read): every such route's own
@@ -216,6 +216,7 @@ These steps serve every bed type or route, so no profile owns them.
 | Step | Purpose |
 |---|---|
 | `user`, `scan`, `scan_result`, `manual`, `select_app`, `select_family`, `bluetooth`, `bluetooth_disambiguate` | Find the bed and pick its app or bed type: `select_app` lists the bed-type list's rows, and its last answer opens the brand list (`select_family`), whose rows are the family rows and the brands without one |
+| `okin_receiver` | The brand list's "Okin (other receivers)" row: the Okin routes named after their protocol, each by the beds and remotes it came with |
 | `bluetooth_confirm` | A discovered bed's app question, from its bed type's own rows, when no family question asks it |
 | `manual_entry` | The address of a bed that is not in range |
 | `finish_settings` | The [final settings](#the-new-bed-journey) |

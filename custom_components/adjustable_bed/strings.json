@@ -38,9 +38,9 @@
         "data": {
           "name": "Name",
           "motor_count": "Number of motors",
-          "has_massage": "Has massage feature",
+          "has_massage": "Massage controls",
           "octo_pin": "Octo PIN",
-          "octo_motor_count_override": "OCTO motor count",
+          "octo_motor_count_override": "Octo motor count",
           "cb24_bed_selection": "Bed side",
           "preferred_adapter": "Bluetooth adapter",
           "transport_direct": "Transport: direct Bluetooth",
@@ -61,8 +61,8 @@
           "idle_disconnect_seconds": "Seconds to stay connected"
         },
         "data_description": {
-          "motor_count": "Number of physical actuators.",
-          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
+          "motor_count": "How many motors the bed has. If the app has 2M, 3M and 4M screens, choose the screen you use.",
+          "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
           "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
           "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
@@ -81,7 +81,8 @@
           "transport_actual_differs": "Home Assistant used a different path than predicted ({predicted}).",
           "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
           "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
-          "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds."
+          "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
+          "has_massage": "Show the massage controls."
         },
         "sections": {
           "advanced": {
@@ -204,7 +205,7 @@
       },
       "diagnostic": {
         "title": "Browse unsupported Bluetooth devices",
-        "description": "Select any visible BLE device to inspect its MAC address and scanner details. Then run the `adjustable_bed.generate_support_bundle` action with that address.",
+        "description": "Select any visible Bluetooth device to inspect its MAC address and scanner details. Then run the `adjustable_bed.generate_support_bundle` action with that address.",
         "data": {
           "address": "Device"
         }
@@ -262,7 +263,7 @@
           "outcome_native_absent": "Outcome: no stored bond on this host"
         },
         "data_description": {
-          "action": "Try again keeps the bed type, adapter and protocol settings you already chose.",
+          "action": "Try again keeps the bed type, adapter and app settings you already chose.",
           "outcome_no_run": "❌ Pairing did not run. Select **Try again**.",
           "outcome_verified_local": "✅ Paired, and the bond was confirmed. It is stored on this Home Assistant host ({transport}).",
           "outcome_verified_proxy": "✅ Paired, and the bond was confirmed. It is stored on the Bluetooth proxy {transport}, not on Home Assistant, so moving this bed to a different proxy will mean pairing again.",
@@ -308,7 +309,7 @@
           "has_light": "Enable light controls",
           "furnimove_remote": "FurniMove handset ID",
           "protocol_variant": "Bed model or remote",
-          "motor_count": "Number of motors or app screen",
+          "motor_count": "Number of motors",
           "lp_legacy_model": "Model code",
           "lp_legacy_mode": "Connection mode",
           "lp_legacy_write_uuid": "Command characteristic ID",
@@ -331,7 +332,7 @@
           "logicdata_app_layout": "Physical actuator layout",
           "malouf_app_model": "Bed model",
           "malouf_app_primary": "Primary bed in the app",
-          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_layout": "Malouf/Lucid motor layout",
           "malouf_memory_slots": "Malouf/Lucid memory positions",
           "gmmotor_side": "App bed side",
           "kaidi_room_id": "Room number",
@@ -340,39 +341,39 @@
           "motion_bed_preset": "Preset layout",
           "motion_bed_movement": "Movement layout",
           "jensen_pin": "Jensen PIN",
-          "disable_angle_sensing": "Disable angle sensing",
           "malouf_app_profile": "App",
           "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
           "richmat_remote": "Richmat remote",
-          "reverse_motor_1": "Reverse motor channel 1",
-          "reverse_motor_2": "Reverse motor channel 2",
-          "reverse_motor_3": "Reverse motor channel 3",
-          "reverse_motor_4": "Reverse motor channel 4",
-          "limoss_remote_theme": "App artwork theme",
+          "reverse_motor_1": "Reverse motor 1",
+          "reverse_motor_2": "Reverse motor 2",
+          "reverse_motor_3": "Reverse motor 3",
+          "reverse_motor_4": "Reverse motor 4",
+          "limoss_remote_theme": "App theme",
           "octo_pin": "Octo PIN",
-          "octo_motor_count_override": "OCTO motor count",
+          "octo_motor_count_override": "Octo motor count",
           "cb24_bed_selection": "Bed side",
           "ergomotion4_model_keys": "Product features",
           "ergomotion4_massage_keys": "Massage features",
           "ergomotion4_rgb": "RGB lighting",
           "ergomotion4_product_name": "Product name in the app",
-          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "fsm_relax_memory_names": "Memory names",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
           "starcode_m1x12_profile": "M1X12 app profile",
           "starcode_lift_entries": "Independently addressed lifts",
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
-          "mline_child_mode": "Local child mode",
-          "agingplace_bed_side": "Telemetry side",
-          "agingplace_selected_side": "Selected telemetry side"
+          "mline_child_mode": "Child mode",
+          "agingplace_bed_side": "Sensor side",
+          "agingplace_selected_side": "Chosen sensor side",
+          "read_positions": "Read bed position"
         },
         "data_description": {
           "jiecang_app_layout": "The layout set in the app.",
           "has_light": "Expose light controls when this bed has under-bed lighting.",
           "furnimove_remote": "The handset ID printed on your remote or shown in the FurniMove / OKIN Smart Remote app.",
           "protocol_variant": "The remote code, the model or layout the app shows, or the side this entry controls. Keep Automatic if you are not sure.",
-          "motor_count": "How many motors the bed has. For an app with 2M, 3M and 4M screens, the screen you use in the app.",
+          "motor_count": "How many motors the bed has. If the app has 2M, 3M and 4M screens, choose the screen you use.",
           "lp_legacy_model": "The four-character model code the L&P Adjustable Base app shows.",
           "lp_legacy_mode": "The connection mode the L&P Adjustable Base app uses for this bed.",
           "lp_legacy_write_uuid": "The full ID of the characteristic the bed accepts commands on, from a Bluetooth scanner app such as nRF Connect.",
@@ -392,8 +393,8 @@
           "logicdata_app_layout": "The layout set in the app. Sleep Smart beds use the two-motor standard or split-series layout.",
           "malouf_app_model": "Choose the model the app shows for this bed.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
-          "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
-          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
+          "malouf_layout": "Choose the controls on the bed's remote. The bed does not report them itself.",
+          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Automatic uses one for the two-motor layout and two otherwise.",
           "gmmotor_side": "The side GM Control drives with this product. The product must offer that side.",
           "kaidi_room_id": "A bed that is already set up keeps its room number, so keep the number shown. For a new bed, choose its room, then use the enrollment action after setup.",
           "ble_device_name": "The bed's Bluetooth name exactly as the app shows it, including capital letters.",
@@ -401,33 +402,33 @@
           "motion_bed_preset": "Automatic follows the bed's name. Change it only if the presets are wrong.",
           "motion_bed_movement": "Automatic follows the bed's name. Change it only if the movement buttons are wrong.",
           "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060. Leave it empty to use the default.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
           "malouf_app_profile": "The app you use with this bed.",
           "rmcontrol_product": "The product code RMControl shows for this bed. Choose None to use the Richmat remote controls instead.",
           "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
           "richmat_remote": "The code on your Richmat remote. It is filled in when the bed name carries it; keep Automatic if you are not sure.",
-          "limoss_remote_theme": "Optional: the artwork theme chosen in the Limoss Remote app, kept as a local preference. It changes no controls.",
-          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
+          "limoss_remote_theme": "Optional: the theme chosen in the Limoss Remote app. It changes no controls.",
+          "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
           "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
           "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides.",
           "ergomotion4_model_keys": "The features of your product, in the order the app lists them.",
           "ergomotion4_massage_keys": "The massage features of your product.",
           "ergomotion4_product_name": "The product name exactly as the app shows it.",
-          "fsm_relax_memory_names": "One name per local memory, M1 to M8. A blank name resets its memory's default name.",
+          "fsm_relax_memory_names": "One name per memory, M1 to M8. Leave a name empty to use its default name.",
           "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin ELEVATE.",
           "starcode_m1x12_profile": "The profile that matches the bed's Bluetooth name.",
           "starcode_lift_entries": "Choose other configured lift entries: up to three AdjustableM5X5 or DewertOkin ELEVATE entries for an AdjustableM5X5 main, or up to two ELEVATE entries set to Adjustable Comfort M1X12 ELEVATE for an M1X12 main. Each keeps its own Bluetooth address and controls.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
-          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown with two sensors. It does not choose which side the controls move.",
-          "agingplace_selected_side": "The telemetry side used when Selectable side is chosen. This setting belongs to this physical bed."
+          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown when the bed has two sensors. It does not change which side the controls move.",
+          "agingplace_selected_side": "The sensor side shown when Selectable side is chosen. This setting belongs to this physical bed.",
+          "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working."
         },
         "sections": {
           "advanced": {
             "name": "Advanced",
             "data": {
               "jiecang_app_transport": "Bluetooth connection",
-              "richmat_classic_third_service": "Allow the app’s third-service fallback",
+              "richmat_classic_third_service": "Bed without the app's usual connection",
               "protocol_variant": "Control box type",
               "logicdata_app_transport": "Bluetooth connection",
               "malouf_app_transport": "Bluetooth connection",
@@ -450,7 +451,7 @@
             },
             "data_description": {
               "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
-              "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
+              "richmat_classic_third_service": "Turn on only if the bed offers none of the app's usual Bluetooth services. The app then uses another one it finds.",
               "protocol_variant": "Automatic reads the control box type from the bed. Change it only if the bed responds wrongly.",
               "logicdata_app_transport": "Automatic finds the bed's connection. Change it only if the bed has more than one.",
               "malouf_app_transport": "Automatic follows the bed's name. Change it only if setup can't reach the bed.",
@@ -469,7 +470,7 @@
               "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
               "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
               "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
-              "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them."
+              "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two."
             }
           }
         }
@@ -642,7 +643,7 @@
       },
       "starcode_family": {
         "title": "Which StarCode app controls this bed?",
-        "description": "The StarCode apps share Star names and the Nordic UART service, so neither chooses one. Choose the app you use on your phone; its own settings come next.",
+        "description": "The StarCode apps work with the same beds, so the bed cannot tell which one you use. Choose the app you use on your phone; its own settings come next.",
         "data": {
           "choice": "App"
         }
@@ -656,14 +657,14 @@
       },
       "reverie_family": {
         "title": "Which Reverie receiver is in this bed?",
-        "description": "Reverie beds use one of two receivers. If you use the Reverie Nightstand app, choose the Nightstand receiver. If you use the older Reverie app, choose the older receiver. Home Assistant could not tell which one this bed has.\n\nNot sure? A Bluetooth scanner app such as nRF Connect shows the service the bed advertises: `db801000-...` is the Nightstand receiver, `1b1d9641-...` the older one.",
+        "description": "Reverie beds use one of two receivers. If you use the Reverie Nightstand app, choose the Nightstand receiver. If you use the older Reverie app, choose the older receiver. Home Assistant could not tell which one this bed has.\n\nNot sure? Choose the receiver for the app you use, then check that the bed responds.",
         "data": {
           "choice": "Receiver"
         }
       },
       "sleep_number_family": {
         "title": "Which Sleep Number base is this?",
-        "description": "Sleep Number bases use one of two control boxes. Climate 360, FlexFit and FlexFit Smart bases are Fuzion bases. Older i8 and 360 FlexFit 2 bases use the older box. Home Assistant could not tell which one this bed has.\n\nNot sure? A Bluetooth scanner app such as nRF Connect shows the service the base advertises: `09d23fae-...` is Fuzion, `ffffd1fd-...` the older box.",
+        "description": "Sleep Number bases use one of two control boxes. Climate 360, FlexFit and FlexFit Smart bases are Fuzion bases. Older i8 and 360 FlexFit 2 bases use the older box. Home Assistant could not tell which one this bed has.\n\nNot sure? Choose the box that matches your base's model, then check that the bed responds.",
         "data": {
           "choice": "Base"
         }
@@ -684,7 +685,7 @@
       },
       "jensen_family": {
         "title": "Which app and bed is this?",
-        "description": "The Jensen Adjustable Sleep app and the Svane Remote app send different commands, and a JMC400 name or the LinonPI services occur with both. Choose the app you use on your phone and the bed it controls. The suggestion follows the apps' own name rules. A LinON Entry box is JMC400 hardware, not the LinOn bed.",
+        "description": "The Jensen Adjustable Sleep app and the Svane Remote app send different commands, and both work with the same beds. Choose the app you use on your phone and the bed it controls. The suggestion follows the apps' own name rules. A LinON Entry box is JMC400 hardware, not the LinOn bed.",
         "data": {
           "choice": "App and bed"
         }
@@ -709,7 +710,8 @@
         "description": "Look at the label on the motor box, the remote or the base. Each row names the apps it covers. If none of these fit, choose **Not sure**.",
         "data": {
           "bed_type": "Brand or family",
-          "not_sure": "Not sure: run diagnostics or browse unsupported devices"
+          "not_sure": "Not sure: run diagnostics or browse unsupported devices",
+          "okin_receivers": "Okin (other receivers)"
         }
       },
       "reconfigure_bed_type": {
@@ -731,6 +733,13 @@
         "description": "Home Assistant can suggest nearby beds as it sees them. Adding a bed from this list still works either way.",
         "data": {
           "discover_new_beds": "Suggest newly found beds"
+        }
+      },
+      "okin_receiver": {
+        "title": "Which Okin receiver is it?",
+        "description": "Choose the bed or remote the receiver came with. If none matches, go back and choose **Not sure**.",
+        "data": {
+          "choice": "Receiver"
         }
       }
     },
@@ -775,7 +784,7 @@
       "mismatched_bed_types": "These two beds are different models, so they can't be combined. Keep them as separate beds.",
       "pairing_needs_capabilities": "Connect each bed once before combining them, so their motors can be checked.",
       "mismatched_motor_layouts": "These two beds have different motors, so they can't be combined.",
-      "octo_pairing_needs_connection": "Each OCTO receiver must connect once before the beds can be combined. Wake that receiver and try again. You can connect them one at a time; each result is remembered. Star2 receivers do not need this.",
+      "octo_pairing_needs_connection": "Each Octo receiver must connect once before the beds can be combined. Wake that receiver and try again. You can connect them one at a time; each result is remembered. Star2 receivers do not need this.",
       "same_address": "Both choices are the same bed. Pick two different beds.",
       "not_advertising": "This bed is not currently advertising, so no connection was attempted. Wake it, put it into pairing mode, or move it closer to a Bluetooth adapter or proxy, then try again.",
       "bond_verification_failed": "The bed connected but the link is still unauthenticated, so the bond did not form. Put the bed back into pairing mode and try again.",
@@ -863,12 +872,12 @@
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
           "motor_count": "Number of motors",
-          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_layout": "Malouf/Lucid motor layout",
           "malouf_memory_slots": "Malouf/Lucid memory positions",
-          "has_massage": "Has massage feature",
+          "has_massage": "Massage controls",
           "passive_position_reconciliation": "Refresh positions while idle",
           "preferred_adapter": "Bluetooth adapter",
-          "cb24_bed_selection": "CB24 bed side",
+          "cb24_bed_selection": "Bed side",
           "protocol_variant": "Bed model or remote",
           "richmat_remote": "Richmat remote",
           "rmcontrol_product": "RMControl product",
@@ -878,156 +887,177 @@
           "octo_pin": "Octo PIN",
           "jensen_pin": "Jensen PIN",
           "pairlink_role": "Pairlink connection role",
-          "pairlink_host_source": "Local Bluetooth source",
+          "pairlink_host_source": "Bluetooth adapter for Pairlink",
           "pairlink_home_id": "Pairlink home ID (optional)",
           "pairlink_password_text": "Pairlink password",
           "pairlink_password_hex": "Pairlink password as hex (optional)",
           "back_max_angle": "Maximum back angle (degrees)",
           "legs_max_angle": "Maximum legs angle (degrees)",
-          "leggett_app_profile": "Leggett app profile",
+          "leggett_app_profile": "Leggett & Platt app",
           "logicdata_app_profile": "Bed app",
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
-          "logicdata_app_transport": "BLE transport",
+          "logicdata_app_transport": "Bluetooth connection",
           "has_light": "Enable light controls",
-          "jiecang_app_profile": "Bed app",
+          "jiecang_app_profile": "App",
           "jiecang_app_layout": "Physical actuator layout",
-          "jiecang_app_transport": "BLE transport",
-          "lp_legacy_model": "Legacy app model code",
-          "lp_legacy_mode": "Legacy app protocol mode",
-          "lp_legacy_write_uuid": "Write characteristic UUID",
-          "lp_legacy_read_uuid": "Notification characteristic UUID",
+          "jiecang_app_transport": "Bluetooth connection",
+          "lp_legacy_model": "Model code",
+          "lp_legacy_mode": "Connection mode",
+          "lp_legacy_write_uuid": "Command characteristic ID",
+          "lp_legacy_read_uuid": "Response characteristic ID",
           "malouf_app_profile": "App",
           "malouf_app_model": "Bed model",
-          "malouf_app_transport": "Bluetooth transport",
+          "malouf_app_transport": "Bluetooth connection",
           "malouf_app_primary": "Primary bed in the app",
           "furnimove_remote": "FurniMove handset ID",
-          "vibradorm_app_profile": "Bed app",
-          "vibradorm_control_type": "Saved app control layout",
-          "vibradorm_restored": "Use retained Caresse settings",
-          "vibradorm_floor_light": "Retained floor lighting",
-          "vibradorm_rgb": "Retained mood lighting",
-          "vibradorm_light_extension": "Retained lighting extension",
-          "vibradorm_floor_default": "Remembered floor brightness",
+          "vibradorm_app_profile": "App",
+          "vibradorm_control_type": "App control layout",
+          "vibradorm_restored": "Match settings saved in the Caresse app",
+          "vibradorm_floor_light": "Floor lighting",
+          "vibradorm_rgb": "Mood lighting",
+          "vibradorm_light_extension": "Lighting extension",
+          "vibradorm_floor_default": "Floor light level",
           "vibradorm_vmat_remote": "VMAT remote",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
           "vmatbasic_profile": "V-MAT Basic product profile",
-          "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
-          "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout",
+          "starcode_abm5_4_command_selector": "Control box type",
+          "starcode_abm5_4_transport_selector": "Bluetooth connection type",
+          "motion_bed_preset": "Preset layout",
+          "motion_bed_movement": "Movement layout",
           "ble_device_name": "Exact Bluetooth name",
-          "motion_bed_restored": "Use an app-restored profile",
-          "starcode_lift_entries": "Independently addressed lifts (up to three)",
+          "motion_bed_restored": "Use a profile restored by the app",
+          "starcode_lift_entries": "Independently addressed lifts",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
-          "product_type": "Product type",
-          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
-          "reverse_motor_1": "Reverse motor channel 1",
-          "reverse_motor_2": "Reverse motor channel 2",
-          "reverse_motor_3": "Reverse motor channel 3",
-          "reverse_motor_4": "Reverse motor channel 4",
-          "limoss_remote_theme": "App artwork theme",
-          "sleeptracker_unit_number": "Processor unit number (wire side)",
-          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
-          "sleeptracker_restricted": "Restricted app session (no authentication)",
-          "sleeptracker_processor_type": "Processor type (0 if unknown)",
-          "sleepys_elite_selector": "Sleepy's Elite control box selector",
-          "kaidi_sofa_acu_no": "Advertised actuator descriptor",
-          "kaidi_room_id": "Room ID",
-          "gmmotor_side": "GM Control app bed side",
-          "ergomotion4_model_keys": "Other product: ordered model keys",
-          "ergomotion4_massage_keys": "Other product: massage keys",
-          "ergomotion4_rgb": "Other product: RGB lighting",
-          "ergomotion4_product_name": "Other product: exact app product name",
-          "richmat_classic_third_service": "Allow the app’s third-service fallback",
-          "octo_motor_count_override": "OCTO motor count",
+          "product_type": "App product, model or layout",
+          "fsm_relax_memory_names": "Memory names",
+          "reverse_motor_1": "Reverse motor 1",
+          "reverse_motor_2": "Reverse motor 2",
+          "reverse_motor_3": "Reverse motor 3",
+          "reverse_motor_4": "Reverse motor 4",
+          "limoss_remote_theme": "App theme",
+          "sleeptracker_unit_number": "Processor unit number",
+          "sleeptracker_snapshot_side": "Side the processor reports",
+          "sleeptracker_restricted": "Restricted session",
+          "sleeptracker_processor_type": "Processor type",
+          "sleepys_elite_selector": "Control box the app lists",
+          "kaidi_sofa_acu_no": "Actuator number",
+          "kaidi_room_id": "Room number",
+          "gmmotor_side": "App bed side",
+          "ergomotion4_model_keys": "Product features",
+          "ergomotion4_massage_keys": "Massage features",
+          "ergomotion4_rgb": "RGB lighting",
+          "ergomotion4_product_name": "Product name in the app",
+          "richmat_classic_third_service": "Bed without the app's usual connection",
+          "octo_motor_count_override": "Octo motor count",
           "starcode_m1x12_profile": "M1X12 app profile",
-          "serta_mp_memory_1_head": "Local memory 1, head angle",
-          "serta_mp_memory_1_foot": "Local memory 1, foot angle",
-          "serta_mp_memory_2_head": "Local memory 2, head angle",
-          "serta_mp_memory_2_foot": "Local memory 2, foot angle",
-          "serta_mp_memory_3_head": "Local memory 3, head angle",
-          "serta_mp_memory_3_foot": "Local memory 3, foot angle",
-          "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "serta_mp_memory_1_head": "Memory 1 head angle",
+          "serta_mp_memory_1_foot": "Memory 1 foot angle",
+          "serta_mp_memory_2_head": "Memory 2 head angle",
+          "serta_mp_memory_2_foot": "Memory 2 foot angle",
+          "serta_mp_memory_3_head": "Memory 3 head angle",
+          "serta_mp_memory_3_foot": "Memory 3 foot angle",
+          "serta_mp_memory_4_head": "Memory 4 head angle",
+          "serta_mp_memory_4_foot": "Memory 4 foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
-          "mline_child_mode": "Local child mode",
+          "mline_child_mode": "Child mode",
           "read_positions": "Read bed position",
           "connection_mode": "Bluetooth connection",
-          "disable_angle_sensing": "Disable angle sensing",
           "agingplace_bed_mode": "Sensor display mode",
-          "agingplace_bed_side": "Telemetry side",
-          "agingplace_selected_side": "Selected telemetry side"
+          "agingplace_bed_side": "Sensor side",
+          "agingplace_selected_side": "Chosen sensor side"
         },
         "data_description": {
-          "motor_count": "Number of physical actuators. Available counts follow the selected protocol variant. Malouf/Lucid beds use the separate actuator-layout setting below.",
-          "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
-          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
-          "passive_position_reconciliation": "Periodically reconnect and read positions while idle so Home Assistant catches up with moves made using the physical remote. This is enabled by default for Linak beds and may briefly use the BLE connection in the background.",
+          "motor_count": "How many motors the bed has. If the app has 2M, 3M and 4M screens, choose the screen you use.",
+          "malouf_layout": "Choose the controls on the bed's remote. The bed does not report them itself.",
+          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Automatic uses one for the two-motor layout and two otherwise.",
+          "passive_position_reconciliation": "Now and then reconnect while idle and read the position, so Home Assistant catches up with moves made with the remote. On by default for Linak beds. It briefly uses the Bluetooth connection.",
           "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
-          "protocol_variant": "The bed model or remote this bed's app uses.",
-          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
-          "rmcontrol_product": "The product code RMControl shows for this bed, or None to use the Richmat remote controls.",
-          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
+          "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides.",
+          "protocol_variant": "The remote code, the model or layout the app shows, or the side this entry controls. Keep Automatic if you are not sure.",
+          "richmat_remote": "The code on your Richmat remote. It is filled in when the bed name carries it; keep Automatic if you are not sure.",
+          "rmcontrol_product": "The product code RMControl shows for this bed. Choose None to use the Richmat remote controls instead.",
+          "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
           "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap.",
           "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
-          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
-          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
+          "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060. Leave it empty to use the default.",
           "pairlink_role": "Central keeps Home Assistant connected to this bed. Local peripheral makes this Home Assistant host join the Pairlink network itself.",
-          "pairlink_host_source": "Select the exact active Bluetooth scanner source on this Home Assistant host. This is required only for local peripheral role; proxy and unknown sources are rejected.",
+          "pairlink_host_source": "The Bluetooth adapter on this Home Assistant host that joins the Pairlink network. Needed only for the local peripheral role; a Bluetooth proxy cannot do this.",
           "pairlink_home_id": "Leave blank to use the home ID the bed advertises, or 5566 if it advertises none. Otherwise enter the home ID as a whole number.",
           "pairlink_password_text": "The Pairlink network password, exactly four characters. The default is 1122.",
           "pairlink_password_hex": "Only if the password has characters you cannot type: enter it as eight hex digits. It applies only while the password above is 1122.",
           "back_max_angle": "Maximum angle for back/head motors. Adjust if position readings don't match your bed's actual range.",
           "legs_max_angle": "Maximum angle for legs/feet motors. Adjust if position readings don't match your bed's actual range.",
           "leggett_app_profile": "Choose the app you use with this bed. It sets the motors and controls.",
-          "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
-          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
-          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
-          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
-          "has_light": "Expose light controls when the bed has lighting.",
-          "jiecang_app_profile": "Select the app used to control this bed. Bluetooth UUIDs cannot identify the app profile.",
-          "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
-          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
-          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
-          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
-          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
-          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications.",
-          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
-          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
-          "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
+          "logicdata_app_profile": "The app you use with this bed.",
+          "logicdata_app_family": "The P1 or P2 setting in the app.",
+          "logicdata_app_layout": "The layout set in the app. Sleep Smart beds use the two-motor standard or split-series layout.",
+          "logicdata_app_transport": "Automatic finds the bed's connection. Change it only if the bed has more than one.",
+          "has_light": "Expose light controls when this bed has under-bed lighting.",
+          "jiecang_app_profile": "The app you use with this bed.",
+          "jiecang_app_layout": "The layout set in the app.",
+          "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
+          "lp_legacy_model": "The four-character model code the L&P Adjustable Base app shows.",
+          "lp_legacy_mode": "The connection mode the L&P Adjustable Base app uses for this bed.",
+          "lp_legacy_write_uuid": "The full ID of the characteristic the bed accepts commands on, from a Bluetooth scanner app such as nRF Connect.",
+          "lp_legacy_read_uuid": "Optional. The full ID of the characteristic the bed answers on. Leave empty if you are not sure.",
+          "malouf_app_profile": "The app you use with this bed.",
+          "malouf_app_model": "Choose the model the app shows for this bed.",
+          "malouf_app_transport": "Automatic follows the bed's name. Change it only if setup can't reach the bed.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
-          "vibradorm_app_profile": "Choose the app used with this bed. Bluetooth identifiers cannot identify the app or its controls.",
-          "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
-          "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
-          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
-          "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
-          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
-          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
-          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
-          "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed, MotoMotion and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
-          "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
-          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
-          "starcode_lift_entries": "Choose up to three other configured AdjustableM5X5 or DewertOkin ELEVATE entries. This main and the three lifts keep separate Bluetooth addresses and controls.",
-          "starcode_m5x5_profile": "Choose CB25, F23 or kneading to match the exact Bluetooth name. ELEVATE lifts use the DewertOkin ELEVATE bed type.",
-          "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
-          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
-          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
-          "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
-          "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
-          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "starcode_m1x12_profile": "Choose the profile matching the exact Bluetooth name; this app choice is never inferred from shared services or manufacturer data.",
+          "vibradorm_app_profile": "The app you use with this bed.",
+          "vibradorm_restored": "Turn on only if you set the bed up earlier in the Caresse app and want the same controls here.",
+          "vibradorm_control_type": "The control layout your app shows.",
+          "vibradorm_floor_default": "The floor light level your app remembers, from 1 to 8.",
+          "vibradorm_vmat_remote": "The remote VMAT shows for this bed.",
+          "vmatbasic_floor_level": "Optional. CBI accepts 0 to 255; XT-Box accepts 1 to 6.",
+          "vmatbasic_floor_minutes": "CBI accepts 0 to 1439 minutes; XT-Box accepts 0 to 255.",
+          "vmatbasic_profile": "The product the V-MAT Basic app shows.",
+          "motion_bed_preset": "Automatic follows the bed's name. Change it only if the presets are wrong.",
+          "ble_device_name": "The bed's Bluetooth name exactly as the app shows it, including capital letters.",
+          "motion_bed_restored": "Turn on only if the app restored this profile from a backup.",
+          "motion_bed_movement": "Automatic follows the bed's name. Change it only if the movement buttons are wrong.",
+          "starcode_lift_entries": "Choose other configured lift entries: up to three AdjustableM5X5 or DewertOkin ELEVATE entries for an AdjustableM5X5 main, or up to two ELEVATE entries set to Adjustable Comfort M1X12 ELEVATE for an M1X12 main. Each keeps its own Bluetooth address and controls.",
+          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin ELEVATE.",
+          "sleeptracker_unit_number": "Leave at 0 unless the bed has more than one processor. Then use the number the app shows for this one.",
+          "sleeptracker_snapshot_side": "0 is left, 1 right, 2 the whole bed and 3 other. Leave at 0 for a single bed.",
+          "sleeptracker_processor_type": "Leave at 0 if you are not sure. Types 5, 6 and 7 cannot save presets.",
+          "sleepys_elite_selector": "The control box the MFRM Sleepy's Elite app shows for this bed. Choose none if it names none.",
+          "richmat_classic_third_service": "Turn on only if the bed offers none of the app's usual Bluetooth services. The app then uses another one it finds.",
+          "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
+          "starcode_m1x12_profile": "The profile that matches the bed's Bluetooth name.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
           "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
           "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
-          "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them.",
-          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown with two sensors. It does not choose which side the controls move.",
-          "agingplace_selected_side": "The telemetry side used when Selectable side is chosen. This setting belongs to this physical bed."
+          "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two.",
+          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown when the bed has two sensors. It does not change which side the controls move.",
+          "agingplace_selected_side": "The sensor side shown when Selectable side is chosen. This setting belongs to this physical bed.",
+          "has_massage": "Show the massage controls.",
+          "fsm_relax_memory_names": "One name per memory, M1 to M8. Leave a name empty to use its default name.",
+          "limoss_remote_theme": "Optional: the theme chosen in the Limoss Remote app. It changes no controls.",
+          "furnimove_remote": "The handset ID printed on your remote or shown in the FurniMove / OKIN Smart Remote app.",
+          "starcode_abm5_4_command_selector": "Automatic works for most beds. Choose the control box type only if the bed responds wrongly.",
+          "starcode_abm5_4_transport_selector": "Automatic follows the bed's Bluetooth name. Change it only if the bed doesn't respond.",
+          "product_type": "The product, model or layout the app shows for this bed.",
+          "sleeptracker_restricted": "Leave off. Turn on only if the app connects to this processor without signing in.",
+          "kaidi_sofa_acu_no": "Filled in from the bed. Change it only if the side controls are wrong.",
+          "kaidi_room_id": "A bed that is already set up keeps its room number, so keep the number shown. For a new bed, choose its room, then use the enrollment action after setup.",
+          "gmmotor_side": "The side GM Control drives with this product. The product must offer that side.",
+          "ergomotion4_model_keys": "The features of your product, in the order the app lists them.",
+          "ergomotion4_massage_keys": "The massage features of your product.",
+          "ergomotion4_product_name": "The product name exactly as the app shows it.",
+          "serta_mp_memory_1_head": "Only if you changed memory 1 in the app: its head angle, in degrees.",
+          "serta_mp_memory_1_foot": "Only if you changed memory 1 in the app: its foot angle, in degrees.",
+          "serta_mp_memory_2_head": "Only if you changed memory 2 in the app: its head angle, in degrees.",
+          "serta_mp_memory_2_foot": "Only if you changed memory 2 in the app: its foot angle, in degrees.",
+          "serta_mp_memory_3_head": "Only if you changed memory 3 in the app: its head angle, in degrees.",
+          "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
+          "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
+          "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
         }
       },
       "remove_bond": {
@@ -1035,9 +1065,7 @@
         "description": "This removes the Bluetooth bond that **{name}** ({address}) has with this Home Assistant host.\n\n**Bond stored on:** {transport}{provenance}\n\nHome Assistant will disconnect from the bed first. Afterwards the bed will need pairing again before it can be controlled, and you may need to put it back into pairing mode to do that.\n\nThis does **not** delete the Adjustable Bed device or its settings. Select **Submit** to remove the bond, or go back to leave it alone.",
         "data": {
           "outcome_removed": "Removal confirmed",
-          "outcome_failed": "Removal failed",
-          "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
+          "outcome_failed": "Removal failed"
         },
         "data_description": {
           "outcome_removed": "✅ The Bluetooth bond was removed and the removal was confirmed.",
@@ -1048,9 +1076,7 @@
         "title": "Choose a bed side",
         "description": "Each side of a Dual Bed has its own Bluetooth bond. Choose the side whose bond you want to remove.",
         "data": {
-          "side": "Bed side",
-          "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
+          "side": "Bed side"
         }
       },
       "remove_bond_result": {
@@ -1061,27 +1087,21 @@
         "title": "Separate the Dual Bed",
         "description": "Turn the Left and Right sides back into separate beds. Side entities keep their IDs, history, names and areas. The Both controls are removed.\n\n**Kept** on each bed: Bluetooth adapter or proxy, and Bluetooth connection.\n\n**Restored** from before the beds were combined: bed type, app and side settings.",
         "data": {
-          "confirm": "Separate this Dual Bed",
-          "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
+          "confirm": "Separate this Dual Bed"
         }
       },
       "pair_sides": {
         "title": "Add Left, Right and Both controls",
         "description": "Expose Left, Right, and Both controls for this bed while keeping its existing Bluetooth address and config entry. This is reversible. Existing standalone behavior is restored if you revert it later.",
         "data": {
-          "confirm": "Add Left, Right and Both controls",
-          "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
+          "confirm": "Add Left, Right and Both controls"
         }
       },
       "revert_sides": {
         "title": "Remove Left, Right and Both controls",
         "description": "Remove the Left, Right and Both controls and return this bed to how it was before they were added. Its own entity IDs and history are kept.\n\n**Kept**: Bluetooth adapter or proxy, and Bluetooth connection.\n\n**Restored** from before the controls were added: bed type, app and side settings.",
         "data": {
-          "confirm": "Remove Left, Right and Both controls",
-          "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector"
+          "confirm": "Remove Left, Right and Both controls"
         }
       },
       "left_settings": {
@@ -1091,30 +1111,30 @@
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
           "idle_disconnect_seconds": "Seconds to stay connected",
-          "sleeptracker_unit_number": "Processor unit number (wire side)",
-          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
-          "sleeptracker_restricted": "Restricted app session (no authentication)",
-          "sleeptracker_processor_type": "Processor type (0 if unknown)",
-          "richmat_classic_third_service": "Allow the app’s third-service fallback",
+          "sleeptracker_unit_number": "Processor unit number",
+          "sleeptracker_snapshot_side": "Side the processor reports",
+          "sleeptracker_restricted": "Restricted session",
+          "sleeptracker_processor_type": "Processor type",
+          "richmat_classic_third_service": "Bed without the app's usual connection",
           "furnimove_remote": "FurniMove handset ID",
           "has_light": "Enable light controls",
-          "has_massage": "Has massage feature",
+          "has_massage": "Massage controls",
           "jiecang_app_layout": "Physical actuator layout",
-          "jiecang_app_transport": "BLE transport",
-          "lp_legacy_mode": "Legacy app protocol mode",
-          "lp_legacy_model": "Legacy app model code",
-          "lp_legacy_read_uuid": "Notification characteristic UUID",
-          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "jiecang_app_transport": "Bluetooth connection",
+          "lp_legacy_mode": "Connection mode",
+          "lp_legacy_model": "Model code",
+          "lp_legacy_read_uuid": "Response characteristic ID",
+          "lp_legacy_write_uuid": "Command characteristic ID",
           "motor_count": "Number of motors",
-          "product_type": "Product type",
+          "product_type": "App product, model or layout",
           "protocol_variant": "Bed model or remote",
-          "sleepys_elite_selector": "Sleepy's Elite control box selector",
-          "vibradorm_control_type": "Saved app control layout",
-          "vibradorm_floor_default": "Remembered floor brightness",
-          "vibradorm_floor_light": "Retained floor lighting",
-          "vibradorm_light_extension": "Retained lighting extension",
-          "vibradorm_restored": "Use retained Caresse settings",
-          "vibradorm_rgb": "Retained mood lighting",
+          "sleepys_elite_selector": "Control box the app lists",
+          "vibradorm_control_type": "App control layout",
+          "vibradorm_floor_default": "Floor light level",
+          "vibradorm_floor_light": "Floor lighting",
+          "vibradorm_light_extension": "Lighting extension",
+          "vibradorm_restored": "Match settings saved in the Caresse app",
+          "vibradorm_rgb": "Mood lighting",
           "vibradorm_vmat_remote": "VMAT remote",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
@@ -1122,110 +1142,137 @@
           "logicdata_app_profile": "Bed app",
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
-          "logicdata_app_transport": "BLE transport",
+          "logicdata_app_transport": "Bluetooth connection",
           "malouf_app_model": "Bed model",
           "malouf_app_primary": "Primary bed in the app",
-          "malouf_app_transport": "Bluetooth transport",
-          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_app_transport": "Bluetooth connection",
+          "malouf_layout": "Malouf/Lucid motor layout",
           "malouf_memory_slots": "Malouf/Lucid memory positions",
-          "gmmotor_side": "GM Control app bed side",
-          "kaidi_room_id": "Room ID",
-          "kaidi_sofa_acu_no": "Advertised actuator descriptor",
+          "gmmotor_side": "App bed side",
+          "kaidi_room_id": "Room number",
+          "kaidi_sofa_acu_no": "Actuator number",
           "ble_device_name": "Exact Bluetooth name",
-          "motion_bed_restored": "Use an app-restored profile",
-          "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout",
+          "motion_bed_restored": "Use a profile restored by the app",
+          "motion_bed_preset": "Preset layout",
+          "motion_bed_movement": "Movement layout",
           "jensen_pin": "Jensen PIN",
-          "disable_angle_sensing": "Disable angle sensing",
-          "malouf_app_profile": "Android app",
-          "rmcontrol_product": "RMControl 21.3.7 product",
+          "malouf_app_profile": "App",
+          "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
           "richmat_remote": "Richmat remote",
-          "reverse_motor_1": "Reverse motor channel 1",
-          "reverse_motor_2": "Reverse motor channel 2",
-          "reverse_motor_3": "Reverse motor channel 3",
-          "reverse_motor_4": "Reverse motor channel 4",
-          "limoss_remote_theme": "App artwork theme",
+          "reverse_motor_1": "Reverse motor 1",
+          "reverse_motor_2": "Reverse motor 2",
+          "reverse_motor_3": "Reverse motor 3",
+          "reverse_motor_4": "Reverse motor 4",
+          "limoss_remote_theme": "App theme",
           "octo_pin": "Octo PIN",
-          "octo_motor_count_override": "OCTO motor count",
-          "cb24_bed_selection": "CB24 bed side",
-          "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
-          "ergomotion4_model_keys": "Other product: ordered model keys",
-          "ergomotion4_massage_keys": "Other product: massage keys",
-          "ergomotion4_rgb": "Other product: RGB lighting",
-          "ergomotion4_product_name": "Other product: exact app product name",
-          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "octo_motor_count_override": "Octo motor count",
+          "cb24_bed_selection": "Bed side",
+          "starcode_abm5_4_command_selector": "Control box type",
+          "starcode_abm5_4_transport_selector": "Bluetooth connection type",
+          "ergomotion4_model_keys": "Product features",
+          "ergomotion4_massage_keys": "Massage features",
+          "ergomotion4_rgb": "RGB lighting",
+          "ergomotion4_product_name": "Product name in the app",
+          "fsm_relax_memory_names": "Memory names",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
           "starcode_m1x12_profile": "M1X12 app profile",
           "starcode_lift_entries": "Independently addressed lifts",
-          "serta_mp_memory_1_head": "Local memory 1, head angle",
-          "serta_mp_memory_1_foot": "Local memory 1, foot angle",
-          "serta_mp_memory_2_head": "Local memory 2, head angle",
-          "serta_mp_memory_2_foot": "Local memory 2, foot angle",
-          "serta_mp_memory_3_head": "Local memory 3, head angle",
-          "serta_mp_memory_3_foot": "Local memory 3, foot angle",
-          "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "serta_mp_memory_1_head": "Memory 1 head angle",
+          "serta_mp_memory_1_foot": "Memory 1 foot angle",
+          "serta_mp_memory_2_head": "Memory 2 head angle",
+          "serta_mp_memory_2_foot": "Memory 2 foot angle",
+          "serta_mp_memory_3_head": "Memory 3 head angle",
+          "serta_mp_memory_3_foot": "Memory 3 foot angle",
+          "serta_mp_memory_4_head": "Memory 4 head angle",
+          "serta_mp_memory_4_foot": "Memory 4 foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
-          "mline_child_mode": "Local child mode",
+          "mline_child_mode": "Child mode",
           "connection_mode": "Bluetooth connection",
           "agingplace_bed_mode": "Sensor display mode",
-          "agingplace_bed_side": "Telemetry side",
-          "agingplace_selected_side": "Selected telemetry side"
+          "agingplace_bed_side": "Sensor side",
+          "agingplace_selected_side": "Chosen sensor side",
+          "read_positions": "Read bed position"
         },
         "data_description": {
-          "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
-          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
-          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
+          "sleeptracker_unit_number": "Leave at 0 unless the bed has more than one processor. Then use the number the app shows for this one.",
+          "sleeptracker_snapshot_side": "0 is left, 1 right, 2 the whole bed and 3 other. Leave at 0 for a single bed.",
+          "sleeptracker_processor_type": "Leave at 0 if you are not sure. Types 5, 6 and 7 cannot save presets.",
           "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
-          "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
-          "has_light": "Expose light controls when the bed has lighting.",
-          "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
-          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
-          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
-          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
-          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications.",
-          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
-          "motor_count": "Number of physical actuators. Available counts follow the selected protocol variant. Malouf/Lucid beds use the separate actuator-layout setting below.",
-          "protocol_variant": "The bed model or remote this bed's app uses.",
-          "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
-          "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
-          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
-          "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
-          "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
-          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
-          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
-          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
-          "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
-          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
-          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
-          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
-          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
+          "richmat_classic_third_service": "Turn on only if the bed offers none of the app's usual Bluetooth services. The app then uses another one it finds.",
+          "has_light": "Expose light controls when this bed has under-bed lighting.",
+          "jiecang_app_layout": "The layout set in the app.",
+          "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
+          "lp_legacy_mode": "The connection mode the L&P Adjustable Base app uses for this bed.",
+          "lp_legacy_model": "The four-character model code the L&P Adjustable Base app shows.",
+          "lp_legacy_read_uuid": "Optional. The full ID of the characteristic the bed answers on. Leave empty if you are not sure.",
+          "lp_legacy_write_uuid": "The full ID of the characteristic the bed accepts commands on, from a Bluetooth scanner app such as nRF Connect.",
+          "motor_count": "How many motors the bed has. If the app has 2M, 3M and 4M screens, choose the screen you use.",
+          "protocol_variant": "The remote code, the model or layout the app shows, or the side this entry controls. Keep Automatic if you are not sure.",
+          "sleepys_elite_selector": "The control box the MFRM Sleepy's Elite app shows for this bed. Choose none if it names none.",
+          "vibradorm_control_type": "The control layout your app shows.",
+          "vibradorm_floor_default": "The floor light level your app remembers, from 1 to 8.",
+          "vibradorm_restored": "Turn on only if you set the bed up earlier in the Caresse app and want the same controls here.",
+          "vibradorm_vmat_remote": "The remote VMAT shows for this bed.",
+          "vmatbasic_floor_level": "Optional. CBI accepts 0 to 255; XT-Box accepts 1 to 6.",
+          "vmatbasic_floor_minutes": "CBI accepts 0 to 1439 minutes; XT-Box accepts 0 to 255.",
+          "vmatbasic_profile": "The product the V-MAT Basic app shows.",
+          "logicdata_app_profile": "The app you use with this bed.",
+          "logicdata_app_family": "The P1 or P2 setting in the app.",
+          "logicdata_app_layout": "The layout set in the app. Sleep Smart beds use the two-motor standard or split-series layout.",
+          "logicdata_app_transport": "Automatic finds the bed's connection. Change it only if the bed has more than one.",
+          "malouf_app_model": "Choose the model the app shows for this bed.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
-          "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
-          "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
-          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
-          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed, MotoMotion and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
-          "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
-          "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
-          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
-          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
-          "rmcontrol_product": "Choose the exact product code used in RMControl, or None to use the Richmat remote controls. Nordic and WiLinke only; hardware unverified.",
-          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
-          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
-          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "malouf_app_transport": "Automatic follows the bed's name. Change it only if setup can't reach the bed.",
+          "malouf_layout": "Choose the controls on the bed's remote. The bed does not report them itself.",
+          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Automatic uses one for the two-motor layout and two otherwise.",
+          "ble_device_name": "The bed's Bluetooth name exactly as the app shows it, including capital letters.",
+          "motion_bed_restored": "Turn on only if the app restored this profile from a backup.",
+          "motion_bed_preset": "Automatic follows the bed's name. Change it only if the presets are wrong.",
+          "motion_bed_movement": "Automatic follows the bed's name. Change it only if the movement buttons are wrong.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060. Leave it empty to use the default.",
+          "malouf_app_profile": "The app you use with this bed.",
+          "rmcontrol_product": "The product code RMControl shows for this bed. Choose None to use the Richmat remote controls instead.",
+          "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
+          "richmat_remote": "The code on your Richmat remote. It is filled in when the bed name carries it; keep Automatic if you are not sure.",
+          "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
+          "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
+          "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
           "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
           "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap.",
-          "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them.",
-          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown with two sensors. It does not choose which side the controls move.",
-          "agingplace_selected_side": "The telemetry side used when Selectable side is chosen. This setting belongs to this physical bed."
+          "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two.",
+          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown when the bed has two sensors. It does not change which side the controls move.",
+          "agingplace_selected_side": "The sensor side shown when Selectable side is chosen. This setting belongs to this physical bed.",
+          "has_massage": "Show the massage controls.",
+          "fsm_relax_memory_names": "One name per memory, M1 to M8. Leave a name empty to use its default name.",
+          "limoss_remote_theme": "Optional: the theme chosen in the Limoss Remote app. It changes no controls.",
+          "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
+          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
+          "sleeptracker_restricted": "Leave off. Turn on only if the app connects to this processor without signing in.",
+          "furnimove_remote": "The handset ID printed on your remote or shown in the FurniMove / OKIN Smart Remote app.",
+          "product_type": "The product, model or layout the app shows for this bed.",
+          "gmmotor_side": "The side GM Control drives with this product. The product must offer that side.",
+          "kaidi_room_id": "A bed that is already set up keeps its room number, so keep the number shown. For a new bed, choose its room, then use the enrollment action after setup.",
+          "kaidi_sofa_acu_no": "Filled in from the bed. Change it only if the side controls are wrong.",
+          "starcode_abm5_4_command_selector": "Automatic works for most beds. Choose the control box type only if the bed responds wrongly.",
+          "starcode_abm5_4_transport_selector": "Automatic follows the bed's Bluetooth name. Change it only if the bed doesn't respond.",
+          "ergomotion4_model_keys": "The features of your product, in the order the app lists them.",
+          "ergomotion4_massage_keys": "The massage features of your product.",
+          "ergomotion4_product_name": "The product name exactly as the app shows it.",
+          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin ELEVATE.",
+          "starcode_m1x12_profile": "The profile that matches the bed's Bluetooth name.",
+          "starcode_lift_entries": "Choose other configured lift entries: up to three AdjustableM5X5 or DewertOkin ELEVATE entries for an AdjustableM5X5 main, or up to two ELEVATE entries set to Adjustable Comfort M1X12 ELEVATE for an M1X12 main. Each keeps its own Bluetooth address and controls.",
+          "serta_mp_memory_1_head": "Only if you changed memory 1 in the app: its head angle, in degrees.",
+          "serta_mp_memory_1_foot": "Only if you changed memory 1 in the app: its foot angle, in degrees.",
+          "serta_mp_memory_2_head": "Only if you changed memory 2 in the app: its head angle, in degrees.",
+          "serta_mp_memory_2_foot": "Only if you changed memory 2 in the app: its foot angle, in degrees.",
+          "serta_mp_memory_3_head": "Only if you changed memory 3 in the app: its head angle, in degrees.",
+          "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
+          "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
+          "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
         }
       },
       "right_settings": {
@@ -1235,30 +1282,30 @@
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
           "idle_disconnect_seconds": "Seconds to stay connected",
-          "sleeptracker_unit_number": "Processor unit number (wire side)",
-          "sleeptracker_snapshot_side": "Status snapshot side ordinal",
-          "sleeptracker_restricted": "Restricted app session (no authentication)",
-          "sleeptracker_processor_type": "Processor type (0 if unknown)",
-          "richmat_classic_third_service": "Allow the app’s third-service fallback",
+          "sleeptracker_unit_number": "Processor unit number",
+          "sleeptracker_snapshot_side": "Side the processor reports",
+          "sleeptracker_restricted": "Restricted session",
+          "sleeptracker_processor_type": "Processor type",
+          "richmat_classic_third_service": "Bed without the app's usual connection",
           "furnimove_remote": "FurniMove handset ID",
           "has_light": "Enable light controls",
-          "has_massage": "Has massage feature",
+          "has_massage": "Massage controls",
           "jiecang_app_layout": "Physical actuator layout",
-          "jiecang_app_transport": "BLE transport",
-          "lp_legacy_mode": "Legacy app protocol mode",
-          "lp_legacy_model": "Legacy app model code",
-          "lp_legacy_read_uuid": "Notification characteristic UUID",
-          "lp_legacy_write_uuid": "Write characteristic UUID",
+          "jiecang_app_transport": "Bluetooth connection",
+          "lp_legacy_mode": "Connection mode",
+          "lp_legacy_model": "Model code",
+          "lp_legacy_read_uuid": "Response characteristic ID",
+          "lp_legacy_write_uuid": "Command characteristic ID",
           "motor_count": "Number of motors",
-          "product_type": "Product type",
+          "product_type": "App product, model or layout",
           "protocol_variant": "Bed model or remote",
-          "sleepys_elite_selector": "Sleepy's Elite control box selector",
-          "vibradorm_control_type": "Saved app control layout",
-          "vibradorm_floor_default": "Remembered floor brightness",
-          "vibradorm_floor_light": "Retained floor lighting",
-          "vibradorm_light_extension": "Retained lighting extension",
-          "vibradorm_restored": "Use retained Caresse settings",
-          "vibradorm_rgb": "Retained mood lighting",
+          "sleepys_elite_selector": "Control box the app lists",
+          "vibradorm_control_type": "App control layout",
+          "vibradorm_floor_default": "Floor light level",
+          "vibradorm_floor_light": "Floor lighting",
+          "vibradorm_light_extension": "Lighting extension",
+          "vibradorm_restored": "Match settings saved in the Caresse app",
+          "vibradorm_rgb": "Mood lighting",
           "vibradorm_vmat_remote": "VMAT remote",
           "vmatbasic_floor_level": "Saved floor brightness",
           "vmatbasic_floor_minutes": "Saved floor timer (minutes)",
@@ -1266,110 +1313,137 @@
           "logicdata_app_profile": "Bed app",
           "logicdata_app_family": "Command family",
           "logicdata_app_layout": "Physical actuator layout",
-          "logicdata_app_transport": "BLE transport",
+          "logicdata_app_transport": "Bluetooth connection",
           "malouf_app_model": "Bed model",
           "malouf_app_primary": "Primary bed in the app",
-          "malouf_app_transport": "Bluetooth transport",
-          "malouf_layout": "Malouf/Lucid actuator layout",
+          "malouf_app_transport": "Bluetooth connection",
+          "malouf_layout": "Malouf/Lucid motor layout",
           "malouf_memory_slots": "Malouf/Lucid memory positions",
-          "gmmotor_side": "GM Control app bed side",
-          "kaidi_room_id": "Room ID",
-          "kaidi_sofa_acu_no": "Advertised actuator descriptor",
+          "gmmotor_side": "App bed side",
+          "kaidi_room_id": "Room number",
+          "kaidi_sofa_acu_no": "Actuator number",
           "ble_device_name": "Exact Bluetooth name",
-          "motion_bed_restored": "Use an app-restored profile",
-          "motion_bed_preset": "Retained preset layout",
-          "motion_bed_movement": "Retained movement layout",
+          "motion_bed_restored": "Use a profile restored by the app",
+          "motion_bed_preset": "Preset layout",
+          "motion_bed_movement": "Movement layout",
           "jensen_pin": "Jensen PIN",
-          "disable_angle_sensing": "Disable angle sensing",
-          "malouf_app_profile": "Android app",
-          "rmcontrol_product": "RMControl 21.3.7 product",
+          "malouf_app_profile": "App",
+          "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
           "richmat_remote": "Richmat remote",
-          "reverse_motor_1": "Reverse motor channel 1",
-          "reverse_motor_2": "Reverse motor channel 2",
-          "reverse_motor_3": "Reverse motor channel 3",
-          "reverse_motor_4": "Reverse motor channel 4",
-          "limoss_remote_theme": "App artwork theme",
+          "reverse_motor_1": "Reverse motor 1",
+          "reverse_motor_2": "Reverse motor 2",
+          "reverse_motor_3": "Reverse motor 3",
+          "reverse_motor_4": "Reverse motor 4",
+          "limoss_remote_theme": "App theme",
           "octo_pin": "Octo PIN",
-          "octo_motor_count_override": "OCTO motor count",
-          "cb24_bed_selection": "CB24 bed side",
-          "starcode_abm5_4_command_selector": "Saved command/parser selector",
-          "starcode_abm5_4_transport_selector": "Bluetooth transport selector",
-          "ergomotion4_model_keys": "Other product: ordered model keys",
-          "ergomotion4_massage_keys": "Other product: massage keys",
-          "ergomotion4_rgb": "Other product: RGB lighting",
-          "ergomotion4_product_name": "Other product: exact app product name",
-          "fsm_relax_memory_names": "Eight local memory names (blank resets M1 to M8)",
+          "octo_motor_count_override": "Octo motor count",
+          "cb24_bed_selection": "Bed side",
+          "starcode_abm5_4_command_selector": "Control box type",
+          "starcode_abm5_4_transport_selector": "Bluetooth connection type",
+          "ergomotion4_model_keys": "Product features",
+          "ergomotion4_massage_keys": "Massage features",
+          "ergomotion4_rgb": "RGB lighting",
+          "ergomotion4_product_name": "Product name in the app",
+          "fsm_relax_memory_names": "Memory names",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
           "starcode_m1x12_profile": "M1X12 app profile",
           "starcode_lift_entries": "Independently addressed lifts",
-          "serta_mp_memory_1_head": "Local memory 1, head angle",
-          "serta_mp_memory_1_foot": "Local memory 1, foot angle",
-          "serta_mp_memory_2_head": "Local memory 2, head angle",
-          "serta_mp_memory_2_foot": "Local memory 2, foot angle",
-          "serta_mp_memory_3_head": "Local memory 3, head angle",
-          "serta_mp_memory_3_foot": "Local memory 3, foot angle",
-          "serta_mp_memory_4_head": "Local memory 4, head angle",
-          "serta_mp_memory_4_foot": "Local memory 4, foot angle",
+          "serta_mp_memory_1_head": "Memory 1 head angle",
+          "serta_mp_memory_1_foot": "Memory 1 foot angle",
+          "serta_mp_memory_2_head": "Memory 2 head angle",
+          "serta_mp_memory_2_foot": "Memory 2 foot angle",
+          "serta_mp_memory_3_head": "Memory 3 head angle",
+          "serta_mp_memory_3_foot": "Memory 3 foot angle",
+          "serta_mp_memory_4_head": "Memory 4 head angle",
+          "serta_mp_memory_4_foot": "Memory 4 foot angle",
           "comfort_enhancement3_remote_code": "Exact remote code",
           "symphony_side": "Side for a standalone split-head bed",
-          "mline_child_mode": "Local child mode",
+          "mline_child_mode": "Child mode",
           "connection_mode": "Bluetooth connection",
           "agingplace_bed_mode": "Sensor display mode",
-          "agingplace_bed_side": "Telemetry side",
-          "agingplace_selected_side": "Selected telemetry side"
+          "agingplace_bed_side": "Sensor side",
+          "agingplace_selected_side": "Chosen sensor side",
+          "read_positions": "Read bed position"
         },
         "data_description": {
-          "sleeptracker_unit_number": "Use the app-recorded integer. 0, 1 and 2 are examples, not proven left/right mappings. Restricted sessions use 0.",
-          "sleeptracker_snapshot_side": "App snapshot ordinal: 0 left, 1 right, 2 entire bed, 3 other.",
-          "sleeptracker_processor_type": "App processor types 5, 6 and 7 hide preset saving. This does not describe a motor count.",
+          "sleeptracker_unit_number": "Leave at 0 unless the bed has more than one processor. Then use the number the app shows for this one.",
+          "sleeptracker_snapshot_side": "0 is left, 1 right, 2 the whole bed and 3 other. Leave at 0 for a single bed.",
+          "sleeptracker_processor_type": "Leave at 0 if you are not sure. Types 5, 6 and 7 cannot save presets.",
           "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
-          "richmat_classic_third_service": "Only for a bed that exposes none of the app's fixed services. The app then writes to the third service it finds, with bare command bytes.",
-          "has_light": "Expose light controls when the bed has lighting.",
-          "jiecang_app_layout": "Select the layout configured in the app. Dream Motion HD does not support the bilateral or split-after-bilateral layouts. The device name and motor count do not identify the layout.",
-          "jiecang_app_transport": "Auto selects a compatible GATT endpoint. ERGOBALANCE G2 requires a G1 or G3 endpoint on the same device; Dream Motion and Dream Motion HD also allow manual standalone G2, without a startup-query burst. Comfort Motion supports G1 and G2 only.",
-          "lp_legacy_mode": "Select the protocol mode confirmed for this bed.",
-          "lp_legacy_model": "Select the exact four-character model code shown by the legacy L&P Adjustable Base app. Codes are not inferred from the Bluetooth name.",
-          "lp_legacy_read_uuid": "Optional full UUID of the notification characteristic confirmed for this bed. Leave empty to disable app response notifications.",
-          "lp_legacy_write_uuid": "Enter the full UUID of the command characteristic confirmed for this bed. No default is assumed.",
-          "motor_count": "Number of physical actuators. Available counts follow the selected protocol variant. Malouf/Lucid beds use the separate actuator-layout setting below.",
-          "protocol_variant": "The bed model or remote this bed's app uses.",
-          "sleepys_elite_selector": "Choose the selector saved for this physical bed. Paired sides keep their selector independently.",
-          "vibradorm_control_type": "Choose the control layout already used in your app. Each choice defines the available movement groups and memory controls.",
-          "vibradorm_floor_default": "Advanced: the floor-light level remembered by your app (1–8). This is a local setting, not a measured light state. A retained level of 8 is valid even when the lighting extension limits the level slider to 6.",
-          "vibradorm_restored": "Advanced: match settings already saved by the Caresse app. Standard controls match a fresh app setup. Retained controls and feature flags do not verify your bed model.",
-          "vibradorm_vmat_remote": "Choose the same remote ordinal shown in VMAT. This sets its controls and features; Bluetooth metadata cannot identify the remote.",
-          "vmatbasic_floor_level": "Optional requested setting. CBI accepts 0–255, including explicit zero; an absent CBI button setting uses 255. XT-Box accepts 1–6. This is not measured brightness.",
-          "vmatbasic_floor_minutes": "CBI accepts 0–1439 minutes; XT-Box accepts 0–255. Zero is an explicit timer setting.",
-          "vmatbasic_profile": "Choose the product shown in the V-MAT Basic app. Advertisements and model strings cannot select its controls.",
-          "logicdata_app_profile": "Choose the MOTIONrelax phone or tablet app, or the Sleep Smart Air Mattress app, used for this bed. Shared Bluetooth services do not identify the app.",
-          "logicdata_app_family": "Choose the P1 or P2 command family selected in the app. The transport does not identify the command family. In Sleep Smart, P2 is the middle rail bed.",
-          "logicdata_app_layout": "Select the physical layout configured in the app. The device name and motor count do not identify the full layout. Sleep Smart beds use the two-motor standard or split-series layout.",
-          "logicdata_app_transport": "Auto works when exactly one supported GATT transport is available. Select T1, T2 or T3 explicitly for a device with multiple transports.",
-          "malouf_app_model": "Choose the exact model selected in the app. Model controls are independent of the Bluetooth transport.",
+          "richmat_classic_third_service": "Turn on only if the bed offers none of the app's usual Bluetooth services. The app then uses another one it finds.",
+          "has_light": "Expose light controls when this bed has under-bed lighting.",
+          "jiecang_app_layout": "The layout set in the app.",
+          "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
+          "lp_legacy_mode": "The connection mode the L&P Adjustable Base app uses for this bed.",
+          "lp_legacy_model": "The four-character model code the L&P Adjustable Base app shows.",
+          "lp_legacy_read_uuid": "Optional. The full ID of the characteristic the bed answers on. Leave empty if you are not sure.",
+          "lp_legacy_write_uuid": "The full ID of the characteristic the bed accepts commands on, from a Bluetooth scanner app such as nRF Connect.",
+          "motor_count": "How many motors the bed has. If the app has 2M, 3M and 4M screens, choose the screen you use.",
+          "protocol_variant": "The remote code, the model or layout the app shows, or the side this entry controls. Keep Automatic if you are not sure.",
+          "sleepys_elite_selector": "The control box the MFRM Sleepy's Elite app shows for this bed. Choose none if it names none.",
+          "vibradorm_control_type": "The control layout your app shows.",
+          "vibradorm_floor_default": "The floor light level your app remembers, from 1 to 8.",
+          "vibradorm_restored": "Turn on only if you set the bed up earlier in the Caresse app and want the same controls here.",
+          "vibradorm_vmat_remote": "The remote VMAT shows for this bed.",
+          "vmatbasic_floor_level": "Optional. CBI accepts 0 to 255; XT-Box accepts 1 to 6.",
+          "vmatbasic_floor_minutes": "CBI accepts 0 to 1439 minutes; XT-Box accepts 0 to 255.",
+          "vmatbasic_profile": "The product the V-MAT Basic app shows.",
+          "logicdata_app_profile": "The app you use with this bed.",
+          "logicdata_app_family": "The P1 or P2 setting in the app.",
+          "logicdata_app_layout": "The layout set in the app. Sleep Smart beds use the two-motor standard or split-series layout.",
+          "logicdata_app_transport": "Automatic finds the bed's connection. Change it only if the bed has more than one.",
+          "malouf_app_model": "Choose the model the app shows for this bed.",
           "malouf_app_primary": "Match the physical primary/secondary setting in the app. Home Assistant Left/Right labels do not change this role.",
-          "malouf_app_transport": "Automatic uses the advertised device name and discovered services. Select a known transport only when automatic selection is ambiguous.",
-          "malouf_layout": "Choose the controls present on the physical remote. Protocol detection does not identify the actuator layout or retail model.",
-          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Auto uses one for the two-motor layout and two otherwise.",
-          "ble_device_name": "Enter the unchanged Bluetooth name, preserving case. Motion Bed, MotoMotion and AdjustableM5X5 profiles are identified from it, not from a friendly display name.",
-          "motion_bed_restored": "Enable only for a same-target profile restored by the app, including its empty-title or fallback layout.",
-          "motion_bed_preset": "Auto follows the original app name. Select an alternative only for a retained layout on this physical target.",
-          "motion_bed_movement": "Auto follows the original app name. This layout names app controls, without inferring motor count.",
-          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060.",
-          "disable_angle_sensing": "When enabled, position sensors and position controls are disabled but the physical remote will continue working. Uncheck to enable position sliders for beds that support them.",
-          "malouf_app_profile": "Choose the app you use with this bed. Shared Bluetooth identifiers do not identify an app.",
-          "rmcontrol_product": "Choose the exact product code used in RMControl, or None to use the Richmat remote controls. Nordic and WiLinke only; hardware unverified.",
-          "rmcontrol_side": "Use the side selected in RMControl. This applies only when an RMControl product is selected.",
-          "richmat_remote": "Select the Richmat remote code (use auto if unsure).",
-          "octo_pin": "PIN used to unlock Standard OCTO Smart Control. Leave empty if PIN authentication is not configured.",
-          "octo_motor_count_override": "Use the advertised OCTO motor count or choose an explicit 1–4 motor layout.",
-          "cb24_bed_selection": "Choose the native CB24 A/B selector. Both uses the broadcast selector.",
+          "malouf_app_transport": "Automatic follows the bed's name. Change it only if setup can't reach the bed.",
+          "malouf_layout": "Choose the controls on the bed's remote. The bed does not report them itself.",
+          "malouf_memory_slots": "Choose the number of memory buttons on the physical remote. Automatic uses one for the two-motor layout and two otherwise.",
+          "ble_device_name": "The bed's Bluetooth name exactly as the app shows it, including capital letters.",
+          "motion_bed_restored": "Turn on only if the app restored this profile from a backup.",
+          "motion_bed_preset": "Automatic follows the bed's name. Change it only if the presets are wrong.",
+          "motion_bed_movement": "Automatic follows the bed's name. Change it only if the movement buttons are wrong.",
+          "jensen_pin": "PIN code for Jensen bed authentication. Default PIN is 3060. Leave it empty to use the default.",
+          "malouf_app_profile": "The app you use with this bed.",
+          "rmcontrol_product": "The product code RMControl shows for this bed. Choose None to use the Richmat remote controls instead.",
+          "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
+          "richmat_remote": "The code on your Richmat remote. It is filled in when the bed name carries it; keep Automatic if you are not sure.",
+          "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
+          "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
+          "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides.",
           "comfort_enhancement3_remote_code": "Use the printed code exactly, including capitalization. No spaces are added or removed.",
           "connection_mode": "How long Home Assistant keeps the Bluetooth link after a command. Most beds accept one connection at a time, so releasing it lets the remote and the bed's app connect again.",
           "motor_pulse_count": "How many times a tap repeats its command, from 1 to 100. Higher numbers move further per tap.",
-          "agingplace_bed_mode": "With two sensors, only the telemetry side is shown; the other modes show every reading. Auto shows every reading until the bed reports its sensor count, so choose Two sensors when you know your bed has them.",
-          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown with two sensors. It does not choose which side the controls move.",
-          "agingplace_selected_side": "The telemetry side used when Selectable side is chosen. This setting belongs to this physical bed."
+          "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two.",
+          "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown when the bed has two sensors. It does not change which side the controls move.",
+          "agingplace_selected_side": "The sensor side shown when Selectable side is chosen. This setting belongs to this physical bed.",
+          "has_massage": "Show the massage controls.",
+          "fsm_relax_memory_names": "One name per memory, M1 to M8. Leave a name empty to use its default name.",
+          "limoss_remote_theme": "Optional: the theme chosen in the Limoss Remote app. It changes no controls.",
+          "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
+          "preferred_adapter": "Select a specific Bluetooth adapter or proxy, or let Home Assistant choose automatically.",
+          "sleeptracker_restricted": "Leave off. Turn on only if the app connects to this processor without signing in.",
+          "furnimove_remote": "The handset ID printed on your remote or shown in the FurniMove / OKIN Smart Remote app.",
+          "product_type": "The product, model or layout the app shows for this bed.",
+          "gmmotor_side": "The side GM Control drives with this product. The product must offer that side.",
+          "kaidi_room_id": "A bed that is already set up keeps its room number, so keep the number shown. For a new bed, choose its room, then use the enrollment action after setup.",
+          "kaidi_sofa_acu_no": "Filled in from the bed. Change it only if the side controls are wrong.",
+          "starcode_abm5_4_command_selector": "Automatic works for most beds. Choose the control box type only if the bed responds wrongly.",
+          "starcode_abm5_4_transport_selector": "Automatic follows the bed's Bluetooth name. Change it only if the bed doesn't respond.",
+          "ergomotion4_model_keys": "The features of your product, in the order the app lists them.",
+          "ergomotion4_massage_keys": "The massage features of your product.",
+          "ergomotion4_product_name": "The product name exactly as the app shows it.",
+          "starcode_m5x5_profile": "The bed class that matches the start of the bed's Bluetooth name. ELEVATE lifts are set up as DewertOkin ELEVATE.",
+          "starcode_m1x12_profile": "The profile that matches the bed's Bluetooth name.",
+          "starcode_lift_entries": "Choose other configured lift entries: up to three AdjustableM5X5 or DewertOkin ELEVATE entries for an AdjustableM5X5 main, or up to two ELEVATE entries set to Adjustable Comfort M1X12 ELEVATE for an M1X12 main. Each keeps its own Bluetooth address and controls.",
+          "serta_mp_memory_1_head": "Only if you changed memory 1 in the app: its head angle, in degrees.",
+          "serta_mp_memory_1_foot": "Only if you changed memory 1 in the app: its foot angle, in degrees.",
+          "serta_mp_memory_2_head": "Only if you changed memory 2 in the app: its head angle, in degrees.",
+          "serta_mp_memory_2_foot": "Only if you changed memory 2 in the app: its foot angle, in degrees.",
+          "serta_mp_memory_3_head": "Only if you changed memory 3 in the app: its head angle, in degrees.",
+          "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
+          "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
+          "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
+          "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target."
         }
       },
       "estimated_positions": {
@@ -1482,65 +1556,65 @@
       }
     },
     "error": {
-      "invalid_pairlink_role": "Choose central connection or local peripheral role.",
-      "pairlink_local_source_unavailable": "Select exactly one active local Bluetooth source from this Home Assistant host.",
-      "invalid_pairlink_home_id": "Enter a signed or unsigned four-byte decimal HomeID.",
-      "invalid_pairlink_password": "Enter text that encodes to exactly four UTF-8 bytes, or use an eight-digit hex override with the default text 1122.",
+      "invalid_pairlink_role": "Choose how Home Assistant joins the Pairlink network.",
+      "pairlink_local_source_unavailable": "Choose a Bluetooth adapter on this Home Assistant host that is turned on. A Bluetooth proxy cannot join the Pairlink network.",
+      "invalid_pairlink_home_id": "Enter the home ID as a whole number, or leave it empty.",
+      "invalid_pairlink_password": "Enter a password of exactly four characters. For characters you cannot type, keep 1122 and enter the password as eight hex digits below.",
       "invalid_number": "Enter a valid number.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
-      "invalid_motor_count_for_bed_type": "The selected motor count is not supported by this bed type and protocol variant.",
+      "invalid_motor_count_for_bed_type": "This bed does not support that number of motors. Choose another number, or change the bed model or remote.",
       "invalid_angle": "Angle must be a positive number between 0 and 180 degrees.",
-      "octo_tv_lift_pairing_unsupported": "One-motor OCTO TV/bed lifts must remain standalone and cannot be paired as bed sides.",
-      "single_address_pairing_unsupported": "This bed's current Bluetooth protocol does not expose paired-side controls.",
-      "leggett_app_invalid_profile": "Choose a supported Leggett app profile.",
+      "octo_tv_lift_pairing_unsupported": "A one-motor Octo TV or bed lift cannot have Left and Right controls. Keep it as a single bed.",
+      "single_address_pairing_unsupported": "This bed has no separate Left and Right controls.",
+      "leggett_app_invalid_profile": "Choose the Leggett & Platt app you use.",
       "limoss_remote_feature_update_failed": "The feature OFF commands could not complete. Settings were not saved.",
-      "logicdata_app_required": "Choose the bed app, command family and physical actuator layout.",
+      "logicdata_app_required": "Choose the app, its command family and the bed layout.",
       "logicdata_app_family_layout": "For MOTIONrelax apps, P2 requires the middle layout and all other layouts use P1.",
       "jiecang_app_required": "Choose the bed app and physical actuator layout.",
-      "comfort_motion_selection": "Comfort Motion supports back/legs, back/legs/neck, or back/legs/neck/lumbar with Auto, G1 or G2 transport.",
-      "invalid_lp_legacy_model": "Select a model code supported by the legacy app.",
-      "invalid_lp_legacy_mode": "Select Legacy or Framed explicitly.",
-      "invalid_characteristic_uuid": "Enter a valid full Bluetooth characteristic UUID.",
-      "malouf_app_required": "Select the Android app and exact bed model.",
-      "furnimove_remote_required": "Choose a captured FurniMove handset ID. An unknown ID requires its exact app table; the receiver label cannot choose one.",
+      "comfort_motion_selection": "Choose back and legs, back, legs and neck, or back, legs, neck and lumbar.",
+      "invalid_lp_legacy_model": "Choose the model code the L&P Adjustable Base app shows.",
+      "invalid_lp_legacy_mode": "Choose Legacy or Framed.",
+      "invalid_characteristic_uuid": "Enter the full Bluetooth characteristic ID, in the form 0000fff1-0000-1000-8000-00805f9b34fb.",
+      "malouf_app_required": "Choose the app you use and the bed model it shows.",
+      "furnimove_remote_required": "Choose the handset ID printed on your remote or shown in the FurniMove app.",
       "vibradorm_app_required": "Choose the bed app.",
-      "vibradorm_app_invalid": "Choose a supported app control layout and retained feature settings.",
-      "vmat_bond_required": "VMAT setup requires verified native pairing for this exact Bluetooth address. Use a supported host Bluetooth adapter and retry; an unverified proxy pairing request cannot finish setup.",
+      "vibradorm_app_invalid": "Choose the control layout your app shows.",
+      "vmat_bond_required": "VMAT beds must be paired with a Bluetooth adapter on the Home Assistant host. Pairing through a proxy cannot be confirmed. Connect through a local adapter and try again.",
       "vmatbasic_invalid": "Enter a whole number within the selected product range.",
       "vmatbasic_link_profile": "Combine only CBI or CBI with XT-Box receivers. The Basic profile has no linked control.",
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
-      "starcode_app_invalid": "Choose a supported app selector and a live Bluetooth transport.",
-      "motion_bed_profile": "Choose a supported Motion Bed name or an explicit app-restored profile, with layouts belonging to the same surface.",
-      "starcode_profile_mismatch": "Choose the bed class matching the Bluetooth name prefix. Letter case does not matter.",
+      "starcode_app_invalid": "Choose the settings the app shows for this bed, then try again.",
+      "motion_bed_profile": "Enter the bed's Bluetooth name exactly as the Motion Bed app shows it, or turn off the restored profile.",
+      "starcode_profile_mismatch": "Choose the bed class that matches the start of the bed's Bluetooth name.",
       "starcode_invalid_lifts": "Select up to three distinct configured AdjustableM5X5 or DewertOkin ELEVATE entries with different Bluetooth addresses.",
       "starcode_elevate_bed_type": "ELEVATE lifts use the DewertOkin ELEVATE bed type. Set them up with it, then select them as lifts here.",
-      "fsm_relax_invalid": "Use a valid app layout, four boolean reversal flags and exactly eight memory names (at most 80 characters each).",
+      "fsm_relax_invalid": "Check the FSM Relax settings: choose a layout and give each of the eight memories a name of at most 80 characters.",
       "invalid_pulse_count_range": "For this app, Movement per tap must be between 1 and 600.",
       "remacro_model_not_in_app": "The selected app does not list this bed's model. Choose the app the bed uses.",
       "logicdata_app_sleep_smart_layout": "Sleep Smart beds use the two-motor standard or split-series layout.",
-      "richmat_mh_choose_model": "The app asks for the model for this Bluetooth name. Choose the model in the protocol variant.",
-      "richmat_mh_no_name": "The app selects the model from the Bluetooth name, which is unavailable. Choose the model in the protocol variant.",
-      "richmat_mh_unknown_model": "The selected app has no model for this Bluetooth name. Choose the model the app shows in the protocol variant.",
+      "richmat_mh_choose_model": "The app needs the bed model for this bed. Choose it under **Bed model or remote**.",
+      "richmat_mh_no_name": "The bed has not reported its Bluetooth name, so the model cannot be picked automatically. Choose it under **Bed model or remote**.",
+      "richmat_mh_unknown_model": "The app has no model for this bed's Bluetooth name. Choose the model the app shows under **Bed model or remote**.",
       "app_profile_unpair_first": "Each side keeps its own {profile} settings. Separate the combined bed, change each bed, then combine them again.",
-      "sleeptracker_restricted_unit": "Restricted app sessions use processor unit 0.",
-      "isleep_profile": "Select a supported ISleep product, signed 32-bit room ID, and valid actuator descriptor.",
-      "isleep_unpair_first": "Revert to a standalone bed before selecting an ISleep product or actuator descriptor without separate side controls.",
-      "starcode_m1x12_profile_mismatch": "Choose the M1X12 profile matching the exact Bluetooth name.",
+      "sleeptracker_restricted_unit": "A restricted session uses processor unit 0. Set the unit to 0.",
+      "isleep_profile": "Choose the ISleep product and enter a whole-number room ID.",
+      "isleep_unpair_first": "Separate the combined bed first, then choose this ISleep product, which has no separate sides.",
+      "starcode_m1x12_profile_mismatch": "Choose the profile that matches the bed's Bluetooth name.",
       "starcode_invalid_m1x12_lifts": "Select up to two distinct configured Adjustable Comfort M1X12 ELEVATE entries with different Bluetooth addresses.",
       "starcode_m1x12_elevate_reconfigure": "Reconfigure this ELEVATE entry as Adjustable Comfort M1X12 ELEVATE before linking it.",
       "casper_pairing_needs_connection": "Home Assistant could not connect to the bed to check whether it supports Left/Right/Both controls. Close the bed's phone app, make sure the bed is powered and in range, then submit to try again.",
-      "doublesleep_profile": "Select a supported SleepEase model and BLE driver.",
-      "gmmotor_product": "Choose an exact admitted GM Control product.",
-      "gmmotor_side": "This product does not expose the selected app side.",
+      "doublesleep_profile": "Choose the SleepEase model the app shows.",
+      "gmmotor_product": "Choose the product the GM Control app shows for this bed.",
+      "gmmotor_side": "This product has no such side. Choose a side the GM Control app offers.",
       "estimate_acknowledge_required": "Confirm that you understand positions are estimated.",
-      "richmat_classic_layout": "Choose a layout shipped in the selected app.",
-      "rize_profile": "Select a supported Rize Beds product, signed 32-bit room ID, and valid actuator descriptor.",
-      "rize_unpair_first": "Revert to a standalone bed before selecting a Rize profile without separate side controls.",
-      "comfy_profile": "Select bed type 129, 130 or 131, the existing signed room ID, and the capability word.",
-      "comfy_unpair_first": "Revert to a standalone bed before choosing a product without separate side controls.",
+      "richmat_classic_layout": "Choose a layout the selected app offers.",
+      "rize_profile": "Choose the Rize Beds product and enter a whole-number room ID.",
+      "rize_unpair_first": "Separate the combined bed first, then choose this Rize Beds product, which has no separate sides.",
+      "comfy_profile": "Choose the product the app shows and keep the room ID the bed already has.",
+      "comfy_unpair_first": "Separate the combined bed first, then choose this product, which has no separate sides.",
       "apex_remote_required": "Choose the remote printed on the bed controller or enter its exact code.",
-      "apex_remote_code": "This exact remote code is not supported. Check capitalization and spaces.",
-      "symphony_profile": "Choose a Symphony Sleep Sense product and BLE selector. The advertisement does not identify the product.",
+      "apex_remote_code": "This remote code is not supported. Check the capital letters and spaces against the label.",
+      "symphony_profile": "Choose the Symphony Sleep Sense product the app shows.",
       "symphony_unpair_first": "Separate the combined bed first, then choose this product, which has no separate sides.",
       "invalid_movement_per_tap": "Enter a number from 1 to 100.",
       "rmcontrol_needs_reconfigure": "This product needs another bed model or remote. Change that in Reconfigure first, then choose the product here.",
@@ -1821,6 +1895,192 @@
       "remote_action": {
         "name": "Remote action"
       },
+      "catalog_action": {
+        "name": "{action}"
+      },
+      "catalog_preset": {
+        "name": "{action}"
+      },
+      "catalog_save": {
+        "name": "Save {preset}"
+      },
+      "catalog_massage": {
+        "name": "{action}"
+      },
+      "catalog_light": {
+        "name": "{action}"
+      },
+      "catalog_climate": {
+        "name": "{action}"
+      },
+      "control_1_up": {
+        "name": "Control 1 up"
+      },
+      "control_1_down": {
+        "name": "Control 1 down"
+      },
+      "control_2_up": {
+        "name": "Control 2 up"
+      },
+      "control_2_down": {
+        "name": "Control 2 down"
+      },
+      "control_3_up": {
+        "name": "Control 3 up"
+      },
+      "control_3_down": {
+        "name": "Control 3 down"
+      },
+      "control_4_up": {
+        "name": "Control 4 up"
+      },
+      "control_4_down": {
+        "name": "Control 4 down"
+      },
+      "control_5_up": {
+        "name": "Control 5 up"
+      },
+      "control_5_down": {
+        "name": "Control 5 down"
+      },
+      "extra_up": {
+        "name": "Extra motor up"
+      },
+      "extra_down": {
+        "name": "Extra motor down"
+      },
+      "head_tilt_up": {
+        "name": "Head tilt up"
+      },
+      "head_tilt_down": {
+        "name": "Head tilt down"
+      },
+      "headrest_up": {
+        "name": "Headrest up"
+      },
+      "headrest_down": {
+        "name": "Headrest down"
+      },
+      "lounge_up": {
+        "name": "Lounge up"
+      },
+      "lounge_down": {
+        "name": "Lounge down"
+      },
+      "lower_section_up": {
+        "name": "Lower section up"
+      },
+      "lower_section_down": {
+        "name": "Lower section down"
+      },
+      "lumbar_pillow_up": {
+        "name": "Lumbar and pillow up"
+      },
+      "lumbar_pillow_down": {
+        "name": "Lumbar and pillow down"
+      },
+      "main_motor_up": {
+        "name": "Main motor up"
+      },
+      "main_motor_down": {
+        "name": "Main motor down"
+      },
+      "mid_body_up": {
+        "name": "Mid-body up"
+      },
+      "mid_body_down": {
+        "name": "Mid-body down"
+      },
+      "motor_1_up": {
+        "name": "Motor 1 up"
+      },
+      "motor_1_down": {
+        "name": "Motor 1 down"
+      },
+      "motor_2_up": {
+        "name": "Motor 2 up"
+      },
+      "motor_2_down": {
+        "name": "Motor 2 down"
+      },
+      "motor_4_up": {
+        "name": "Motor 4 up"
+      },
+      "motor_4_down": {
+        "name": "Motor 4 down"
+      },
+      "motor_5_up": {
+        "name": "Motor 5 up"
+      },
+      "motor_5_down": {
+        "name": "Motor 5 down"
+      },
+      "motor_6_up": {
+        "name": "Motor 6 up"
+      },
+      "motor_6_down": {
+        "name": "Motor 6 down"
+      },
+      "motor_7_up": {
+        "name": "Motor 7 up"
+      },
+      "motor_7_down": {
+        "name": "Motor 7 down"
+      },
+      "motors_1_2_up": {
+        "name": "Motors 1 and 2 up"
+      },
+      "motors_1_2_down": {
+        "name": "Motors 1 and 2 down"
+      },
+      "motors_2_3_up": {
+        "name": "Motors 2 and 3 up"
+      },
+      "motors_2_3_down": {
+        "name": "Motors 2 and 3 down"
+      },
+      "motors_3_4_up": {
+        "name": "Motors 3 and 4 up"
+      },
+      "motors_3_4_down": {
+        "name": "Motors 3 and 4 down"
+      },
+      "pillow_2_up": {
+        "name": "Pillow 2 up"
+      },
+      "pillow_2_down": {
+        "name": "Pillow 2 down"
+      },
+      "pillow_lumbar_tilt_up": {
+        "name": "Pillow and lumbar tilt up"
+      },
+      "pillow_lumbar_tilt_down": {
+        "name": "Pillow and lumbar tilt down"
+      },
+      "storage_lift_up": {
+        "name": "Storage lift up"
+      },
+      "storage_lift_down": {
+        "name": "Storage lift down"
+      },
+      "t_flat_up": {
+        "name": "T-flat up"
+      },
+      "t_flat_down": {
+        "name": "T-flat down"
+      },
+      "upper_section_up": {
+        "name": "Upper section up"
+      },
+      "upper_section_down": {
+        "name": "Upper section down"
+      },
+      "zero_gravity_up": {
+        "name": "Zero gravity up"
+      },
+      "zero_gravity_down": {
+        "name": "Zero gravity down"
+      },
       "vibradorm_app_mood_toggle": {
         "name": "Toggle mood light"
       },
@@ -2085,18 +2345,6 @@
       "logicdata_air_pump_save_memory": {
         "name": "Save pressure memory"
       },
-      "richmat_mh_massage": {
-        "name": "{action}"
-      },
-      "richmat_mh_preset": {
-        "name": "{action}"
-      },
-      "richmat_mh_save": {
-        "name": "{action}"
-      },
-      "richmat_mh_action": {
-        "name": "{action}"
-      },
       "richmat_mh_start_detection": {
         "name": "Start component check"
       },
@@ -2298,18 +2546,6 @@
       "isleep_enroll": {
         "name": "Add bed to room"
       },
-      "bedsense_action": {
-        "name": "{action}"
-      },
-      "bedsense_massage": {
-        "name": "{action}"
-      },
-      "bedsense_light": {
-        "name": "{action}"
-      },
-      "casper_base_action": {
-        "name": "{action}"
-      },
       "bf_cherish_both_up": {
         "name": "Back and legs up"
       },
@@ -2318,15 +2554,6 @@
       },
       "bf_query_alarm": {
         "name": "Refresh alarm"
-      },
-      "doublesleep_action": {
-        "name": "{action}"
-      },
-      "doublesleep_massage_action": {
-        "name": "{action}"
-      },
-      "doublesleep_light_action": {
-        "name": "{action}"
       },
       "adjustamattress_lift_up": {
         "name": "Lift up"
@@ -2376,9 +2603,6 @@
       "adjustamattress_lift_foot": {
         "name": "Lift foot"
       },
-      "hjbed_action": {
-        "name": "{action}"
-      },
       "hjbed_release": {
         "name": "Release held control"
       },
@@ -2396,9 +2620,6 @@
       },
       "estimate_remote_used": {
         "name": "I used the remote"
-      },
-      "goodvibe_action": {
-        "name": "{action}"
       },
       "goodvibe_release": {
         "name": "Release held control"
@@ -2424,20 +2645,11 @@
       "eshine_okin_massage_timer": {
         "name": "Cycle massage timer"
       },
-      "richmat_classic_action": {
-        "name": "{action}"
-      },
       "richmat_classic_release": {
         "name": "Release held control"
       },
-      "motomotion_action": {
-        "name": "{action}"
-      },
       "motomotion_release": {
         "name": "Release held control"
-      },
-      "hush_base_action": {
-        "name": "{action}"
       },
       "motion_bed_left_legs_down": {
         "name": "Left legs Down"
@@ -2904,12 +3116,6 @@
       "resident_sync_clock": {
         "name": "Sync clock"
       },
-      "luuna_preset": {
-        "name": "{action}"
-      },
-      "luuna_massage": {
-        "name": "{action}"
-      },
       "comfortbase_save_flat": {
         "name": "Save flat"
       },
@@ -2918,9 +3124,6 @@
       },
       "comfortbase_save_anti_snore": {
         "name": "Save anti-snore"
-      },
-      "richmat_app_action": {
-        "name": "{action}"
       },
       "richmat_app_release": {
         "name": "Release held control"
@@ -3102,9 +3305,6 @@
       "rize_remedy_ii_wave_3": {
         "name": "Massage wave 3"
       },
-      "apex_group": {
-        "name": "{action}"
-      },
       "apex_tilt": {
         "name": "Tilt"
       },
@@ -3149,18 +3349,6 @@
       },
       "symphony_sync_clock": {
         "name": "Sync clock"
-      },
-      "symphony_utility_action": {
-        "name": "{action}"
-      },
-      "symphony_presets_action": {
-        "name": "{action}"
-      },
-      "symphony_lighting_action": {
-        "name": "{action}"
-      },
-      "symphony_massage_action": {
-        "name": "{action}"
       },
       "symphony_head_up": {
         "name": "Head up"
@@ -3231,12 +3419,6 @@
       "bedgear_combined_down": {
         "name": "Head and foot down"
       },
-      "sonicsleep_action": {
-        "name": "{action}"
-      },
-      "sonicsleep_save": {
-        "name": "{action}"
-      },
       "starcode_abm5_4_light_on": {
         "name": "Turn floor light on"
       },
@@ -3249,131 +3431,14 @@
       "rize_pattern_off": {
         "name": "Massage pattern off"
       },
-      "symphony_save_action": {
-        "name": "{action}"
-      },
-      "okin_bedding_app_save": {
-        "name": "{action}"
-      },
       "richmat_mh_toggle_smart_set_lock": {
         "name": "Toggle smart set lock"
-      },
-      "hjbed_save": {
-        "name": "{action}"
-      },
-      "richmat_app_save": {
-        "name": "{action}"
-      },
-      "woosa_program_love": {
-        "name": "Save anti-snore position"
-      },
-      "woosa_program_tv": {
-        "name": "Save TV position"
-      },
-      "woosa_program_zero_g": {
-        "name": "Save zero gravity position"
-      },
-      "customatic_save_zg": {
-        "name": "Save zero G"
-      },
-      "customatic_save_incline": {
-        "name": "Save incline"
       },
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
-      "mlily_remote_bedlight": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massageheadinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massagefootinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massagemodechange": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massagemodealloff": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massage10minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massage20minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massage30minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_zerogravity": {
-        "name": "{action}"
-      },
-      "mlily_remote_zerogravity_save": {
-        "name": "{action}"
-      },
-      "mlily_remote_antisnoring": {
-        "name": "{action}"
-      },
-      "mlily_remote_antisnoring_save": {
-        "name": "{action}"
-      },
-      "mlily_remote_massageheadinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_massagefootinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_massagemodechange": {
-        "name": "{action}"
-      },
-      "mlily_remote_massagemodealloff": {
-        "name": "{action}"
-      },
-      "mlily_remote_massage10minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_massage20minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_massage30minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_massagelumbarinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_tvposition": {
-        "name": "{action}"
-      },
-      "mlily_remote_tvposition_save": {
-        "name": "{action}"
-      },
-      "mlily_remote_loungeposition": {
-        "name": "{action}"
-      },
-      "mlily_remote_loungeposition_save": {
-        "name": "{action}"
-      },
-      "richmat_legacy_lighting": {
-        "name": "{action}"
-      },
-      "richmat_legacy_massage": {
-        "name": "{action}"
-      },
-      "richmat_legacy_presets": {
-        "name": "{action}"
-      },
-      "richmat_legacy_utility": {
-        "name": "{action}"
-      },
-      "richmat_legacy_save": {
-        "name": "{action}"
-      },
       "richmat_mh_toggle_smart_light_lock": {
         "name": "Toggle smart light lock"
-      },
-      "goodvibe_save_action": {
-        "name": "{action}"
       },
       "onlysnore_massage_timer_next": {
         "name": "Cycle massage timer"
@@ -3591,29 +3656,14 @@
       "cheerssleep_lift_foot_down": {
         "name": "Foot lift down"
       },
-      "okimiki_action": {
-        "name": "{action}"
-      },
-      "comfortfurniture_save": {
-        "name": "{action}"
-      },
       "comfortfurniture_reset": {
         "name": "Reset"
       },
       "comfortfurniture_preset_stop": {
         "name": "Stop preset"
       },
-      "suta_action": {
-        "name": "{action}"
-      },
       "suta_release": {
         "name": "Release held control"
-      },
-      "suta_preset": {
-        "name": "{action}"
-      },
-      "suta_save": {
-        "name": "{action}"
       },
       "somos_head_massage": {
         "name": "Head massage"
@@ -3690,12 +3740,6 @@
       "sophie_program_anti_snore": {
         "name": "Save or clear anti-snore position"
       },
-      "personal_comfort_action": {
-        "name": "{action}"
-      },
-      "ormatek_action": {
-        "name": "{action}"
-      },
       "ormatek_light": {
         "name": "Toggle light"
       },
@@ -3708,41 +3752,11 @@
       "l2motion_save_snore": {
         "name": "Save anti-snore position"
       },
-      "betterliving2_program_zero_g": {
-        "name": "Save Zero Gravity"
-      },
       "betterliving2_all_sections_up": {
         "name": "Raise all sections"
       },
       "betterliving2_all_sections_down": {
         "name": "Lower all sections"
-      },
-      "betterliving2_stop_preset": {
-        "name": "Stop preset"
-      },
-      "betterliving2_massage_off": {
-        "name": "Stop massage"
-      },
-      "betterliving2_massage_toggle": {
-        "name": "Toggle massage"
-      },
-      "betterliving2_massage_timer": {
-        "name": "Cycle massage timer"
-      },
-      "betterliving2_massage_feet_up": {
-        "name": "Increase foot massage"
-      },
-      "betterliving2_massage_head_up": {
-        "name": "Increase head massage"
-      },
-      "betterliving2_massage_feet_down": {
-        "name": "Decrease foot massage"
-      },
-      "betterliving2_massage_head_down": {
-        "name": "Decrease head massage"
-      },
-      "betterliving2_massage_wave": {
-        "name": "Cycle massage wave"
       }
     },
     "cover": {
@@ -5383,6 +5397,9 @@
       },
       "betterliving2_massage_timer": {
         "name": "Massage timer setting"
+      },
+      "majestichome": {
+        "name": "Model"
       }
     },
     "light": {
@@ -6254,7 +6271,7 @@
         }
       },
       "remacro_control_side": {
-        "name": "Control side",
+        "name": "Controlled side",
         "state": {
           "left": "Left",
           "right": "Right"
@@ -6567,7 +6584,7 @@
         }
       },
       "motomotion_side": {
-        "name": "Side",
+        "name": "Controlled side",
         "state": {
           "left": "Left",
           "right": "Right"
@@ -9733,6 +9750,42 @@
           "name": "Side"
         }
       }
+    },
+    "majestichome": {
+      "name": "Majestic Home: settings",
+      "description": "Read, create, edit, enable, disable or delete bed alarms, or set the bed clock.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side",
+          "description": "Target side of a combined bed."
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "alarm_id": {
+          "name": "Alarm ID",
+          "description": "Required for new, set, toggle and delete. Choose an explicit ID from 1 through 7 for new alarms, or a received ID for an existing alarm. Partial replies cannot identify a free slot."
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "preset": {
+          "name": "Preset"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday is 0 and Sunday is 6. Empty means once."
+        },
+        "enabled": {
+          "name": "Enabled"
+        }
+      }
     }
   },
   "exceptions": {
@@ -10032,7 +10085,7 @@
         "step": {
           "confirm": {
             "title": "Pair your adjustable bed",
-            "description": "**{name}** ({address}) needs a Bluetooth bond before it can be controlled.\n\n1. Put the bed into pairing mode. Most OKIN bases (Okimat, Okin CST, Nectar, Mattress Firm 900-O): unplug the control box for 30 seconds, then plug it back in. Leggett & Platt Smart Bed: unplug the bed and take the batteries out of the power supply, then plug it back in and wait for the chime and the pulsing blue light. Other beds: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is in pairing mode, select **Submit**.\n3. If pairing keeps failing, remove the old pairing and try again. On a Home Assistant host, run `bluetoothctl remove {address}`. Through an ESPHome Bluetooth proxy, the pairing is stored on the proxy, so clear it there. One common cause is an old pairing that no longer matches.\n\nPairing happens on Home Assistant or its Bluetooth proxy, not on your phone. ESPHome proxies need ESPHome 2024.3.0 or newer."
+            "description": "**{name}** ({address}) needs a Bluetooth bond before it can be controlled.\n\n1. Put the bed into pairing mode. Most OKIN bases (Okimat, Rize, Jordan's, Nectar, Mattress Firm 900-O): unplug the control box for 30 seconds, then plug it back in. Leggett & Platt Smart Bed: unplug the bed and take the batteries out of the power supply, then plug it back in and wait for the chime and the pulsing blue light. Other beds: hold the pairing button on the control box or remote until its light blinks.\n2. While the bed is in pairing mode, select **Submit**.\n3. If pairing keeps failing, remove the old pairing and try again. On a Home Assistant host, run `bluetoothctl remove {address}`. Through an ESPHome Bluetooth proxy, the pairing is stored on the proxy, so clear it there. One common cause is an old pairing that no longer matches.\n\nPairing happens on Home Assistant or its Bluetooth proxy, not on your phone. ESPHome proxies need ESPHome 2024.3.0 or newer."
           },
           "proxy_pairing": {
             "title": "Pair your bed through the Bluetooth proxy",
@@ -10121,7 +10174,24 @@
     },
     "octo_pin_required": {
       "title": "PIN required for {name}",
-      "description": "**{name}** ({address}) reports that PIN control is enabled, a PIN is configured, and the receiver is locked. Normal controls remain unavailable until the receiver is unlocked.\n\nIf you know the PIN, enter it under **Settings → Devices & services → Adjustable Bed → Configure → OCTO PIN**. If you do not know it, follow the receiver manufacturer's instructions."
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Enter the PIN for {name}",
+            "description": "**{name}** is locked with a PIN, and Home Assistant has none saved for it. Its controls stay unavailable until the PIN is saved.\n\nEnter the four-digit PIN set on the Octo receiver. Home Assistant saves it and reconnects to the bed. If you do not know it, follow the receiver manufacturer's instructions.",
+            "data": {
+              "octo_pin": "Octo PIN"
+            }
+          }
+        },
+        "error": {
+          "invalid_pin": "Enter exactly four digits."
+        },
+        "abort": {
+          "entry_missing": "This bed is no longer set up.",
+          "pin_saved": "A PIN is already saved for this bed, or it is no longer an Octo bed. Nothing was changed."
+        }
+      }
     },
     "furnimove_layout": {
       "title": "Confirm the control layout for {name}",
@@ -10136,7 +10206,7 @@
           },
           "handset": {
             "title": "Select the FurniMove handset",
-            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. Receiver labels such as RF ECO BT and P1103 do not identify the motor layout. No layout is selected automatically. Handset codes listed under Okin UUID are not offered here; a full bed with one of those keeps its current configuration, then uses Reconfigure to choose that Okimat or OKIN handset code.",
+            "description": "Choose the handset ID used by the FurniMove app, matching its physical remote. The receiver's own label does not tell the motor layout, so none is chosen automatically. Okimat handset codes are not offered here: for such a bed, keep the current setup, then choose its Okimat handset code in Reconfigure.",
             "data": {
               "furnimove_remote": "Handset layout"
             }
@@ -10156,9 +10226,9 @@
         "step": {
           "init": {
             "title": "Switch {name} to FurniMove",
-            "description": "**{name}** uses Okin DOT with handset {handset}. The FurniMove profile for that handset follows the app exactly, including the frame format of each control and the light state the receiver reports. If the bed already works as expected, keep the current configuration. Your existing device and matching entity IDs will be preserved.",
+            "description": "**{name}** uses the DOT remote controls with handset {handset}. The FurniMove profile for that handset matches the app exactly, including each control and the light state the receiver reports. If the bed already works as expected, keep the current setup. Your existing device and matching entity IDs will be preserved.",
             "data": {
-              "route": "Configuration"
+              "route": "Controls"
             }
           }
         },
@@ -10168,14 +10238,14 @@
       }
     },
     "okimat_cst_route": {
-      "title": "Check the protocol for {name}",
+      "title": "Check the controls for {name}",
       "fix_flow": {
         "step": {
           "init": {
-            "title": "Choose the protocol for {name}",
-            "description": "**{name}** is set to Okin CST, but its drive reports the model **{model}**. Older versions chose Okin CST for these drives automatically, and they ignore its commands. Okimat is what a new setup uses for this drive. Choose FurniMove only if the handset ID shown in the FurniMove app is in the list. If the bed already moves as expected, keep the current configuration. Your existing device and matching entity IDs will be preserved.",
+            "title": "Choose the controls for {name}",
+            "description": "**{name}** uses the controls of the Rize and Jordan's apps, but its drive reports the model **{model}**. Older versions chose those controls for these drives automatically, and the drives ignore them. A new setup uses the Okimat controls for this drive. Choose FurniMove only if the handset ID shown in the FurniMove app is in the list. If the bed already moves as expected, keep the current setup. Your existing device and matching entity IDs will be preserved.",
             "data": {
-              "route": "Protocol"
+              "route": "Controls"
             }
           },
           "handset": {
@@ -10196,7 +10266,7 @@
     },
     "remacro_model_unmapped": {
       "title": "{name} uses limited Remacro controls",
-      "description": "**{name}** ({address}) advertises company ID {company_id}, which none of the Slumberland, The Brick or Jerome's apps list, so its model is not recognized. Home Assistant uses a limited set of controls common to these beds: Head, Feet and Lumbar movement, Flat, TV and Zero-G, the light and Stop. Some of them may do nothing on this bed. If the bed later advertises a listed model, it reloads with that model's controls."
+      "description": "**{name}** ({address}) reports a model that none of the Slumberland, The Brick or Jerome's apps list. Home Assistant uses a limited set of controls common to these beds: Head, Feet and Lumbar movement, Flat, TV and Zero-G, the light and Stop. Some of them may do nothing on this bed. If the bed later advertises a listed model, it reloads with that model's controls."
     },
     "remacro_model_not_in_app": {
       "title": "{name} is not listed by the {app} app",
@@ -10283,39 +10353,20 @@
         }
       }
     },
-    "app_profile_woosa": {
-      "title": "Do you use Woosa Sleep with {name}?",
-      "fix_flow": {
-        "step": {
-          "managed": {
-            "title": "Do you use Woosa Sleep with {name}?",
-            "description": "**{name}** uses {current}. Woosa Sleep has its own Favourite memory, massage levels, lights and alarm, and no HomeKobo hip, lumbar or wave controls. If you control the bed with the Woosa Sleep app, its controls can follow that app.\n\nThe guided change lists the control changes before anything is saved. A paired bed must first be split explicitly. This repair stays open until you apply a change or keep the current setup.",
-            "data": {
-              "choice": "Setup choice"
-            }
-          }
-        },
-        "abort": {
-          "entry_missing": "The entry no longer exists or was already reviewed. Open its current configuration.",
-          "migration_setup_started": "Continue in the guided change.",
-          "migration_setup_unavailable": "The guided change could not open. Your current setup and this review were kept. Open Reconfigure from the entry's three-dot menu."
-        }
-      }
-    },
     "lumbar_star254202_box25": {
       "title": "A better profile may be available for {target}",
       "fix_flow": {
         "step": {
           "init": {
             "title": "Review the profile for {name}",
-            "description": "**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save zero gravity, Save lounge, Save incline, Save anti-snore, Wave 1, Wave 2, Wave 3, Massage on and Refresh massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nReview opens the suggested profile’s settings. Check them and submit to apply the change. Closing settings keeps your current profile. Choose Keep current profile to dismiss this suggestion across restarts and updates.",
+            "description": "**{name}** currently uses **{current}**. Its Bluetooth name and maker match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save zero gravity, Save lounge, Save incline, Save anti-snore, Wave 1, Wave 2, Wave 3, Massage on and Refresh massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nReview opens the suggested profile’s settings. Check them and submit to apply the change. Closing settings keeps your current profile. Choose Keep the current setup to dismiss this suggestion across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "paired": {
             "title": "Review the profile for {target}",
-            "description": "**{target}** ({address}):\n\n**{name}** currently uses **{current}**. Its observed Star254202 Bluetooth name and manufacturer match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save zero gravity, Save lounge, Save incline, Save anti-snore, Wave 1, Wave 2, Wave 3, Massage on and Refresh massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nThis recommendation applies only to this physical bed. Changing this app profile requires restoring standalone controls first. Review opens Configure: choose {pair_action}, then change only the affected bed to the suggested profile. No split or profile change happens automatically. Keep current profile dismisses this suggestion for this bed only.",
+            "description": "**{target}** ({address}):\n\n**{name}** currently uses **{current}**. Its Bluetooth name and maker match a reported bed where switching to **{suggested}** restored Memory 1 saving and recall. This is a possible match, not a guarantee for every bed with that identity.\n\nThe suggested profile exposes numbered memory controls. Lumbar-specific Save zero gravity, Save lounge, Save incline, Save anti-snore, Wave 1, Wave 2, Wave 3, Massage on and Refresh massage buttons will no longer be available. The Incline preset is replaced by TV. Automations using removed controls will need updating. Existing device and matching entity IDs are preserved.\n\nThis recommendation applies only to this physical bed. Changing this app profile requires restoring standalone controls first. Review opens Configure: choose {pair_action}, then change only the affected bed to the suggested profile. No split or profile change happens automatically. Keep the current setup dismisses this suggestion for this bed only.",
             "data": {
               "action": "Profile choice"
             }
@@ -10336,21 +10387,21 @@
         "step": {
           "init": {
             "title": "Review the profile for {name}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Reconfigure with **{suggested}** preselected. It shows which controls change before anything is saved. Closing it keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Reconfigure with **{suggested}** preselected. It shows which controls change before anything is saved. Closing it keeps the current profile. Keep the current setup dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "managed": {
             "title": "Review the profile for {name}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens this bed's guided change in Reconfigure. Choose the app or remote you use there, and check the listed control changes before applying. A combined bed is split first. Nothing changes until you apply it. Closing it keeps the current profile and this notice. Keep current profile, here or in the guided change, dismisses this assessment across restarts and updates.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens this bed's guided change in Reconfigure. Choose the app or remote you use there, and check the listed control changes before applying. A combined bed is split first. Nothing changes until you apply it. Closing it keeps the current profile and this notice. Keep the current setup, here or in the guided change, dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "paired": {
             "title": "Review the profile for {target}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair’s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) is a clearer match for **{suggested}** than the selected profile. This suggests a possible mismatch, but does not verify the bed’s controls.\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair’s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep the current setup dismisses this assessment for this physical bed only.",
             "data": {
               "action": "Profile choice"
             }
@@ -10367,26 +10418,26 @@
       }
     },
     "profile_ambiguous": {
-      "title": "Check the profile or protocol variant for {target}",
+      "title": "Check the app or remote for {target}",
       "fix_flow": {
         "step": {
           "init": {
             "title": "Review the profile for {name}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep current profile dismisses this assessment across restarts and updates.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests checking the selected app or remote. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens Configure. Check your app, remote and product settings before submitting. Nothing changes until you save. Closing settings keeps the current profile. Keep the current setup dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "managed": {
             "title": "Review the profile for {name}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens this bed's guided change in Reconfigure. Choose the app or remote you use there, and check the listed control changes before applying. A combined bed is split first. Nothing changes until you apply it. Closing it keeps the current profile and this notice. Keep current profile, here or in the guided change, dismisses this assessment across restarts and updates.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests checking the selected app or remote. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nReview opens this bed's guided change in Reconfigure. Choose the app or remote you use there, and check the listed control changes before applying. A combined bed is split first. Nothing changes until you apply it. Closing it keeps the current profile and this notice. Keep the current setup, here or in the guided change, dismisses this assessment across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "paired": {
             "title": "Review the profile for {target}",
-            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests reviewing the selected profile or protocol variant. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair’s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep current profile dismisses this assessment for this physical bed only.",
+            "description": "**{target}** ({address}) currently uses **{current}**. The observed Bluetooth advertisement ({bluetooth_name}) suggests checking the selected app or remote. It cannot establish which controls your bed has. Check the app and physical remote you use against these choices:\n\n{choices}\n\nChanging profiles can add or remove motor, memory, preset, massage and light controls. Automations using removed controls may need updating. Existing device and matching entity IDs are preserved.\n\nThis assessment applies to this physical bed. Review opens the pair’s Configure menu. To choose a different profile, select {pair_action} first, then configure the affected bed. No pair or profile changes happen automatically. Keep the current setup dismisses this assessment for this physical bed only.",
             "data": {
               "action": "Profile choice"
             }
@@ -10408,14 +10459,14 @@
         "step": {
           "init": {
             "title": "Review the app for {target}",
-            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep the current setup dismisses this notice for this physical bed across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
           },
           "paired": {
             "title": "Review the app for {target}",
-            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep current profile dismisses this notice for this physical bed across restarts and updates.",
+            "description": "**{target}** ({bluetooth_name}, {address}) uses **{current}**. This matches a reported TEMPUR-Ergo ProSmart Air / ActiveBreeze setup that used Adjustable Lite for compatibility. If your official app is **Tempur Sleeptracker-AI**, use **Tempur Sleeptracker-AI (ProSmart / ActiveBreeze processor)** for the app’s presets, ActiveBreeze heat/cooling and premium massage controls. A similar Bluetooth name alone does not confirm that app or its processor.\n\nThe app controls a separate Bluetooth endpoint. Review shows how to add that processor. Keep the current setup dismisses this notice for this physical bed across restarts and updates.",
             "data": {
               "action": "Profile choice"
             }
@@ -10444,13 +10495,13 @@
     "migration_check_action": {
       "options": {
         "retry": "Try again",
-        "keep": "Keep current setup"
+        "keep": "Keep the current setup"
       }
     },
     "migration_confirm_action": {
       "options": {
         "apply": "Apply this change",
-        "keep": "Keep current setup"
+        "keep": "Keep the current setup"
       }
     },
     "pairing_action": {
@@ -10470,49 +10521,49 @@
       "options": {
         "furnimove": "FurniMove adjustable bed",
         "staircase": "Single-actuator staircase",
-        "keep": "Keep current configuration"
+        "keep": "Keep the current setup"
       }
     },
     "furnimove_handset_route": {
       "options": {
         "furnimove": "Switch to the FurniMove profile",
-        "keep": "Keep current configuration"
+        "keep": "Keep the current setup"
       }
     },
     "okimat_cst_route": {
       "options": {
         "okimat": "Switch to Okimat",
         "furnimove": "Switch to FurniMove",
-        "keep": "Keep Okin CST"
+        "keep": "Keep the current setup"
       }
     },
     "app_profile_review": {
       "options": {
-        "keep": "Keep current configuration"
+        "keep": "Keep the current setup"
       }
     },
     "profile_recommendation_action": {
       "options": {
         "review": "Review profile settings",
-        "keep": "Keep current profile"
+        "keep": "Keep the current setup"
       }
     },
     "tempur_processor_action": {
       "options": {
         "review": "Show processor setup",
-        "keep": "Keep current profile"
+        "keep": "Keep the current setup"
       }
     },
     "profile_review_managed": {
       "options": {
         "configure": "Choose my app",
-        "keep": "Keep current setup"
+        "keep": "Keep the current setup"
       }
     },
     "profile_review_unpair": {
       "options": {
         "split": "I'll separate the Dual Bed in Configure",
-        "keep": "Keep current configuration"
+        "keep": "Keep the current setup"
       }
     },
     "jiecang_family_choice": {
@@ -10521,11 +10572,11 @@
         "dreamotion": "Dream Motion app",
         "dreamhd": "Dream Motion HD app",
         "comfort_motion": "Comfort Motion app",
-        "legacy_jiecang": "No app: Glide or Comfort Motion remote (legacy Jiecang controls)",
+        "legacy_jiecang": "No app: Glide or Comfort Motion remote",
         "legacy_lierda": "No app: Comfort Motion / Lierda remote (legacy Lierda controls)",
         "logicdata_app": "LOGICDATA app: MOTIONrelax, or the Sleep Smart Air Mattress bed base",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the current controls"
+        "keep": "Keep the current setup"
       }
     },
     "okin_family_choice": {
@@ -10535,7 +10586,7 @@
         "okin_dot": "No app: DOT remote (RF34 or RF6707)",
         "okin_rf_eco_bt": "No app: single-actuator staircase, RF ECO BT (requires pairing)",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected controls"
+        "keep": "Keep the current setup"
       }
     },
     "keeson_family_choice": {
@@ -10547,9 +10598,9 @@
         "okin_seating_apps": "Adjustable Lite, Simon Li, Heal Every Night or OKIN-Seating app",
         "purple_base_json": "Purple Smart Base, Member's Mark or Linx / Juna Sleep",
         "coolbase": "Cool Base app (with fan)",
-        "other_route": "No app: another Keeson remote route",
+        "other_route": "No app: another Keeson remote",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected controls"
+        "keep": "Keep the current setup"
       }
     },
     "solace_family_choice": {
@@ -10559,7 +10610,7 @@
         "motion_bed": "Motion Bed app",
         "bedsense": "BedSense app",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected controls",
+        "keep": "Keep the current setup",
         "sophie": "Sophie app"
       }
     },
@@ -10571,11 +10622,11 @@
         "useries": "U Series app: back, feet and pillow",
         "lp_control_okin": "LP Control app with an LP BED receiver",
         "lp_control_gen2": "LP Control app with an LP Comfort Connect base",
-        "lp_app_mlrm": "L&P Adjustable Base app with an MlRM base",
+        "lp_app_mlrm": "L&P Adjustable Base app, MlRM remote",
         "lp_app_qrrm": "L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2)",
-        "lp_legacy": "L&P Adjustable Base legacy app (2.2.1)",
+        "lp_legacy": "L&P Adjustable Base app (older version)",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the current controls"
+        "keep": "Keep the current setup"
       }
     },
     "sleepys_family_choice": {
@@ -10585,7 +10636,7 @@
         "box24": "No app: control box labelled BOX24",
         "box15": "No app: control box labelled BOX15",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected controls"
+        "keep": "Keep the current setup"
       }
     },
     "logicdata_family_choice": {
@@ -10596,7 +10647,7 @@
         "sleep_smart": "Sleep Smart Air Mattress app: bed base",
         "sleep_smart_pump": "Sleep Smart Air Mattress app: air mattress pump (its own device)",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected controls"
+        "keep": "Keep the current setup"
       }
     },
     "customatic_family_choice": {
@@ -10607,7 +10658,7 @@
         "zseries_z230": "Z-Series app with the Z-230 model",
         "zseries_z280": "Z-Series app with the Z-280 model",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current app"
+        "keep": "Keep the current setup"
       }
     },
     "jordans_family_choice": {
@@ -10615,7 +10666,7 @@
         "serenity": "Jordan's Serenity app",
         "tranquil": "Jordan's Tranquil app",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current app"
+        "keep": "Keep the current setup"
       }
     },
     "starcode_family_choice": {
@@ -10624,7 +10675,7 @@
         "m5x5": "AdjustableM5X5 app: CB25, F23 or kneading bed",
         "m1x12": "Adjustable Comfort M1X12 app: CB25, F23 or kneading bed",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current app"
+        "keep": "Keep the current setup"
       }
     },
     "remacro_family_choice": {
@@ -10640,7 +10691,7 @@
         "protocol_110": "Nightstand receiver (Reverie Nightstand app)",
         "protocol_108": "Older receiver (Reverie app)",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected receiver"
+        "keep": "Keep the current setup"
       }
     },
     "limoss_family_choice": {
@@ -10649,7 +10700,7 @@
         "fsm_relax": "FSM Relax app: bed or chair profile with app-labelled controls",
         "generic": "No app: Stawett or older Limoss controls",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current controls"
+        "keep": "Keep the current setup"
       }
     },
     "malouf_family_choice": {
@@ -10659,7 +10710,7 @@
         "nordic_uart": "No app: Malouf or Lucid remote, newer receiver",
         "ffe5": "No app: Malouf or Lucid remote, older receiver",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected controls"
+        "keep": "Keep the current setup"
       }
     },
     "sleep_number_family_choice": {
@@ -10667,7 +10718,7 @@
         "fuzion": "Fuzion base: Climate 360, FlexFit or FlexFit Smart",
         "mcr": "Older BAM/MCR base: i8 or 360 FlexFit 2",
         "another": "Another app or remote: search every app",
-        "keep": "I don't know: keep the detected transport"
+        "keep": "Keep the current setup"
       }
     },
     "jensen_family_choice": {
@@ -10677,7 +10728,7 @@
         "svane_bed": "Svane Remote app with a Svane Bed",
         "svane_jmc400": "Svane Remote app with a JMC400 bed",
         "another": "Another app or remote: search every app",
-        "keep": "Keep the current controls"
+        "keep": "Keep the current setup"
       }
     },
     "richmat_family_choice": {
@@ -10689,7 +10740,7 @@
         "harmony": "HARMONY app",
         "idealbed": "Idealbed app",
         "ruf": "RUF Betten app",
-        "wsilver2": "W.Silver Products app",
+        "wsilver2": "W.Silver Products app (newer version)",
         "americanstar": "AMERICANSTAR app",
         "bailey2": "Bailey's Bed Control app",
         "tx": "TX app",
@@ -10712,11 +10763,12 @@
         "zerogravity": "Zero Gravity app",
         "mlily_remote": "MLILY Remote app",
         "sleep_evolution": "SleepEvolution app",
-        "wsilver_legacy": "W.Silver Products 3.x app",
+        "wsilver_legacy": "W.Silver Products app (older version)",
         "nisco": "Nisco app",
         "mlily_supreme": "MLILY Supreme app",
         "okimiki": "Okimiki app",
-        "luniosmart": "Lunio Smart+ app"
+        "luniosmart": "Lunio Smart+ app",
+        "majestichome": "Majestic Home app"
       }
     },
     "setup_start": {
@@ -10724,7 +10776,7 @@
         "select_by_app": "Set up by app or remote",
         "scan": "Scan again for beds",
         "manual": "Pick any Bluetooth device",
-        "diagnostic": "Browse unsupported BLE devices",
+        "diagnostic": "Browse unsupported Bluetooth devices",
         "pair_beds": "Combine two beds into one (Dual Bed)",
         "discovery": "Find new beds automatically"
       }
@@ -12030,6 +12082,42 @@
         "left": "Left",
         "right": "Right",
         "both": "Both"
+      }
+    },
+    "remacro_model": {
+      "options": {
+        "unknown": "Not reported yet",
+        "unlisted": "Unknown model"
+      }
+    },
+    "okin_receiver_choice": {
+      "options": {
+        "okin_64bit": "Receiver named NORA_CON or NORACON",
+        "okin_7byte": "Nectar bed",
+        "okin_cb24": "SmartBed by Okin or Amada bed",
+        "okin_cb35": "Sealy Posturematic or DewertOkin Star bed",
+        "okin_ffe": "Okin 13 or 15 series receiver",
+        "okin_handle": "DewertOkin or A H Beard bed",
+        "okin_nordic": "Mattress Firm 900 or iFlex bed",
+        "okin_ore": "Older ORE remote"
+      }
+    },
+    "majestichome_operation": {
+      "options": {
+        "list": "Read alarms",
+        "new": "New alarm",
+        "set": "Set alarm",
+        "toggle": "Turn alarm on or off",
+        "delete": "Delete alarm",
+        "sync_clock": "Set bed clock"
+      }
+    },
+    "majestichome_preset": {
+      "options": {
+        "zero_gravity": "Zero Gravity",
+        "anti_snore": "Anti-Snore",
+        "memory_1": "Memory 1",
+        "memory_2": "Memory 2"
       }
     }
   }

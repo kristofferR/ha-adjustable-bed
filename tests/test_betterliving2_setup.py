@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 from custom_components.adjustable_bed.profile_id import entry_profile_id, profile_route
 from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+from custom_components.adjustable_bed.profile_review import related_app_choices
 from custom_components.adjustable_bed.setup_questions import setup_profile_for
 from tests.form_helpers import NEW_BED_ROUTES, form_fields, start_new_bed
 from tests.test_betterliving2_runtime import data
@@ -112,6 +113,12 @@ def test_side_owned_route_and_product_settings():
     profile = per_side_profile("betterliving2", "p1")
     assert profile is not None
     assert {"protocol_variant", "product_type"} <= profile.keys
+
+
+@pytest.mark.parametrize("variant", ("auto", "base", "sino"))
+def test_generic_keeson_review_offers_explicit_app_choice(variant):
+    assert "betterliving2" in related_app_choices("keeson", variant)
+    assert related_app_choices("betterliving2", "p1") == []
 
 
 def test_shared_name_hint_preserves_receiver_recommendations_and_explicit_app():

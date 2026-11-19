@@ -9,11 +9,7 @@
       "raw": true,
       "special": true
     },
-    "expected_bytes": "01",
-    "evidence": [
-      "work/blutter/objs.txt:24809",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "01"
   },
   {
     "id": "P1-51dcc1-tap-side0",
@@ -25,11 +21,7 @@
       "raw": true,
       "special": true
     },
-    "expected_bytes": "00",
-    "evidence": [
-      "work/blutter/objs.txt:24817",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "00"
   },
   {
     "id": "P1-51dce1-tap-side0",
@@ -41,11 +33,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "2f",
-    "evidence": [
-      "work/blutter/objs.txt:24825",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "2f"
   },
   {
     "id": "P1-51dce1-save-side0",
@@ -57,11 +45,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "2c",
-    "evidence": [
-      "work/blutter/objs.txt:24825",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "2c"
   },
   {
     "id": "P1-51dd01-tap-side0",
@@ -73,11 +57,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "2e",
-    "evidence": [
-      "work/blutter/objs.txt:24834",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "2e"
   },
   {
     "id": "P1-51dd01-save-side0",
@@ -89,11 +69,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "2b",
-    "evidence": [
-      "work/blutter/objs.txt:24834",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "2b"
   },
   {
     "id": "P1-51dd21-tap-side0",
@@ -105,11 +81,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "46",
-    "evidence": [
-      "work/blutter/objs.txt:24843",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "46"
   },
   {
     "id": "P1-51dd21-save-side0",
@@ -121,11 +93,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "69",
-    "evidence": [
-      "work/blutter/objs.txt:24843",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "69"
   },
   {
     "id": "P1-51dd41-tap-side0",
@@ -137,11 +105,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "45",
-    "evidence": [
-      "work/blutter/objs.txt:24852",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "45"
   },
   {
     "id": "P1-51dd41-save-side0",
@@ -153,11 +117,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "66",
-    "evidence": [
-      "work/blutter/objs.txt:24852",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "66"
   },
   {
     "id": "P1-51dd61-tap-side0",
@@ -169,11 +129,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "5e",
-    "evidence": [
-      "work/blutter/objs.txt:24861",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "5e"
   },
   {
     "id": "P1-51dd81-tap-side0",
@@ -185,11 +141,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "48",
-    "evidence": [
-      "work/blutter/objs.txt:24869",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "48"
   },
   {
     "id": "P1-51dda1-tap-side0",
@@ -201,11 +153,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "4e",
-    "evidence": [
-      "work/blutter/objs.txt:24877",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "4e"
   },
   {
     "id": "P1-51ddc1-tap-side0",
@@ -217,11 +165,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "4c",
-    "evidence": [
-      "work/blutter/objs.txt:24885",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "4c"
   },
   {
     "id": "P1-51dde1-tap-side0",
@@ -233,11 +177,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "3c",
-    "evidence": [
-      "work/blutter/objs.txt:24893",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "3c"
   },
   {
     "id": "P1-51de01-tap-side0",
@@ -249,11 +189,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "31",
-    "evidence": [
-      "work/blutter/objs.txt:24901",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "31"
   },
   {
     "id": "P1-51de21-tap-side0",
@@ -265,11 +201,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "27",
-    "evidence": [
-      "work/blutter/objs.txt:24909",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "27"
   },
   {
     "id": "P1-51de41-tap-side0",
@@ -281,11 +213,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "26",
-    "evidence": [
-      "work/blutter/objs.txt:24917",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "26"
   },
   {
     "id": "P1-51de61-tap-side0",
@@ -297,11 +225,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "25",
-    "evidence": [
-      "work/blutter/objs.txt:24925",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "25"
   },
   {
     "id": "P1-51de81-tap-side0",
@@ -313,11 +237,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "24",
-    "evidence": [
-      "work/blutter/objs.txt:24933",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "24"
   },
   {
     "id": "P1-51dea1-tap-side0",
@@ -329,11 +249,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "61",
-    "evidence": [
-      "work/blutter/objs.txt:24941",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "61"
   },
   {
     "id": "P1-51dec1-tap-side0",
@@ -345,11 +261,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "63",
-    "evidence": [
-      "work/blutter/objs.txt:24949",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "63"
   },
   {
     "id": "P1-51dee1-tap-side0",
@@ -361,11 +273,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "5f",
-    "evidence": [
-      "work/blutter/objs.txt:24957",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "5f"
   },
   {
     "id": "P1-51df01-tap-side0",
@@ -377,11 +285,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "6e",
-    "evidence": [
-      "work/blutter/objs.txt:24965",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e"
   },
   {
     "id": "P1-51df21-tap-side0",
@@ -393,11 +297,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "42",
-    "evidence": [
-      "work/blutter/objs.txt:24973",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "42"
   },
   {
     "id": "P1-51df41-tap-side0",
@@ -409,11 +309,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "41",
-    "evidence": [
-      "work/blutter/objs.txt:24981",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "41"
   },
   {
     "id": "P1-51df61-tap-side0",
@@ -425,11 +321,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "40",
-    "evidence": [
-      "work/blutter/objs.txt:24989",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "40"
   },
   {
     "id": "P1-51df81-tap-side0",
@@ -441,11 +333,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "3f",
-    "evidence": [
-      "work/blutter/objs.txt:24997",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "3f"
   },
   {
     "id": "P1-51dfa1-tap-side0",
@@ -457,11 +345,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "2a",
-    "evidence": [
-      "work/blutter/objs.txt:25005",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "2a"
   },
   {
     "id": "P1-51dfc1-tap-side0",
@@ -473,11 +357,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "29",
-    "evidence": [
-      "work/blutter/objs.txt:25013",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "29"
   },
   {
     "id": "P1-51dfe1-tap-side0",
@@ -489,11 +369,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "30",
-    "evidence": [
-      "work/blutter/objs.txt:25021",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "30"
   },
   {
     "id": "P1-51dfe1-save-side0",
@@ -505,11 +381,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "2d",
-    "evidence": [
-      "work/blutter/objs.txt:25021",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "2d"
   },
   {
     "id": "P1-51e001-tap-side0",
@@ -521,11 +393,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "58",
-    "evidence": [
-      "work/blutter/objs.txt:25030",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "58"
   },
   {
     "id": "P1-51e001-save-side0",
@@ -537,11 +405,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "64",
-    "evidence": [
-      "work/blutter/objs.txt:25030",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "64"
   },
   {
     "id": "P1-51e021-tap-side0",
@@ -553,11 +417,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "e0",
-    "evidence": [
-      "work/blutter/objs.txt:25039",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "e0"
   },
   {
     "id": "P1-51e041-tap-side0",
@@ -569,11 +429,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "59",
-    "evidence": [
-      "work/blutter/objs.txt:25047",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "59"
   },
   {
     "id": "P1-51e041-save-side0",
@@ -585,11 +441,7 @@
       "raw": true,
       "special": false
     },
-    "expected_bytes": "65",
-    "evidence": [
-      "work/blutter/objs.txt:25047",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "65"
   },
   {
     "id": "P2-51dca1-tap-side0",
@@ -601,11 +453,7 @@
       "raw": false,
       "special": true
     },
-    "expected_bytes": "6e 08 01 01 78",
-    "evidence": [
-      "work/blutter/objs.txt:24809",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 08 01 01 78"
   },
   {
     "id": "P2-51dcc1-tap-side0",
@@ -617,11 +465,7 @@
       "raw": false,
       "special": true
     },
-    "expected_bytes": "6e 02 01 00 71",
-    "evidence": [
-      "work/blutter/objs.txt:24817",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 02 01 00 71"
   },
   {
     "id": "P2-51dce1-tap-side0",
@@ -633,11 +477,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 2f 9e",
-    "evidence": [
-      "work/blutter/objs.txt:24825",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 2f 9e"
   },
   {
     "id": "P2-51dce1-tap-side1",
@@ -649,11 +489,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 2f 9f",
-    "evidence": [
-      "work/blutter/objs.txt:24825",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 2f 9f"
   },
   {
     "id": "P2-51dce1-save-side0",
@@ -665,11 +501,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 2c 9b",
-    "evidence": [
-      "work/blutter/objs.txt:24825",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 2c 9b"
   },
   {
     "id": "P2-51dce1-save-side1",
@@ -681,11 +513,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 2c 9c",
-    "evidence": [
-      "work/blutter/objs.txt:24825",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 2c 9c"
   },
   {
     "id": "P2-51dd01-tap-side0",
@@ -697,11 +525,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 2e 9d",
-    "evidence": [
-      "work/blutter/objs.txt:24834",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 2e 9d"
   },
   {
     "id": "P2-51dd01-tap-side1",
@@ -713,11 +537,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 2e 9e",
-    "evidence": [
-      "work/blutter/objs.txt:24834",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 2e 9e"
   },
   {
     "id": "P2-51dd01-save-side0",
@@ -729,11 +549,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 2b 9a",
-    "evidence": [
-      "work/blutter/objs.txt:24834",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 2b 9a"
   },
   {
     "id": "P2-51dd01-save-side1",
@@ -745,11 +561,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 2b 9b",
-    "evidence": [
-      "work/blutter/objs.txt:24834",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 2b 9b"
   },
   {
     "id": "P2-51dd21-tap-side0",
@@ -761,11 +573,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 46 b5",
-    "evidence": [
-      "work/blutter/objs.txt:24843",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 46 b5"
   },
   {
     "id": "P2-51dd21-tap-side1",
@@ -777,11 +585,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 46 b6",
-    "evidence": [
-      "work/blutter/objs.txt:24843",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 46 b6"
   },
   {
     "id": "P2-51dd21-save-side0",
@@ -793,11 +597,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 69 d8",
-    "evidence": [
-      "work/blutter/objs.txt:24843",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 69 d8"
   },
   {
     "id": "P2-51dd21-save-side1",
@@ -809,11 +609,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 69 d9",
-    "evidence": [
-      "work/blutter/objs.txt:24843",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 69 d9"
   },
   {
     "id": "P2-51dd41-tap-side0",
@@ -825,11 +621,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 45 b4",
-    "evidence": [
-      "work/blutter/objs.txt:24852",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 45 b4"
   },
   {
     "id": "P2-51dd41-tap-side1",
@@ -841,11 +633,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 45 b5",
-    "evidence": [
-      "work/blutter/objs.txt:24852",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 45 b5"
   },
   {
     "id": "P2-51dd41-save-side0",
@@ -857,11 +645,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 66 d5",
-    "evidence": [
-      "work/blutter/objs.txt:24852",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 66 d5"
   },
   {
     "id": "P2-51dd41-save-side1",
@@ -873,11 +657,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 66 d6",
-    "evidence": [
-      "work/blutter/objs.txt:24852",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 66 d6"
   },
   {
     "id": "P2-51dd61-tap-side0",
@@ -889,11 +669,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 5e cd",
-    "evidence": [
-      "work/blutter/objs.txt:24861",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 5e cd"
   },
   {
     "id": "P2-51dd61-tap-side1",
@@ -905,11 +681,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 5e ce",
-    "evidence": [
-      "work/blutter/objs.txt:24861",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 5e ce"
   },
   {
     "id": "P2-51dd81-tap-side0",
@@ -921,11 +693,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 48 b7",
-    "evidence": [
-      "work/blutter/objs.txt:24869",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 48 b7"
   },
   {
     "id": "P2-51dd81-tap-side1",
@@ -937,11 +705,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 48 b8",
-    "evidence": [
-      "work/blutter/objs.txt:24869",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 48 b8"
   },
   {
     "id": "P2-51dda1-tap-side0",
@@ -953,11 +717,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 4e bd",
-    "evidence": [
-      "work/blutter/objs.txt:24877",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 4e bd"
   },
   {
     "id": "P2-51dda1-tap-side1",
@@ -969,11 +729,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 4e be",
-    "evidence": [
-      "work/blutter/objs.txt:24877",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 4e be"
   },
   {
     "id": "P2-51ddc1-tap-side0",
@@ -985,11 +741,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 4c bb",
-    "evidence": [
-      "work/blutter/objs.txt:24885",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 4c bb"
   },
   {
     "id": "P2-51ddc1-tap-side1",
@@ -1001,11 +753,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 4c bc",
-    "evidence": [
-      "work/blutter/objs.txt:24885",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 4c bc"
   },
   {
     "id": "P2-51dde1-tap-side0",
@@ -1017,11 +765,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 3c ab",
-    "evidence": [
-      "work/blutter/objs.txt:24893",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 3c ab"
   },
   {
     "id": "P2-51dde1-tap-side1",
@@ -1033,11 +777,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 3c ac",
-    "evidence": [
-      "work/blutter/objs.txt:24893",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 3c ac"
   },
   {
     "id": "P2-51de01-tap-side0",
@@ -1049,11 +789,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 31 a0",
-    "evidence": [
-      "work/blutter/objs.txt:24901",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 31 a0"
   },
   {
     "id": "P2-51de01-tap-side1",
@@ -1065,11 +801,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 31 a1",
-    "evidence": [
-      "work/blutter/objs.txt:24901",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 31 a1"
   },
   {
     "id": "P2-51de21-tap-side0",
@@ -1081,11 +813,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 27 96",
-    "evidence": [
-      "work/blutter/objs.txt:24909",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 27 96"
   },
   {
     "id": "P2-51de21-tap-side1",
@@ -1097,11 +825,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 27 97",
-    "evidence": [
-      "work/blutter/objs.txt:24909",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 27 97"
   },
   {
     "id": "P2-51de41-tap-side0",
@@ -1113,11 +837,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 26 95",
-    "evidence": [
-      "work/blutter/objs.txt:24917",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 26 95"
   },
   {
     "id": "P2-51de41-tap-side1",
@@ -1129,11 +849,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 26 96",
-    "evidence": [
-      "work/blutter/objs.txt:24917",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 26 96"
   },
   {
     "id": "P2-51de61-tap-side0",
@@ -1145,11 +861,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 25 94",
-    "evidence": [
-      "work/blutter/objs.txt:24925",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 25 94"
   },
   {
     "id": "P2-51de61-tap-side1",
@@ -1161,11 +873,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 25 95",
-    "evidence": [
-      "work/blutter/objs.txt:24925",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 25 95"
   },
   {
     "id": "P2-51de81-tap-side0",
@@ -1177,11 +885,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 24 93",
-    "evidence": [
-      "work/blutter/objs.txt:24933",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 24 93"
   },
   {
     "id": "P2-51de81-tap-side1",
@@ -1193,11 +897,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 24 94",
-    "evidence": [
-      "work/blutter/objs.txt:24933",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 24 94"
   },
   {
     "id": "P2-51dea1-tap-side0",
@@ -1209,11 +909,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 61 d0",
-    "evidence": [
-      "work/blutter/objs.txt:24941",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 61 d0"
   },
   {
     "id": "P2-51dea1-tap-side1",
@@ -1225,11 +921,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 61 d1",
-    "evidence": [
-      "work/blutter/objs.txt:24941",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 61 d1"
   },
   {
     "id": "P2-51dec1-tap-side0",
@@ -1241,11 +933,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 63 d2",
-    "evidence": [
-      "work/blutter/objs.txt:24949",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 63 d2"
   },
   {
     "id": "P2-51dec1-tap-side1",
@@ -1257,11 +945,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 63 d3",
-    "evidence": [
-      "work/blutter/objs.txt:24949",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 63 d3"
   },
   {
     "id": "P2-51dee1-tap-side0",
@@ -1273,11 +957,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 5f ce",
-    "evidence": [
-      "work/blutter/objs.txt:24957",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 5f ce"
   },
   {
     "id": "P2-51dee1-tap-side1",
@@ -1289,11 +969,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 5f cf",
-    "evidence": [
-      "work/blutter/objs.txt:24957",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 5f cf"
   },
   {
     "id": "P2-51df01-tap-side0",
@@ -1305,11 +981,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 6e dd",
-    "evidence": [
-      "work/blutter/objs.txt:24965",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 6e dd"
   },
   {
     "id": "P2-51df01-tap-side1",
@@ -1321,11 +993,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 6e de",
-    "evidence": [
-      "work/blutter/objs.txt:24965",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 6e de"
   },
   {
     "id": "P2-51df21-tap-side0",
@@ -1337,11 +1005,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 42 b1",
-    "evidence": [
-      "work/blutter/objs.txt:24973",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 42 b1"
   },
   {
     "id": "P2-51df21-tap-side1",
@@ -1353,11 +1017,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 42 b2",
-    "evidence": [
-      "work/blutter/objs.txt:24973",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 42 b2"
   },
   {
     "id": "P2-51df41-tap-side0",
@@ -1369,11 +1029,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 41 b0",
-    "evidence": [
-      "work/blutter/objs.txt:24981",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 41 b0"
   },
   {
     "id": "P2-51df41-tap-side1",
@@ -1385,11 +1041,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 41 b1",
-    "evidence": [
-      "work/blutter/objs.txt:24981",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 41 b1"
   },
   {
     "id": "P2-51df61-tap-side0",
@@ -1401,11 +1053,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 40 af",
-    "evidence": [
-      "work/blutter/objs.txt:24989",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 40 af"
   },
   {
     "id": "P2-51df61-tap-side1",
@@ -1417,11 +1065,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 40 b0",
-    "evidence": [
-      "work/blutter/objs.txt:24989",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 40 b0"
   },
   {
     "id": "P2-51df81-tap-side0",
@@ -1433,11 +1077,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 3f ae",
-    "evidence": [
-      "work/blutter/objs.txt:24997",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 3f ae"
   },
   {
     "id": "P2-51df81-tap-side1",
@@ -1449,11 +1089,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 3f af",
-    "evidence": [
-      "work/blutter/objs.txt:24997",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 3f af"
   },
   {
     "id": "P2-51dfa1-tap-side0",
@@ -1465,11 +1101,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 2a 99",
-    "evidence": [
-      "work/blutter/objs.txt:25005",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 2a 99"
   },
   {
     "id": "P2-51dfa1-tap-side1",
@@ -1481,11 +1113,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 2a 9a",
-    "evidence": [
-      "work/blutter/objs.txt:25005",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 2a 9a"
   },
   {
     "id": "P2-51dfc1-tap-side0",
@@ -1497,11 +1125,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 29 98",
-    "evidence": [
-      "work/blutter/objs.txt:25013",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 29 98"
   },
   {
     "id": "P2-51dfc1-tap-side1",
@@ -1513,11 +1137,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 29 99",
-    "evidence": [
-      "work/blutter/objs.txt:25013",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 29 99"
   },
   {
     "id": "P2-51dfe1-tap-side0",
@@ -1529,11 +1149,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 30 9f",
-    "evidence": [
-      "work/blutter/objs.txt:25021",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 30 9f"
   },
   {
     "id": "P2-51dfe1-tap-side1",
@@ -1545,11 +1161,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 30 a0",
-    "evidence": [
-      "work/blutter/objs.txt:25021",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 30 a0"
   },
   {
     "id": "P2-51dfe1-save-side0",
@@ -1561,11 +1173,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 2d 9c",
-    "evidence": [
-      "work/blutter/objs.txt:25021",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 2d 9c"
   },
   {
     "id": "P2-51dfe1-save-side1",
@@ -1577,11 +1185,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 2d 9d",
-    "evidence": [
-      "work/blutter/objs.txt:25021",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 2d 9d"
   },
   {
     "id": "P2-51e001-tap-side0",
@@ -1593,11 +1197,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 58 c7",
-    "evidence": [
-      "work/blutter/objs.txt:25030",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 58 c7"
   },
   {
     "id": "P2-51e001-tap-side1",
@@ -1609,11 +1209,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 58 c8",
-    "evidence": [
-      "work/blutter/objs.txt:25030",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 58 c8"
   },
   {
     "id": "P2-51e001-save-side0",
@@ -1625,11 +1221,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 64 d3",
-    "evidence": [
-      "work/blutter/objs.txt:25030",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 64 d3"
   },
   {
     "id": "P2-51e001-save-side1",
@@ -1641,11 +1233,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 64 d4",
-    "evidence": [
-      "work/blutter/objs.txt:25030",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 64 d4"
   },
   {
     "id": "P2-51e021-tap-side0",
@@ -1657,11 +1245,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 e0 4f",
-    "evidence": [
-      "work/blutter/objs.txt:25039",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 e0 4f"
   },
   {
     "id": "P2-51e021-tap-side1",
@@ -1673,11 +1257,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 e0 50",
-    "evidence": [
-      "work/blutter/objs.txt:25039",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 e0 50"
   },
   {
     "id": "P2-51e041-tap-side0",
@@ -1689,11 +1269,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 59 c8",
-    "evidence": [
-      "work/blutter/objs.txt:25047",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 59 c8"
   },
   {
     "id": "P2-51e041-tap-side1",
@@ -1705,11 +1281,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 59 c9",
-    "evidence": [
-      "work/blutter/objs.txt:25047",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 59 c9"
   },
   {
     "id": "P2-51e041-save-side0",
@@ -1721,11 +1293,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 00 65 d4",
-    "evidence": [
-      "work/blutter/objs.txt:25047",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 00 65 d4"
   },
   {
     "id": "P2-51e041-save-side1",
@@ -1737,11 +1305,7 @@
       "raw": false,
       "special": false
     },
-    "expected_bytes": "6e 01 01 65 d5",
-    "evidence": [
-      "work/blutter/objs.txt:25047",
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:316-1166"
-    ]
+    "expected_bytes": "6e 01 01 65 d5"
   },
   {
     "id": "P3-alarm-0-0-low",
@@ -1752,10 +1316,7 @@
       "code": 0,
       "part": "low"
     },
-    "expected_bytes": "6e 05 00 00 73",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-315"
-    ]
+    "expected_bytes": "6e 05 00 00 73"
   },
   {
     "id": "P3-alarm-0-0-high",
@@ -1766,10 +1327,7 @@
       "code": 0,
       "part": "high"
     },
-    "expected_bytes": "6e 06 00 00 74",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-315"
-    ]
+    "expected_bytes": "6e 06 00 00 74"
   },
   {
     "id": "P3-alarm-1-69-low",
@@ -1780,10 +1338,7 @@
       "code": 69,
       "part": "low"
     },
-    "expected_bytes": "6e 05 01 00 74",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-315"
-    ]
+    "expected_bytes": "6e 05 01 00 74"
   },
   {
     "id": "P3-alarm-1-69-high",
@@ -1794,10 +1349,7 @@
       "code": 69,
       "part": "high"
     },
-    "expected_bytes": "6e 06 00 45 b9",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-315"
-    ]
+    "expected_bytes": "6e 06 00 45 b9"
   },
   {
     "id": "P3-alarm-300-46-low",
@@ -1808,10 +1360,7 @@
       "code": 46,
       "part": "low"
     },
-    "expected_bytes": "6e 05 2c 00 9f",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-315"
-    ]
+    "expected_bytes": "6e 05 2c 00 9f"
   },
   {
     "id": "P3-alarm-300-46-high",
@@ -1822,10 +1371,7 @@
       "code": 46,
       "part": "high"
     },
-    "expected_bytes": "6e 06 01 2e a3",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-315"
-    ]
+    "expected_bytes": "6e 06 01 2e a3"
   },
   {
     "id": "P3-alarm-1439-88-low",
@@ -1836,10 +1382,7 @@
       "code": 88,
       "part": "low"
     },
-    "expected_bytes": "6e 05 9f 00 12",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-315"
-    ]
+    "expected_bytes": "6e 05 9f 00 12"
   },
   {
     "id": "P3-alarm-1439-88-high",
@@ -1850,10 +1393,7 @@
       "code": 88,
       "part": "high"
     },
-    "expected_bytes": "6e 06 05 58 d1",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-315"
-    ]
+    "expected_bytes": "6e 06 05 58 d1"
   },
   {
     "id": "P3-clock-2026",
@@ -1869,10 +1409,7 @@
         56
       ]
     },
-    "expected_bytes": "6e 20 0d 08 03 01 38 0b 10 0c 22 38 60",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:1167-1548"
-    ]
+    "expected_bytes": "6e 20 0d 08 03 01 38 0b 10 0c 22 38 60"
   },
   {
     "id": "P3-clock-2025",
@@ -1888,9 +1425,6 @@
         5
       ]
     },
-    "expected_bytes": "6e 20 0d 08 03 01 37 01 02 03 04 05 ed",
-    "evidence": [
-      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:1167-1548"
-    ]
+    "expected_bytes": "6e 20 0d 08 03 01 37 01 02 03 04 05 ed"
   }
 ]

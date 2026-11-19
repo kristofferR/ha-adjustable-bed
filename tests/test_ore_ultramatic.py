@@ -1,4 +1,4 @@
-"""Row158 factory, HA callers, sessions and bounded/renewable control paths."""
+"""ORE Ultramatic factory, HA callers, sessions and bounded/renewable control paths."""
 
 from __future__ import annotations
 
@@ -270,7 +270,7 @@ async def test_setup_configure_and_side_owned_layout(hass):
 
     choice = bed_type_choice("keeson", APP)
     assert (
-        "Ultramatic app (ORE)" in {row["value"]: row["label"] for row in get_bed_type_options()}[choice]
+        "Ultramatic app" in {row["value"]: row["label"] for row in get_bed_type_options()}[choice]
     )
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}

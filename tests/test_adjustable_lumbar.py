@@ -1,4 +1,4 @@
-"""Row054 Adjustable bed (Lumbar) app: artifact vectors, table selection and timing."""
+"""Adjustable bed (Lumbar) app: artifact vectors, table selection and timing."""
 
 from __future__ import annotations
 

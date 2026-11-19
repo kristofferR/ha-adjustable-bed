@@ -14,7 +14,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_HIDDEN, CARD_MASSAGE, CARD_PRESET_SAVE
+from ...card import CARD_HIDDEN, CARD_MASSAGE
 from ...command_scheduler import CommandContext, current_command_context
 from ...const import CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
 from ...controller_state import StateKey
@@ -22,6 +22,7 @@ from ...profiles import betterliving2 as app
 from ...profiles.keeson import BETTERLIVING2, Preset
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button, massage_button, save_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -211,43 +212,40 @@ class BetterLiving2Controller(KeesonController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        buttons = [
-            ControllerButtonSpec(
+        buttons: list[ControllerButtonSpec | None] = [
+            save_button(
                 "betterliving2_program_zero_g",
                 "Save Zero Gravity",
                 lambda c: require(c).program("zero_g"),
-                "mdi:content-save",
-                requires_confirmation=True,
-                card=CARD_PRESET_SAVE,
+                icon="mdi:content-save",
             ),
         ]
         if self.wire == "P1":
             buttons.extend(
                 (
-                    ControllerButtonSpec(
+                    catalog_button(
                         "betterliving2_stop_preset",
                         "Stop preset",
                         lambda c: require(c).tap(app.P1_PRESET_STOP),
+                        kind=Kind.PRESET,
                     ),
-                    ControllerButtonSpec(
+                    massage_button(
                         "betterliving2_massage_off",
                         "Stop massage",
                         lambda c: require(c).massage_pair(0, 0),
-                        card=CARD_MASSAGE,
                     ),
                 )
             )
         else:
             buttons.extend(
-                ControllerButtonSpec(
+                massage_button(
                     f"betterliving2_massage_{name}",
                     app.MASSAGE_LABELS[name],
                     lambda c, word=word: require(c).massage_step(word),
-                    card=CARD_MASSAGE,
                 )
                 for name, word in app.STEP_MASSAGE.items()
             )
-        return tuple(replace(button, translation_key=button.key) for button in buttons)
+        return unique_buttons(buttons)
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:

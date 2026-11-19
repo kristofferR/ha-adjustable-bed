@@ -16,6 +16,7 @@ from ...controller_state import StateKey, StateUpdate
 from ...profiles.keeson import ergomotion_4_profile
 from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import BedController
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -290,38 +291,36 @@ class Ergomotion4Controller(AppController):
 
             return run
 
-        specs = tuple(
-            ControllerButtonSpec(
+        specs = [
+            catalog_button(
                 a.key,
-                a.name,
+                # The Light binary sensor shows the state this button toggles.
+                "Toggle light" if a.name == "Light" else a.name,
                 press(a.key),
                 hold=ControllerHoldSpec(a.key, 0, 0) if a.held else None,
             )
             for a in self._actions()
-        )
+        ]
         # Shared alarm dismissal is not gated by a selected product.
-        specs += (
-            ControllerButtonSpec(
+        specs.append(
+            catalog_button(
                 "dismiss_alarm",
                 "Dismiss wake vibration",
                 lambda c: c.stop_wake_routine(),
+                kind=Kind.MASSAGE,
                 cancel_movement=False,
                 scheduler_resource="configuration",
-            ),
+            )
         )
         if self._meditation_product:
-            specs += tuple(
-                ControllerButtonSpec(
-                    key,
-                    name,
-                    press(key),
-                )
+            specs.extend(
+                catalog_button(key, name, press(key))
                 for key, name in (
                     ("meditation_start", "Start meditation"),
                     ("meditation_stop", "Stop meditation"),
                 )
             )
-        return specs
+        return unique_buttons(specs)
 
     def controller_button_available(self, key: str) -> bool:
         if key in {"dismiss_alarm", "meditation_start", "meditation_stop"}:

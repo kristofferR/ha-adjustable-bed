@@ -54,7 +54,7 @@ async def test_native_names_types_exposure_and_retained_ids(hass, protocol, layo
         for spec in controller.controller_button_specs:
             entity = ControllerActionButton(view, spec)
             assert entity.unique_id == view.entity_unique_id(spec.key)
-            assert STRINGS["button"][entity.translation_key]["name"] == spec.name
+            assert entity.translation_key == spec.translation_key
             entities.append(("button", entity))
         for spec in controller.controller_number_specs:
             entity = AdjustableBedControllerNumber(view, spec)
@@ -70,7 +70,12 @@ async def test_native_names_types_exposure_and_retained_ids(hass, protocol, layo
             else:
                 assert entity.entity_registry_enabled_default
             entities.append(("sensor", entity))
-        names = [STRINGS[domain][entity.translation_key]["name"] for domain, entity in entities]
+        names = [
+            STRINGS[domain][entity.translation_key]["name"].format_map(
+                getattr(entity, "_attr_translation_placeholders", None) or {}
+            )
+            for domain, entity in entities
+        ]
         assert len(names) == len(set(names))
         assert "All sections" in names and "Save Zero Gravity" in names
         assert not {(domain, entity.translation_key) for domain, entity in entities} & set(REMOVED)

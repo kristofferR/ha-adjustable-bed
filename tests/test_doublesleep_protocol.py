@@ -1,4 +1,4 @@
-"""Vectors from row107's independently accepted 1.2.24 artifact."""
+"""Vectors from the independently accepted DoubleSleep 1.2.24 artifact."""
 
 from __future__ import annotations
 

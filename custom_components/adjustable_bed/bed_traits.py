@@ -285,6 +285,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_GALAXY: _NO_ANGLES,
     BED_TYPE_GOODVIBE: _NO_ANGLES,
     BED_TYPE_MLILY: _NO_ANGLES,
+    "majestichome": _NO_ANGLES,
     BED_TYPE_OKIMIKI: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_BOBPOWERBASE: replace(_NO_ANGLES, connection_scoped_state=True, single_address_native_both=False, connection_timeout=5),
     BED_TYPE_MLILY_REMOTE: replace(_NO_ANGLES, connection_scoped_state=True, single_address_native_both=False),

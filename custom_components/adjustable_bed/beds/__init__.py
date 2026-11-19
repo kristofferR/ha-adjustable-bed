@@ -80,6 +80,7 @@ if TYPE_CHECKING:
     from .logicdata.app import LogicdataAppController as LogicdataAppController
     from .logicdata.controller import LogicdataController as LogicdataController
     from .luniosmart.controller import LunioSmartController as LunioSmartController
+    from .majestichome.controller import MajesticHomeController as MajesticHomeController
     from .malouf.app import MaloufAppController as MaloufAppController
     from .mlily_remote.controller import MlilyRemoteController as MlilyRemoteController
     from .motion_bed.controller import MotionBedController as MotionBedController
@@ -168,6 +169,7 @@ _EXPORT_MODULES = {
     "JalonBedController": "jalon_bed.controller",
     "SymphonyController": "symphony.controller",
     "GoodVibeController": "goodvibe.controller",
+    "MajesticHomeController": "majestichome.controller",
     "MotoMotionController": "motomotion.controller",
     "HJBedController": "hjbed.controller",
     "RichmatAppController": "richmat_app.controller",
@@ -176,7 +178,7 @@ _EXPORT_MODULES = {
     "GmmotorDeskController": "gmmotor.desk",
     "GmmotorSleepController": "gmmotor.sleep",
     'TempurCurveController': 'tempur_curve',
-    'QPlusAppController': 'sbi',
+    'QPlusAppController': "sbi",
     'SertaMPRemoteController': 'serta_mp_remote',
     'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
     'ErgomotionAppController': 'ergomotion_app',

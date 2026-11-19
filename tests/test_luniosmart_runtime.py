@@ -76,7 +76,8 @@ async def test_factory_actual_entities_and_registered_actions(hass, runtime):
     assert isinstance(ctrl, bed.LunioSmartController)
     buttons = _button_entities_for(hass, target)
     save = next(e for e in buttons if e.unique_id.endswith("program_memory_1"))
-    assert save.extra_state_attributes["requires_confirmation"] is True
+    # The card offers a memory save only in Set mode; it needs no second prompt.
+    assert "requires_confirmation" not in save.extra_state_attributes
     assert not any(e.unique_id.endswith("preset_memory_2") for e in buttons)
     for key, expected in (
         ("preset_flat", "6e010031a0"),

@@ -69,7 +69,6 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_COUNT,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
@@ -129,6 +128,7 @@ from custom_components.adjustable_bed.pairing_candidates import (
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profile_recommendations import _watches
 from tests.coordinator_patches import patch_coordinator_global
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 LEFT_ADDR = "AA:BB:CC:DD:EE:01"
 RIGHT_ADDR = "AA:BB:CC:DD:EE:02"
@@ -1011,6 +1011,12 @@ class TestPairedSetup:
         diag = await async_get_config_entry_diagnostics(hass, entry)
         assert diag["paired"] is True
         assert set(diag["sides"]) == {SIDE_LEFT, SIDE_RIGHT}
+        for side in (SIDE_LEFT, SIDE_RIGHT):
+            assert set(diag["sides"][side]["connection"]) == {
+                "mode",
+                "idle_seconds",
+                "reads_positions",
+            }
         from custom_components.adjustable_bed.app_state_store import app_state_store
 
         child = hass.data[DOMAIN][entry.entry_id].children[SIDE_LEFT]
@@ -3860,16 +3866,18 @@ class TestPairedReceiverSettings:
     async def test_unchanged_receiver_form_preserves_defaults_and_other_options(
         self, hass, enable_custom_integrations
     ):
-        from custom_components.adjustable_bed.const import CONF_IDLE_DISCONNECT_SECONDS
+        from custom_components.adjustable_bed.const import (
+            CONF_IDLE_DISCONNECT_SECONDS,
+            CONF_PROFILE_REVIEW_KEPT,
+        )
         from custom_components.adjustable_bed.pairing import effective_child_data, get_child
 
         entry = _paired_entry(hass)
+        # An entry-level key that neither side inherits.
+        unrelated = {CONF_PROFILE_REVIEW_KEPT: {"route": "unrelated"}}
         hass.config_entries.async_update_entry(
             entry,
-            options={
-                CONF_IDLE_DISCONNECT_SECONDS: 95,
-                CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT,
-            },
+            options={CONF_IDLE_DISCONNECT_SECONDS: 95, **unrelated},
         )
         expected = {
             side: effective_child_data(entry.data, side, entry.options) for side in PAIR_SIDES
@@ -3879,7 +3887,7 @@ class TestPairedReceiverSettings:
             menu["flow_id"], {"next_step_id": "right_settings"}
         )
         await hass.config_entries.options.async_configure(form["flow_id"], {})
-        assert entry.options == {CONF_PAIR_CONNECTION_MODE: PAIR_CONNECTION_MODE_CONCURRENT}
+        assert entry.options == unrelated
         for side in PAIR_SIDES:
             actual = effective_child_data(entry.data, side, entry.options)
             assert actual == expected[side]
@@ -4408,6 +4416,52 @@ class TestOfflineSafeBedTypes:
             assert right.capability_controller.selection.movement == "W4"
             assert left.client is None and right.client is None
             assert left.controller is None and right.controller is None
+
+    @pytest.mark.parametrize("product", ["FARM", "JLRM", "JGRN", "JHRN", None, "", "auto", "unknown", "none", "FARMX"])
+    async def test_majestichome_offline_capabilities_require_each_saved_product(
+        self, hass: HomeAssistant, product: str | None
+    ) -> None:
+        from custom_components.adjustable_bed.beds.majestichome.controller import (
+            MajesticHomeController,
+        )
+        from custom_components.adjustable_bed.pairing import OFFLINE_CAPABILITY_SAFE_VARIANTS
+        from custom_components.adjustable_bed.profiles.majestichome import PROFILE_CHOICES
+
+        assert "majestichome" not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
+        assert OFFLINE_CAPABILITY_SAFE_VARIANTS["majestichome"] == frozenset(PROFILE_CHOICES)
+        data = _paired_entry_data()
+        data[CONF_BED_TYPE] = "majestichome"
+        for row in data[CONF_PAIR_CHILDREN]:
+            row[CONF_BED_TYPE] = "majestichome"
+            row.pop("capabilities", None)
+            row.pop(CONF_PROTOCOL_VARIANT, None)
+            if row[CONF_SIDE] == SIDE_RIGHT:
+                row[CONF_PROTOCOL_VARIANT] = "JLRM"
+            elif product is not None:
+                row[CONF_PROTOCOL_VARIANT] = product
+        entry = MockConfigEntry(domain=DOMAIN, data=data, version=5)
+        entry.add_to_hass(hass)
+        children = _build_paired_children(hass, entry)
+        for side, child in children.items():
+            with patch.object(child, "async_connect", new_callable=AsyncMock) as connect:
+                await child.async_prime_offline_controller()
+            connect.assert_not_awaited()
+            assert child.client is None and child.controller is None
+            controller = child.capability_controller
+            expected = "JLRM" if side == SIDE_RIGHT else product
+            if expected in PROFILE_CHOICES:
+                assert isinstance(expected, str)
+                assert isinstance(controller, MajesticHomeController)
+                assert controller.layout.key == expected
+                assert controller._link is None
+                assert {spec.key for spec in controller.motor_control_specs} == {
+                    "FARM": {"back", "legs", "both"},
+                    "JLRM": {"back", "legs", "lumbar"},
+                    "JGRN": {"back", "legs", "both"},
+                    "JHRN": {"legs"},
+                }[expected]
+            else:
+                assert controller is None
 
     @pytest.mark.parametrize("profile", [*ESHINE_OKIN_PROFILES, None, "", "auto", "unKnown", "eshine_e6000"])
     async def test_eshine_offline_capabilities_require_an_explicit_side_profile(

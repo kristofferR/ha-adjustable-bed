@@ -12,7 +12,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
-from ...card import CARD_UTILITY
+from ...card import CARD_HIDDEN, CARD_LIGHT_STATE, CARD_LIGHTING
 from ...command_scheduler import current_command_context
 from ...const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
 from ...profiles import nerum as app
@@ -368,7 +368,8 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
                 lambda c: require(c)._press("light"),
                 hold=ControllerHoldSpec("light"),
                 translation_key="nerum_light",
-                card=CARD_UTILITY,
+                # A held button: the card's lighting buttons keep its hold.
+                card=CARD_LIGHTING,
             )
         ]
         if self.profile.key != "p1":
@@ -581,7 +582,16 @@ class NerumController(ProfileExecution[app.NerumProfile], BedController):
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return tuple(
-            ControllerStateBinarySensorSpec(str(key), str(key), key, "mdi:information-outline")
+            ControllerStateBinarySensorSpec(
+                str(key),
+                str(key),
+                key,
+                "mdi:information-outline",
+                # The light state sits beside its toggle in the card, which only
+                # sees enabled entities.
+                card=CARD_LIGHT_STATE if key is state.LIGHT else CARD_HIDDEN,
+                entity_registry_enabled_default=key is state.LIGHT,
+            )
             for key in (state.MASSAGE, state.LIGHT)
             if self.profile.key == "p1" or self.profile.key == "p2" and key is state.MASSAGE
         )

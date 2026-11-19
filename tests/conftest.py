@@ -51,6 +51,7 @@ from custom_components.adjustable_bed.const import (
     SVANE_HEAD_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
 )
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 # Test constants
 TEST_ADDRESS = "AA:BB:CC:DD:EE:FF"
@@ -176,21 +177,20 @@ def _pair_starting_mode_from_test_data(
     everywhere except here.
     """
     import custom_components.adjustable_bed as integration
-    from custom_components.adjustable_bed import const
     from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 
     if request.module.__name__.rsplit(".", 1)[-1] != "test_entry_migration":
         monkeypatch.setattr(
             integration,
             "V5_6_REMOVED_KEYS",
-            integration.V5_6_REMOVED_KEYS - {const.CONF_PAIR_CONNECTION_MODE},
+            integration.V5_6_REMOVED_KEYS - {CONF_PAIR_CONNECTION_MODE},
         )
 
     original_init = PairedBedCoordinator.__init__
 
     def _init(self, hass, entry, children, *, connection_mode=None):
         stored = {**entry.data, **getattr(entry, "options", {})}.get(
-            const.CONF_PAIR_CONNECTION_MODE
+            CONF_PAIR_CONNECTION_MODE
         )
         original_init(self, hass, entry, children, connection_mode=connection_mode or stored)
 

@@ -1,4 +1,4 @@
-"""Frozen row135 vectors and the Jalon app's reachable BLE behavior."""
+"""Frozen Jalon app vectors and the Jalon app's reachable BLE behavior."""
 
 from __future__ import annotations
 
@@ -103,7 +103,6 @@ async def test_app_picker_reaches_each_distinct_controller_and_layout(hass, rout
     labels = {value: label for label, value in picker.rows().items()}
     assert labels["jalon_bed"] != labels["jalon"]
     assert "OkinComfortBed" in labels[route]
-    assert "Jalon" in labels[route]
     result = await flow.async_step_select_app({CONF_BED_TYPE: labels[route]})
     assert result["step_id"] == "manual_entry"
     result = await flow.async_step_manual_entry({"address": "AA:BB:CC:DD:EE:35"})

@@ -139,6 +139,19 @@ class OkinCstController(ProfileExecution[OkinNFrameProfile], BedController):
         return bool(self._profile.memory_slots)
 
     @property
+    def memory_slots_recalled_by_presets(self) -> frozenset[int]:
+        presets = {
+            CstRemoteCommands.ZERO_G: self.supports_preset_zero_g,
+            CstRemoteCommands.LOUNGE: self.supports_preset_lounge or self.supports_preset_reading,
+            CstRemoteCommands.INCLINE: self.supports_preset_incline,
+        }
+        return frozenset(
+            slot
+            for slot, memory in enumerate(self._profile.memory_slots, 1)
+            if presets.get(memory.recall, False)
+        )
+
+    @property
     def memory_slot_names(self) -> tuple[str, ...]:
         return tuple(slot.name for slot in self._profile.memory_slots)
 

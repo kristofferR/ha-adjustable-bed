@@ -101,6 +101,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_app`](#richmat_app) | Richmat app: settings | Sets the light, alarm, sleep sensing and other options of a Richmat app bed. Read the feature first before changing it. |
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Write the three aroma timing sliders of a Richmat MH app profile. |
 | [`richmat_mh_light_color`](#richmat_mh_light_color) | Richmat app: light color | Write the LED or button-light page colour of a Richmat MH app profile. |
+| [`majestichome`](#majestichome) | Majestic Home: settings | Read, create, edit, enable, disable or delete bed alarms, or set the bed clock. |
 | [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run app control | Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands. |
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: Set sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
 | [`richmat_legacy`](#richmat_legacy) | SleepEvolution and W.Silver Products 3.x: run app control | Run a control from the selected app and name prefix, as a press or a save. |
@@ -175,7 +176,7 @@ FSM Relax and Limoss Remote. Other beds reject it before any bed moves. Leave
 it unset to use the bed's own recall gesture.
 
 Position targets use the controller's units, which may be degrees or percentages.
-Check the position entity and [protocol guide](SUPPORTED_ACTUATORS.md). Feedback
+Check the position entity and the bed's [guide](README.md#bed-guides). Feedback
 must be enabled for feedback-driven seeks. Sleep Number MCR uses `left_back`,
 `right_back`, `left_legs`, and `right_legs` with percentage targets for discovered
 foundation actuators. A `set_positions` list cannot repeat a motor. Its validation
@@ -391,8 +392,8 @@ data:
 ### `sync_clock`
 
 
-Set each targeted controller's clock to Home Assistant's local time. Supported
-by the [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family) app profile on its OKIN
+Set each targeted controller's clock to Home Assistant's local time. Supported,
+for example, by [RMControl](beds/richmat.md#rmcontrol) products with a clock, the [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family) app profile on its OKIN
 transports, [Glideaway Motion / Montion](beds/keeson.md#alarm-and-clock), [SIMMONS](beds/okin-nframe.md#alarms-and-clock), and
 [Customatic Z-Series](beds/okin-nframe.md#customatic-z-series) controllers whose
 manufacturer string enables the alarm page (see
@@ -432,13 +433,15 @@ data:
 | Bed | Wake actions | Other options |
 |-----|--------------|---------------|
 | BF and Cherish | `none`, `memory_1`, `memory_2` | Once only |
+| Comfort Enhancement 3 | Depends on the remote: `none`, `memory_1`, `memory_2`, `zero_g`, `tv`, `anti_snore` | `slot` 0–99, `massage` with zone, intensity and 10/20/30-minute duration, `light`. Once, at the next occurrence |
 | Comfort Enhancements | `none`, `memory_1`, `memory_2` | `massage`; today only |
 | ComfortBase | `memory_1`, `memory_2` | Once only |
-| Comfort Enhancement 3 | Depends on the remote: `none`, `memory_1`, `memory_2`, `zero_g`, `tv`, `anti_snore` | `slot` 0–99, `massage` with zone, intensity and 10/20/30-minute duration, `light`. Once, at the next occurrence |
+| Customatic Z-Series | `massage`, `memory_1` (required to turn on) | Once. Needs a Z-Series controller with an alarm page |
 | eShine | `zero_g`, `flat`, `massage` (by model) | Once; the bed clock is set first |
 | Glideaway Motion | `none`, `memory_1`, `memory_2` | Once |
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
+| L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
@@ -446,24 +449,25 @@ data:
 | M Line | `zero_g`, `flat`, `memory_1`, `memory_2`, `massage`, `anti_snore` | `weekdays` |
 | Malouf / Lucid app | `zero_g`, `lounge`, `tv`, `anti_snore`, memories | `weekdays` |
 | Motion Bed | `none` (rings only), `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` (the alarm tone by default; music 1 by default where the bed has audio) |
-| Nerum (P2, P3) | `none`, `memory_1`, `memory_2`, `light` | `slot` 1–3, `weekdays` or once. The other two alarms are read from the bed first |
 | N32 Motion Bed | `none`, `memory_1` … `memory_3`, `flat` | `slot` 1–3, `weekdays`; turning off keeps the slot's time |
-| OkinComfortBed II (Jalon) | By app version | `weekdays` |
-| OkinComfortBed II (bed) | `none`, `memory_1`, `memory_2`, `massage` | `weekdays` |
+| Nerum (P2, P3) | `none`, `memory_1`, `memory_2`, `light` | `slot` 1–3, `weekdays` or once. The other two alarms are read from the bed first |
 | OKIN Smart Sleep | `memory_1`, `memory_2`, `zero_g`, `flat`, `massage`, plus `lounge`, `tv`, `anti_snore`, `light` on newer models | `weekdays` on newer models |
+| OkinComfortBed II (bed) | `none`, `memory_1`, `memory_2`, `massage` | `weekdays` |
+| OkinComfortBed II (Jalon) | By app version | `weekdays` |
+| OrmatekTechnoSmart | New: `massage`, `memory_1`, `flat`. Lite: `zero_g`, `tv` | Daily, one alarm |
 | Richmat app beds | From the model's alarm page | Once (the bed counts down), `slot` 1–3 on three-alarm models, `massage` with zone. `mattress_side` sets the vibrating mattress alarm, once or every day, with intensity 1–3 |
 | Richmat app calendar models | From the model's alarm list | `slot` 1–7, `weekdays`; `mattress_side` for the vibrating mattress |
-| RMControl | From the product's alarm list | Repeating products: `slot` 1–7 with `weekdays`. Others: once, as a countdown |
+| RMControl | From the product's alarm list; required to turn an alarm on | Repeating products: `slot` 1–7 with at least one weekday. Others: once, as a countdown |
 | SIMMONS | `custom_position`, `flat`, `anti_snore` (regular bed) | `slot` 1–2, `weekdays`, `confirm_custom_position`. Both alarms are read from the bed first |
 | Solace | `none`, `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` |
-| OrmatekTechnoSmart | New: `massage`, `memory_1`, `flat`. Lite: `zero_g`, `tv` | Daily, one alarm |
-| Solace (Sophie app) | `none`, `zero_g`, `memory_1`; side models `none`, `zero_g_left`, `zero_g_right`, `zero_g` | `weekdays`, `massage` (not QMS2), `sound: alarm` rings. Once the bed reports alarm support |
+| Sophie (Solace) | `none`, `zero_g`, `memory_1`; side models `none`, `zero_g_left`, `zero_g_right`, `zero_g` | `weekdays`, `massage` (not QMS2), `sound: alarm` rings. Once the bed reports alarm support |
+| SUTA Smart Home (models whose app has an alarm) | None | `weekdays` or once. To turn an alarm off, send the same `time` and `weekdays` it was set with |
 | Symphony Sleep | `none`, `memory_1`, `memory_2` | Once |
+| Symphony Sleep Sense | By product | `weekdays` |
 | Ultramatic (ORE) | `none`, `massage`, `memory_1`, `memory_2` on the older bed route; `tv`, `massage`, `zero_g` on the newer | `weekdays` or once. Turning it on needs a `wake_action`; connect once first so the route is known |
 | Ultramatic Smart Bed | `massage`, `zero_g`, `memory_1` (required to turn on) | `weekdays` or once. Left, Right and Both set the A, B and AB alarms; a standalone bed uses its configured side. Turning off without a time keeps the reported alarm's other fields; refresh the alarm first |
-| Symphony Sleep Sense | By product | `weekdays` |
 | Yamada | By app version | `slot` 1–2, `weekdays`. Refresh the bed's alarms first |
-| Customatic Z-Series | `massage`, `memory_1` (required to turn on) | Once. Needs a Z-Series controller with an alarm page |
+| Bedgear, Casper Base, classic Richmat apps, Galaxy Bed Control, GM Control, Good Vibe Sleep, HJBed, Hush Base, Lady Americana and partner beds, Luuna, Luuna Rise and Power Cool, MLILY, MLILY Remote, OKIN SleepEase, Okimiki, Power Bob Base, Richmat app (`richmat_app` bed type), Snore Monitor, SonicSleep | Use the bed's own action | See [Bedgear](#bedgear), [Casper Base](#casper_base), [classic Richmat apps](#richmat_classic), [Galaxy](#galaxy), [GM Control](#gmmotor), [Good Vibe Sleep](#good-vibe-sleep), [HJBed](#hjbed), [Hush Base](#hush_base), [Lady Americana and partner beds](#richmat_resource_bed), [Luuna](#luuna), [Luuna Rise and Power Cool](#richmat_rise), [MLILY](#mlily), [MLILY Remote](#mlily-remote), [OKIN SleepEase](#doublesleep_configure), [Okimiki](#okimiki), [Power Bob Base](#bobpowerbase), [Richmat app](#richmat_app), [`onlysnore_set_alarm`](#onlysnore_set_alarm) and [SonicSleep](#sonicsleep) |
 
 ### Estimated positions
 
@@ -545,7 +549,7 @@ secondary-head actions fail before any receiver is commanded.
 
 Target the paired parent for shared-foot operation. A child target or optional
 `side` restricts the request; conflicting app sleeper routing is rejected.
-An unpaired FH receiver can also select its bank with `sleeper`.
+A standalone FH receiver can also select its bank with `sleeper`.
 
 ```yaml
 action: adjustable_bed.bedtech_app_command
@@ -629,10 +633,10 @@ operation's fields and the separate sensor/remote entry types.
 | `rgb` | RGB | Three values from 0 to 255. |
 | `brightness` | Brightness | Legacy RGB brightness from 0 to 255. |
 | `duration_ms` | Duration or Yb timer parameter | Hold duration in milliseconds. Yb uses parameter 300 or 900, whose time selection is 5 or 15 minutes. |
-| `axis` | Axis |  |
-| `up` | Move up |  |
+| `axis` | Axis | One of `all`, `back`, `legs` or `lumbar`. |
+| `up` | Move up | On or off. |
 | `position` | Position selector | Ten/NewTen position 1 all, 2 back, 3 feet, 4 waist. |
-| `side` | Side |  |
+| `side` | Side | One of `both`, `left` or `right`. |
 | `sleeper` | Auxiliary sleeper | Seven screen local side selector. Must match a targeted paired child. |
 
 ### CheersSleep bed controls
@@ -668,9 +672,9 @@ Model gates and shared versus side-specific packets are described in the
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `duration` | Massage duration (minutes) |  |
-| `intensity` | Relative intensity steps |  |
-| `kind` | Massage area or wave |  |
+| `duration` | Massage duration (minutes) | One of `10` (10 minutes), `20` (20 minutes) or `30` (30 minutes). |
+| `intensity` | Relative intensity steps | A number from 1 to 3. |
+| `kind` | Massage area or wave | One of `head`, `feet`, `both` or `wave`. |
 
 ### Comfort Enhancement 3 / Comfort Plus3
 
@@ -732,7 +736,7 @@ See [FSM Relax](beds/limoss.md#fsm-relax) for profile gates and reply ambiguity.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `action` | Action |  |
+| `action` | Action | One of `zero_g` (Zero gravity), `flat`, `anti_snore` (Anti-snore), `memory_1`, `memory_2`, `memory_3`, `save_zero_g` (Save zero gravity), `save_anti_snore` (Save anti-snore) and others; see the action in Home Assistant. |
 | `internal_side` | Internal preset selector | First is the normal Floyd UI. Both and second are conditional exported-alarm selectors, not physical Left/Right targets. |
 | `confirm` | Confirm configuration write | Required to save over a preset or to link the bed to a room. |
 | `room_id` | BLE room ID | Room to link this bed to, for a bed not yet in a room. Does not change the bed's Wi-Fi. |
@@ -764,25 +768,25 @@ schedule these presets; the app's phone alarms are not on-bed alarm storage.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `minutes` | Advisory duration |  |
+| `minutes` | Advisory duration | One of `10` (10 minutes), `15` (15 minutes), `20` (20 minutes) or `30` (30 minutes). |
 
 <a id="furnimove_massage_program"></a>
 **`furnimove_massage_program`**: Select program 1, 2, 3 or 4 (Wave) using the handset’s captured massage queue.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `program` | Program |  |
+| `program` | Program | A number from 1 to 4. |
 
 <a id="furnimove_move_simultaneously"></a>
 **`furnimove_move_simultaneously`**: Hold two supported axes with the app’s combined command and release cleanup.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `first_motor` | First motor |  |
-| `second_motor` | Second motor |  |
-| `first_direction` | First direction |  |
-| `second_direction` | Second direction |  |
-| `duration_ms` | Duration in milliseconds |  |
+| `first_motor` | First motor | One of `head`, `back`, `legs` or `feet`. |
+| `second_motor` | Second motor | One of `head`, `back`, `legs` or `feet`. |
+| `first_direction` | First direction | `up` or `down`. |
+| `second_direction` | Second direction | `up` or `down`. |
+| `duration_ms` | Duration in milliseconds | A number from 1 to 60000. |
 
 ### FurniMove app controls
 
@@ -804,21 +808,21 @@ local state, sends no timer packet and does not stop the receiver on expiry.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation |  |
-| `value` | Operation value |  |
-| `mode` | Exact alarm action name |  |
-| `slot` | Alarm ID |  |
-| `repeat` | Repeat mask |  |
-| `hour` | Hour |  |
-| `minute` | Minute |  |
-| `status` | Alarm status |  |
+| `operation` | Operation | One of `clock_sync` (Set bed clock), `alarm` (Alarm tone), `alarm_at` (Alarm at a time), `alarm_cancel` (Cancel alarm), `repeat_alarm` (Repeating alarm), `repeat_delete` (Delete repeating alarm), `repeat_query` (Read repeating alarms), `light_color` and others; see the action in Home Assistant. |
+| `value` | Operation value | A number from 0 to 65535. |
+| `mode` | Exact alarm action name | Text. |
+| `slot` | Alarm ID | A number from 0 to 255. |
+| `repeat` | Repeat mask | A number from 0 to 255. |
+| `hour` | Hour | A number from 0 to 23. |
+| `minute` | Minute | A number from 0 to 59. |
+| `status` | Alarm status | A number from 0 to 255. |
 | `enabled` | Enabled | Turn the selected option on or off. |
-| `rgb_color` | RGB color |  |
-| `part` | Report side (1 left, 2 right) |  |
-| `report_type` | Report type (1 day, 2 month) |  |
-| `report_date` | Report date |  |
-| `height` | Desk height |  |
-| `unit` | Height unit |  |
+| `rgb_color` | RGB color | A color. |
+| `part` | Report side (1 left, 2 right) | `1` or `2`. |
+| `report_type` | Report type (1 day, 2 month) | `1` or `2`. |
+| `report_date` | Report date | A date. |
+| `height` | Desk height | A number from 0 to 2560. |
+| `unit` | Height unit | One of `cm` (Centimeters) or `inch` (Inches). |
 
 ### GM Control
 
@@ -851,15 +855,15 @@ the distinct wire builders and raw-data limitations.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Action |  |
-| `action` | Exact alarm action ID |  |
+| `operation` | Action | One of `single` (One-time alarm), `cancel_single` (Cancel one-time alarm), `repeat` (Repeating alarm), `enable_alarm` (Turn alarm on or off), `delete`, `alarms` (Read alarms), `sync` (Set bed clock), `light_color` and others; see the action in Home Assistant. |
+| `action` | Exact alarm action ID | Text. |
 | `datetime` | Alarm date and time | ISO 8601 with a timezone offset. |
-| `alarm_id` | Alarm slot |  |
+| `alarm_id` | Alarm slot | A number from 1 to 7. |
 | `weekdays` | Repeat weekdays | Monday is 0, Sunday is 6. Empty means no repeat days. |
 | `enabled` | Enabled | Turn the selected option on or off. |
 | `seconds` | Light duration | Zero uses the app's always-on value. |
-| `rgb_color` | Light color |  |
-| `value` | Value (massage minutes or snore setting) |  |
+| `rgb_color` | Light color | A color. |
+| `value` | Value (massage minutes or snore setting) | A number from 0 to 255. |
 
 ### Galaxy Bed Control configuration
 
@@ -880,17 +884,17 @@ Separate sleep-sensor operations are not offered.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Action |  |
-| `action` | Exact alarm action ID |  |
+| `operation` | Action | One of `single` (One-time alarm), `cancel_single` (Cancel one-time alarm), `repeat` (Repeating alarm), `delete`, `alarms` (Read alarms), `sync` (Set bed clock), `light_color`, `light_duration` (Light timer) and others; see the action in Home Assistant. |
+| `action` | Exact alarm action ID | Text. |
 | `datetime` | Alarm date and time | ISO 8601 with a timezone offset. |
-| `alarm_id` | Alarm slot |  |
+| `alarm_id` | Alarm slot | A number from 1 to 7. |
 | `weekdays` | Repeat weekdays | Monday is 0, Sunday is 6. Empty means no repeat days. |
 | `enabled` | Enabled | Turn the selected option on or off. |
 | `seconds` | Light duration | Zero uses the app's always-on value. |
-| `rgb_color` | Light color |  |
-| `value` | Snore count or time value |  |
+| `rgb_color` | Light color | A color. |
+| `value` | Snore count or time value | A number from 0 to 255. |
 | `part` | Sleep part | Set type 1 to 1 or 2; type 2 to 11, 12 or 13. Report queries use 1 or 2. |
-| `date` | Report date |  |
+| `date` | Report date | A date. |
 | `report_type` | Report type | Day is 1, month is 2. |
 
 ### Good Vibe Sleep configuration
@@ -905,15 +909,15 @@ Separate sleep-sensor operations are not offered.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation |  |
-| `action` | Alarm action |  |
-| `time` | Time |  |
+| `operation` | Operation | One of `single` (One-time alarm), `cancel_single` (Cancel one-time alarm), `repeat` (Repeating alarm), `delete`, `query` (Read current settings), `toggle` (Turn on or off), `sync` (Set bed clock), `light_timeout` (Light timer) and others; see the action in Home Assistant. |
+| `action` | Alarm action | Text. |
+| `time` | Time | A time of day. |
 | `alarm_id` | Alarm number | Choose a slot from 1 to 7. Leave blank only to reuse a slot deleted during this Bluetooth connection. |
-| `weekdays` | Weekdays (empty means once) |  |
+| `weekdays` | Weekdays (empty means once) | One of `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday` or `sunday`. |
 | `enabled` | Enabled | Turn the selected option on or off. |
-| `seconds` | Light timeout in seconds |  |
-| `rgb_color` | Light color |  |
-| `mode` | Control mode |  |
+| `seconds` | Light timeout in seconds | A number from 0 to 28800. |
+| `rgb_color` | Light color | A color. |
+| `mode` | Control mode | One of `split_head` (Separate heads) or `standard`. |
 
 ### HJBed configuration
 
@@ -958,7 +962,7 @@ Use `adjustable_bed.hush_base` for Hush bed and independent sleep-module configu
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `preset` | Bed preset |  |
+| `preset` | Bed preset | One of `flat`, `zero_g` (Zero gravity), `anti_snore` (Anti-snore), `memory_1` or `memory_2`. |
 | `head_level` | Head massage level | Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity. |
 | `foot_level` | Foot massage level | Wake massage intensity, with 0 for off and 1 to 3 for increasing intensity. |
 
@@ -996,7 +1000,7 @@ product/name gates; an HA automation can repeat Start for cycle operation.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `action` | Action |  |
+| `action` | Action | One of `zero` (Flat), `h_increase` (Head up), `h_decrease` (Head down), `f_increase` (Foot up), `f_decrease` (Foot down), `timer_start` (Start timer), `timer_stop` (Stop timer), `lock` and others; see the action in Home Assistant. |
 
 ### KomfyD / ComfyDS
 
@@ -1072,7 +1076,7 @@ device schedules or timer feedback. See the [protocol guide](beds/richmat.md#lad
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `action` | Action |  |
+| `action` | Action | One of `start` or `cancel`. |
 | `minutes` | Delay | Required to start. Prodigy accepts 1 to 1439 minutes; U Series accepts 15, 30, 45, 60, 75, or 90 minutes. |
 | `preset` | Sleep action | Prodigy beds use memory 1 to 4. U Series beds use 0 for flat or memory 1 to 3; memory 3 is only reachable through this timer. |
 
@@ -1114,10 +1118,10 @@ The explicit [Limoss Remote app profile](beds/limoss.md#limoss-remote) adds `lim
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `first_motor` | First motor |  |
-| `first_direction` | First direction |  |
-| `second_motor` | Second motor |  |
-| `second_direction` | Second direction |  |
+| `first_motor` | First motor | One of `base`, `feet`, `head`, `legs` or `back`. |
+| `first_direction` | First direction | `up` or `down`. |
+| `second_motor` | Second motor | One of `base`, `feet`, `head`, `legs` or `back`. |
+| `second_direction` | Second direction | `up` or `down`. |
 | `duration_ms` | Duration | How long to hold the combined movement before STOP. |
 
 ## Linx
@@ -1141,7 +1145,7 @@ The status query runs once on the same connection; it never reconnects. See the
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `preset` | Preset |  |
+| `preset` | Preset | One of `flat`, `zero_g` (Zero gravity), `anti_snore` (Anti-snore), `memory_1` or `memory_2`. |
 | `duration` | Duration | How long to hold, 0.2 to 60 seconds. |
 
 ## Luuna
@@ -1178,10 +1182,10 @@ local calendar. Each target is validated before any writes. Not yet confirmed on
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation |  |
+| `operation` | Operation | One of `query` (Read current settings), `alarm` (Alarm tone), `cancel_alarm`, `rgb` (Light color), `lamp_timer`, `massage_timer`, `massage_popup` (Massage menu), `diagnostic_cycle` (Test cycle) and others; see the action in Home Assistant. |
 | `actions` | Alarm actions | A list of node keys such as node_1 from this layout’s alarm_actions diagnostics. The first bed choice and the layout-ordered massage choices determine the command. |
 | `time` | Alarm time | Next occurrence of this local time, with minute precision. Omit for 1440 minutes. |
-| `rgb_color` | RGB color |  |
+| `rgb_color` | RGB color | A color. |
 | `seconds` | Lamp timer | Lamp timer, 0 to 300 seconds. |
 | `timer_save` | Use save encoding | At zero, Save writes 0000 and slider release writes FFFF. |
 | `progress` | Massage timer index | D1RM or D9RM slider index, 0 to 5. These are source indices, not inferred durations. |
@@ -1224,11 +1228,11 @@ See the [generated command tables](beds/richmat.md#luuna-rise--power-cool).
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `action` | Action |  |
+| `action` | Action | One of `privacy`, `anti_snore` (Anti-snore), `anti_snore_demo` (Anti-snore demo), `settings_refresh` (Read settings), `alarm_refresh` (Read alarm), `live_query` (Read live data), `history_read` (Read sleep history) or `history_ack` (Confirm sleep history received). |
 | `enabled` | Enabled | Turn the selected option on or off. |
-| `angle` | Angle |  |
-| `position` | Position |  |
-| `all_records` | All records |  |
+| `angle` | Angle | One of `1` (Low), `3` (Medium) or `6` (High). |
+| `position` | Position | One of `1` (Head) or `2` (Elevation). |
+| `all_records` | All records | On or off. |
 | `transfer` | Transfer | The transfer code from a finished sleep history download, to confirm you received it. |
 
 ### M Line
@@ -1259,6 +1263,49 @@ token, which also expires 30 seconds after completion. This explicit consumer bo
 processing, without claiming SQL success. See the [M Line guide](beds/mline.md)
 for field projections, source limitations and the external hardware test status.
 
+## Majestic Home
+
+<a id="majestichome"></a>
+**`majestichome`**: Read, create, edit, enable, disable or delete bed alarms, or set the bed clock.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `operation` | Operation |  |
+| `alarm_id` | Alarm ID | Required for new, set, toggle and delete. Choose an explicit ID from 1 through 7 for new alarms, or a received ID for an existing alarm. Partial replies cannot identify a free slot. |
+| `hour` | Hour |  |
+| `minute` | Minute |  |
+| `preset` | Preset |  |
+| `weekdays` | Weekdays | Monday is 0 and Sunday is 6. Empty means once. |
+| `enabled` | Enabled |  |
+
+### Majestic Home settings
+
+Supply an explicit `alarm_id` for `new`, `set`, `toggle` and `delete`.
+New IDs use 1 through 7. Partial alarm replies cannot prove a free slot, so
+Home Assistant never chooses an ID automatically. Sequential pairs refresh
+required fields on the execution connection; toggles reject changed fields.
+
+`adjustable_bed.majestichome` accepts `operation: list`, `new`, `set`, `toggle`,
+`delete` or `sync_clock`. Select a configured Majestic Home device or a native
+paired parent/child, with `side` when needed. Alarm operations require the current
+connection's clock response. FARM/JLRM accept `preset: zero_gravity`,
+`anti_snore`, `memory_1` or `memory_2`, `hour`, `minute`, `weekdays` (Monday 0
+through Sunday 6) and `enabled`. An empty weekday list means once.
+
+Supply `alarm_id` explicitly for `new`, `set`, `toggle` or `delete`.
+Neither an empty nor a nonempty cache proves which IDs are free.
+Every `toggle` reads the requested ID on the current connection before changing
+only its enable bit. Missing or changed fields refuse the write.
+`list` keeps each physical connection open for a fixed five-second observation
+window from query submission. It optionally returns `targets`, one result per
+physical address and `side`, containing copied `alarms` and `complete: false`.
+These are partial observations, including when the array is empty; neither
+silence nor elapsed time proves the bed has no other alarms. Sequential sides
+disconnect after their window, and returned snapshots cannot authorize mutations.
+The received records are attributes of the diagnostic Model sensor, which is
+disabled by default: enable it to read them. See the
+[Majestic Home profile](beds/richmat.md#majestic-home).
+
 ## MLILY
 
 <a id="mlily"></a>
@@ -1266,17 +1313,17 @@ for field projections, source limitations and the external hardware test status.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Action |  |
-| `action` | Exact alarm action ID |  |
+| `operation` | Action | One of `single` (One-time alarm), `cancel_single` (Cancel one-time alarm), `repeat` (Repeating alarm), `delete`, `alarms` (Read alarms), `sync` (Set bed clock), `light_color`, `light_duration` (Light timer) and others; see the action in Home Assistant. |
+| `action` | Exact alarm action ID | Text. |
 | `datetime` | Alarm date and time | ISO 8601 with a timezone offset. |
-| `alarm_id` | Alarm slot |  |
+| `alarm_id` | Alarm slot | A number from 1 to 7. |
 | `weekdays` | Repeat weekdays | Monday is 0, Sunday is 6. Empty means no repeat days. |
 | `enabled` | Enabled | Turn the selected option on or off. |
 | `seconds` | Light duration | Zero uses the app's always-on value. |
-| `rgb_color` | Light color |  |
-| `value` | Snore count or time value |  |
+| `rgb_color` | Light color | A color. |
+| `value` | Snore count or time value | A number from 0 to 255. |
 | `part` | Sleep part | Set type 1 to 1 or 2; type 2 to 11, 12 or 13. Report queries use 1 or 2. |
-| `date` | Report date |  |
+| `date` | Report date | A date. |
 | `report_type` | Report type | Day is 1, month is 2. |
 | `alarm_record` | Observed alarm record | The alarm as the bed reported it, so editing keeps the same alarm. |
 | `left` | Left sleep operand | SXB anti-snore number or numeric list. |
@@ -1304,7 +1351,7 @@ gestures, notifications and sleep operations.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation |  |
+| `operation` | Operation | One of `alarm` (Set alarm), `alarm_cancel` (Cancel alarm), `time_sync` (Set bed clock) or `anti_snore` (Anti-snore intervention). |
 | `hour` | Alarm hour | Alarm hour in 24-hour time. |
 | `minute` | Alarm minute | Minute within the selected alarm hour. |
 | `mode` | Alarm position | Position the bed moves to when the alarm goes off. |
@@ -1326,110 +1373,110 @@ once; the anti-snore intervention runs on the left.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `action` | Action |  |
-| `branch` | Branch |  |
-| `duration` | Duration |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `action` | Action | Text. |
+| `branch` | Branch | One of `app`, `save` or `clear`. |
+| `duration` | Duration | A number from 0.01 to 10. |
 
 <a id="motion_bed_air_setting"></a>
 **`motion_bed_air_setting`**: Query or save the selected mode’s upper gear and optional timer. Lower pressure is readback only.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `mode` | Mode |  |
-| `query` | Query |  |
-| `gear` | Gear |  |
-| `timer` | Timer |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `mode` | Mode | A number. |
+| `query` | Query | On or off. |
+| `gear` | Gear | A number. |
+| `timer` | Timer | A number. |
 
 <a id="motion_bed_audio"></a>
 **`motion_bed_audio`**: Select a track, preview a track, or set volume on a target that reports audio support.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `operation` | Operation |  |
-| `value` | Value |  |
-| `preview` | Preview |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `operation` | Operation | One of `track` or `volume`. |
+| `value` | Value | A number. |
+| `preview` | Preview | On or off. |
 
 <a id="motion_bed_calibration"></a>
 **`motion_bed_calibration`**: Save the app’s flat and side calibration readings. Confirm before changing calibration.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `flat` | Flat |  |
-| `side_position` | Side position |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `flat` | Flat | A number from 0 to 2.14748e+09. |
+| `side_position` | Side position | A number. |
 
 <a id="motion_bed_clock"></a>
 **`motion_bed_clock`**: Set the motor or thermal module clock.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `timestamp` | Timestamp |  |
-| `thermal` | Thermal |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `timestamp` | Timestamp | Text. |
+| `thermal` | Thermal | On or off. |
 
 <a id="motion_bed_module"></a>
 **`motion_bed_module`**: Lists, adds or removes the motor, air or heating modules of a Motion Bed hub. Adding and removing need confirmation.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `operation` | Operation |  |
-| `module_type` | Module type |  |
-| `address` | Address |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `operation` | Operation | One of `query` (Read current settings), `bind` (Add) or `delete`. |
+| `module_type` | Module type | A number. |
+| `address` | Address | Text. |
 
 <a id="motion_bed_pressure"></a>
 **`motion_bed_pressure`**: Adjusts one air channel, or saves all twelve air pressures at once.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `operation` | Operation |  |
-| `channel` | Channel |  |
-| `value` | Value |  |
-| `values` | Values |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `operation` | Operation | One of `live` or `save`. |
+| `channel` | Channel | A number from 0 to 11. |
+| `value` | Value | A number. |
+| `values` | Values | A list of whole numbers, one per channel, for `save`. |
 
 <a id="motion_bed_sleep_angles"></a>
 **`motion_bed_sleep_angles`**: Saves the four flat and four side-sleeping positions used by sleep sensing. Use the values shown in the app.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `page` | Page |  |
-| `flat` | Flat |  |
-| `side_positions` | Side positions |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `page` | Page | A number. |
+| `flat` | Flat | A list of whole numbers: the flat positions the app shows. |
+| `side_positions` | Side positions | A list of whole numbers: the side-sleeping positions the app shows. |
 
 <a id="motion_bed_sleep_report"></a>
 **`motion_bed_sleep_report`**: Read current, historical day, month or timer data. Historical day selection and graph window offset are separate.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `kind` | Kind |  |
-| `offset` | Offset |  |
-| `window_offset` | Window offset |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `kind` | Kind | One of `month`, `real` (Live), `timer` or `day`. |
+| `offset` | Offset | A number from 0 to 29. |
+| `window_offset` | Window offset | A number from 0 to 4. |
 
 <a id="motion_bed_sleep_timer"></a>
 **`motion_bed_sleep_timer`**: Select an app bedtime or fall timer slot.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `slot` | Slot |  |
-| `fall` | Fall |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `slot` | Slot | A number. |
+| `fall` | Fall | On or off. |
 
 <a id="motion_bed_thermal_schedule"></a>
 **`motion_bed_thermal_schedule`**: Save a timer with cooling or heating mode and gear, without guessing a thermostat setpoint.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `confirmed` | Confirm persistent change |  |
-| `hour` | Hour |  |
-| `minute` | Minute |  |
-| `mode` | Mode |  |
-| `gear` | Gear |  |
+| `confirmed` | Confirm persistent change | On or off. |
+| `hour` | Hour | A number from 0 to 23. |
+| `minute` | Minute | A number from 0 to 59. |
+| `mode` | Mode | A number. |
+| `gear` | Gear | A number. |
 
 ### Motion Bed app actions
 
@@ -1456,9 +1503,9 @@ The [Motion Bed action index](beds/ff_frame.md#services-2) covers all 12 typed a
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `action` | Action |  |
+| `action` | Action | One of `press` (Press control), `remote_long` (Save with remote button), `voice_queue` (Voice command), `query` (Read setting) or `app_mode` (Set app mode). |
 | `opcode` | Control number | Decimal byte value from this app and model's control table. |
-| `query` | Setting to read |  |
+| `query` | Setting to read | One of `version` (Firmware version), `exit_one_minute` (Leave one-minute mode), `alarm`, `light`, `mattress`, `waist_mattress`, `snore` (Snore intervention), `diagnostics` (Component check) and others; see the action in Home Assistant. |
 | `transmit_mode` | Transmit mode | The app's transmit mode for later control and release frames (Set app mode). |
 | `motor_group` | Motor group | The app's motor group, which decides the Motor mode choices (Set app mode). |
 
@@ -1467,7 +1514,7 @@ The [Motion Bed action index](beds/ff_frame.md#services-2) covers all 12 typed a
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `mode` | Sleepers |  |
+| `mode` | Sleepers | One of `single` (One sleeper) or `double` (Two sleepers). |
 
 ### Nisco and MLILY Supreme controls
 
@@ -1505,22 +1552,22 @@ recipient or create one-address native Left/Right devices.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `action` | Action |  |
-| `hour` | Alarm hour |  |
-| `minute` | Alarm minute |  |
+| `action` | Action | One of `alarm` (Alarm tone), `anti_snore` (Anti-snore), `anti_snore_demo` (Anti-snore demo), `sensitivities` (Sensitivity), `report` (Sleep report), `save_preset` or `capabilities` (Read features). |
+| `hour` | Alarm hour | A number from 0 to 23. |
+| `minute` | Alarm minute | A number from 0 to 59. |
 | `weekdays` | Repeat on | Leave empty for a one-time alarm at the next occurrence of the selected time. |
-| `alarm_preset` | Alarm action |  |
-| `alarm_massage` | Alarm massage |  |
-| `mode` | Anti-snore mode |  |
+| `alarm_preset` | Alarm action | One of `zero_g` (Zero gravity), `flat`, `memory_1`, `memory_2` or `vibration`. |
+| `alarm_massage` | Alarm massage | On or off. |
+| `mode` | Anti-snore mode | A number from 1 to 3. |
 | `pwm` | Slow anti-snore PWM byte | Anti-snore movement strength. |
 | `timer` | Slow anti-snore timer byte | Anti-snore movement time. |
 | `sensor_side` | P2 sensor sides | App side value1,2 or3. Omit to retain the reported setting. P3 supports reading this setting only. |
 | `left_sensitivity` | Left sensitivity | Omit to retain the reported value. |
 | `right_sensitivity` | Right sensitivity | Omit to retain the reported value. |
-| `date` | Report date |  |
-| `report_side` | Report sensor side |  |
-| `report_kind` | Report period |  |
-| `preset` | Preset to program |  |
+| `date` | Report date | A date. |
+| `report_side` | Report sensor side | One of `left` or `right`. |
+| `report_kind` | Report period | One of `day` or `month`. |
+| `preset` | Preset to program | One of `memory_1`, `memory_2`, `anti_snore` (Anti-snore), `lounge`, `tv` or `zero_g` (Zero gravity). |
 | `capability_page` | Capability page byte | Which feature list to read from the bed. |
 
 ### OKIN SleepEase / DoubleSleep
@@ -1568,16 +1615,16 @@ data:
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation |  |
-| `control` | Control |  |
-| `duration_ms` | Press duration |  |
-| `datetime` | Alarm time |  |
+| `operation` | Operation | One of `press`, `save`, `light_color`, `light_duration`, `light_off`, `single` (Set one-time alarm), `cancel_single` (Cancel one-time alarm), `alarms` (Read alarms) and others; see the action in Home Assistant. |
+| `control` | Control | One of `head_up`, `head_down`, `foot_up`, `foot_down`, `head_foot_up` (Head and foot up), `head_foot_down` (Head and foot down), `flat`, `memory_1` and others; see the action in Home Assistant. |
+| `duration_ms` | Press duration | A number from 0 to 60000 ms. |
+| `datetime` | Alarm time | A date and time. |
 | `alarm_id` | Alarm slot | Choose 1 through 7 explicitly when creating an alarm. Read the alarms first (the Alarms sensor lists them) before editing, turning on or off, or deleting one. |
-| `mode` | Wake action |  |
+| `mode` | Wake action | One of `lounge`, `zero_gravity`, `memory_1` or `memory_2`. |
 | `weekdays` | Weekdays | Days the alarm repeats. An empty list sets a one-time alarm; leaving the field out keeps an edited alarm's days. |
-| `enabled` | Enabled |  |
+| `enabled` | Enabled | On or off. |
 | `seconds` | Light duration | Zero keeps the light on. |
-| `rgb_color` | RGB color |  |
+| `rgb_color` | RGB color | A color. |
 
 ### Okimiki controls and alarms
 
@@ -1613,14 +1660,14 @@ between the check and the write, and when Stop interrupts the check.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Action |  |
-| `action` | Alarm preset |  |
+| `operation` | Action | One of `repeat` (Save repeating alarm), `delete` (Delete alarm), `alarms` (Read alarms), `sync` (Set bed clock), `light_color` (Set light color), `light_duration` (Set light duration) or `light_off` (Turn light off). |
+| `action` | Alarm preset | One of `anti_snore` (Anti-snore), `zero_gravity`, `tv`, `memory_1` or `memory_2`. |
 | `datetime` | Alarm date and time | ISO 8601 with a timezone offset. |
 | `alarm_id` | Alarm slot | Use an explicit slot when the reported alarm list may be incomplete. |
 | `weekdays` | Repeat weekdays | Monday is 0, Sunday is 6. Empty means once. |
-| `enabled` | Enabled |  |
+| `enabled` | Enabled | On or off. |
 | `seconds` | Light duration | Whole minutes from 0 to 15, supplied as seconds. Zero means always on. |
-| `rgb_color` | Light color |  |
+| `rgb_color` | Light color | A color. |
 
 ### Power Bob Base configuration
 
@@ -1647,7 +1694,7 @@ holds can run serially. See [Power Bob Base](beds/richmat.md#power-bob-base).
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation |  |
+| `operation` | Operation | One of `switch` (Turn on or off), `configure` (Settings) or `query` (Read current settings). |
 | `enabled` | Enabled | Turn anti-snore on or off. |
 | `mode` | Configuration mode | Required for configure. |
 | `value` | Intervention value | How many nudges, or how long, depending on the mode. |
@@ -1725,17 +1772,17 @@ Reported state remains the last measured value until feedback arrives. See
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation |  |
-| `action` | Layout alarm action |  |
-| `time` | Alarm time |  |
-| `minutes` | Lamp minutes |  |
-| `rgb_color` | RGB color |  |
-| `aroma_times` | Aroma times |  |
-| `progress` | Massage timer slider |  |
-| `height` | Desk target |  |
-| `unit` | Desk unit |  |
-| `slot` | Desk button |  |
-| `popup` | Massage popup choice |  |
+| `operation` | Operation | One of `query` (Read current settings), `alarm` (Alarm tone), `cancel_alarm`, `rgb` (Light color), `lamp_slider` (Lamp brightness), `lamp_save` (Save lamp setting), `aroma`, `massage_timer` and others; see the action in Home Assistant. |
+| `action` | Layout alarm action | Text. |
+| `time` | Alarm time | A time of day. |
+| `minutes` | Lamp minutes | A number from 0 to 15. |
+| `rgb_color` | RGB color | A color. |
+| `aroma_times` | Aroma times | Three whole numbers, as the app shows them. |
+| `progress` | Massage timer slider | A number from 0 to 5. |
+| `height` | Desk target | A number from 0 to 6553. |
+| `unit` | Desk unit | One of `cm` (Centimeters) or `inches`. |
+| `slot` | Desk button | A number from 1 to 4. |
+| `popup` | Massage popup choice | One of `15` (15 minutes), `30` (30 minutes), `45` (45 minutes) or `toggle` (Turn on or off). |
 | `duration_ms` | Desk button duration | Bounded duration in milliseconds. |
 
 ### Classic Richmat app settings
@@ -1832,8 +1879,8 @@ a separate Richmat sleep entry. See the [operation and parameter reference](beds
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `preset` | Preset |  |
-| `confirm` | Confirm programming |  |
+| `preset` | Preset | One of `zero_g` (Zero gravity), `anti_snore` (Anti-snore), `book` or `leisure`. |
+| `confirm` | Confirm programming | On or off. |
 
 ### Rize Beds default-preset programming
 
@@ -1910,40 +1957,40 @@ network/account actions are accepted. Hardware behavior remains unverified.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `fan_side` | Fan zone |  |
-| `mode` | Mode |  |
-| `level` | Level (0 off, 1–3) |  |
-| `constant` | Constant level (off selects curve) |  |
+| `fan_side` | Fan zone | One of `both`, `left` or `right`. |
+| `mode` | Mode | One of `heat` or `cool`. |
+| `level` | Level (0 off, 1–3) | A number from 0 to 3. |
+| `constant` | Constant level (off selects curve) | On or off. |
 
 <a id="sleeptracker_massage"></a>
 **`sleeptracker_massage`**: Steps a massage zone or pattern, picks a vibration speed, or stops the massage.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `action` | Action |  |
+| `action` | Action | One of `head`, `foot` (Feet), `pattern`, `28hz` (28 Hz vibration), `40hz` (40 Hz vibration) or `off`. |
 
 <a id="sleeptracker_preset"></a>
 **`sleeptracker_preset`**: Moves to or saves a preset. The presets depend on the bed.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `preset` | Preset |  |
-| `save` | Save current position |  |
+| `preset` | Preset | One of `all_flat` (Flat), `zero_g` (Zero gravity), `anti_snore` (Anti-snore), `user_favorite` (Favorite), `tv_pc` (TV and computer) or `favorite_2`. |
+| `save` | Save current position | On or off. |
 
 <a id="sleeptracker_relaxation"></a>
 **`sleeptracker_relaxation`**: Starts the wind-down routine or the bed's relaxation movement.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `action` | Action |  |
+| `action` | Action | One of `wind_down_1`, `wind_down_2` or `local_animation` (Light animation). |
 
 <a id="sleeptracker_wave"></a>
 **`sleeptracker_wave`**: Starts a wave massage at the chosen speed and for the chosen time. Use Stop massage to end it early.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `frequency` | Frequency (Hz) |  |
-| `minutes` | Duration (minutes) |  |
+| `frequency` | Frequency (Hz) | One of `28` (28 Hz), `40` (40 Hz), `52` (52 Hz), `68` (68 Hz) or `88` (88 Hz). |
+| `minutes` | Duration (minutes) | A number from 5 to 105. |
 
 ### Sleeptracker Smart Bed
 
@@ -2020,7 +2067,7 @@ BED](beds/onlysnore.md#settings-and-alarms) for the one-time weekday handling.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `action` | Action |  |
+| `action` | Action | One of `select` (Select track), `preview` (Preview track), `query` (Read current settings) or `set_volume` (Volume). |
 | `track` | Track | Required for select and preview actions. |
 | `volume` | Volume | Required for the set_volume action. |
 
@@ -2031,11 +2078,11 @@ BED](beds/onlysnore.md#settings-and-alarms) for the one-time weekday handling.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation |  |
+| `operation` | Operation | One of `list` (Read alarms), `new` (New alarm), `edit` (Edit alarm), `toggle` (Turn on or off), `delete`, `link_name` or `sync_clock` (Set bed clock). |
 | `alarm_id` | Alarm id | Received ID for edit, toggle and delete. New alarms allocate their own ID. |
-| `hour` | Hour |  |
-| `minute` | Minute |  |
-| `mode` | Mode |  |
+| `hour` | Hour | A number from 0 to 23. |
+| `minute` | Minute | A number from 0 to 59. |
+| `mode` | Mode | One of `zero_gravity`, `lounge`, `tv`, `anti_snore` (Anti-snore), `memory_1` or `memory_2`. |
 | `weekdays` | Weekdays | Monday is 0 and Sunday is 6. Empty means once; select all seven for every day. |
 | `enabled` | Enabled | Turn the selected option on or off. |
 
@@ -2120,7 +2167,7 @@ Main controls also expose Ascent/TV, Zero Gravity, Anti-Snore, Lounge, two memor
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `motor` | Axis |  |
+| `motor` | Axis | One of `head` or `feet`. |
 
 ### Svane Remote held controls
 
@@ -2137,25 +2184,25 @@ Main controls also expose Ascent/TV, Zero Gravity, Anti-Snore, Lounge, two memor
 | Field | Name | Meaning |
 |-------|------|---------|
 | `enabled` | Enabled | Turn the selected option on or off. |
-| `axis` | Actuator |  |
-| `strength` | Strength |  |
-| `demo` | Run demonstration |  |
+| `axis` | Actuator | One of `head` or `elevation`. |
+| `strength` | Strength | One of `1` (Low), `2` (SoundWave medium), `3` (Legacy medium / SoundWave high) or `6` (Legacy high). |
+| `demo` | Run demonstration | On or off. |
 
 <a id="symphony_preset"></a>
 **`symphony_preset`**: Recall a preset, or explicitly save it where the product supports programming.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `preset` | Preset |  |
-| `save` | Save current position |  |
+| `preset` | Preset | One of `zero_g` (Zero gravity), `flat`, `memory_1`, `memory_2`, `reading`, `tv` or `anti_snore` (Anti-snore). |
+| `save` | Save current position | On or off. |
 
 <a id="symphony_set_light"></a>
 **`symphony_set_light`**: Set both light parameters explicitly, without replacing unknown companion state. ES700 and SS800 only.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `color` | Color code (1–7) |  |
-| `brightness` | Brightness (20–80) |  |
+| `color` | Color code (1–7) | A number from 1 to 7. |
+| `brightness` | Brightness (20–80) | A number from 20 to 80. |
 
 ### Symphony Sleep Sense
 

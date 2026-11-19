@@ -36,6 +36,8 @@ class ControllerButtonSpec:
     # A maintenance action (e.g. a refresh for a bed that never pushes state):
     # a diagnostic entity, disabled by default.
     diagnostic: bool = field(default=False, kw_only=True)
+    # Only movement, presets, memory, massage and light are on by default.
+    entity_registry_enabled_default: bool = field(default=True, kw_only=True)
     # Fills a translated name template, e.g. ``{action}``, with an app label.
     translation_placeholders: Mapping[str, str] | None = field(default=None, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
@@ -177,6 +179,9 @@ class MotorControlSpec:
     max_angle: float = 68
     scheduler_resource: str | None = None
     hold: ControllerMotorHoldSpec | None = field(default=None, kw_only=True)
+    # What this motor's STOP halts when it has no hold spec: "side" when its
+    # stop is the controller's side-wide STOP. A hold spec states its own scope.
+    stop_scope: Literal["motor", "side"] | None = field(default=None, kw_only=True)
     # Logical sides drive the same physical actuator on a single receiver.
     shared_across_sides: bool = field(default=False, kw_only=True)
 

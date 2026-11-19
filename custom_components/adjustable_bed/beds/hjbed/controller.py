@@ -13,12 +13,13 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN, CARD_PRESET_SAVE
+from ...card import CARD_HIDDEN
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import HJBED, RichmatProfile
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -94,6 +95,15 @@ def select_transport(
 
 def action_key(action: Action) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", action.key).lower()
+
+
+# Catalog groups that say what a control is; others are read from the label.
+_KINDS: Final[dict[str, Kind]] = {
+    "motor": Kind.MOTOR,
+    "music": Kind.EXTRA,
+    "reset": Kind.EXTRA,
+    "sofa_reset": Kind.PRESET,
+}
 
 
 def action_label(action: Action) -> str:
@@ -552,7 +562,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        buttons: list[ControllerButtonSpec] = []
+        buttons: list[ControllerButtonSpec | None] = []
         for detail in dict.fromkeys(
             (
                 *self.product.motor,
@@ -574,12 +584,11 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
                     continue
             key = action_key(action)
             buttons.append(
-                ControllerButtonSpec(
+                catalog_button(
                     "hjbed_" + key,
                     action_label(action),
                     partial(_action, detail=detail),
-                    translation_key="hjbed_action",
-                    translation_placeholders={"action": action_label(action)},
+                    kind=_KINDS.get(action.kind),
                     hold=ControllerHoldSpec("hjbed_" + key, 0, 0, "hjbed_release")
                     if action.sustain or action.release
                     else None,
@@ -587,14 +596,11 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
             )
             if action.save_code is not None and detail in self.product.preset:
                 buttons.append(
-                    ControllerButtonSpec(
+                    catalog_button(
                         "hjbed_save_" + key,
                         "Save " + action_label(action),
                         partial(_action, detail=detail, save=True),
-                        translation_key="hjbed_save",
-                        translation_placeholders={"action": "Save " + action_label(action)},
-                        requires_confirmation=True,
-                        card=CARD_PRESET_SAVE,
+                        kind=Kind.SAVE,
                     )
                 )
 
@@ -612,7 +618,7 @@ class HJBedController(ProfileExecution[RichmatProfile], BedController):
                 card=CARD_HIDDEN,
             )
         )
-        return tuple(buttons)
+        return unique_buttons(buttons)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:

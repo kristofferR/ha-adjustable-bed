@@ -54,29 +54,34 @@ def test_every_declared_question_has_its_labels():
 
     Any question but a yes or no one also explains itself in setup.
     """
+    from custom_components.adjustable_bed.config_flow import _form_key
+
     step = _STRINGS["config"]["step"]["profile_questions"]
     settings = _STRINGS["options"]["step"]["settings"]["data"]
     for key, profile in SETUP_PROFILES.items():
         for question in profile.questions:
             strings = step["sections"]["advanced"] if question.advanced else step
-            assert question.key in strings["data"], (key, question.key)
+            field = _form_key(question)
+            assert field in strings["data"], (key, field)
             if (
                 question.choices is not None
                 or question.context_choices is not None
                 or question.text
                 or question.validator is not None
             ):
-                assert question.key in strings["data_description"], (key, question.key)
-            assert question.key in settings, (key, question.key)
+                assert field in strings["data_description"], (key, field)
+            assert field in settings, (key, field)
 
 
 def test_every_generic_step_string_belongs_to_a_declared_question():
     """The generic step labels only declared questions, so none outlives its field."""
     step = _STRINGS["config"]["step"]["profile_questions"]
     advanced = step["sections"]["advanced"]
+    from custom_components.adjustable_bed.config_flow import _form_key
+
     questions = [question for profile in SETUP_PROFILES.values() for question in profile.questions]
-    assert set(step["data"]) == {q.key for q in questions if not q.advanced}
-    assert set(advanced["data"]) == {q.key for q in questions if q.advanced}
+    assert set(step["data"]) == {_form_key(q) for q in questions if not q.advanced}
+    assert set(advanced["data"]) == {_form_key(q) for q in questions if q.advanced}
     settings = _STRINGS["options"]["step"]["settings"]
     for strings in (step, advanced, settings):
         assert set(strings["data_description"]) <= set(strings["data"])

@@ -208,7 +208,7 @@ async def test_the_comfort_motion_review_continues_into_the_logicdata_question(
 ):
     """The review's LOGICDATA suggestion runs the guided change, never a combined form."""
     from custom_components.adjustable_bed.profile_review import async_refresh_profile_review_issue
-    from tests.test_profile_review import _entry, _issue, _open
+    from tests.test_profile_offer import _entry, _issue, _open
 
     entry = _entry(hass, const.BED_TYPE_COMFORT_MOTION, variant=None)
     manager = hass.config_entries.flow
@@ -246,7 +246,7 @@ async def test_the_comfort_motion_review_continues_into_the_logicdata_question(
 
 async def test_the_comfort_motion_review_stays_until_keep(hass, enable_custom_integrations):
     from custom_components.adjustable_bed.profile_review import async_refresh_profile_review_issue
-    from tests.test_profile_review import _entry, _issue, _open
+    from tests.test_profile_offer import _entry, _issue, _open
 
     entry = _entry(hass, const.BED_TYPE_COMFORT_MOTION, variant=None)
     before = dict(entry.data)

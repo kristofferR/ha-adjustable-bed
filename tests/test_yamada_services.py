@@ -71,8 +71,10 @@ async def test_stop_on_later_target_invalidates_captured_batch_admission(hass):
     execute = first.async_execute_controller_command.side_effect
 
     async def stop_later(command, **kwargs):
-        second.stop_epoch += 1
+        # STOP on the later target once the first target's write went out. A
+        # STOP before the first write is released writes no target at all.
         await execute(command, **kwargs)
+        second.stop_epoch += 1
 
     first.async_execute_controller_command.side_effect = stop_later
     with virtual_clock():

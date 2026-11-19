@@ -1,6 +1,6 @@
 # Okin N-frame
 
-**Status:** ⚠️ Mixed: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
+**Status:** Partly tested: Okimat, OKIN SmartBed CB24, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), david_nagy, corne, PT, MarcusW and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -1051,7 +1051,7 @@ builders.
 
 ### Okimat
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 #### Setup
 
@@ -1228,7 +1228,7 @@ FurniMove 2.2.0.
 
 ### DewertOkin
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1326,7 +1326,7 @@ The complete app listing was `disassembly/output/OKIN_MASTER_ANALYSIS.md`.
 
 **App:** [OKIN Smart Remote / FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) 2.2.0 (19), `com.okin.okinsmartcomfort`
 
-**Status:** ✅ Tested (reporter hardware in [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344))
+**Status:** Tested (reporter hardware in [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344))
 
 > [!WARNING]
 > This controls a moving staircase, not a bed. It exposes one cover entity named
@@ -1354,7 +1354,7 @@ advertisements.
 - The integration requests a Bluetooth bond, as it does for Okimat beds.
 
 **Device identification.** The reported device advertises as `OKIN-050226` with
-no service UUIDs, so it cannot be auto-detected safely from advertisements.
+no service UUIDs, so it cannot be detected safely from advertisements.
 Diagnostics can identify it after connecting from the Okin service and write
 characteristic plus CSS service `90311623-25fa-3346-12ef-3cfb7a2556ac` and CSS
 write characteristic `90311625-25fa-3346-12ef-3cfb7a2556ac`. Nordic DFU service
@@ -1392,7 +1392,7 @@ pulse count (see the [timing table](#hold-and-release-timing)). Cancellation
 always clears the held motor state.
 
 **Connection.** Home Assistant keeps this profile's BLE connection open,
-including when **Disconnect After Command** is enabled.
+whatever the **Bluetooth connection** setting.
 
 - In the reporter's [4.1.1 test](https://github.com/kristofferR/ha-adjustable-bed/issues/344#issuecomment-6036101893),
   the normal 40-second idle disconnect left the receiver advertising but unable
@@ -1406,7 +1406,7 @@ including when **Disconnect After Command** is enabled.
 - Keeping the link open occupies a Bluetooth connection slot and may prevent a
   companion app from connecting.
 - After an unexpected drop, Home Assistant schedules one automatic reconnect
-  using the connection profile's bounded retry budget. Recovery sends no
+  using the normal bounded retry budget. Recovery sends no
   movement command. If it fails, the next command or **Connect** action can try
   again; no background retry loop runs.
 - Manual Disconnect remains available and cancels both scheduled and in-progress
@@ -1425,7 +1425,7 @@ evidence.
 
 ### Customatic family
 
-**Status:** ❓ Needs testing (APK-verified, physical operation unverified)
+**Status:** Not yet tested
 
 The three apps share one frame, transport and timing; each is its own bed type.
 The Clarity and Remedy packages publish their apps as **Rize Clarity** and
@@ -1587,7 +1587,7 @@ write-property compatibility is deferred to users after release.
 
 **App:** [Customatic Clarity](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticclarity) 1.0.1, `com.okin.bedding.customaticclarity`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Customatic family](#customatic-family), except as below.
 
@@ -1599,7 +1599,7 @@ Flat sends the Flat word once.
 
 **App:** [Customatic Jerome's](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticjeromes) 1.0.1, `com.okin.bedding.customaticjeromes`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Customatic family](#customatic-family), except as below.
 
@@ -1616,7 +1616,7 @@ Behaves as the [Customatic family](#customatic-family), except as below.
 
 **App:** [Customatic Remedy](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticremedy) 1.0.1, `com.okin.bedding.customaticremedy`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 Behaves as the [Customatic family](#customatic-family), except as below.
 
@@ -1626,7 +1626,7 @@ Adds the lumbar motor. Flat sends the Flat word once.
 
 ### Leggett Okin family
 
-**Status:** ⚠️ Partially tested (Prodigy CE / CU170 hardware-tested in #368; the other app profiles are statically verified, hardware unverified)
+**Status:** Partly tested (Prodigy CE / CU170 tested in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368); the other app profiles need testing)
 
 #### Setup
 
@@ -1647,7 +1647,7 @@ Adds the lumbar motor. Flat sends the Flat word once.
   revision in diagnostics, and refuses to guess when service discovery is
   unavailable.
 - Configure each side before combining two separately addressed beds; shared
-  paired options keep each side's app profile. Unpair temporarily to change it.
+  paired options keep each side's app profile. Separate the combined bed temporarily to change it.
 - **Pairing** is required. Neither app calls `createBond`, but the write
   characteristic needs an encrypted link, so Android bonds reactively on the
   resulting ATT error 5. An authentication failure while connecting clears the
@@ -1712,7 +1712,7 @@ See the [timing tables](#hold-and-release-timing).
 |---|---|
 | Held keys (motors, flat, light, massage) | Stream while held; on release exactly four zero frames, then silence |
 | Recalls (memory slots, Snore) | A fixed burst with no terminator: the box drives the move to completion itself, and a release could cancel it |
-| Flat | No app-defined duration: the integration streams it for the Flat hold at the configured pulse delay, never faster than the profile's interval, then releases |
+| Flat | No app-defined duration: the integration streams it for the Flat hold at the bed's repeat interval, never faster than the profile's interval, then releases |
 | Control mode | The settings dialog's attempts, then one zero frame |
 
 - A recall interrupted by cancellation or a write failure ends with the zero
@@ -1776,7 +1776,7 @@ CE.
 
 **App:** [Prodigy 2L](https://play.google.com/store/apps/details?id=com.leggett.prodigy2L) 1.2 (15), `com.leggett.prodigy2L`
 
-**Status:** ❓ Needs testing (statically verified)
+**Status:** Not yet tested
 
 Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 
@@ -1800,7 +1800,7 @@ settings initialization write.
 
 **App:** [Prodigy 2](https://play.google.com/store/apps/details?id=com.leggett.prodigy2) 2.2.0 (44), `com.leggett.prodigy2`
 
-**Status:** ❓ Needs testing (statically verified)
+**Status:** Not yet tested
 
 Behaves as [Prodigy 2L](#prodigy-2l), except that the third motor is the pillow
 instead of lumbar.
@@ -1809,7 +1809,7 @@ instead of lumbar.
 
 **App:** [Prodigy CE / Prodigy 4](https://play.google.com/store/apps/details?id=com.leggett.prodigy4) 1.2.0 (18), `com.leggett.prodigy4`
 
-**Status:** ✅ Tested on two CU170 controllers in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368) (movement, Flat, presets and the light); recall of saved favorites is not yet confirmed
+**Status:** Tested on two CU170 controllers in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368) (movement, Flat, presets and the light); recall of saved favorites is not yet confirmed
 
 Behaves as [Prodigy 2L](#prodigy-2l), with head, feet, pillow and lumbar, except
 as below.
@@ -1884,7 +1884,7 @@ removed; `light.toggle` stays available, as does the physical remote.
 
 **App:** [U / Ultra Series](https://play.google.com/store/apps/details?id=com.leggett.useries) 2.1 (16), `com.leggett.useries`
 
-**Status:** ❓ Needs testing (statically verified)
+**Status:** Not yet tested
 
 Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 
@@ -1903,7 +1903,7 @@ Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 
 **App:** [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi), `com.okin.bedding.smartbedwifi`
 
-**Status:** ✅ Tested (Lucid L600 beds in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) and [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309); presets on the Amada bed in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) were not confirmed after the last fix)
+**Status:** Tested (Lucid L600 beds in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) and [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309); presets on the Amada bed in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) were not confirmed after the last fix)
 
 #### Setup
 
@@ -1948,7 +1948,7 @@ Frames are the pre-v5 controller's, frozen in `tests/okin_nframe_vectors.py`;
 
 **App:** [FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) (earlier analysis; accepted 2.2.0 audit), `com.okin.okinsmartcomfort`
 
-**Status:** ❓ Needs testing (untested: protocol from APK + live handset backend, no hardware confirmation yet)
+**Status:** Not yet tested
 
 All keycodes come live from the DewertOkin handset backend
 (`GET /mobile-data/button/{code}`); the snapshot lives in
@@ -2004,7 +2004,7 @@ connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
 
 - Bytes 2–5: 32-bit keycode, big-endian
 - No checksum
-- Identical to the [Okin CB24](../SUPPORTED_ACTUATORS.md) frame with bed
+- Identical to the [Okin CB24](#okin-smartbed-cb24) frame with bed
   selection byte `0x00`
 
 ###### Handshake
@@ -2062,8 +2062,8 @@ Values are 32-bit keycodes placed in the DOT frame.
 | Command | Value |
 |---------|-------|
 | Stop | `0x00000000` |
-| First motor Up / Down | `0x00000001` / `0x00000002` — Head on RF1058/RF6707, Back on RF34 |
-| Second motor Up / Down | `0x00000004` / `0x00000008` — Feet on RF1058, Legs on RF34, Back on RF6707 |
+| First motor Up / Down | `0x00000001` / `0x00000002`: Head on RF1058/RF6707, Back on RF34 |
+| Second motor Up / Down | `0x00000004` / `0x00000008`: Feet on RF1058, Legs on RF34, Back on RF6707 |
 | Flat | `0x08000000` |
 | Toggle Lights (UBL) | `0x00020000` |
 
@@ -2128,15 +2128,15 @@ one of the reasons these codes must not be driven with the Okimat profile.
 
 ###### Source Code References
 
-- `custom_components/adjustable_bed/beds/okin_dot.py` — controller
-- `disassembly/output/com.okin.okinsmartcomfort/jadx/sources/com/dewertokin/okinsmartcomfort/service/utils/HexValueConverter.java` — DOT framing
-- `disassembly/output/com.okin.okinsmartcomfort/jadx/sources/com/dewertokin/okinsmartcomfort/service/bleModule/bluetooth/BluetoothLeService.java` — DOT detection + `affirm` handshake
+- `custom_components/adjustable_bed/beds/okin_dot.py`: controller
+- `disassembly/output/com.okin.okinsmartcomfort/jadx/sources/com/dewertokin/okinsmartcomfort/service/utils/HexValueConverter.java`: DOT framing
+- `disassembly/output/com.okin.okinsmartcomfort/jadx/sources/com/dewertokin/okinsmartcomfort/service/bleModule/bluetooth/BluetoothLeService.java`: DOT detection + `affirm` handshake
 
 ### SIMMONS
 
 **App:** [SIMMONS](https://play.google.com/store/apps/details?id=com.okin.simmons) 1.12.9 (code 99), `com.okin.simmons`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -2206,7 +2206,7 @@ Name rule:
   neither prefix.
 - Use a fixed variant if Home Assistant sees a different name than the phone.
 - In a two-address pair the variant belongs to each physical bed, so the
-  combined options form refuses variant changes: unpair, set each bed, then
+  combined options form refuses variant changes: separate the beds, set each bed, then
   combine them again.
 
 Bed type and motors:
@@ -2410,7 +2410,7 @@ mode, wire type, weekday mask and whether a reply is awaited.
 
 ###### Validation requests
 
-For real users after a beta or release:
+For real users:
 
 - Whether each name prefix matches the bed's actual protocol
 - Which GATT roles the bed exposes
@@ -2429,7 +2429,7 @@ Based on SIMMONS 1.12.9 (`com.okin.simmons`).
 
 **App:** [OKIN SleepEase / DoubleSleep](https://play.google.com/store/apps/details?id=com.okin.doublesleep) 1.2.24 (code 109), `com.okin.doublesleep`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 Select **OKIN SleepEase (DoubleSleep / XiaoBao)** for the `com.okin.doublesleep`
 app. Support is based on the independently accepted 1.2.24 / code 109 artifact.
@@ -2869,7 +2869,7 @@ Based on OKIN SleepEase / DoubleSleep 1.2.24 (`com.okin.doublesleep`).
 
 **App:** [MFRM Sleepy's Elite](https://play.google.com/store/apps/details?id=com.okin.bedding.sleepy), `com.okin.bedding.sleepy`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -2902,7 +2902,7 @@ Frames are the pre-v5 translation table's, frozen in
 
 **App:** [AdjustableM5X4](https://play.google.com/store/apps/details?id=com.starcode.abm5_4) 1.0.1 (3), `com.starcode.abm5_4`
 
-**Status:** ❓ Needs testing (implemented profile covered by artifact vectors and focused tests; hardware operation is unverified)
+**Status:** Not yet tested
 
 This profile belongs to `com.starcode.abm5_4` 1.0.1 (3), delivered as five APK
 members. It preserves this app's commands and state rules separately from other
@@ -3073,16 +3073,16 @@ selector.
 | `saveZeroGravity` | `05028000100000` | `e6fe160010000000f5` | `a55a7f00002060` | `05028000100000` | `05028000100000` | `5a0103103023a5` |
 | `resetMemory` | `05028800000000` | `05028800000000` | `05028800000000` | `05028800000000` | `05028800000000` | `5a0103103037a5` |
 | `massageOnOff` | `05020008000000` | `05020008000000` | `05020008000000` | `05020008000000` | `05020008000000` | `5a010310305aa5` |
-| `headStrengthAdd` | — | — | `05020000080000` | `05020000080000` | `05020000080000` | `5a0103103060a5` |
-| `headStrengthReduce` | — | — | `05020080000000` | `05020080000000` | `05020080000000` | `5a0103103061a5` |
-| `footStrengthAdd` | — | — | `05020000040000` | `05020000040000` | `05020000040000` | `5a0103103062a5` |
-| `footStrengthReduce` | — | — | `05020100000000` | `05020100000000` | `05020100000000` | `5a0103103063a5` |
-| `waveAdd` | — | — | `05021000000000` | `05021000000000` | `05021000000000` | `5a0103103058a5` |
-| `waveReduce` | — | — | `05020400000000` | `05020400000000` | `05020400000000` | `5a0103103059a5` |
+| `headStrengthAdd` | none | none | `05020000080000` | `05020000080000` | `05020000080000` | `5a0103103060a5` |
+| `headStrengthReduce` | none | none | `05020080000000` | `05020080000000` | `05020080000000` | `5a0103103061a5` |
+| `footStrengthAdd` | none | none | `05020000040000` | `05020000040000` | `05020000040000` | `5a0103103062a5` |
+| `footStrengthReduce` | none | none | `05020100000000` | `05020100000000` | `05020100000000` | `5a0103103063a5` |
+| `waveAdd` | none | none | `05021000000000` | `05021000000000` | `05021000000000` | `5a0103103058a5` |
+| `waveReduce` | none | none | `05020400000000` | `05020400000000` | `05020400000000` | `5a0103103059a5` |
 | `underbedLighting` (toggle) | `08020002000000000000` | `e6fe16000002000003` | `a55a5f00002080` | `05020002000000` | `08020002000000000000` | `5a0103103071a5` |
 | `turnonUnderbedLighting` | `05020002000000` | `05020002000000` | `05020002000000` | `08020000000000000040` | `04e001010000` | `5a0103103073a5` |
 | `turnoffUnderbedLighting` | `05020002000000` | `05020002000000` | `05020002000000` | `08020000000000000080` | `04e001000000` | `5a0103103074a5` |
-| `change2White` (automatic white) | — | — | — | — | `05020002000400` | `5a0103103079a5` |
+| `change2White` (automatic white) | none | none | none | none | `05020002000400` | `5a0103103079a5` |
 | `keepConnect` (wake) | `5a0b00a5` | `5a0b00a5` | `5a0b00a5` | `5a0b00a5` | `5a0b00a5` | `5a0b00a5` |
 | `queryMassage` | `00b0` | `00b0` | `00b0` | `00b0` | `00b0` | `5ab000a5` |
 
@@ -3385,7 +3385,7 @@ Based on AdjustableM5X4 1.0.1 (`com.starcode.abm5_4`).
 
 **App:** [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22), `com.okin.eshine`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 One profile per product selector in the app: E2000 (`eshine_e2000`),
 E3000/E3100 (`eshine_e30003100`, one selector) and E5000 (`eshine_e5000`). They
@@ -3504,7 +3504,7 @@ The profile parses its own replies (`eshine_okin_protocol.py`):
 | `a5 0c 0e` | Weekday mask `d4`, action `d5`, hour `d6`, minute `d7`, enabled `d9`; enabled1 with all four preceding fields zero means off; other nonzero enabled means on |
 
 Timer indexes 1/2/3 correspond to the app's 10/20/30-minute indicators. Reported
-values remain unclamped, including wave -1, Head6, Foot86/87 or timer110. Disabled
+values remain unclamped, including wave -1, Head6, Foot86/87 or timer 110. Disabled
 massage zeroes its displayed wave/strengths while preserving raw observations.
 Alarm actions map 1/9/8 to Zero Gravity/Flat/Massage; unknown action is reported as
 unknown. Overflow hours/minutes normalize in the local reference date; raw fields
@@ -3548,7 +3548,7 @@ alarm frames are frozen in `tests/okin_nframe_vectors.py`.
 - All physical behavior remains unverified, including STOP scope and long-hold
   preset persistence. Do not infer either from the shared transport.
 - No WiFi/cloud/account/OTA management is included.
-- Real users may validate physical behavior after a beta or release.
+- Real users may validate physical behavior.
 
 ###### eShine analysis provenance
 
@@ -3558,7 +3558,7 @@ Based on eShine 1.1.8 (`com.okin.eshine`).
 
 **Apps:** the Rize, MFirm 900, Support and Nectar Motion apps in [Apps](#apps)
 
-**Status:** ⚠️ Partially tested (the MFirm 900 - O profile works on a CB3633A in [#501](https://github.com/kristofferR/ha-adjustable-bed/issues/501); Okin CST movement worked on an MFirm 900-O, a Jordan's Serenity bed and a Nectar Premium in [#365](https://github.com/kristofferR/ha-adjustable-bed/issues/365), [#573](https://github.com/kristofferR/ha-adjustable-bed/issues/573) and [#605](https://github.com/kristofferR/ha-adjustable-bed/issues/605); the other app profiles need testing)
+**Status:** Partly tested (the MFirm 900 - O profile works on a CB3633A in [#501](https://github.com/kristofferR/ha-adjustable-bed/issues/501); Okin CST movement worked on an MFirm 900-O, a Jordan's Serenity bed and a Nectar Premium in [#365](https://github.com/kristofferR/ha-adjustable-bed/issues/365), [#573](https://github.com/kristofferR/ha-adjustable-bed/issues/573) and [#605](https://github.com/kristofferR/ha-adjustable-bed/issues/605); the other app profiles need testing)
 
 **Android:** all ten analyzed packages are Android apps, listed under
 [Analysis provenance](#cst-analysis-provenance).
@@ -3710,7 +3710,7 @@ keeps the other CST application profiles unchanged.
   its runtime default; the integration keeps its write-with-response policy
   (see [Write Mode](#write-mode-3)).
 
-Hardware checks remain deferred for real users after a beta or release:
+Hardware checks remain deferred:
 effective write behavior, physical axis and preset meaning, notification byte
 meaning, and receiver repeat/STOP semantics. They are not implementation work.
 
@@ -3832,7 +3832,7 @@ fields above.
 - Nectar Move uses the same 100 ms held-command refresh and delayed STOP pair,
   but its app also repeats every other reachable action only while held.
 - Home Assistant movement commands are finite, so each one refreshes the axis
-  at the app's 100 ms interval for the configured **Motor pulse count**
+  at the app's 100 ms interval for the configured **Movement per tap**
   (default 10, about one second), then sends the STOP pair.
 - The card's hold loop re-issues movements while a control stays pressed, and a
   STOP or replacement command ends the refresh early with the same release.
@@ -3880,7 +3880,7 @@ Nectar Motion apps.
 
 **App:** [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2), `com.okin.bedding.serenity`
 
-**Status:** ❓ Needs testing (APK-verified, physical operation unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -3975,8 +3975,8 @@ Touch labels and voice labels conflict for the extra selectors:
 - Remote tilt controls send selector 5, while its presenter calls that lumbar.
 - Voice lumbar selects 4 and headtilt selects 5.
 
-HA therefore exposes literal **Remote Selector 4/5 Up/Down** buttons rather than
-assigning unverified physical lumbar/headtilt axes. Only the proven head/feet
+HA therefore exposes **Control 4 up/down** and **Control 5 up/down** buttons
+rather than guessing whether they move the lumbar or the head tilt. Only the proven head/feet
 controls create covers. All covers share the global scheduler resource because
 every release zeros the whole command.
 
@@ -4158,7 +4158,7 @@ Based on Serenity 1.0.1 (`com.okin.bedding.serenity`).
 
 **App:** [Jordan's Tranquil](https://play.google.com/store/apps/details?id=com.okin.bedding.tranquil) 1.0.2 (code 3), `com.okin.bedding.tranquil`
 
-**Status:** ❓ Needs testing (APK-verified, physical operation unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4354,7 +4354,7 @@ Based on Jordan's Tranquil 1.0.2 (`com.okin.bedding.tranquil`).
 
 **App:** [Customatic Z-Series](https://play.google.com/store/apps/details?id=com.okin.bedding.glory) 1.0.4 (code 5), `com.okin.bedding.glory`
 
-**Status:** ❓ Needs testing (APK-verified, physical operation unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4445,8 +4445,8 @@ Values occupy the primary field; the secondary field is always zero. The
 | Release/Stop | 0 | yes | yes |
 
 The Z-280 extra control shows neck artwork, while the presenter calls it lumbar
-and this app's builder operation 5 emits `0x10`/`0x20`. HA exposes literal
-**Remote Selector 5 Up/Down** buttons; the physical actuator is unverified.
+and this app's builder operation 5 emits `0x10`/`0x20`. HA exposes
+**Control 5 up** and **Control 5 down** buttons; which part they move still needs testing.
 
 ###### Presets
 
@@ -4575,7 +4575,7 @@ Based on Customatic Z-Series 1.0.4 (`com.okin.bedding.glory`).
 
 **App:** Adjustable bed, `com.okin.bedding.adjustbed`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 **Ref:** Reverse-engineered from the `com.okin.bedding.adjustbed` APK
 
@@ -4725,7 +4725,7 @@ a held frame repeated about every 300 ms followed by STOP.
 
 **App:** [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33), `com.okin.bedding.adjustbed`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4746,7 +4746,7 @@ P1/P2 use Nordic UART without response; P3 uses the custom OKIN service with res
 | Light | Toggle |
 | Positions / numbered memory / side packets | None established by this app |
 
-Covers and the preset, save, wave, intensity and light buttons use the touch route. **App speech** buttons expose the direct BLE actions reached by the speech dispatcher without speech recognition. On P2, the lumbar cover uses that dispatcher too: ordinary lumbar declarations are unreachable. No explicit light-on/off, brightness, color, numbered memory or alarm controls are inferred from unused declarations.
+Covers and the preset, save, wave, intensity and light buttons use the touch route. The **Voice: …** buttons (diagnostic, disabled by default) send the commands the app's voice control sends, without speech recognition. On P2, the lumbar cover uses that dispatcher too: ordinary lumbar declarations are unreachable. No explicit light-on/off, brightness, color, numbered memory or alarm controls are inferred from unused declarations.
 
 Long tables use the N-frame encoder. The STAR-manufacturer table uses the [Okin 5A encoder](okin-5a.md), with no checksum despite the asset flag. The generated table contains the reachable ordinary and speech packets and raw query:
 
@@ -4866,14 +4866,14 @@ Standard movement, STOP and held-control actions work through the command queue.
 
 Based on `com.okin.bedding.adjustbed` 1.2.1 (33). Frozen literals cover all reachable command rows in `tests/fixtures/adjustable_bed_vectors.json`.
 
-Hardware effects, watchdogs, retail compatibility, real replies and preset storage need beta-user validation. Home Assistant uses its own Bluetooth connection policy; the app SDK's MTU, timeout and Android calls are not firmware requirements. Speech/audio/help, Wi-Fi/cloud/accounts and firmware updates are outside the integration. The legacy Okin 64-Bit profile remains separate, with its historical additional commands, for existing entries.
+Hardware effects, watchdogs, retail compatibility, real replies and preset storage need testing by owners. Home Assistant uses its own Bluetooth connection policy; the app SDK's MTU, timeout and Android calls are not firmware requirements. Speech/audio/help, Wi-Fi/cloud/accounts and firmware updates are outside the integration. The legacy Okin 64-Bit profile remains separate, with its historical additional commands, for existing entries.
 
 
 ### Adjustable bed (Lumbar)
 
 **App:** [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33), `com.okin.bedding.adjustablelumbar`
 
-**Status:** ⚠️ Partially tested (a BOX25 Star control box ran this profile's controls, memory included, before 4.1.0 in [#670](https://github.com/kristofferR/ha-adjustable-bed/issues/670); the current profile is static-verified only)
+**Status:** Partly tested (a BOX25 Star control box ran this profile's controls, memory included, before 4.1.0 in [#670](https://github.com/kristofferR/ha-adjustable-bed/issues/670); the current profile needs testing)
 
 Select **Adjustable bed (Lumbar) app** manually when the bed uses the Android
 app `com.okin.bedding.adjustablelumbar` (shown as "Adjustable bed(Lumbar)").
@@ -4944,7 +4944,7 @@ Existing entries keep their bed type until you change it.
   stores the raw name at setup and on later real (non-address) observations; an
   address-like live name falls back to it.
 - Use a fixed variant if Home Assistant sees a different name than the phone.
-- In a two-address pair the variant belongs to each physical bed: unpair, set
+- In a two-address pair the variant belongs to each physical bed: separate the beds, set
   each bed, then combine them again.
 
 ###### Home Assistant setup
@@ -5060,12 +5060,12 @@ Based on Adjustable bed (Lumbar) 1.2.2.
 
 **App:** [Rize Home](https://play.google.com/store/apps/details?id=com.okin.rize) 1.1.2 (12), `com.okin.rize`
 
-**Status:** ❓ Needs testing. Both layouts are source-proven, hardware unverified.
+**Status:** Not yet tested
 
 #### Setup
 
 Choose **Rize Home app (Remedy III / Contempo IV)**, then select the product.
-Configure can change this selection later. A shared `smartbed` name is only an
+**Reconfigure** can change this selection later. A shared `smartbed` name is only an
 app candidate, never an automatic product or protocol identification. Rize Beds
 (Kaidi), the older Rize CST apps and Resident Adjustable Base are separate routes.
 
@@ -5203,9 +5203,8 @@ The original 34 literals, 39 semantic rows and eight parser cases are replayed b
 `tests/test_rize_home.py`. The existing codec's prefixed-record/request encoders
 reproduce all literals, including the fixed prefix on different record lengths.
 
-External beta/release users can validate discovery/GATT, press/release and voice
-STOP, programming/reset effects and real notification ranges. No maintainer
-hardware acquisition or testing is required. Phone UI, audio, local locks/themes,
+External owners can validate discovery/GATT, press/release and voice
+STOP, programming/reset effects and real notification ranges. Phone UI, audio, local locks/themes,
 manual/PDF infrastructure and generic network/account/OTA SDK surface are outside
 the direct BLE bed product boundary.
 
@@ -5214,7 +5213,7 @@ the direct BLE bed product boundary.
 
 **App:** [OKIN Motion Bed](https://apkpure.com/okin-motion-bed/com.okin.motionbed) 1.0 (2), `com.okin.motionbed`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5236,8 +5235,9 @@ no measured positions, ranges or light-state entities.
 Flat, Zero-G and Memory A/B recall and programming use separate explicit actions.
 Repeated recalls always recall. **Stop preset** sends the distinct preset-stop
 frame that Android sends on a second same-preset tap. Global Stop sends manual
-STOP and preset STOP, so it covers either class of movement. **Bed light parameter
-0/1** are separate card buttons; physical on/off polarity is unverified.
+STOP and preset STOP, so it covers either class of movement. The **Bed light**
+switch sends the app's light parameter 1 for on and 0 for off; which one the
+bed treats as on still needs testing.
 
 Android shares a last-button/count toggle between presets, lights and phone
 flashlight. An initial memory long-save retains count -1, so the next same-slot
@@ -5307,7 +5307,7 @@ and preset-stop buttons are also callable through `button.press`.
 #### Evidence
 
 Based on `com.okin.motionbed` 1.0 (2). All reachable command literals reproduce through the existing gateway
-encoder. Hardware remains unverified. External beta/release users can validate
+encoder. Hardware remains unverified. External owners can validate
 mechanical mappings, light polarity, memory/preset behavior, release latency,
 GATT properties and reconnect ordering. Notification interpretation needs future
 physical captures; no static proven bed control is waiting on hardware.
@@ -5316,7 +5316,7 @@ physical captures; no static proven bed control is waiting on hardware.
 
 **App:** [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38), `com.okin.simmonskorea`
 
-**Status:** ❓ Hardware UNVERIFIED. External beta/release reports are welcome.
+**Status:** Not yet tested
 
 #### Setup
 
@@ -5428,15 +5428,24 @@ Based on `com.okin.simmonskorea` 1.1.14 (38).
 The 20 raw masks, original 28 vectors and 36 corrected alarm/identity cases
 are preserved in the N32 test fixture. The former `v-alarm-delete-3` is a
 retained-fields disable, distinct from cleared UI deletion. Physical behavior
-and firmware save/stop effects await external beta/release validation.
+and firmware save/stop effects await testing by owners.
 
 ### Resident Adjustable Base
 
 **App:** [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1), `com.okin.resident.release`
 
-**Status:** ❓ Needs testing. App behavior is statically verified; hardware is unverified.
+**Status:** Not yet tested
 
 #### Setup
+
+1. Choose **Resident Adjustable Base app**. There is no model or remote question.
+2. Put the base in [pairing mode](../TROUBLESHOOTING.md#putting-the-bed-in-pairing-mode)
+   so Home Assistant can bond with it.
+
+The layout is fixed: two motors and massage, with **Read bed position** off.
+**Movement per tap** still sets how far one tap moves. For two receivers, add
+each one and combine them; each keeps its own app. Left and Right controls on
+one receiver are not supported.
 
 Choose **Resident Adjustable Base app (com.okin.resident.release)**. Shared
 Okin service and name matches offer it as a candidate alongside existing
@@ -5545,12 +5554,12 @@ This profile's own startup and controls have not yet run on that hardware.
 
 **App:** [Ultramatic Smart Bed](https://play.google.com/store/apps/details?id=com.okin.ultramaticSmartBed) 1.1.2 (5), `com.okin.ultramaticSmartBed`
 
-**Status:** ❓ Needs testing. Static app behavior only; physical hardware unverified.
+**Status:** Not yet tested
 
 #### Setup
 
 Select **Ultramatic Smart Bed app** during setup or Reconfigure.
-This is independent of the legacy Ultramatic ORE controls. The app admits a
+This is independent of the legacy Ultramatic ORE controls. The app accepts a
 platform name beginning with `smartbed`, ignoring case, and the first
 manufacturer-data value beginning with `44 4F 54 01 05`. It checks no company
 identifier or advertised service. HA offers an app choice for this shared name;
@@ -5567,7 +5576,7 @@ app's five control pairs or assert a physical actuator count.
 
 Head, Foot and Head tilt use the app labels. The covers **Posture** and
 **Lumbar** also use the app's visible labels; the app's internal names for
-them are LUMBAR and HIPS, and their physical mapping is unverified. There is no
+them are LUMBAR and HIPS, and their physical mapping still needs testing. There is no
 angle feedback, seek, or calibration.
 
 Flat, ZG, ANTI, M1 and M2 are held recalls. Confirmed **Save zero gravity
@@ -5650,7 +5659,7 @@ without catching up missed refreshes. Release drains on cancellation and uses
 the captured connection. STOP always addresses AB, including after A or B
 movement. Concurrent arbitrary controls are unsupported; renewable Both holds
 on a sequential pair are rejected before motion. Finite and single-side
-operations use the normal coordinator admission.
+operations use the normal coordinator acceptance.
 
 #### Notifications
 
@@ -5694,8 +5703,8 @@ HA is disconnected.
 #### Evidence
 
 Based on Ultramatic Smart Bed 1.1.2 (`com.okin.ultramaticSmartBed`). The app's
-literals and receive cases reproduce through the shared N-frame codec, including
-the corrected unequal wake-type/side alarm cases. Hardware is unverified.
+frames and receive cases reproduce through the shared N-frame codec, including
+the corrected unequal wake-type/side alarm cases. Hardware still needs testing.
 
 ## Notes
 
@@ -5724,9 +5733,8 @@ Other Okin formats, which share roots but not frames: [Nectar](okin-5a.md#nectar
 (7 bytes), [Mattress Firm 900](okin-5a.md#mattress-firm-900--iflex) (7 bytes over Nordic UART),
 [Okin CST](#okin-cst) (14 bytes) and [Okin 64-Bit](#okin-64-bit) (10-byte
 `08 02` frames; select it for a `NORA_CON` / `NORACON` controller or the
-`com.okin.bedding.adjustbed` app). See
-[Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family) for
-detection priority and troubleshooting.
+`com.okin.bedding.adjustbed` app). The
+[brand lookup](../SUPPORTED_ACTUATORS.md) lists which brands use which family.
 
 ### Analysis provenance
 
@@ -5741,9 +5749,13 @@ detection priority and troubleshooting.
 
 **App:** Rize Remedy II 1.0.1 (2), `com.okin.bedding.rizeii`
 
-**Status:** ❓ Needs testing (APK-verified, hardware unverified)
+**Status:** Not yet tested
 
 #### Setup
+
+Choose **Rize Remedy II app**. There are no further questions: the layout has
+head, foot and lumbar motors, massage and lights. **Movement per tap** can be set
+from 1 to 600. The three memory buttons save Zero Gravity, Incline and Leisure.
 
 ##### Known models
 
@@ -5878,16 +5890,23 @@ safe unload cleanup.
 Based on `com.okin.bedding.rizeii` 1.0.1 (2).
 The profile reproduces all 24 live command literals. GATT/write-mode behavior,
 physical axis mapping, release effects, save acknowledgments and memory
-persistence need external user validation after a beta or release.
+persistence need testing by owners.
 
 ### Comfort Enhancement 3
 
 **App:** [Comfort Enhancement 3](https://play.google.com/store/apps/details?id=com.okin.apex)
 1.4.0 (5), `com.okin.apex`. Acquisition name: Comfort Plus3.
 
-**Status:** ❓ Needs testing. Direct BLE behavior is statically verified; hardware is unverified.
+**Status:** Not yet tested
 
 #### Setup
+
+1. Choose **Comfort Enhancement 3 / Comfort Plus3 app**.
+2. Choose the remote from the list, or choose to enter a code and type the exact
+   remote code. The bed's name does not tell the remotes apart.
+
+The remote decides every control. On a bed with two receivers, each side keeps
+its own remote.
 
 Choose **Comfort Enhancement 3 / Comfort Plus3** under Okin, then choose one of
 its remote indices or enter its exact printed code. The manual-code card is a
@@ -5994,7 +6013,7 @@ countdown without adding a massage-stop command.
 
 #### Notifications
 
-The controller requires write1525 and notify1625 under service1523. Optional
+The controller requires write 1525 and notify 1625 under service 1523. Optional
 standard Service Changed subscriptions are enabled and awaited, then bed
 notifications get one retry. Optional model and firmware reads cannot change
 capabilities; the model's HE150 comparison has no app effect. There are no
@@ -6013,7 +6032,7 @@ There is no proven read/list operation or physical slot maximum.
 
 The schedule encoder concatenates `0B0D`, decimal slot/step text padded to two
 characters, eight hexadecimal delay characters, eight command characters and
-two duration characters, then parses hex pairs. Thus index10 is encoded as
+two duration characters, then parses hex pairs. Thus index 10 is encoded as
 hexadecimal `10`, not a binary integer byte. HA accepts only the nominal
 13-byte formatter domain (slot/step 0..99, unsigned fields). This is a wire-width
 check, not a firmware capacity claim. Source overflows and odd-width failures
@@ -6030,6 +6049,6 @@ live session. Phone reminders, music and notifications are separate.
 #### Evidence
 
 All original 29 literal and eight dynamic vectors are reproduced by the Okin
-N-frame codec, including its schedule encoder. External beta/release users may
-validate firmware acceptance; maintainer hardware acquisition is not required.
+N-frame codec, including its schedule encoder. External owners may
+validate firmware acceptance.
 

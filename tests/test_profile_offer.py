@@ -1,0 +1,565 @@
+"""Entries from before the app profiles are asked, once, whether one fits."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+import voluptuous as vol
+from homeassistant.config_entries import ConfigEntryState
+from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import InvalidData
+from homeassistant.helpers import issue_registry as ir
+from pytest_homeassistant.common import MockConfigEntry
+
+from custom_components.adjustable_bed import async_migrate_entry
+from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+from custom_components.adjustable_bed.const import (
+    BED_TYPE_COOLBASE,
+    BED_TYPE_FURNIMOVE,
+    BED_TYPE_KEESON,
+    BED_TYPE_LIMOSS,
+    BED_TYPE_LINAK,
+    BED_TYPE_MAJESTICHOME,
+    BED_TYPE_OCTO,
+    BED_TYPE_OKIN_ORE,
+    BED_TYPE_RICHMAT,
+    BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SOLACE,
+    CONF_BED_TYPE,
+    CONF_MOTOR_COUNT,
+    CONF_PAIR_CHILDREN,
+    CONF_PAIR_ID,
+    CONF_PAIR_MODE,
+    CONF_PROFILE_REVIEW_KEPT,
+    CONF_PROFILE_REVIEW_PENDING,
+    CONF_PROTOCOL_VARIANT,
+    CONF_SIDE,
+    DOMAIN,
+    KEESON_BASE_SERVICE_UUID,
+    KEESON_VARIANT_INNOVA,
+    KEESON_VARIANT_KSBT,
+    NORDIC_UART_SERVICE_UUID,
+    PAIR_MODE_SEPARATE_ADDRESS,
+    PAIR_MODE_SINGLE_ADDRESS,
+    SIDE_LEFT,
+    SIDE_RIGHT,
+    SOLACE_SERVICE_UUID,
+)
+from custom_components.adjustable_bed.detection import get_bed_type_options, resolve_bed_type_choice
+from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from custom_components.adjustable_bed.profile_review import (
+    _ROUTE_APPS,
+    ProfileReviewRepairFlow,
+    async_refresh_profile_review_issue,
+    profile_review_mark,
+)
+from custom_components.adjustable_bed.repairs import async_create_fix_flow
+
+ADDRESS = "AA:BB:CC:DD:EE:30"
+_HISTORY = "custom_components.adjustable_bed.profile_review.bluetooth.async_last_service_info"
+
+
+def _entry(hass: HomeAssistant, bed_type: str, *, variant: str | None = "auto", **data: Any) -> MockConfigEntry:
+    entry_data = {
+        CONF_ADDRESS: ADDRESS,
+        CONF_NAME: "Bedroom",
+        CONF_BED_TYPE: bed_type,
+        CONF_MOTOR_COUNT: 2,
+        **data,
+    }
+    if variant is not None:
+        entry_data[CONF_PROTOCOL_VARIANT] = variant
+    entry_data[CONF_PROFILE_REVIEW_PENDING] = profile_review_mark(entry_data)
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="Bedroom", unique_id=ADDRESS, data=entry_data, version=4, minor_version=3
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+def _advertisement(name: str, *service_uuids: str) -> MagicMock:
+    info = MagicMock()
+    info.name = name
+    info.address = ADDRESS
+    info.manufacturer_data = {}
+    info.service_data = {}
+    info.service_uuids = list(service_uuids)
+    return info
+
+
+def _issue(hass: HomeAssistant, entry: MockConfigEntry) -> ir.IssueEntry | None:
+    return ir.async_get(hass).async_get_issue(DOMAIN, f"app_profile_review_{entry.entry_id}")
+
+
+async def _open(hass: HomeAssistant, entry: MockConfigEntry) -> tuple[ProfileReviewRepairFlow, Any]:
+    issue = _issue(hass, entry)
+    assert issue is not None
+    flow = await async_create_fix_flow(hass, issue.issue_id, issue.data)
+    assert isinstance(flow, ProfileReviewRepairFlow)
+    flow.hass = hass
+    # Home Assistant opens the flow with the issue ID, not a submitted form.
+    return flow, await flow.async_step_init({"issue_id": issue.issue_id})
+
+
+def _offered(form: dict[str, Any]) -> list[str]:
+    return [option["value"] for option in form["data_schema"].schema["choice"].config["options"]]
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "variant", "mark"),
+    [
+        (BED_TYPE_KEESON, "auto", "keeson:auto"),
+        (BED_TYPE_RICHMAT, "auto", "richmat:auto"),
+        (BED_TYPE_SOLACE, None, "solace:auto"),  # Motion Bed names need the advertisement
+        (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA, None),  # already an app profile
+        (BED_TYPE_LINAK, None, None),
+    ],
+)
+async def test_migration_marks_only_routes_that_gained_app_profiles(
+    hass: HomeAssistant, bed_type: str, variant: str | None, mark: str | None
+) -> None:
+    data = {CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: bed_type}
+    if variant is not None:
+        data[CONF_PROTOCOL_VARIANT] = variant
+    entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=2)
+    entry.add_to_hass(hass)
+
+    await async_migrate_entry(hass, entry)
+
+    assert (entry.version, entry.minor_version) == (5, 6)
+    assert entry.data.get(CONF_PROFILE_REVIEW_PENDING) == mark
+
+
+async def test_entries_created_now_are_never_marked(hass: HomeAssistant) -> None:
+    """Entries created at 4.3 or later are never marked."""
+    assert (AdjustableBedConfigFlow.VERSION, AdjustableBedConfigFlow.MINOR_VERSION) == (5, 6)
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ADDRESS: ADDRESS, CONF_BED_TYPE: BED_TYPE_LINAK, CONF_PROTOCOL_VARIANT: "auto"},
+        version=4,
+        minor_version=3,
+    )
+    entry.add_to_hass(hass)
+
+    await async_migrate_entry(hass, entry)
+    async_refresh_profile_review_issue(hass, entry)
+
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+    assert _issue(hass, entry) is None
+
+
+async def test_offline_entry_gets_the_review_before_connecting(hass: HomeAssistant) -> None:
+    entry = _entry(hass, BED_TYPE_LIMOSS, variant=None)
+    from custom_components.adjustable_bed import async_setup_entry
+
+    with (
+        patch("custom_components.adjustable_bed.async_register_services", AsyncMock()),
+        patch(
+            "custom_components.adjustable_bed.AdjustableBedCoordinator.async_create",
+            side_effect=RuntimeError("offline"),
+        ),
+        pytest.raises(RuntimeError, match="offline"),
+    ):
+        await async_setup_entry(hass, entry)
+
+    issue = _issue(hass, entry)
+    assert issue is not None and issue.is_fixable
+    assert issue.translation_key == "app_profile_review"
+    assert issue.translation_placeholders["apps"] == (
+        "- FSM Relax app\n- Limoss Remote app"
+    )
+
+
+async def test_keep_dismisses_the_review_for_good(hass: HomeAssistant) -> None:
+    entry = _entry(hass, BED_TYPE_OKIN_ORE, variant=None)
+    async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    apps = ["keeson:dynasty_bases", "keeson:innova"]
+    assert sorted(_offered(form)[:-1]) == apps and _offered(form)[-1] == "keep"
+    mark = entry.data[CONF_PROFILE_REVIEW_PENDING]
+    before = {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_PENDING}
+
+    result = await flow.async_step_init({"choice": "keep"})
+
+    assert result["type"] == "create_entry"
+    kept = entry.data[CONF_PROFILE_REVIEW_KEPT]
+    assert kept == {"route": mark, "apps": apps}
+    assert {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_KEPT} == before
+    async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+
+
+async def test_keep_asks_again_only_when_a_new_app_is_offered(hass: HomeAssistant) -> None:
+    # Richmat's apps do not depend on an advertisement, so the review is complete.
+    entry = _entry(hass, BED_TYPE_RICHMAT)
+    async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    shown = [choice for choice in _offered(form) if choice != "keep"]
+    await flow.async_step_init({"choice": "keep"})
+    assert entry.data[CONF_PROFILE_REVIEW_KEPT]["apps"] == sorted(shown)
+    async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None
+
+    # A later release adds an app the user was not shown when keeping.
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            **entry.data,
+            CONF_PROFILE_REVIEW_KEPT: {"route": "richmat:auto", "apps": sorted(shown)[1:]},
+        },
+    )
+    async_refresh_profile_review_issue(hass, entry)
+
+    assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "richmat:auto"
+    assert _issue(hass, entry) is not None
+    flow, _form = await _open(hass, entry)
+    await flow.async_step_init({"choice": "keep"})
+    async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None
+
+
+async def test_keep_for_another_route_never_asks(hass: HomeAssistant) -> None:
+    entry = _entry(hass, BED_TYPE_KEESON, variant=KEESON_VARIANT_KSBT)
+    hass.config_entries.async_update_entry(
+        entry,
+        data={
+            key: value
+            for key, value in {
+                **entry.data,
+                CONF_PROFILE_REVIEW_KEPT: {"route": "keeson:base", "apps": []},
+            }.items()
+            if key != CONF_PROFILE_REVIEW_PENDING
+        },
+    )
+
+    async_refresh_profile_review_issue(hass, entry)
+
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+    assert _issue(hass, entry) is None
+
+
+@pytest.mark.parametrize("variant", [None, "auto"])
+async def test_richmat_review_offers_majestic_without_inference(
+    hass: HomeAssistant, variant: str | None
+) -> None:
+    entry = _entry(hass, BED_TYPE_RICHMAT, variant=variant)
+    before = dict(entry.data)
+    with patch(_HISTORY, return_value=_advertisement("Unknown bed", NORDIC_UART_SERVICE_UUID)):
+        async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    assert BED_TYPE_MAJESTICHOME in _offered(form)
+    assert _offered(form)[-1] == "keep"
+    assert dict(entry.data) == before
+
+    await flow.async_step_init({"choice": "keep"})
+
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
+    assert entry.data.get(CONF_PROTOCOL_VARIANT) == variant
+    assert entry.data[CONF_ADDRESS] == ADDRESS
+
+
+async def test_majestic_review_requires_explicit_product_before_applying(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    entry = _entry(hass, BED_TYPE_RICHMAT)
+    entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
+    async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    assert BED_TYPE_MAJESTICHOME in _offered(form)
+    handoff = await flow.async_step_init({"choice": BED_TYPE_MAJESTICHOME})
+    assert handoff["reason"] == "migration_setup_started"
+    kind, flow_id = handoff["next_flow"]
+    assert kind == "config_flow"
+    manager = hass.config_entries.flow
+    result = await manager.async_configure(flow_id)
+    assert result["step_id"] == "reconfigure_bed_type"
+    chose_product = False
+    with patch.object(hass.config_entries, "async_schedule_reload") as reload:
+        while result["type"] == "form" and result["step_id"] != "migration_confirm":
+            schema = result["data_schema"]
+            assert schema is not None
+            answer = {}
+            if result["step_id"] == "profile_questions":
+                assert CONF_PROTOCOL_VARIANT in schema.schema
+                with pytest.raises(vol.Invalid):
+                    schema({})
+                with pytest.raises(InvalidData):
+                    await manager.async_configure(flow_id, {})
+                answer[CONF_PROTOCOL_VARIANT] = "JLRM"
+                chose_product = True
+            result = await manager.async_configure(flow_id, schema(answer))
+            assert not result.get("errors")
+        assert chose_product
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_RICHMAT
+        assert entry.data[CONF_PROTOCOL_VARIANT] == "auto"
+        result = await manager.async_configure(flow_id, {"action": "apply"})
+    assert result["reason"] == "migration_applied"
+    reload.assert_called_once_with(entry.entry_id)
+    assert (entry.data[CONF_BED_TYPE], entry.data[CONF_PROTOCOL_VARIANT]) == (
+        BED_TYPE_MAJESTICHOME, "JLRM"
+    )
+    assert entry.data[CONF_ADDRESS] == ADDRESS
+
+
+async def test_richmat_pair_majestic_offer_preserves_both_side_settings(
+    hass: HomeAssistant,
+) -> None:
+    entry = _paired(hass, PAIR_MODE_SEPARATE_ADDRESS)
+    data = {
+        **entry.data,
+        CONF_BED_TYPE: BED_TYPE_RICHMAT,
+        CONF_PAIR_CHILDREN: [
+            {**child, CONF_BED_TYPE: BED_TYPE_RICHMAT, CONF_MOTOR_COUNT: 3 + index}
+            for index, child in enumerate(entry.data[CONF_PAIR_CHILDREN])
+        ],
+    }
+    data[CONF_PROFILE_REVIEW_PENDING] = profile_review_mark(data)
+    hass.config_entries.async_update_entry(entry, data=data)
+    before = dict(entry.data)
+    async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    assert form["step_id"] == "unpair"
+    assert "- Majestic Home app" in form["description_placeholders"]["apps"]
+    result = await flow.async_step_unpair({"choice": "split"})
+    assert result["reason"] == "profile_review_open"
+    assert dict(entry.data) == before
+
+
+async def test_switch_applies_the_app_through_reconfigure(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """The chosen app opens Reconfigure preselected; its review saves the change."""
+    entry = _entry(hass, BED_TYPE_OKIN_ORE, variant=None)
+    entry_id = entry.entry_id
+    entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
+    async_refresh_profile_review_issue(hass, entry)
+    flow, form = await _open(hass, entry)
+    choice = f"{BED_TYPE_KEESON}:{KEESON_VARIANT_INNOVA}"
+    assert choice in _offered(form)
+
+    handoff = await flow.async_step_init({"choice": choice})
+
+    assert handoff["reason"] == "migration_setup_started"
+    kind, flow_id = handoff["next_flow"]
+    assert kind == "config_flow"
+    manager = hass.config_entries.flow
+    result = await manager.async_configure(flow_id)
+    assert result["step_id"] == "reconfigure_bed_type"
+    with patch.object(hass.config_entries, "async_schedule_reload") as reload:
+        schema = result["data_schema"]
+        assert schema is not None
+        result = await manager.async_configure(flow_id, schema({}))
+        while result["type"] == "form" and result["step_id"] != "migration_confirm":
+            schema = result["data_schema"]
+            assert schema is not None
+            result = await manager.async_configure(flow_id, schema({}))
+        result = await manager.async_configure(flow_id, {"action": "apply"})
+
+    assert result["reason"] == "migration_applied"
+    reload.assert_called_once_with(entry_id)
+    assert (entry.data[CONF_BED_TYPE], entry.data[CONF_PROTOCOL_VARIANT]) == (
+        BED_TYPE_KEESON,
+        KEESON_VARIANT_INNOVA,
+    )
+    assert _issue(hass, entry) is None
+    async_refresh_profile_review_issue(hass, entry)
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+    assert _issue(hass, entry) is None
+
+
+async def test_detection_drift_names_the_matching_profile(hass: HomeAssistant) -> None:
+    """v4.0.2 matched Cool Base only as a name prefix, so this bed stayed Keeson."""
+    entry = _entry(hass, BED_TYPE_KEESON, variant=KEESON_VARIANT_KSBT)
+    with patch(_HISTORY, return_value=_advertisement("Bed base-i5", KEESON_BASE_SERVICE_UUID)):
+        async_refresh_profile_review_issue(hass, entry)
+        flow, form = await _open(hass, entry)
+
+    issue = _issue(hass, entry)
+    assert issue is not None and issue.translation_key == "app_profile_review"
+    # Keeson changes run through its guided change, which the review lists.
+    assert form["step_id"] == "managed"
+    assert form["description_placeholders"]["apps"] == (
+        "- Cool Base\n- Adjustable Lite app"
+    )
+
+    entry = _entry(hass, BED_TYPE_KEESON, variant="purple", **{CONF_ADDRESS: "AA:BB:CC:DD:EE:33"})
+    with patch(_HISTORY, return_value=_advertisement("Bed base-i5", KEESON_BASE_SERVICE_UUID)):
+        async_refresh_profile_review_issue(hass, entry)
+    issue = _issue(hass, entry)
+    assert issue is not None and issue.translation_key == "app_profile_match"
+    assert issue.translation_placeholders["app"] == "Cool Base"
+
+
+async def test_switching_to_a_route_with_its_own_apps_does_not_ask_again(
+    hass: HomeAssistant, enable_custom_integrations: None
+) -> None:
+    """Cool Base lists Restonic apps, but the user already answered the review."""
+    entry = _entry(hass, BED_TYPE_KEESON, variant="purple")
+    manager = hass.config_entries.flow
+    with patch(_HISTORY, return_value=_advertisement("Bed base-i5", KEESON_BASE_SERVICE_UUID)):
+        async_refresh_profile_review_issue(hass, entry)
+        flow, _form = await _open(hass, entry)
+        # The review hands a Keeson bed to its guided change.
+        handoff = await flow.async_step_init({"choice": "configure"})
+        assert handoff["reason"] == "migration_setup_started"
+        flow_id = handoff["next_flow"][1]
+        result = await manager.async_configure(flow_id, {"choice": "coolbase"})
+        assert result["step_id"] == "migration_confirm"
+        result = await manager.async_configure(flow_id, {"action": "apply"})
+        assert result["reason"] == "migration_applied"
+        assert entry.data[CONF_BED_TYPE] == BED_TYPE_COOLBASE
+        async_refresh_profile_review_issue(hass, entry)
+
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+    assert _issue(hass, entry) is None
+
+
+async def test_changing_the_bed_type_in_configure_answers_the_review(hass: HomeAssistant) -> None:
+    entry = _entry(hass, BED_TYPE_RICHMAT)
+    async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is not None
+
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_KEESON}
+    )
+    async_refresh_profile_review_issue(hass, entry)
+
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+    assert _issue(hass, entry) is None
+
+
+async def test_advertised_app_candidates_join_the_review(hass: HomeAssistant) -> None:
+    entry = _entry(hass, BED_TYPE_SLEEPYS_BOX25, variant=None)
+    with patch(_HISTORY, return_value=_advertisement("STAR25A1", NORDIC_UART_SERVICE_UUID)):
+        async_refresh_profile_review_issue(hass, entry)
+
+    issue = _issue(hass, entry)
+    assert issue is not None
+    assert issue.translation_placeholders["apps"] == (
+        "- Adjustable bed (Lumbar) app\n"
+        "- AdjustableM5X4 app\n"
+        "- AdjustableM5X5 app"
+    )
+
+
+async def test_review_waits_for_an_advertisement_that_could_add_an_app(hass: HomeAssistant) -> None:
+    entry = _entry(hass, BED_TYPE_OCTO, variant=None)
+    with patch(_HISTORY, return_value=None):
+        async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None
+    assert entry.data[CONF_PROFILE_REVIEW_PENDING] == "octo:auto"
+
+    with patch(_HISTORY, return_value=_advertisement("RC2", "0000ffe0-0000-1000-8000-00805f9b34fb")):
+        async_refresh_profile_review_issue(hass, entry)
+    # Nothing to offer once the advertisement is known: the mark is retired.
+    assert _issue(hass, entry) is None
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+
+
+async def test_a_solace_review_asks_about_woosa_and_adds_motion_bed_once_advertised(
+    hass: HomeAssistant,
+) -> None:
+    entry = _entry(hass, BED_TYPE_SOLACE, variant=None)
+    with patch(_HISTORY, return_value=None):
+        async_refresh_profile_review_issue(hass, entry)
+    # Woosa Sleep and Sophie share the name routes' names, so no advertisement decides it.
+    issue = _issue(hass, entry)
+    assert issue is not None and issue.translation_key == "app_profile_review"
+    assert issue.translation_placeholders["apps"] == "- Sophie app\n- Woosa Sleep app"
+
+    with patch(_HISTORY, return_value=_advertisement("QMS-IQ 1234", SOLACE_SERVICE_UUID)):
+        async_refresh_profile_review_issue(hass, entry)
+    issue = _issue(hass, entry)
+    assert issue is not None and issue.translation_key == "app_profile_review"
+    assert issue.translation_placeholders["apps"] == "- Motion Bed app\n- Sophie app\n- Woosa Sleep app"
+
+
+def _paired(hass: HomeAssistant, mode: str) -> MockConfigEntry:
+    second = ADDRESS if mode == PAIR_MODE_SINGLE_ADDRESS else "AA:BB:CC:DD:EE:32"
+    data: dict[str, Any] = {
+        CONF_PAIR_ID: "pair_review",
+        CONF_PAIR_MODE: mode,
+        CONF_BED_TYPE: BED_TYPE_OKIN_ORE,
+        CONF_PAIR_CHILDREN: [
+            {CONF_SIDE: side, CONF_ADDRESS: address, CONF_BED_TYPE: BED_TYPE_OKIN_ORE,
+             CONF_MOTOR_COUNT: 2}
+            for side, address in ((SIDE_LEFT, ADDRESS), (SIDE_RIGHT, second))
+        ],
+    }
+    data[CONF_PROFILE_REVIEW_PENDING] = profile_review_mark(data)
+    entry = MockConfigEntry(domain=DOMAIN, title="Pair", data=data, version=4, minor_version=3)
+    entry.add_to_hass(hass)
+    return entry
+
+
+@pytest.mark.parametrize("mode", [PAIR_MODE_SEPARATE_ADDRESS, PAIR_MODE_SINGLE_ADDRESS])
+async def test_paired_bed_explains_splitting_instead_of_switching(
+    hass: HomeAssistant, mode: str
+) -> None:
+    entry = _paired(hass, mode)
+    async_refresh_profile_review_issue(hass, entry)
+    before = {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_PENDING}
+    flow, form = await _open(hass, entry)
+
+    assert form["step_id"] == "unpair"
+    assert form["data_schema"].schema["choice"].config["options"] == ["split", "keep"]
+    assert form["description_placeholders"]["apps"] == (
+        "- Dynasty Bases app\n- INNOVA app"
+    )
+    result = await flow.async_step_unpair({"choice": "split"})
+    assert result["type"] == "abort"
+    assert result["reason"] == "profile_review_open"
+    assert {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_PENDING} == before
+    assert CONF_PROFILE_REVIEW_PENDING in entry.data
+    assert _issue(hass, entry) is not None
+
+    # A working pair can keep its setup without splitting.
+    flow, _form = await _open(hass, entry)
+    result = await flow.async_step_unpair({"choice": "keep"})
+    assert result["type"] == "create_entry"
+    assert CONF_PROFILE_REVIEW_PENDING not in entry.data
+    async_refresh_profile_review_issue(hass, entry)
+    assert _issue(hass, entry) is None
+
+
+def test_every_offered_app_is_a_selectable_profile() -> None:
+    selectable = {option["value"] for option in get_bed_type_options()}
+    offered = {choice for route in _ROUTE_APPS for choice in route.choices}
+    from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
+    from custom_components.adjustable_bed.const import BED_TYPE_VIBRADORM
+    from custom_components.adjustable_bed.detection import (
+        HIDDEN_APP_CHOICES,
+    )
+
+    assert BED_TYPE_VIBRADORM in selectable
+    # Family steps reach the rest, and Configure accepts them by ID as a repair
+    # submits them.
+    assert offered <= selectable | FAMILY_STEP_ROUTES | HIDDEN_APP_CHOICES
+    # FurniMove's own repairs cover the routes its handsets used.
+    assert not any(choice.startswith(BED_TYPE_FURNIMOVE) for choice in offered)
+    # Why a paired bed is split first: no offered app keeps paired controls.
+    assert not any(
+        supports_single_address_pairing(*resolve_bed_type_choice(choice)) for choice in offered
+    )
+
+
+def test_review_text_is_translated_identically() -> None:
+    root = Path("custom_components/adjustable_bed")
+    strings, english = (
+        json.loads((root / name).read_text()) for name in ("strings.json", "translations/en.json")
+    )
+    for key in ("app_profile_review", "app_profile_match"):
+        issue = strings["issues"][key]
+        assert issue == english["issues"][key]
+        assert set(issue["fix_flow"]["step"]) == {"init", "unpair", "managed"}
+        assert "entry_missing" in issue["fix_flow"]["abort"]
+        assert "—" not in json.dumps(issue, ensure_ascii=False)
+    assert strings["selector"]["app_profile_review"] == {
+        "options": {"keep": "Keep the current setup"}
+    }

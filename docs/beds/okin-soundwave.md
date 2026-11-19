@@ -1,6 +1,6 @@
 # Okin SoundWave and Symphony Sleep Sense
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -208,7 +208,7 @@ and session cleanup. These are simulated BLE results.
 
 **App:** [Symphony Sleep Sense](https://play.google.com/store/apps/details?id=com.okin.ist) 2.8.0 (194), `com.okin.ist`
 
-**Status:** ❓ Static behavior verified; hardware unverified.
+**Status:** Not yet tested
 
 #### Setup
 
@@ -310,9 +310,8 @@ physical effect and is not a raw-packet API.
 #### Evidence
 
 The app has three direct BLE wire groups, explicit product and
-selector dispatch, parser bindings and release behavior. Static controls are
-implemented without requiring maintainer hardware testing. External beta/release
-reports can corroborate peripheral effects and transport behavior.
+selector dispatch, parser bindings and release behavior. The controls come from the app; reports from owners can confirm how the bed
+responds.
 
 ## Notes
 

@@ -27,6 +27,7 @@ APPS = [
     "wsilver_legacy",
     "sonicsleep",
     "mlily",
+    "majestichome",
     "okimiki",
     "mlily_remote",
     "revive",
@@ -88,6 +89,25 @@ async def answer(flow, choice: str):
     return result, finish
 
 
+async def test_generic_richmat_switch_requires_a_majestic_product(hass):
+    flow = setup_flow(hass)
+    flow._discovery_info = None
+    with patch.object(flow, "_verification_possible", return_value=False):
+        result = await flow.async_step_richmat_family({"choice": "majestichome"})
+        assert result["step_id"] == "profile_questions"
+        assert const.CONF_PROTOCOL_VARIANT not in flow._manual_data
+        schema = result["data_schema"]
+        assert schema is not None
+        with pytest.raises(vol.Invalid):
+            schema({})
+        answer = schema({const.CONF_PROTOCOL_VARIANT: "JGRN"})
+        chosen = await flow.async_step_profile_questions(answer)
+    assert chosen["type"] is FlowResultType.CREATE_ENTRY
+    assert chosen["data"][const.CONF_BED_TYPE] == "majestichome"
+    assert chosen["data"][const.CONF_PROTOCOL_VARIANT] == "JGRN"
+    assert flow._manual_data[const.CONF_PROTOCOL_VARIANT] == "JGRN"
+
+
 def test_every_app_has_a_searchable_row_and_the_family_row_stays_short():
     rows = {option["value"]: option["label"] for option in get_bed_type_options()}
     for app in ("RMControl", "SleepFunction", "SVEN & SON", "Richmat remotes"):
@@ -119,7 +139,7 @@ def test_configure_lists_each_mh_app_by_its_own_label():
 async def test_the_richmat_row_asks_the_app(hass):
     result = await setup_flow(hass).async_step_richmat_family()
     assert result["step_id"] == "richmat_family"
-    assert choices(result) == APPS
+    assert sorted(choices(result)) == sorted(APPS)
 
 
 async def test_rmcontrol_asks_its_product_and_side(hass):
@@ -374,6 +394,7 @@ async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
         ("Revive Control app · Richmat", const.BED_TYPE_RICHMAT_REVIVE),
         ("Forty Winks app · Richmat", const.BED_TYPE_RICHMAT_CLASSIC_APPS),
         ("MLILY Control app · Richmat", const.BED_TYPE_MLILY),
+        ("Majestic Home app · Richmat", "majestichome"),
         ("MLILY Remote app · Richmat", const.BED_TYPE_MLILY_REMOTE),
     ],
 )
@@ -390,3 +411,17 @@ async def test_an_app_found_by_its_own_row_skips_the_richmat_question(hass, labe
     result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:36"})
     assert result["step_id"] != "richmat_family"
     assert flow._manual_data[const.CONF_BED_TYPE] == route
+
+
+async def test_the_long_app_question_reads_alphabetically(hass):
+    """Richmat's many apps are sorted by their shown name; Keep would stay last."""
+    import json
+    from pathlib import Path
+
+    result = await setup_flow(hass).async_step_richmat_family()
+    keys = result["data_schema"].schema["choice"].config["options"]
+    labels = json.loads(
+        (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
+    )["selector"]["richmat_family_choice"]["options"]
+    shown = [labels[key].casefold() for key in keys if key not in ("keep", "another")]
+    assert shown == sorted(shown)

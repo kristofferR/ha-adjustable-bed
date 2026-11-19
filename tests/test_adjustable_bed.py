@@ -1,4 +1,4 @@
-"""Unit087: independent frozen frames, live selection, gestures and exposure."""
+"""Adjustable bed app: independent frozen frames, live selection, gestures and exposure."""
 
 from __future__ import annotations
 

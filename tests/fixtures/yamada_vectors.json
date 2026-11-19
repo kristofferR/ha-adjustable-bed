@@ -9,10 +9,7 @@
         "version": 1,
         "action": "head_up"
       },
-      "expected_bytes": "e6 fe 16 01 00 00 00 00 04",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3096f8, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 01 00 00 00 00 04"
     },
     {
       "id": "V2-head_up",
@@ -23,10 +20,7 @@
         "version": 2,
         "action": "head_up"
       },
-      "expected_bytes": "05 02 00 00 00 01 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3096f8, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 00 00 01 00"
     },
     {
       "id": "V1-head_down",
@@ -37,10 +31,7 @@
         "version": 1,
         "action": "head_down"
       },
-      "expected_bytes": "e6 fe 16 02 00 00 00 00 03",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308d80, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 02 00 00 00 00 03"
     },
     {
       "id": "V2-head_down",
@@ -51,10 +42,7 @@
         "version": 2,
         "action": "head_down"
       },
-      "expected_bytes": "05 02 00 00 00 02 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308d80, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 00 00 02 00"
     },
     {
       "id": "V1-foot_up",
@@ -65,10 +53,7 @@
         "version": 1,
         "action": "foot_up"
       },
-      "expected_bytes": "e6 fe 16 04 00 00 00 00 01",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3093d0, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 04 00 00 00 00 01"
     },
     {
       "id": "V2-foot_up",
@@ -79,10 +64,7 @@
         "version": 2,
         "action": "foot_up"
       },
-      "expected_bytes": "05 02 00 00 00 04 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3093d0, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 00 00 04 00"
     },
     {
       "id": "V1-foot_down",
@@ -93,10 +75,7 @@
         "version": 1,
         "action": "foot_down"
       },
-      "expected_bytes": "e6 fe 16 08 00 00 00 00 fd",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3090a8, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 08 00 00 00 00 fd"
     },
     {
       "id": "V2-foot_down",
@@ -107,10 +86,7 @@
         "version": 2,
         "action": "foot_down"
       },
-      "expected_bytes": "05 02 00 00 00 08 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x3090a8, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 00 00 08 00"
     },
     {
       "id": "V1-anti_snore",
@@ -121,10 +97,7 @@
         "version": 1,
         "action": "anti_snore"
       },
-      "expected_bytes": "e6 fe 16 00 80 00 00 00 85",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308408, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 00 80 00 00 00 85"
     },
     {
       "id": "V2-anti_snore",
@@ -135,10 +108,7 @@
         "version": 2,
         "action": "anti_snore"
       },
-      "expected_bytes": "05 02 00 00 80 00 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308408, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 00 80 00 00"
     },
     {
       "id": "V1-zero",
@@ -149,10 +119,7 @@
         "version": 1,
         "action": "zero"
       },
-      "expected_bytes": "e6 fe 16 00 10 00 00 00 f5",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308a58, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 00 10 00 00 00 f5"
     },
     {
       "id": "V2-zero",
@@ -163,10 +130,7 @@
         "version": 2,
         "action": "zero"
       },
-      "expected_bytes": "05 02 00 00 10 00 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308a58, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 00 10 00 00"
     },
     {
       "id": "V1-memory_m2",
@@ -177,10 +141,7 @@
         "version": 1,
         "action": "memory_m2"
       },
-      "expected_bytes": "e6 fe 16 00 20 00 00 00 e5",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x30a20c, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 00 20 00 00 00 e5"
     },
     {
       "id": "V2-memory_m2",
@@ -191,10 +152,7 @@
         "version": 2,
         "action": "memory_m2"
       },
-      "expected_bytes": "05 02 00 00 20 00 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x30a20c, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 00 20 00 00"
     },
     {
       "id": "V1-tvpc",
@@ -205,10 +163,7 @@
         "version": 1,
         "action": "tvpc"
       },
-      "expected_bytes": "e6 fe 16 00 40 00 00 00 c5",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x30a5f0, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 00 40 00 00 00 c5"
     },
     {
       "id": "V2-tvpc",
@@ -219,10 +174,7 @@
         "version": 2,
         "action": "tvpc"
       },
-      "expected_bytes": "05 02 00 00 40 00 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x30a5f0, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 00 40 00 00"
     },
     {
       "id": "V1-light",
@@ -233,10 +185,7 @@
         "version": 1,
         "action": "light"
       },
-      "expected_bytes": "e6 fe 16 00 00 02 00 00 03",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308730, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 00 00 02 00 00 03"
     },
     {
       "id": "V2-light",
@@ -247,10 +196,7 @@
         "version": 2,
         "action": "light"
       },
-      "expected_bytes": "05 02 00 02 00 00 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x308730, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 02 00 00 00"
     },
     {
       "id": "V1-flat",
@@ -261,10 +207,7 @@
         "version": 1,
         "action": "flat"
       },
-      "expected_bytes": "e6 fe 16 00 00 00 08 00 fd",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x309a20, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 00 00 00 08 00 fd"
     },
     {
       "id": "V2-flat",
@@ -275,10 +218,7 @@
         "version": 2,
         "action": "flat"
       },
-      "expected_bytes": "05 02 08 00 00 00 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x309a20, size 0x274; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 08 00 00 00 00"
     },
     {
       "id": "V1-stop",
@@ -289,10 +229,7 @@
         "version": 1,
         "action": "stop"
       },
-      "expected_bytes": "e6 fe 16 00 00 00 00 00 05",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x309dd0, size 0x270; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "e6 fe 16 00 00 00 00 00 05"
     },
     {
       "id": "V2-stop",
@@ -303,10 +240,7 @@
         "version": 2,
         "action": "stop"
       },
-      "expected_bytes": "05 02 00 00 00 00 00",
-      "evidence": [
-        "libapp.so!package:yamada/tool/ble_manager.dart closure 0x309dd0, size 0x270; writeData 0x29c784; Uint8 map 0x29ce20"
-      ]
+      "expected_bytes": "05 02 00 00 00 00 00"
     },
     {
       "id": "V1-clock-12",
@@ -323,10 +257,7 @@
         "minute": 30,
         "second": 45
       },
-      "expected_bytes": "e7 80 01 7e 0a 0c 06 1e 2d b2",
-      "evidence": [
-        "libapp.so!BleManager::calibrationTime closure 0x29be38-0x29c530"
-      ]
+      "expected_bytes": "e7 80 01 7e 0a 0c 06 1e 2d b2"
     },
     {
       "id": "V2-clock-12",
@@ -343,10 +274,7 @@
         "minute": 30,
         "second": 45
       },
-      "expected_bytes": "07 04 7e 0a 0c 04 06 1e 2d",
-      "evidence": [
-        "libapp.so!BleManager::calibrationTime closure 0x29be38-0x29c530"
-      ]
+      "expected_bytes": "07 04 7e 0a 0c 04 06 1e 2d"
     },
     {
       "id": "V1-clock-15",
@@ -363,10 +291,7 @@
         "minute": 59,
         "second": 58
       },
-      "expected_bytes": "e7 80 01 7e 0a 0f 17 3b 3a 74",
-      "evidence": [
-        "libapp.so!BleManager::calibrationTime closure 0x29be38-0x29c530"
-      ]
+      "expected_bytes": "e7 80 01 7e 0a 0f 17 3b 3a 74"
     },
     {
       "id": "V2-clock-15",
@@ -383,10 +308,7 @@
         "minute": 59,
         "second": 58
       },
-      "expected_bytes": "07 04 7e 0a 0f 00 17 3b 3a",
-      "evidence": [
-        "libapp.so!BleManager::calibrationTime closure 0x29be38-0x29c530"
-      ]
+      "expected_bytes": "07 04 7e 0a 0f 00 17 3b 3a"
     },
     {
       "id": "V1-alarm-129",
@@ -407,10 +329,7 @@
           15
         ]
       },
-      "expected_bytes": "ed 80 03 07 1e 81 0e 08 2d ff 0f 00 00 00 00 98",
-      "evidence": [
-        "libapp.so!BleManager::setAlarm1 0x306074-0x306568"
-      ]
+      "expected_bytes": "ed 80 03 07 1e 81 0e 08 2d ff 0f 00 00 00 00 98"
     },
     {
       "id": "V1-alarm-0",
@@ -431,10 +350,7 @@
           28
         ]
       },
-      "expected_bytes": "ed 80 03 07 1e 00 00 08 2d 80 1c 00 00 00 00 99",
-      "evidence": [
-        "libapp.so!BleManager::setAlarm1 0x306074-0x306568"
-      ]
+      "expected_bytes": "ed 80 03 07 1e 00 00 08 2d 80 1c 00 00 00 00 99"
     },
     {
       "id": "V2-alarm-1-true",
@@ -449,10 +365,7 @@
         "position": 2,
         "enabled": true
       },
-      "expected_bytes": "07 05 81 02 07 1e 00 01 00",
-      "evidence": [
-        "libapp.so!BleManager::setAlarm2 0x30328c-0x30367c"
-      ]
+      "expected_bytes": "07 05 81 02 07 1e 00 01 00"
     },
     {
       "id": "V2-alarm-2-true",
@@ -467,10 +380,7 @@
         "position": 9,
         "enabled": true
       },
-      "expected_bytes": "07 06 ff 09 08 2d 00 01 00",
-      "evidence": [
-        "libapp.so!BleManager::setAlarm2 0x30328c-0x30367c"
-      ]
+      "expected_bytes": "07 06 ff 09 08 2d 00 01 00"
     },
     {
       "id": "V2-alarm-1-false",
@@ -485,10 +395,7 @@
         "position": 2,
         "enabled": false
       },
-      "expected_bytes": "07 05 00 02 07 1e 00 00 00",
-      "evidence": [
-        "libapp.so!BleManager::setAlarm2 0x30328c-0x30367c"
-      ]
+      "expected_bytes": "07 05 00 02 07 1e 00 00 00"
     },
     {
       "id": "V2-alarm-2-false",
@@ -503,10 +410,7 @@
         "position": 9,
         "enabled": false
       },
-      "expected_bytes": "07 06 00 09 08 2d 00 00 00",
-      "evidence": [
-        "libapp.so!BleManager::setAlarm2 0x30328c-0x30367c"
-      ]
+      "expected_bytes": "07 06 00 09 08 2d 00 00 00"
     },
     {
       "id": "V1-query-0",
@@ -517,10 +421,7 @@
         "version": 1,
         "index": 0
       },
-      "expected_bytes": "e1 80 03 9b",
-      "evidence": [
-        "libapp.so!BleManager::checkAlarm closure 0x303730-0x303a18"
-      ]
+      "expected_bytes": "e1 80 03 9b"
     },
     {
       "id": "V2-query-0",
@@ -531,10 +432,7 @@
         "version": 2,
         "index": 0
       },
-      "expected_bytes": "00 c0",
-      "evidence": [
-        "libapp.so!BleManager::checkAlarm closure 0x303730-0x303a18"
-      ]
+      "expected_bytes": "00 c0"
     },
     {
       "id": "V2-query-1",
@@ -545,10 +443,7 @@
         "version": 2,
         "index": 1
       },
-      "expected_bytes": "00 d0",
-      "evidence": [
-        "libapp.so!BleManager::checkAlarm closure 0x303730-0x303a18"
-      ]
+      "expected_bytes": "00 d0"
     }
   ],
   "parser_vectors": [
@@ -592,10 +487,7 @@
           "position": 15,
           "enabled": true
         }
-      },
-      "evidence": [
-        "AlarmListPage closure 0x325838-0x325efc"
-      ]
+      }
     },
     {
       "id": "P1-alarms-disabled-preserve-week",
@@ -637,10 +529,7 @@
           "position": 28,
           "enabled": false
         }
-      },
-      "evidence": [
-        "AlarmListPage closure 0x325838-0x325efc"
-      ]
+      }
     },
     {
       "id": "P2-alarm-one",
@@ -673,10 +562,7 @@
           "position": 2,
           "enabled": true
         }
-      },
-      "evidence": [
-        "AlarmListPage closure 0x32529c-0x325838"
-      ]
+      }
     },
     {
       "id": "P2-alarm-two-disabled-preserve-week",
@@ -709,10 +595,7 @@
           "position": 9,
           "enabled": false
         }
-      },
-      "evidence": [
-        "AlarmListPage closure 0x32529c-0x325838"
-      ]
+      }
     }
   ],
   "scope": "Frozen static vectors, hardware UNVERIFIED. Dynamic values are explicit valid UI-domain inputs. Parser vectors deliberately have arbitrary trailing checksum/reserved bytes because app parsing does not validate them."

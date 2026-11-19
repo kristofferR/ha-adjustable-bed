@@ -1,6 +1,6 @@
 # OCTO Smart Control
 
-**Status:** ⚠️ Partially tested (Standard 2-4 motor receivers work in [#73](https://github.com/kristofferR/ha-adjustable-bed/issues/73), [#440](https://github.com/kristofferR/ha-adjustable-bed/issues/440) and [#499](https://github.com/kristofferR/ha-adjustable-bed/issues/499), and a Star2 DA1458X in [#510](https://github.com/kristofferR/ha-adjustable-bed/issues/510); an RTV TV lift was reported working in [#440](https://github.com/kristofferR/ha-adjustable-bed/issues/440); OCTO Smart Control 1.03.02 behavior is APK-verified, hardware unverified)
+**Status:** Partly tested (Standard 2-4 motor receivers work in [#73](https://github.com/kristofferR/ha-adjustable-bed/issues/73), [#440](https://github.com/kristofferR/ha-adjustable-bed/issues/440) and [#499](https://github.com/kristofferR/ha-adjustable-bed/issues/499), and a Star2 DA1458X in [#510](https://github.com/kristofferR/ha-adjustable-bed/issues/510); an RTV TV lift was reported working in [#440](https://github.com/kristofferR/ha-adjustable-bed/issues/440); the other OCTO Smart Control app features need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [_pm](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790), [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10), Murp, and [Brokkert](https://github.com/Brokkert)
 
@@ -197,7 +197,7 @@ memory features. The Standard-only session gate does not apply to Star2.
 - **Standard variant:** Detected by an official OCTO device-name prefix. The
   shared `FFE0` service UUID alone is not sufficient because other protocol
   families also use it.
-- **Star2 variant:** Auto-detected after connection when the
+- **Star2 variant:** Detected after connection when the
   `0000aa5c-0000-1000-8000-00805f9b34fb` service contains the
   `00005a55-0000-1000-8000-00805f9b34fb` write characteristic. Explicit
   variant selections override this GATT-based detection.
@@ -381,8 +381,8 @@ those states from command timing.
 
 ### One-motor TV lift
 
-- Native Open/Close actions use the configured **Motor pulse count** and
-  **Motor pulse delay**, as on Standard OCTO bed motors. The bundled card's
+- Native Open/Close actions use the configured **Movement per tap** and the
+  bed's repeat interval, as on Standard OCTO bed motors. The bundled card's
   press-and-hold and optional tap-to-move controls use renewable holds and STOP.
 - For a repeatable timed action, use `adjustable_bed.hold_control` with
   `control: tv_lift_up` or `tv_lift_down` and `duration` in seconds (0.1–60).
@@ -399,7 +399,7 @@ those states from command timing.
   Lift** cover with Raise, Lower, and Stop controls. You can also select one
   motor manually for a Standard OCTO controller.
 - The lift is deliberately not presented as an adjustable bed. Bed-only controls
-  such as Flat, Back + Legs Up, memory positions, lights, and synchro mode are
+  such as Flat, Back + Legs Up, memory positions, lights, and Controller Sync are
   suppressed even if a malformed or unexpected capability response advertises
   them. Position feedback is not available.
 - The packet implementation is derived from the official OCTO app; physical RTV
@@ -718,7 +718,7 @@ If one configured Octo entry only moves one side of the bed:
 
 1. Add the other Octo BLE address as a second Adjustable Bed device.
 2. Rename the two entries during setup so they are clearly left/right.
-3. Use the `Synchro Mode` switch if your hardware supports linked movement.
+3. Use the **Controller Sync** switch if your hardware supports linked movement.
 
 The official Octo app handles this by storing separate left/right device
 addresses and switching between them. Also note that the `Back + Legs Up`
@@ -737,10 +737,10 @@ device.
   same side (Ref #612). Existing automatic pairs adopt the corrected policy on
   reload.
 - Automatic mode falls back to sequential switching if the adapter reports that
-  the second link exhausted its connection slots, and **explicit sequential
-  mode** still visits the two sides in turn. This changes integration
-  scheduling, not controller commands, authentication, or timing.
-- When explicitly configured for sequential switching, the paired coordinator
+  the second link exhausted its connection slots. There is no setting to choose
+  sequential switching. This changes integration scheduling, not controller
+  commands, authentication, or timing.
+- While switching sequentially, the paired coordinator
   follows the stricter control-screen contract: a disconnect error that still
   reports an active physical link is retained and reported, and sequential
   switching stops before connecting the other address.
@@ -749,7 +749,7 @@ device.
   a one-motor RTV cannot be paired with a two-motor RC2.
 - This design matches three-device installations such as two `RC2` bed sides
   plus one `RTV` TV lift.
-- `Synchro Mode`, when advertised by a receiver, remains a hardware capability
+- **Controller Sync**, when advertised by a receiver, remains a hardware capability
   and is not software grouping across arbitrary entries.
 
 Unit tests cover left-then-right switching, abort-on-release-failure, PIN
@@ -784,10 +784,11 @@ dual-proxy operation remain hardware-validation items.
 - Star2 defaults to 3 command pulses with a 50 ms delay. This cadence produced
   smooth, jerk-free movement on a DA1458x receiver during the hardware testing
   reported in [issue #510](https://github.com/kristofferR/ha-adjustable-bed/issues/510#issuecomment-5453581631).
-  Standard OCTO keeps its separate 350 ms default. Existing entries keep their
-  configured overrides; change Motor Pulse Count to `3` and Motor Pulse Delay to
-  `50` in the integration options if an older Star2 entry still has other
-  values.
+  Standard OCTO keeps its separate 350 ms default. An older Star2 entry keeps
+  any repeat interval it saved, which Configure no longer shows. Set
+  **Movement per tap** to `3`. If the bed still moves jerkily, removing the
+  entry and adding the bed again restores the 50 ms interval, but the new
+  entry gets new entities.
 
 ## Notes
 

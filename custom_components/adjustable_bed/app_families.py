@@ -18,6 +18,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Final
 
 from homeassistant.const import CONF_ADDRESS
+from homeassistant.helpers.translation import async_get_cached_translations
 
 from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .const import (
@@ -124,6 +125,7 @@ from .const import (
     CONF_VIBRADORM_VMAT_REMOTE,
     CONF_VMATBASIC_PROFILE,
     DEFAULT_MOTOR_COUNT,
+    DOMAIN,
     JIECANG_APP_PROFILES,
     KEESON_VARIANT_ADJUSTABLE_LITE,
     KEESON_VARIANT_AMERICANSTAR,
@@ -240,6 +242,8 @@ class Answer:
 
 
 KEEP: Final = Answer(bed_type="", keep=True)
+# The one wording every question uses for keeping the current route.
+KEEP_LABEL: Final = "Keep the current setup"
 
 
 @dataclass(frozen=True, slots=True)
@@ -631,7 +635,7 @@ def _vibradorm_answers(visit: Visit) -> Mapping[str, Answer]:
         return VIBRADORM_FAMILY.answers
     return {
         **VIBRADORM_FAMILY.answers,
-        "legacy": replace(KEEP, label="Keep current setup"),
+        "legacy": replace(KEEP, label=KEEP_LABEL),
     }
 
 
@@ -661,7 +665,7 @@ VIBRADORM_FAMILY: Final = AppFamily(
     routes=frozenset({BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}),
     picks_route=False,
     form=Form.DROPDOWN,
-    keep_label="Keep current setup",
+    keep_label=KEEP_LABEL,
     offers_keep=lambda visit: visit.guided and not _on_legacy_vibradorm(visit),
     offer=_vibradorm_answers,
     profile_key=CONF_VIBRADORM_APP_PROFILE,
@@ -877,7 +881,7 @@ OKIN_FAMILY: Final = AppFamily(
     # route, so an existing entry keeps Configure.
     also=frozenset({BED_TYPE_OKIMAT, BED_TYPE_OKIN_CST}),
     form=Form.LABELLED,
-    keep_label="I don't know: keep the detected controls",
+    keep_label=KEEP_LABEL,
     # A FurniMove row or gateway chose no handset, so there is nothing to keep.
     offers_keep=keep_unless_row,
     offer=_okin_answers,
@@ -929,7 +933,7 @@ KEESON_FAMILY: Final = AppFamily(
     row=BED_TYPE_KEESON,
     name="Keeson",
     apps=(
-        "Member's Mark, Purple, Sleep Harmony and Linx / Juna Sleep apps, some Ergomotion Sync beds"
+        "Member's Mark, Purple, Sleep Harmony and Juna Sleep apps, some Ergomotion Sync beds"
     ),
     answers={
         "sleep_harmony": Answer(BED_TYPE_KEESON, KEESON_VARIANT_SLEEP_HARMONY),
@@ -1009,7 +1013,7 @@ SOLACE_FAMILY: Final = AppFamily(
     step="solace_family",
     row=BED_TYPE_SOLACE,
     name="Solace",
-    apps="HomeKobo, Sealy MotionFlex, Sweet Night and Sophie apps",
+    apps="HomeKobo, Sealy MotionFlex and Sweet Night apps",
     answers={
         "name_route": Answer(BED_TYPE_SOLACE, VARIANT_AUTO),
         "sophie": Answer(BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE),
@@ -1437,6 +1441,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         "wsilver_legacy": Answer("wsilver_legacy", data=_NO_RMCONTROL),
         "sonicsleep": Answer("sonicsleep", data=_NO_RMCONTROL),
         "mlily": Answer(BED_TYPE_MLILY, data=_NO_RMCONTROL),
+        "majestichome": Answer("majestichome", data=_NO_RMCONTROL),
         "okimiki": Answer(BED_TYPE_OKIMIKI, data=_NO_RMCONTROL),
         "mlily_remote": Answer(BED_TYPE_MLILY_REMOTE, data=_NO_RMCONTROL),
         **{app: Answer(bed_type, data=_NO_RMCONTROL) for bed_type, app in RICHMAT_MH_APPS.items()},
@@ -1447,7 +1452,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI},
+    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", "majestichome", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI},
     routes_show_row=False,
     lists_members=True,
     offers_keep=keep_never,
@@ -1501,15 +1506,14 @@ def _remacro_placeholders(visit: Visit) -> dict[str, str]:
     from .beds.remacro.protocol import MODELS
 
     model_id = _remacro_model(visit)
-    return {
-        "model": (
-            "none seen yet"
-            if model_id is None
-            else MODELS[model_id].name
-            if model_id in MODELS
-            else f"company ID {model_id}"
-        )
-    }
+    if model_id is not None and (model := MODELS.get(model_id)) is not None:
+        return {"model": model.name}
+    key, default = ("unknown", "Not reported yet") if model_id is None else ("unlisted", "Unknown model")
+    try:
+        words = async_get_cached_translations(visit.hass, visit.hass.config.language, "selector", DOMAIN)
+    except Exception:  # noqa: BLE001 - a missing translation must not block the question
+        words = {}
+    return {"model": words.get(f"component.{DOMAIN}.selector.remacro_model.options.{key}", default)}
 
 
 # The advertisement picks the model, never the app.

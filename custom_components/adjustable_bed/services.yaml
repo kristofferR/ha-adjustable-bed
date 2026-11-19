@@ -3370,6 +3370,62 @@ betterliving2_massage:
           translation_key: bed_side
           options: [left, right, both]
 
+majestichome:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+    operation:
+      required: true
+      selector:
+        select:
+          options: [list, new, set, toggle, delete, sync_clock]
+          translation_key: majestichome_operation
+    alarm_id:
+      selector:
+        number:
+          min: 0
+          max: 255
+          mode: box
+    hour:
+      default: 7
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    preset:
+      default: memory_1
+      selector:
+        select:
+          options: [zero_gravity, anti_snore, memory_1, memory_2]
+          translation_key: majestichome_preset
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options: ['0', '1', '2', '3', '4', '5', '6']
+          translation_key: weekday_number
+    enabled:
+      default: true
+      selector:
+        boolean:
+
 l2motion:
   fields:
     device_id:

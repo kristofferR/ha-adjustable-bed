@@ -44,9 +44,8 @@ def _galaxy() -> frozenset[str]:
     return frozenset(frames)
 
 
-
 def _goodvibe() -> frozenset[str]:
-    """Good Vibe Sleep 2.0.1 (row116): the accepted report's vectors in ``fixtures/goodvibe``.
+    """Good Vibe Sleep 2.0.1: the accepted report's vectors in ``fixtures/goodvibe``.
 
     Every catalog action alternative, the inline startup, release and timer
     frames, and the settings, alarm and time-sync builders, plus the cancelled
@@ -540,7 +539,7 @@ _RUF_RICHMAT: dict[str, frozenset[str]] = {
 }
 
 
-# Richmat MH row055 (cluster-020): the five apps share one BLE library and their
+# Richmat MH apps: the five apps share one BLE library and their
 # reconciled builders are identical, so every app freezes the union of the five
 # accepted reports: revive3 1.0.26 (-055-006), best_mattress 1.1.1 (-055-005),
 # blvd_home 1.0.1 (-055-008), harmony 1.0.0 (-055-006), idealbed 2.4.2 (-055-003).
@@ -1072,7 +1071,7 @@ _RICHMAT_MH: frozenset[str] = frozenset(
     }
 )
 
-# Classic Richmat apps row066 (cluster-018): the five apps share one builder, so
+# Classic Richmat apps: the five apps share one builder, so
 # every app freezes the union of the five accepted reports' sent single-frame
 # literals: avocadoecobase 1.0.4, coastersleep 1.0.10, fortywinks 1.0.1,
 # milemont 1.0.4 and superior 1.0.9, with the slider vectors exported from the
@@ -1529,7 +1528,7 @@ _RICHMAT_CLASSIC: frozenset[str] = frozenset(
     }
 )
 
-# L&P Adjustable Base 2.2.1 legacy app (row019): every Legacy and Framed packet
+# L&P Adjustable Base 2.2.1 legacy app: every Legacy and Framed packet
 # the accepted catalog stored for its 122 layouts, frozen from
 # the catalog (then ``lp_legacy_profiles.json``) before it kept only the app's tokens.
 _LP_LEGACY: frozenset[str] = frozenset(
@@ -1924,7 +1923,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "6e01006edd",
         }
     ),
-    # HJBed 2.1.2 row121: wire fields of the accepted ledger, frames pinned in tests/test_hjbed.py,
+    # HJBed 2.1.2: wire fields of the accepted ledger, frames pinned in tests/test_hjbed.py,
     # and the builder examples in the guide (light 600 s, RGB 11/22/33, clock sync 2026-11-03 12:00 +01:00)
     "hjbed": frozenset(
         {
@@ -2078,7 +2077,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "6e90c101c0",
         }
     ),
-    # Eshine 1.0.1 row106: the artifact vectors pinned in tests/test_eshine.py, framed and
+    # Eshine 1.0.1: the artifact vectors pinned in tests/test_eshine.py, framed and
     # bare (N1), including setup's ExitLimit.
     "eshine": frozenset(
         {
@@ -2152,7 +2151,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
 FROZEN_FRAMES.update(BEDTECH_APP_FRAMES)
 
 
-# Accepted row173: all preserved generic, extended and receive literal fixtures.
+# Richmat app: all preserved generic, extended and receive literal fixtures.
 def _richmat_app() -> frozenset[str]:
     rows = json.loads(
         gzip.decompress(
@@ -2200,8 +2199,8 @@ FROZEN_FRAMES["richmat_app"] = _richmat_app() | frozenset(
 )
 
 
-def _cluster017_frames() -> dict[str, frozenset[str]]:
-    root = Path(__file__).parent / "fixtures/richmat_cluster017"
+def _resource_app_frames() -> dict[str, frozenset[str]]:
+    root = Path(__file__).parent / "fixtures/richmat_resource_apps"
     rows = json.loads(gzip.decompress((root / "wire.json.gz").read_bytes()))
     frames: dict[str, set[str]] = {}
     for app, _source, _wire, _operand, literal in rows:
@@ -2225,7 +2224,15 @@ def _cluster017_frames() -> dict[str, frozenset[str]]:
     return {"richmat_classic_" + app: frozenset(values) for app, values in frames.items()}
 
 
-FROZEN_FRAMES.update(_cluster017_frames())
+FROZEN_FRAMES.update(_resource_app_frames())
+
+# Majestic Home 1.0.4 literals, frozen before the production codec was selected.
+_MAJESTICHOME = json.loads(
+    (Path(__file__).parent / "fixtures/majestichome/protocol.json").read_text()
+)
+FROZEN_FRAMES["majestichome"] = frozenset(
+    row["expected_bytes"] for row in _MAJESTICHOME if row["protocol"] in ("P1", "P2", "P_EXT")
+)
 
 
 def _okimiki() -> frozenset[str]:
@@ -2246,9 +2253,9 @@ def _okimiki() -> frozenset[str]:
 FROZEN_FRAMES["okimiki"] = _okimiki() | frozenset({"2b", "2c", "65", "66"})
 
 
-def _cluster022_frames() -> dict[str, frozenset[str]]:
+def _nisco_supreme_frames() -> dict[str, frozenset[str]]:
     result = {}
-    directory = Path(__file__).parent / "fixtures/richmat_cluster022"
+    directory = Path(__file__).parent / "fixtures/richmat_nisco_supreme"
     for app in ("nisco", "mlily_supreme"):
         values = set()
         for row in json.loads((directory / f"{app}_vectors.json").read_text()):
@@ -2265,4 +2272,4 @@ def _cluster022_frames() -> dict[str, frozenset[str]]:
     return result
 
 
-FROZEN_FRAMES.update(_cluster022_frames())
+FROZEN_FRAMES.update(_nisco_supreme_frames())

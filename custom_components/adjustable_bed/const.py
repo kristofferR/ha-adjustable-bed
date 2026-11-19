@@ -395,7 +395,6 @@ PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
 # each receiver keeps its own connection policy) and falls back to
 # ``sequential`` (one link at a time) when the adapter cannot hold both. The
 # stored key is obsolete: nothing ever set it, and schema 5.6 drops it.
-CONF_PAIR_CONNECTION_MODE: Final = "pair_connection_mode"
 PAIR_CONNECTION_MODE_AUTO: Final = "auto"
 PAIR_CONNECTION_MODE_CONCURRENT: Final = "concurrent"
 PAIR_CONNECTION_MODE_SEQUENTIAL: Final = "sequential"
@@ -503,6 +502,7 @@ BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 BED_TYPE_GALAXY: Final = "galaxy"
 BED_TYPE_GOODVIBE: Final = "goodvibe"
 BED_TYPE_MLILY: Final = "mlily"
+BED_TYPE_MAJESTICHOME: Final = "majestichome"
 BED_TYPE_OKIMIKI: Final = "okimiki"
 BED_TYPE_BOBPOWERBASE: Final = "bobpowerbase"
 BED_TYPE_MLILY_REMOTE: Final = "mlily_remote"
@@ -549,7 +549,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {BED_TYPE_MAJESTICHOME, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 ).union({BED_TYPE_BETTERLIVING2})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
@@ -772,6 +772,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_GALAXY,
     BED_TYPE_GOODVIBE,
     BED_TYPE_MLILY,
+    BED_TYPE_MAJESTICHOME,
     BED_TYPE_OKIMIKI,
     BED_TYPE_BOBPOWERBASE,
     BED_TYPE_MLILY_REMOTE,
@@ -1815,7 +1816,7 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 VARIANT_AUTO: Final = "auto"
 STAR_ELEVATE_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
-    STAR_ELEVATE_VARIANT_M1X12: "Adjustable Comfort M1X12 ELEVATE",
+    STAR_ELEVATE_VARIANT_M1X12: "Adjustable Comfort M1X12 app, Elevate lift",
 }
 
 # SIMMONS app: the regular/inclined bed type is independent of the packet

@@ -21,13 +21,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:639-743",
-      "BleManager::motionSensorOff@0x39a068",
-      "E-WRITE",
-      "E-SENSOR",
-      "E-MEMORY"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Disable motion sensor"
   },
@@ -53,13 +46,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1001-1105",
-      "BleManager::motionSensorOn@0x39b5c8",
-      "E-WRITE",
-      "E-SENSOR",
-      "E-MEMORY"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Enable motion sensor"
   },
@@ -85,13 +71,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1106-1182",
-      "BleManager::underbedLighting@0x39b6c8",
-      "E-WRITE",
-      "E-ONCE",
-      "E-RELEASE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Under-bed light toggle"
   },
@@ -117,15 +96,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1451-1546",
-      "BleManager::massageHeadAndFootMinus@0x39ba40",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Decrease both massage intensities"
   },
@@ -151,15 +121,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1547-1640",
-      "BleManager::massageHeadAndFoot@0x39bb34",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Increase both massage intensities"
   },
@@ -185,15 +146,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1641-1734",
-      "BleManager::massageFootMinus@0x39bc24",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Decrease foot massage intensity"
   },
@@ -219,15 +171,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1735-1828",
-      "BleManager::massageFoot@0x39bd14",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Increase foot massage intensity"
   },
@@ -253,15 +196,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1829-1922",
-      "BleManager::massageHeadMinus@0x39be04",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Decrease head massage intensity"
   },
@@ -287,15 +221,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:1923-2016",
-      "BleManager::massageHead@0x39bef4",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Increase head massage intensity"
   },
@@ -321,15 +246,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2017-2110",
-      "BleManager::massageOff@0x39bfe4",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Massage off (speech action)"
   },
@@ -355,15 +271,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2111-2204",
-      "BleManager::massageOn@0x39c0d4",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Massage on (speech action)"
   },
@@ -389,15 +296,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2205-2296",
-      "BleManager::reading@0x39c1c4",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Reading preset recall"
   },
@@ -423,15 +321,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2297-2388",
-      "BleManager::m5@0x39c2b0",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Memory recall (artifact method m5)"
   },
@@ -457,15 +346,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2389-2480",
-      "BleManager::flat@0x39c39c",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Flat preset recall"
   },
@@ -491,15 +371,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2481-2572",
-      "BleManager::antiSnore@0x39c488",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Anti-snore preset recall"
   },
@@ -525,15 +396,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2573-2664",
-      "BleManager::zeroGravity@0x39c574",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Zero-gravity preset recall"
   },
@@ -559,15 +421,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2665-2756",
-      "BleManager::leisure@0x39c660",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Leisure preset recall"
   },
@@ -593,13 +446,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2757-2904",
-      "BleManager::stopCommand@0x39c74c",
-      "E-WRITE",
-      "E-STOP",
-      "E-ONCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "stopCommand (speak source)"
   },
@@ -625,13 +471,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2757-2904",
-      "BleManager::stopCommand@0x39c74c",
-      "E-WRITE",
-      "E-STOP",
-      "E-ONCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "stopCommand (button source)"
   },
@@ -657,14 +496,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2905-2981",
-      "BleManager::elevateDown@0x39c8c4",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "elevateDown"
   },
@@ -690,14 +521,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2982-3058",
-      "BleManager::elevateUp@0x39c984",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "elevateUp"
   },
@@ -723,14 +546,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3059-3135",
-      "BleManager::lumbarDown@0x39ca44",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "lumbarDown"
   },
@@ -756,14 +571,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3136-3212",
-      "BleManager::lumbarUp@0x39cb04",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "lumbarUp"
   },
@@ -789,14 +596,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3213-3289",
-      "BleManager::footDown@0x39cbc4",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "footDown"
   },
@@ -822,14 +621,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3290-3366",
-      "BleManager::footUp@0x39cc84",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "footUp"
   },
@@ -855,14 +646,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3367-3443",
-      "BleManager::headDown@0x39cd44",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "headDown"
   },
@@ -888,14 +671,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3444-3520",
-      "BleManager::headUp@0x39ce04",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "headUp"
   },
@@ -921,14 +696,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3521-3597",
-      "BleManager::headTiltDown@0x39cec4",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "headTiltDown"
   },
@@ -954,14 +721,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3598-3674",
-      "BleManager::headTiltUp@0x39cf84",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-RELEASE",
-      "E-VOICE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "headTiltUp"
   },
@@ -987,14 +746,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3909-3978",
-      "BleManager::confirmationResponse@0x429dec",
-      "E-WRITE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-DISPATCH"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Query massage state"
   },
@@ -1020,15 +771,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:3979-4072",
-      "BleManager::massageOpen@0x42a274",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Massage UI power toggle"
   },
@@ -1053,15 +795,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:4073-4166",
-      "BleManager::massageMode@0x42ce68",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Cycle massage mode"
   },
@@ -1087,15 +820,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:4167-4260",
-      "BleManager::massageTimer@0x42f380",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Cycle massage timer"
   },
@@ -1121,13 +845,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:4261-4339",
-      "BleManager::flatAndZg@0x43335c",
-      "E-WRITE",
-      "E-MEMORY",
-      "E-STOP"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Reset programmed presets (FLAT+ZG)"
   },
@@ -1152,16 +869,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2665-2756",
-      "BleManager::leisure@0x39c660",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE",
-      "E-MEMORY"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Program leisure preset via held recall"
   },
@@ -1186,16 +893,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2573-2664",
-      "BleManager::zeroGravity@0x39c574",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE",
-      "E-MEMORY"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Program Zero Gravity preset via held recall"
   },
@@ -1220,16 +917,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2481-2572",
-      "BleManager::antiSnore@0x39c488",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE",
-      "E-MEMORY"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Program Anti Snore preset via held recall"
   },
@@ -1253,16 +940,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2297-2388",
-      "BleManager::m5@0x39c2b0",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE",
-      "E-MEMORY"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Program memory preset via held recall"
   },
@@ -1286,16 +963,6 @@
     ],
     "dynamic_fields": "None in frame; only action/source-selected literal differs.",
     "response": "No matching app response/position parser.",
-    "evidence": [
-      "work/blutter-3.9.2/asm/rise/tools/ble_manager.dart:2205-2296",
-      "BleManager::reading@0x39c1c4",
-      "E-WRITE",
-      "E-CONTINUE",
-      "E-ONCE",
-      "E-MASSAGE-POLL",
-      "E-SOURCE",
-      "E-MEMORY"
-    ],
     "confidence": "VERIFIED",
     "semantic_action": "Program reading preset via held recall"
   }

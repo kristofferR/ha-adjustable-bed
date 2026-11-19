@@ -1,4 +1,4 @@
-"""Row049 SIMMONS app vectors, routing, release lifecycle and alarm state."""
+"""SIMMONS app vectors, routing, release lifecycle and alarm state."""
 
 from __future__ import annotations
 

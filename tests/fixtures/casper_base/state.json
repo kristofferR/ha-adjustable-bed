@@ -2776,12 +2776,6 @@
     "id": "numeric-conversion-76",
     "kind": "numeric_helper",
     "input": 7,
-    "source_functions": [
-      "0x5401f8",
-      "0x54027c",
-      "0x540680",
-      "0x540704"
-    ],
     "expected": {
       "result": 7,
       "error": null
@@ -2791,12 +2785,6 @@
     "id": "numeric-conversion-77",
     "kind": "numeric_helper",
     "input": 7.9,
-    "source_functions": [
-      "0x5401f8",
-      "0x54027c",
-      "0x540680",
-      "0x540704"
-    ],
     "expected": {
       "result": 7,
       "error": null
@@ -2806,12 +2794,6 @@
     "id": "numeric-conversion-78",
     "kind": "numeric_helper",
     "input": -7.9,
-    "source_functions": [
-      "0x5401f8",
-      "0x54027c",
-      "0x540680",
-      "0x540704"
-    ],
     "expected": {
       "result": -7,
       "error": null
@@ -2821,12 +2803,6 @@
     "id": "numeric-conversion-79",
     "kind": "numeric_helper",
     "input": "7",
-    "source_functions": [
-      "0x5401f8",
-      "0x54027c",
-      "0x540680",
-      "0x540704"
-    ],
     "expected": {
       "result": null,
       "error": "num"
@@ -2836,12 +2812,6 @@
     "id": "numeric-conversion-80",
     "kind": "numeric_helper",
     "input": null,
-    "source_functions": [
-      "0x5401f8",
-      "0x54027c",
-      "0x540680",
-      "0x540704"
-    ],
     "expected": {
       "result": null,
       "error": "num"
@@ -2851,12 +2821,6 @@
     "id": "numeric-conversion-81",
     "kind": "numeric_helper",
     "input": true,
-    "source_functions": [
-      "0x5401f8",
-      "0x54027c",
-      "0x540680",
-      "0x540704"
-    ],
     "expected": {
       "result": null,
       "error": "num"

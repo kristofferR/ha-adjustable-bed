@@ -7,10 +7,10 @@ for (const route of ["p1", "p2", "p3"]) {
   test(`BetterLiving2 ${route} keeps native controls with their physical child`, () => {
     const keys = [
       "cover:back", "cover:feet", "cover:betterliving2_all_sections",
-      "button:betterliving2_program_zero_g",
+      "button:catalog_save",
       ...(route === "p1"
         ? ["number:betterliving2_massage_head"]
-        : ["button:betterliving2_massage_timer", "sensor:betterliving2_massage_head"]),
+        : ["button:massage_timer_step", "sensor:betterliving2_massage_head"]),
     ];
     const entries: Record<string, EntityRegistryDisplayEntry> = {};
     for (const side of ["left", "right"]) {
@@ -46,14 +46,14 @@ for (const route of ["p1", "p2", "p3"]) {
       },
     });
     expect(bed.utility).toEqual([]);
-    expect(bed.presetSaves).toEqual(["button.left_betterliving2_program_zero_g"]);
+    expect(bed.presetSaves).toEqual(["button.left_catalog_save"]);
     expect(bed.utilityStates).toEqual([]);
     if (route === "p1") {
       expect(bed.massage.numbers).toEqual(["number.left_betterliving2_massage_head"]);
       expect(bed.massage.buttons).toEqual([]);
       expect(bed.massage.timer).toBeUndefined();
     } else {
-      expect(bed.massage.buttons).toEqual(["button.left_betterliving2_massage_timer"]);
+      expect(bed.massage.buttons).toEqual(["button.left_massage_timer_step"]);
       expect(bed.massage.states).toEqual(["sensor.left_betterliving2_massage_head"]);
     }
     expect(JSON.stringify(bed)).not.toContain("right_");

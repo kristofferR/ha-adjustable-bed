@@ -57,7 +57,6 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
     CONF_PROFILE_MIGRATION,
@@ -213,21 +212,9 @@ SETUP_CLEANUP_TIMEOUT = 5.0
 
 _LOGGER = logging.getLogger(__name__)
 
+# Standalone and paired beds (both single- and separate-address pairs) set up
+# the same platforms; a pair builds per-side entities on native child devices.
 PLATFORMS: list[Platform] = [
-    Platform.BINARY_SENSOR,
-    Platform.BUTTON,
-    Platform.CLIMATE,
-    Platform.COVER,
-    Platform.LIGHT,
-    Platform.NUMBER,
-    Platform.SELECT,
-    Platform.SENSOR,
-    Platform.SWITCH,
-]
-
-# Platforms a paired bed (Dual Bed 4.0) sets up. Each builds per-side entities
-# against native child devices for both single- and separate-address pairs.
-PAIRED_PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.CLIMATE,
@@ -536,7 +523,7 @@ def migrate_v5_5_data(
 # Settings 5.6 removed (#v5 settings simplification). Their behaviour is now
 # one value for every bed, or the per-bed default.
 V5_6_REMOVED_KEYS: Final = frozenset(
-    {"position_mode", "connection_profile", CONF_PAIR_CONNECTION_MODE}
+    {"position_mode", "connection_profile", "pair_connection_mode"}
 )
 _LEGACY_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
 
@@ -1432,8 +1419,8 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 entry.entry_id,
                 [(child.address, side) for side, child in coordinator.children.items()],
             )
-            await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
-            async_sweep_after_setup(hass, entry, PAIRED_PLATFORMS)
+            await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+            async_sweep_after_setup(hass, entry, PLATFORMS)
         except (Exception, asyncio.CancelledError):
             hass.data[DOMAIN].pop(entry.entry_id, None)
             await _shutdown_failed_pair()
@@ -1509,8 +1496,8 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
     try:
         async_register_children(hass, coordinator)
         entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-        await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
-        async_sweep_after_setup(hass, entry, PAIRED_PLATFORMS)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        async_sweep_after_setup(hass, entry, PLATFORMS)
     except (Exception, asyncio.CancelledError):
         hass.data[DOMAIN].pop(entry.entry_id, None)
         await coordinator.async_shutdown()
@@ -1635,6 +1622,44 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     )
 
     coordinator = await AdjustableBedCoordinator.async_create(hass, entry)
+    try:
+        await _async_setup_standalone_entry(hass, entry, coordinator)
+    except BaseException:
+        # A failed setup must not leave a reconnect timer or bond task behind:
+        # Home Assistant's retry builds a new coordinator for the same bed,
+        # which accepts one connection.
+        domain_data = hass.data.get(DOMAIN, {})
+        if domain_data.get(entry.entry_id) is coordinator:
+            domain_data.pop(entry.entry_id)
+
+        async def _bounded_shutdown() -> None:
+            # A stalled disconnect must not block the setup retry.
+            async with asyncio.timeout(SETUP_CLEANUP_TIMEOUT):
+                await coordinator.async_shutdown()
+
+        shutdown = hass.async_create_task(
+            _bounded_shutdown(), "adjustable_bed.failed_setup_shutdown"
+        )
+        cancelled = False
+        while not shutdown.done():
+            try:
+                # Unlike awaiting the task, this neither cancels it nor raises its error.
+                await asyncio.wait((shutdown,))
+            except asyncio.CancelledError:
+                cancelled = True
+        if not shutdown.cancelled() and (err := shutdown.exception()) is not None:
+            _LOGGER.warning(
+                "Failed to stop %s after its setup failed: %r", entry.title, err
+            )
+        if cancelled:
+            raise asyncio.CancelledError from None
+        raise
+
+
+async def _async_setup_standalone_entry(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: AdjustableBedCoordinator
+) -> None:
+    """Connect a standalone bed and forward its platforms."""
     _async_ensure_device_registry_entry(hass, entry, coordinator)
     await async_watch_profile_recommendations(hass, entry, ((None, coordinator),))
 
@@ -1744,8 +1769,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Unload a config entry."""
     _LOGGER.info("Unloading Adjustable Bed integration for %s", entry.title)
 
-    platforms = PAIRED_PLATFORMS if is_paired(entry.data) else PLATFORMS
-    await hass.config_entries.async_unload_platforms_or_raise(entry, platforms)
+    await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
     coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[DOMAIN].pop(
         entry.entry_id
     )

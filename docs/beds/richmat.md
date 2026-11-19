@@ -1,6 +1,6 @@
 # Richmat
 
-**Status:** ✅ Tested (Richmat and legacy BedTech routes); ❓ explicit BedTech 7.1.3 models; ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, L&P legacy app, Casper Base, Hush Base, SonicSleep, Lunio Smart+ and Luuna + profiles are APK-verified with hardware unverified
+**Status:** Partly tested (the Richmat remotes and legacy BedTech controls are tested; the app profiles need testing). Each profile states its own status.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), getrav, [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [Josh Pearce](https://github.com/joshpearce) (L&P MlRM)
 
@@ -94,7 +94,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [Zero Gravity](https://play.google.com/store/apps/details?id=com.richmat.zerogravity) 1.0.3 (4) | `com.richmat.zerogravity` | [Zero Gravity](#zero-gravity) |
 | ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | [Good Vibe Sleep](#good-vibe-sleep) |
 | ✅ | [MLILY Control](https://play.google.com/store/apps/details?id=com.richmat.mlily2) 5.0.2 (50200) | `com.richmat.mlily2` | [MLILY Control](#mlily-control) |
-| ❓ | [Okimiki](https://play.google.com/store/apps/details?id=com.richmat.okimiki) 1.0.1 (10101) | `com.richmat.okimiki` | [Okimiki](#okimiki) |
+| ✅ | [Okimiki](https://play.google.com/store/apps/details?id=com.richmat.okimiki) 1.0.1 (10101) | `com.richmat.okimiki` | [Okimiki](#okimiki) |
 | ✅ | [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (10800) | `com.richmat.casperbase` | [Casper Base](#casper-base); setup, sleep sensors and remote finder in its [own guide](casper-base.md) |
 | ✅ | [Lunio Smart+](https://play.google.com/store/apps/details?id=com.richmat.luniosmart) 1.0.4 (10400) | `com.richmat.luniosmart` | [Lunio Smart+](#lunio-smart) |
 | ✅ | [SonicSleep](https://play.google.com/store/apps/details?id=com.richmat.sonicsleep) 1.0.4 (10400) | `com.richmat.sonicsleep` | [SonicSleep](#sonicsleep) |
@@ -150,9 +150,9 @@ Setup then asks which app you use; the bed's name and services never decide it.
 RMControl and the remote controls also offer the packet dialect under
 **Advanced**. An app picked from the **Richmat app profiles** brand list skips
 the question. Existing entries keep their bed type, settings and entity IDs.
-**Configure** changes the same answers and lists each app by its own name, so an
-existing entry can switch to an MH or classic app there. A remote entry opts in
-to RMControl by choosing a product, and an RMControl entry returns to the remote
+**Reconfigure** changes the same answers and lists each app by its own name, so an
+existing entry can switch to an MH or classic app there. In **Configure**, a remote
+entry opts in to RMControl by choosing a product, and an RMControl entry returns to the remote
 controls by choosing None. Each receiver of a two-address pair answers for itself.
 
 <!-- generated:richmat-profiles -->
@@ -219,6 +219,7 @@ sends STOP.
 | Galaxy Bed Control | `galaxy` | W1, N1, W5, W4, W3, W2 | per-product catalog | no |
 | Good Vibe Sleep | `goodvibe` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease on sustained controls |
 | MLILY Control | `mlily` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease on sustained controls |
+| Majestic Home | `majestichome` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease on sustained controls |
 | Okimiki | `okimiki` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease on sustained controls |
 | Power Bob Base | `bobpowerbase` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease on sustained controls |
 | L&P legacy app | `leggett_lp_legacy` | configured characteristics | per-layout catalog | no |
@@ -298,13 +299,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -527,7 +528,7 @@ every product's catalog codes are frozen.
 
 ### Richmat remotes
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 The `richmat` bed type. Its protocol variant picks the framing (one
 [profile](#choosing-a-profile) each); its Richmat remote code picks the motors,
@@ -555,7 +556,7 @@ because the BLE name and GATT layout do not distinguish it from other QRRM
 surfaces.
 The current L&P and Richmat apps make the same explicit product-profile choice;
 their generic QRRM profiles contain no controls. On the hardware from
-issue #504, Flat is confirmed. The other command frames are statically verified
+issue #504, Flat is confirmed. The other command frames are checked against the app
 across the apps but have not yet been validated on that physical bed.
 
 The QRRM receiver in issue #695 (Sven & Son, `WLT825X_H35_S`) is paired with an
@@ -591,7 +592,7 @@ The app tries BLE services in this order:
 > detects as a bed when the device name also matches a Richmat pattern.
 
 > **W4 (`0000FFF0-...`) caveat:** FFF0 is a fully generic short UUID that many
-> non-bed devices advertise — a "NO_DVR-*" camera system was misdetected as a
+> non-bed devices advertise. A "NO_DVR-*" camera system was misdetected as a
 > Richmat bed (issue #418). All known W4 beds are Germany Motions units named
 > `DHN-*` (the GM Bed Control app scans unfiltered and identifies beds by
 > name/remote code, never by bare FFF0), so W4 likewise only detects as a bed
@@ -641,7 +642,7 @@ Device name hints:
     simple on/off switch. See [Lights](#lights) for the frames.
 - **Controller Sync** sends `BC` (on) or `BD` (off).
 
-**Controller Sync** (previously **Synchro Mode**) sends the selected controller's
+**Controller Sync** sends the selected controller's
 sync command. It does not mirror commands between two Home Assistant entries.
 The displayed switch state records requested changes, not confirmed movement or
 sync status from the bed. In the HJC9 report, enabling it on both frames did not
@@ -701,7 +702,7 @@ its 120 ms delay); the other frames are the pre-v5 controller's.
 
 **App:** [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) 7.1.3 (14), `com.bedtech`
 
-**Status:** ❓ Needs testing (explicit app models); ✅ existing legacy controls
+**Status:** Partly tested (the legacy controls are tested; the app models need testing)
 
 #### Setup
 
@@ -841,7 +842,7 @@ Based on `com.bedtech`
 reproduces every literal byte for byte, including bank 1. All 585 app
 model/action/side routes are retained as focused test vectors. Hardware remains
 unverified for the explicit profiles, including cessation of movement after
-refresh ends, bank mapping, memory saves and the timer20 button.
+refresh ends, bank mapping, memory saves and the timer 20 button.
 
 The earlier BedTech 7.1.3 Hermes checks (2026-07-10, issue #410) established
 write-with-response; the contrary light/Lounge experiment in issue #243 did
@@ -852,7 +853,7 @@ remains available independently of the explicit app profiles.
 
 **App:** [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) 2.3.25, `com.richmat.lp2`
 
-**Status:** ✅ Tested
+**Status:** Tested
 
 Behaves as the Richmat remotes route with WiLinke framing on W1, except as below.
 
@@ -889,7 +890,7 @@ L&P MlRM sends only its frozen frames, the pre-v5 controller's.
 
 **App:** [RMControl](https://play.google.com/store/apps/details?id=com.richmat.rmcontrol2) 21.3.7, `com.richmat.rmcontrol2`
 
-**Status:** ❓ Needs testing (source-verified against RMControl 21.3.7, hardware unverified)
+**Status:** Not yet tested
 
 These opt-in profiles preserve the app's exact product choices and individual
 button commands. Movement, preset, memory, massage, light and extra-action
@@ -1082,7 +1083,7 @@ be worked around by choosing an unrelated product.
 
 **App:** Revive Control 1.0.26, Best Mattress 1.1.1, Blvd Home 1.0.1, HARMONY 1.0.0 and Idealbed 2.4.2 (see [Apps](#apps))
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1117,7 +1118,7 @@ changed.
 
 - Setup and Configure report a name the app cannot resolve on the model question.
 - Each side of a two-address pair keeps its own app and model. Change a side's
-  model under its receiver settings; unpair to change its app.
+  model under its receiver settings; separate the combined bed to change its app.
 
 The controller follows the app's GATT selection (Nordic UART, then the fee9 and
 ffe0/fff0 maps, then a fallback service; see [Transports](#transports)) and keeps
@@ -1184,7 +1185,7 @@ Answer the Richmat question with the app your phone uses, for example **Revive C
 | Button-light page | Colour as above, timeout (Blvd Home: 0–15 min); **Button light off** only in Revive Control and Best Mattress, the apps with an emitting OFF button | as above, OFF `75` |
 | Smart set lock | **Toggle smart set lock** button, **Smart set lock** state | `6e 01 M 84` once |
 | Snore intervention | Select: off, anti-snore, zero gravity (the model's list) | `6e 13 M code` |
-| Detection | Start/stop buttons, **Detection** sensor with per-device results | `6e88c210c8`, `6e88c220d8` |
+| Detection | Start/stop buttons, **Component check** sensor with per-device results | `6e88c210c8`, `6e88c220d8` |
 | VER1 angles | Back/foot/pillow angle numbers in the model's range | `6e 88 (30\|bits<<2) angle`, 100 ms after release |
 | VER1 massage intensity | Head/foot intensity numbers (both zones sent) | `6e 88 a0 ((foot<<3)\|head)` |
 | VER1 motor mode | Select (left/right or mode 1–3) | `6e 88 (10\|bits<<2) 00` |
@@ -1337,9 +1338,9 @@ See [Actions](../SERVICES.md).
 
 #### Evidence
 
-The Richmat MH apps send only frames frozen from their apps. Real users should confirm model selection by
+The Richmat MH apps send only frames frozen from their apps. Owners can help confirm model selection by
 name, KEEP/STOP behavior, alarm countdown semantics, LED timeout units and the
-waist mattress controls after a beta or release.
+waist mattress controls.
 
 `tools/generate_richmat_mh_catalog.py` builds `beds/richmat_mh/catalog.py` from the
 machine-local frozen reports (hash-pinned). It reads them from `--phase4-dir`,
@@ -1351,7 +1352,7 @@ and reports missing inputs instead of failing with a traceback.
 
 **App:** [HJBed](https://play.google.com/store/apps/details?id=com.richmat.hjbed) 2.1.2 (code 21200), `com.richmat.hjbed`
 
-**Status:** ❓ Needs testing (static app evidence; physical behavior, ATT and firmware acceptance unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -1724,14 +1725,13 @@ selected product's alarm list.
 #### Evidence
 
 HJBed sends only frames frozen from its app. Physical
-effects, ATT behavior and firmware acceptance are for real users to validate after
-a beta or release.
+effects, ATT behavior and firmware acceptance still need testing by owners.
 
 ### Eshine
 
 **App:** [Eshine](https://play.google.com/store/apps/details?id=com.richmat.eshinesleep) 1.0.1 (code 10100), `com.richmat.eshinesleep`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 The `eshine` bed type drives the E6000 (metadata H3RN), the only product the
 app offers, from one fixed table: head, feet, lumbar and pillow motors, presets,
@@ -1871,14 +1871,14 @@ bare. Desk data, firmware maintenance and OTA, empty pruned blanket and
 diagnostic models, unused enums and unrelated phone infrastructure are excluded;
 no bed Wi-Fi, provisioning, cloud or account path was found. Firmware
 acceptance, physical axis semantics, massage and light cycles and STOP behavior
-are for real users to validate after a beta or release, with full GATT and
+are for real users to validate, with full GATT and
 notification captures.
 
 ### Classic Richmat apps
 
 **App:** Avocado Eco Base 1.0.4 (5), CoasterSleep 1.0.10 (10), Forty Winks 1.0.1, Milemont 1.0.4 and Superior 1.0.9 (see [Apps](#apps))
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 These older resource-driven apps have an independent profile per app. Existing
 Richmat and RMControl entries retain their own behavior, and no capability is
@@ -2240,7 +2240,7 @@ behavior is unverified.
 
 **App:** [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103), `com.richmat.goodvibesleep`
 
-**Status:** ❓ Needs testing (static app evidence only)
+**Status:** Not yet tested
 
 A per-product catalog app over this codec, plus independent sleep sensors that
 speak their own JSON envelope. Its product catalog stays controller data; the
@@ -2528,14 +2528,13 @@ monitoring to protect the shared response selector.
 
 Good Vibe Sleep sends only frames frozen from its app's vectors
 (`tests/fixtures/goodvibe`). Hardware, ATT delivery, firmware acceptance and
-physiological interpretation remain unverified. Real users may validate them
-after beta/release; maintainer hardware acquisition is not required.
+physiological interpretation still need testing by owners.
 
 ### L&P legacy app
 
 **App:** [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp) 2.2.1 (13), `com.richmat.lp`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 The `leggett_lp_legacy` bed type follows the legacy app's 122 remote layouts,
 each selected by the four-character code used in that app's manual or QR setup
@@ -2566,7 +2565,7 @@ or L&P QRRM configurations.
 - For paired beds with separate addresses, each side's stored profile provides
   its remote buttons even when that side is unavailable during startup.
 - Profile, packet mode and GATT UUIDs stay specific to each side and are not
-  shown in the pair's shared settings. To change them, unpair the beds, update
+  shown in the pair's shared settings. To change them, separate the combined bed, update
   the individual entries, then pair them again.
 - Changing the layout or packet mode creates distinct action entities. Update
   automations to use those new entities; old actions remain unavailable instead
@@ -2666,12 +2665,12 @@ positions, battery readings, a capability query or proof that an alarm is set.
 
 The L&P legacy app sends only the packets of its catalog, in
 both modes. Physical confirmation is deferred to users with
-the corresponding bed after a beta or release; it is separate from static
+the corresponding bed; it is separate from static
 protocol verification.
 
 ### Casper and Hush family
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 The Casper Base and Hush Base apps ship one Richmat library: its transports,
 connect queries, fixed codes, receive parser and settings records are the same
@@ -2827,13 +2826,13 @@ Both apps send only frames frozen from their apps
 `tests/test_casper_base_vectors.py` and `tests/test_hush_vectors.py` rebuild
 each one through this codec. Physical motor effects, firmware compatibility,
 ATT behavior and sensor accuracy remain unverified. Real users can supply
-captures after a beta or release; maintainer hardware is not required.
+captures.
 
 ### Casper Base
 
 **App:** [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (version code 10800), `com.richmat.casperbase`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 Behaves as the [Casper and Hush family](#casper-and-hush-family), except as below.
 
@@ -2932,7 +2931,7 @@ Casper Base sends only the frames frozen from its app: its builder vectors
 
 **App:** [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501), `com.richmat.hushbase`
 
-**Status:** ❓ Needs testing (hardware unverified)
+**Status:** Not yet tested
 
 Behaves as the [Casper and Hush family](#casper-and-hush-family), except as below.
 
@@ -3063,11 +3062,11 @@ products, shared builders and auxiliary shards are listed in
 
 **App:** [Lunio Smart+](https://play.google.com/store/apps/details?id=com.richmat.luniosmart) 1.0.4 (10400), `com.richmat.luniosmart`
 
-**Status:** ❓ Needs testing. APK-verified; hardware unverified.
+**Status:** Not yet tested
 
 #### Setup
 
-Search for **Lunio Smart+** under Richmat in new setup or Configure. The layout always has head and foot controls and one
+Search for **Lunio Smart+** under Richmat in new setup, or in Reconfigure for an existing bed. The layout always has head and foot controls and one
 memory slot. The catalog supplies discovery aliases, not physical compatibility
 or model capabilities. Names match case-sensitive substrings. HA's indexed scan
 gate recognizes prefixes; manual setup also covers names with a keyword in the
@@ -3083,7 +3082,7 @@ also supports write without response, HA uses it; otherwise it requests a respon
 With no notification characteristic, startup still sends query then clock.
 Subscription failure propagates before either write, with no alternate subscription.
 
-There is no proven app PIN, custom authentication or Device Information read.
+There is no app PIN, custom authentication or Device Information read.
 The Android plugin requests MTU 512 after 350 ms and can race service discovery;
 HA delegates MTU, scan, CCCD and connection transport to its Bluetooth stack and
 proxies. These are platform operations, not additional bed commands.
@@ -3094,7 +3093,7 @@ Head/foot up/down, flat, zero gravity, anti-snore and separate memory-1 recall/s
 use the full framed command on **every** route, including Nordic UART. Only the
 capability query switches to a bare byte for S1. Save is a dedicated single-shot
 action and asks for confirmation. No additional memory, simultaneous-axis opcode,
-side selector, position setter, light or massage setter is inferred from receive
+side selector, position setter, light or massage setter is guessed from receive
 fields. Two-address pairing retains each physical bed's independent app selection.
 
 <!-- generated:luniosmart -->
@@ -3157,7 +3156,7 @@ keeps no app-style motion FIFO and does not replay stale movement after reconnec
 #### Notifications
 
 Diagnostics and support bundles retain the latest BED event payloads under the
-artifact's names. Common protocol version, mode, unsigned angle fields, packed massage fields,
+app's names. Common protocol version, mode, unsigned angle fields, packed massage fields,
 diagnostic status and the empty diagnostic-detail object remain read-only. Extended
 BED records retain motor height/type/angle/monitorHeight, head and foot strengths,
 massage mode/frequency/power, white LED, normalized RGB, raw base-60 light timer,
@@ -3172,7 +3171,7 @@ buffer end. Common fragments of three or more bytes are consumed immediately.
 Extended BED frames require the additive checksum and declared length. Common
 fields have no general checksum gate. Desk/OTA envelopes retain their boundary
 effect without publishing their payloads. The inner snore-capability literal
-collides with the 21 zero-length envelope and is not admitted as a BED event by
+collides with the 21 zero-length envelope and is not accepted as a BED event by
 the live receiver.
 
 Partial bytes expire after the generated interval without reparse. The app clears
@@ -3191,7 +3190,7 @@ year minus 1970 and an additive checksum.
 
 #### Evidence
 
-The app's literals prove the shared codec; physical routing, axes, release and
+The app's frames prove the shared codec; physical routing, axes, release and
 memory behavior still need testing on real beds.
 
 Based on Lunio Smart+ 1.0.4 (`com.richmat.luniosmart`).
@@ -3200,11 +3199,15 @@ Based on Lunio Smart+ 1.0.4 (`com.richmat.luniosmart`).
 
 **App:** [SonicSleep / 소닉슬립](https://play.google.com/store/apps/details?id=com.richmat.sonicsleep) 1.0.4 (10400), `com.richmat.sonicsleep`
 
-**Status:** ❓ APK-verified; hardware unverified.
+**Status:** Not yet tested
 
 #### Setup
 
-Search for **SonicSleep** in manual setup or Configure, under Richmat. Setup
+Choose **SonicSleep / 소닉슬립 app**. There are no further questions: the
+product is fixed with two motors, and **Read bed position** is off. On a bed
+with two receivers, each side keeps its own settings.
+
+Search for **SonicSleep** in manual setup, or in Reconfigure for an existing bed, under Richmat. Setup
 stores the fixed `one` / IQRM product and two physical motors. Head, foot and
 combined controls are selections of those motors. Names and shared services
 never select another product, remote code or downloaded catalog. Each physical
@@ -3219,7 +3222,7 @@ the raw/framed route selector. The writer requires the exact write UUID and
 `write`; a write-without-response-only characteristic is rejected. The first
 `notify` characteristic wins, regardless of the expected UUID. Its writer's
 properties select the write response mode. Multi-service firmware can expose
-mixed roles under this source rule; physical compatibility remains unverified.
+mixed roles under this source rule; physical compatibility still needs testing.
 
 #### Controls
 
@@ -3298,7 +3301,7 @@ before the next tick, cancels unsent refreshes, drains an in-flight write, and n
 up missed ticks. Timed movement and renewable card holds use the real command
 scheduler, captured physical owner and a bounded deadline. Release and STOP end
 refresh without sending an extra packet. Firmware watchdog and physical stopping
-behavior remain unverified. Sequential two-link pairs reject renewable Both
+behavior still need testing. Sequential two-link pairs reject renewable Both
 holds before motion; finite operations and individual-side controls remain usable.
 
 #### Notifications
@@ -3313,7 +3316,7 @@ The state sensor publishes only observations from the current physical session:
 clock/light/snore/diagnostic capabilities, protocol version, bed mode, raw motor
 and travel values, massage/follow-shake, white/RGB light, anti-snore/off-bed,
 press/split status, BED diagnostic frames, alarm records and bed link name.
-No percentage/degree calibration or battery value is inferred. Reconnect and
+No percentage/degree calibration or battery value is guessed. Reconnect and
 controller replacement invalidate the cache and old notification callbacks.
 
 Alarm list replies insert at the front if the record is absent. Escalations
@@ -3342,7 +3345,7 @@ After a mutation, that ID requires fresh received fields before another mutation
 an ACK alone cannot validate the previous record. Prepared fields are checked
 again under the BLE lock immediately before dispatch.
 A new alarm refreshes and collects observed list records before allocating an
-ID. Because no empty-list or list-completion reply is proven, silence rejects
+ID. Because no empty-list or list-completion reply is known, silence rejects
 creation too. A changed cache or released/replaced connection invalidates a
 prepared all-target settings operation. Choose an individual side if a
 sequential pair cannot retain both live alarm caches.
@@ -3356,16 +3359,16 @@ Clock synchronization preserves whole-hour timezone truncation and year minus
 #### Evidence
 
 Based on SonicSleep 1.0.4 (10400).
-All command literals use the existing Richmat codec; receive and stream
+All command frames use the existing Richmat codec; receive and stream
 contracts are covered by the committed SonicSleep fixtures. Opaque alarm fields
 and caller-specific domains are covered too. Hardware
-validation belongs to external beta/release users with existing beds.
+validation belongs to owners with existing beds.
 
 ### Luuna +
 
 **App:** [Luuna +](https://play.google.com/store/apps/details?id=com.richmat.luuna) 2.0.1 (20102), `com.richmat.luuna`
 
-**Status:** ❓ Needs testing. Static BLE evidence is verified; hardware remains unverified.
+**Status:** Not yet tested
 
 #### Setup
 
@@ -3499,15 +3502,23 @@ All normal/program, dynamic-builder and parser literal cases are kept
 in `tests/fixtures/luuna/` and exercised by `tests/test_luuna.py`. The existing
 Richmat codec reproduces the app's literal command frames without a new codec.
 Physical movement, stop latency, supported firmware, calibration and negotiated
-MTU remain for real beta/release users to validate.
+MTU remain for owners to validate.
 
 ### MLILY Remote
 
 **App:** [MLILY Remote](https://play.google.com/store/apps/details?id=com.richmat.mlilyremote) 1.0.1 (10103), `com.richmat.mlilyremote`
 
-**Status:** ❓ Needs testing. All five products are statically verified; hardware is unverified.
+**Status:** Not yet tested
 
 #### Setup
+
+1. Choose **MLILY Remote app**.
+2. Choose the product (MS200, MS300, MS600, PowerCool or MS300-SH) and whether
+   the bed is a single bed or a double bed with separate sides.
+
+The product sets the motors and massage; PowerCool shows fan and cooling
+controls. **Read bed position** is off. On a bed with two receivers, each side
+keeps its own product and layout.
 
 Choose **Richmat → MLILY Remote**, then the exact product: MS200, MS300,
 MS600, PowerCool or MS300-SH. This is independent of MLILY Control. Choose the
@@ -3615,7 +3626,7 @@ app's cadence. Presets, flat, light, massage and fan buttons add no release STOP
 Startup subscribes, exits limit mode, queries clock support and synchronizes
 the local calendar, in that order at the 100 ms queue cadence. Writes use
 without-response when offered, otherwise with-response. No application command
-retry, authentication, PIN or encryption handshake is proven. HA owns adapter
+retry, authentication, PIN or encryption handshake is known. HA owns adapter
 selection, connection budgets and reconnect-on-demand.
 
 #### Notifications
@@ -3625,7 +3636,7 @@ the last rejected reply as attributes, without inventing
 position, massage, RGB, detector or recurring-alarm entities. Clock support is
 announced by its exact response. Alarm add/cancel acknowledgements commit or
 remove the local saved alarm. Six-field extended alarm records remain opaque;
-no hour, minute, repeat or record identity is inferred from their offsets.
+no hour, minute, repeat or record identity is guessed from their offsets.
 
 HA keeps complete five-byte common notifications across fragments, validates
 extended checksums, guards truncated records and rejects zero-length frames.
@@ -3660,7 +3671,7 @@ Based on MLILY Remote 1.0.1 (10103).
 
 **App:** [MLILY Control](https://play.google.com/store/apps/details?id=com.richmat.mlily2) 5.0.2 (50200), `com.richmat.mlily2`
 
-**Status:** ❓ Needs testing. Static APK behavior verified; hardware remains unverified.
+**Status:** Not yet tested
 
 #### Setup
 
@@ -4943,9 +4954,18 @@ physical effects, over-air delivery, alarm accuracy or persistence.
 
 **App:** [Richmat](https://play.google.com/store/apps/details?id=com.richmat.richmat) 4.2.0 (42006), `com.richmat.richmat`
 
-**Status:** ❓ Needs testing. Complete static protocol support; hardware remains unverified.
+**Status:** Not yet tested
 
 #### Setup
+
+1. Choose **Richmat app**, then search for the product code the app shows.
+   Codes marked "restored product" are ones the app only reaches from a saved
+   setup; choose one only when it is your bed's code.
+2. If your bed has a separate sleep sensor, add it as its own device with
+   **Richmat app sleep sensor**, and choose its session type (MM or HJ).
+
+The product sets the motors, massage and timing. On a bed with two receivers,
+add each one and combine them; each side keeps its own product.
 
 Choose **Richmat 4.2.0 app** and the exact product code. The searchable product
 question lists the app's manual products first and labels the additional restored
@@ -6438,7 +6458,7 @@ metadata retains fsize-driven followups and polling cancellation; physiological
 report interpretation is excluded. Local sleep cancellation clears the session,
 without sending the main bed's movement STOP.
 An active report keeps its BLE link through the metadata handshake and compressed
-transfer, even with quick handoff or a short idle timeout. Completion, cancellation,
+transfer, even when the link is released after each command or stays connected only briefly. Completion, cancellation,
 disconnect, or a 60-second integration watchdog ends that hold. The watchdog is an
 integration limit, not a protocol response interval.
 
@@ -6471,14 +6491,14 @@ no action accepts arbitrary packet bytes.
 Richmat 4.2.0 provides every catalog, frame and lifecycle
 value. `tests/test_richmat_app_vectors.py` preserves all 2,094 literal fixtures and
 24 semantic cases. `tests/test_richmat_app.py` checks integration behavior.
-Physical validation is for real beta/release users and is not implied here.
+Physical validation is for owners and is not implied here.
 
 
 ### Power Bob Base
 
 **App:** [Power Bob Base](https://play.google.com/store/apps/details?id=com.richmat.bobpowerbase) 1.0.9 (10900), `com.richmat.bobpowerbase`
 
-**Status:** ❓ Needs testing, all four products are unverified on hardware.
+**Status:** Not yet tested
 
 #### Setup
 
@@ -6583,9 +6603,9 @@ The normal light menu appears only after the connected bed reports it.
 
 The generated table states the app intervals. Movement first refreshes after
 one tick. Finite HA movement budgets start after that nominal startup tick,
-with a fixed admission end anchored before waiting. New movement is admitted
+with a fixed acceptance end anchored before waiting. New movement is accepted
 strictly before that end, without queued catch-up or per-tick grace. Renewable
-controls retain HA's absolute admitted hold lease. Cleanup begins at the finite
+controls retain HA's absolute accepted hold lease. Cleanup begins at the finite
 end (or earlier on STOP/cancellation), retains the source FIFO spacing and can
 submit STOP after that end. The public action drains the submitted
 write and its captured-link STOP even if the caller is cancelled. The app's
@@ -6599,9 +6619,9 @@ The status sensor exposes connection-scoped BED events, motor-index feedback,
 massage, lighting, alarm records and lock state as attributes. Motor indices
 and height-like values are retained without calibrated physical-axis claims.
 Diagnostic and anti-snore configuration event payloads retain raw fields.
-No setter is inferred from a receiver. Partial receive bytes expire and old
+No setter is guessed from a receiver. Partial receive bytes expire and old
 callbacks cannot publish into a replacement session. The app's exact snore
-capability literal conflicts with its type-21 framing; no corrected frame is invented.
+capability literal conflicts with its type-21 framing; no corrected frame is added.
 
 #### Services
 
@@ -6620,6 +6640,219 @@ operands are checked before control writes use the coordinator scheduler.
 
 Based on Power Bob Base 1.0.9 (10900) (`com.richmat.bobpowerbase`).
 
+### Majestic Home
+
+**App:** [Majestic Home](https://play.google.com/store/apps/details?id=com.richmat.majestichome) 1.0.4 (10400), `com.richmat.majestichome`
+
+**Status:** Not yet tested (hardware unverified; external beta).
+
+#### Setup
+
+Choose **Majestic Home**, then the exact FARM, JLRM, JGRN or JHRN identifier
+shown in the app. Change it later in Reconfigure. Each physical side of a
+two-address pair keeps its own choice; separate a combined bed before changing
+either side's product. Imports and restored entries use the same
+profile id. The empty product sentinel has no controls and is not a setup choice.
+
+The app scans without filters. A Bluetooth name or shared service cannot choose
+its product. The six supported GATT definitions are listed in the codec transport
+table. Service enumeration retains the first matching writable TX and the first
+notify-capable characteristic; the declared RX UUID is metadata. The final matched
+service selects raw versus framed commands even if earlier handles were retained.
+Write-without-response is used only when that selected writable TX also advertises it.
+
+The embedded manuals cover headboard installation, power storage, electric bed
+controls and Hi-Lo Tilt. They ground labels, not inferred product-to-hardware
+aliases, BLE pairing, side commands or packet values. The unused Factory Reset
+title is not an action. Flat is the reachable MotorReset control.
+
+#### Controls
+
+Native motor entities expose each product's held directions. Presets and their
+separate save buttons, light toggle and every massage action are product-gated.
+Saving uses the source long operand with a single short action, not a timed long
+press. There are no inferred brightness/RGB setters, calibration, position seeking,
+extra memory slots, single-address split controls or factory reset.
+
+Finite `timed_move` and `hold_control` actions require at least 200 ms. Their
+elapsed budget includes the 100 ms delayed first tick and any radio pacing;
+requests shorter than 200 ms are rejected. An implicit legacy one-pulse press
+uses a 200 ms budget. Native cover presses keep their default duration. If radio
+or scheduling delays consume the entire budget, HA reports failure without
+sending expired movement. Renewable native holds keep their current absolute
+lease expiry, with no startup allowance. STOP cleanup drains any submitted write
+before releasing the same live physical link. These are HA safety bounds, not
+new hardware timing guarantees or changes to the app's enqueue cadence.
+
+<!-- generated:majestichome -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Held directions | Alarm presets |
+|---|---|---|
+| none | none | none |
+| JHRN | Foot Up, Foot Down | none |
+| JGRN | Head Up, Head Down, Foot Up, Foot Down, Head and Foot Up, Head and Foot Down | none |
+| JLRM | Head Up, Head Down, Foot Up, Foot Down, Lumbar Up, Lumbar Down | Zero Gravity, Anti-Snore, Memory 1, Memory 2 |
+| FARM | Head Up, Head Down, Foot Up, Foot Down, Head and Foot Up, Head and Foot Down | Zero Gravity, Anti-Snore, Memory 1, Memory 2 |
+
+| Product | Action | Raw | Framed | Save raw | Save framed |
+|---|---|---|---|---|---|
+| JHRN | Foot Up | `29` | `6E 01 00 29 98` | none | none |
+| JHRN | Foot Down | `2A` | `6E 01 00 2A 99` | none | none |
+| JHRN | Flat | `31` | `6E 01 00 31 A0` | none | none |
+| JGRN | Head Up | `24` | `6E 01 00 24 93` | none | none |
+| JGRN | Head Down | `25` | `6E 01 00 25 94` | none | none |
+| JGRN | Foot Up | `26` | `6E 01 00 26 95` | none | none |
+| JGRN | Foot Down | `27` | `6E 01 00 27 96` | none | none |
+| JGRN | Head and Foot Up | `29` | `6E 01 00 29 98` | none | none |
+| JGRN | Head and Foot Down | `2A` | `6E 01 00 2A 99` | none | none |
+| JGRN | Flat | `31` | `6E 01 00 31 A0` | none | none |
+| JGRN | Memory 1 | `2E` | `6E 01 00 2E 9D` | `2B` | `6E 01 00 2B 9A` |
+| JLRM | Head Up | `24` | `6E 01 00 24 93` | none | none |
+| JLRM | Head Down | `25` | `6E 01 00 25 94` | none | none |
+| JLRM | Foot Up | `26` | `6E 01 00 26 95` | none | none |
+| JLRM | Foot Down | `27` | `6E 01 00 27 96` | none | none |
+| JLRM | Lumbar Up | `3F` | `6E 01 00 3F AE` | none | none |
+| JLRM | Lumbar Down | `40` | `6E 01 00 40 AF` | none | none |
+| JLRM | Flat | `31` | `6E 01 00 31 A0` | none | none |
+| JLRM | Toggle Light | `3C` | `6E 01 00 3C AB` | none | none |
+| JLRM | Massage: Head Level 1 | `99` | `6E 01 00 99 08` | none | none |
+| JLRM | Massage: Head Level 2 | `9A` | `6E 01 00 9A 09` | none | none |
+| JLRM | Massage: Head Level 3 | `9B` | `6E 01 00 9B 0A` | none | none |
+| JLRM | Massage: Foot Level 1 | `9D` | `6E 01 00 9D 0C` | none | none |
+| JLRM | Massage: Foot Level 2 | `9E` | `6E 01 00 9E 0D` | none | none |
+| JLRM | Massage: Foot Level 3 | `9F` | `6E 01 00 9F 0E` | none | none |
+| JLRM | Constant | `3A` | `6E 01 00 3A A9` | none | none |
+| JLRM | Pulse | `38` | `6E 01 00 38 A7` | none | none |
+| JLRM | Wave | `39` | `6E 01 00 39 A8` | none | none |
+| JLRM | All Off | `5E` | `6E 01 00 5E CD` | none | none |
+| JLRM | Massage: Timer 10 Minutes | `5F` | `6E 01 00 5F CE` | none | none |
+| JLRM | Massage: Timer 20 Minutes | `63` | `6E 01 00 63 D2` | none | none |
+| JLRM | Massage: Timer 30 Minutes | `61` | `6E 01 00 61 D0` | none | none |
+| JLRM | Zero Gravity | `45` | `6E 01 00 45 B4` | `66` | `6E 01 00 66 D5` |
+| JLRM | Anti-Snore | `46` | `6E 01 00 46 B5` | `69` | `6E 01 00 69 D8` |
+| JLRM | Memory 1 | `2E` | `6E 01 00 2E 9D` | `2B` | `6E 01 00 2B 9A` |
+| JLRM | Memory 2 | `2F` | `6E 01 00 2F 9E` | `2C` | `6E 01 00 2C 9B` |
+| FARM | Head Up | `24` | `6E 01 00 24 93` | none | none |
+| FARM | Head Down | `25` | `6E 01 00 25 94` | none | none |
+| FARM | Foot Up | `26` | `6E 01 00 26 95` | none | none |
+| FARM | Foot Down | `27` | `6E 01 00 27 96` | none | none |
+| FARM | Head and Foot Up | `29` | `6E 01 00 29 98` | none | none |
+| FARM | Head and Foot Down | `2A` | `6E 01 00 2A 99` | none | none |
+| FARM | Flat | `31` | `6E 01 00 31 A0` | none | none |
+| FARM | Toggle Light | `3C` | `6E 01 00 3C AB` | none | none |
+| FARM | Massage: Head Off | `98` | `6E 01 00 98 07` | none | none |
+| FARM | Massage: Foot Off | `9C` | `6E 01 00 9C 0B` | none | none |
+| FARM | Massage: Head Level 1 | `99` | `6E 01 00 99 08` | none | none |
+| FARM | Massage: Head Level 2 | `9A` | `6E 01 00 9A 09` | none | none |
+| FARM | Massage: Head Level 3 | `9B` | `6E 01 00 9B 0A` | none | none |
+| FARM | Massage: Foot Level 1 | `9D` | `6E 01 00 9D 0C` | none | none |
+| FARM | Massage: Foot Level 2 | `9E` | `6E 01 00 9E 0D` | none | none |
+| FARM | Massage: Foot Level 3 | `9F` | `6E 01 00 9F 0E` | none | none |
+| FARM | Constant | `3A` | `6E 01 00 3A A9` | none | none |
+| FARM | Pulse | `38` | `6E 01 00 38 A7` | none | none |
+| FARM | Wave | `39` | `6E 01 00 39 A8` | none | none |
+| FARM | All Off | `5E` | `6E 01 00 5E CD` | none | none |
+| FARM | Massage: Timer 10 Minutes | `5F` | `6E 01 00 5F CE` | none | none |
+| FARM | Massage: Timer 20 Minutes | `63` | `6E 01 00 63 D2` | none | none |
+| FARM | Massage: Timer 30 Minutes | `61` | `6E 01 00 61 D0` | none | none |
+| FARM | Zero Gravity | `45` | `6E 01 00 45 B4` | `66` | `6E 01 00 66 D5` |
+| FARM | Anti-Snore | `46` | `6E 01 00 46 B5` | `69` | `6E 01 00 69 D8` |
+| FARM | Memory 1 | `2E` | `6E 01 00 2E 9D` | `2B` | `6E 01 00 2B 9A` |
+| FARM | Memory 2 | `2F` | `6E 01 00 2F 9E` | `2C` | `6E 01 00 2C 9B` |
+
+| Schedule | Milliseconds |
+|---|---|
+| First held refresh | 100 |
+| Held refresh / FIFO tick | 100 |
+| Clock menu query | 300 |
+
+| Session / alarm operation | Frame |
+|---|---|
+| Exit limit | `6E 02 01 00 71` |
+| Clock query | `6E 08 01 01 78` |
+| STOP | `6E 01 00 6E DD` |
+| Alarm list | `6E 08 20 05 01 00 00 9C` |
+| Delete alarm 1 | `6E 08 20 05 02 01 01 9F` |
+| Alarm 1, memory 1, 07:30 weekdays enabled | `6E 0D 20 05 01 01 01 00 07 1E 2E F9 EF` |
+<!-- /generated -->
+
+#### Timing
+
+The generated schedule gives first/refresh ticks and the clock-menu interval.
+After notification registration, startup exits limit mode, sends the epoch/zone
+and local calendar only for FARM/JLRM, then checks the clock menu. Alarm records
+always put length before `20`, including over the raw Nordic route. Notifications
+put length after `20`. All framed BED writes use additive sum8.
+Epoch serialization takes the first eight padded hexadecimal digits; timezone
+offsets truncate to whole hours and keep their low byte. The calendar uses the
+local year minus 1970, month, day, hour, minute and second.
+
+The app's sender is a periodic FIFO. Overlapping async callbacks can submit a
+queued first item more than once, STOP does not flush it, and disconnect/dispose
+does not explicitly STOP. HA serializes and drains the physical write before
+movement cleanup, drops cancelled work and applies a strict elapsed hold ceiling.
+It sends the actual STOP after a submitted held refresh, with cancellation unable
+to suppress cleanup. A release before the first refresh sends nothing. Tap,
+preset, save, light and massage actions send once without an extra STOP. These HA
+ownership and cancellation guards do not establish a firmware watchdog.
+
+#### Notifications
+
+Common frames split at the next `6e` or consume the current buffer, without a
+checksum gate or common-fragment assembly. The embedded-delimiter stop-music
+literal cannot match through that stream. Extended BED frames accumulate their
+declared length and validate sum8. No partial-record expiry is invented.
+Malformed zero-length or truncated records are bounded instead of reproducing
+the app's hang or indexing failure. Excluded OTA framing is consumed without an
+updater. Desk, accessory and audio branches have no bed actions; shared BED
+snore/out-of-bed and stop-music effects remain observations.
+
+The diagnostic Model sensor (disabled by default) shows the product layout and
+carries observed motor travel/angle, massage, white/RGB light, alarm, lock,
+diagnostic and press/coupled/sync fields as attributes, without inferring physical
+axes, units, firmware capabilities or setters. V1 checksum omission, ignored
+extended motor index and raw diagnostic pass-through follow the source. All
+observations and alarm fields are cleared on disconnect; old callbacks cannot
+publish into a replacement physical session.
+
+#### Actions
+
+`adjustable_bed.majestichome` supports `list`, `new`, `set`, `toggle`, `delete`
+and `sync_clock`. Alarm access requires the current connection's clock ACK.
+FARM/JLRM supply the four preset choices. `set` creates or replaces an explicit
+ID. `new` also requires an explicit ID from the app's range 1 through 7,
+without claiming firmware capacity. A nonempty cache cannot establish which
+slots are free: no list terminator or empty-list proof is known. Partial replies
+and silence never authorize automatic allocation.
+
+Weekday bits run Monday through Sunday from bit 7 to bit 1; bit 0 enables the
+alarm. An empty weekday selection is once. New/edit forms use reserved zero.
+Toggle preserves all received fields and changes only the enable bit, including
+unknown preset and reserved values. Mutations mark cached fields stale until a
+new notification arrives; ACKs do not invent the new tuple. Every target is
+admitted before the first settings write, including native paired parent/child
+device targets. A replaced session or changed alarm list invalidates the plan.
+Sequential pairs preflight every physical target before any settings mutation.
+An intentional switch retains only validated intent, never old packets or a
+closed link. On the execution connection HA validates the owner/product and
+inputs again, waits for the current clock ACK, and queries fresh target fields
+for toggles. Changed toggle fields abort instead of reusing the previous tuple.
+All topologies query a fresh requested-ID tuple before a toggle. Those reply
+waits have a five-second HA bound; they do not establish list completeness.
+An explicit list reads for five seconds from actual query submission, with slow
+writes consuming that window. Its optional response contains copied alarm tuples
+per physical address/side and `complete: false`, including for zero observations.
+Sequential sides disconnect only after their observation window; the response
+does not retain a live cache or confer mutation authority. Concurrent and
+standalone plans retain their exact live-link guard.
+Every target's actual entry route and physical ownership are checked again after
+queued waits and at packet submission, before any settings mutation.
+
+#### Evidence
+
+Based on Majestic Home 1.0.4 (10400).
+
 ## Notes
 
 ### Analysis provenance
@@ -6633,7 +6866,7 @@ Legacy BedTech and L&P MlRM routes send the pre-v5 controllers' frames.
 
 **App:** [Galaxy Bed Control](https://play.google.com/store/apps/details?id=nl.starinternational.galaxy) 3.3.0 (330002), `nl.starinternational.galaxy`
 
-**Status:** ❓ Needs testing. Primary arm64 app behavior is verified; hardware and firmware behavior remain unverified.
+**Status:** Not yet tested
 
 #### Setup
 
@@ -7982,15 +8215,14 @@ current getters, installed copied configuration, screen route and session state.
 The 48,642 ordinary frozen literals are carried by `tests/fixtures/galaxy` and
 encoded by `codec/richmat.py`; focused tests also cover normal advanced builders,
 parsers, countdown commits and reconciled runtime transitions. This is static
-app evidence, not a claim of hardware validation. Real beta/release users can
+app evidence, not a claim of hardware validation. Real owners can
 validate firmware, physical sides and release behavior with timestamped captures.
 
 Based on Galaxy 3.3.0 (`nl.starinternational.galaxy`).
 
 ## Luuna Rise / Power Cool
 
-**Status:** ❓ Needs testing. Static protocol support is implemented; physical
-targets, selected product compatibility and firmware effects are unverified.
+**Status:** Not yet tested
 
 ### Known Models
 
@@ -8621,12 +8853,12 @@ Based on Luuna Rise 1.0.13 (`com.richmat.luunarise2`) and Power Cool Sleep Syste
 
 ### Lady Americana / ACAA / STA Homecare / Zero Gravity family
 
-**Status:** ❓ APK-verified, hardware unverified. External beta/release qualification only.
+**Status:** Not yet tested
 
 #### Setup
 
 Choose **Richmat**, then the exact app and its four-character layout. All four
-app names are searchable in setup and Configure. A shared Bluetooth name or
+app names are searchable in setup and Reconfigure. A shared Bluetooth name or
 service suggests the family, and does not choose an app or physical layout.
 Each receiver in a two-address pair keeps its own app, layout and saved choices.
 There is no single-address Left/Right selector for these apps.
@@ -9029,7 +9261,7 @@ motion, physical axes, memory effects and optional features remain unverified.
 
 **App:** [Lady Americana](https://play.google.com/store/apps/details?id=com.richmat.lady_americana) 1.0.2 (3), `com.richmat.lady_americana`
 
-**Status:** ❓ Needs testing.
+**Status:** Not yet tested
 
 Behaves as the [resource app family](#lady-americana--acaa--sta-homecare--zero-gravity-family).
 
@@ -9049,7 +9281,7 @@ Based on Lady Americana 1.0.2 (3).
 
 **App:** [ACAA](https://play.google.com/store/apps/details?id=com.richmat.acaa) 1.0.4 (5), `com.richmat.acaa`
 
-**Status:** ❓ Needs testing.
+**Status:** Not yet tested
 
 Behaves as the [resource app family](#lady-americana--acaa--sta-homecare--zero-gravity-family).
 
@@ -9069,7 +9301,7 @@ Based on ACAA 1.0.4 (5).
 
 **App:** [STA Homecare](https://play.google.com/store/apps/details?id=com.richmat.sta2) 1.0.5 (6), `com.richmat.sta2`
 
-**Status:** ❓ Needs testing.
+**Status:** Not yet tested
 
 Behaves as the [resource app family](#lady-americana--acaa--sta-homecare--zero-gravity-family).
 
@@ -9089,7 +9321,7 @@ Based on STA Homecare 1.0.5 (6).
 
 **App:** [Zero Gravity](https://play.google.com/store/apps/details?id=com.richmat.zerogravity) 1.0.3 (4), `com.richmat.zerogravity`
 
-**Status:** ❓ Needs testing.
+**Status:** Not yet tested
 
 Behaves as the [resource app family](#lady-americana--acaa--sta-homecare--zero-gravity-family).
 
@@ -9112,9 +9344,17 @@ Based on Zero Gravity 1.0.3 (4).
 **App:** [Okimiki](https://play.google.com/store/apps/details?id=com.richmat.okimiki)
 1.0.1 (10101), `com.richmat.okimiki`
 
-**Status:** ❓ Needs testing. Hardware unverified.
+**Status:** Not yet tested
 
 #### Setup
+
+1. Choose **Okimiki app**.
+2. Choose the product code the app shows: HCRN, IPRM, IQRM or KWRN. The bed's
+   name does not tell them apart.
+
+The product decides the memory, preset and alarm controls. The light and alarm
+controls appear once the bed has connected and reported them. Configure keeps
+the product; on a bed with two receivers each side keeps its own.
 
 Choose **Okimiki app**, then the exact product code shown in the app. Configure,
 import and restored entries retain that product independently for each bed.
@@ -9226,11 +9466,11 @@ slot instead.
 A one-shot alarm uses the selected local time and a minute countdown; a positive
 subminute interval rolls to the next day. Clock sync sends epoch seconds with
 a truncated whole-hour timezone, then a local calendar frame. Service requests
-retain their physical owner through admission, validation, writes and cleanup.
+retain their physical owner through acceptance, validation, writes and cleanup.
 
 #### Evidence
 
-The app's original and continuation literals match the production Richmat codec
+The app's original and continuation frames match the production Richmat codec
 byte for byte; no existing profile's frames change. Hardware behavior, effective
 STOP, RGB/timer and firmware alarm execution still need testing on real beds.
 Shared passive bed effects add no controls and assume no single-address pairing.
@@ -9241,7 +9481,7 @@ Based on Okimiki 1.0.1 (`com.richmat.okimiki`).
 
 **App:** Nisco 1.1.1 (code 3), `com.richmat.nisco`
 
-**Status:** ❓ Needs testing (APK-verified; hardware unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -9311,7 +9551,7 @@ event and cannot migrate into a replacement BLE session.
 
 The shared classifier retains exact version handling, INIT checksum/length
 gates, mode, signed angle, massage, memory and alarm/snore state. The identical
-massage/UBL-lock prefix remains shadowed; no missing lock decoder is invented.
+massage/UBL-lock prefix remains shadowed; no missing lock decoder is added.
 Nisco's waist combined forms are 14, 15 and 19 bytes, distinct from MLILY
 Supreme's 14, 18 and 19. Nisco has no detailed diagnostic result consumer or
 mattress cache offsets.
@@ -9320,7 +9560,7 @@ The sleep receiver retains local rates, occupancy, movement, user mode and
 intervention settings. The raw `Std` value is the disabled-by-default
 diagnostic Left/Right sleep receiver state sensor. Wi-Fi, network/mesh administration, cloud,
 accounts, firmware administration, scoring, reports and phone/media features
-are excluded. A source-proven BED effect remains included even when its caller
+are excluded. A BED effect remains included even when its caller
 sits beside excluded infrastructure.
 
 #### Services
@@ -9329,7 +9569,7 @@ sits beside excluded infrastructure.
 fixed-remote long-save caller, or an included query. Arbitrary opcodes and
 unavailable model controls are rejected. Standard preset/memory actions,
 `set_alarm` and `richmat_mh_light_color` use the same family runtime. Service
-admission captures all physical targets and STOP epochs before lazy imports.
+acceptance captures all physical targets and STOP epochs before lazy imports.
 
 #### Evidence
 
@@ -9339,7 +9579,7 @@ Based on Nisco 1.1.1 (3).
 
 **App:** MLILY Supreme 1.3.1 (code 5), `com.richmat.mlily_supreme`
 
-**Status:** ❓ Needs testing (APK-verified; hardware unverified)
+**Status:** Not yet tested
 
 #### Setup
 
@@ -9348,13 +9588,13 @@ from MLILY Control and other same-brand integrations. The name rule and GATT
 priority match Nisco's established common domains. Unlike Nisco, the six short
 manual surface identifiers are selectable. Choose the explicit normal-mattress
 variant only for that app-selected extra; a powered initialization must still
-arrive. Waist powered initialization admits its own area. Configure and paired
+arrive. Waist powered initialization accepts its own area. Configure and paired
 side storage retain these choices independently.
 
 #### Controls
 
 Use this app's own table. CFRM lacks Nisco's catalog LOCK entry. Its dedicated
-smart-light-lock caller is independently available on the admitted CFRM light
+smart-light-lock caller is independently available on the accepted CFRM light
 page, preserves fixed mode 00 and sends once without motor release.
 
 The light timer's final high byte is the current transmit mode, including its
@@ -9369,7 +9609,7 @@ setting domains. Pad selectors do not create another BLE recipient.
 
 The shared query schedule and ordinary/fixed-remote caller timings apply only
 where established. Two-phase alarms use 300 ms. Mattress initialization
-consumers run 300 ms after their admitted frames. Mattress commands are one-shot;
+consumers run 300 ms after their accepted frames. Mattress commands are one-shot;
 mode zero and leg/pillow zero are explicit stop values.
 
 #### Notifications
@@ -9396,7 +9636,7 @@ guaranteed Android fallback-recovery claim.
 
 The family control and light-color actions and `set_alarm` target the
 selected physical bed or paired child. Every target is validated before the
-first control frame, and stale ownership or a later STOP invalidates admission.
+first control frame, and stale ownership or a later STOP invalidates acceptance.
 No Wi-Fi, SSID, mesh, cloud, account, OTA, audio or accessory administration
 service is provided.
 
@@ -10370,7 +10610,7 @@ Based on MLILY Supreme 1.3.1 (5).
 
 ### SleepEvolution / W.Silver Products 3.x
 
-**Status:** ❓ Needs testing (APK-verified; hardware unverified).
+**Status:** Not yet tested
 
 | App | Version (code) | Package ID |
 |---|---|---|
@@ -10381,6 +10621,15 @@ Physical directions, preset, massage, light and reset effects, radio delivery
 and STOP response are not yet verified on hardware.
 
 #### Setup
+
+1. Choose **SleepEvolution app** or **W.Silver Products 3.x app** under Richmat.
+   The newer W.Silver Products app is a separate choice.
+2. Choose the start of the bed's Bluetooth name (**Bed model or remote**). It is
+   case-sensitive. A6, U3, U5 and X1 are offered only for SleepEvolution.
+
+**Reconfigure** asks the same two questions. On a bed with two receivers, add
+each one and combine them; each keeps its own app and name. Left and Right
+controls on one receiver are not supported. **Read bed position** is off.
 
 Search **SleepEvolution** or **W.Silver Products 3.x** under **Richmat** in setup
 or **Reconfigure**, then select the exact case-sensitive two-character name
@@ -10393,7 +10642,7 @@ SleepEvolution. BE includes its separate massage screen.
 Each receiver in a two-address pair keeps its own app and prefix. The apps have
 no bed-side field, so single-address paired addressing is unsupported. A
 sequential connection cannot run a held batch on both sides. HA owns Bluetooth
-adapter/proxy discovery, connection admission and handoff.
+adapter/proxy discovery, connection acceptance and handoff.
 
 #### Controls
 
@@ -10412,7 +10661,7 @@ field or authentication exchange. Each listed byte is a separate write,
 including adjacent triplicate recalls, with no added interwrite delay. `$` is
 byte `24` and character `1` is byte `31`; uppercase and lowercase commands
 remain distinct. The live characteristic's properties select ATT write mode;
-radio delivery remains hardware unverified.
+radio delivery remains still needs testing on hardware.
 
 Control keys identify the selected profile's app labels/artwork, rather than a
 universal command map. For example, A1 and A2 recall the same displayed slots
@@ -12333,11 +12582,11 @@ position-query packets.
 #### Services
 
 `adjustable_bed.richmat_legacy` runs a listed `control` with a finite
-`operation: gesture`, or `operation: program` for a proven save. Gesture
+`operation: gesture`, or `operation: program` for a save. Gesture
 `duration_ms` is 1–60000, default 1000; program uses its event budget instead.
 Programming cancellation suppresses short recall. Finite `hold_control`
-gestures retain their original recall/save boundary; renewable holds admit
-proven motion only. All batch targets pass admission before writes.
+gestures retain their original recall/save boundary; renewable holds accept
+motion only. All batch targets pass acceptance before writes.
 
 Use named catalog actions for the displayed memory slots, rather than generic
 numeric memory services. See [Actions and Automations](../SERVICES.md#richmat_legacy)

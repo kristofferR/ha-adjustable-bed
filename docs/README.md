@@ -1,7 +1,7 @@
 # Documentation
 
-These guides describe `main`. The integration requires **Home Assistant
-2026.11.0+**. The release version lives in
+These guides describe v5, on the `v5` branch while it is in beta. The
+integration requires **Home Assistant 2026.11.0+**. The release version lives in
 [`manifest.json`](../custom_components/adjustable_bed/manifest.json) and
 [`pyproject.toml`](../pyproject.toml).
 
@@ -12,7 +12,7 @@ These guides describe `main`. The integration requires **Home Assistant
 | [Project README](../README.md) | Installation, features and the supported beds table |
 | [Dashboard card](DASHBOARD_CARD.md) | Adding the card, holds and tap to move, paired and compact cards, editor and YAML options |
 | [Connection guide](CONNECTION_GUIDE.md) | Discovery, adapters, proxies and Bluetooth bonds |
-| [Configuration](CONFIGURATION.md) | Options, choosing your remote, combined beds and restoring standalone controls |
+| [Configuration](CONFIGURATION.md) | Settings, choosing your app or remote, and combined beds |
 | [Actions and automations](SERVICES.md) | Memory, movement, side targeting and specialized actions |
 | [Estimated positions](ESTIMATED_POSITIONS.md) | Calibrated travel-time estimates and saved positions for beds without position feedback |
 | [Wake-up automation](WAKE_UP.md) | Importable scheduled raise or memory recall, with optional lighting |
@@ -21,45 +21,68 @@ These guides describe `main`. The integration requires **Home Assistant
 | [v5 breaking changes](V5_BREAKING_CHANGES.md) | What the 4.x to v5 upgrade migrates, adds and moves, and why a backup is the only rollback |
 | [Getting help](GETTING_HELP.md) | Support bundles, diagnostics, issue reports and app traffic captures |
 
-## Controller and Protocol Reference
+## Bed Guides
 
 Start with the [Supported Beds table](../README.md#supported-beds), which groups
-every app, remote and brand by the family setup shows. Use [Supported Actuators](SUPPORTED_ACTUATORS.md)
-to identify your controller and compare features.
+every app, remote and brand by bed family, or look up a brand in the
+[brand lookup](SUPPORTED_ACTUATORS.md).
 
-Bed support is split into wire codecs and app profiles: a wire format shared by
-several apps is encoded once, and each app or legacy route is a profile over it.
-Each codec has one guide, with a section per profile:
+Each bed guide lists the apps and models it covers, the features, the setup
+questions and the command tables, and records its testing status. Guides marked
+**Shared** cover one command format that several apps use, with a section per
+app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 
-| Codec guide | Profiles for |
-|-------------|--------------|
-| [Jiecang](beds/jiecang.md) | Jiecang, Comfort Motion, the Dream apps and the LOGICDATA apps |
-| [Linx](beds/linx.md) | Linx 2.5 Q and Orbes, independent A00A / UART BLE routes |
-| [Keeson](beds/keeson.md) | Keeson, Ergomotion, Serta, the Keeson-based apps, Ergomotion 4.0, OrmatekTechnoSmart and アシステック / Yamada |
-| [Symphony Sleep Sense / Okin SoundWave](beds/okin-soundwave.md) | Explicit Symphony products and selectors over proven Keeson, N-frame and SoundWave carriers |
-| [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24/CST/DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, AdjustableM5X4, Okin 64-Bit, Adjustable bed (Lumbar), Resident Adjustable Base, N32 Motion Bed, eShine and Comfort Enhancement 3 / Comfort Plus3 |
-| [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900, Okin CB35 and DewertOkin ELEVATE |
-| [Malouf](beds/malouf.md) | Malouf and the Malouf Base / Lucid Base apps |
-| [Richmat](beds/richmat.md) | Richmat, RMControl, BedTech, L&P MlRM, the L&P legacy app, the Richmat MH apps, HJBed, Eshine, Good Vibe Sleep, Casper Base, Hush Base, Luuna +, [SleepEvolution and W.Silver Products 3.x (fixed ASCII)](beds/richmat.md#sleepevolution--wsilver-products-3x) |
-| [Limoss](beds/limoss.md) | Limoss, Limoss Remote and FSM Relax |
-| [FFFF frame](beds/ff_frame.md) | Solace, Sophie, Woosa Sleep, BedSense and Motion Bed |
-| [HHC `$#` frames](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear and L2 Motion |
-| [JMC400](beds/jmc.md) | Jensen JMC400 and the Svane Remote app's JMC400 route |
-| [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS |
-| [Vibradorm](beds/vibradorm.md) | Vibradorm, Caresse, Werkmeister, VMAT and V-MAT Basic |
-| [CheersSleep](beds/cheerssleep.md) | CheersSleep P1 and P2, all 36 model keys |
-| [OKIN Smart Sleep](beds/smart-sleep.md) | OKIN Smart Sleep legacy P1 and new P2 |
-| [Nerum](beds/nerum.md) | Nerum P1 ORE, P2 Okin and P3 Smartbed profiles |
-| [Snore Monitor BED](beds/onlysnore.md) | Snore Monitor direct BED controls and local alarms |
-| [M Line](beds/mline.md) | M Line Sleep, Smart, Smart Sainuo, Okin and fallback selectors |
-| [Smart Comfort seats](beds/smart-comfort.md) | Smart Comfort by SYNARGY and Smart Comfort (SYNERGY) |
-| [Personal Comfort](beds/personal-comfort.md) | Personal Comfort air units and bases |
-| [SUTA](beds/suta.md) | SUTA Smart Home name-selected P1 text and P2 mattress/heating profiles |
-| [BedJet PowerLayer](beds/bedjet-powerlayer.md) | BedJet PowerLayer |
+| Guide | Covers | Shared |
+|-------|--------|--------|
+| [BedJet PowerLayer](beds/bedjet-powerlayer.md) | The BedJet PowerLayer adjustable frame | |
+| [Casper Base](beds/casper-base.md) | The Casper Base app, sleep sensors and remote finder | |
+| [CheersSleep](beds/cheerssleep.md) | The CheersSleep app | |
+| [FFFF frame](beds/ff_frame.md) | Solace remotes and apps, Sophie, Woosa Sleep, BedSense and Motion Bed | Shared |
+| [FurniMove / OKIN Smart Remote](beds/furnimove.md) | The FurniMove app and OKIN handset codes | |
+| [GM Control](beds/gmmotor.md) | The GM Control app and sleep modules | |
+| [Hush Base](beds/hush-base.md) | The Hush Base app, sleep sensors and remote finder | |
+| [Jensen](beds/jensen.md) | The Jensen Adjustable Sleep app | |
+| [Jiecang](beds/jiecang.md) | Jiecang remotes, Comfort Motion, the Dream apps and the LOGICDATA apps | Shared |
+| [JMC400](beds/jmc.md) | Jensen JMC400 beds, from the Jensen and Svane Remote apps | Shared |
+| [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS | Shared |
+| [Keeson](beds/keeson.md) | Keeson remotes, Ergomotion, Serta, Tempur, Purple, Sino, the ORE apps, Ergomotion 4.0, OrmatekTechnoSmart, Somos, Yamada and other Keeson-based apps | Shared |
+| [Leggett & Platt](beds/leggett-platt.md) | LP Control, LP Comfort Connect and the L&P remotes | |
+| [Limoss](beds/limoss.md) | Limoss Remote, FSM Relax, Stawett and older Limoss controls | Shared |
+| [Linak](beds/linak.md) | Linak Bed Control, Bed Connect and Performance Series | |
+| [Linx](beds/linx.md) | The Linx app | |
+| [LOGICDATA SimplicityFrame](beds/logicdata.md) | SILVERmotion / SimplicityFrame | |
+| [LOGICDATA Sleep Smart](beds/logicdata-sleep-smart.md) | The Sleep Smart air mattress pump | |
+| [M Line](beds/mline.md) | The M Line app | |
+| [Majestic Home](beds/richmat.md#majestic-home) | Majestic Home product layouts | |
+| [Malouf / Lucid](beds/malouf.md) | The Malouf Base and Lucid Base apps and receivers | Shared |
+| [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear and L2 Motion | Shared |
+| [Nerum](beds/nerum.md) | The Nerum app | |
+| [OCTO Smart Control](beds/octo.md) | OCTO receivers, the RTV TV lift and Octo Remote Star2 | |
+| [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900, Okin CB35 and DewertOkin ELEVATE | Shared |
+| [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24, CST and DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, StarCode AdjustableM5X4, Okin 64-Bit, eShine and other Okin apps | Shared |
+| [Okin SoundWave and Symphony](beds/okin-soundwave.md) | Symphony Sleep Sense and the SoundWave pages | Shared |
+| [OKIN Smart Sleep](beds/smart-sleep.md) | The OKIN Smart Sleep app | |
+| [Paramount](beds/paramount.md) | The Paramount bed operation app | |
+| [Personal Comfort](beds/personal-comfort.md) | Personal Comfort air units with their base | |
+| [Remacro](beds/remacro.md) | The Slumberland, The Brick and Jerome's apps | |
+| [Reverie](beds/reverie.md) | The Reverie Nightstand app and Reverie receivers | |
+| [Reverie Pairlink](beds/reverie-pairlink-sdk.md) | Reverie Pairlink (R510L / Harmoniq) | |
+| [Richmat](beds/richmat.md) | Richmat remotes, RMControl, BedTech, L&P MlRM, the L&P legacy app, the Richmat MH apps, HJBed, Eshine, Good Vibe Sleep, Luuna, MLILY, SleepEvolution and other Richmat-based apps | Shared |
+| [RUF and related apps](beds/ruf-richmat-apps.md) | RUF Betten, W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX | |
+| [Sleep Number](beds/sleep_number.md) | Sleep Number Fuzion and BAM/MCR bases ([commands](beds/sleep-number-services.md)) | |
+| [SleepSpa S9000AI](beds/sleepstar.md) | The SleepSpa S9000AI | |
+| [Sleeptracker](beds/sleeptracker.md) | The Tempur Sleeptracker-AI processor | |
+| [Sleepy's Elite](beds/sleepys.md) | The MFRM Sleepy's Elite app and the BOX15, BOX24 and BOX25 receivers | |
+| [Smart Comfort seats](beds/smart-comfort.md) | Smart Comfort by SYNARGY and Smart Comfort (SYNERGY) | |
+| [Snore Monitor](beds/onlysnore.md) | The Snore Monitor app | |
+| [StarCode Adjustable Comfort M1X12](beds/starcode-m1x12.md) | The Adjustable Comfort M1X12 app | |
+| [StarCode AdjustableM5X5](beds/starcode-m5x5.md) | The AdjustableM5X5 app | |
+| [SUTA Smart Home](beds/suta.md) | The SUTA Smart Home app | |
+| [Svane Remote](beds/svane.md) | The Svane Remote app | |
+| [TiMOTION AHF](beds/timotion-ahf.md) | TiMOTION AHF | |
+| [Vibradorm](beds/vibradorm.md) | Vibradorm remotes, Caresse, Werkmeister, VMAT and V-MAT Basic | Shared |
 
-Beds with their own wire format have their own guide in [`beds/`](beds/). Every
-guide follows the [bed guide format](BED_GUIDE_FORMAT.md) and records its
-testing status.
+## Design Notes
 
 | Design note | Contents |
 |-------------|----------|
@@ -73,7 +96,7 @@ testing status.
 
 ## Development and Validation
 
-Work from `main`. Development uses Python **3.14.2+** with `uv`, and Bun for
+Work from `v5` while v5 is in beta. Development uses Python **3.14.2+** with `uv`, and Bun for
 the Lit/TypeScript card. Follow the environment and test commands in the
 [repository instructions](../AGENTS.md#running-tests), including the Bluetooth
 dependencies from Home Assistant's own manifests.
@@ -81,7 +104,7 @@ dependencies from Home Assistant's own manifests.
 | Reference | Contents |
 |-----------|----------|
 | [Repository instructions](../AGENTS.md) | Architecture, controller contracts, contribution and release rules |
-| [Design notes](#controller-and-protocol-reference) | Codecs and profiles, execution capabilities, command lifecycle and paired runtimes |
+| [Design notes](#design-notes) | Codecs and profiles, execution capabilities, command lifecycle and paired runtimes |
 | [APK Protocol Audit workflow](apk-analysis/phase4-coordinator-workflow.md) | Coordination and evidence gates |
 | [APK tracker rules](apk-analysis/TRACKERS.md) | What the #436, #443 and #447 issue bodies hold, and the guard that keeps them clean |
 | [Analysis tooling](apk-analysis/TOOLING.md) | Protocol-neutral decompiler setup and stack coverage |

@@ -34,6 +34,7 @@ import {
   bedIsEmpty,
   hasLightingControls,
   isSingleAddressPairedDevice,
+  nameCombinedMotors,
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
@@ -414,6 +415,7 @@ export class AdjustableBedCard extends LitElement {
       // from display order. A renamed child can appear in either visual pane.
       synchronizationTarget: { deviceId: id },
     }));
+    nameCombinedMotors(parentBed, sides.map((side) => side.bed));
     const childStops = sides.flatMap((side) => side.bed.stop ? [side.bed.stop] : []);
     const parentStop = parentBed.stop;
     const bothStopScope = [...new Set([
@@ -471,6 +473,7 @@ export class AdjustableBedCard extends LitElement {
       left: bedEntitiesForDevice(hass, deviceId, "left"),
       right: bedEntitiesForDevice(hass, deviceId, "right"),
     };
+    nameCombinedMotors(beds.both, [beds.left, beds.right]);
     const childStops = [beds.left.stop, beds.right.stop].filter(
       (id): id is string => id !== undefined,
     );
@@ -1264,7 +1267,8 @@ export class AdjustableBedCard extends LitElement {
     // Motors with movement controls open their position setter from the label.
     const positionRows = positionOnlyMotors(bed);
     const hasRows =
-      motors.length > 0 || positionRows.length > 0 || !!bed.synchro || !!bed.controlSide;
+      motors.length > 0 || positionRows.length > 0 || !!bed.synchro || !!bed.controlSide ||
+      !!bed.motorExtras?.length;
     const estimates = estimate ? this._contextEstimates(estimate) : [];
     return html`
       ${estimate && estimates.length ? this._estimateAlertTemplate(estimate, estimates) : nothing}
@@ -1272,6 +1276,7 @@ export class AdjustableBedCard extends LitElement {
       ${estimate?.side === "both" ? this._estimateOverview(estimate) : nothing}
       ${bed.controlSide ? this._moreInfoRow(bed.controlSide) : nothing}
       ${bed.synchro ? this._toggleRow(bed.synchro) : nothing}
+      ${bed.motorExtras?.map((id) => id.startsWith("switch.") ? this._switchRow(id) : this._moreInfoRow(id))}
       ${
         motors.length
           ? html`<div class="rows">
@@ -1298,6 +1303,12 @@ export class AdjustableBedCard extends LitElement {
             </button>`
           : nothing
       }
+      ${bed.extraStops?.map((id) => html`<button class="stop-all" @click=${() => stopCardMotorHold(
+        this._hold, id, [...routedStopScope, id], undefined, this.hass,
+      )} ?data-armed=${this._hold.tapMoving}>
+        <ha-icon icon="mdi:stop"></ha-icon>
+        <span>${entityLabel(this.hass, id)}</span>
+      </button>`)}
     `;
   }
 
@@ -2161,7 +2172,8 @@ export class AdjustableBedCard extends LitElement {
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ");
     // A bed-specific motor key has no card label; its cover's name is the right one.
-    return m.cover ? entityLabel(this.hass, m.cover, fallback) : fallback;
+    const named = m.cover ?? m.nameFrom;
+    return named ? entityLabel(this.hass, named, fallback) : fallback;
   }
 
   private _angle(m: MotorEntity): number | undefined {
@@ -2233,6 +2245,7 @@ export class AdjustableBedCard extends LitElement {
       bed.massage.timer,
     ].forEach((x) => x && ids.add(x));
     bed.firmness.forEach((x) => ids.add(x));
+    [...(bed.extraStops ?? []), ...(bed.motorExtras ?? [])].forEach((x) => ids.add(x));
     bed.massage.buttons.forEach((x) => ids.add(x));
     bed.lights.buttons?.forEach((x) => ids.add(x));
     bed.lights.numbers?.forEach((x) => ids.add(x));

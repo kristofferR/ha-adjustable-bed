@@ -1,6 +1,6 @@
 # Nerum
 
-**Status:** ❓ Needs testing (static support complete; hardware unverified)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -71,25 +71,29 @@ is required by this app. Clock sync follows the 200 ms setup delay on P2/P3.
 
 ## Detection / Setup
 
-Select **Nerum (com.okin.bedding.nerum)** during installation or Configure.
-Shared names offer an app candidate without replacing existing receiver matches.
-Choose P2 for the app's ordinary `okin` name route, P3 for `smartbed`, or P1
-for an ORE receiver with the app's raw advertisement OK marker. HA does not
-provide Android's original raw scan-record offsets, so select P1 explicitly
-from the matching GATT roles. Never reconstruct that marker from manufacturer
-company IDs or guess it from service resemblance.
+1. Choose **Nerum app**.
+2. Choose the version: P2 for a bed whose Bluetooth name starts with `okin`, P3
+   for `smartbed`, or P1 for an ORE receiver. Home Assistant cannot detect P1
+   from the advertisement, so choose it yourself.
+3. Choose the page that matches your remote: Nerum, or 2, 3 or 4 motors.
 
-The original marker at raw offsets 9/10 selects P1 and copies 16 identity bytes
-from offset 11. Byte strings shorter than 27 bytes cannot supply that identity.
-The second UTF-16 character selects the motor count; identity characters 4/5
-control the advertised massage flag. A nonnumeric motor character defaults to
-2 and massage true. The all-zero default identity parses motor count 0 and
-massage false. These are app state, not a hardware model catalog.
+On a bed with two receivers, each side keeps its own choices.
 
-The initial Nerum page has head/foot controls and no TV. Select the explicit
-2/3/4 motor page only when it matches the remote. The app can retain a previously
-selected page across protocol changes; HA saves that layout per physical side.
-The hidden Android override changes local UI only and writes no configuration.
+Discovery offers the Nerum app for these names next to any receiver match; it
+never replaces one. The app recognises a P1 (ORE) receiver by a marker in the
+raw advertisement that Home Assistant does not receive, so P1 is always your
+choice, never a guess from the services or manufacturer data.
+
+In the app, that marker (raw offsets 9 and 10) is followed by 16 identity bytes
+from offset 11, so an advertisement shorter than 27 bytes has none. The second
+identity character gives the motor count and characters 4 and 5 the massage
+flag; a non-numeric motor character means 2 motors with massage, and an all-zero
+identity means 0 motors without massage. These values only drive the app's
+screens; they are not a list of hardware models.
+
+The Nerum page has head and foot controls and no TV. Choose a 2, 3 or 4 motor
+page only when it matches your remote. The page is saved for each side of the
+bed.
 
 ## Commands
 
@@ -167,20 +171,19 @@ action. A short positive hold still submits its initial command.
 
 ### Memory
 
-The app repeats recall packets and shows a local toast after 5200 ms. Its save
-method is empty. No firmware programming behavior or distinct SAVE packet is
-proven, so programming is unavailable. External users may validate long-recall
-semantics after a beta or release.
+The app repeats recall frames and shows a message after 5200 ms. It has no save
+frame, so memory programming is not offered. Whether a long recall stores a
+position on the bed still needs testing.
 
 ### Massage
 
-Dormant massage handlers and builder branches are preserved as frozen encoder
-vectors. They have no ordinary reachable BLE page and do not create controls.
+The app contains massage code that no screen reaches. The codec keeps its frames
+for reference, but no massage controls are created.
 
 ### Lights
 
-**Toggle light** sends the held light key, with the same bytes for the Android
-on/off wrappers. It does not provide discrete on/off, brightness or color. P1
+**Toggle light** sends the held light key; the app's on and off buttons send
+the same bytes. It does not provide discrete on/off, brightness or color. P1
 reports the light state as the **Light** binary sensor.
 
 ### Alarms
@@ -206,35 +209,32 @@ Sunday-zero weekday. No BCD conversion is applied.
 
 There is no position feedback. P1 reports signed massage levels, timer, wave,
 light and operation. The operation reply only echoes which app control ran and
-is not exposed. Preserve its signed opcode dispatch: canonical low bytes
-80 through 95 do not reach the apparent single-field cases. P2 reports massage
+is not exposed. Its opcode is read as a signed byte, so values 80 to 95 do not
+reach the single-field cases they appear to match. P2 reports massage
 state for complete 10/16/23-byte status shapes and three alarm records. A first
 F4/FE/16 fragment stores the exact prefix and publishes nothing; an unbuffered
 short non-10/16 fragment also publishes nothing. P3 reports three alarm slots.
 The disabled-by-default **Alarm 1–3** sensors show the alarm's `HH:MM` time,
 with `enabled`, `days`, `recurring` and the wake `action` as attributes.
 
-The Android parser retains a global uncleared fragment buffer and can index
-short admitted alarms out of bounds. Android also retains old connections and
-nonselected notification callbacks when selecting a different bed. HA uses
-bounded consumed fragments, checks every field before publishing, and confines
-callbacks and deferred writes to the current physical session. Invalid or
-incomplete data does not become fabricated zero state.
+Unlike the app, the integration discards fragments once used, checks every
+field before publishing, and ties callbacks and delayed writes to the current
+connection. Invalid or incomplete data never shows up as zero values.
 
 ## Command Timing
 
-Held controls refresh at 300 ms. Finite holds stop submitting at their elapsed
-deadline; submitted writes drain before cleanup. Release sends STOP after
-300 and 600 ms with a fresh cancellation event. The initial Nerum page sends
+Held controls repeat every 300 ms. A timed hold stops at its time limit, and
+writes already sent finish first. Release sends STOP 300 and 600 ms later, even
+if the command was cancelled. The initial Nerum page sends
 one per offset; explicit motor pages send duplicate STOPs per offset for motor controls. Presets,
-light and an independent STOP send one per offset. Cleanup
-uses the captured connection and cannot follow a later device selection.
+light and a separate STOP send one per offset. Cleanup always uses the
+connection the command started on.
 
 ## Notes
 
-Wi-Fi provisioning, network administration, accounts, cloud, OTA, phone audio,
-analytics and unrelated accessory/seating functions are outside this product.
-They are not future bed feature work. Home Assistant Bluetooth adapters and
+Wi-Fi setup, network administration, accounts, cloud services, firmware updates,
+phone audio, analytics and seating accessories are outside this Bluetooth bed
+integration. Home Assistant Bluetooth adapters and
 proxies remain supported.
 
 ### Analysis provenance

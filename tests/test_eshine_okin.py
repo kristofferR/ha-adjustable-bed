@@ -1,4 +1,4 @@
-"""Accepted row122 vectors and deliberate HA session/framing corrections."""
+"""Accepted eShine app vectors and deliberate HA session/framing corrections."""
 
 from __future__ import annotations
 
@@ -555,7 +555,9 @@ async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, 
         blocking=True,
     )
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    fake = MagicMock(hold_control=AsyncMock())
+    # The checked controller, so the hold is not checked again.
+    fake = coordinator.capability_controller
+    fake.hold_control = AsyncMock()
     await command(fake)
     fake.hold_control.assert_awaited_once_with("flat_zero_g", 5500)
     coordinator.async_execute_controller_command.reset_mock()

@@ -1,6 +1,6 @@
 # SUTA Smart Home
 
-**Status:** ⚠️ Partially tested. Existing bed-frame reports remain valid for their tested hardware. The expanded 3.20.0 name-specific surface is **hardware UNVERIFIED**, for external beta testing.
+**Status:** Partly tested (the bed frame controls from 4.x are tested; the controls added from SUTA Smart Home 3.20.0 need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed).
 
@@ -900,7 +900,7 @@ Binary callbacks use complete notification frames; malformed short input is
 ignored safely, without assuming a different packet or reassembling fragments.
 
 RBHC reads signed big-endian 16-bit values at offsets 1, 3, 5 and 7.
-Only the first BACK and third FOOT fields have proven degree units.
+Only the first BACK and the third FOOT field are known to be degrees.
 N520's similarly shaped parser is not fed by its normal name route.
 
 MOON reports massage, strength, timer, adaptive mode/stiffness, automatic
@@ -942,14 +942,13 @@ literals through the production codec.
 
 **App:** SUTA Smart Home 3.20.0 (80), `com.shuta.smart_home`.
 
-**Status:** ❓ Expanded controls need external hardware testing.
+**Status:** Not yet tested
 
 #### Setup
 
 The saved Bluetooth name belongs to one physical bed. Generic motor count,
 massage and angle choices cannot enable controls absent from that name's
-panel. MOON/TEMP actions name their logical side explicitly. No ASCII side
-selector or live SINSLAVE command is proven.
+panel. MOON/TEMP actions name their logical side explicitly. The app has no text side selector or live SINSLAVE command.
 
 #### Controls
 
@@ -1477,14 +1476,14 @@ query after 300 ms and version after another 300 ms.
 
 #### Notifications
 
-Only fields reachable through the selected name/parser route are published.
+Only fields the bed's name and reply format provide are published.
 State is cleared on disconnect. Old callbacks and delayed actions cannot
 write to a replacement connection.
 
 #### Services
 
 `adjustable_bed.suta` accepts an action key from the generated catalog.
-Text DT/LV/fan actions use a proven `suffix`; MOON/TEMP actions use
+Text DT/LV/fan actions use the app's `suffix`; MOON/TEMP actions use
 `logical_side` (`left` or `right`) and `value` when their payload requires them.
 The physical paired `side` remains separate from the binary payload side.
 
@@ -1496,7 +1495,7 @@ on the next day the time occurs, with Loop `00`. Turning an alarm off sends
 Each write is followed by the alarm list query. Clock sync uses Home
 Assistant's current local time.
 
-`snore_cycle` sends the proven normal SNORE burst then FLAT after the
+`snore_cycle` sends the app's normal SNORE burst, then FLAT after the
 source's delay. This explicit HA operation owns both effects and cancellation;
 it performs no phone sensing or background reconnection.
 

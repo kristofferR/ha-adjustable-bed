@@ -1,6 +1,6 @@
 # Linx
 
-**Status:** ❓ Needs testing (static app evidence only)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -65,9 +65,9 @@ Model and transport are independent. The two mixed restored-state choices
 also preserve the saved intervention selector independently of generic writes:
 JSON intervention follows the generic destination, while binary intervention
 always writes directly to UART. The app's running service flag chooses
-where unchanged event83/event92 buffers go. JSON commands and alarm-slot clears
-therefore retain their JSON bytes on the UART route too. This is verified app
-routing; peripheral acceptance of that mixed format remains unverified.
+where unchanged event 83/event92 buffers go. JSON commands and alarm-slot clears
+therefore retain their JSON bytes on the UART route too. This is how the app routes them; whether the bed accepts that mix still needs
+testing.
 
 ### Framing and checksum
 
@@ -169,12 +169,12 @@ once, so an arriving notification cannot change an active gesture's cleanup.
 Quest's `data.apld` reports off or 10/20/30-minute timer indicators (the
 **Massage timer** sensor), and `data.mgmd` reports the mode indicator (**Active
 massage mode**). These are reported state, not success acknowledgements for
-commands. The Android light callbacks are empty, so `blsw` has no proven
-meaning and stays in the support bundle's raw notification capture. The bed
+commands. The app ignores `blsw` for the light, so its meaning is unknown; it stays in the
+support bundle's raw notification capture. The bed
 mode cache only selects command parameters and is not an entity. No angle or
 position is inferred.
-HA keeps valid updates fresh within the session instead of copying Android's
-15-field UI freeze.
+Valid updates are shown as they arrive during a connection; the app's screen
+freeze after 15 fields is not copied.
 
 The UART setup consumer accepts exactly eight bytes beginning with `0x8e`.
 Byte 4 equal to 2 selects version bytes 5/6. The first pair is parsed as decimal;
@@ -183,8 +183,7 @@ first pair is an invalid-version result, not a fabricated firmware version or
 an uncaught exception. Byte 4 equal to 1 reports connection failure. Other
 lengths, prefixes and selectors are ignored. There is no checksum or ACK match.
 The version is the disabled-by-default **Firmware version** diagnostic sensor,
-with the reply result as its `linx_setup_reply` attribute. Both are separate
-from HA's actual BLE connectivity and setup admission. No HTTP registration is performed.
+with the reply result as its `linx_setup_reply` attribute. Neither affects the Bluetooth connection or setup. No HTTP registration is performed.
 
 Self-check consumes `chkStatu`, `headPlus` and `footPlus`. Its completion and
 fault fields preserve the app's leading binary-string interpretation; the
@@ -213,7 +212,17 @@ writes. A failed alarm clear has no latent continuation.
 `tests/fixtures/linx/vectors.json` keeps the app's 39 frame literals unchanged.
 `tests/test_linx_vectors.py` compares them against the production codec. Runtime
 coverage in `tests/test_linx.py` exercises setup, entities, services, elapsed
-holds, STOP admission and physical paired-child targeting.
+holds, STOP and side targeting on combined beds.
+
+## Setup
+
+1. Choose **Linx app**.
+2. Choose the model (Linx 2.5 Q is the default), the Bluetooth connection type
+   (A00A is the default, or Nordic UART) and the bed's exact Bluetooth name.
+
+The model sets the motors, massage and refresh timing. On a bed with two
+receivers, each side keeps its own settings. No Wi-Fi or account setup is
+needed.
 
 ## Profiles
 
@@ -221,7 +230,7 @@ holds, STOP admission and physical paired-child targeting.
 
 **App:** [Linx](https://play.google.com/store/apps/details?id=com.keeson.connectedbed) 1.0.7 (27), `com.keeson.connectedbed`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
@@ -255,7 +264,7 @@ reported mode does not change the mode button's fixed `statsBo=0` command.
 See the generated profile table. The app attempts a held refresh at fixed delay,
 but its callback gate means this is not a guaranteed wire rate. HA serializes
 writes and skips expired refreshes. Finite holds use elapsed monotonic time;
-short holds start when the first wire write is admitted. Slow writes never
+short holds start when the first write is sent. Slow writes never
 cause catch-up bursts. A leased hold uses the scheduler's bounded deadline.
 
 #### Notifications
@@ -287,7 +296,7 @@ belong to the physical receiver, including in a two-address pair.
 
 **App:** [Linx](https://play.google.com/store/apps/details?id=com.keeson.connectedbed) 1.0.7 (27), `com.keeson.connectedbed`
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 #### Setup
 
