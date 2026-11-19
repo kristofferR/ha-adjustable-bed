@@ -183,8 +183,6 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_AIR_PUMP,
-    BED_TYPE_MALOUF_LEGACY_OKIN,
-    BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
@@ -291,7 +289,6 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     KEESON_LAYOUT_APP_BED_TYPES,
-    LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
     LEGGETT_VARIANT_GEN2,
@@ -1172,18 +1169,6 @@ def _family_name(info: BluetoothServiceInfoBleak) -> str:
     return bed_type_label(bed_type).split(" (", 1)[0]
 
 
-def _bed_type_field(
-    marker: type[vol.Required] | type[vol.Optional],
-    default: str | None,
-    **selector_options: Any,
-) -> tuple[vol.Marker, _SearchableSelect]:
-    """Return the bed-type marker and selector, defaulting to the shown label."""
-    selector = _bed_type_selector(default, **selector_options)
-    if default is None:
-        return marker(CONF_BED_TYPE), selector
-    return marker(CONF_BED_TYPE, default=selector.shown(default)), selector
-
-
 def _rows_where(
     rows: Mapping[str, tuple[str | None, str]],
     test: Callable[[str | None, str], bool],
@@ -1515,24 +1500,9 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
     return None
 
 
-MALOUF_BED_TYPES = frozenset({BED_TYPE_MALOUF_NEW_OKIN, BED_TYPE_MALOUF_LEGACY_OKIN})
-
-
 def _is_leggett_app_type(bed_type: str | None, variant: str | None = None) -> bool:
     """Resolve only the explicit Okin route of the legacy umbrella type."""
     return resolve_explicit_bed_type(bed_type, variant) == BED_TYPE_LEGGETT_OKIN
-
-
-def _add_leggett_app_schema_field(
-    schema: dict[vol.Marker, Any], current_data: dict[str, Any] | None = None
-) -> None:
-    current_data = current_data or {}
-    schema[
-        vol.Optional(
-            CONF_LEGGETT_APP_PROFILE,
-            default=current_data.get(CONF_LEGGETT_APP_PROFILE, LEGGETT_APP_DEFAULT_PROFILE),
-        )
-    ] = vol.In(LEGGETT_APP_PROFILES)
 
 
 def _starcode_initial_transport(data: Mapping[str, Any], observed_name: str | None) -> str | None:

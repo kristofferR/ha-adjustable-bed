@@ -1064,16 +1064,6 @@ class PairlinkRuntime:
         if was_primary:
             self.state_generation += 1
 
-    def set_peer_device_type(self, peer: PairlinkPeerIdentity, device_type: int) -> None:
-        self._validate_local_peer(peer)
-        if isinstance(device_type, bool) or not isinstance(device_type, int) or not 0 <= device_type <= 0xFF:
-            raise ValueError("Pairlink peer type must fit one byte")
-        session = self._current_peer_session(peer)
-        if session is None:
-            raise PairlinkRuntimeNotReadyError("Pairlink peer generation is stale")
-        session.device_type = device_type
-        session.state_generation += 1
-
     def prepare_send(self, *, mtu: int = 23) -> PairlinkSendSnapshot:
         """Capture all currently proven send state before constructing bytes."""
         if self._closed or self._exiting:
