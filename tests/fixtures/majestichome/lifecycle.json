@@ -1,0 +1,50 @@
+[
+  {
+    "id": "release-before-first-refresh",
+    "kind": "sustain",
+    "release_ms": 75,
+    "expected_queue_actions": [],
+    "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
+  },
+  {
+    "id": "held-250ms-release",
+    "kind": "sustain",
+    "release_ms": 250,
+    "expected_queue_actions": [
+      "move",
+      "move",
+      "stop"
+    ],
+    "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
+  },
+  {
+    "id": "held-350ms-cancel",
+    "kind": "sustain",
+    "release_ms": 350,
+    "expected_queue_actions": [
+      "move",
+      "move",
+      "move",
+      "stop"
+    ],
+    "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
+  },
+  {
+    "id": "preset-save-button-release",
+    "kind": "save",
+    "release_ms": 50,
+    "expected_queue_actions": [
+      "save"
+    ],
+    "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
+  },
+  {
+    "id": "preset-recall-button-release",
+    "kind": "short",
+    "release_ms": 50,
+    "expected_queue_actions": [
+      "recall"
+    ],
+    "scope": "UI enqueue semantics only; sender FIFO/async BLE completion can change wire time and duplicate delayed writes."
+  }
+]

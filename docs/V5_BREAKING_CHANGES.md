@@ -264,6 +264,10 @@ on every entity that tells the dashboard card where it belongs.
   either. A failed alarm check no longer stops the other side.
 - **Customatic covers** queue a second motor's move behind the first, as on
   other beds, instead of replacing it.
+- **Majestic Home**, newly supported in v5, requires at least 200 ms for finite
+  `timed_move` and `hold_control` requests. Renewable native holds keep their
+  absolute expiry. Its alarm list observes replies for five seconds and returns
+  an incomplete result; creating an alarm requires an explicit ID.
 - **Leggett Okin Prodigy CE and U Series** send the release once after a
   `timed_move`, where 4.x sent it twice.
 - **Support bundles** of beds that run their own write loops now record those

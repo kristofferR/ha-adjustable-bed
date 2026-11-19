@@ -99,6 +99,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_app`](#richmat_app) | Richmat app: settings | Sets the light, alarm, sleep sensing and other options of a Richmat app bed. Read the feature first before changing it. |
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Write the three aroma timing sliders of a Richmat MH app profile. |
 | [`richmat_mh_light_color`](#richmat_mh_light_color) | Richmat app: light color | Write the LED or button-light page colour of a Richmat MH app profile. |
+| [`majestichome`](#majestichome) | Majestic Home: settings | Read, create, edit, enable, disable or delete bed alarms, or set the bed clock. |
 | [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run app control | Run a control declared by the selected app and model, read one setting from the bed, or set the app mode used by later commands. |
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: Set sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
 | [`richmat_legacy`](#richmat_legacy) | SleepEvolution and W.Silver Products 3.x: run app control | Run a control from the selected app and name prefix, as a press or a save. |
@@ -1259,6 +1260,49 @@ raw result before acknowledging it; reconnect and cancellation invalidate its
 token, which also expires 30 seconds after completion. This explicit consumer boundary replaces the app's phone report/SQL
 processing, without claiming SQL success. See the [M Line guide](beds/mline.md)
 for field projections, source limitations and the external hardware test status.
+
+## Majestic Home
+
+<a id="majestichome"></a>
+**`majestichome`**: Read, create, edit, enable, disable or delete bed alarms, or set the bed clock.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `operation` | Operation |  |
+| `alarm_id` | Alarm ID | Required for new, set, toggle and delete. Choose an explicit ID from 1 through 7 for new alarms, or a received ID for an existing alarm. Partial replies cannot identify a free slot. |
+| `hour` | Hour |  |
+| `minute` | Minute |  |
+| `preset` | Preset |  |
+| `weekdays` | Weekdays | Monday is 0 and Sunday is 6. Empty means once. |
+| `enabled` | Enabled |  |
+
+### Majestic Home settings
+
+Supply an explicit `alarm_id` for `new`, `set`, `toggle` and `delete`.
+New IDs use 1 through 7. Partial alarm replies cannot prove a free slot, so
+Home Assistant never chooses an ID automatically. Sequential pairs refresh
+required fields on the execution connection; toggles reject changed fields.
+
+`adjustable_bed.majestichome` accepts `operation: list`, `new`, `set`, `toggle`,
+`delete` or `sync_clock`. Select a configured Majestic Home device or a native
+paired parent/child, with `side` when needed. Alarm operations require the current
+connection's clock response. FARM/JLRM accept `preset: zero_gravity`,
+`anti_snore`, `memory_1` or `memory_2`, `hour`, `minute`, `weekdays` (Monday 0
+through Sunday 6) and `enabled`. An empty weekday list means once.
+
+Supply `alarm_id` explicitly for `new`, `set`, `toggle` or `delete`.
+Neither an empty nor a nonempty cache proves which IDs are free.
+Every `toggle` reads the requested ID on the current connection before changing
+only its enable bit. Missing or changed fields refuse the write.
+`list` keeps each physical connection open for a fixed five-second observation
+window from query submission. It optionally returns `targets`, one result per
+physical address and `side`, containing copied `alarms` and `complete: false`.
+These are partial observations, including when the array is empty; neither
+silence nor elapsed time proves the bed has no other alarms. Sequential sides
+disconnect after their window, and returned snapshots cannot authorize mutations.
+The received records are attributes of the diagnostic Model sensor, which is
+disabled by default: enable it to read them. See the
+[Majestic Home profile](beds/richmat.md#majestic-home).
 
 ## MLILY
 
