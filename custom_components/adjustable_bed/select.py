@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Coroutine
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
@@ -50,6 +50,8 @@ class AdjustableBedControllerStateSelectDescription(SelectEntityDescription):
     state_key: StateKey[str | None]
     select_fn: Callable[[BedController, str], Coroutine[Any, Any, None]]
     card: CardPlacement
+    # Whether the controller currently offers the setting, once it was created.
+    available_fn: Callable[[BedController], bool] | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -212,7 +214,10 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 entities.append(
                     AdjustableBedControllerStateSelect(
                         coordinator,
-                        LIGHT_TIMER_DESCRIPTION,
+                        replace(
+                            LIGHT_TIMER_DESCRIPTION,
+                            available_fn=controller.light_timer_available_fn,
+                        ),
                         timer_options,
                     )
                 )
@@ -498,10 +503,16 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
 
     @property
     def available(self) -> bool:
-        """Respect Octo's PIN gate for live settings."""
-        controller = self._coordinator.capability_controller
-        octo = octo_controller(controller)
-        return super().available and (octo is None or octo.normal_controls_available)
+        """Respect Octo's PIN gate and the controller's own gate for live settings."""
+        with self._side_scope():
+            controller = self._coordinator.capability_controller
+            octo = octo_controller(controller)
+            available_fn = self.entity_description.available_fn
+            return (
+                super().available
+                and (octo is None or octo.normal_controls_available)
+                and (available_fn is None or controller is not None and available_fn(controller))
+            )
 
     def __init__(
         self,
@@ -536,7 +547,8 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
     @callback
     def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Write state when the controller publishes updated select state."""
-        if self.entity_description.state_key in state:
+        # A gated setting's availability can change with any published state.
+        if self.entity_description.state_key in state or self.entity_description.available_fn:
             self.async_write_ha_state()
 
     @property

@@ -6311,18 +6311,6 @@
       "hjbed_layout": {
         "name": "Remote layout"
       },
-      "goodvibe_light_duration": {
-        "name": "Light duration (seconds)"
-      },
-      "goodvibe_massage_timer": {
-        "name": "Massage timer",
-        "state": {
-          "0": "Off",
-          "10": "10 minutes",
-          "20": "20 minutes",
-          "30": "30 minutes"
-        }
-      },
       "richmat_classic_mode": {
         "name": "Remote mode",
         "state": {

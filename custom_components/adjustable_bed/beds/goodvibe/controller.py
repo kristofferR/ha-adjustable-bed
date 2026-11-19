@@ -30,6 +30,7 @@ from ...controller_state import StateKey
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import GOODVIBE, RichmatProfile
 from ...profiles.richmat_catalog import Catalog
+from ...state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
 from ..catalog_buttons import (
@@ -38,6 +39,7 @@ from ..catalog_buttons import (
     catalog_button,
     classify,
     is_placeholder,
+    massage_timer_minutes,
     unique_buttons,
 )
 from ..entity_specs import (
@@ -100,10 +102,8 @@ REJECTION: Final = StateKey[str | None]("goodvibe_rejection")
 SIDE: Final = StateKey[str | None]("goodvibe_side")
 MONITORING: Final = StateKey[bool]("goodvibe_monitoring")
 MEMORY: Final = StateKey[bool]("goodvibe_memory")
-LIGHT_DURATION: Final = StateKey[str | None]("goodvibe_light_duration")
 SNORE_COUNT: Final = StateKey[int | None]("goodvibe_snore_count")
 SNORE_TIME: Final = StateKey[int | None]("goodvibe_snore_time")
-MASSAGE_TIMER: Final = StateKey[str | None]("goodvibe_massage_timer")
 
 
 def _live_key(side: str, name: str) -> StateKey[object]:
@@ -172,6 +172,15 @@ async def _release(controller: BedController) -> None:
 def _stop(side: int, link: Link) -> bytes:
     assert GOODVIBE.stop is not None
     return codec.function(GOODVIBE.stop, side, single=link.legacy)
+
+
+def light_option(seconds: int) -> str:
+    """A light duration as the shared light timer names it; zero keeps the light on."""
+    if seconds == 0:
+        return "Always On"
+    if seconds % 3600 == 0:
+        return f"{seconds // 3600} hour{'s' if seconds > 3600 else ''}"
+    return f"{seconds // 60} min"
 
 
 def label(action: Action) -> str:
@@ -436,7 +445,7 @@ class GoodVibeController(BedController):
             # product's registry identity or the user's customizations.
             return frozenset({
                 ("button", "goodvibe_light_off"),
-                ("select", "controller_select_goodvibe_light_duration"),
+                ("select", "light_timer"),
             })
         return super().retained_entity_keys
 
@@ -469,7 +478,6 @@ class GoodVibeController(BedController):
 
     def _publish(self) -> None:
         events = self.choices.events
-        timer = events.get("massage_timer")
         count = events.get("deviceAntiSnoreConfigCountEvent")
         time = events.get("deviceAntiSnoreConfigTimeEvent")
         self.forward_controller_state_updates(
@@ -479,11 +487,9 @@ class GoodVibeController(BedController):
             SIDE(str(self.choices.side)),
             MONITORING(self.choices.monitoring),
             MEMORY(self.choices.memory),
-            LIGHT_DURATION(str(events["light_duration"]) if "light_duration" in events else None),
             # The entities only show numbers and option strings.
             SNORE_COUNT(count if isinstance(count, int) else None),
             SNORE_TIME(time if isinstance(time, int) else None),
-            MASSAGE_TIMER(timer if isinstance(timer, str) else None),
             *(
                 _live_key(side, name)(value)
                 for side, live in self.choices.realtime.items()
@@ -1083,9 +1089,10 @@ class GoodVibeController(BedController):
                     kind=Kind.LIGHT,
                 )
             )
+        timers = set(self._massage_timer_details.values())
         for detail in self.control_actions:
             action = self.actions[detail]
-            if action.local or action.hidden or not action.interactive:
+            if action.local or action.hidden or not action.interactive or detail in timers:
                 continue
             key = "goodvibe_" + detail
             power_bob = self.catalog.bed is not None
@@ -1400,24 +1407,6 @@ class GoodVibeController(BedController):
         if self.product is None:
             return ()
         specs = []
-        if self.product.massage_timer:
-
-            async def massage_timer(controller: BedController, value: str) -> None:
-                from .services import Request
-
-                await selected(controller).async_execute_goodvibe_request(
-                    Request("massage_timer", value=int(value))
-                )
-
-            specs.append(
-                ControllerSelectSpec(
-                    "goodvibe_massage_timer",
-                    "goodvibe_massage_timer",
-                    MASSAGE_TIMER,
-                    ("0", "10", "20", "30"),
-                    massage_timer,
-                )
-            )
         if len(self.product.sides) > 1:
             # Good Vibe has no single-address pairing, so the select is the
             # only way to reach the other side of a split bed.
@@ -1434,30 +1423,6 @@ class GoodVibeController(BedController):
                     set_side,
                     local_select_fn=self._select_side,
                     card=CARD_CONTROLLED_SIDE,
-                )
-            )
-        if self.product.light and (self.catalog.bed is None or self.menu_available("light")):
-
-            async def duration(controller: BedController, value: str) -> None:
-                from .services import Request
-
-                await selected(controller).async_execute_goodvibe_request(
-                    Request("light_duration", seconds=int(value))
-                )
-
-            eight = self.product.light_display == "deviceBedLightDisplayCircleEightColorValue"
-            options = tuple(map(str, (minute * 60 for minute in self.catalog.bed.light_minutes))) if self.catalog.bed else tuple(map(str, p.light_durations(self.product.label.split(" / ")[0], eight)))
-            specs.append(
-                ControllerSelectSpec(
-                    "goodvibe_light_duration",
-                    "goodvibe_light_duration",
-                    LIGHT_DURATION,
-                    options,
-                    duration,
-                    is_available=(
-                        lambda controller: isinstance(controller, GoodVibeController)
-                        and controller.catalog.bed is not None and controller.menu_available("light")
-                    ) if self.catalog.bed is not None else None,
                 )
             )
         return tuple(specs)
@@ -1770,13 +1735,111 @@ class GoodVibeController(BedController):
             self.choices.events[request.operation] = (
                 request.rgb if request.operation == "light_color" else request.seconds
             )
+            if request.operation == "light_duration" and request.seconds is not None:
+                self.forward_sent_state_updates(LIGHT_TIMER_OPTION(light_option(request.seconds)))
         elif request.operation == "massage_timer":
-            self.choices.events["massage_timer"] = str(request.value)
+            assert request.value is not None
+            # The bed reports no timer.
+            self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(request.value))
         if self.catalog.reply_gated_menus and request.operation in ("repeat", "delete"):
             await asyncio.sleep(0.2)
             self.choices.events["repeat_alarm_records"] = []
             await self._send(p.QUERIES["alarms"])
         self._publish()
+
+    @property
+    def _massage_timer_details(self) -> dict[int, str]:
+        """The product's fixed-duration massage timer controls, by their minutes."""
+        timers: dict[int, str] = {}
+        for detail in self.control_actions:
+            action = self.actions[detail]
+            minutes = massage_timer_minutes(action.label)
+            if (
+                minutes is not None
+                and action.gesture == "shortPress"
+                and not (action.local or action.hidden or action.force_long)
+                and action.interactive
+                and "massage" in self.catalog.labels.get(detail, label(action)).lower()
+            ):
+                timers.setdefault(minutes, detail)
+        return timers
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows a product's massage timer.
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self.product is not None and (
+            self.product.massage_timer or bool(self._massage_timer_details)
+        )
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        if self.product is not None and self.product.massage_timer:
+            return [10, 20, 30]
+        return sorted(self._massage_timer_details)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # Only the countdown request has an off; timer controls set durations.
+        return self.product is not None and self.product.massage_timer
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        if self.product is not None and self.product.massage_timer:
+            from .services import Request
+
+            # The request shows the timer it sent.
+            await self.async_execute_goodvibe_request(Request("massage_timer", value=minutes))
+            return
+        detail = self._massage_timer_details.get(minutes)
+        if detail is None:
+            raise ValueError("Choose a massage timer this product offers")
+        await _press(self, detail=detail)
+        # The bed reports no timer.
+        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
+
+    @property
+    def _light_durations(self) -> tuple[int, ...]:
+        if self.product is None:
+            return ()
+        if self.catalog.bed is not None:
+            return tuple(minute * 60 for minute in self.catalog.bed.light_minutes)
+        eight = self.product.light_display == "deviceBedLightDisplayCircleEightColorValue"
+        return p.light_durations(self.product.label.split(" / ")[0], eight)
+
+    @property
+    def supports_light_timer(self) -> bool:
+        return (
+            self.product is not None
+            and self.product.light
+            and (self.catalog.bed is None or self.menu_available("light"))
+        )
+
+    @property
+    def light_timer_available_fn(self) -> Callable[[BedController], bool] | None:
+        if self.catalog.bed is None:
+            return None
+        # A missing session reply withdraws the light menu.
+        return lambda controller: (
+            isinstance(controller, GoodVibeController)
+            and controller.catalog.bed is not None
+            and controller.menu_available("light")
+        )
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        return [light_option(seconds) for seconds in self._light_durations]
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        from .services import Request
+
+        seconds = {light_option(s): s for s in self._light_durations}.get(timer_option)
+        if seconds is None:
+            raise ValueError("Choose one of this product's light durations")
+        # The request shows the duration it sent.
+        await self.async_execute_goodvibe_request(Request("light_duration", seconds=seconds))
 
     @property
     def supports_clock_sync(self) -> bool:

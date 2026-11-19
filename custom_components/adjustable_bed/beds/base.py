@@ -2490,6 +2490,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def light_timer_available_fn(self) -> Callable[[BedController], bool] | None:
+        """Return the gate on whether the light timer can be set right now, if any."""
+        return None
+
+    @property
     def light_timer_pending(self) -> bool:
         """Return whether light timer support still awaits device discovery."""
         return False

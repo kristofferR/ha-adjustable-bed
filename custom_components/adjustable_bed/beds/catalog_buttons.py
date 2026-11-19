@@ -168,6 +168,8 @@ _COMBO: Final = re.compile(
     r"(?:head|foot) (?:up|down)(?: and)? (?:head|foot) (?:up|down|stop)", re.IGNORECASE
 )
 _LIGHT_WORDS: Final = re.compile(r"\b(?:light|lights|lamp|night light)\b", re.IGNORECASE)
+# An app's fixed-duration massage timer action, by the minutes it sets.
+_MASSAGE_TIMER_ACTION: Final = re.compile(r"(?:deviceFunctionItem)?Massage(?P<minutes>\d+)MinuteTimer")
 
 
 @dataclass(frozen=True, slots=True)
@@ -215,6 +217,15 @@ def _massage_key(name: str) -> str | None:
         return None
     zone = {"feet": "foot", "leg": "foot", None: "all"}.get(match["zone"], match["zone"])
     return f"massage_{zone}_{'up' if op in ('up', '+', 'add', 'increase', 'strengthen') else 'down'}"
+
+
+def massage_timer_minutes(action: str) -> int | None:
+    """The minutes an app's fixed-duration massage timer action sets, if it is one.
+
+    Such actions are the bed's massage timer select, not buttons of their own.
+    """
+    match = _MASSAGE_TIMER_ACTION.fullmatch(action)
+    return int(match["minutes"]) if match else None
 
 
 def is_placeholder(label: str) -> bool:
