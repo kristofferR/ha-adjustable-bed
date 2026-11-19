@@ -397,9 +397,10 @@ async def test_real_setup_entities_alarm_service_and_card_hold(
         "yamada_alarm_1",
         "yamada_alarm_2",
         "yamada_query_alarms",
-        "yamada_sync_clock",
         "stop",
     } <= keys
+    # The shared sync_clock action sets the clock (test_clock_sync_frames).
+    assert "yamada_sync_clock" not in keys
     assert not {"massage_toggle", "preset_lounge", "preset_memory_2"} & keys
     stop = next(v.entity_id for v in entities if v.translation_key == "stop")
     stop_state = hass.states.get(stop)

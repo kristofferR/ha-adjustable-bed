@@ -504,7 +504,7 @@ class FurniMoveController(BedController):
         return tuple(
             ControllerStateBinarySensorSpec(
                 key,
-                "under_bed_lights" if key == "furnimove_ubl" else key,
+                "under_bed_light_state" if key == "furnimove_ubl" else key,
                 _state_key(key),
                 icon,
                 entity_registry_enabled_default=enabled,

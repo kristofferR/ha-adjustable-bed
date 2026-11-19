@@ -433,6 +433,8 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 requires_confirmation=key in _SAVE_ACTIONS,
                 card=CARD_PRESET_SAVE if key.startswith("save_") else CARD_UTILITY,
                 diagnostic=key == "query",
+                # Clearing every saved position is maintenance: there to enable.
+                entity_registry_enabled_default=key != "reset",
             )
             for key, name in buttons
         )

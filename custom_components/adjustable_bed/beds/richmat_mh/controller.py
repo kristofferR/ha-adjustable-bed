@@ -21,6 +21,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
+from homeassistant.const import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
@@ -957,6 +958,9 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     state_key=MOTOR_MODE_KEY,
                     options=options,
                     select_fn=lambda ctrl, option: _invoke(ctrl, "set_motor_mode", option),
+                    # Settings, not dashboard controls: there to enable.
+                    entity_category=EntityCategory.CONFIG,
+                    entity_registry_enabled_default=False,
                 )
             )
         if options := self._snore_options():
@@ -967,6 +971,8 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                     state_key=SNORE_KEY,
                     options=options,
                     select_fn=lambda ctrl, option: _invoke(ctrl, "set_snore", option),
+                    entity_category=EntityCategory.CONFIG,
+                    entity_registry_enabled_default=False,
                 )
             )
         if self._waist:
@@ -993,6 +999,9 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                                 ctrl, "set_waist_setting", s, f, option
                             ),
                             card=CARD_MASSAGE,
+                            # The waist mode is the dashboard control; per-side settings are there to enable.
+                            entity_category=EntityCategory.CONFIG,
+                            entity_registry_enabled_default=False,
                         )
                     )
         return tuple(specs)
@@ -1049,12 +1058,12 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                 ControllerStateSensorSpec(
                     DETECTION_KEY, DETECTION_KEY, DETECTION_KEY, "mdi:stethoscope",
                     attribute_keys=(DETECTION_RESULTS_KEY,),
-                    entity_registry_enabled_default=True,
+                    entity_registry_enabled_default=False,
                 )
             )
         if self._alarm_page():
             specs.append(
-                ControllerStateSensorSpec(ALARM_STATUS_KEY, ALARM_STATUS_KEY, ALARM_STATUS_KEY, "mdi:alarm", entity_registry_enabled_default=True)
+                ControllerStateSensorSpec(ALARM_STATUS_KEY, ALARM_STATUS_KEY, ALARM_STATUS_KEY, "mdi:alarm", entity_registry_enabled_default=False)
             )
         if self.route == "C" and self._memory_groups():
             specs.append(
@@ -1071,7 +1080,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
                         attribute_keys=(
                             WAIST_ALARM_REPEAT_KEYS[side], WAIST_ALARM_INTENSITY_KEYS[side]
                         ),
-                        entity_registry_enabled_default=True,
+                        entity_registry_enabled_default=False,
                     )
                 )
         return tuple(specs)
@@ -1088,7 +1097,7 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
             specs.append(
                 ControllerStateBinarySensorSpec(
                     SMART_SET_LOCK_KEY, SMART_SET_LOCK_KEY, SMART_SET_LOCK_KEY, "mdi:lock",
-                    entity_registry_enabled_default=True,
+                    entity_registry_enabled_default=False,
                 )
             )
         if self._smart_light_lock():

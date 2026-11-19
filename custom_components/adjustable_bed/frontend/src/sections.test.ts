@@ -38,7 +38,7 @@ test("visual editor offers lighting for a discovered state-only bed", () => {
     entities: {
       [entityId]: {
         entity_id: entityId,
-        translation_key: "under_bed_lights",
+        translation_key: "under_bed_light_state",
         device_id: "bed",
         platform: "adjustable_bed",
       },
