@@ -2289,6 +2289,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         normalize=_smart_sleep_normalize, seed=_smart_sleep_seed,
     ),
+    "enso": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, {
+            "2": "2 motors: back and feet", "3": "3 motors: back, feet and lumbar",
+            "4": "4 motors: back, feet, waist and lumbar",
+        }, "2"),),
+        derive=lambda data: {CONF_MOTOR_COUNT: int(data.get(CONF_PRODUCT_TYPE, "2"))},
+        title=lambda _data: "Enso Remote",
+    ),
     BED_TYPE_YAMADA: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
               CONF_DISABLE_ANGLE_SENSING: True},

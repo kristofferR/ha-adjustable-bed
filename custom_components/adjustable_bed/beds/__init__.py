@@ -62,6 +62,7 @@ if TYPE_CHECKING:
     from .keeson.agingplace import AgingPlaceController as AgingPlaceController
     from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
     from .keeson.controller import KeesonController as KeesonController
+    from .keeson.enso import EnsoController as EnsoController
     from .keeson.jalon import JalonController as JalonController
     from .keeson.ormatek import OrmatekController as OrmatekController
     from .keeson.somos import SomosController as SomosController
@@ -198,6 +199,7 @@ _EXPORT_MODULES = {
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
     "SomosController": ("keeson.somos", "SomosController"),
+    "EnsoController": ("keeson.enso", "EnsoController"),
     "YamadaController": ("keeson.yamada", "YamadaController"),
     "GlideawayMotionController": "glideaway_motion.controller",
     "BedSenseController": "bedsense",

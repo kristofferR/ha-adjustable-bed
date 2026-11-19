@@ -536,6 +536,7 @@ ZSERIES_VARIANTS: Final = {
     ZSERIES_VARIANT_Z280: "Z-280 page (M1/M2, separate massage zones)",
 }
 # Bed types whose variant is a user choice with no automatic default.
+BED_TYPE_ENSO: Final = "enso"
 BED_TYPE_YAMADA: Final = "yamada"
 BED_TYPE_SOMOS: Final = "somos"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
@@ -759,6 +760,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_ONLYSNORE,
+    BED_TYPE_ENSO,
     BED_TYPE_YAMADA,
     BED_TYPE_BEDGEAR,
     BED_TYPE_L2MOTION,

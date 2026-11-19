@@ -110,6 +110,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 SUTA_STREAM = tuple(f"SutaProfile:{p.key}@{p.layout}" for p in SUTA_PROFILES.values() if p.execution.declared)
 
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"EnsoProfile:{n}": {"hold": ("Enso Remote 2.3: immediate 100 ms refresh until zero release",)} for n in (2, 3, 4)},
     **{f"PersonalComfortProfile:{key}": {"hold": ("Personal Comfort 2.6.1",)}
        for key in ("malouf", "reverie_v1", "reverie_v2")},
 
@@ -437,6 +438,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/vibradorm/app.py:<module>.VibradormAppController.execution": ("vibradorm_app",),
     "beds/vmatbasic/controller.py:<module>.VMatBasicController": ("vmatbasic",),
     "beds/vmatbasic/controller.py:<module>.VMatBasicController.execution": ("vmatbasic",),
+    "profiles/enso.py:<module>.PROFILES": tuple(f"EnsoProfile:{n}" for n in (2, 3, 4)),
     "profiles/ff_frame.py:<module>.BEDSENSE": ("BedSenseProfile:bedsense",),
     "profiles/ff_frame.py:<module>.SOLACE_PROFILES": (
         "SolaceProfile:common",

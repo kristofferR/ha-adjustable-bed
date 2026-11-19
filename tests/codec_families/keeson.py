@@ -6,12 +6,14 @@ import json
 import re
 from pathlib import Path
 
+from custom_components.adjustable_bed.profiles.enso import EnsoProfile
 from custom_components.adjustable_bed.profiles.keeson import AppProfile, KeesonProfile
 from tests.codec_families import CodecFamily, CodecGuide, spelled_frames
 from tests.keeson_vectors import FROZEN_FRAMES
 from tests.ormatek_vectors import VECTORS as ORMATEK_VECTORS
 from tests.somos_vectors import FROZEN_FRAMES as SOMOS_FRAMES
 
+_ENSO_FRAMES = frozenset(row["expected_bytes"] for row in json.loads((Path(__file__).parents[1] / "fixtures/enso/vectors.json").read_text()) if row["kind"] != "notification")
 _SOMOS = {f"somos_{key}": value for key, value in SOMOS_FRAMES.items()}
 
 # The guide's AdjustaMattress section also spells its P3/P4 Okin N-frames, which
@@ -33,7 +35,7 @@ _SYMPHONY_FRAMES = {
 
 FAMILY = CodecFamily(
     # The Keeson layout apps: one AppProfile per layout, vectors per app.
-    profiles={KeesonProfile: {**FROZEN_FRAMES, **_SYMPHONY_FRAMES, **{f"ormatek_{wire}": frozenset(v[3] for v in ORMATEK_VECTORS if v[0] == wire) for wire in ("okin15", "okin24")}, **_SOMOS,
+    profiles={EnsoProfile: {str(n): _ENSO_FRAMES for n in (2, 3, 4)}, KeesonProfile: {**FROZEN_FRAMES, **_SYMPHONY_FRAMES, **{f"ormatek_{wire}": frozenset(v[3] for v in ORMATEK_VECTORS if v[0] == wire) for wire in ("okin15", "okin24")}, **_SOMOS,
         "agingplace": frozenset(row["expected_bytes"] for row in json.loads(
             (Path(__file__).parents[1] / "fixtures/agingplace/vectors.json").read_text()))}, AppProfile: FROZEN_FRAMES},
     bed_types=frozenset(
@@ -45,6 +47,7 @@ FAMILY = CodecFamily(
             "keeson",
             "jalon_bed",
             "yamada",
+            "enso",
             "somos",
             "okin_ffe",
             "serta",
@@ -72,11 +75,12 @@ FAMILY = CodecFamily(
             "ergomotion_4",
         }
     ),
+    app_routes={"enso": ("product_type", ("2", "3", "4"))},
     guide=CodecGuide(
         path="docs/beds/keeson.md",
         spelled=spelled_frames(
             r"`((?:E[56] ?FE ?16|0[45] ?02)(?: ?[0-9A-F]{2}){4,})`", re.IGNORECASE
         ),
-        frozen=frozenset().union(*FROZEN_FRAMES.values(), *_SYMPHONY_FRAMES.values(), *_SOMOS.values(), (v[3] for v in ORMATEK_VECTORS), _ADJUSTAMATTRESS),
+        frozen=frozenset().union(*FROZEN_FRAMES.values(), *_SYMPHONY_FRAMES.values(), *_SOMOS.values(), _ENSO_FRAMES, (v[3] for v in ORMATEK_VECTORS), _ADJUSTAMATTRESS),
     ),
 )

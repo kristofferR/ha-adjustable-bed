@@ -634,6 +634,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 app",
     BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
+    "enso": "Enso Remote",
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app",
     BED_TYPE_LINX: "Linx app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",

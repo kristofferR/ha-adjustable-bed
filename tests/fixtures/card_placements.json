@@ -50,6 +50,10 @@
  "binary_sensor:cheerssleep_right_asleep": {
   "card_section": "hidden"
  },
+ "binary_sensor:enso_light": {
+  "card_section": "lighting",
+  "card_role": "state"
+ },
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
@@ -767,6 +771,27 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "elevate_both"
+ },
+ "button:enso_foot_massage_decrease": {
+  "card_section": "massage"
+ },
+ "button:enso_foot_massage_increase": {
+  "card_section": "massage"
+ },
+ "button:enso_head_massage_decrease": {
+  "card_section": "massage"
+ },
+ "button:enso_head_massage_increase": {
+  "card_section": "massage"
+ },
+ "button:enso_massage_level": {
+  "card_section": "massage"
+ },
+ "button:enso_massage_mode": {
+  "card_section": "massage"
+ },
+ "button:enso_timer_massage_page": {
+  "card_section": "massage"
  },
  "button:eshine_massage_foot_strength": {
   "card_section": "massage"
@@ -3868,6 +3893,10 @@
  },
  "sensor:doublesleep_use_side": {
   "card_section": "utility"
+ },
+ "sensor:enso_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "sensor:eshine_alarm": {
   "card_section": "hidden"
