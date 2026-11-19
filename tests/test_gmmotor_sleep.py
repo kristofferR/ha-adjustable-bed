@@ -302,3 +302,19 @@ async def test_off_drops_a_pending_on_and_queued_polls(hass: HomeAssistant) -> N
     await turning_on
     assert not ctrl._live_enabled
     ctrl._coordinator.client.write_gatt_char.assert_not_awaited()
+
+
+async def test_off_during_a_queued_polls_send_delay_sends_nothing(hass: HomeAssistant) -> None:
+    ctrl = controller(hass)
+    ctrl._live_enabled = True
+
+    async def execute(apply, **_kwargs):
+        await apply(ctrl)
+
+    ctrl._coordinator.async_execute_controller_command = execute
+    ctrl._queue("q_realtime")
+    for _ in range(3):
+        await asyncio.sleep(0)  # The poll is admitted and waits in the send delay.
+    ctrl._stop_live()
+    await asyncio.gather(*ctrl._tasks)
+    ctrl._coordinator.client.write_gatt_char.assert_not_awaited()

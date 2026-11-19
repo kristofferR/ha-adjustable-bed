@@ -270,7 +270,8 @@ class GmmotorSleepController(BedController, GmmotorActions):
                             characteristic=transport.write,
                         )
 
-    async def _send(self, command: SleepCommand) -> None:
+    async def _send(self, command: SleepCommand, *, generation: int | None = None) -> None:
+        """Send one command; a queued one passes its generation so a stop voids it."""
         now = dt_util.now()
         request = self._requests.build(
             command,
@@ -288,6 +289,8 @@ class GmmotorSleepController(BedController, GmmotorActions):
         # Every reachable framed bean is pressType5: removed before one send.
         # Chunks are sequential SDK writes, without a per-chunk queue delay.
         await asyncio.sleep(_QUEUE_TICK)
+        if generation is not None and generation != self._generation:
+            return  # Stopped during the queue delay.
         await self.write_command(request.packet)
 
     def _queue(self, command: SleepCommand, *, delayed: bool = False) -> None:
@@ -311,7 +314,7 @@ class GmmotorSleepController(BedController, GmmotorActions):
                     and self._transport is not None
                     and self._coordinator.controller is self
                 ):
-                    await self._send(command)
+                    await self._send(command, generation=generation)
 
             try:
                 await self._coordinator.async_execute_controller_command(
