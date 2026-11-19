@@ -1766,26 +1766,6 @@ class LinakController(BedController):
                 received_axes.add(spec.axis_name)
         return received_axes
 
-    async def _read_two_motor_secondary_position(self) -> float | None:
-        """Read and resolve the second actuator for a 2-motor Linak bed."""
-        current_spec = self._two_motor_secondary_spec()
-        candidates = [current_spec] + [
-            candidate
-            for candidate in self._two_motor_secondary_candidates()
-            if candidate.uuid != current_spec.uuid
-        ]
-
-        for spec in candidates:
-            angle = await self._read_position_characteristic(spec)
-            if angle is None:
-                continue
-
-            if spec.uuid != current_spec.uuid:
-                await self._set_two_motor_secondary_spec(spec)
-            return angle
-
-        return None
-
     async def read_non_notifying_positions(self) -> None:
         """Read positions for manual refresh flows that need a back-motor read."""
         if self.client is None or not self.client.is_connected:

@@ -26,6 +26,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
@@ -196,6 +197,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
     BED_TYPE_YAMADA: {"p1": "P1 control box", "p2": "P2 control box"},
+    BED_TYPE_BETTERLIVING2: {"p1": "P1 control box", "p2": "P2 control box", "p3": "P3 control box"},
     **{bed_type: RICHMAT_MH_VARIANTS_BY_APP[app] for bed_type, app in RICHMAT_MH_APPS.items()},
     "richmat_sleep_receiver": {"wsilver2": "W.Silver Products", "americanstar": "AMERICANSTAR",
                                "bailey2": "Bailey's Bed Control", "tx": "TX"},
@@ -219,11 +221,6 @@ def get_variants_for_bed_type(bed_type: str | None) -> dict[str, str] | None:
     if bed_type is None:
         return None
     return VARIANTS_BY_BED_TYPE.get(bed_type)
-
-
-def bed_type_has_variants(bed_type: str) -> bool:
-    """Check if a bed type has multiple protocol variants."""
-    return bed_type in VARIANTS_BY_BED_TYPE
 
 
 def is_valid_variant_for_bed_type(bed_type: str, variant: str) -> bool:

@@ -2278,3 +2278,9 @@ FROZEN_FRAMES.update(_nisco_supreme_frames())
 
 # Bed Tech has its own literals, separate from both modern and older sibling apps.
 FROZEN_FRAMES["richmat_mh_bedtech_classic"] = BEDTECH_CLASSIC_FRAMES
+
+
+# L&P Adjustable Base 2.3.25, ordinary and direct literal writes.
+FROZEN_FRAMES["richmat_classic_lp2"] = frozenset(json.loads(gzip.decompress(
+    (Path(__file__).parent / "fixtures/lp2/outbound.json.gz").read_bytes()
+)))

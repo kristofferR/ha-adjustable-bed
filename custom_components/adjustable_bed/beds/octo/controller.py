@@ -1797,11 +1797,6 @@ class OctoController(BedController, OctoPacketCodec):
         record = self._capability_records.get(OCTO_FEATURE_SYNCHRO)
         return bool(self._has_synchro and record is not None)
 
-    @property
-    def is_synchro_active(self) -> bool | None:
-        """Return current synchro/linked mode state, or None if unknown."""
-        return self._synchro_active
-
     async def set_synchro(self, enabled: bool) -> None:
         """Set the CAP_SYNCHRO value while preserving advertised metadata."""
         if not self.supports_synchro:

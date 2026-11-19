@@ -456,6 +456,7 @@ class BedTechClassicController(RichmatMHAppController):
                     "Refresh alarms",
                     _refresh_alarms,
                     kind=Kind.EXTRA,
+                    diagnostic=True,
                     cancel_movement=False,
                 )
             )

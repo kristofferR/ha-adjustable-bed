@@ -372,6 +372,8 @@ def _census(key: str) -> set[str]:
             *(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in range(6)),
         }
         return {frame.hex() for frame in frames}
+    if key == "richmat_classic_lp2":
+        return {classic.release("RAW").hex(), classic.release("FRAMED").hex(), classic.INITIALIZE.hex(), classic.ALARM_QUERY.hex(), classic.LAMP_QUERY.hex(), classic.AROMA_QUERY.hex()}
     if key.startswith("richmat_classic_"):
         return _classic_census()
     if key.startswith("richmat_mh_"):

@@ -110,6 +110,9 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 SUTA_STREAM = tuple(f"SutaProfile:{p.key}@{p.layout}" for p in SUTA_PROFILES.values() if p.execution.declared)
 
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"KeesonProfile:betterliving2_p{wire}_{layout}": {"hold": ("BetterLiving2 1.3.0",), "hold_controls": ("BetterLiving2 1.3.0",)}
+       for wire in (1, 2, 3) for layout in (2, 3)},
+    **{f"EnsoProfile:{n}": {"hold": ("Enso Remote 2.3: immediate 100 ms refresh until zero release",)} for n in (2, 3, 4)},
     **{f"PersonalComfortProfile:{key}": {"hold": ("Personal Comfort 2.6.1",)}
        for key in ("malouf", "reverie_v1", "reverie_v2")},
 
@@ -283,10 +286,10 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "okimiki": {"hold": ("okimiki",), "hold_controls": ("okimiki",)},
     "bobpowerbase": {"hold": ("bob096",), "hold_controls": ("bob096",)},
     # Scoped to the held controls that run the keep mode under the current
-    # Hold/Release, memory-arm and head/foot selection (five app reports).
+    # Hold/Release, memory-arm and head/foot selection.
     "richmat_classic_apps": {
-        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior"),
-        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior"),
+        "hold": ("avocado", "coaster", "fortywinks", "milemont", "superior", "L&P Adjustable Base 2.3.25: status 1 refreshes at 110/150/170 ms until release, then STOP"),
+        "hold_controls": ("avocado", "coaster", "fortywinks", "milemont", "superior", "L&P Adjustable Base 2.3.25: stream controls only; confirmed saves never hold"),
     },
     "isleep": {"hold": ("kaidi",)},
     "ComfyProfile:komfyd": {"hold": ("komfyd084",)},
@@ -341,6 +344,8 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/keeson.py:<module>.BETTERLIVING2": tuple(
+        f"KeesonProfile:betterliving2_p{wire}_{layout}" for wire in (1, 2, 3) for layout in (2, 3)),
     "profiles/ormatek.py:<module>.PROFILES": ("KeesonProfile:ormatek_okin15", "KeesonProfile:ormatek_okin24"),
     "profiles/personal_comfort.py:<module>.MALOUF": ("PersonalComfortProfile:malouf",),
     "profiles/personal_comfort.py:<module>": ("PersonalComfortProfile:reverie_v1", "PersonalComfortProfile:reverie_v2"),
@@ -387,6 +392,8 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/mline.py:<module>.MLineProfile": tuple(f"MLineProfile:{key}" for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")),
     "profiles/mlily_remote.py:<module>.MlilyRemoteProfile": tuple(f"MlilyRemoteProfile:{key}" for key in ("ms200", "ms300", "ms600", "powercool", "ms300_sh")),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
+    "beds/richmat_classic/lp2.py:<module>.Lp2Controller": ("richmat_classic_apps",),
+    "beds/richmat_classic/lp2.py:<module>.Lp2Controller.execution": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
     "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,
@@ -438,6 +445,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "beds/vibradorm/app.py:<module>.VibradormAppController.execution": ("vibradorm_app",),
     "beds/vmatbasic/controller.py:<module>.VMatBasicController": ("vmatbasic",),
     "beds/vmatbasic/controller.py:<module>.VMatBasicController.execution": ("vmatbasic",),
+    "profiles/enso.py:<module>.PROFILES": tuple(f"EnsoProfile:{n}" for n in (2, 3, 4)),
     "profiles/ff_frame.py:<module>.BEDSENSE": ("BedSenseProfile:bedsense",),
     "profiles/ff_frame.py:<module>.SOLACE_PROFILES": (
         "SolaceProfile:common",

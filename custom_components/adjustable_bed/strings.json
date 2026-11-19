@@ -3524,6 +3524,33 @@
       },
       "adjustamattress_lift_foot": {
         "name": "Lift foot"
+      },
+      "betterliving2_all_sections_up": {
+        "name": "Raise all sections"
+      },
+      "betterliving2_all_sections_down": {
+        "name": "Lower all sections"
+      },
+      "enso_head_massage_increase": {
+        "name": "Increase head massage"
+      },
+      "enso_head_massage_decrease": {
+        "name": "Decrease head massage"
+      },
+      "enso_foot_massage_increase": {
+        "name": "Increase foot massage"
+      },
+      "enso_foot_massage_decrease": {
+        "name": "Decrease foot massage"
+      },
+      "enso_massage_level": {
+        "name": "Cycle massage intensity"
+      },
+      "enso_timer_massage_page": {
+        "name": "Cycle massage timer"
+      },
+      "enso_massage_mode": {
+        "name": "Cycle massage mode"
       }
     },
     "cover": {
@@ -3895,6 +3922,9 @@
       },
       "ormatek_both": {
         "name": "Head and feet"
+      },
+      "betterliving2_all_sections": {
+        "name": "All sections"
       }
     },
     "sensor": {
@@ -5003,6 +5033,18 @@
       "ormatek_alarm_time": {
         "name": "Alarm time"
       },
+      "betterliving2_massage_head": {
+        "name": "Head massage intensity"
+      },
+      "betterliving2_massage_feet": {
+        "name": "Foot massage intensity"
+      },
+      "betterliving2_massage_wave": {
+        "name": "Massage wave setting"
+      },
+      "betterliving2_massage_timer": {
+        "name": "Massage timer setting"
+      },
       "heart_rate": {
         "name": "Heart rate"
       },
@@ -5032,6 +5074,9 @@
       },
       "paramount_current_height": {
         "name": "Current bed height"
+      },
+      "enso_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "light": {
@@ -5449,6 +5494,9 @@
       },
       "under_bed_light_state": {
         "name": "Under-bed light state"
+      },
+      "enso_light": {
+        "name": "Light"
       }
     },
     "number": {
@@ -5781,6 +5829,15 @@
       },
       "l2motion_light_timer": {
         "name": "Light timer"
+      },
+      "betterliving2_massage_head": {
+        "name": "Head massage intensity"
+      },
+      "betterliving2_massage_feet": {
+        "name": "Foot massage intensity"
+      },
+      "betterliving2_massage_wave": {
+        "name": "Massage wave"
       },
       "motion_bed_brightness": {
         "name": "Light brightness"
@@ -9252,6 +9309,39 @@
         }
       }
     },
+    "betterliving2_diagnostic_action": {
+      "name": "BetterLiving2: settings",
+      "description": "Refresh alarm or massage status.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "betterliving2_massage": {
+      "name": "BetterLiving2: run control",
+      "description": "Set head and foot massage intensity. Zero turns a zone off.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "head": {
+          "name": "Head massage level"
+        },
+        "feet": {
+          "name": "Foot massage level"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "majestichome": {
       "name": "Majestic Home: settings",
       "description": "Read, create, edit, turn on or off, or delete the bed's alarms. Set the clock with Set bed clock.",
@@ -9285,6 +9375,67 @@
         },
         "enabled": {
           "name": "Enabled"
+        }
+      }
+    },
+    "lp2": {
+      "name": "L&P Adjustable Base: settings",
+      "description": "Lighting, aromatherapy, fans and movement programs. Use Set alarm for wake-up alarms. Physical behavior needs hardware testing.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "operation": {
+          "name": "Setting"
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "seconds": {
+          "name": "Light duration (seconds)"
+        },
+        "aroma_times": {
+          "name": "Aromatherapy times"
+        },
+        "fan": {
+          "name": "Fan"
+        },
+        "intensity": {
+          "name": "Intensity (%)"
+        },
+        "duration": {
+          "name": "Fan duration",
+          "description": "Duration choice 0 through 6. The foot fan sends only intensity; it does not send a duration."
+        },
+        "schedule": {
+          "name": "Movement program"
+        },
+        "confirm": {
+          "name": "Confirm programming or saving"
+        },
+        "control": {
+          "name": "Control"
+        },
+        "mode": {
+          "name": "Control mode"
+        },
+        "long": {
+          "name": "Long press"
+        },
+        "held": {
+          "name": "Continuous movement"
+        },
+        "head": {
+          "name": "Head selection"
+        },
+        "motor": {
+          "name": "Motor"
+        },
+        "duration_ms": {
+          "name": "Movement duration (milliseconds)"
+        },
+        "side": {
+          "name": "Bed side"
         }
       }
     }
@@ -9569,6 +9720,15 @@
     "l2motion_control_unavailable": {
       "message": "This control is unavailable. Check the bed model, reported synchronization support and confirmation."
     },
+    "betterliving2_selection_changed": {
+      "message": "The selected bed changed during the action: {reason}. Try again."
+    },
+    "betterliving2_alarm_owner_changed": {
+      "message": "The selected bed changed while preparing its alarm. Try again."
+    },
+    "betterliving2_massage_owner_changed": {
+      "message": "The selected bed changed while preparing massage. Try again."
+    },
     "action_rejected": {
       "message": "{reason}"
     },
@@ -9715,6 +9875,21 @@
     },
     "pair_transfer_failed": {
       "message": "The combined bed {name} could not take over either of its beds. Home Assistant will try again; if it keeps failing, separate the beds and combine them again."
+    },
+    "enso_session_changed": {
+      "message": "The bed disconnected or its Bluetooth session changed. Reconnect and try again."
+    },
+    "enso_gatt_missing": {
+      "message": "The bed must expose writable and notification characteristics. Check the selected device."
+    },
+    "enso_control_invalid": {
+      "message": "This control is not available for the selected bed layout."
+    },
+    "enso_name_invalid": {
+      "message": "Enter a Bluetooth name with 1 to 14 characters."
+    },
+    "enso_duration_invalid": {
+      "message": "Choose a hold duration between 1 and 60000 milliseconds."
     }
   },
   "issues": {
@@ -10412,6 +10587,7 @@
         "okimiki": "Okimiki app",
         "luniosmart": "Lunio Smart+ app",
         "majestichome": "Majestic Home app",
+        "lp2": "L&P Adjustable Base app",
         "bedtech_classic": "Bed Tech app"
       }
     },
@@ -11369,7 +11545,8 @@
         "get_up": "Help getting up",
         "wake_up": "Wake-up",
         "wake_mode_1": "Wake mode 1",
-        "wake_mode_2": "Wake mode 2"
+        "wake_mode_2": "Wake mode 2",
+        "flat_sleep": "Flat sleep"
       }
     },
     "set_alarm_sound": {
@@ -11708,6 +11885,19 @@
         "sync_mode": "Synchronization mode"
       }
     },
+    "betterliving2_diagnostic_action": {
+      "options": {
+        "refresh_alarm": "Refresh alarm",
+        "refresh_massage": "Refresh massage"
+      }
+    },
+    "bed_side": {
+      "options": {
+        "left": "Left",
+        "right": "Right",
+        "both": "Both"
+      }
+    },
     "remacro_model": {
       "options": {
         "unknown": "Not reported yet",
@@ -11741,6 +11931,23 @@
         "anti_snore": "Anti-Snore",
         "memory_1": "Memory 1",
         "memory_2": "Memory 2"
+      }
+    },
+    "lp2_operation": {
+      "options": {
+        "color": "Set light color",
+        "light_duration": "Set light duration",
+        "aromatherapy": "Set aromatherapy times",
+        "fan": "Set fan",
+        "motor_program": "Program movement sequence",
+        "control": "Run control",
+        "movement_test": "Run movement test"
+      }
+    },
+    "lp2_fan": {
+      "options": {
+        "head": "Head",
+        "foot": "Foot"
       }
     }
   }

@@ -719,12 +719,6 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
             )
             await self._async_apply_runtime_effects_unlocked(effects)
 
-    async def _async_apply_runtime_effects(self, effects: tuple[PairlinkEffect, ...]) -> None:
-        """Serialize source continuations across persistence/callback awaits."""
-        async with self._sdk_receive_lock:
-            await self._async_initialize_sdk()
-            await self._async_apply_runtime_effects_unlocked(effects)
-
     async def _async_apply_runtime_effects_unlocked(self, effects: tuple[PairlinkEffect, ...]) -> None:
         for effect in effects:
             if isinstance(effect, PairlinkWelcome):
@@ -1383,15 +1377,6 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
             )
         )
 
-    def _sdk_device_is_current(
-        self, source_mac: str, peer: PairlinkPeerIdentity | None
-    ) -> bool:
-        return any(
-            bean is not None
-            and self._sdk_owners.get(id(bean)) == (self._runtime.epoch, source_mac, peer)
-            for bean in self._sdk_devices
-        )
-
     @staticmethod
     def _pairlink_channel12_emits_status8(frame: bytes) -> bool:
         """Apply only bounded source guards for channel-0x12 status callbacks."""
@@ -1777,11 +1762,6 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                 value = selected.get(key)
                 if isinstance(value, int) and not isinstance(value, bool):
                     self._notify_position(axis, value)
-
-    def process_network_info_event(self) -> None:
-        """Reset the signing table when a session adapter reports network info."""
-        self._sign_gate.process_network_info()
-        self._runtime.state_generation += 1
 
     def _schedule_state_queries(self, selectors: tuple[int, ...]) -> None:
         """Run source A8/A9 query expansion through the existing command scheduler."""

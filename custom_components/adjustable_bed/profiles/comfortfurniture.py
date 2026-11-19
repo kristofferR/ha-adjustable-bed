@@ -9,11 +9,10 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Final, Literal
+from typing import Final
 
 from .keeson import COMFORTFURNITURE, KeesonProfile
 
-MassageSlider = Literal["wave", "intensity"]
 PRESET_NAMES: Final = MappingProxyType(
     {
         "zero_g": "Zero G",

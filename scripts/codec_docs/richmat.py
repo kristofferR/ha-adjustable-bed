@@ -59,6 +59,7 @@ from scripts.codec_docs import (
     _richmat_mh_apps,
 )
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
 
 GUIDE = "docs/beds/richmat.md"
 # The Casper Base and Hush Base apps: their profile class and controller module.
@@ -1734,3 +1735,6 @@ def render_mlily_remote() -> str:
 BLOCKS.append((GUIDE, "mlily-remote-commands", render_mlily_remote))
 
 BLOCKS += _bedtech_classic.BLOCKS
+
+
+BLOCKS += LP2_BLOCKS

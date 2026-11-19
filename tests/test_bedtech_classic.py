@@ -415,6 +415,7 @@ async def test_native_calendar_preflight_reads_slot_after_idle_disconnect(hass, 
 def test_late_calendar_records_offer_dynamic_delete_buttons():
     ctrl = calendar_model()
     assert ctrl.has_dynamic_buttons and ctrl.has_dynamic_controller_entities
+    assert next(s for s in ctrl.controller_button_specs if s.key == "bedtech_refresh_alarms").diagnostic
     assert not any("delete_alarm" in spec.key for spec in ctrl.controller_button_specs)
     ctrl._apply(p.Event("calendar", "6e20000501020201071e2e83"))
     assert any(spec.key == "bedtech_delete_alarm_2" for spec in ctrl.controller_button_specs)

@@ -41,7 +41,7 @@
 | Flat | ✅ | ✅ |
 | Presets | ✅ (TV, Lounge, Anti-snore, Zero-G; recall and save) | ✅ (same) |
 | Memory Presets | ✅ (1 slot, recall and save) | ✅ (1 slot, recall and save) |
-| Massage | ✅ (head/foot intensity, mode change, all off; 10/20/30-minute timers as the **Massage timer** select) | ✅ (same; different all-off opcode) |
+| Massage | ✅ (head/foot intensity, mode change, all off; 10/20/30-minute timers as the **Massage: Timer** select) | ✅ (same; different all-off opcode) |
 | Lights | ✅ (Light Board button) | ✅ (Light Board and Bed Light buttons; ordinary light page once the capability reply confirms it) |
 | RGB, music, alarms, sensor menu | ❌ | ❌ |
 | Position Feedback | ❌ (raw motor-number diagnostics only, not calibrated angles) | ❌ (same) |
@@ -205,10 +205,12 @@ Builders in
 
 - Reports retain typed fields and a date/partition cache key in the
   diagnostic's `casper_sleep_report` attribute.
-- Live entities expose separate left/right on-bed, heart, breath, movement and
-  snoring display values.
-- The app's unset token `--`, missing/null values, sequential updates and
-  partial mutation before malformed-data errors are preserved.
+- Live entities expose separate left and right **heart rate** and **breathing
+  rate** sensors and **in bed**, **body movement** and **snoring** binary
+  sensors.
+- The app's unset token `--` and missing or null values show as unknown.
+  Sequential updates and partial mutation before malformed-data errors are
+  preserved.
 - These are device/app values without a medical interpretation.
 - SXB information `type` and `ver` are nullable strings. Non-null values merge
   into previous information even when `error` is nonzero; null values retain

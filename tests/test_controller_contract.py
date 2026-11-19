@@ -199,6 +199,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "a"
     if bed_type == const.BED_TYPE_YAMADA:
         return "p1"
+    if bed_type == const.BED_TYPE_BETTERLIVING2:
+        return "p1"
     if bed_type == const.BED_TYPE_COMFORTBASE:
         return "accord"
     if bed_type == const.BED_TYPE_COMFORT_ENHANCEMENTS:
@@ -225,6 +227,9 @@ async def _create_controller_for_bed_type(
     """Create a controller through the factory for a bed type and optional variant."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == const.BED_TYPE_BETTERLIVING2:
+        coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_PROTOCOL_VARIANT: variant or "p1"})
+        return await create_controller(coordinator, bed_type, variant or "p1", client)
     if bed_type == const.BED_TYPE_ORMATEK:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "new"
         variant = "okin15" if not variant or variant == VARIANT_AUTO else variant
@@ -260,6 +265,9 @@ async def _create_controller_for_bed_type(
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"
     if bed_type == "nerum":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "nerum"
+
+    if bed_type == "enso":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "2"
 
     if bed_type == const.BED_TYPE_JALON_BED:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"

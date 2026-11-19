@@ -41,6 +41,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
@@ -1018,6 +1019,9 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *MANUAL_ALIASES.get(app, {}),
         *LAYOUT_PICKER_CHOICES.get(app, {}),
     } - (_CLASSIC_EXCLUDED - ({"TEST", "RMCS"} if app == "powercool" else set()))
+    if app == "lp2":
+        codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
+        codes.update(("RMCS", "TEST"))
     if app in ("luunarise2", "powercool"):
         codes -= {"WFRM", "FWRM"}
     if app in APPS:
@@ -1050,6 +1054,8 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         excluded = excluded | {"WFRM", "FWRM"}
     if (profile := APPS.get(str(data.get(CONF_PROTOCOL_VARIANT, "")))) is not None:
         excluded = excluded | profile.excluded_layouts
+    if data.get(CONF_PROTOCOL_VARIANT) == "lp2":
+        excluded = (excluded - {"RMCS", "TEST"}) | {"209A05", "6HRM", "QRRM", "ZRS3"}
     if layout in excluded or layout not in shipped:
         return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}
@@ -2240,6 +2246,17 @@ def _legacy_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
 
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+    BED_TYPE_BETTERLIVING2: SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, {"p1": "P1 control box", "p2": "P2 control box", "p3": "P3 control box"}),
+            Question(CONF_PRODUCT_TYPE, {"2": "2 motors: back and feet", "3": "3 motors: back, feet and all sections"}),
+        ),
+        derive=lambda data: {CONF_MOTOR_COUNT: int(data[CONF_PRODUCT_TYPE]),
+                             CONF_MOTOR_PULSE_DELAY_MS: 100 if data[CONF_PRODUCT_TYPE] == "2" else 200},
+        title=lambda _data: "BetterLiving2",
+    ),
     "ormatek": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True},
@@ -2288,6 +2305,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question(CONF_PRODUCT_TYPE, _smart_sleep_models, "0", searchable=True),
         ),
         normalize=_smart_sleep_normalize, seed=_smart_sleep_seed,
+    ),
+    "enso": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, {
+            "2": "2 motors: back and feet", "3": "3 motors: back, feet and lumbar",
+            "4": "4 motors: back, feet, waist and lumbar",
+        }, "2"),),
+        derive=lambda data: {CONF_MOTOR_COUNT: int(data.get(CONF_PRODUCT_TYPE, "2"))},
+        title=lambda _data: "Enso Remote",
     ),
     BED_TYPE_YAMADA: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
