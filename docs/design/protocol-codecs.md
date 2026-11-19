@@ -67,6 +67,20 @@ The standalone `svane` bed type builds its JMC400 route and both of its routes'
 lamp frames through `codec/jmc.py`, from the Svane Remote profile; its default
 route writes LinonPI frames, so its controller is not a profile over the codec.
 
+## Snore Monitor BED records
+
+Snore Monitor 2.3.8's literals require `codec/onlysnore.py`.
+Its control declares five while carrying six payload bytes, including a distinct
+save/release flag; triple alarms likewise keep a declared length that differs
+from their payload size. Neither the existing N-frame carrier nor Smart Sleep
+codec reproduces its complete control, intervention, alarm and receive formats.
+The minimal codec reuses N-frame's parameter-record encoder without introducing
+a new carrier or changing existing scenarios. `profiles/onlysnore.py` owns this
+app's command catalog and timing, while its controller owns the BED session and
+distinct single/triple alarm behavior. The frozen proof and actual-path tests
+are app-specific; separate sleep sensing, network and audio remain excluded.
+See the [Snore Monitor BED guide](../beds/onlysnore.md).
+
 ## Smart Comfort seat codec
 
 The Smart Comfort SYNARGY and SYNERGY literals are reproduced by
@@ -78,6 +92,16 @@ No existing codec reproduces every relevant command and response format, so this
 family owns its encoders and parser. `tests/test_smart_comfort.py` verifies both
 members' frozen literals, rather than selecting a family by UUID or brand.
 See the [Smart Comfort guide](../beds/smart-comfort.md).
+
+## Ultramatic Smart Bed
+
+Ultramatic Smart Bed 1.1.2 reproduces every app send through
+Okin N-frame's `frame40`, `request`, `clock` and `alarm` encoders, including
+unequal alarm type/side cases. `SideRecordParser` adds bounded extraction of
+the app's two seven-byte replies. Its typed app profile owns BCD, side selection
+and normalization; the family controller extension owns the session and gestures.
+It uses one Nordic UART route and is independent of the legacy Ultramatic ORE
+controller. Hardware remains unverified.
 
 ## M Line composite codec
 
@@ -346,3 +370,64 @@ cases live in `tests/fixtures/bedgear/`; `tests/test_bedgear_vectors.py` proves
 the byte matches. The separate `BedgearProfile` owns its 15 layouts, independent
 name gates, timing and control release policies. No sibling app's parameters
 select its capabilities.
+
+Leon's L2Motion 2.0.2 matches the existing HHC carrier in all independent
+transmit literals in `tests/l2motion_vectors.py`. Its `L2MotionProfile` declares
+its own name gates, axes and controls. The shared letter runtime preserves
+Bedgear's timing while L2Motion delays the first periodic write until its first
+timer tick. Neither synchronization commands nor accessory replies establish
+concurrent motors, position feedback or native side routing.
+
+## Linx
+
+Linx 1.0.7 (27) adds `codec/linx.py` and typed Quest/Orbes
+profiles. The existing Keeson JSON encoder does not reproduce the frozen Gson
+field order, and no existing carrier reproduces its complete AA, ASCII startup
+and AB intervention literals. The production harness compares all 39 accepted
+literals byte for byte. The independent transport selection and connection-owned
+release, cache and callback behavior belong to `beds/linx/`, without changing
+any legacy JSON wire scenario. See [Linx](../beds/linx.md).
+
+Somos 1.0.0/code1 reuses Keeson's K1 E6, P2 and P2-side carriers
+only after all 60 accepted literal rows match. The final zero in its P1
+carrier and P3 trailer establishes no side selection. Its five explicit
+`profiles/somos.py` products use the shared family controller, extended only
+for source-specific polling, notification parsing and neutral UI axes.
+
+### SUTA P1/P2 (accepted unit128)
+
+SUTA's exact-name application panels now use `codec/suta.py`,
+`profiles/suta.py` and the shared `beds/suta/` controller. P1 adds only UTF-8
+CRLF framing; P2 uses its own 53 59 / payload / additive-sum / 54 43 format.
+No existing family represents both accepted formats and every frozen literal,
+so the new codec is deliberately limited to these two builders. The production
+harness covers all 203 accepted final frames and 56 constructor literals.
+Names, timing and capability gates stay in profile/catalog data. The historical
+standalone SUTA inventory does not describe this expanded route.
+
+Okimiki 1.0.1 (10101) freezes the original 42
+and focused 29 literal rows in `tests/fixtures/okimiki/`. All 71 passed the
+production Richmat codec before selecting it. `profiles/okimiki.py` retains
+four concrete factory/CID/body identities, including IPRM and IQRM's distinct
+alarm getter despite sharing KWRN's menu body. Its shared catalog-controller
+extension owns the app's whole-buffer common parser, captured-session writes,
+strict elapsed deadlines, flat release, three-second save threshold and local
+alarm records. No existing wire builder or profile changes.
+
+CheersSleep 2.7.0 adds `codec/cheerssleep.py`: the serial/PID P1
+encoder is extracted from Remacro's existing `build_frame`, retaining that import
+API and all app-specific counters. The accepted P1 literals prove identical
+framing; CheersSleep's distinct counters and timing remain in its own profile.
+P2's EE normal/setting/query frames require a new encoder, since no existing
+codec reproduces them. Neither UI labels nor shared service identity establish
+byte equivalence. `tests/test_cheerssleep_vectors.py` covers both formats.
+
+ORE Ultramatic 1.0.5 selects the existing Keeson codec only after
+all 81 frozen transmit literals reproduce through its production encoders.
+Both the big-endian P1 and reserved-byte little-endian P2 builders are proven;
+shared names or GATT roles do not establish that match. The app profile owns
+GATT-dependent selection, alarm choices and calendar transformations. A shared
+ORE controller extension owns route capabilities and session-fenced callbacks,
+with corrected fragment early returns in the Keeson parser. The full 91-vector
+harness and 12 parser observations remain fixtures, with
+explicit bounds-safe/session-lifetime differences for Home Assistant.

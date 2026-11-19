@@ -1,9 +1,8 @@
-"""SUTA discovery hints."""
+"""SUTA uses its case-sensitive advertised name, never a shared service alone."""
 
-from ..const import BED_TYPE_SUTA, SUTA_SERVICE_UUID
-from ._hints import Hint, names, services
+from ..const import BED_TYPE_SUTA
+from ._hints import Hint, names
 
 HINTS: tuple[Hint, ...] = (
-    *services(SUTA_SERVICE_UUID, bed_types={BED_TYPE_SUTA}),
     names("SUTA", bed_types={BED_TYPE_SUTA}),
 )

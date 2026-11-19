@@ -4339,7 +4339,7 @@ class TestOfflineSafeBedTypes:
             child[CONF_BED_TYPE] = bed_type
             if bed_type == BED_TYPE_SOLACE:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
-            elif bed_type == "bedgear":
+            elif bed_type in ("bedgear", "l2motion"):
                 child[CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
             elif bed_type == "motomotion":
                 child[CONF_BLE_DEVICE_NAME] = "SOFA000001S000H"
@@ -4349,6 +4349,10 @@ class TestOfflineSafeBedTypes:
                 child["furnimove_remote"] = "00000"
             elif bed_type == "richmat_classic_apps":
                 child.update({CONF_PROTOCOL_VARIANT: "avocadoecobase", "product_type": "6BRM"})
+            elif bed_type == "personal_comfort":
+                child.update({CONF_PROTOCOL_VARIANT: "malouf", "product_type": "pf4"})
+            elif bed_type in ("sleep_evolution", "wsilver_legacy"):
+                child[CONF_PROTOCOL_VARIANT] = "GV"
             elif bed_type == BED_TYPE_VIBRADORM_APP:
                 child.update({
                     CONF_VIBRADORM_APP_PROFILE: "caresse",

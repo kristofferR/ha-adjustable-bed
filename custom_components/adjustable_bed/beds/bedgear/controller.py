@@ -1,4 +1,4 @@
-"""Bedgear's direct BED session and source-specific held gestures."""
+"""Shared direct-BLE sessions for Bedgear and Leon's L2Motion."""
 
 from __future__ import annotations
 
@@ -11,21 +11,36 @@ from math import isfinite
 from time import monotonic
 from typing import TYPE_CHECKING
 
-from ...card import CARD_HIDDEN, CARD_LIGHT_TOGGLE, CARD_MASSAGE
+from ...alarm import AlarmCapability, AlarmError, AlarmRequest
+from ...card import (
+    CARD_HIDDEN,
+    CARD_LIGHT_TOGGLE,
+    CARD_MASSAGE,
+    CARD_PRESET_SAVE,
+    CardPlacement,
+    CardRole,
+    CardSection,
+)
 from ...codec import motomotion as codec
 from ...command_scheduler import current_command_context
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
+from ...labels import display_label
 from ...profiles.bedgear import BedgearProfile, Control
+from ...profiles.l2motion import L2MotionProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
+    ControllerNumberSpec,
+    ControllerSelectSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
 )
+from .music import BASS, CHANNELS, MODE, MODES, TREBLE, VIBRATION, VOLUME, Music
 from .protocol import Receiver, color_parameters, token_fields
 
 if TYPE_CHECKING:
@@ -41,6 +56,7 @@ ALARM = StateKey[str | None]("bedgear_alarm")
 STRENGTH = StateKey[int | None]("bedgear_alarm_strength")
 SYNC = StateKey[int | None]("bedgear_sync_type")
 BIND = StateKey[str | None]("bedgear_sync_state")
+L2SYNC = StateKey[bool | None]("l2motion_sync")
 
 
 def _control_name(key: str) -> str:
@@ -79,14 +95,24 @@ def select_transport(client: BleakClient) -> Link:
     return Link(client, chars[-1], chars)
 
 
+async def set_music(controller: BedController, value: float, *, index: int) -> None:
+    await require_controller(controller, BedgearController).set_music(index, value)
+
+
 async def press(controller: BedController, *, key: str) -> None:
     await require_controller(controller, BedgearController).press(key)
 
 
-class BedgearController(ProfileExecution[BedgearProfile], BedController):
-    def __init__(self, coordinator: AdjustableBedCoordinator, *, name: str) -> None:
+class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedController):
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        name: str,
+        profile: L2MotionProfile | None = None,
+    ) -> None:
         super().__init__(coordinator)
-        self.profile = BedgearProfile(name)
+        self.profile = profile if profile is not None else BedgearProfile(name)
         self._address = coordinator.address
         self._link: Link | None = None
         self._receiver = Receiver()
@@ -97,6 +123,221 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         self._sync: int | None = None
         self._gesture_up = False
         self._cleanup_context: CommandContext | None = None
+        self._music = Music()
+        self._music_sent: set[int] = set()
+        self._mode_sent = False
+        self._color = (255, 255, 255)
+        self._brightness = 1.0
+        self._color_busy: Link | None = None
+        self._color_revision = 0
+        self._color_changed_at = 0.0
+        self._color_cancel: asyncio.Event | None = None
+
+    @property
+    def is_l2motion(self) -> bool:
+        return isinstance(self.profile, L2MotionProfile)
+
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        return not self.is_l2motion and super().supports_single_address_pairing
+
+    @property
+    def sync_available(self) -> bool:
+        if not self.is_l2motion or self._bind is None or not self._bind[0]:
+            return False
+        try:
+            self._current()
+        except ConnectionError:
+            return False
+        return True
+
+    def _control_label(self, key: str) -> str:
+        if not self.is_l2motion:
+            return _control_name(key)
+        labels = {
+            "massage_head_up": "Increase head massage",
+            "massage_head_down": "Decrease head massage",
+            "massage_foot_up": "Increase foot massage",
+            "massage_foot_down": "Decrease foot massage",
+        }
+        return display_label(labels.get(key, _control_name(key)))
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {
+            "layout": self.profile.panel,
+            "sync_type": self._sync,
+            "sync_available": self._bind[0] if self._bind else None,
+            "rgb": self._rgb,
+            "light_minutes": self._timer,
+        }
+
+    @property
+    def _extra_buttons(self) -> tuple[ControllerButtonSpec, ...]:
+        if not self.is_l2motion or self.profile.panel != "PanelE":
+            return ()
+        return (
+            ControllerButtonSpec(
+                "l2motion_save_snore",
+                "Save anti-snore position",
+                lambda ctrl: require_controller(ctrl, BedgearController).configure(
+                    Request(operation="save_snore")
+                ),
+                translation_key="l2motion_save_snore",
+                requires_confirmation=True,
+                card=CARD_PRESET_SAVE,
+            ),
+        )
+
+    @property
+    def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
+        if not self.is_l2motion:
+            return ()
+        specs = []
+        if self.profile.timer:
+            specs.append(
+                ControllerNumberSpec(
+                    "l2motion_light_timer",
+                    "l2motion_light_timer",
+                    TIMER,
+                    0,
+                    1439,
+                    1,
+                    lambda ctrl, value: require_controller(ctrl, BedgearController).configure(
+                        Request(operation="light_timer", minutes=int(value))
+                    ),
+                    "min",
+                    card=CardPlacement(CardSection.LIGHTING, CardRole.TIMER_MINUTES),
+                )
+            )
+        if isinstance(self.profile, L2MotionProfile) and self.profile.music:
+            specs.extend(
+                ControllerNumberSpec(
+                    str(key), str(key), key, 0, 22, 1, partial(set_music, index=index)
+                )
+                for index, key in enumerate(CHANNELS)
+            )
+        return tuple(specs)
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        if not isinstance(self.profile, L2MotionProfile) or not self.profile.music:
+            return ()
+        return (
+            ControllerSelectSpec(
+                str(MODE),
+                str(MODE),
+                MODE,
+                MODES,
+                lambda ctrl, mode: require_controller(ctrl, BedgearController).set_music_mode(mode),
+            ),
+        )
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if not self.is_l2motion:
+            return ()
+        return (
+            ControllerSwitchSpec(
+                "l2motion_sync",
+                "l2motion_sync",
+                lambda ctrl, enabled: require_controller(ctrl, BedgearController).set_sync(enabled),
+                state_key=L2SYNC,
+                available_fn=lambda ctrl: (
+                    isinstance(ctrl, BedgearController) and ctrl.sync_available
+                ),
+            ),
+        )
+
+    async def set_sync(self, enabled: bool) -> None:
+        if not self.sync_available:
+            raise ValueError("Synchronization is unavailable until the bed reports support")
+        assert self._bind is not None
+        if self._bind[1] == enabled:
+            return
+        link, cancel = self._current(), self._coordinator.cancel_command
+        # 12 binds, 15 unbinds. This does not select a physical bed side.
+        await self._send(codec.ascii_command(12 if enabled else 15), link, cancel)
+
+    async def set_music(self, index: int, value: float) -> None:
+        if not isinstance(self.profile, L2MotionProfile) or not self.profile.music:
+            raise ValueError("Sound controls are unavailable")
+        frame = self._music.scalar(index, value)
+        link, cancel = self._current(), self._coordinator.cancel_command
+        await self._send(codec.short_transport(frame.decode(), wrapped=True), link, cancel)
+        self._check_link(link)
+        if not cancel.is_set():
+            self._music.commit_scalar(index, value)
+            self._music_sent.add(index)
+            self._publish_music()
+
+    async def set_music_mode(self, mode: str) -> None:
+        if not isinstance(self.profile, L2MotionProfile) or not self.profile.music:
+            raise ValueError("Sound controls are unavailable")
+        frame = self._music.aggregate(mode)
+        link, cancel = self._current(), self._coordinator.cancel_command
+        await self._send(frame, link, cancel)
+        self._check_link(link)
+        if not cancel.is_set():
+            self._music.mode = mode
+            self._mode_sent = True
+            self._music_sent.update(range(4))
+            self._publish_music()
+
+    def _publish_music(self) -> None:
+        treble, bass, vibration = self._music.maps[self._music.mode]
+        self.forward_controller_state_updates(
+            VOLUME(self._music.volume if 0 in self._music_sent else None),
+            TREBLE(treble if 1 in self._music_sent else None),
+            BASS(bass if 2 in self._music_sent else None),
+            VIBRATION(vibration if 3 in self._music_sent else None),
+            MODE(self._music.mode if self._mode_sent else None),
+        )
+
+    @property
+    def alarm_capability(self) -> AlarmCapability | None:
+        return (
+            AlarmCapability(massage_intensities=2, cancel_running=True)
+            if self.is_l2motion and self.profile.alarm
+            else None
+        )
+
+    def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if self.alarm_capability is None:
+            raise AlarmError("alarm_not_supported", "This bed has no alarm", device_name="")
+        if (
+            not 0 <= alarm.hour <= 23
+            or not 0 <= alarm.minute <= 59
+            or alarm.massage_intensity not in (1, 2)
+            or alarm.weekdays
+            or alarm.slot != 1
+            or alarm.wake_action != "none"
+            or alarm.sound != "none"
+            or alarm.light
+            or alarm.massage
+            or alarm.head_massage_level
+            or alarm.foot_massage_level
+            or alarm.massage_duration is not None
+            or alarm.massage_zone is not None
+            or alarm.mattress_side is not None
+            or alarm.confirm_custom_position
+        ):
+            raise AlarmError(
+                "alarm_option_not_supported",
+                "Unsupported alarm option",
+                device_name="",
+                option="alarm",
+            )
+
+    async def configure_alarm(self, alarm: AlarmRequest) -> None:
+        self.validate_alarm(alarm)
+        await self.configure(
+            Request(
+                operation="alarm",
+                time=f"{alarm.hour:02d}:{alarm.minute:02d}",
+                strength=alarm.massage_intensity if alarm.enabled else 0,
+            )
+        )
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -144,24 +385,52 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        if self.is_l2motion:
+            return tuple(
+                ControllerStateSensorSpec(str(key), translation, key, icon)
+                for key, translation, icon in (
+                    (ALARM, "bedgear_alarm", "mdi:alarm"),
+                    (STRENGTH, "bedgear_alarm_strength", "mdi:vibrate"),
+                )
+                if self.profile.alarm
+            )
         specs = []
         if self.profile.rgb:
             specs.append(
-                ControllerStateSensorSpec("bedgear_rgb", "bedgear_rgb", RGB, "mdi:palette", entity_registry_enabled_default=True)
+                ControllerStateSensorSpec(
+                    "bedgear_rgb",
+                    "bedgear_rgb",
+                    RGB,
+                    "mdi:palette",
+                    entity_registry_enabled_default=True,
+                )
             )
         if self.profile.timer:
             specs.append(
                 ControllerStateSensorSpec(
-                    "bedgear_light_minutes", "bedgear_light_minutes", TIMER, "mdi:timer", "min",
+                    "bedgear_light_minutes",
+                    "bedgear_light_minutes",
+                    TIMER,
+                    "mdi:timer",
+                    "min",
                     entity_registry_enabled_default=True,
                 )
             )
         if self.profile.alarm:
             specs.extend(
                 (
-                    ControllerStateSensorSpec("bedgear_alarm", "bedgear_alarm", ALARM, "mdi:alarm", entity_registry_enabled_default=True),
                     ControllerStateSensorSpec(
-                        "bedgear_alarm_strength", "bedgear_alarm_strength", STRENGTH, "mdi:vibrate",
+                        "bedgear_alarm",
+                        "bedgear_alarm",
+                        ALARM,
+                        "mdi:alarm",
+                        entity_registry_enabled_default=True,
+                    ),
+                    ControllerStateSensorSpec(
+                        "bedgear_alarm_strength",
+                        "bedgear_alarm_strength",
+                        STRENGTH,
+                        "mdi:vibrate",
                         entity_registry_enabled_default=True,
                     ),
                 )
@@ -169,11 +438,17 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         specs.extend(
             (
                 ControllerStateSensorSpec(
-                    "bedgear_sync_type", "bedgear_sync_type", SYNC, "mdi:sync",
+                    "bedgear_sync_type",
+                    "bedgear_sync_type",
+                    SYNC,
+                    "mdi:sync",
                     entity_registry_enabled_default=False,
                 ),
                 ControllerStateSensorSpec(
-                    "bedgear_sync_state", "bedgear_sync_state", BIND, "mdi:link",
+                    "bedgear_sync_state",
+                    "bedgear_sync_state",
+                    BIND,
+                    "mdi:link",
                     entity_registry_enabled_default=False,
                 ),
             )
@@ -190,6 +465,11 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         return None
 
     def _publish(self) -> None:
+        if self.is_l2motion:
+            self.forward_controller_state_updates(
+                L2SYNC(self._bind[1] if self._bind and self._bind[0] else None)
+            )
+            self._publish_music()
         self.forward_controller_state_updates(
             RGB(",".join(str(channel) for channel in self._rgb) if self._rgb is not None else None),
             TIMER(self._timer),
@@ -230,7 +510,7 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
             return
         self.forward_raw_notification(sender.uuid, bytes(data))
         for text in self._receiver.feed(bytes(data)):
-            fields = token_fields(text)
+            fields = token_fields(text, alarm_indices=self.profile.alarm_indices)
             rgb_timer = fields.get("rgb_timer")
             if isinstance(rgb_timer, list):
                 values = [
@@ -263,6 +543,9 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         link = select_transport(client)
         self._link = link
         self._receiver = Receiver()
+        self._music = Music()
+        self._music_sent.clear()
+        self._mode_sent = False
         self._cleanup_context = None
         self._rgb = None
         self._timer = None
@@ -287,6 +570,9 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
     async def stop_notify(self) -> None:
         link, self._link = self._link, None
         self._receiver = Receiver()
+        self._music = Music()
+        self._music_sent.clear()
+        self._mode_sent = False
         self._cleanup_context = None
         self._rgb = None
         self._timer = None
@@ -305,14 +591,26 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         cancel: asyncio.Event,
         *,
         deadline: float | None = None,
+        boundary_tick: bool = False,
     ) -> None:
         if command is None or cancel.is_set():
             return
 
+        queued = self.ble_lock.locked()
+
         def before_write() -> None:
             self._check_link(link)
-            if deadline is not None and asyncio.get_running_loop().time() >= deadline:
-                raise _HoldElapsed
+            if deadline is not None:
+                now = asyncio.get_running_loop().time()
+                if now >= deadline:
+                    # A due final timer tick may wake late, but cannot survive
+                    # waiting in the BLE lane or catch up a whole lost period.
+                    if not (
+                        boundary_tick
+                        and not queued
+                        and now < deadline + self.profile.refresh_ms / 1000
+                    ):
+                        raise _HoldElapsed
 
         await self._write_gatt_with_retry(
             link.write.uuid,
@@ -357,7 +655,11 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
 
     @property
     def held_control_options(self) -> tuple[str, ...]:
-        return tuple("bedgear_" + control.key for control in self.profile.controls if control.held)
+        return tuple(
+            self.profile.key + "_" + control.key
+            for control in self.profile.controls
+            if control.held
+        )
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if (
@@ -381,42 +683,62 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
-        binding = next(c for c in self.profile.controls if "bedgear_" + c.key == control)
+        binding = next(
+            c for c in self.profile.controls if self.profile.key + "_" + c.key == control
+        )
         link, cancel = self._current(), self._coordinator.cancel_command
         count, self._gesture_up = 0, False
+        normal_up = False
         loop = asyncio.get_running_loop()
         start = loop.time()
         deadline = start + duration_ms / 1000
         interval = self.profile.refresh_ms
         leased = self.leased_hold_refreshes(interval) is not None
-        # Finite HA windows start with a pulse, rather than making their only
-        # pulse race the deadline. Native leased gestures keep the first tick.
+        # Bedgear finite windows keep their immediate pulse. L2 Motion and
+        # native leased gestures retain their first periodic tick.
         ticks = (
             range(1, duration_ms // interval + 1)
-            if leased
+            if leased or self.profile.delayed_first_tick
             else range((duration_ms + interval - 1) // interval)
         )
         try:
             for tick in ticks:
-                if not await self._wait(
-                    max(0, start + tick * interval / 1000 - loop.time()), cancel
+                wait_s = max(0, start + tick * interval / 1000 - loop.time())
+                if self.profile.delayed_first_tick and wait_s <= 0:
+                    # A slow write may consume timer periods. Never replay
+                    # those missed periods as a burst on the physical bed.
+                    continue
+                boundary_tick = (
+                    self.profile.delayed_first_tick
+                    and not leased
+                    and tick * interval == duration_ms
+                    and wait_s > 0
+                )
+                if not await self._wait(wait_s, cancel):
+                    break
+                if (
+                    loop.time() > deadline
+                    if self.profile.delayed_first_tick
+                    else loop.time() >= deadline
                 ):
-                    break
-                if loop.time() >= deadline:
-                    break
+                    if not (boundary_tick and loop.time() < deadline + interval / 1000):
+                        return
                 try:
                     await self._send(
                         self._letter(binding.letter),
                         link,
                         cancel,
                         deadline=None if leased else deadline,
+                        boundary_tick=boundary_tick,
                     )
                 except _HoldElapsed:
-                    break
+                    return
                 if not cancel.is_set():
                     count += 1
             if not cancel.is_set():
-                await self._wait(max(0, start + duration_ms / 1000 - loop.time()), cancel)
+                normal_up = await self._wait(
+                    max(0, start + duration_ms / 1000 - loop.time()), cancel
+                )
         finally:
             # Cleanup is pinned to the captured link and uses a fresh event.
             # Cancellation without an up gesture never sends the short-up fallback.
@@ -427,7 +749,7 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
                 and self._coordinator.address == self._address
                 and self._coordinator.controller is self
             ):
-                up = not cancel.is_set() or self._gesture_up
+                up = (normal_up if self.is_l2motion else not cancel.is_set()) or self._gesture_up
                 await self._release(binding, link, count, up=up)
 
     async def _release(self, binding: Control, link: Link, count: int, *, up: bool) -> None:
@@ -465,7 +787,7 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         if control is None:
             raise NotImplementedError("Unavailable Bedgear control")
         if control.held:
-            await self.hold_control("bedgear_" + key, self.leased_hold_ms(1000))
+            await self.hold_control(self.profile.key + "_" + key, self.leased_hold_ms(1000))
         else:
             await self._send(
                 self._letter(control.letter), self._current(), self._coordinator.cancel_command
@@ -486,11 +808,11 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
                 lambda ctrl: ctrl.stop_all(),
                 scheduler_resource="bedgear",
                 hold=ControllerMotorHoldSpec(
-                    "bedgear_" + axis + "_up",
-                    "bedgear_" + axis + "_down",
+                    self.profile.key + "_" + axis + "_up",
+                    self.profile.key + "_" + axis + "_down",
                     stop_scope="side",
                     press_is_native=True,
-                    release_button_key="bedgear_release",
+                    release_button_key=self.profile.key + "_release",
                 ),
             )
             for axis, _up, _down in self.profile.axes
@@ -498,37 +820,46 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        return tuple(
-            ControllerButtonSpec(
-                "bedgear_" + c.key,
-                _control_name(c.key),
-                partial(press, key=c.key),
-                translation_key="bedgear_massage"
-                if c.key.startswith("massage_")
-                else "bedgear_light_toggle",
-                translation_placeholders={"action": _control_name(c.key)},
-                hold=ControllerHoldSpec("bedgear_" + c.key, release_button_key="bedgear_release")
-                if c.held
-                else None,
-                card=CARD_MASSAGE if c.key.startswith("massage_") else CARD_LIGHT_TOGGLE,
+        return (
+            tuple(
+                ControllerButtonSpec(
+                    self.profile.key + "_" + c.key,
+                    self._control_label(c.key),
+                    partial(press, key=c.key),
+                    translation_key="bedgear_massage"
+                    if c.key.startswith("massage_")
+                    else "bedgear_light_toggle",
+                    translation_placeholders={"action": self._control_label(c.key)},
+                    hold=ControllerHoldSpec(
+                        self.profile.key + "_" + c.key,
+                        release_button_key=self.profile.key + "_release",
+                    )
+                    if c.held
+                    else None,
+                    card=CARD_MASSAGE if c.key.startswith("massage_") else CARD_LIGHT_TOGGLE,
+                )
+                for c in self.profile.controls
+                if c.key.startswith(("massage_", "light_"))
             )
-            for c in self.profile.controls
-            if c.key.startswith(("massage_", "light_"))
-        ) + (
-            ControllerButtonSpec(
-                "bedgear_release",
-                "Release held control",
-                lambda ctrl: ctrl.stop_all(),
-                translation_key="bedgear_release",
-                release_only=True,
-                card=CARD_HIDDEN,
-            ),
+            + self._extra_buttons
+            + (
+                ControllerButtonSpec(
+                    self.profile.key + "_release",
+                    "Release held control",
+                    lambda ctrl: ctrl.stop_all(),
+                    translation_key="bedgear_release",
+                    release_only=True,
+                    card=CARD_HIDDEN,
+                ),
+            )
         )
 
     def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
         control = key.removeprefix("preset_") if key.startswith("preset_memory_") else key
-        if "bedgear_" + control in self.held_control_options:
-            return ControllerHoldSpec("bedgear_" + control, release_button_key="bedgear_release")
+        if self.profile.key + "_" + control in self.held_control_options:
+            return ControllerHoldSpec(
+                self.profile.key + "_" + control, release_button_key=self.profile.key + "_release"
+            )
         return None
 
     async def stop_all(self) -> None:
@@ -548,12 +879,18 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
 
     async def move_head_up(self) -> None:
         await self._move(
-            "actuator" if self.profile.panel in ("PanelE", "PanelFive") else "head", True
+            "actuator"
+            if not self.is_l2motion and self.profile.panel in ("PanelE", "PanelFive")
+            else "head",
+            True,
         )
 
     async def move_head_down(self) -> None:
         await self._move(
-            "actuator" if self.profile.panel in ("PanelE", "PanelFive") else "head", False
+            "actuator"
+            if not self.is_l2motion and self.profile.panel in ("PanelE", "PanelFive")
+            else "head",
+            False,
         )
 
     async def move_head_stop(self) -> None:
@@ -627,7 +964,7 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
 
     async def recall_memory(self, slot: int, *, hold_ms: int) -> None:
         self.validate_memory_recall(slot)
-        await self.hold_control(f"bedgear_memory_{slot}", hold_ms)
+        await self.hold_control(f"{self.profile.key}_memory_{slot}", hold_ms)
 
     async def preset_memory(self, memory_num: int) -> None:
         await self.press(f"memory_{memory_num}")
@@ -639,12 +976,64 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
             self._letter("Za"[memory_num - 1]), self._current(), self._coordinator.cancel_command
         )
 
+    def queue_color_update(self, request: Request) -> bool:
+        """Merge admitted input into this physical session's running sequence."""
+        if self._color_busy is None or self._color_cancel is None or self._color_cancel.is_set():
+            return False
+        try:
+            self._check_link(self._color_busy)
+        except ConnectionError:
+            return False
+        assert request.rgb is not None
+        self._color, self._brightness = request.rgb, request.brightness
+        self._color_revision += 1
+        self._color_changed_at = asyncio.get_running_loop().time()
+        return True
+
+    async def _change_color(self, request: Request, link: Link, cancel: asyncio.Event) -> None:
+        assert request.rgb is not None
+        self._color, self._brightness = request.rgb, request.brightness
+        self._color_revision += 1
+        self._color_changed_at = asyncio.get_running_loop().time()
+        self._color_busy = link
+        self._color_cancel = cancel
+        try:
+            while not cancel.is_set():
+                revision = self._color_revision
+                for index, command in enumerate((315, 316, 317)):
+                    await self._send(self._letter("z"), link, cancel)
+                    if not await self._wait(0 if self.profile.wrapped else 0.1, cancel):
+                        return
+                    parameter = color_parameters(self._color, self._brightness)[index]
+                    await self._send(codec.ascii_command(command, parameter), link, cancel)
+                    if not await self._wait(0.1, cancel):
+                        return
+                if revision == self._color_revision:
+                    return
+                # Drain the current sequence in the command lane before the
+                # replaced debounce's latest color, retaining its physical owner.
+                while True:
+                    changed_at = self._color_changed_at
+                    if not await self._wait(
+                        max(0, changed_at + 0.5 - asyncio.get_running_loop().time()), cancel
+                    ):
+                        return
+                    if changed_at == self._color_changed_at:
+                        break
+        finally:
+            if self._color_busy is link:
+                self._color_busy = None
+                self._color_cancel = None
+
     async def configure(self, request: Request) -> None:
         self.validate_request(request)
         link, cancel = self._current(), self._coordinator.cancel_command
         op = request.operation
         if op == "rgb":
             assert request.rgb is not None
+            if self.is_l2motion:
+                await self._change_color(request, link, cancel)
+                return
             for command, parameter in zip(
                 (315, 316, 317), color_parameters(request.rgb, request.brightness), strict=True
             ):
@@ -683,7 +1072,7 @@ class BedgearController(ProfileExecution[BedgearProfile], BedController):
         elif op == "save_snore":
             await self._send(self._letter("W"), link, cancel)
         elif op == "save_memory":
-            await self.program_memory(request.slot)
+            await self._send(self._letter("Za"[request.slot - 1]), link, cancel)
             if request.recall_on_release:
                 await self._send(self._letter("UV"[request.slot - 1]), link, cancel)
 
@@ -754,6 +1143,9 @@ class Request:
 
 async def build_controller(ctx: BuildContext) -> BedgearController:
     stored = ctx.data.get(CONF_BLE_DEVICE_NAME)
+    name = stored if isinstance(stored, str) else ctx.live_device_name or ""
     return BedgearController(
-        ctx.coordinator, name=stored if isinstance(stored, str) else ctx.live_device_name or ""
+        ctx.coordinator,
+        name=name,
+        profile=L2MotionProfile(name) if ctx.bed_type == "l2motion" else None,
     )

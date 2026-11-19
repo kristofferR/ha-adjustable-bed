@@ -858,6 +858,19 @@ def test_keeson_auto_named_transports_do_not_offer_unrelated_apps(variant, name)
     )
 
 
+def test_somos_shared_name_preserves_an_explicit_app_selection():
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+
+    observed = advertisement("KSBT03CR123456789", [NORDIC_UART_SERVICE_UUID])
+    assert "somos" in (detect_bed_type_detailed(observed).ambiguous_types or ())
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: "somos", CONF_PROTOCOL_VARIANT: "b"}, observed, {}
+        )
+        is None
+    )
+
+
 def test_keeson_auto_generic_ksbt_offers_only_adjustable_lite():
     result = recommend_profile(
         {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "auto"},

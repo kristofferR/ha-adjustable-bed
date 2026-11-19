@@ -14,9 +14,21 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
-from ...const import DOMAIN
+from ...const import CONF_PRODUCT_TYPE, CONF_PROFILE_ID, CONF_PROTOCOL_VARIANT, DOMAIN
+from ...entity_runtime import controller_side_scope
 from ...import_executor import async_import_modules
-from ...services import DEVICE_IDS, SIDE_FIELD, _call_targets, _preflight_and_execute
+from ...paired_coordinator import PairedBedCoordinator, SingleAddressSideCoordinator
+from ...services import (
+    DEVICE_IDS,
+    SIDE_FIELD,
+    _call_targets,
+    _capture_command_admission,
+    _command_targets,
+    _execute_preflighted,
+    _family_command,
+    _preflight_and_execute,
+)
+from ..base import BedController
 from . import protocol as p
 
 if TYPE_CHECKING:
@@ -68,6 +80,10 @@ class Request:
     alarm_fields: tuple[int, ...] = ()
 
     def validate(self, controller: GoodVibeController, *, reported: bool = True) -> None:
+        if controller.catalog.bed is not None and self.operation not in BOB_OPERATIONS:
+            raise ValueError("This action is not offered by Power Bob Base")
+        if controller.catalog.bed is not None and self.operation == "light_off":
+            controller._side()
         operations = BED_OPERATIONS if controller.catalog.key == "galaxy" else OPERATIONS
         if self.operation not in operations:
             raise ValueError("Unknown Good Vibe Sleep action")
@@ -136,7 +152,8 @@ class Request:
             )
             if menu is not None and menu not in controller._menus:
                 raise ValueError("The connected bed has not advertised this product capability")
-        if self.operation in ("light_color", "light_duration", "light_off") and not controller.menu_available("light"):
+        light_allowed = product.light if controller.catalog.bed is not None and not reported else controller.menu_available("light")
+        if self.operation in ("light_color", "light_duration", "light_off") and not light_allowed:
             raise ValueError("The selected product has no light menu")
         if self.operation == "massage_timer" and (
             not product.massage_timer or self.value not in (0, 10, 20, 30)
@@ -149,9 +166,11 @@ class Request:
         eight_color = product.light_display == "deviceBedLightDisplayCircleEightColorValue"
         if self.operation == "light_color" and eight_color and self.rgb not in p.EIGHT_COLORS:
             raise ValueError("Choose one of this product's eight app colors")
-        if self.operation == "light_duration" and self.seconds not in p.light_durations(
-            product.label.split(" / ")[0], eight_color
-        ):
+        durations = (
+            tuple(minute * 60 for minute in controller.catalog.bed.light_minutes)
+            if controller.catalog.bed else p.light_durations(product.label.split(" / ")[0], eight_color)
+        )
+        if self.operation == "light_duration" and self.seconds not in durations:
             raise ValueError("Choose one of this product's app light durations")
         if (
             self.operation in ("single", "cancel_single", "repeat", "delete", "alarms", "toggle", "enable_alarm")
@@ -189,7 +208,9 @@ class Request:
                 raise ValueError("An edit must retain a valid observed alarm ID")
         if self.operation == "toggle" and (self.record is None or self.enabled is None):
             raise ValueError("Choose the observed alarm record and its enabled state")
-        if self.operation == "repeat" and self.alarm_id is None and self.record is None:
+        if self.operation == "repeat" and self.alarm_id is None and self.record is None and (
+            reported or controller.catalog.bed is None
+        ):
             self.repeat_slot(controller)
         if any(day not in range(7) for day in self.weekdays or ()):
             raise ValueError("Invalid weekday")
@@ -258,6 +279,8 @@ class Request:
                 ),
             )
         if op == "sync":
+            if controller.catalog.bed is not None:
+                return (codec.calendar(dt_util.now(), build=controller.record),)
             return p.sync_time(dt_util.now(), dt_util.now(), build=controller.record)
         if op == "light_color":
             assert self.rgb is not None
@@ -352,9 +375,30 @@ SCHEMA = vol.Schema(FIELDS)
 MLILY_SCHEMA = SCHEMA.extend({vol.Optional("part"): vol.Coerce(int)})
 BED_OPERATIONS = (*OPERATIONS[:14], "enable_alarm")
 GALAXY_SCHEMA = SCHEMA.extend({vol.Required("operation"): vol.In(BED_OPERATIONS)})
+BOB_OPERATIONS = ("repeat", "delete", "alarms", "sync", "light_color", "light_duration", "light_off")
+BOB_SCHEMA = vol.Schema({
+    key: value for key, value in FIELDS.items()
+    if str(key.schema) in (
+        CONF_DEVICE_ID, "operation", "action", "datetime", "alarm_id", "weekdays", "enabled",
+        "seconds", "rgb_color", "side",
+    )
+}).extend({vol.Required("operation"): vol.In(BOB_OPERATIONS)})
 
 
 async def handle_goodvibe(call: ServiceCall) -> None:
+    targets = _call_targets(call)
+    admissions = [_capture_command_admission(parent, side) for parent, side in targets]
+    # Freeze every physical ownership token before the first import or preflight.
+    physical = [child for parent, side in targets for child in _command_targets(parent, side)]
+    sessions = {
+        owner: (
+            owner.controller, owner.client, owner._position_connection_generation, owner._cancel_counter,
+            (owner.address, owner.bed_type, *(owner.entry.options.get(key, owner.entry.data.get(key))
+              for key in (CONF_PROTOCOL_VARIANT, CONF_PRODUCT_TYPE, CONF_PROFILE_ID))),
+        )
+        for child in physical
+        for owner in (child._single_inner if isinstance(child, SingleAddressSideCoordinator) else child,)
+    } if call.service == "bobpowerbase" else {}
     await async_import_modules(call.hass, "beds.goodvibe.controller")
     from .controller import GoodVibeController
 
@@ -370,7 +414,7 @@ async def handle_goodvibe(call: ServiceCall) -> None:
         value=call.data.get("value"),
         part=call.data.get("part"),
         date=call.data.get("date"),
-        report_type=call.data["report_type"],
+        report_type=call.data.get("report_type", 1),
         record=call.data.get("alarm_record"),
         left=call.data.get("left"),
         right=call.data.get("right"),
@@ -384,6 +428,116 @@ async def handle_goodvibe(call: ServiceCall) -> None:
             raise ServiceValidationError("Choose the action for the target's app")
         plans[(target._address.upper(), target.product_key)] = request.plan(target)
 
+    if call.service == "bobpowerbase":
+        def check_admission(*, reported: bool = False) -> bool:
+            if any(_capture_command_admission(parent, side) != admission
+                   for (parent, side), admission in zip(targets, admissions, strict=True)) or physical != [
+                       child for parent, side in targets for child in _command_targets(parent, side)
+                   ]:
+                raise ServiceValidationError("The command was interrupted before Power Bob Base dispatch")
+            for owner, (controller, client, generation, command_generation, route) in sessions.items():
+                current_route = (owner.address, owner.bed_type, *(owner.entry.options.get(key, owner.entry.data.get(key))
+                    for key in (CONF_PROTOCOL_VARIANT, CONF_PRODUCT_TYPE, CONF_PROFILE_ID)))
+                if owner._cancel_counter != command_generation or current_route != route:
+                    raise ServiceValidationError("The Power Bob Base command or product changed after admission")
+                # Reconnect may replace the controller and link. Replacement
+                # within the same still-live physical generation is stale work.
+                if client is not None and client.is_connected and owner._position_connection_generation == generation and (
+                    owner.controller is not controller or owner.client is not client
+                ):
+                    raise ServiceValidationError("The Power Bob Base session changed without reconnecting")
+            if reported:
+                for child in physical:
+                    controller = child.controller
+                    # A sequential peer can be intentionally disconnected;
+                    # its own dispatch must obtain and validate a fresh reply.
+                    if controller is not None and controller.client is not None and controller.client.is_connected:
+                        if not isinstance(controller, GoodVibeController) or controller.catalog.key != "bobpowerbase":
+                            raise ServiceValidationError("The Power Bob Base controller changed after admission")
+                        owner = child._single_inner if isinstance(child, SingleAddressSideCoordinator) else child
+                        if controller.product_key != sessions[owner][4][2]:
+                            raise ServiceValidationError("The Power Bob Base product changed after admission")
+                        with controller_side_scope(child):
+                            controller._current_link()
+                            request.validate(controller)
+            return True
+
+        def live_plan(controller: BedController) -> Request:
+            check_admission()
+            if not isinstance(controller, GoodVibeController) or controller.catalog.key != "bobpowerbase":
+                raise ServiceValidationError("Choose Power Bob Base for every target")
+            route = sessions.get(controller._coordinator)
+            if route is None or controller.product_key != route[4][2]:
+                raise ServiceValidationError("The Power Bob Base product changed after admission")
+            controller._current_link()
+            return request.plan(controller)
+
+        check_admission()
+        # Validate every offline product and operand before startup can write.
+        for child in physical:
+            controller = child.capability_controller
+            if not isinstance(controller, GoodVibeController) or controller.catalog.key != "bobpowerbase":
+                raise ServiceValidationError("Choose Power Bob Base for every target")
+            owner = child._single_inner if isinstance(child, SingleAddressSideCoordinator) else child
+            if controller.product_key != sessions[owner][4][2]:
+                raise ServiceValidationError("The Power Bob Base product changed after admission")
+            try:
+                with controller_side_scope(child):
+                    request.validate(controller, reported=False)
+            except ValueError as error:
+                raise ServiceValidationError(str(error)) from error
+
+        # Query through each topology's ordinary connection lane. A sequential
+        # pair may release the first link before validating the second.
+        for (parent, side), admission in zip(targets, admissions, strict=True):
+            for child in _command_targets(parent, side):
+                async def inspect(controller: BedController) -> bool:
+                    try:
+                        check_admission()
+                        if isinstance(controller, GoodVibeController):
+                            await controller.async_prepare_goodvibe_request(request, admitted=check_admission)
+                        live_plan(controller)
+                    except ValueError as error:
+                        raise ServiceValidationError(str(error)) from error
+                    return True
+
+                async def query(target=child) -> None:
+                    if not await target.async_execute_controller_query(inspect, cancel_running=False, run_if=check_admission):
+                        raise ServiceValidationError("Power Bob Base live preflight was interrupted")
+
+                check_admission()
+                if isinstance(parent, PairedBedCoordinator):
+                    child_side = next(key for key, target in parent.children.items() if target is child)
+                    await parent.async_run_child_operation(
+                        "Power Bob Base live preflight", query, side=child_side, cancel_running=False,
+                        resources=admission.resources,
+                        expected_pair_generations=admission.expected_pair_generations,
+                        expected_stop_epochs=admission.expected_stop_epochs,
+                    )
+                else:
+                    await query()
+
+        async def execute_bob(target: GoodVibeController) -> None:
+            check_admission()
+            await target.async_prepare_goodvibe_request(request, admitted=check_admission)
+            plan = live_plan(target)
+            owner, link = target._coordinator, target._current_link()
+            generation = owner._position_connection_generation
+
+            def dispatch() -> None:
+                check_admission(reported=True)
+                if owner.controller is not target or owner._position_connection_generation != generation or target._current_link() is not link:
+                    raise ServiceValidationError("The Power Bob Base session changed before dispatch")
+                plan.validate(target)
+
+            await target.async_execute_goodvibe_request(plan, dispatch=dispatch)
+
+        await _execute_preflighted(
+            targets, [], _family_command(GoodVibeController, "Power Bob Base configuration", execute_bob),
+            resource="configuration", admissions=admissions,
+        )
+        return
+
     async def execute(target: GoodVibeController) -> None:
         plan = plans.get((target._address.upper(), target.product_key))
         if plan is None:
@@ -391,11 +545,12 @@ async def handle_goodvibe(call: ServiceCall) -> None:
         await target.async_execute_goodvibe_request(plan)
 
     await _preflight_and_execute(
-        _call_targets(call),
+        targets,
         GoodVibeController,
         "Good Vibe Sleep configuration",
         execute,
         validate=validate,
+        admissions=admissions,
     )
 
 
@@ -403,3 +558,4 @@ def async_register_goodvibe_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, "goodvibe", handle_goodvibe, schema=SCHEMA)
     hass.services.async_register(DOMAIN, "mlily", handle_goodvibe, schema=MLILY_SCHEMA)
     hass.services.async_register(DOMAIN, "galaxy", handle_goodvibe, schema=GALAXY_SCHEMA)
+    hass.services.async_register(DOMAIN, "bobpowerbase", handle_goodvibe, schema=BOB_SCHEMA)

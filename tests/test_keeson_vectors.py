@@ -308,6 +308,10 @@ def _app_census(profile: KeesonProfile) -> set[bytes]:
         words |= {apps.HEAL_HEAD_MASSAGE + level for level in range(apps.HEAL_ZONE_MAX + 1)}
         words |= {apps.HEAL_FOOT_MASSAGE + level for level in range(apps.HEAL_ZONE_MAX + 1)}
         words |= {apps.HEAL_WAVE + level - 1 for level in range(1, apps.HEAL_WAVE_MAX + 1)}
+    elif profile.key == "comfortfurniture":
+        from custom_components.adjustable_bed.profiles.comfortfurniture import PROFILE
+
+        words |= PROFILE.words
     else:
         ore = ore_comfort_bed
         words |= {

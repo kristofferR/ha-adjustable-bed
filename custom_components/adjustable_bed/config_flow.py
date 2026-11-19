@@ -186,11 +186,13 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -303,6 +305,7 @@ from .const import (
     RUNTIME_BOND_KEYS,
     SIDE_LEFT,
     SIDE_RIGHT,
+    SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     SVANE_VARIANT_JENSEN_LINON,
@@ -421,8 +424,8 @@ CONFIGURED_RETRY_PREFIX = "configured_retry::"
 _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
-     BED_TYPE_GMMOTOR, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
+    {"bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, "gmmotor_sleep_mm", "gmmotor_sleep_sxb"}
 )
 
 
@@ -853,8 +856,14 @@ def _bed_type_selector(
             ),
             *RICHMAT_MH_BED_TYPES,
             "luuna",
+            "luniosmart",
             "sonicsleep",
+            "suta",
+            "sleep_evolution",
+            "wsilver_legacy",
             BED_TYPE_MLILY,
+            BED_TYPE_OKIMIKI,
+            BED_TYPE_MLILY_REMOTE,
             BED_TYPE_JENSEN,
             # Protocol-named routes are off the setup list but stay selectable.
             *PROTOCOL_ROUTES,
@@ -1272,6 +1281,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # Each app's own answers.
         BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_MOTION_BED,
+        "ultramatic_smart_bed",
         BED_TYPE_DOUBLESLEEP,
         "symphony",
         BED_TYPE_SLEEPTRACKER,
@@ -1283,9 +1293,13 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
         "bedgear",
+        "l2motion",
+        "suta",
         "hush_base",
         "luuna",
         "mline",
+        "nerum",
+        "cheerssleep",
         BED_TYPE_LEGGETT_LP_LEGACY,
         *STARCODE_FAMILY.direct,
     }
@@ -1300,7 +1314,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
     if (
-        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear")
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear", "l2motion", "suta", "sleep_evolution", "wsilver_legacy")
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
@@ -1319,6 +1333,8 @@ def _motor_count_options(
         return [3]
     if bed_type == BED_TYPE_STARCODE_M5X5:
         return [2]
+    if bed_type == "ultramatic_smart_bed":
+        return [2]  # Compatibility field; the app controls are declared explicitly.
     if bed_type == BED_TYPE_OKIN_RF_ECO_BT:
         return [1]
     if bed_type == BED_TYPE_FURNIMOVE:
@@ -1344,7 +1360,7 @@ def _motor_count_options(
         return [1, 2, 3, 4]
     if bed_type == BED_TYPE_OKIN_CST:
         return [3] if protocol_variant in OKIN_CST_THREE_MOTOR_VARIANTS else [2]
-    if bed_type == BED_TYPE_SOLACE and protocol_variant == SOLACE_VARIANT_WOOSA:
+    if bed_type == BED_TYPE_SOLACE and protocol_variant in (SOLACE_VARIANT_WOOSA, SOLACE_VARIANT_SOPHIE):
         return [2]
     return [2, 3, 4]
 
@@ -1724,6 +1740,20 @@ def _apply_route_defaults(data: dict[str, Any], bed_type: str, variant: str | No
     """Give a newly chosen route the defaults Configure gives a bed-type change."""
     data[CONF_BED_TYPE] = bed_type
     variants = get_variants_for_bed_type(bed_type)
+    if variant is None and variants and not is_valid_variant_for_bed_type(bed_type, VARIANT_AUTO):
+        # A model question that suggests its own answer (from the Bluetooth name,
+        # say) decides it for the new route; the previous route's answer does not.
+        profile = setup_profile_for({CONF_BED_TYPE: bed_type})
+        question = next(
+            (q for q in profile.questions if q.key == CONF_PROTOCOL_VARIANT), None
+        ) if profile is not None else None
+        if question is not None and callable(question.default):
+            staged = {key: value for key, value in data.items() if key != CONF_PROTOCOL_VARIANT}
+            suggested = question.default(staged)
+            variant = suggested if isinstance(suggested, str) and suggested in variants else None
+            if variant is None:
+                data.pop(CONF_PROTOCOL_VARIANT, None)
+                variants = {}
     if variant is None and variants:
         variant = (
             VARIANT_AUTO
@@ -1935,7 +1965,7 @@ _IDLE_SECONDS_SELECTOR: Final = NumberSelector(
 
 
 def _pulse_count_selector(bed_type: str, saved: object) -> NumberSelector:
-    """Return Movement per tap's field, keeping room for a larger count saved earlier."""
+    """Return Movement per tap's field, keeping room for a larger saved or default count."""
     high = _PULSE_COUNT_RANGE[1]
     if bed_type in {BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}:
         # These apps' 100 ms taps have their own, longer range.
@@ -2027,7 +2057,9 @@ def _settings_fields(
         CONF_NAME: str,
         CONF_MOTOR_COUNT: vol.All(vol.Coerce(int), vol.In(_motor_count_options(bed_type, variant))),
         CONF_PREFERRED_ADAPTER: vol.In(adapters),
-        CONF_MOTOR_PULSE_COUNT: _pulse_count_selector(bed_type, data.get(CONF_MOTOR_PULSE_COUNT)),
+        CONF_MOTOR_PULSE_COUNT: _pulse_count_selector(
+            bed_type, data.get(CONF_MOTOR_PULSE_COUNT, route_defaults[CONF_MOTOR_PULSE_COUNT])
+        ),
         **dict.fromkeys(_ANGLE_LIMITS, _TEXT),
     }
     fields: dict[vol.Marker, Any] = {}

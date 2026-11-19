@@ -35,7 +35,7 @@ def _selection_error(reason: str) -> ServiceValidationError:
 
 
 class PreparationCancelled(asyncio.CancelledError):
-    """Retire one owned startup through the native connection cleanup path."""
+    """Retire a captured operation through the native cancellation cleanup path."""
 
     def __init__(self, selection: Selection, child: AdjustableBedCoordinator) -> None:
         super().__init__("Captured BetterLiving2 preparation cancelled")
@@ -52,7 +52,8 @@ class Batch:
     roster: tuple[tuple[str, AdjustableBedCoordinator], ...]
     topology: object | None
     sequential: bool
-    started: bool = False
+    preemption_admitted: bool = False
+    dispatched: bool = False
     ready: asyncio.Event = field(default_factory=asyncio.Event)
     aborted: asyncio.Event = field(default_factory=asyncio.Event)
 
@@ -161,14 +162,16 @@ class Selection:
             SELECTION.reset(token)
 
     def begin(self, child: AdjustableBedCoordinator) -> None:
-        self.check()
         owner = self.owners.get(id(child))
         if owner is None or not self._owned(owner.batch):
             raise _selection_error("BetterLiving2 preparation was not admitted")
         context = current_command_context()
         if context is None or context.scheduler_token is not owner.scheduler_token:
             raise _selection_error("BetterLiving2 preparation has no owned reservation")
+        if owner.context is not None and owner.context is not context:
+            raise _selection_error("BetterLiving2 preparation reservation changed")
         owner.context = context
+        self.check()
         if not owner.batch.sequential:
             peers = [other for other in self.owners.values() if other.batch is owner.batch]
             if len(peers) > 1:
@@ -193,19 +196,50 @@ class Selection:
         if owner is not None and not owner.ready:
             owner.batch.aborted.set()
 
+    def _pair_generations(
+        self, batch: Batch
+    ) -> tuple[dict[str, tuple[int, ...]], dict[str, tuple[int, ...]]]:
+        before = batch.admission.expected_pair_generations
+        parent = batch.parent
+        if not isinstance(parent, PairedBedCoordinator):
+            return {}, before
+        current = {
+            side: parent._pair_cancel_generation(side, batch.admission.resources) for side in before
+        }
+        admitted = {side: (value[0] + 1,) for side, value in before.items()}
+        if not batch.preemption_admitted and current == admitted and self._owned(batch):
+            batch.preemption_admitted = True
+        return current, admitted if batch.preemption_admitted else before
+
+    def _owner_cancelled(self, owner: Owner) -> bool:
+        if owner.child.stop_epoch != owner.stop_epoch or (
+            owner.context is not None and owner.context.cancel_event.is_set()
+        ):
+            return True
+        current, expected = self._pair_generations(owner.batch)
+        return any(
+            child is owner.child and side in expected and current.get(side) != expected[side]
+            for side, child in owner.batch.roster
+        )
+
     def _cohort_cancelled(self, batch: Batch) -> bool:
         return batch.aborted.is_set() or any(
-            other.batch is batch
-            and other.context is not None
-            and other.context.cancel_event.is_set()
-            for other in self.owners.values()
+            other.batch is batch and self._owner_cancelled(other) for other in self.owners.values()
         )
+
+    def _dispatch_cancelled(self, owner: Owner) -> bool:
+        return self._owner_cancelled(owner) or (
+            not self._dispatched(owner) and self._cohort_cancelled(owner.batch)
+        )
+
+    def _dispatched(self, owner: Owner) -> bool:
+        return owner.started if owner.batch.sequential else owner.batch.dispatched
 
     async def prepared(self, controller: BetterLiving2Controller) -> bool:
         """Complete the current cohort's owned startup before any user write."""
         owner = self.owners.get(id(controller._coordinator))
         if owner is not None and not owner.batch.sequential:
-            if self._cohort_cancelled(owner.batch):
+            if self._dispatch_cancelled(owner):
                 # An expected peer STOP must not become a linked-operation failure.
                 return False
         self.check(controller)
@@ -221,7 +255,7 @@ class Selection:
                 other.context.cancel_event for other in peers if other.context is not None
             ]
             await _first_set(batch.ready, batch.aborted, *cancel_events)
-            if batch.aborted.is_set() or any(event.is_set() for event in cancel_events):
+            if self._dispatch_cancelled(owner):
                 return False
         self.check(controller)
         return True
@@ -243,19 +277,45 @@ class Selection:
             and topology.command_lock.locked()
         )
 
-    def _check(self, binding: Owner | None = None) -> None:
+    def _check(
+        self,
+        binding: Owner | None = None,
+        receiver: Owner | None = None,
+        *,
+        releasing: bool = False,
+        completed: bool = False,
+    ) -> bool:
         if not self.active or self.invalid:
             raise _selection_error("BetterLiving2 selection was retired")
         context = current_command_context()
-        if context is not None:
-            for owner in self.owners.values():
-                if (
-                    owner.context is context
-                    and not owner.ready
-                    and not owner.batch.sequential
-                    and self._cohort_cancelled(owner.batch)
-                ):
-                    raise PreparationCancelled(self, owner.child)
+        current_owner = next(
+            (
+                owner
+                for owner in self.owners.values()
+                if context is not None and owner.context is context
+            ),
+            None,
+        )
+        if not completed and current_owner is not None and self._dispatch_cancelled(current_owner):
+            raise PreparationCancelled(self, current_owner.child)
+        scoped_stop = current_owner is not None and self._dispatched(current_owner)
+        startup = receiver or binding
+        execution_owner = current_owner or startup
+        stop_batch = execution_owner.batch if execution_owner is not None else None
+        cancelled_startup = None
+        if (
+            context is None
+            and startup is not None
+            and (releasing or startup.context is None and not startup.started)
+            and startup.batch.sequential
+            and self._owned(startup.batch)
+            and self._cohort_cancelled(startup.batch)
+        ):
+            # The sequential native cycle connects before entering its child
+            # worker. Let its post-connect cancellation check release this link.
+            cancelled_startup = startup.batch
+        # Completion checks only structure and sessions. Native admission and
+        # dispatch guards enforce STOP, including for batches still queued.
         for batch in self.batches:
             parent = batch.parent
             if (
@@ -270,29 +330,42 @@ class Selection:
                     or any(parent.children.get(side) is not child for side, child in batch.roster)
                 ):
                     raise _selection_error("BetterLiving2 physical roster changed")
-                generations = {
-                    side: parent._pair_cancel_generation(side, batch.admission.resources)
-                    for side in batch.admission.expected_pair_generations
-                }
-                before = batch.admission.expected_pair_generations
-                # This action uses the shared all-resource admission. Its own
-                # paired preemption adds exactly one; any further bump retires it.
-                admitted = {side: (value[0] + 1,) for side, value in before.items()}
-                if not batch.started and generations == admitted and self._owned(batch):
-                    batch.started = True
-                if generations != (admitted if batch.started else before):
+                generations, expected = (
+                    ({}, {})
+                    if completed or stop_batch is not None and batch is not stop_batch
+                    else self._pair_generations(batch)
+                )
+                sides = (
+                    [
+                        side
+                        for side, child in batch.roster
+                        if current_owner is not None and child is current_owner.child
+                    ]
+                    if scoped_stop
+                    else ([] if batch is cancelled_startup else list(expected))
+                )
+                if any(generations.get(side) != expected.get(side) for side in sides):
                     raise _selection_error("BetterLiving2 paired admission changed")
         for owner in self.owners.values():
             child = owner.child
             if (
                 child.address.upper() != owner.address
                 or dict(child.entry.data) != owner.data
-                or child.stop_epoch != owner.stop_epoch
                 or child._command_scheduler.token is not owner.scheduler_token
-                or owner.context is not None
-                and owner.context.cancel_event.is_set()
             ):
                 raise _selection_error("BetterLiving2 physical owner/profile/STOP changed")
+            if (
+                not completed
+                and (stop_batch is None or owner.batch is stop_batch)
+                and owner.batch is not cancelled_startup
+                and (not scoped_stop or owner is current_owner)
+                and (
+                    child.stop_epoch != owner.stop_epoch
+                    or owner.context is not None
+                    and owner.context.cancel_event.is_set()
+                )
+            ):
+                raise _selection_error("BetterLiving2 physical STOP changed")
             if owner is binding:
                 continue
             # An initially offline peer may still be establishing transport
@@ -323,9 +396,22 @@ class Selection:
                 or getattr(child._controller, "_link", None) is not owner.link
             ):
                 raise _selection_error("BetterLiving2 captured session changed")
+        return cancelled_startup is not None
+
+    def completed(self, parent: PairedBedCoordinator, side: str) -> None:
+        """Validate the recorded physical releases after native cleanup awaits."""
+        batch = next(
+            batch for batch in self.batches if batch.parent is parent and batch.side == side
+        )
+        if batch.sequential:
+            self._check(completed=True)
 
     def check(self, controller: BetterLiving2Controller | None = None) -> None:
-        self._check()
+        cancelled_startup = self._check(
+            receiver=self.owners.get(id(controller._coordinator))
+            if controller is not None
+            else None
+        )
         if controller is not None:
             owner = self.owners.get(id(controller._coordinator))
             if (
@@ -334,6 +420,8 @@ class Selection:
                 or owner.link is not controller._link
             ):
                 raise _selection_error("BetterLiving2 dispatch session was not admitted")
+            if cancelled_startup and controller._startup_cancel is not None:
+                controller._startup_cancel.set()
 
     def stopped_before_preflight(self) -> bool:
         """Retain the native service contract for a STOP during its lazy import."""
@@ -356,7 +444,7 @@ class Selection:
         if owner is None or owner.controller is not controller or owner.client is None:
             return  # The coordinator also releases its offline capability copy.
         try:
-            self._check()
+            self._check(receiver=owner, releasing=True)
         except PreparationCancelled:
             return  # Expected owned cancellation must not retire the peer's cleanup.
         except ServiceValidationError:
@@ -378,3 +466,5 @@ class Selection:
             raise _selection_error("BetterLiving2 session preparation is incomplete")
         self.check(controller)
         owner.started = True
+        # Services call start immediately before dispatching the controller action.
+        owner.batch.dispatched = True

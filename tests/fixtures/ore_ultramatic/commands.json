@@ -1,0 +1,904 @@
+{
+  "P1": [
+    {
+      "action": "back_up",
+      "key": "00000001",
+      "bytes": "E5 FE 16 00 00 00 01 05",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "back_down",
+      "key": "00000002",
+      "bytes": "E5 FE 16 00 00 00 02 04",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "foot_up",
+      "key": "00000004",
+      "bytes": "E5 FE 16 00 00 00 04 02",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "foot_down",
+      "key": "00000008",
+      "bytes": "E5 FE 16 00 00 00 08 FE",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "combined_back_foot_up",
+      "key": "00000010",
+      "bytes": "E5 FE 16 00 00 00 10 F6",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2"
+      ]
+    },
+    {
+      "action": "combined_back_foot_down",
+      "key": "00000020",
+      "bytes": "E5 FE 16 00 00 00 20 E6",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2"
+      ]
+    },
+    {
+      "action": "head_up",
+      "key": "00000010",
+      "bytes": "E5 FE 16 00 00 00 10 F6",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding3"
+      ]
+    },
+    {
+      "action": "head_down",
+      "key": "00000020",
+      "bytes": "E5 FE 16 00 00 00 20 E6",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding3"
+      ]
+    },
+    {
+      "action": "waist_up",
+      "key": "00000010",
+      "bytes": "E5 FE 16 00 00 00 10 F6",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding4"
+      ]
+    },
+    {
+      "action": "waist_down",
+      "key": "00000020",
+      "bytes": "E5 FE 16 00 00 00 20 E6",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding4"
+      ]
+    },
+    {
+      "action": "lumbar_up",
+      "key": "00000040",
+      "bytes": "E5 FE 16 00 00 00 40 C6",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding4"
+      ]
+    },
+    {
+      "action": "lumbar_down",
+      "key": "00000080",
+      "bytes": "E5 FE 16 00 00 00 80 86",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding4"
+      ]
+    },
+    {
+      "action": "release_stop",
+      "key": "00000000",
+      "bytes": "E5 FE 16 00 00 00 00 06",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "recall_M1",
+      "key": "01000008",
+      "bytes": "E5 FE 16 01 00 00 08 FD",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "recall_M2",
+      "key": "01000009",
+      "bytes": "E5 FE 16 01 00 00 09 FC",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "recall_ZG",
+      "key": "01000001",
+      "bytes": "E5 FE 16 01 00 00 01 04",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "recall_Flat",
+      "key": "01000002",
+      "bytes": "E5 FE 16 01 00 00 02 03",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "save_M1",
+      "key": "20000008",
+      "bytes": "E5 FE 16 20 00 00 08 DE",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "save_M2",
+      "key": "20000009",
+      "bytes": "E5 FE 16 20 00 00 09 DD",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "save_ZG",
+      "key": "20000001",
+      "bytes": "E5 FE 16 20 00 00 01 E5",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "save_Flat",
+      "key": "20000002",
+      "bytes": "E5 FE 16 20 00 00 02 E4",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_wave",
+      "bytes": "control(P1, 0x10000020 + floor(progress/10)), progress 0..39, q 0..3",
+      "key_formula": "10000020+q",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "Shared parser can update massage intensity/timer only, no matching per-slider acknowledgement.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_head_intensity",
+      "bytes": "control(P1, 0x10000010 + floor(progress/10)), progress 0..39, q 0..3",
+      "key_formula": "10000010+q",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "Shared parser can update massage intensity/timer only, no matching per-slider acknowledgement.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_foot_intensity",
+      "bytes": "control(P1, 0x11000010 + floor(progress/10)), progress 0..39, q 0..3",
+      "key_formula": "11000010+q",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "Shared parser can update massage intensity/timer only, no matching per-slider acknowledgement.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_timer_10min",
+      "key": "10000030",
+      "bytes": "E5 FE 16 10 00 00 30 C6",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_timer_20min",
+      "key": "10000031",
+      "bytes": "E5 FE 16 10 00 00 31 C5",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_timer_30min",
+      "key": "10000032",
+      "bytes": "E5 FE 16 10 00 00 32 C4",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "underbed_light_on",
+      "key": "31000001",
+      "bytes": "E5 FE 16 31 00 00 01 D4",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "underbed_light_off",
+      "key": "31000000",
+      "bytes": "E5 FE 16 31 00 00 00 D5",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_start",
+      "bytes": "control(P1,0x10000020+qw); control(P1,0x10000010+qh); control(P1,0x11000010+qf), each q=0..3",
+      "timing": {
+        "delay_before_each_write_ms": 100,
+        "writes": 3
+      },
+      "semantics": "wave(qw), head(qh), foot(qf), each q=floor(saved/current progress/10)",
+      "response": "No sequence acknowledgement parsed.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_stop",
+      "bytes": "E5 FE 16 10 00 00 10 E6 ; E5 FE 16 11 00 00 10 E5",
+      "timing": {
+        "delay_before_each_write_ms": 100,
+        "writes": 2
+      },
+      "semantics": "head intensity 0 followed by foot intensity 0",
+      "response": "No sequence acknowledgement parsed.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "alarm_query",
+      "bytes": "finish(E2 FE 16 now.second now.minute now.hour (Calendar.DAY_OF_WEEK-1))",
+      "timing": {
+        "delay_before_write_ms": 200,
+        "writes": 1
+      },
+      "response": "P1 E2 FE reply or P2 ED 80 alarm state, parsed as documented."
+    },
+    {
+      "action": "alarm_enable",
+      "bytes": "alarm(P1, enabled=True, local now, alarm_hour/minute, repeat mask, alarm_type); see exact offsets/pseudocode and reproduce.py",
+      "timing": {
+        "delay_before_write_ms": 100,
+        "writes": 1,
+        "ui_sequence": "For P2 send current-time first (100 ms); then alarm packet (100 ms); then query (200 ms). P1 omits time-sync."
+      },
+      "response": "Queried back by alarm_query after switch action. See parser mismatch and signed-byte caveats."
+    },
+    {
+      "action": "alarm_disable",
+      "bytes": "alarm(P1, enabled=False, local now, alarm_hour/minute, repeat mask, alarm_type); see exact offsets/pseudocode and reproduce.py",
+      "timing": {
+        "delay_before_write_ms": 100,
+        "writes": 1,
+        "ui_sequence": "For P2 send current-time first (100 ms); then alarm packet (100 ms); then query (200 ms). P1 omits time-sync."
+      },
+      "response": "Queried back by alarm_query after switch action. See parser mismatch and signed-byte caveats."
+    }
+  ],
+  "P2": [
+    {
+      "action": "back_up",
+      "key": "00000001",
+      "bytes": "E6 FE 16 01 00 00 00 00 04",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "back_down",
+      "key": "00000002",
+      "bytes": "E6 FE 16 02 00 00 00 00 03",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "foot_up",
+      "key": "00000004",
+      "bytes": "E6 FE 16 04 00 00 00 00 01",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "foot_down",
+      "key": "00000008",
+      "bytes": "E6 FE 16 08 00 00 00 00 FD",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "combined_back_foot_up",
+      "key": "00000005",
+      "bytes": "E6 FE 16 05 00 00 00 00 00",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2"
+      ]
+    },
+    {
+      "action": "combined_back_foot_down",
+      "key": "0000000A",
+      "bytes": "E6 FE 16 0A 00 00 00 00 FB",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2"
+      ]
+    },
+    {
+      "action": "head_up",
+      "key": "00000010",
+      "bytes": "E6 FE 16 10 00 00 00 00 F5",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding3"
+      ]
+    },
+    {
+      "action": "head_down",
+      "key": "00000020",
+      "bytes": "E6 FE 16 20 00 00 00 00 E5",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding3"
+      ]
+    },
+    {
+      "action": "waist_up",
+      "key": "00000010",
+      "bytes": "E6 FE 16 10 00 00 00 00 F5",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding4"
+      ]
+    },
+    {
+      "action": "waist_down",
+      "key": "00000020",
+      "bytes": "E6 FE 16 20 00 00 00 00 E5",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding4"
+      ]
+    },
+    {
+      "action": "lumbar_up",
+      "key": "00000040",
+      "bytes": "E6 FE 16 40 00 00 00 00 C5",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding4"
+      ]
+    },
+    {
+      "action": "lumbar_down",
+      "key": "00000080",
+      "bytes": "E6 FE 16 80 00 00 00 00 85",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding4"
+      ]
+    },
+    {
+      "action": "release_stop",
+      "key": "00000000",
+      "bytes": "E6 FE 16 00 00 00 00 00 05",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "preset_TV",
+      "key": "00004000",
+      "bytes": "E6 FE 16 00 40 00 00 00 C5",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "preset_Anti_Snore",
+      "key": "00008000",
+      "bytes": "E6 FE 16 00 80 00 00 00 85",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "preset_ZG",
+      "key": "00001000",
+      "bytes": "E6 FE 16 00 10 00 00 00 F5",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "preset_Flat",
+      "key": "08000000",
+      "bytes": "E6 FE 16 00 00 00 08 00 FD",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_head_button",
+      "key": "00000800",
+      "bytes": "E6 FE 16 00 08 00 00 00 FD",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_foot_button",
+      "key": "00000400",
+      "bytes": "E6 FE 16 00 04 00 00 00 01",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_timer_button",
+      "key": "00000200",
+      "bytes": "E6 FE 16 00 02 00 00 00 03",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_toggle",
+      "key": "00000100",
+      "bytes": "E6 FE 16 00 01 00 00 00 04",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "massage_wave_button",
+      "key": "10000000",
+      "bytes": "E6 FE 16 00 00 00 10 00 F5",
+      "timing": {
+        "initial_delay_ms": 0,
+        "repeat_interval_ms": 100,
+        "repeat_count": "Unbounded while handler active; one write per runnable invocation, no success-based queue or retry"
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "underbed_light_toggle",
+      "key": "00020000",
+      "bytes": "E6 FE 16 00 00 02 00 00 03",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No per-command acknowledgement parsed; incoming FFE4 bytes follow the shared alarm/massage parser.",
+      "variants": [
+        "bedding2",
+        "bedding3",
+        "bedding4"
+      ]
+    },
+    {
+      "action": "alarm_query",
+      "bytes": "E2 80 03 00 9A",
+      "timing": {
+        "delay_before_write_ms": 200,
+        "writes": 1
+      },
+      "response": "P1 E2 FE reply or P2 ED 80 alarm state, parsed as documented."
+    },
+    {
+      "action": "alarm_enable",
+      "bytes": "alarm(P2, enabled=True, local now, alarm_hour/minute, repeat mask, alarm_type); see exact offsets/pseudocode and reproduce.py",
+      "timing": {
+        "delay_before_write_ms": 100,
+        "writes": 1,
+        "ui_sequence": "For P2 send current-time first (100 ms); then alarm packet (100 ms); then query (200 ms). P1 omits time-sync."
+      },
+      "response": "Queried back by alarm_query after switch action. See parser mismatch and signed-byte caveats."
+    },
+    {
+      "action": "alarm_disable",
+      "bytes": "alarm(P2, enabled=False, local now, alarm_hour/minute, repeat mask, alarm_type); see exact offsets/pseudocode and reproduce.py",
+      "timing": {
+        "delay_before_write_ms": 100,
+        "writes": 1,
+        "ui_sequence": "For P2 send current-time first (100 ms); then alarm packet (100 ms); then query (200 ms). P1 omits time-sync."
+      },
+      "response": "Queried back by alarm_query after switch action. See parser mismatch and signed-byte caveats."
+    },
+    {
+      "action": "set_current_time",
+      "bytes": "finish(E7 80 01 (year-1900) month0 day hour minute second)",
+      "timing": {
+        "writes": 1,
+        "delay_before_each_write_ms": 100,
+        "repeat_count": 1
+      },
+      "response": "No clock-sync acknowledgement parsed."
+    }
+  ]
+}

@@ -69,6 +69,7 @@ from .const import (
     BED_TYPE_KOMFYD,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_LINX,
     BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
@@ -76,11 +77,13 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -105,6 +108,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_SOMOS,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
@@ -122,6 +126,9 @@ from .const import (
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CB24_BED_SELECTION_DEFAULT,
+    CONF_AGINGPLACE_BED_MODE,
+    CONF_AGINGPLACE_BED_SIDE,
+    CONF_AGINGPLACE_SELECTED_SIDE,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
@@ -203,12 +210,14 @@ from .const import (
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_ERGOMOTION,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_OKIN_COMFORT_BED,
+    KEESON_VARIANT_ORE_ULTRAMATIC,
     LOGICDATA_APP_FAMILIES,
     LOGICDATA_APP_LAYOUTS,
     LOGICDATA_APP_PROFILES,
@@ -243,9 +252,13 @@ from .profiles import jiecang as jiecang_profiles
 from .profiles import limoss as limoss_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
+from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
+from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 
 if TYPE_CHECKING:
@@ -292,10 +305,17 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_remote": GENERIC_FIELDS,
     "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "luuna": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
+    "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "sleep_evolution": GENERIC_FIELDS,
+    "wsilver_legacy": GENERIC_FIELDS,
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "agingplace": GENERIC_FIELDS,
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
+    BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORTBASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -303,6 +323,9 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_GALAXY: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    BED_TYPE_MLILY_REMOTE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JALON: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_RICHMAT_APP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
@@ -342,6 +365,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_VMATBASIC: _APP_DEFINED,
     BED_TYPE_MOTION_BED: _APP_DEFINED,
     "bedgear": _APP_DEFINED,
+    "l2motion": _APP_DEFINED,
     BED_TYPE_MOTOMOTION: _APP_DEFINED,
     BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SLEEPTRACKER: _APP_DEFINED,
@@ -354,11 +378,15 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_LOGICDATA_APP: _FIXED_LAYOUT,
 }
 _OWNED_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
+    (BED_TYPE_KEESON, KEESON_VARIANT_COMFORTFURNITURE): frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}),
     # Nectar Move fixes two axes, has massage, and uses its own refresh interval.
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): _NECTAR_MOVE,
     (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS},
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): _FIXED_LAYOUT | {CONF_PROTOCOL_VARIANT},
+    (BED_TYPE_KEESON, KEESON_VARIANT_ORE_ULTRAMATIC): frozenset(
+        {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
+    ),
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_COMFORT_BED): frozenset(
         {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
     ),
@@ -847,6 +875,7 @@ _APP_SCREENS: Final[Mapping[Any, str]] = {
     4: "4M: back, feet, waist and lumbar",
 }
 _SCREEN_VARIANTS: Final = (
+    KEESON_VARIANT_ORE_ULTRAMATIC,
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_OKIN_COMFORT_BED,
     KEESON_VARIANT_AMERICANSTAR,
@@ -1320,6 +1349,13 @@ def _motion_bed_seed(
     return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
 
 
+def _l2motion_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.bedgear import eligible
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    return {} if isinstance(name, str) and eligible(name) else {CONF_BLE_DEVICE_NAME: "l2motion_profile"}
+
+
 def _bedgear_errors(data: Mapping[str, Any]) -> dict[str, str]:
     from .profiles.bedgear import eligible
 
@@ -1578,6 +1614,31 @@ def _mline_protocols(_data: Mapping[str, Any]) -> Mapping[str, str]:
     return {"auto": "Use Bluetooth name and manufacturer data", "sleep": "Sleep",
             "smart": "Smart", "smartsainuo": "Smart Sainuo", "okin": "Okin",
             "unknown": "Unmatched-name fallback"}
+
+
+def _personal_comfort_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.personal_comfort import MODELS
+
+    return MODELS
+
+
+def _personal_comfort_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    base = data.get(CONF_PROTOCOL_VARIANT) in ("malouf", "reverie_v1", "reverie_v2")
+    return {CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: base and data.get(CONF_PRODUCT_TYPE) in ("pf3", "pf4", "other"),
+            CONF_DISABLE_ANGLE_SENSING: True}
+
+
+def _mlily_remote_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.mlily_remote import PROFILES
+
+    profile = PROFILES.get(str(data.get(CONF_PROTOCOL_VARIANT)))
+    return {
+        CONF_MOTOR_COUNT: 4 if profile is not None and profile.key == "ms600" else 2,
+        CONF_HAS_MASSAGE: profile is not None and bool(profile.row[2]) and not profile.cooling,
+        CONF_DISABLE_ANGLE_SENSING: True,
+        CONF_MOTOR_PULSE_COUNT: 10,
+        CONF_MOTOR_PULSE_DELAY_MS: 100,
+    }
 
 
 def _luuna_settings(data: Mapping[str, Any]) -> dict[str, Any]:
@@ -1939,6 +2000,16 @@ def _asking(key: str, **declared: Any) -> SetupProfile:
     return replace(_BASE.get(key, SetupProfile()), **declared)
 
 
+def _somos_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.somos import PRODUCTS
+
+    product = PRODUCTS.get(data.get(CONF_PROTOCOL_VARIANT, ""))
+    if product is None:
+        return {}
+    return {CONF_MOTOR_COUNT: len(product.axes), CONF_HAS_MASSAGE: product.massage,
+            CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300}
+
+
 def _comfortbase_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     from .profiles.comfortbase import PRODUCTS
 
@@ -1959,6 +2030,28 @@ def _smart_sleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
             if data.get(CONF_PROTOCOL_VARIANT) != "p2" or model == 80}
 
 
+def _onlysnore_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.onlysnore import MODELS
+
+    return {model: model for model in MODELS}
+
+
+def _onlysnore_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from .profiles.onlysnore import advertisement
+
+    result = dict(data)
+    if discovered and result.get(CONF_PRODUCT_TYPE) not in _onlysnore_models(result):
+        result[CONF_PRODUCT_TYPE] = (
+            advertisement(
+                discovered.name or "", discovered.manufacturer_data or {}, discovered.address
+            )
+            or "unKnow"
+        )
+    return result
+
+
 def _smart_sleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
     from .profiles.smart_sleep import advertisement
     result = dict(data)
@@ -1977,6 +2070,35 @@ def _smart_sleep_normalize(previous: Mapping[str, Any], answers: Mapping[str, An
     if result.get(CONF_PROTOCOL_VARIANT) == "p2":
         result[CONF_PRODUCT_TYPE] = "80"
     return result
+
+
+def _linx_models(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.linx import PROFILES
+    return {key: profile.label for key, profile in PROFILES.items()}
+
+
+def _linx_transports(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.linx import TRANSPORT_CHOICES
+    return dict(TRANSPORT_CHOICES)
+
+
+def _linx_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .codec.linx import startup_query
+    from .profiles.linx import ROUTES
+    errors = {}
+    if data.get(CONF_PRODUCT_TYPE) not in _linx_models(data):
+        errors[CONF_PRODUCT_TYPE] = "invalid_selection"
+    if data.get(CONF_PROTOCOL_VARIANT) not in _linx_transports(data):
+        errors[CONF_PROTOCOL_VARIANT] = "invalid_selection"
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    if not isinstance(name, str) or not name or len(name.encode()) > 248:
+        errors[CONF_BLE_DEVICE_NAME] = "invalid_selection"
+    elif (route := ROUTES.get(str(data.get(CONF_PROTOCOL_VARIANT)))) is not None and route.event_transport == "uart":
+        try:
+            startup_query(name)
+        except (ValueError, UnicodeError):
+            errors[CONF_BLE_DEVICE_NAME] = "invalid_selection"
+    return errors
 
 
 def _symphony_sleep_choices(_data: Mapping[str, Any]) -> dict[str, str]:
@@ -2042,6 +2164,80 @@ def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
+def _nerum_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.nerum import advertisement
+
+    result = dict(data)
+    if discovered is not None:
+        name = discovered.device.name or discovered.name
+        found = advertisement(name)
+        if found is not None:
+            if result.get(CONF_PROTOCOL_VARIANT) not in ("p1", "p2", "p3"):
+                result[CONF_PROTOCOL_VARIANT] = found.protocol
+            result.setdefault(CONF_BLE_DEVICE_NAME, name)
+    return result
+
+
+def _suta_derive(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.suta import profile_for_name
+
+    name = str(data.get(CONF_BLE_DEVICE_NAME, ""))
+    profile = profile_for_name(name)
+    return {CONF_DISABLE_ANGLE_SENSING: not name.startswith("SUTA-RBHC"),
+            CONF_MOTOR_PULSE_DELAY_MS: profile.refresh_ms or 150 if profile else 150}
+
+
+def _suta_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.suta import profile_for_name
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    profile = profile_for_name(name) if isinstance(name, str) and name.startswith("SUTA-") else None
+    return {} if profile is not None and profile.key != "MattressControllerDrawerFragment" else {CONF_BLE_DEVICE_NAME: "suta_name"}
+
+
+def _cheerssleep_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .beds.cheerssleep.catalog import MODELS
+    # Several app screens share a model name; the key tells them apart.
+    return {str(key): f"{model.label} ({key})" for key, model in MODELS.items()}
+
+
+def _cheerssleep_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .beds.cheerssleep.catalog import advertisement
+    result = dict(data)
+    if discovered and (found := advertisement(discovered.manufacturer_data or {})) and CONF_PRODUCT_TYPE not in result:
+        result[CONF_PRODUCT_TYPE] = str(found[0].key)
+    return result
+
+
+def _cheerssleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    return {} if str(data.get(CONF_PRODUCT_TYPE, "45")) in _cheerssleep_models(data) else {CONF_PRODUCT_TYPE: "cheerssleep_model_required"}
+
+
+def _cheerssleep_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .beds.cheerssleep.catalog import MODELS
+    model = MODELS.get(int(data.get(CONF_PRODUCT_TYPE, 45)), MODELS[45])
+    return {CONF_MOTOR_COUNT: min(4, max(2, len(model.axes))), CONF_HAS_MASSAGE: model.massage or model.sonic or model.as_layout}
+
+
+def _legacy_choices(data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.richmat_legacy import choices
+
+    return choices(data[CONF_BED_TYPE])
+
+
+def _legacy_default(data: Mapping[str, Any]) -> str:
+    from .profiles.richmat_legacy import matching_profile
+
+    selected = data.get(CONF_PROTOCOL_VARIANT)
+    if isinstance(selected, str) and selected in _legacy_choices(data):
+        return selected
+    return matching_profile(data[CONF_BED_TYPE], data.get(CONF_BLE_DEVICE_NAME))
+
+
+def _legacy_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    return {} if data.get(CONF_PROTOCOL_VARIANT) in _legacy_choices(data) else {CONF_PROTOCOL_VARIANT: "invalid_selection"}
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_BETTERLIVING2: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
@@ -2053,6 +2249,46 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda data: {CONF_MOTOR_COUNT: int(data[CONF_PRODUCT_TYPE]),
                              CONF_MOTOR_PULSE_DELAY_MS: 100 if data[CONF_PRODUCT_TYPE] == "2" else 200},
         title=lambda _data: "BetterLiving2",
+    ),
+    "ormatek": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_PRODUCT_TYPE, {"new": "Techno Smart New", "lite": "Techno Smart Lite"}, "new"),
+                   Question(CONF_PROTOCOL_VARIANT, {"okin15": "Okin", "okin24": "SmartBed"}, "okin15")),
+        derive=lambda data: {CONF_HAS_MASSAGE: data.get(CONF_PRODUCT_TYPE, "new") == "new"},
+        title=lambda _data: "OrmatekTechnoSmart",
+    ),
+    "solace:sophie": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_PROTOCOL_VARIANT: "sophie"},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
+        title=lambda _data: "Sophie",
+    ),
+    "nerum": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, {"p1": "P1: ORE / 1000", "p2": "P2: Okin / FFE5", "p3": "P3: Smartbed / Nordic"}, "p2"),
+            Question(CONF_PRODUCT_TYPE, {"nerum": "Nerum: head and foot", "2": "2 motors with combined control", "3": "3 motors with head tilt", "4": "4 motors with head tilt and lumbar"}, "nerum"),
+        ),
+        seed=_nerum_seed,
+        derive=lambda data: {CONF_MOTOR_COUNT: {"nerum": 2, "2": 2, "3": 3, "4": 4}.get(data.get(CONF_PRODUCT_TYPE, "nerum"), 2)},
+        imports=("profiles.nerum",),
+    ),
+    "cheerssleep": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, _cheerssleep_models, "45", searchable=True),),
+        seed=_cheerssleep_seed, validate=_cheerssleep_errors, derive=_cheerssleep_settings, imports=("beds.cheerssleep.catalog",),
+    ),
+    "onlysnore": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: SET_BY_PROFILE,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 150,
+        },
+        questions=(Question(CONF_PRODUCT_TYPE, _onlysnore_models, "unKnow", searchable=True),),
+        seed=_onlysnore_seed,
     ),
     "smart_sleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
@@ -2083,6 +2319,29 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "OkinComfortBed Ⅱ (Jalon)",
     ),
     **_BASE,
+    "suta": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: SET_BY_PROFILE, CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),),
+        derive=_suta_derive,
+        validate=_suta_errors, seed=_motion_bed_seed,
+        imports=("profiles.suta",),
+    ),
+    "agingplace": _asking(
+        "agingplace",
+        owns={CONF_MOTOR_COUNT: 3, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_MOTOR_PULSE_COUNT: 5, CONF_MOTOR_PULSE_DELAY_MS: 200, CONF_PROTOCOL_VARIANT: "auto"},
+        questions=(
+            Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_BLE_DEVICE_NAME, ""), text=True),
+            Question(CONF_AGINGPLACE_BED_MODE, {"auto": "Automatic (recommended)", "0": "Single sensor", "1": "Two sensors", "2": "Single display"}, "auto", advanced=True),
+            Question(CONF_AGINGPLACE_BED_SIDE, {0: "Left", 1: "Right", 2: "Selectable side"}, 0),
+            Question(CONF_AGINGPLACE_SELECTED_SIDE, {0: "Left", 1: "Right"}, 0,
+                     # The form submits the choice as text before it is coerced.
+                     when={"field": CONF_AGINGPLACE_BED_SIDE, "operator": ConditionOperator.IN, "value": [2, "2"]}),
+        ),
+        seed=_motion_bed_seed,
+        title=lambda _data: "Aging in Place / Dawn House",
+    ),
     BED_TYPE_RIZE_REMEDY_II: SetupProfile(
         owns={CONF_MOTOR_COUNT: 3, CONF_MOTOR_PULSE_DELAY_MS: 100,
               CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: True,
@@ -2128,6 +2387,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         )
         for bed_type in (BED_TYPE_OKIN_UUID, BED_TYPE_OKIMAT, BED_TYPE_OKIN_DOT)
     },
+    f"{BED_TYPE_KEESON}:{KEESON_VARIANT_COMFORTFURNITURE}": _asking(
+        f"{BED_TYPE_KEESON}:{KEESON_VARIANT_COMFORTFURNITURE}",
+        owns={CONF_MOTOR_COUNT: 4, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+    ),
     # The app's screen sets the motor count.
     **{
         f"{BED_TYPE_KEESON}:{variant}": _asking(
@@ -2440,6 +2704,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
         imports=("beds.limoss.remote",),
     ),
+    BED_TYPE_SOMOS: _asking(
+        BED_TYPE_SOMOS,
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_SOMOS)),),
+        derive=_somos_settings,
+    ),
     BED_TYPE_COMFORTBASE: _asking(
         BED_TYPE_COMFORTBASE,
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_COMFORTBASE)),),
@@ -2464,10 +2733,28 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
     ),
     # The app's product sets every control, so its one row asks it.
+    "bobpowerbase": _asking(
+        "bobpowerbase",
+        questions=(Question(CONF_PROTOCOL_VARIANT, BOB_PROFILES),
+                   Question(CONF_PRODUCT_TYPE, BOB_LAYOUTS, "standard")),
+    ),
+    BED_TYPE_MLILY_REMOTE: _asking(
+        BED_TYPE_MLILY_REMOTE,
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, MLILY_REMOTE_PROFILES, searchable=True),
+            Question(CONF_PRODUCT_TYPE, {"single": "Single bed", "double": "Double bed, separate sides"}, "single"),
+        ),
+        derive=_mlily_remote_settings,
+    ),
     BED_TYPE_MLILY: _asking(
         BED_TYPE_MLILY,
         questions=(Question(CONF_PROTOCOL_VARIANT, MLILY_PROFILES, searchable=True),),
         seed=_mlily_seed,
+    ),
+    BED_TYPE_OKIMIKI: _asking(
+        BED_TYPE_OKIMIKI,
+        owns={**_BASE[BED_TYPE_OKIMIKI].owns, CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, OKIMIKI_PROFILES),),
     ),
     BED_TYPE_GALAXY: _asking(
         BED_TYPE_GALAXY,
@@ -2516,11 +2803,49 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             Question("mline_child_mode", default=False)),
         derive=_mline_settings, imports=("profiles.mline",),
     ),
+    "personal_comfort": _asking(
+        "personal_comfort",
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes("personal_comfort")),
+                   Question(CONF_PRODUCT_TYPE, _personal_comfort_models,
+                            when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN,
+                                  "value": ["malouf", "reverie_v1", "reverie_v2"]})),
+        derive=_personal_comfort_settings,
+    ),
     "luuna": _asking(
         "luuna",
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("luuna")),),
         derive=_luuna_settings,
     ),
+    "luniosmart": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 100,
+            CONF_PROTOCOL_VARIANT: "auto",
+        },
+        title=lambda _data: "Lunio Smart+",
+        imports=("profiles.luniosmart",),
+    ),
+    **{
+        app: SetupProfile(
+            owns={
+                CONF_MOTOR_COUNT: SET_BY_PROFILE,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_MOTOR_PULSE_COUNT: SET_BY_PROFILE,
+                CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
+            },
+            questions=(Question(CONF_PROTOCOL_VARIANT, _legacy_choices, _legacy_default),),
+            validate=_legacy_errors,
+            # The prefix names the layout, so a prefix change shows in the review.
+            title=lambda data: (
+                "SleepEvolution" if data[CONF_BED_TYPE] == "sleep_evolution" else "W.Silver Products 3.x"
+            ) + (f" {data[CONF_PROTOCOL_VARIANT]}" if data.get(CONF_PROTOCOL_VARIANT) else ""),
+            imports=("profiles.richmat_legacy",),
+        )
+        for app in ("sleep_evolution", "wsilver_legacy")
+    },
     "sonicsleep": SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,
@@ -2713,6 +3038,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: 200,
         },
     ),
+    BED_TYPE_LINX: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 3},
+        questions=(Question(CONF_PRODUCT_TYPE, _linx_models, "quest"),
+                   Question(CONF_PROTOCOL_VARIANT, _linx_transports, "a00a"),
+                   Question(CONF_BLE_DEVICE_NAME, text=True)),
+        validate=_linx_errors,
+        derive=lambda data: {CONF_HAS_MASSAGE: data.get(CONF_PRODUCT_TYPE) == "quest"},
+        seed=_discovered_name_seed, title=lambda _data: "Linx",
+        imports=("profiles.linx",),
+    ),
     BED_TYPE_SYMPHONY_SLEEP: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300},
@@ -2742,6 +3078,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 300,
         },
+    ),
+    "ultramatic_smart_bed": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto",
+              CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(Question(CONF_CB24_BED_SELECTION, {0: "Both", 1: "Left", 2: "Right"}, 0),),
+        title=lambda _data: "Ultramatic Smart Bed",
     ),
     # AdjustableM5X4's saved command selector and transport. A shared UART is
     # no app identity.
@@ -2853,6 +3196,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
         title=lambda _data: "Bedgear",
+    ),
+    "l2motion": _asking(
+        "l2motion",
+        owns={**_BASE["l2motion"].owns, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),),
+        validate=_l2motion_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_motion_bed_seed,
+        title=lambda _data: "L2 Motion",
     ),
     BED_TYPE_MOTOMOTION: _asking(
         BED_TYPE_MOTOMOTION,

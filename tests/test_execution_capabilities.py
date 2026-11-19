@@ -37,6 +37,8 @@ from custom_components.adjustable_bed.execution import (
 )
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from custom_components.adjustable_bed.profiles import vibradorm as vibradorm_profiles
+from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
+from custom_components.adjustable_bed.profiles.suta import PROFILES as SUTA_PROFILES
 from tests.codec_families import families
 from tests.test_controller_contract import (
     _create_controller_for_bed_type,
@@ -65,6 +67,8 @@ KEESON_STREAM: dict[str, tuple[str, ...]] = {
     "maxcoil_una": ("maxcoil",),
     "americanstar": ("americanstar",),
     "okin_comfort_bed": ("okincomfort",),
+    "comfortfurniture": ("comfortfurniture",),
+    "ore_ultramatic": ("oreultra",),
     "simon_li": ("simon",),
     "heal_every_night": ("heal",),
     "okin_seating": ("minghua",),
@@ -103,16 +107,34 @@ KEESON_APP_STREAM: dict[str, tuple[str, ...]] = {
 ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUCTS.values())
 
 # Declaration -> declared field -> evidence keys from the design document.
+SUTA_STREAM = tuple(f"SutaProfile:{p.key}@{p.layout}" for p in SUTA_PROFILES.values() if p.execution.declared)
+
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     **{f"KeesonProfile:betterliving2_p{wire}_{layout}": {"hold": ("BetterLiving2 1.3.0",), "hold_controls": ("BetterLiving2 1.3.0",)}
        for wire in (1, 2, 3) for layout in (2, 3)},
+    **{f"PersonalComfortProfile:{key}": {"hold": ("Personal Comfort 2.6.1",)}
+       for key in ("malouf", "reverie_v1", "reverie_v2")},
+
+    **{f"LinxProfile:{key}": {"hold": ("linx079",)} for key in ("quest", "orbes")},
+    **{f"NerumProfile:{key}": {"hold": ("nerum103",)} for key in ("p1", "p2", "p3")},
+    **{f"KeesonProfile:somos_{key}": {"hold": ("row099",)} for key in "abcde"},
+    **{identity: {"hold": ("suta128",), "hold_controls": ("suta128",)} for identity in SUTA_STREAM},
+    "CheersSleepProfile:p1": {"hold": ("cheerssleep",)},
+    "CheersSleepProfile:p2": {"hold": ("cheerssleep",)},
+    "KeesonProfile:agingplace": {"hold": ("agingplace069",)},
+    "OnlySnoreProfile:onlysnore": {"hold": ("row170",)},
+    **{f"LegacyProfile:{key}": {"hold": ("cluster023",), "hold_controls": ("cluster023",)} for key in legacy_profiles()},
     "SmartSleepProfile:p1": {"hold": ("row094",)},
     "SmartSleepProfile:p2": {"hold": ("row094",), "hold_controls": ("row094",)},
     **{f"OkinNFrameProfile:apex_{i}": {"hold": ("row083",)} for i in range(15)},
+    **{f"KeesonProfile:ormatek_{wire}": {"hold": ("OrmatekTechnoSmart 1.2.0: immediate held refresh every 200ms until release",)} for wire in ("okin15", "okin24")},
     **{f"KeesonProfile:symphony_sleep_{route}": {"hold": ("symphony078",)} for route in ("box1", "box2", "fallback")},
     "SymphonyWordProfile:symphony": {"hold": ("row133",)},
+    "L2MotionProfile:l2motion": {"hold": ("l2motion",)},
     "BedgearProfile:bedgear": {"hold": ("bedgear",)},
     **{f"MLineProfile:{key}": {"hold": ("mline147",)} for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")},
+    "LunioSmartProfile:luniosmart": {"hold": ("luniosmart",)},
+    **{f"MlilyRemoteProfile:{key}": {"hold": ("mlily162",)} for key in ("ms200", "ms300", "ms600", "powercool", "ms300_sh")},
     "SonicSleepProfile:one": {"hold": ("sonicsleep",)},
     "ParamountProfile:paramount": {"hold": ("paramount",)},
     **{f"AdjustableAppProfile:{key}": {"hold": ("adjustbed",)}
@@ -160,6 +182,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "OkinNFrameProfile:okin_motionbed": {"hold": ("row150",)},
     "OkinNFrameProfile:n32_motion_bed": {"hold": ("n32",)},
     "OkinNFrameProfile:resident": {"hold": ("resident-base",)},
+    "OkinNFrameProfile:ultramatic_smart_bed": {"hold": ("ultramatic-smart-bed",)},
     "OkinNFrameProfile:adjustable_lumbar_okin": {"hold": ("lumbar",)},
     "OkinNFrameProfile:adjustable_lumbar_star": {"hold": ("lumbar",)},
     # Customatic: held motor keys OR into one shared mask; a release clears one bit (#516).
@@ -232,6 +255,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "RichmatProfile:richmat_mh_ruf": {"hold": ("ruf", "row061")},
     "RichmatProfile:richmat_mh_tx": {"hold": ("tx", "row061")},
     "RichmatProfile:richmat_mh_wsilver2": {"hold": ("wsilver", "row061")},
+    "RichmatProfile:richmat_mh_nisco": {"hold": ("nisco", "row081")},
+    "RichmatProfile:richmat_mh_mlily_supreme": {"hold": ("mlily-supreme", "row081")},
     "RichmatProfile:richmat_nordic": {"hold": ("rmc2",)},
     "RichmatProfile:richmat_prefix55": {"hold": ("rmc2",)},
     "RichmatProfile:richmat_prefixaa": {"hold": ("rmc2",)},
@@ -243,6 +268,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "SolaceProfile:home_k2": {"hold": ("homekobo",)},
     "SolaceProfile:motion_flex": {"hold": ("motionflex",)},
     "SolaceProfile:woosa": {"hold": ("woosa",)},
+    "SolaceProfile:sophie": {"hold": ("sophie124",)},
     # Standalone controllers. Stream holds need stream evidence; latched holds
     # (#821) a latched row. The generic ``vibradorm`` route keeps finite pulses
     # and ``leggett_lp_legacy`` is not declared yet (see the design note). Svane
@@ -254,6 +280,8 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "galaxy": {"hold": ("galaxy",), "hold_controls": ("galaxy",)},
     "goodvibe": {"hold": ("goodvibe",), "hold_controls": ("goodvibe",)},
     "mlily": {"hold": ("mlily159",), "hold_controls": ("mlily159",)},
+    "okimiki": {"hold": ("okimiki",), "hold_controls": ("okimiki",)},
+    "bobpowerbase": {"hold": ("bob096",), "hold_controls": ("bob096",)},
     # Scoped to the held controls that run the keep mode under the current
     # Hold/Release, memory-arm and head/foot selection (row066, five reports).
     "richmat_classic_apps": {
@@ -315,13 +343,32 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/keeson.py:<module>.BETTERLIVING2": tuple(
         f"KeesonProfile:betterliving2_p{wire}_{layout}" for wire in (1, 2, 3) for layout in (2, 3)),
+    "profiles/ormatek.py:<module>.PROFILES": ("KeesonProfile:ormatek_okin15", "KeesonProfile:ormatek_okin24"),
+    "profiles/personal_comfort.py:<module>.MALOUF": ("PersonalComfortProfile:malouf",),
+    "profiles/personal_comfort.py:<module>": ("PersonalComfortProfile:reverie_v1", "PersonalComfortProfile:reverie_v2"),
+
+    "profiles/linx.py:<module>.LinxProfile": ("LinxProfile:quest", "LinxProfile:orbes"),
+    "profiles/somos.py:<module>.PROFILES": tuple(f"KeesonProfile:somos_{key}" for key in "abcde"),
+    "profiles/suta.py:<module>.SutaProfile": SUTA_STREAM,
+    "profiles/suta.py:<module>.SutaProfile.__post_init__": SUTA_STREAM,
+    "beds/suta/controller.py:<module>.SutaController": SUTA_STREAM,
+    "beds/okimiki/controller.py:<module>.OkimikiController": ("okimiki",),
+    "beds/okimiki/controller.py:<module>.OkimikiController.execution": ("okimiki",),
+    "profiles/cheerssleep.py:<module>.CheersSleepProfile": ("CheersSleepProfile:p1", "CheersSleepProfile:p2"),
+    "profiles/cheerssleep.py:<module>.PROFILES": ("CheersSleepProfile:p1", "CheersSleepProfile:p2"),
+    "profiles/agingplace.py:<module>.PROFILE": ("KeesonProfile:agingplace",),
+    "profiles/onlysnore.py:<module>.OnlySnoreProfile": ("OnlySnoreProfile:onlysnore",),
     "profiles/smart_sleep.py:<module>.PROFILES": ("SmartSleepProfile:p2",),
     "profiles/smart_sleep.py:<module>.SmartSleepProfile": ("SmartSleepProfile:p1", "SmartSleepProfile:p2"),
     "profiles/comfort_enhancement3.py:<module>.profile": tuple(f"OkinNFrameProfile:apex_{i}" for i in range(15)),
     "profiles/symphony_sleep.py:<module>.PROFILES": tuple(f"KeesonProfile:symphony_sleep_{route}" for route in ("box1", "box2", "fallback")),
     **{f"profiles/symphony.py:<module>.{site}": ("SymphonyWordProfile:symphony",)
        for site in ("EXECUTION", "SymphonyProfile", "word_profile")},
+    "profiles/l2motion.py:<module>.L2MotionProfile": ("L2MotionProfile:l2motion",),
     "profiles/bedgear.py:<module>.BedgearProfile": ("BedgearProfile:bedgear",),
+    "profiles/luniosmart.py:<module>.LunioSmartProfile": ("LunioSmartProfile:luniosmart",),
+    "profiles/richmat_legacy.py:<module>.LegacyProfile": tuple(f"LegacyProfile:{key}" for key in legacy_profiles()),
+    "profiles/richmat_legacy.py:<module>.LegacyProfile.__post_init__": tuple(f"LegacyProfile:{key}" for key in legacy_profiles()),
     "profiles/sonicsleep.py:<module>.SonicSleepProfile": ("SonicSleepProfile:one",),
     "profiles/paramount.py:<module>.ParamountProfile": ("ParamountProfile:paramount",),
     **{
@@ -337,15 +384,18 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
     "profiles/okin_nframe.py:<module>.OKIN_MOTIONBED": ("OkinNFrameProfile:okin_motionbed",),
     "profiles/n32_motion_bed.py:<module>.N32": ("OkinNFrameProfile:n32_motion_bed",),
     "profiles/okin_nframe.py:<module>.RESIDENT": ("OkinNFrameProfile:resident",),
+    "profiles/nerum.py:<module>.NerumProfile": tuple(f"NerumProfile:{key}" for key in ("p1", "p2", "p3")),
+    "profiles/ultramatic.py:<module>.PROFILE": ("OkinNFrameProfile:ultramatic_smart_bed",),
     "profiles/mline.py:<module>.MLineProfile": tuple(f"MLineProfile:{key}" for key in ("sleep", "smart", "smartsainuo", "okin", "unknown")),
+    "profiles/mlily_remote.py:<module>.MlilyRemoteProfile": tuple(f"MlilyRemoteProfile:{key}" for key in ("ms200", "ms300", "ms600", "powercool", "ms300_sh")),
     "profiles/luuna.py:<module>.LuunaProfile": tuple(f"LuunaProfile:{key}" for key in ("rise", "risepro", "riseprolight")),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController": ("richmat_classic_apps",),
     "beds/richmat_classic/controller.py:<module>.RichmatClassicController.execution": ("richmat_classic_apps",),
     "beds/eshine_okin/controller.py:<module>.EshineOkinController": _ESHINE,
     "beds/furnimove/controller.py:<module>.FurniMoveController": ("furnimove",),
     "beds/furnimove/controller.py:<module>.FurniMoveController.execution": ("furnimove",),
-    "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe", "mlily", "galaxy"),
-    "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe", "mlily", "galaxy"),
+    "beds/goodvibe/controller.py:<module>.GoodVibeController": ("goodvibe", "mlily", "galaxy", "bobpowerbase"),
+    "beds/goodvibe/controller.py:<module>.GoodVibeController.execution": ("goodvibe", "mlily", "galaxy", "bobpowerbase"),
     "beds/kaidi/app.py:<module>.KaidiAppController": ("isleep",),
     "profiles/comfy.py:<module>.ComfyProfile": ("ComfyProfile:komfyd", "ComfyDSProfile:comfyds"),
     "beds/kaidi/comfy.py:<module>.ComfyController": ("ComfyProfile:komfyd", "ComfyDSProfile:comfyds"),
@@ -395,6 +445,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         "SolaceProfile:home_k2",
         "SolaceProfile:motion_flex",
         "SolaceProfile:woosa",
+        "SolaceProfile:sophie",
     ),
     "profiles/jiecang.py:<module>.DREAMASK": ("JiecangProfile:dreamask",),
     "profiles/jiecang.py:<module>.DREAMHD": ("JiecangProfile:dreamhd",),
@@ -451,6 +502,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         for app in (
             *("best_mattress", "blvd_home", "harmony", "idealbed", "revive"),
             *("americanstar", "bailey2", "ruf", "tx", "wsilver2"),
+            *("nisco", "mlily_supreme"),
         )
     ),
 }
@@ -490,6 +542,12 @@ async def _family_profiles() -> dict[str, ExecutionCapabilities]:
         PROFILES as SYMPHONY_PROFILES,
     )
     profiles.extend(SYMPHONY_PROFILES.values())
+    from custom_components.adjustable_bed.profiles.ormatek import PROFILES as ORMATEK_PROFILES
+    profiles.extend(ORMATEK_PROFILES.values())
+    from custom_components.adjustable_bed.profiles.somos import PROFILES as SOMOS_PROFILES
+
+    profiles.extend(SOMOS_PROFILES.values())
+    profiles.extend(legacy_profiles().values())
     for bed_type in SUPPORTED_BED_TYPES:
         profiles.append(getattr(await _create_controller_for_bed_type(bed_type), "profile", None))
     # Layouts are built at runtime and never stored; reach every one.

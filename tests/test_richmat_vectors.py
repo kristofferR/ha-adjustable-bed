@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
 from custom_components.adjustable_bed.beds.galaxy.catalog import ACTIONS as GALAXY_ACTIONS
@@ -14,12 +17,17 @@ from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     get_lp_legacy_profile,
 )
+from custom_components.adjustable_bed.beds.okimiki import protocol as okimiki
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic
 from custom_components.adjustable_bed.beds.richmat_mh import controller as mh_bed
 from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh
 from custom_components.adjustable_bed.beds.ruf_richmat import controller as ruf_richmat
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles import richmat as profiles
+from custom_components.adjustable_bed.profiles.bobpowerbase import WIRE as BOB_WIRE
+from custom_components.adjustable_bed.profiles.okimiki import CATALOG as OKIMIKI_CATALOG
+from custom_components.adjustable_bed.profiles.okimiki import CONTROLS as OKIMIKI_CONTROLS
+from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI_WIRE
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.richmat_vectors import FROZEN_FRAMES
 
@@ -36,11 +44,44 @@ PROFILES = {
     "eshine": profiles.ESHINE,
     "goodvibe": profiles.GOODVIBE,
     "mlily": profiles.MLILY,
+    "bobpowerbase": BOB_WIRE,
     "galaxy": profiles.GALAXY,
+    "okimiki": OKIMIKI_WIRE,
     "leggett_lp_legacy": profiles.LP_LEGACY,
     **{profile.key: profile for profile in profiles.RICHMAT_MH.values()},
     **{profile.key: profile for profile in profiles.RICHMAT_CLASSIC.values()},
 }
+
+_NISCO_QUERY_IDS = (
+    "N.C1[108]",
+    "N.C1[109]",
+    "N.C1[110]",
+    "N.C1[112]",
+    "N.C1[113]",
+    "N.C1[114]",
+    "N.C1[116]",
+    "N.C1[117]",
+    "N.C1[118]",
+    "N.C1[119]",
+    "N.C1[120]",
+    "N.C1[121]",
+    "N.C1[122]",
+    "N.C1[123]",
+    "N.C1[124]",
+    "N.C1[101]:phase1",
+    "N.C1[101]:phase2",
+    "N.C1[106]",
+    "N.C1[107]",
+)
+
+
+def _nisco_query_addendum() -> dict[str, dict]:
+    path = Path(__file__).parent / "fixtures/richmat_cluster022/nisco_query_addendum.json"
+    rows = json.loads(path.read_text())
+    assert tuple(row["source_id"] for row in rows) == _NISCO_QUERY_IDS
+    assert sum(row["provenance_kind"] == "accepted_finalized_literal" for row in rows) == 15
+    assert sum(row["provenance_kind"] == "accepted_formula_expansion" for row in rows) == 4
+    return {row["source_id"]: row for row in rows}
 
 
 def _decode(data: bytes) -> bytes:
@@ -87,6 +128,9 @@ _RUF_RICHMAT_QUERIES: dict[str, set[bytes]] = {
 
 def _mh_census(app: str) -> set[str]:
     queries = {*mh.INIT_VER0, *mh.INIT_VER1, mh.TX_VERSION, mh.TX_SPEECH, *mh.TX_ALARM_CANCEL}
+    if app in {"nisco", "mlily_supreme"}:
+        # These apps retain the schedule slots without excluded accessory writes.
+        queries.difference_update({mh.TX_AROMA, mh.TX_SPEECH})
     queries |= _RUF_RICHMAT_QUERIES.get(app, set())
     queries |= {mh.TX_START_DETECTION, mh.TX_STOP_DETECTION}
     codes = {
@@ -215,6 +259,39 @@ def _lp_legacy_census() -> set[str]:
 
 
 def _census(key: str) -> set[str]:
+    if key == "okimiki":
+        # Actual four-product controls, STOP/light-off and startup builders.
+        # Parameterized alarms, RGB, time and duration retain their 71 literals.
+        codes = {
+            code
+            for product in OKIMIKI_CATALOG.products.values()
+            for name in product.actions
+            for control in (OKIMIKI_CONTROLS[name],)
+            for code in (control.opcode, control.save)
+            if code is not None
+        } | {0x6E, 0x75}
+        return {
+            codec.function(code, single=single).hex()
+            for code in codes for single in (False, True)
+        } | {
+            codec.function(code, action=action, single=single).hex()
+            for action, code in OKIMIKI_CATALOG.startup for single in (False, True)
+        } | {
+            codec.record(5, 1, 0, (0,)).hex(),
+            *(frame.hex() for frame in okimiki.countdown(0, 0)),
+        }
+    if key == "bobpowerbase":
+        from custom_components.adjustable_bed.profiles.bobpowerbase import ACTIONS, CATALOG
+
+        return {
+            codec.function(code, side, single=raw, action=action.label).hex()
+            for action in ACTIONS.values() for side in (0, 1) for raw in (False, True)
+            for code in ((action.short, action.long) if action.long else (action.short,))
+        } | {
+            codec.function(code, single=raw, action=name).hex()
+            for name, code in (*CATALOG.startup, ("deviceFunctionItemStop", 0x6E))
+            for raw in (False, True)
+        }
     if key == "mlily":
         from custom_components.adjustable_bed.profiles.mlily import catalog
 
@@ -302,7 +379,22 @@ def test_every_profile_has_vectors() -> None:
 @pytest.mark.parametrize("key", sorted(PROFILES))
 def test_profile_sends_only_frozen_frames(key: str) -> None:
     census = _census(key)
-    assert census <= FROZEN_FRAMES[key]
+    expected = FROZEN_FRAMES[key]
+    if key == "richmat_mh_nisco":
+        # Separate15-literal/4-formula addendum; original frozen vectors unchanged.
+        expected |= frozenset(row["expected_hex"] for row in _nisco_query_addendum().values())
+    assert census <= expected
     if key in FIXED_ROUTES or key == "leggett_lp_legacy":
         # The pre-v5 controller's frames, or the LP catalog's, are the complete vector set.
         assert census == FROZEN_FRAMES[key]
+
+
+@pytest.mark.parametrize("source_id", _NISCO_QUERY_IDS)
+def test_nisco_query_addendum_round_trips_through_codec(source_id: str) -> None:
+    row = _nisco_query_addendum()[source_id]
+    expected = bytes.fromhex(row["expected_hex"])
+    if row["provenance_kind"] == "accepted_formula_expansion":
+        assert row["literal_hex"] is None  # Formula expectation, not artifact literal.
+    else:
+        assert row["literal_hex"] == row["expected_hex"]
+    assert _decode(expected) == expected

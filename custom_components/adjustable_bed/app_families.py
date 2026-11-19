@@ -50,8 +50,10 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_FFE,
@@ -128,6 +130,7 @@ from .const import (
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
@@ -156,6 +159,7 @@ from .const import (
     RICHMAT_REMOTES,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
+    SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
     SVANE_VARIANT_JMC,
@@ -945,6 +949,7 @@ KEESON_FAMILY: Final = AppFamily(
             step="keeson_app",
             group=_keeson_group(
                 (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES),
+                (BED_TYPE_KEESON, KEESON_VARIANT_COMFORTFURNITURE),
                 (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR),
                 (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES),
                 (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA),
@@ -968,6 +973,7 @@ KEESON_FAMILY: Final = AppFamily(
             group=_keeson_group(
                 (BED_TYPE_KEESON, KEESON_VARIANT_PURPLE),
                 (BED_TYPE_KEESON, KEESON_VARIANT_BASE),
+                ("linx", None),
                 (BED_TYPE_KEESON, KEESON_VARIANT_JSON),
             ),
         ),
@@ -988,10 +994,10 @@ KEESON_FAMILY: Final = AppFamily(
 # --- Solace -----------------------------------------------------------------
 
 
-def _woosa_row(visit: Visit) -> str | None:
-    """The Woosa Sleep row already answered the question."""
-    if visit.first and not visit.guided and visit.incoming[1] == SOLACE_VARIANT_WOOSA:
-        return "woosa"
+def _explicit_solace_row(visit: Visit) -> str | None:
+    """An explicit app row already answered the family question."""
+    if visit.first and not visit.guided:
+        return {SOLACE_VARIANT_WOOSA: "woosa", SOLACE_VARIANT_SOPHIE: "sophie"}.get(visit.incoming[1])
     return None
 
 
@@ -1003,16 +1009,17 @@ SOLACE_FAMILY: Final = AppFamily(
     step="solace_family",
     row=BED_TYPE_SOLACE,
     name="Solace",
-    apps="HomeKobo, Sealy MotionFlex and Sweet Night apps",
+    apps="HomeKobo, Sealy MotionFlex, Sweet Night and Sophie apps",
     answers={
         "name_route": Answer(BED_TYPE_SOLACE, VARIANT_AUTO),
+        "sophie": Answer(BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE),
         # Say what Woosa Sleep controls differ before choosing it.
         "woosa": Answer(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA, step="solace_woosa"),
         "motion_bed": Answer(BED_TYPE_MOTION_BED, member=False),
         "bedsense": Answer(BED_TYPE_BEDSENSE, member=False),
     },
     offers_keep=keep_always,
-    preselect=_woosa_row,
+    preselect=_explicit_solace_row,
     placeholders=_current,
     guided=True,
     route_keys=(CONF_PROTOCOL_VARIANT,),
@@ -1382,7 +1389,7 @@ def _richmat_answers(visit: Visit) -> Mapping[str, Answer]:
     name = info.name if info is not None else None
     answers: dict[str, Answer] = {}
     for key, answer in RICHMAT_FAMILY.answers.items():
-        if answer.bed_type in RICHMAT_MH_APPS:
+        if answer.bed_type in RICHMAT_MH_APPS or answer.bed_type in ("sleep_evolution", "wsilver_legacy"):
             answer = replace(
                 answer, data={**answer.data, **_name_rule_setup_name(answer.bed_type, name)}
             )
@@ -1425,8 +1432,13 @@ RICHMAT_FAMILY: Final = AppFamily(
         "richmat_420": Answer("richmat_app"),
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
         "luuna": Answer("luuna", data=_NO_RMCONTROL),
+        "luniosmart": Answer("luniosmart", data=_NO_RMCONTROL),
+        "sleep_evolution": Answer("sleep_evolution", data=_NO_RMCONTROL),
+        "wsilver_legacy": Answer("wsilver_legacy", data=_NO_RMCONTROL),
         "sonicsleep": Answer("sonicsleep", data=_NO_RMCONTROL),
         "mlily": Answer(BED_TYPE_MLILY, data=_NO_RMCONTROL),
+        "okimiki": Answer(BED_TYPE_OKIMIKI, data=_NO_RMCONTROL),
+        "mlily_remote": Answer(BED_TYPE_MLILY_REMOTE, data=_NO_RMCONTROL),
         **{app: Answer(bed_type, data=_NO_RMCONTROL) for bed_type, app in RICHMAT_MH_APPS.items()},
         # The classic apps keep their own declared questions.
         **{
@@ -1435,7 +1447,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", BED_TYPE_MLILY},
+    routes=RICHMAT_MH_BED_TYPES | {"luuna", "sonicsleep", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI},
     routes_show_row=False,
     lists_members=True,
     offers_keep=keep_never,

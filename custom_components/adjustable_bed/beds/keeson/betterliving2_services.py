@@ -136,6 +136,9 @@ async def _execute_selection(
                     expected_pair_generations=admission.expected_pair_generations,
                     expected_stop_epochs=admission.expected_stop_epochs,
                 )
+                if selection.invalid:
+                    selection.check()
+                selection.completed(parent, side)
             else:
                 await child_operation(parent)
     except BaseException:

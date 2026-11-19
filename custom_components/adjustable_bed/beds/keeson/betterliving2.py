@@ -123,6 +123,7 @@ class BetterLiving2Controller(KeesonController):
         self._notify_stop: asyncio.Task[None] | None = None
         self._pending_alarm: bytes | None = None
         self._active_cancel: asyncio.Event | None = None
+        self._startup_cancel: asyncio.Event | None = None
         self._receive_kind = "alarm"
         self._view, self._saved = AlarmView(), AlarmView()
         self._observed_alarm = False
@@ -343,6 +344,7 @@ class BetterLiving2Controller(KeesonController):
 
     async def async_discover_capabilities(self) -> None:
         self.on_disconnect()
+        self._startup_cancel = asyncio.Event()
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("BetterLiving2 is disconnected")
@@ -394,14 +396,25 @@ class BetterLiving2Controller(KeesonController):
         cleanup: bool = False,
         external_cancel: asyncio.Event | None = None,
     ) -> None:
+        startup_cancel = None if cleanup else self._startup_cancel
+
+        def write_interrupted() -> bool:
+            return (
+                cancel.is_set()
+                or external_cancel is not None
+                and external_cancel.is_set()
+                or startup_cancel is not None
+                and startup_cancel.is_set()
+                or deadline is not None
+                and asyncio.get_running_loop().time() >= deadline
+            )
+
         async with asyncio.timeout(LOCK_TIMEOUT):
             async with self._wire_lock:
                 self._live(link)
                 if serial is not None and serial != self._serial:
                     raise ConnectionError("BetterLiving2 command owner changed")
-                if cancel.is_set() or external_cancel is not None and external_cancel.is_set():
-                    return
-                if deadline is not None and asyncio.get_running_loop().time() >= deadline:
+                if write_interrupted():
                     return
                 selection = current_selection()
                 if selection is not None and not cleanup:
@@ -409,16 +422,14 @@ class BetterLiving2Controller(KeesonController):
 
                 async def write() -> None:
                     self._live(link)
-                    if (
-                        cancel.is_set()
-                        or (external_cancel is not None and external_cancel.is_set())
-                        or (deadline is not None and asyncio.get_running_loop().time() >= deadline)
-                    ):
+                    if write_interrupted():
                         return
                     if serial is not None and serial != self._serial:
                         raise ConnectionError("BetterLiving2 command owner changed")
                     if selection is not None and not cleanup:
                         selection.check(self)
+                    if write_interrupted():
+                        return
                     if on_write is not None:
                         on_write()
                     self._record_command_trace(
@@ -994,31 +1005,48 @@ class BetterLiving2Controller(KeesonController):
             selection.releasing(self, reason)
 
     async def async_on_connect(self, session: ControllerSession) -> None:
-        await session.async_start_notify()
-        link = self._live()
-        self._manufacturer_text = None
-        self._manufacturer_hint = None
-        if link.manufacturer is not None:
-            try:
-                async with asyncio.timeout(WRITE_TIMEOUT):
-                    value = await link.client.read_gatt_char(link.manufacturer)
+        startup_cancel = self._startup_cancel
+        selection = current_selection()
+        try:
+            await session.async_start_notify()
+            link = self._live()
+            if selection is not None:
+                selection.check(self)
+            if startup_cancel is not None and startup_cancel.is_set():
+                return
+            self._manufacturer_text = None
+            self._manufacturer_hint = None
+            if link.manufacturer is not None:
+                try:
+                    async with asyncio.timeout(WRITE_TIMEOUT):
+                        value = await link.client.read_gatt_char(link.manufacturer)
+                    self._live(link)
+                    self._manufacturer_hint = app.manufacturer_route(bytes(value))
+                    self._manufacturer_text = (
+                        bytes(value).decode("utf-8", errors="replace").replace("\0", "").strip()
+                    )
+                except BleakError, TimeoutError:
+                    # Explicit route/endpoint validation does not inherit Android's
+                    # missing manufacturer callback readiness stall or rebinding race.
+                    self._live(link)
+            session.store_device_info(self._manufacturer_text, None)
+            await self.sync_clock()
+            delay_ms = 0 if self._has_connected else app.SETUP_QUERY_DELAY_MS
+            queried = False
+            if (startup_cancel is None or not startup_cancel.is_set()) and not await pause(
+                delay_ms / 1000, self._cancel
+            ):
                 self._live(link)
-                self._manufacturer_hint = app.manufacturer_route(bytes(value))
-                self._manufacturer_text = (
-                    bytes(value).decode("utf-8", errors="replace").replace("\0", "").strip()
-                )
-            except BleakError, TimeoutError:
-                # Explicit route/endpoint validation does not inherit Android's
-                # missing manufacturer callback readiness stall or rebinding race.
-                self._live(link)
-        session.store_device_info(self._manufacturer_text, None)
-        await self.sync_clock()
-        delay_ms = 0 if self._has_connected else app.SETUP_QUERY_DELAY_MS
-        if not await pause(delay_ms / 1000, self._cancel):
-            self._live(link)
-            await self.query_alarm()
-            self._has_connected = True
-            self._publish_alarm()
+                await self.query_alarm()
+                queried = True
+            if selection is not None:
+                selection.check(self)
+            if queried and (startup_cancel is None or not startup_cancel.is_set()):
+                self._has_connected = True
+                self._publish_alarm()
+        finally:
+            if self._startup_cancel is startup_cancel:
+                self._startup_cancel = None
 
 
 def require(controller: BedController) -> BetterLiving2Controller:

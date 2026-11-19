@@ -47,7 +47,9 @@ from .const import (
     BED_TYPE_KOMFYD,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_RICHMAT_APP,
     BED_TYPE_RICHMAT_APP_SLEEP,
@@ -55,6 +57,7 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SOMOS,
     BED_TYPE_SYMPHONY,
     BED_TYPE_YAMADA,
     CB24_BED_SELECTION_A,
@@ -107,8 +110,11 @@ from .const import (
     VARIANT_AUTO,
     VMATBASIC_CONFIG_KEYS,
 )
+from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
+from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 
 # Explicit protocol variants whose entity-gating capabilities depend only on stored
 # config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
@@ -118,11 +124,15 @@ from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    BED_TYPE_SOMOS: frozenset({"a", "b", "c", "d", "e"}),
     BED_TYPE_COMFORTBASE: frozenset(COMFORTBASE_PRODUCTS),
     BED_TYPE_YAMADA: frozenset({"p1", "p2"}),
     BED_TYPE_BETTERLIVING2: frozenset({"p1", "p2", "p3"}),
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
     BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
+    BED_TYPE_OKIMIKI: frozenset(OKIMIKI_PROFILES),
+    "bobpowerbase": frozenset(BOB_PROFILES),
+    BED_TYPE_MLILY_REMOTE: frozenset(MLILY_REMOTE_PROFILES),
     BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
     BED_TYPE_RICHMAT_APP: frozenset(RICHMAT_APP_PRODUCTS),
     BED_TYPE_RICHMAT_APP_SLEEP: frozenset(RICHMAT_SLEEP_CHOICES),
@@ -196,7 +206,11 @@ KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
+        "cheerssleep",
+        "ultramatic_smart_bed",
+        "bobpowerbase",
         "bedtech",
+        BED_TYPE_MLILY_REMOTE,
         BED_TYPE_ERGOMOTION,
         BED_TYPE_ERGOMOTION_4,
         BED_TYPE_KEESON,
@@ -227,8 +241,14 @@ def supports_single_address_pairing(
     ble_device_name: str | None = None,
 ) -> bool:
     """Return whether a bed can expose the Phase 3 single-address surface."""
+    if bed_type == "bobpowerbase":
+        return protocol_variant in ("elite_sh", "ultra_sh")
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == "cheerssleep":
+        return str(product_type) in {"51", "52", "140", "141", "172"}
+    if bed_type == BED_TYPE_MLILY_REMOTE:
+        return product_type == "double"
     if bed_type == BED_TYPE_SYMPHONY:
         return str(product_type) in {"10", "15"}
     if bed_type in (BED_TYPE_KOMFYD, BED_TYPE_COMFYDS):
@@ -704,6 +724,13 @@ def build_pair_entry_data(
     pair's setup re-homes that entry's registry rows in place instead of letting
     the platforms recreate them (preserving per-side history/customizations).
     """
+    if any(item.get(CONF_BED_TYPE) == "personal_comfort" for item in (left_data, right_data)) and any(
+        item.get(CONF_BED_TYPE) != "personal_comfort"
+        or item.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}
+        or item.get(CONF_PRODUCT_TYPE) == "none"
+        for item in (left_data, right_data)
+    ):
+        raise ValueError("Only configured Personal Comfort bases can be combined")
     left_addr = left_data[CONF_ADDRESS]
     right_addr = right_data[CONF_ADDRESS]
     left_entry_id, left_unique_id = left_origin or (None, None)
@@ -807,6 +834,9 @@ def build_single_address_pair_entry_data(
     elif bed_type == BED_TYPE_OKIN_CB24:
         left[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_A
         right[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_B
+    elif bed_type == "ultramatic_smart_bed":
+        left[CONF_CB24_BED_SELECTION] = 1
+        right[CONF_CB24_BED_SELECTION] = 2
     elif bed_type == BED_TYPE_SLEEP_NUMBER:
         left[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_LEFT
         right[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_RIGHT

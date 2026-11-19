@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .bf_cherish.controller import BfCherishController as BfCherishController
     from .casper_base.controller import CasperBaseController as CasperBaseController
     from .casper_sleep.controller import CasperSleepController as CasperSleepController
+    from .cheerssleep.controller import CheersSleepController as CheersSleepController
     from .comfort_enhancement3.controller import (
         ComfortEnhancement3Controller as ComfortEnhancement3Controller,
     )
@@ -58,9 +59,13 @@ if TYPE_CHECKING:
     from .kaidi.comfy import ComfyController as ComfyController
     from .kaidi.controller import KaidiController as KaidiController
     from .kaidi.rize import RizeController as RizeController
+    from .keeson.agingplace import AgingPlaceController as AgingPlaceController
     from .keeson.betterliving2 import BetterLiving2Controller as BetterLiving2Controller
+    from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.jalon import JalonController as JalonController
+    from .keeson.ormatek import OrmatekController as OrmatekController
+    from .keeson.somos import SomosController as SomosController
     from .keeson.symphony_sleep import SymphonySleepController as SymphonySleepController
     from .keeson.yamada import YamadaController as YamadaController
     from .leggett.gen2 import LeggettGen2Controller as LeggettGen2Controller
@@ -70,15 +75,20 @@ if TYPE_CHECKING:
     from .limoss.controller import LimossController as LimossController
     from .limoss.remote import LimossRemoteController as LimossRemoteController
     from .linak.controller import LinakController as LinakController
+    from .linx.controller import LinxController as LinxController
     from .logicdata.air_pump import LogicdataAirPumpController as LogicdataAirPumpController
     from .logicdata.app import LogicdataAppController as LogicdataAppController
     from .logicdata.controller import LogicdataController as LogicdataController
+    from .luniosmart.controller import LunioSmartController as LunioSmartController
     from .malouf.app import MaloufAppController as MaloufAppController
+    from .mlily_remote.controller import MlilyRemoteController as MlilyRemoteController
     from .motion_bed.controller import MotionBedController as MotionBedController
     from .motomotion.controller import MotoMotionController as MotoMotionController
     from .motosleep import MotoSleepController as MotoSleepController
     from .n32_motion_bed.controller import N32MotionBedController as N32MotionBedController
+    from .nerum.controller import NerumController as NerumController
     from .octo.controller import OctoController as OctoController
+    from .okimiki.controller import OkimikiController as OkimikiController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
     from .okin_cb24 import OkinCB24Controller as OkinCB24Controller
     from .okin_cb35 import OkinCB35Controller as OkinCB35Controller
@@ -91,8 +101,11 @@ if TYPE_CHECKING:
     from .okin_rf_eco_bt import OkinRfEcoBtController as OkinRfEcoBtController
     from .okin_uuid.controller import OkinUuidController as OkinUuidController
     from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
+    from .onlysnore.controller import OnlySnoreController as OnlySnoreController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
     from .paramount.controller import ParamountController as ParamountController
+    from .personal_comfort.air import PersonalComfortAir as PersonalComfortAir
+    from .personal_comfort.controller import PersonalComfortBase as PersonalComfortBase
     from .remacro.controller import RemacroController as RemacroController
     from .resident.controller import ResidentController as ResidentController
     from .reverie.controller import ReverieController as ReverieController
@@ -100,6 +113,7 @@ if TYPE_CHECKING:
     from .richmat.controller import RichmatController as RichmatController
     from .richmat_app.controller import RichmatAppController as RichmatAppController
     from .richmat_classic.controller import RichmatClassicController as RichmatClassicController
+    from .richmat_legacy.controller import RichmatLegacyController as RichmatLegacyController
     from .richmat_mh.controller import RichmatMhController as RichmatMhController
     from .rize_home.controller import RizeHomeController as RizeHomeController
     from .rondure import RondureController as RondureController
@@ -127,12 +141,13 @@ if TYPE_CHECKING:
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
     from .starcode.m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
     from .starcode.star_elevate import StarElevateController as StarElevateController
-    from .suta import SutaController as SutaController
+    from .suta.controller import SutaController as SutaController
     from .svane.controller import SvaneController as SvaneController
     from .symphony.controller import SymphonyController as SymphonyController
     from .tempur_au import TempurAUController as TempurAUController
     from .tempur_curve import TempurCurveController as TempurCurveController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
+    from .ultramatic.controller import UltramaticController as UltramaticController
     from .vibradorm.app import VibradormAppController as VibradormAppController
     from .vibradorm.controller import VibradormController as VibradormController
     from .vmatbasic.controller import VMatBasicController as VMatBasicController
@@ -142,8 +157,13 @@ _EXPORT_MODULES = {
     "RizeHomeController": "rize_home.controller",
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
     "N32MotionBedController": "n32_motion_bed.controller",
+    "LunioSmartController": "luniosmart.controller",
     "SonicSleepController": "sonicsleep.controller",
+    "MlilyRemoteController": "mlily_remote.controller",
     "ResidentController": "resident.controller",
+    "NerumController": "nerum.controller",
+    "CheersSleepController": "cheerssleep.controller",
+    "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",
     "SymphonyController": "symphony.controller",
@@ -167,6 +187,7 @@ _EXPORT_MODULES = {
     'TempurAUController': 'tempur_au',
     "CasperBaseController": "casper_base.controller",
     "HushBaseController": "hush_base.controller",
+    "RichmatLegacyController": "richmat_legacy.controller",
     "LuunaController": "luuna.controller",
     "MLineController": "mline.controller",
     "HushSleepController": "hush_sleep.controller",
@@ -175,6 +196,7 @@ _EXPORT_MODULES = {
     "EshineController": "eshine.controller",
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
+    "SomosController": ("keeson.somos", "SomosController"),
     "YamadaController": ("keeson.yamada", "YamadaController"),
     "BetterLiving2Controller": ("keeson.betterliving2", "BetterLiving2Controller"),
     "GlideawayMotionController": "glideaway_motion.controller",
@@ -189,6 +211,8 @@ _EXPORT_MODULES = {
     "SimmonsController": "simmons.controller",
     "AdjustaMattressController": "adjustamattress.controller",
     "AdjustableLumbarController": "adjustable_lumbar",
+    "PersonalComfortBase": "personal_comfort.controller",
+    "PersonalComfortAir": "personal_comfort.air",
     "ParamountController": "paramount.controller",
     "AdjustableBedAppController": "adjustable_lumbar",
     "BedJetPowerLayerController": "bedjet_powerlayer",
@@ -209,8 +233,11 @@ _EXPORT_MODULES = {
     "RizeController": "kaidi.rize",
     "ComfyController": "kaidi.comfy",
     "KaidiController": "kaidi.controller",
+    "LinxController": "linx.controller",
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
     "KeesonController": "keeson.controller",
+    "OrmatekController": "keeson.ormatek",
+    "AgingPlaceController": "keeson.agingplace",
     "LeggettGen2Controller": "leggett.gen2",
     "LeggettLpLegacyController": "leggett.lp_legacy",
     "LeggettOkinController": "leggett.okin",
@@ -226,6 +253,7 @@ _EXPORT_MODULES = {
     "BedgearController": "bedgear.controller",
     "MotoSleepController": "motosleep",
     "OctoController": "octo.controller",
+    "OkimikiController": "okimiki.controller",
     "Okin7ByteController": "okin_7byte",
     "OkinCB24Controller": "okin_cb24",
     "OkinCB35Controller": "okin_cb35",
@@ -238,6 +266,7 @@ _EXPORT_MODULES = {
     "OkinOreController": "okin_ore",
     "OkinRfEcoBtController": "okin_rf_eco_bt",
     "OkinUuidController": "okin_uuid.controller",
+    "ComfortFurnitureController": "keeson.comfortfurniture",
     "OreComfortBedController": "ore_comfort_bed",
     "RemacroController": "remacro.controller",
     "ReverieController": "reverie.controller",
@@ -254,7 +283,7 @@ _EXPORT_MODULES = {
     "SleepysBox25LegacyController": "sleepys.box25",
     "SolaceController": "solace.controller",
     "StarElevateController": "starcode.star_elevate",
-    "SutaController": "suta",
+    "SutaController": "suta.controller",
     "SvaneController": "svane.controller",
     "TiMOTIONAhfController": "timotion_ahf",
     "VibradormController": "vibradorm.controller",
@@ -293,9 +322,11 @@ __all__ = [
     "OkinRfEcoBtController",
     "OkinUuidController",
     "Okin7ByteController",
+    "ComfortFurnitureController",
     "OreComfortBedController",
     "InnovaController",
     "OkinMotionBedController",
+    "UltramaticController",
     "OkinNordicController",
     "LeggettGen2Controller",
     "LeggettLpLegacyController",
@@ -310,16 +341,19 @@ __all__ = [
     "JensenLinonController",
     "KaidiController",
     "KeesonController",
+    "OrmatekController",
     "JalonBedController",
     "SymphonyController",
     "LimossController",
     "LinakController",
+    "LinxController",
     "LogicdataController",
     "LogicdataAppController",
     "LogicdataAirPumpController",
     "BedgearController",
     "MotoSleepController",
     "OctoController",
+    "OkimikiController",
     "RemacroController",
     "ReverieController",
     "ReverieNightstandController",

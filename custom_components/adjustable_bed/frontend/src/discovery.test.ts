@@ -36,6 +36,50 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   });
 }
 
+test("Ultramatic SmartBed publishes five neutral motors and its app controls", () => {
+  const motors = ["head", "foot", "headtilt", "lumbar", "hips"];
+  const hass = hassWith([
+    ...motors.map((motor) => entry(`cover.${motor}`, `ultramatic_${motor}`)),
+    entry("button.light", "ultramatic_light"),
+    entry("button.massage", "massage_all_toggle"),
+    entry("button.timer", "ultramatic_timerswitch"),
+    entry("button.save", "ultramatic_save_zg"),
+    entry("button.reset", "ultramatic_reset_memory"),
+    entry("button.clock", "ultramatic_clock"),
+    entry("button.query", "ultramatic_query_alarm"),
+    // Release plumbing is hidden by default; held controls still find it.
+    { ...entry("button.release", "ultramatic_release"), hidden: true },
+    entry("sensor.alarm", "ultramatic_ab_alarm"),
+    entry("sensor.timer", "ultramatic_ab_timer"),
+  ]);
+  for (const motor of motors) {
+    hass.states[`cover.${motor}`] = {
+      entity_id: `cover.${motor}`, state: "unknown", last_changed: "", last_updated: "",
+      attributes: {
+        held_control_up: `${motor.toUpperCase()}UP`, held_control_down: `${motor.toUpperCase()}DOWN`,
+        held_stop_scope: "side",
+        hold_start_delay_ms: 0, hold_release_delay_ms: 0,
+        hold_release_button_key: "ultramatic_release",
+      },
+    };
+  }
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors.map((motor) => motor.key).sort())
+    .toEqual(motors.map((motor) => `ultramatic_${motor}`).sort());
+  for (const motor of bed.motors) {
+    expect(motor.releaseButton).toBe("button.release");
+    expect(motor.heldControls?.up?.releaseDelayMs).toBe(0);
+  }
+  expect(bed.lights.buttons).toEqual(["button.light"]);
+  expect(bed.presets).toEqual([]);
+  // Saves are never quick presets; they sit in the save role.
+  expect(bed.presetSaves).toEqual(["button.reset", "button.save"]);
+  expect(bed.utility).toEqual(["button.clock", "button.query"]);
+  expect(bed.utilityStates).toEqual(["sensor.alarm"]);
+  expect(bed.massage.buttons).toEqual(["button.massage", "button.timer"]);
+  expect(bed.massage.states).toEqual(["sensor.timer"]);
+});
+
 test("OKIN Motion Bed keeps neutral middle holds and its bed light switch reachable", () => {
   const hass = hassWith([
     entry("cover.middle", "motionbed_middle"),
@@ -67,6 +111,26 @@ test("OKIN Motion Bed keeps neutral middle holds and its bed light switch reacha
   // Without a floor light, the app light switch is the main light.
   expect(bed.lights.switch).toBe("switch.light");
   expect(bed.lights.switches).toBeUndefined();
+});
+
+test("Snore Monitor keeps presets, massage cycles and bed settings reachable", () => {
+  const hass = hassWith([
+    entry("cover.snore_back", "smart_sleep_head"),
+    entry("button.snore_reading", "preset_reading"),
+    entry("button.snore_save", "onlysnore_save_reading"),
+    entry("button.snore_wave", "massage_mode_step"),
+    entry("button.snore_timer", "onlysnore_massage_timer_next"),
+    entry("select.snore_intervention", "onlysnore_intervention"),
+    entry("button.snore_memory", "preset_memory_1"),
+    entry("button.snore_program", "program_memory_1"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors).toHaveLength(1);
+  expect(bed.presets).toContain("button.snore_reading");
+  expect(bed.presetSaves).toContain("button.snore_save");
+  expect(bed.memory).toEqual([{ slot: 1, goto: "button.snore_memory", save: "button.snore_program" }]);
+  expect(bed.massage.buttons).toContain("button.snore_wave");
+  expect(bed.utilitySelects).toContain("select.snore_intervention");
 });
 
 test("GM product controls and raw session state stay with their physical device", () => {

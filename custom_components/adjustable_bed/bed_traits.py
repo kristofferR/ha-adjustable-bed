@@ -21,6 +21,7 @@ from .const import (
     BED_TYPE_BEDSENSE,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_BF,
+    BED_TYPE_BOBPOWERBASE,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CASPER_SLEEP_MM,
     BED_TYPE_CASPER_SLEEP_SXB,
@@ -66,15 +67,18 @@ from .const import (
     BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
+    BED_TYPE_LINX,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
@@ -103,6 +107,7 @@ from .const import (
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_SOMOS,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
@@ -125,7 +130,9 @@ from .const import (
     CONNECTION_MODE_IDLE,
     CONNECTION_MODE_RELEASE,
     KEESON_LAYOUT_APP_BED_TYPES,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_ERGOMOTION,
+    KEESON_VARIANT_ORE_ULTRAMATIC,
     KEESON_VARIANT_SINO,
     ORE_COMFORT_BED_VARIANTS,
     REVERIE_BACK_MAX_ANGLE,
@@ -204,9 +211,15 @@ _REVERIE_MAX_ANGLES: Final = {"back": REVERIE_BACK_MAX_ANGLE, "head": REVERIE_BA
 # Bed types absent here have no static traits (BedTraits()). The base record of
 # a bed type with variants describes its automatic route; bed_traits() refines it.
 _BED_TRAITS: Final[dict[str, BedTraits]] = {
+    "agingplace": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "bedgear": BedTraits(no_angle_feedback=True, connection_scoped_state=True),
+    "l2motion": BedTraits(no_angle_feedback=True, connection_scoped_state=True),
     "paramount": BedTraits(position_feedback=True, connection_scoped_state=True, max_angles={"head": 75, "back": 75, "legs": 30, "feet": 30}),
+    "ormatek": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "nerum": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "cheerssleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "smart_sleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "onlysnore": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "smart_comfort_synargy": _NO_ANGLES_SCOPED,
     "smart_comfort_synergy": _NO_ANGLES_SCOPED,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _NO_ANGLES),
@@ -219,6 +232,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_COMFORT_ENHANCEMENT3: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_N32_MOTION_BED: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "ultramatic_smart_bed": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
     # Measured against the BedJet LCD remote's own degree readout.
     BED_TYPE_BEDJET_POWERLAYER: BedTraits(
@@ -233,6 +247,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_BEDSENSE: _NO_ANGLES,
     BED_TYPE_BF: _NO_ANGLES,
     BED_TYPE_JALON_BED: _NO_ANGLES_SCOPED,
+    BED_TYPE_LINX: replace(_NO_ANGLES_SCOPED, connection_timeout=10.0, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY_SLEEP: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, connection_timeout=8.0),
     BED_TYPE_YAMADA: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
@@ -245,6 +260,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: _NO_ANGLES,
     # Preset repeat-tap and massage cycles depend on connection-local state.
     BED_TYPE_COMFORT_ENHANCEMENTS: _NO_ANGLES_SCOPED,
+    BED_TYPE_SOMOS: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_COMFORTBASE: _NO_ANGLES_SCOPED,
     BED_TYPE_COMFORT_MOTION: _SCOPED,
     BED_TYPE_CUSTOMATIC_CLARITY: _NO_ANGLES,
@@ -269,12 +285,19 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_GALAXY: _NO_ANGLES,
     BED_TYPE_GOODVIBE: _NO_ANGLES,
     BED_TYPE_MLILY: _NO_ANGLES,
+    BED_TYPE_OKIMIKI: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    BED_TYPE_BOBPOWERBASE: replace(_NO_ANGLES, connection_scoped_state=True, single_address_native_both=False, connection_timeout=5),
+    BED_TYPE_MLILY_REMOTE: replace(_NO_ANGLES, connection_scoped_state=True, single_address_native_both=False),
     BED_TYPE_HJBED: _NO_ANGLES,
     BED_TYPE_RICHMAT_APP: _NO_ANGLES,
     BED_TYPE_RICHMAT_APP_SLEEP: _NO_ANGLES,
     BED_TYPE_HUSH_BASE: _NO_ANGLES,
     "luuna": _NO_ANGLES_SCOPED,
+    "personal_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "mline": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "luniosmart": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "sleep_evolution": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "wsilver_legacy": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "sonicsleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "hush_remote": _NO_ANGLES,
     BED_TYPE_HUSH_SLEEP_MM: _NO_ANGLES,
@@ -379,7 +402,7 @@ _REVERIE_MODEL_BED_TYPES: Final = frozenset(
 )
 # Keeson routes that may resolve to a connection-scoped controller before connecting.
 _KEESON_SCOPED_VARIANTS: Final = frozenset(
-    {None, "", VARIANT_AUTO, KEESON_VARIANT_ERGOMOTION, KEESON_VARIANT_SINO}
+    {None, "", VARIANT_AUTO, KEESON_VARIANT_ERGOMOTION, KEESON_VARIANT_SINO, KEESON_VARIANT_ORE_ULTRAMATIC}
 )
 _GOODVIBE_SLEEP_SENSORS: Final = frozenset({"sleep_rm", "sleep_hj"})
 
@@ -390,6 +413,10 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return _NONE
     resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
     traits = _BED_TRAITS.get(resolved, _NONE)
+    if resolved == "solace" and protocol_variant == "sophie":
+        return replace(traits, no_angle_feedback=True, connection_scoped_state=True, owns_device_info_reads=True)
+    if resolved in ("richmat_nisco", "richmat_mlily_supreme") and protocol_variant == "sleep":
+        return replace(traits, persistent_connection=True)
     if resolved == "bedtech" and protocol_variant not in (None, "", VARIANT_AUTO):
         return _NO_ANGLES
     if resolved in _REVERIE_MODEL_BED_TYPES:
@@ -407,7 +434,8 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
             traits,
             position_feedback=protocol_variant == KEESON_VARIANT_ERGOMOTION,
             percentage_positions=protocol_variant not in ORE_COMFORT_BED_VARIANTS,
-            connection_scoped_state=protocol_variant in _KEESON_SCOPED_VARIANTS,
+            connection_scoped_state=protocol_variant in _KEESON_SCOPED_VARIANTS or protocol_variant == KEESON_VARIANT_COMFORTFURNITURE,
+            no_angle_feedback=traits.no_angle_feedback or protocol_variant == KEESON_VARIANT_COMFORTFURNITURE,
         )
     if resolved in (BED_TYPE_GOODVIBE, BED_TYPE_MLILY):
         return replace(traits, connection_scoped_state=protocol_variant in _GOODVIBE_SLEEP_SENSORS)
@@ -471,7 +499,7 @@ def store_read_positions(data: dict[str, object], read: bool | None = None) -> N
 MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
     {
      "adjustable_bed", "adjustable_lumbar", "adjustamattress", "bailey_bed_control",
-     "bedgear", "bedjet_powerlayer", "bedsense", "bf", "casper_base", "casper_remote",
+     "l2motion", "bedgear", "bedjet_powerlayer", "bedsense", "bf", "casper_base", "casper_remote",
      "casper_sleep_mm", "casper_sleep_sxb", "cherish", "comfort_enhancement3",
      "comfortbase", "coolbase", "customatic_clarity", "customatic_jeromes",
      "customatic_remedy", "customatic_zseries", "diagnostic", "doublesleep", "ergo_slim",
@@ -480,7 +508,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "hjbed", "hush_base", "hush_remote", "hush_sleep_mm", "hush_sleep_sxb", "jalon",
      "leggett_lp_legacy", "logicdata_air_pump", "luuna", "malouf_app", "mlily",
      "motion_bed", "motomotion", "motosleep", "octo", "okin_motionbed", "okin_rf_eco_bt",
-     "omazz_adjusto_iii", "paramount", "qplus_app", "remacro", "resident", "reverie",
+     "omazz_adjusto_iii", "personal_comfort", "paramount", "qplus_app", "remacro", "resident", "reverie",
      "reverie_nightstand", "richmat_americanstar", "richmat_app", "richmat_app_sleep",
      "richmat_best_mattress", "richmat_blvd_home", "richmat_classic_apps",
      "richmat_harmony", "richmat_idealbed", "richmat_revive", "richmat_sleep_receiver",
@@ -490,7 +518,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "smart_comfort_synergy", "solace", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
-     "wsilver_products", "yamada",
+     "wsilver_products", "yamada", "ormatek",
     }
 )
 

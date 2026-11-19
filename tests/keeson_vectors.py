@@ -25,6 +25,9 @@ from pathlib import Path
 from pathlib import Path as _Path
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    "comfortfurniture": frozenset(v["expected_bytes"] for v in json.loads(
+        (Path(__file__).parent / "fixtures/comfortfurniture/vectors.json").read_text()
+    ) if v["kind"] == "command"),
     # com.ore.okincomfortbed 1.1.6 (8), unit152 frozen vectors.json.
     "okin_comfort_bed": frozenset(
         {
@@ -2084,3 +2087,10 @@ for _version in (1, 2):
         row["expected_bytes"].replace(" ", "").lower()
         for row in _YAMADA["packet_vectors"] if row["protocol"] == f"P{_version}"
     )
+
+# ORE Ultramatic 1.0.5: every literal transmit builder from the app.
+FROZEN_FRAMES["ore_ultramatic"] = frozenset(
+    row["expected_bytes"].replace(" ", "").lower()
+    for row in json.loads((Path(__file__).parent / "fixtures/ore_ultramatic/vectors.json").read_text())
+    if row["inputs"]["builder"] != "notification"
+)

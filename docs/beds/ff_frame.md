@@ -109,6 +109,7 @@ it. **Configure** keeps routine settings; the app changes only through
 | Home K2 | `home_k2` | back, legs, head, lumbar | yes | 2 slots | Q1 (Q2 for compound names) | massage | light timer | none |
 | MotionFlex | `motion_flex` | back, legs | yes | 2 slots | Q2 | none | light levels, light timer | relaxing bedtime, audio, alarm, clock sync |
 | Woosa Sleep | `woosa` | back, legs | yes | 1 slot | Woosa | massage | light levels, light timer | alarm |
+| Sophie | `sophie` | back, legs | yes | 2 slots | Named03 / fallback09 | massage | light levels, light timer | none |
 | Legacy S4-Y | `legacy_s4_y` | back, legs, bed_height, tilt | yes | 2 slots | none, no notifications | none | none | none |
 | Unverified | `unverified` | back, legs | no | 0 slots | none, no notifications | none | none | none |
 
@@ -123,6 +124,7 @@ release behavior](#stop-and-release-behavior).
 | Home K1 | +300 ms: Q1 queries, 500 ms apart | none |
 | Home K2 | +300 ms: Q1 (Q2 for compound names) queries, 500 ms apart | none |
 | MotionFlex | +300 ms: clock, Q2 queries, light status, 500 ms apart | none |
+| Sophie | Sophie startup schedule | none |
 | Legacy S4-Y | none | none |
 | Unverified | none | none |
 | Woosa Sleep | Woosa startup schedule | presets: STOP, 200 ms, preset; massage start steps 400 ms apart; after a save, each preset query 300 ms apart |
@@ -224,8 +226,8 @@ their own tables in their sections.
 
 | Axis | Up | Down | Routes |
 |---|---|---|---|
-| Back | `FF FF FF FF 05 00 00 00 03 97 01` | `FF FF FF FF 05 00 00 00 04 D6 C3` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Legacy S4-Y, Unverified |
-| Legs | `FF FF FF FF 05 00 00 00 06 57 02` | `FF FF FF FF 05 00 00 00 07 96 C2` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Legacy S4-Y, Unverified |
+| Back | `FF FF FF FF 05 00 00 00 03 97 01` | `FF FF FF FF 05 00 00 00 04 D6 C3` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Sophie, Legacy S4-Y, Unverified |
+| Legs | `FF FF FF FF 05 00 00 00 06 57 02` | `FF FF FF FF 05 00 00 00 07 96 C2` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Sophie, Legacy S4-Y, Unverified |
 | Head | `FF FF FF FF 05 00 00 00 01 16 C0` | `FF FF FF FF 05 00 00 00 02 56 C1` | Home K1, Home K2 |
 | Hip | `FF FF FF FF 05 00 00 00 0D 16 C5` | `FF FF FF FF 05 00 00 00 0E 56 C4` | Home K1 |
 | Lumbar | `FF FF FF FF 05 00 00 00 0D 16 C5` | `FF FF FF FF 05 00 00 00 0E 56 C4` | Home K2 |
@@ -248,9 +250,9 @@ frames in replies and echoes.
 |---|---|---|---|---|---|
 | Flat | `FF FF FF FF 05 00 00 00 08 D6 C6` | n/a | n/a | n/a | every route with presets except Legacy S4-Y |
 | Flat (legacy all-flat) | `FF FF FF FF 05 00 00 00 2A 56 DF` | n/a | n/a | n/a | Legacy S4-Y |
-| TV | `FF FF FF FF 05 00 00 00 05 17 03` | `FF FF FF FF 05 00 00 51 05 2A 93` | `FF FF FF FF 05 00 00 50 05 2B 03` | `FF FF FF FF 05 00 00 5F 05 2E F3` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Legacy S4-Y |
-| Zero-G | `FF FF FF FF 05 00 00 00 09 17 06` | `FF FF FF FF 05 00 00 91 09 7A 96` | `FF FF FF FF 05 00 00 90 09 7B 06` | `FF FF FF FF 05 00 00 9F 09 7E F6` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Legacy S4-Y |
-| Anti-Snore (Woosa: Love) | `FF FF FF FF 05 00 00 00 0F 97 04` | `FF FF FF FF 05 00 00 F1 0F D2 94` | `FF FF FF FF 05 00 00 F0 0F D3 04` | `FF FF FF FF 05 00 00 FF 0F D6 F4` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Legacy S4-Y |
+| TV | `FF FF FF FF 05 00 00 00 05 17 03` | `FF FF FF FF 05 00 00 51 05 2A 93` | `FF FF FF FF 05 00 00 50 05 2B 03` | `FF FF FF FF 05 00 00 5F 05 2E F3` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Sophie, Legacy S4-Y |
+| Zero-G | `FF FF FF FF 05 00 00 00 09 17 06` | `FF FF FF FF 05 00 00 91 09 7A 96` | `FF FF FF FF 05 00 00 90 09 7B 06` | `FF FF FF FF 05 00 00 9F 09 7E F6` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Sophie, Legacy S4-Y |
+| Anti-Snore (Woosa: Love) | `FF FF FF FF 05 00 00 00 0F 97 04` | `FF FF FF FF 05 00 00 F1 0F D2 94` | `FF FF FF FF 05 00 00 F0 0F D3 04` | `FF FF FF FF 05 00 00 FF 0F D6 F4` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Sophie, Legacy S4-Y |
 | Relaxing bedtime | `FF FF FF FF 05 00 00 00 6A 57 2F` | n/a | n/a | n/a | MotionFlex |
 <!-- /generated -->
 
@@ -261,8 +263,8 @@ frames in replies and echoes.
 
 | Slot | Recall | Program | Program while selected | Routes |
 |---|---|---|---|---|
-| 1 | `FF FF FF FF 05 00 00 A1 0A 2E 97` | `FF FF FF FF 05 00 00 A0 0A 2F 07` | `FF FF FF FF 05 00 00 AF 0A 2A F7` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Legacy S4-Y |
-| 2 | `FF FF FF FF 05 00 00 B1 0B E2 97` | `FF FF FF FF 05 00 00 B0 0B E3 07` | `FF FF FF FF 05 00 00 BF 0B E6 F7` | Common, Home K1, Home K2, MotionFlex, Legacy S4-Y |
+| 1 | `FF FF FF FF 05 00 00 A1 0A 2E 97` | `FF FF FF FF 05 00 00 A0 0A 2F 07` | `FF FF FF FF 05 00 00 AF 0A 2A F7` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Sophie, Legacy S4-Y |
+| 2 | `FF FF FF FF 05 00 00 B1 0B E2 97` | `FF FF FF FF 05 00 00 B0 0B E3 07` | `FF FF FF FF 05 00 00 BF 0B E6 F7` | Common, Home K1, Home K2, MotionFlex, Sophie, Legacy S4-Y |
 
 Woosa saves its Favourite slot with the program frame only.
 <!-- /generated -->
@@ -274,16 +276,16 @@ Woosa saves its Favourite slot with the program frame only.
 
 | Command | Bytes (hex) | Routes |
 |---|---|---|
-| Head + | `FF FF FF FF 05 00 00 00 10 D6 CC` | Home K1, Home K2, Woosa Sleep |
-| Head - | `FF FF FF FF 05 00 00 00 11 17 0C` | Home K1, Home K2, Woosa Sleep |
-| Foot + | `FF FF FF FF 05 00 00 00 12 57 0D` | Home K1, Home K2, Woosa Sleep |
-| Foot - | `FF FF FF FF 05 00 00 00 13 96 CD` | Home K1, Home K2, Woosa Sleep |
-| Stop | `FF FF FF FF 05 00 00 00 1C D6 C9` | Home K1, Home K2, Woosa Sleep |
-| Timer 10 min | `FF FF FF FF 05 00 00 00 16 56 CE` | Home K1, Home K2, Woosa Sleep |
-| Timer 20 min | `FF FF FF FF 05 00 00 00 17 97 0E` | Home K1, Home K2, Woosa Sleep |
-| Timer 30 min | `FF FF FF FF 05 00 00 00 18 D7 0A` | Home K1, Home K2, Woosa Sleep |
-| Wave + | `FF FF FF FF 05 00 00 00 14 D7 0F` | Home K1, Home K2 |
-| Wave - | `FF FF FF FF 05 00 00 00 15 16 CF` | Home K1, Home K2 |
+| Head + | `FF FF FF FF 05 00 00 00 10 D6 CC` | Home K1, Home K2, Woosa Sleep, Sophie |
+| Head - | `FF FF FF FF 05 00 00 00 11 17 0C` | Home K1, Home K2, Woosa Sleep, Sophie |
+| Foot + | `FF FF FF FF 05 00 00 00 12 57 0D` | Home K1, Home K2, Woosa Sleep, Sophie |
+| Foot - | `FF FF FF FF 05 00 00 00 13 96 CD` | Home K1, Home K2, Woosa Sleep, Sophie |
+| Stop | `FF FF FF FF 05 00 00 00 1C D6 C9` | Home K1, Home K2, Woosa Sleep, Sophie |
+| Timer 10 min | `FF FF FF FF 05 00 00 00 16 56 CE` | Home K1, Home K2, Woosa Sleep, Sophie |
+| Timer 20 min | `FF FF FF FF 05 00 00 00 17 97 0E` | Home K1, Home K2, Woosa Sleep, Sophie |
+| Timer 30 min | `FF FF FF FF 05 00 00 00 18 D7 0A` | Home K1, Home K2, Woosa Sleep, Sophie |
+| Wave + | `FF FF FF FF 05 00 00 00 14 D7 0F` | Home K1, Home K2, Sophie |
+| Wave - | `FF FF FF FF 05 00 00 00 15 16 CF` | Home K1, Home K2, Sophie |
 | Cycle full body | `FF FF FF FF 05 00 05 00 E4 C7 4A` | Home K1 |
 | Cycle head | `FF FF FF FF 05 00 05 00 E3 86 88` | Home K1 |
 | Cycle leg | `FF FF FF FF 05 00 05 00 E5 06 8A` | Home K1 |
@@ -323,21 +325,21 @@ Woosa saves its Favourite slot with the program frame only.
 
 | Command | Bytes (hex) | Routes |
 |---|---|---|
-| Level 0 | `FF FF FF FF 05 00 00 00 23 96 D9` | MotionFlex, Woosa Sleep |
-| Level 1 | `FF FF FF FF 05 00 00 01 23 97 49` | MotionFlex, Woosa Sleep |
-| Level 2 | `FF FF FF FF 05 00 00 02 23 97 B9` | MotionFlex, Woosa Sleep |
-| Level 3 | `FF FF FF FF 05 00 00 03 23 96 29` | MotionFlex, Woosa Sleep |
-| Level 4 | `FF FF FF FF 05 00 00 04 23 94 19` | MotionFlex, Woosa Sleep |
-| Level 5 | `FF FF FF FF 05 00 00 05 23 95 89` | MotionFlex, Woosa Sleep |
-| Level 6 | `FF FF FF FF 05 00 00 06 23 95 79` | MotionFlex, Woosa Sleep |
-| Level 7 | `FF FF FF FF 05 00 00 07 23 94 E9` | MotionFlex, Woosa Sleep |
-| Level 8 | `FF FF FF FF 05 00 00 08 23 91 19` | MotionFlex, Woosa Sleep |
-| Level 9 | `FF FF FF FF 05 00 00 09 23 90 89` | MotionFlex, Woosa Sleep |
-| Level 10 | `FF FF FF FF 05 00 00 0A 23 90 79` | MotionFlex, Woosa Sleep |
+| Level 0 | `FF FF FF FF 05 00 00 00 23 96 D9` | MotionFlex, Woosa Sleep, Sophie |
+| Level 1 | `FF FF FF FF 05 00 00 01 23 97 49` | MotionFlex, Woosa Sleep, Sophie |
+| Level 2 | `FF FF FF FF 05 00 00 02 23 97 B9` | MotionFlex, Woosa Sleep, Sophie |
+| Level 3 | `FF FF FF FF 05 00 00 03 23 96 29` | MotionFlex, Woosa Sleep, Sophie |
+| Level 4 | `FF FF FF FF 05 00 00 04 23 94 19` | MotionFlex, Woosa Sleep, Sophie |
+| Level 5 | `FF FF FF FF 05 00 00 05 23 95 89` | MotionFlex, Woosa Sleep, Sophie |
+| Level 6 | `FF FF FF FF 05 00 00 06 23 95 79` | MotionFlex, Woosa Sleep, Sophie |
+| Level 7 | `FF FF FF FF 05 00 00 07 23 94 E9` | MotionFlex, Woosa Sleep, Sophie |
+| Level 8 | `FF FF FF FF 05 00 00 08 23 91 19` | MotionFlex, Woosa Sleep, Sophie |
+| Level 9 | `FF FF FF FF 05 00 00 09 23 90 89` | MotionFlex, Woosa Sleep, Sophie |
+| Level 10 | `FF FF FF FF 05 00 00 0A 23 90 79` | MotionFlex, Woosa Sleep, Sophie |
 | Status query | `FF FF FF FF 05 00 05 FF 23 C7 28` | MotionFlex, Woosa Sleep |
-| Timer 10 min | `FF FF FF FF 05 00 00 00 19 16 CA` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep |
-| Timer 8 hours | `FF FF FF FF 05 00 00 00 1A 56 CB` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep |
-| Timer 10 hours | `FF FF FF FF 05 00 00 00 1B 97 0B` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep |
+| Timer 10 min | `FF FF FF FF 05 00 00 00 19 16 CA` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Sophie |
+| Timer 8 hours | `FF FF FF FF 05 00 00 00 1A 56 CB` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Sophie |
+| Timer 10 hours | `FF FF FF FF 05 00 00 00 1B 97 0B` | Common, Home K1, Home K2, MotionFlex, Woosa Sleep, Sophie |
 | Off | `FF FF FF FF 05 00 00 00 4B 97 37` | Woosa Sleep |
 
 Routes with brightness offer an Off light timer, which sends level 0 (Woosa: Off).
@@ -1038,6 +1040,133 @@ before any write; persistent changes need `confirmed: true`.
 Motion Bed sends only its frozen frames. Its Wi-Fi provisioning and cloud
 controls are out of scope.
 
+### Sophie
+
+**App:** [Sophie](https://play.google.com/store/apps/details?id=com.sddq.sophienew) 1.0.6 (8), `com.sddq.sophienew`
+
+**Status:** ❓ Needs testing
+
+#### Setup
+
+Choose **Solace → Sophie app** explicitly. Shared names and FFE1 do not identify
+this app. Keep the actual Bluetooth name in setup: it selects the saved-query
+route, alarm modes and alarm-massage gate independently. Name punctuation is
+normalized as the app does before these feature checks.
+
+The app accepts case-sensitive substrings anywhere in the raw name. Home
+Assistant's advertisement index can register only literal three-character
+prefixes, so names outside those generated matchers require active discovery or
+manual setup. The profile fixes two motors, enables massage and disables angle
+sensing. It never infers a service UUID: the last FFE1 characteristic in the
+GATT table carries writes and notifications, with its runtime write properties.
+No application authentication or ordinary single-address side control is proven.
+Two physical addresses can be combined using Home Assistant's paired bed setup;
+each side retains its own name, state and session.
+
+#### Controls
+
+Back and legs have one start frame and one global release. Flat is a single
+write. TV, zero gravity and anti-snore recall their saved version when reported
+saved, or the built-in version otherwise. Memory 1/2 recall requires a saved
+report. Memory programming and the **Save or clear TV / zero gravity /
+anti-snore position** buttons choose save or clear from the last report, shown by
+the matching **… position saved** binary sensors. Home Assistant exposes confirmed explicit actions
+instead of delayed Android long-press callbacks that can survive cancellation.
+
+Massage has head and foot minus/plus, wave minus/plus and three timers. Selecting
+an already selected massage timer sends the reachable timer deselect/stop frame.
+The minus/plus labels describe app intent; physical stepping remains unverified.
+Brightness uses the shared literal levels after a brightness reply; the
+brightness query is part of every connection's startup. Light timers are receiver commands;
+Home Assistant does not invent countdown tasks or periodic writes.
+
+The app's movement / massage header action (STOP's body with a different
+trailer) has no proven effect and is not exposed. Use the normal motor STOP for
+release. Bed synchronization is the **Controller Sync** switch. The shared movement, massage and lighting command tables above
+apply to Sophie; the additional rows and exact startup offsets follow.
+
+<!-- generated:sophie -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Sophie action | Frame |
+|---|---|
+| Synchronization off | `FF FF FF FF 01 00 09 0B 00 11 04` |
+| Synchronization on | `FF FF FF FF 01 00 09 0B 01 12 04` |
+| Synchronization query | `FF FF FF FF 01 00 0A 0B 0F 21 04` |
+| Save memory_1 | `FF FF FF FF 05 00 00 A0 0A 2F 07` |
+| Clear memory_1 | `FF FF FF FF 05 00 00 AF 0A 2A F7` |
+| Recall saved memory_1 | `FF FF FF FF 05 00 00 A1 0A 2E 97` |
+| Save memory_2 | `FF FF FF FF 05 00 00 B0 0B E3 07` |
+| Clear memory_2 | `FF FF FF FF 05 00 00 BF 0B E6 F7` |
+| Recall saved memory_2 | `FF FF FF FF 05 00 00 B1 0B E2 97` |
+| Save tv | `FF FF FF FF 05 00 00 50 05 2B 03` |
+| Clear tv | `FF FF FF FF 05 00 00 5F 05 2E F3` |
+| Recall saved tv | `FF FF FF FF 05 00 00 51 05 2A 93` |
+| Save zero_g | `FF FF FF FF 05 00 00 90 09 7B 06` |
+| Clear zero_g | `FF FF FF FF 05 00 00 9F 09 7E F6` |
+| Recall saved zero_g | `FF FF FF FF 05 00 00 91 09 7A 96` |
+| Save anti_snore | `FF FF FF FF 05 00 00 F0 0F D3 04` |
+| Clear anti_snore | `FF FF FF FF 05 00 00 FF 0F D6 F4` |
+| Recall saved anti_snore | `FF FF FF FF 05 00 00 F1 0F D2 94` |
+
+| Startup action | Offset |
+|---|---|
+| Saved preset queries | 300 ms, then 500 ms apart |
+| Local clock | 500 ms |
+| Synchronization query | 1000 ms |
+| Brightness query | 1000 ms |
+| Android save / clear threshold | 2000 ms; HA uses confirmed explicit actions |
+
+| Selector | Result |
+|---|---|
+| MQ, 1520, 1320 | Raw case-sensitive substring discovery candidates |
+| QMS-MQ, QMS2, S3-2, QMS3 | Named03 saved queries; fallback09 otherwise |
+| QMS-DFQ, QMS-430, QMS-444 | Side alarm modes; ordinary movement has no side byte |
+| QMS2 (case-insensitive) | No alarm massage control |
+<!-- /generated -->
+
+#### Timing
+
+Startup queries run at the generated offsets after notifications start, through
+Home Assistant's serialized query path. Each scheduled write checks the captured
+connection. Disconnect cancels startup and rejects stale notifications. Movement
+is bounded by Home Assistant's action duration or hold lease, with release on
+cancellation. A delayed release can never target a replacement link.
+
+#### Notifications
+
+Only the name-selected query family updates saved flags. Named03 replies mark
+the five presets saved. Fallback09's duplicated AB marks
+both memory 2 and TV saved, matching the shipped app. Save/clear echoes update
+the corresponding flags, with clear taking precedence. Massage literals report
+head/foot levels and wave, preserving head-before-foot-before-wave priority.
+Brightness retains the reported byte, including values outside the control's
+supported range. The app's unusual timer-cleared signature is retained.
+
+Alarm replies expose enabled, time, weekdays, mode, massage and ring attributes.
+The no-alarm reply clears the previous alarm record, including its time. Alarm
+transmit enable and received enable use different values. Synchronization is
+available only after its own support reply. Proven alarm and synchronization
+support stay with that physical bed across idle disconnects; the current
+synchronization value becomes unknown until refreshed or changed. The alarm-present reply takes
+precedence over synchronization. Home Assistant checks lengths and frame starts
+for offset-based fields instead of reproducing Android's crashes and unrelated
+callback offsets. State is scoped to each physical bed, without static caches.
+
+#### Services
+
+[`set_alarm`](../SERVICES.md#set_alarm) sets the bed alarm once the bed reports
+alarm support: time, `weekdays` or once, `massage` and `sound: alarm` (the ring).
+Ordinary models wake with `none`, `zero_g` or `memory_1`. QMS-DFQ, QMS-430 and
+QMS-444 names wake with `none`, `zero_g_left`, `zero_g_right` or `zero_g` (both
+sides). QMS2 has no alarm massage. Every target is checked before any is
+written. The side-specific wake actions apply only to the alarm, and do not
+enable normal movement addressing.
+`adjustable_bed.sync_clock` sends the local Home Assistant clock. The
+**Controller Sync** switch (disabled by default) sends on/off only after the bed
+reports synchronization support. Its state resets to unknown on disconnect and
+updates after a report or a successful command.
+
 ## Notes
 
 ### Analysis provenance
@@ -1045,4 +1174,5 @@ controls are out of scope.
 - Solace MotionFlex, HomeKobo and Sweet Night: based on their apps.
 - Woosa Sleep: based on Woosa Sleep 1.1.9 (`com.sn.woosa`), [#606](https://github.com/kristofferR/ha-adjustable-bed/issues/606).
 - BedSense: based on BedSense 1.8 (`com.fenmenbielei.bedsense`).
+- Sophie: based on Sophie 1.0.6 (`com.sddq.sophienew`).
 - Motion Bed: based on Motion Bed 1.24 (`com.sn.blackdianqi`).

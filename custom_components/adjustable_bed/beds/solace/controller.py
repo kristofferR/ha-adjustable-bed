@@ -898,6 +898,11 @@ class SolaceController(ProfileExecution[SolaceProfile], BedController, SolaceAud
 
 async def build_controller(ctx: BuildContext) -> BedController:
     """Build the Solace controller, or Woosa's for its app profile."""
+    if ctx.variant == "sophie":
+        await ctx.preload("solace.sophie")
+        from .sophie import SophieController
+
+        return SophieController(ctx.coordinator)
     if ctx.variant == SOLACE_VARIANT_WOOSA:
         await ctx.preload("woosa")
         from ..woosa import WoosaController

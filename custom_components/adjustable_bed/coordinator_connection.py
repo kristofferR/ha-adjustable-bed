@@ -457,6 +457,7 @@ class CoordinatorConnectionMixin:
                     self._vmat_unready_client = None
             self._controller = None
             self._intentional_disconnect = False
+            self._connection_creator_task = None
 
     async def _async_connect_locked(self: AdjustableBedCoordinator, reset_timer: bool = True) -> bool:
         """Allow automatic auth recovery before asking the user to re-pair."""
@@ -1437,6 +1438,7 @@ class CoordinatorConnectionMixin:
                 # reconnect hydration and seeks can distinguish fresh feedback
                 # from cached values.
                 self._position_connection_generation += 1
+                self._connection_creator_task = asyncio.current_task()
                 controller_session_generation = self._position_connection_generation
                 # Remember the resolved persistence so reconnect/idle decisions are
                 # correct even after _on_disconnect clears the controller.
@@ -1735,6 +1737,7 @@ class CoordinatorConnectionMixin:
                 self._address,
             )
             return
+        self._connection_creator_task = None
         # Whether the dropped link had finished startup and accepted commands.
         ready, self._link_ready = self._link_ready, False
 
@@ -2343,6 +2346,8 @@ class CoordinatorConnectionMixin:
 
     def _notify_connection_state_change(self: AdjustableBedCoordinator, connected: bool) -> None:
         """Notify all registered callbacks of a connection state change."""
+        if not connected:
+            self._connection_creator_task = None
         for callback_fn in list(self._connection_state_callbacks):
             try:
                 callback_fn(connected)

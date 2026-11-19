@@ -1,0 +1,111 @@
+{
+  "cases": [
+    {
+      "id": "alarm-ZG-AB",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 21,
+        "minute": 9,
+        "days": 2,
+        "side": "AB",
+        "enabled": false,
+        "type_code": 2
+      },
+      "expected_bytes": "07 05 02 02 21 09 00 00 00",
+      "case_kind": "changed_fixture"
+    },
+    {
+      "id": "alarm-M1-B",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 23,
+        "minute": 59,
+        "days": 255,
+        "side": "B",
+        "enabled": true,
+        "type_code": 3
+      },
+      "expected_bytes": "07 05 ff 03 23 59 00 01 02",
+      "case_kind": "changed_fixture"
+    },
+    {
+      "id": "alarm-once-today",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 7,
+        "minute": 30,
+        "days": 128,
+        "side": "AB",
+        "enabled": true,
+        "type_code": 1,
+        "now": "2026-11-17T06:30:00"
+      },
+      "expected_bytes": "07 05 04 01 07 30 00 01 00",
+      "case_kind": "changed_fixture"
+    },
+    {
+      "id": "alarm-once-Saturday-wrap",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 6,
+        "minute": 30,
+        "days": 128,
+        "side": "A",
+        "enabled": true,
+        "type_code": 3,
+        "now": "2026-11-21T20:00:00"
+      },
+      "expected_bytes": "07 05 01 03 06 30 00 01 01",
+      "case_kind": "changed_fixture"
+    },
+    {
+      "id": "audit001-vibrate-B",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 5,
+        "minute": 7,
+        "days": 64,
+        "side": "B",
+        "enabled": true,
+        "type_code": 1
+      },
+      "expected_bytes": "07 05 40 01 05 07 00 01 02",
+      "case_kind": "new_unequal_type_side"
+    },
+    {
+      "id": "audit001-ZG-A",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 22,
+        "minute": 45,
+        "days": 32,
+        "side": "A",
+        "enabled": false,
+        "type_code": 2
+      },
+      "expected_bytes": "07 05 20 02 22 45 00 00 01",
+      "case_kind": "new_unequal_type_side"
+    },
+    {
+      "id": "audit001-M1-AB",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "hour": 0,
+        "minute": 1,
+        "days": 1,
+        "side": "AB",
+        "enabled": true,
+        "type_code": 3
+      },
+      "expected_bytes": "07 05 01 03 00 01 00 01 00",
+      "case_kind": "new_unequal_type_side"
+    }
+  ]
+}

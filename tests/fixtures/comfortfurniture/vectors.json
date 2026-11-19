@@ -1,0 +1,692 @@
+[
+  {
+    "id": "V01",
+    "protocol": "P1",
+    "action": "back_up",
+    "inputs": {
+      "command": "00000001"
+    },
+    "expected_bytes": "e5fe160000000105",
+    "evidence": [
+      "E07",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V02",
+    "protocol": "P1",
+    "action": "back_down",
+    "inputs": {
+      "command": "00000002"
+    },
+    "expected_bytes": "e5fe160000000204",
+    "evidence": [
+      "E07",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V03",
+    "protocol": "P1",
+    "action": "foot_up",
+    "inputs": {
+      "command": "00000004"
+    },
+    "expected_bytes": "e5fe160000000402",
+    "evidence": [
+      "E07",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V04",
+    "protocol": "P1",
+    "action": "foot_down",
+    "inputs": {
+      "command": "00000008"
+    },
+    "expected_bytes": "e5fe1600000008fe",
+    "evidence": [
+      "E07",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V05",
+    "protocol": "P1",
+    "action": "back_foot_up",
+    "inputs": {
+      "command": "00000005"
+    },
+    "expected_bytes": "e5fe160000000501",
+    "evidence": [
+      "E07",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V06",
+    "protocol": "P1",
+    "action": "back_foot_down",
+    "inputs": {
+      "command": "0000000a"
+    },
+    "expected_bytes": "e5fe160000000afc",
+    "evidence": [
+      "E07",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V07",
+    "protocol": "P1",
+    "action": "head_up",
+    "inputs": {
+      "command": "00000010"
+    },
+    "expected_bytes": "e5fe1600000010f6",
+    "evidence": [
+      "E08",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V08",
+    "protocol": "P1",
+    "action": "head_down",
+    "inputs": {
+      "command": "00000020"
+    },
+    "expected_bytes": "e5fe1600000020e6",
+    "evidence": [
+      "E08",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V09",
+    "protocol": "P1",
+    "action": "waist_up",
+    "inputs": {
+      "command": "00000040"
+    },
+    "expected_bytes": "e5fe1600000040c6",
+    "evidence": [
+      "E08",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V10",
+    "protocol": "P1",
+    "action": "waist_down",
+    "inputs": {
+      "command": "00000080"
+    },
+    "expected_bytes": "e5fe160000008086",
+    "evidence": [
+      "E08",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V11",
+    "protocol": "P1",
+    "action": "movement_release_stop",
+    "inputs": {
+      "command": "00000000"
+    },
+    "expected_bytes": "e5fe160000000006",
+    "evidence": [
+      "E12",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V12",
+    "protocol": "P1",
+    "action": "preset_zero_gravity_recall",
+    "inputs": {
+      "command": "21000001"
+    },
+    "expected_bytes": "e5fe1621000001e4",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V13",
+    "protocol": "P1",
+    "action": "preset_flat_recall",
+    "inputs": {
+      "command": "21000002"
+    },
+    "expected_bytes": "e5fe1621000002e3",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V14",
+    "protocol": "P1",
+    "action": "preset_as_recall",
+    "inputs": {
+      "command": "21000003"
+    },
+    "expected_bytes": "e5fe1621000003e2",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V15",
+    "protocol": "P1",
+    "action": "preset_reading_recall",
+    "inputs": {
+      "command": "21000004"
+    },
+    "expected_bytes": "e5fe1621000004e1",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V16",
+    "protocol": "P1",
+    "action": "preset_memory_recall",
+    "inputs": {
+      "command": "21000006"
+    },
+    "expected_bytes": "e5fe1621000006df",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V17",
+    "protocol": "P1",
+    "action": "preset_stop_same_button",
+    "inputs": {
+      "command": "21000000"
+    },
+    "expected_bytes": "e5fe1621000000e5",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V18",
+    "protocol": "P1",
+    "action": "preset_zero_gravity_save",
+    "inputs": {
+      "command": "21000011"
+    },
+    "expected_bytes": "e5fe1621000011d4",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V19",
+    "protocol": "P1",
+    "action": "preset_flat_save",
+    "inputs": {
+      "command": "21000012"
+    },
+    "expected_bytes": "e5fe1621000012d3",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V20",
+    "protocol": "P1",
+    "action": "preset_as_save",
+    "inputs": {
+      "command": "21000013"
+    },
+    "expected_bytes": "e5fe1621000013d2",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V21",
+    "protocol": "P1",
+    "action": "preset_reading_save",
+    "inputs": {
+      "command": "21000014"
+    },
+    "expected_bytes": "e5fe1621000014d1",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V22",
+    "protocol": "P1",
+    "action": "preset_memory_save",
+    "inputs": {
+      "command": "21000016"
+    },
+    "expected_bytes": "e5fe1621000016cf",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V23",
+    "protocol": "P1",
+    "action": "bed_reset_label",
+    "inputs": {
+      "command": "ffffffff"
+    },
+    "expected_bytes": "e5fe16ffffffff0a",
+    "evidence": [
+      "E09",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V24",
+    "protocol": "P1",
+    "action": "massage_start_initial",
+    "inputs": {
+      "command": "10000011"
+    },
+    "expected_bytes": "e5fe1610000011e5",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V25",
+    "protocol": "P1",
+    "action": "massage_stop",
+    "inputs": {
+      "command": "10000010"
+    },
+    "expected_bytes": "e5fe1610000010e6",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V26",
+    "protocol": "P1",
+    "action": "massage_intensity_bin0",
+    "inputs": {
+      "command": "10000011"
+    },
+    "expected_bytes": "e5fe1610000011e5",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V27",
+    "protocol": "P1",
+    "action": "massage_intensity_bin1",
+    "inputs": {
+      "command": "10000012"
+    },
+    "expected_bytes": "e5fe1610000012e4",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V28",
+    "protocol": "P1",
+    "action": "massage_intensity_bin2",
+    "inputs": {
+      "command": "10000013"
+    },
+    "expected_bytes": "e5fe1610000013e3",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V29",
+    "protocol": "P1",
+    "action": "massage_wave_bin0",
+    "inputs": {
+      "command": "10000021"
+    },
+    "expected_bytes": "e5fe1610000021d5",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V30",
+    "protocol": "P1",
+    "action": "massage_wave_bin1",
+    "inputs": {
+      "command": "10000022"
+    },
+    "expected_bytes": "e5fe1610000022d4",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V31",
+    "protocol": "P1",
+    "action": "massage_wave_bin2",
+    "inputs": {
+      "command": "10000023"
+    },
+    "expected_bytes": "e5fe1610000023d3",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V32",
+    "protocol": "P1",
+    "action": "massage_timer_10min",
+    "inputs": {
+      "command": "10000030"
+    },
+    "expected_bytes": "e5fe1610000030c6",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V33",
+    "protocol": "P1",
+    "action": "massage_timer_20min",
+    "inputs": {
+      "command": "10000031"
+    },
+    "expected_bytes": "e5fe1610000031c5",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V34",
+    "protocol": "P1",
+    "action": "massage_timer_30min",
+    "inputs": {
+      "command": "10000032"
+    },
+    "expected_bytes": "e5fe1610000032c4",
+    "evidence": [
+      "E10",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V35",
+    "protocol": "P1",
+    "action": "bed_light_off",
+    "inputs": {
+      "command": "31000000"
+    },
+    "expected_bytes": "e5fe1631000000d5",
+    "evidence": [
+      "E11",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "V36",
+    "protocol": "P1",
+    "action": "bed_light_on",
+    "inputs": {
+      "command": "31000001"
+    },
+    "expected_bytes": "e5fe1631000001d4",
+    "evidence": [
+      "E11",
+      "E06"
+    ],
+    "kind": "command",
+    "provenance": "Frozen static app constant/formula plus smali byte construction; not hardware capture"
+  },
+  {
+    "id": "N_zero_length8",
+    "protocol": "P1",
+    "action": "notification routing zero_length8",
+    "inputs": {
+      "view": "bedding"
+    },
+    "expected_bytes": "0000000000000000",
+    "expected_result": "reject_length",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  },
+  {
+    "id": "N_generic07_bad_header",
+    "protocol": "P1",
+    "action": "notification routing generic07_bad_header",
+    "inputs": {
+      "view": "bedding"
+    },
+    "expected_bytes": "000000000000000700",
+    "expected_result": "cancel_repeater_without_stop",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  },
+  {
+    "id": "N_generic06_bad_header",
+    "protocol": "P1",
+    "action": "notification routing generic06_bad_header",
+    "inputs": {
+      "view": "bedding"
+    },
+    "expected_bytes": "ffffffffffffff06ff",
+    "expected_result": "cancel_repeater_without_stop",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  },
+  {
+    "id": "N_generic0a",
+    "protocol": "P1",
+    "action": "notification routing generic0a",
+    "inputs": {
+      "view": "bedding"
+    },
+    "expected_bytes": "000000000000000a00",
+    "expected_result": "cancel_repeater_without_stop",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  },
+  {
+    "id": "N_type30_priority",
+    "protocol": "P1",
+    "action": "notification routing type30_priority",
+    "inputs": {
+      "view": "bedding"
+    },
+    "expected_bytes": "000000300000000700",
+    "expected_result": "accessory_lamp_dispatch_index2",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  },
+  {
+    "id": "N_type10_bed_fallthrough",
+    "protocol": "P1",
+    "action": "notification routing type10_bed_fallthrough",
+    "inputs": {
+      "view": "bedding"
+    },
+    "expected_bytes": "000000100000000700",
+    "expected_result": "cancel_repeater_without_stop",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  },
+  {
+    "id": "N_type10_other_priority",
+    "protocol": "P1",
+    "action": "notification routing type10_other_priority",
+    "inputs": {
+      "view": "others"
+    },
+    "expected_bytes": "000000100000000700",
+    "expected_result": "accessory_massage_dispatch_index0",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  },
+  {
+    "id": "N_f0_audio",
+    "protocol": "P1",
+    "action": "notification routing f0_audio",
+    "inputs": {
+      "view": "bedding"
+    },
+    "expected_bytes": "000000f00000000300",
+    "expected_result": "accessory_audio_dispatch_index1",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  },
+  {
+    "id": "N_f0_fridge",
+    "protocol": "P1",
+    "action": "notification routing f0_fridge",
+    "inputs": {
+      "view": "bedding"
+    },
+    "expected_bytes": "000000f00000000c00",
+    "expected_result": "accessory_fridge_dispatch_index3",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  },
+  {
+    "id": "N_ignored9",
+    "protocol": "P1",
+    "action": "notification routing ignored9",
+    "inputs": {
+      "view": "bedding"
+    },
+    "expected_bytes": "000000000000000000",
+    "expected_result": "ignored",
+    "evidence": [
+      "E13"
+    ],
+    "kind": "notification",
+    "provenance": "Synthetic parser branch fixture derived from code, no capture"
+  }
+]

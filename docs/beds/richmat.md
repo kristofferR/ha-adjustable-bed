@@ -1,6 +1,6 @@
 # Richmat
 
-**Status:** ✅ Tested (Richmat and legacy BedTech routes); ❓ explicit BedTech 7.1.3 models; ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, L&P legacy app, Casper Base, Hush Base, SonicSleep and Luuna + profiles are APK-verified with hardware unverified
+**Status:** ✅ Tested (Richmat and legacy BedTech routes); ❓ explicit BedTech 7.1.3 models; ❓ the RMControl, Richmat MH, HJBed, Eshine, classic app, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, L&P legacy app, Casper Base, Hush Base, SonicSleep, Lunio Smart+ and Luuna + profiles are APK-verified with hardware unverified
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), getrav, [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt) and [Josh Pearce](https://github.com/joshpearce) (L&P MlRM)
 
@@ -57,6 +57,7 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | [Power Bob Base](https://play.google.com/store/apps/details?id=com.richmat.bobpowerbase) 1.0.9 (10900) | `com.richmat.bobpowerbase` | [Power Bob Base](#power-bob-base) |
 | ✅ | [Richmat](https://play.google.com/store/apps/details?id=com.richmat.richmat) 4.2.0 (42006) | `com.richmat.richmat` | [Richmat 4.2.0](#richmat-420) |
 | ✅ | [RMControl](https://play.google.com/store/apps/details?id=com.richmat.rmcontrol2) 21.3.7 | `com.richmat.rmcontrol2` | [RMControl](#rmcontrol); the [Richmat remotes](#richmat-remotes) cover the same beds |
 | ✅ | [BedTech](https://play.google.com/store/apps/details?id=com.bedtech) 7.1.3 (14) | `com.bedtech` | [BedTech](#bedtech) |
@@ -66,6 +67,8 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [LP Control](https://play.google.com/store/apps/details?id=com.leggett.android.universal) 2.9.0 | `com.leggett.android.universal` | [Leggett & Platt](leggett-platt.md) |
 | ✅ | [SVEN & SON](https://play.google.com/store/apps/details?id=com.richmat.svenson) | `com.richmat.svenson` | [Richmat remotes](#richmat-remotes) |
 | ✅ | [Revive Control](https://play.google.com/store/apps/details?id=com.richmat.revive3) 1.0.26 | `com.richmat.revive3` | [Richmat MH](#richmat-mh-apps), bed type `richmat_revive` |
+| ✅ | Nisco 1.1.1 (3) | `com.richmat.nisco` | [Nisco](#nisco), bed type `richmat_nisco` |
+| ✅ | MLILY Supreme 1.3.1 (5) | `com.richmat.mlily_supreme` | [MLILY Supreme](#mlily-supreme), bed type `richmat_mlily_supreme` |
 | ✅ | [Best Mattress](https://play.google.com/store/apps/details?id=com.richmat.best_mattress) 1.1.1 | `com.richmat.best_mattress` | [Richmat MH](#richmat-mh-apps), bed type `richmat_best_mattress` |
 | ✅ | [Blvd Home](https://play.google.com/store/apps/details?id=com.richmat.blvd_home) 1.0.1 | `com.richmat.blvd_home` | [Richmat MH](#richmat-mh-apps), bed type `richmat_blvd_home` |
 | ✅ | [HARMONY](https://play.google.com/store/apps/details?id=com.richmat.harmony) 1.0.0 | `com.richmat.harmony` | [Richmat MH](#richmat-mh-apps), bed type `richmat_harmony` |
@@ -91,7 +94,9 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | ✅ | [Zero Gravity](https://play.google.com/store/apps/details?id=com.richmat.zerogravity) 1.0.3 (4) | `com.richmat.zerogravity` | [Zero Gravity](#zero-gravity) |
 | ✅ | [Good Vibe Sleep](https://play.google.com/store/apps/details?id=com.richmat.goodvibesleep) 2.0.1 (20103) | `com.richmat.goodvibesleep` | [Good Vibe Sleep](#good-vibe-sleep) |
 | ✅ | [MLILY Control](https://play.google.com/store/apps/details?id=com.richmat.mlily2) 5.0.2 (50200) | `com.richmat.mlily2` | [MLILY Control](#mlily-control) |
+| ❓ | [Okimiki](https://play.google.com/store/apps/details?id=com.richmat.okimiki) 1.0.1 (10101) | `com.richmat.okimiki` | [Okimiki](#okimiki) |
 | ✅ | [Casper Base](https://play.google.com/store/apps/details?id=com.richmat.casperbase) 1.0.8 (10800) | `com.richmat.casperbase` | [Casper Base](#casper-base); setup, sleep sensors and remote finder in its [own guide](casper-base.md) |
+| ✅ | [Lunio Smart+](https://play.google.com/store/apps/details?id=com.richmat.luniosmart) 1.0.4 (10400) | `com.richmat.luniosmart` | [Lunio Smart+](#lunio-smart) |
 | ✅ | [SonicSleep](https://play.google.com/store/apps/details?id=com.richmat.sonicsleep) 1.0.4 (10400) | `com.richmat.sonicsleep` | [SonicSleep](#sonicsleep) |
 | ✅ | [Luuna +](https://play.google.com/store/apps/details?id=com.richmat.luuna) 2.0.1 (20102) | `com.richmat.luuna` | [Luuna +](#luuna-) |
 | ✅ | [Hush Base](https://play.google.com/store/apps/details?id=com.richmat.hushbase) 1.0.5 (10501) | `com.richmat.hushbase` | [Hush Base](#hush-base); setup, sleep sensors and remote finder in its [own guide](hush-base.md) |
@@ -183,6 +188,7 @@ sends STOP.
 
 | Profile | Bed type | Transport order | Commands | Hold until release |
 |---|---|---|---|---|
+| Lunio Smart+ | `luniosmart` | platform GATT order | fixed two-axis layout | 100 ms stream and explicit release |
 | SonicSleep | `sonicsleep` | platform GATT order | fixed IQRM product | renewable lease; no release packet |
 | HJBed | `hjbed` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease |
 | Richmat 4.2.0 | `richmat_app` | N1, W1, W2, W3, W4, W5 | per-model catalog | renewable lease |
@@ -197,6 +203,8 @@ sends STOP.
 | Richmat MH AMERICANSTAR | `richmat_americanstar` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH Bailey | `bailey_bed_control` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Richmat MH TX | `richmat_tx` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH Nisco | `richmat_nisco` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
+| Richmat MH MLILY Supreme | `richmat_mlily_supreme` | N1, W1, W2, W3, W4 | per-model catalog | renewable lease |
 | Classic Avocado Eco Base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic CoasterSleep | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Forty Winks | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
@@ -211,10 +219,13 @@ sends STOP.
 | Galaxy Bed Control | `galaxy` | W1, N1, W5, W4, W3, W2 | per-product catalog | no |
 | Good Vibe Sleep | `goodvibe` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease on sustained controls |
 | MLILY Control | `mlily` | W1, N1, W5, W4, W3, W2 | per-product catalog | renewable lease on sustained controls |
+| Okimiki | `okimiki` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease on sustained controls |
+| Power Bob Base | `bobpowerbase` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease on sustained controls |
 | L&P legacy app | `leggett_lp_legacy` | configured characteristics | per-layout catalog | no |
 | Casper Base | `casper_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
 | Hush Base | `hush_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
 | Luuna + | `luuna` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease |
+| MLILY Remote | `mlily_remote` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease |
 <!-- /generated -->
 
 ### Catalog app timing
@@ -287,13 +298,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Casper Base, Hush Base, Luuna +, SonicSleep |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -3048,6 +3059,143 @@ Hush Base sends only the frames frozen from its app, whose
 products, shared builders and auxiliary shards are listed in
 `tests/hush_vectors.py`.
 
+### Lunio Smart+
+
+**App:** [Lunio Smart+](https://play.google.com/store/apps/details?id=com.richmat.luniosmart) 1.0.4 (10400), `com.richmat.luniosmart`
+
+**Status:** ❓ Needs testing. APK-verified; hardware unverified.
+
+#### Setup
+
+Search for **Lunio Smart+** under Richmat in new setup or Configure. The layout always has head and foot controls and one
+memory slot. The catalog supplies discovery aliases, not physical compatibility
+or model capabilities. Names match case-sensitive substrings. HA's indexed scan
+gate recognizes prefixes; manual setup also covers names with a keyword in the
+middle. Neither an alias nor a shared service silently selects this app.
+
+The six routes, command bytes and timing are generated below. GATT enumeration
+keeps the first matching characteristic with WRITE, independently the first
+NOTIFY-capable characteristic, and the last matching service's query format.
+A later service without a writer still changes the query. A WNR-only writer or
+indication-only notification characteristic does not qualify. The declared
+notification UUID is reference data, not the app's selection rule. If the writer
+also supports write without response, HA uses it; otherwise it requests a response.
+With no notification characteristic, startup still sends query then clock.
+Subscription failure propagates before either write, with no alternate subscription.
+
+There is no proven app PIN, custom authentication or Device Information read.
+The Android plugin requests MTU 512 after 350 ms and can race service discovery;
+HA delegates MTU, scan, CCCD and connection transport to its Bluetooth stack and
+proxies. These are platform operations, not additional bed commands.
+
+#### Controls
+
+Head/foot up/down, flat, zero gravity, anti-snore and separate memory-1 recall/save
+use the full framed command on **every** route, including Nordic UART. Only the
+capability query switches to a bare byte for S1. Save is a dedicated single-shot
+action and asks for confirmation. No additional memory, simultaneous-axis opcode,
+side selector, position setter, light or massage setter is inferred from receive
+fields. Two-address pairing retains each physical bed's independent app selection.
+
+<!-- generated:luniosmart -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Layout | Refresh | Partial receive expiry | Memory slots |
+|---|---|---|---|
+| Head and foot | 100 ms | 500 ms | 1 |
+
+| Route | Service | Write | Declared notify | Isolated query |
+|---|---|---|---|---|
+| S1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | `00` |
+| S2 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | `6E 02 01 00 71` |
+| S3 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | `6E 02 01 00 71` |
+| S4 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | `6E 02 01 00 71` |
+| S5 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | `6E 02 01 00 71` |
+| S6 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | `6E 02 01 00 71` |
+
+| Control | All six routes |
+|---|---|
+| head_up | `6E 01 00 24 93` |
+| head_down | `6E 01 00 25 94` |
+| foot_up | `6E 01 00 26 95` |
+| foot_down | `6E 01 00 27 96` |
+| flat | `6E 01 00 31 A0` |
+| memory_recall_1 | `6E 01 00 2E 9D` |
+| memory_save_1 | `6E 01 00 2B 9A` |
+| zero_gravity | `6E 01 00 45 B4` |
+| anti_snore | `6E 01 00 46 B5` |
+| release | `6E 01 00 6E DD` |
+
+| Startup | Encoding |
+|---|---|
+| Query | Last matched service selects the isolated query above, independently of the writer |
+| Local calendar example, 2026-11-17 12:34:56 | `6E 20 0D 08 03 01 38 0B 11 0C 22 38 61` |
+
+| Discovery | Value |
+|---|---|
+| Explicit case-sensitive substrings | `QRRM`, `MlRM`, `COOL`, `MPE_`, `209A05`, `208A14`, `200U`, `FC200`, `200I`, `400I`, `800I`, `L&P-`, `L&P ` |
+| Catalog | 1134 aliases, 1128 eligible; discovery only |
+<!-- /generated -->
+
+#### Timing
+
+The app has two independent periodic queues, each at the generated refresh
+interval. Their schedule is not a guaranteed radio cadence. Held controls remain
+queued until connected pointer-up; presets and memory actions queue an action
+followed by release. The app's disconnected pointer-up does not clear held state;
+both untagged queues can survive replacement and later target the new writer.
+Overlapping asynchronous callbacks can remove an unsent release. These are
+recovered app defects, not safe behavior or observed hardware outcomes.
+
+HA starts a finite hold immediately, refreshes at the profile interval against
+an elapsed deadline, and never catches up missed writes. Presets send once then
+release after one interval. Invoked writes settle before cancellation cleanup;
+release uses a fresh cancellation event and the same captured physical session.
+Disconnect, replacement or ownership transfer invalidates pending writes. HA
+keeps no app-style motion FIFO and does not replay stale movement after reconnect.
+
+#### Notifications
+
+Diagnostics and support bundles retain the latest BED event payloads under the
+artifact's names. Common protocol version, mode, unsigned angle fields, packed massage fields,
+diagnostic status and the empty diagnostic-detail object remain read-only. Extended
+BED records retain motor height/type/angle/monitorHeight, head and foot strengths,
+massage mode/frequency/power, white LED, normalized RGB, raw base-60 light timer,
+six anonymous alarm fields, anti-snore/off-bed/count/time, lock and press/split state.
+Diagnostics retain the selector and complete received frame. These events do not
+change the fixed app controls or prove writable settings. Angles are uncalibrated;
+height type, timer/time units and anonymous alarm meanings remain unspecified.
+
+The bounded stream receiver retains the source boundaries: 20/21 total byte length,
+40 big-endian total length, and common frames ending at the next 6E or current
+buffer end. Common fragments of three or more bytes are consumed immediately.
+Extended BED frames require the additive checksum and declared length. Common
+fields have no general checksum gate. Desk/OTA envelopes retain their boundary
+effect without publishing their payloads. The inner snore-capability literal
+collides with the 21 zero-length envelope and is not admitted as a BED event by
+the live receiver.
+
+Partial bytes expire after the generated interval without reparse. The app clears
+partial bytes on subscription installation without cancelling its old timer;
+disconnect alone clears neither. HA clears both bytes and timer on session teardown
+and replacement. Zero-length non-progress, oversized buffers and missing offsets
+are rejected or bounded instead of spinning or throwing from a callback. No field
+is synthesized to repair a malformed packet.
+
+#### Services
+
+Use standard `timed_move`, `goto_preset` and `save_preset` actions. Every
+connection queries capabilities and synchronizes the bed's local calendar, so
+neither has its own button. Neither appends a release. Clock encoding uses local
+year minus 1970 and an additive checksum.
+
+#### Evidence
+
+The app's literals prove the shared codec; physical routing, axes, release and
+memory behavior still need testing on real beds.
+
+Based on Lunio Smart+ 1.0.4 (`com.richmat.luniosmart`).
+
 ### SonicSleep
 
 **App:** [SonicSleep / 소닉슬립](https://play.google.com/store/apps/details?id=com.richmat.sonicsleep) 1.0.4 (10400), `com.richmat.sonicsleep`
@@ -3352,6 +3500,161 @@ in `tests/fixtures/luuna/` and exercised by `tests/test_luuna.py`. The existing
 Richmat codec reproduces the app's literal command frames without a new codec.
 Physical movement, stop latency, supported firmware, calibration and negotiated
 MTU remain for real beta/release users to validate.
+
+### MLILY Remote
+
+**App:** [MLILY Remote](https://play.google.com/store/apps/details?id=com.richmat.mlilyremote) 1.0.1 (10103), `com.richmat.mlilyremote`
+
+**Status:** ❓ Needs testing. All five products are statically verified; hardware is unverified.
+
+#### Setup
+
+Choose **Richmat → MLILY Remote**, then the exact product: MS200, MS300,
+MS600, PowerCool or MS300-SH. This is independent of MLILY Control. Choose the
+app's single or double bed layout. The catalog codes are product identifiers,
+not Bluetooth-name mappings. Discovery recognizes the case-sensitive substrings
+`QRRM`, `COOL`, `MPE_`, `209A` and `BED-`; shared service UUIDs never choose a product.
+
+All six Richmat routes are supported. Nordic sends single-byte controls and
+cannot address separate sides. Other routes frame side 0 (left/single) or 1
+(right). Double layout allows opting into HA's single-address Left/Right child
+devices after a framed connection has been established. There is no native
+Both opcode. Clock and alarm packets remain framed even on Nordic.
+
+#### Controls
+
+The model table and every available action/save code come from the shipped
+profile. MS200 has no light or massage. MS600 adds lumbar, pillow, lumbar
+massage, TV and memory 3. MS300 and MS300-SH add combined head/foot controls.
+Only MS600 has alarm-mode choices. No shared receive parser expands these gates.
+
+| Entity | Products |
+|---|---|
+| Flat, Memory 1–3, Save to Memory 1–3 (shared preset buttons) | all, memory 3 on MS600 |
+| Zero Gravity, Anti-Snore and their Save buttons | all |
+| TV, Save TV | MS600 |
+| Lounge, Save Lounge | MS200 |
+| Toggle Light | all except MS200 |
+| Massage: Head/Foot Up, Massage mode, All Off, Massage: Timer 10/20/30 Minutes | MS300, MS300-SH, MS600 |
+| Massage: Lumbar Up | MS600 |
+| Fan: Head/Foot Up, Mode, Off, Timer 2/3/5 Hours | PowerCool |
+| Model (diagnostic, disabled by default) | all |
+
+PowerCool sends the massage codes to its fans, with 2/3/5-hour timers; the
+same codes on MS300, MS300-SH and MS600 are massage controls with
+10/20/30-minute timers. Discrete actions send once. Preset recall and Save
+buttons use distinct codes; Save waits the app's three-second programming
+threshold and asks for confirmation.
+
+<!-- generated:mlily-remote-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Catalog code | Motors | Massage/cooling | Alarm modes |
+|---|---|---|---|---|
+| MS200 | EGRM | 2 | none | none |
+| MS300 | JBRM | 2 | massage, 10/20/30 minutes | none |
+| MS300-SH | DYRN | 2 | massage, 10/20/30 minutes | none |
+| PowerCool | D9RM | 2 | cooling, 2/3/5 hours | none |
+| MS600 | ANRN | 4 | massage, 10/20/30 minutes | ZeroGravity, AntiSnoring, TVPosition, MemoryPosition1, MemoryPosition2, MemoryPosition3 |
+
+| Action | Recall/action | Save | Framed left | Products |
+|---|---|---|---|---|
+| HeadUp | `24` | none | `6E 01 00 24 93` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| HeadDown | `25` | none | `6E 01 00 25 94` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| FootUp | `26` | none | `6E 01 00 26 95` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| FootDown | `27` | none | `6E 01 00 27 96` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| HeadAndFootUp | `29` | none | `6E 01 00 29 98` | MS300, MS300-SH |
+| HeadAndFootDown | `2A` | none | `6E 01 00 2A 99` | MS300, MS300-SH |
+| LumberUp | `3F` | none | `6E 01 00 3F AE` | MS600 |
+| LumberDown | `40` | none | `6E 01 00 40 AF` | MS600 |
+| PillowUp | `41` | none | `6E 01 00 41 B0` | MS600 |
+| PillowDown | `42` | none | `6E 01 00 42 B1` | MS600 |
+| MemoryPosition1 | `2E` | `2B` | `6E 01 00 2E 9D` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| MemoryPosition2 | `2F` | `2C` | `6E 01 00 2F 9E` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| MemoryPosition3 | `30` | `2D` | `6E 01 00 30 9F` | MS600 |
+| BedLight | `3C` | none | `6E 01 00 3C AB` | MS300, MS300-SH, PowerCool, MS600 |
+| MotorReset | `31` | none | `6E 01 00 31 A0` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| MassageHeadInstensityStrengthen | `4C` | none | `6E 01 00 4C BB` | MS300, MS300-SH, PowerCool, MS600 |
+| MassageFootInstensityStrengthen | `4E` | none | `6E 01 00 4E BD` | MS300, MS300-SH, PowerCool, MS600 |
+| MassageLumbarInstensityStrengthen | `E0` | none | `6E 01 00 E0 4F` | MS600 |
+| MassageModeChange | `48` | none | `6E 01 00 48 B7` | MS300, MS300-SH, PowerCool, MS600 |
+| MassageModeAllOff | `5E` | none | `6E 01 00 5E CD` | MS300, MS300-SH, PowerCool, MS600 |
+| Massage10MinuteTimer | `5F` | none | `6E 01 00 5F CE` | MS300, MS300-SH, PowerCool, MS600 |
+| Massage20MinuteTimer | `63` | none | `6E 01 00 63 D2` | MS300, MS300-SH, PowerCool, MS600 |
+| Massage30MinuteTimer | `61` | none | `6E 01 00 61 D0` | MS300, MS300-SH, PowerCool, MS600 |
+| ZeroGravity | `45` | `66` | `6E 01 00 45 B4` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| AntiSnoring | `46` | `69` | `6E 01 00 46 B5` | MS200, MS300, MS300-SH, PowerCool, MS600 |
+| TVPosition | `58` | `64` | `6E 01 00 58 C7` | MS600 |
+| LoungePosition | `59` | `65` | `6E 01 00 59 C8` | MS200 |
+
+| Alarm/time/release | Write |
+|---|---|
+| STOP left | `6E 01 00 6E DD` |
+| STOP right | `6E 01 01 6E DE` |
+| Cancel countdown, low then high | `6E 05 00 00 73` / `6E 06 00 00 74` |
+| 300 minutes, memory 1, low then high | `6E 05 2C 00 9F` / `6E 06 01 2E A3` |
+| Calendar, 2026-11-16 12:34:56 | `6E 20 0D 08 03 01 38 0B 10 0C 22 38 60` |
+
+| Startup | Framed | Nordic |
+|---|---|---|
+| ExitLimit | `6E 02 01 00 71` | `00` |
+| CheckClock | `6E 08 01 01 78` | `01` |
+<!-- /generated -->
+
+#### Timing
+
+Movement starts after 100 ms, refreshes every 100 ms while held, and queues one
+side-scoped STOP after a submitted movement. HA captures the original side and
+connection for cleanup, serializes writes, and drops missed ticks rather than
+backfilling old movement. A 100 ms hold tolerates up to one tick of scheduling
+latency for its first write. A disconnected or replaced session receives no
+old cleanup. Native cover taps use a finite one-second hold; renewable holds
+end through the scheduler's lease. Entry pulse overrides do not change the
+app's cadence. Presets, flat, light, massage and fan buttons add no release STOP.
+
+Startup subscribes, exits limit mode, queries clock support and synchronizes
+the local calendar, in that order at the 100 ms queue cadence. Writes use
+without-response when offered, otherwise with-response. No application command
+retry, authentication, PIN or encryption handshake is proven. HA owns adapter
+selection, connection budgets and reconnect-on-demand.
+
+#### Notifications
+
+The diagnostic Model sensor carries received BED events, the saved alarm and
+the last rejected reply as attributes, without inventing
+position, massage, RGB, detector or recurring-alarm entities. Clock support is
+announced by its exact response. Alarm add/cancel acknowledgements commit or
+remove the local saved alarm. Six-field extended alarm records remain opaque;
+no hour, minute, repeat or record identity is inferred from their offsets.
+
+HA keeps complete five-byte common notifications across fragments, validates
+extended checksums, guards truncated records and rejects zero-length frames.
+This avoids the app's incomplete-common-frame, embedded-delimiter and
+non-progressing-scanner defects. Subscriptions, pending acknowledgements and
+receive buffers are bound to the current connection. The saved acknowledged
+alarm is local metadata, not a guarantee that a bed retained it after power loss.
+
+#### Services
+
+`adjustable_bed.mlily_remote` accepts `operation`, `device_id` and paired
+`side`. Operations are `time_sync`, `alarm`, `alarm_cancel` and `anti_snore`.
+For MS600 alarms, set `hour` (0–23), `minute` (0–59) and `mode`: `zero_g`,
+`anti_snore`, `tv`, `memory_1`, `memory_2` or `memory_3`. A live clock-support
+announcement is required. The low countdown half precedes the high/action half;
+cancellation sends both halves as zero. Countdown uses minute-truncated epoch
+differences, adding 86,400 seconds when nonpositive, so an equal time means
+1,440 minutes, preserving the app's behavior through local offset changes.
+
+`anti_snore` is restricted to MS300-SH and exposes the direct BED consequence of the app's excluded phone
+microphone algorithm: one normal anti-snore command on the default left side.
+It does not enable phone sensing or configure a bed detector. On a single-address
+pair, a Right-only target is rejected; parent/Both targets execute once through
+the left owner. The ordinary anti-snore preset button follows the targeted child
+side instead.
+
+#### Evidence
+
+Based on MLILY Remote 1.0.1 (10103).
 
 ### MLILY Control
 
@@ -6171,6 +6474,152 @@ value. `tests/test_richmat_app_vectors.py` preserves all 2,094 literal fixtures 
 Physical validation is for real beta/release users and is not implied here.
 
 
+### Power Bob Base
+
+**App:** [Power Bob Base](https://play.google.com/store/apps/details?id=com.richmat.bobpowerbase) 1.0.9 (10900), `com.richmat.bobpowerbase`
+
+**Status:** ❓ Needs testing, all four products are unverified on hardware.
+
+#### Setup
+
+Choose Power Bob Base, the exact Elite/Elite SH/Ultra/Ultra SH product, and its
+Standard, Split head or Split installation. Configure asks the same questions;
+imports and restored entries retain the product, layout and derived profile id.
+Shared scan words offer the app as a candidate. Neither a shared GATT service
+nor the catalog metadata code selects a product. SH products expose Left/Right
+controls; Nordic generic commands omit the side and cannot control Right.
+No mandatory bond or PIN is implied by this app.
+
+#### Controls
+
+<!-- generated:bobpowerbase -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Stored selector | Controls | Sides |
+|---|---|---|---|
+| Power Bob Elite | elite | head_up, head_down, foot_up, foot_down, reset, light, anti_snore, zero_gravity, tv, memory_1, memory_2 | 0 |
+| Power Bob Elite SH | elite_sh | head_up, head_down, foot_up, foot_down, reset, light, anti_snore, zero_gravity, tv, memory_1, memory_2 | 0, 1 |
+| Power Bob Ultra | ultra | head_up, head_down, foot_up, foot_down, head_foot_up, head_foot_down, lumbar_up, lumbar_down, pillow_up, pillow_down, reset, massage_head, massage_foot, massage_mode, massage_off, massage_10, massage_20, massage_30, anti_snore, zero_gravity, tv, memory_1, memory_2 | 0 |
+| Power Bob Ultra SH | ultra_sh | head_up, head_down, foot_up, foot_down, head_foot_up, head_foot_down, lumbar_up, lumbar_down, pillow_up, pillow_down, reset, massage_head, massage_foot, massage_mode, massage_off, massage_10, massage_20, massage_30, anti_snore, zero_gravity, tv, memory_1, memory_2 | 0, 1 |
+
+| Installation | Stored layout |
+|---|---|
+| Standard | standard |
+| Split head | split_head |
+| Split | split |
+
+| Transport | Service | Write | Catalog notify | Generic framing |
+|---|---|---|---|---|
+| n1 | 6e400001-b5a3-f393-e0a9-e50e24dcca9e | 6e400002-b5a3-f393-e0a9-e50e24dcca9e | 6e400003-b5a3-f393-e0a9-e50e24dcca9e | raw |
+| w1 | 0000fee9-0000-1000-8000-00805f9b34fb | d44bc439-abfd-45a2-b575-925416129600 | d44bc439-abfd-45a2-b575-925416129601 | 6E |
+| w2 | 0000fee9-0000-1000-8000-00805f9b34bb | d44bc439-abfd-45a2-b575-925416129622 | d44bc439-abfd-45a2-b575-925416129611 | 6E |
+| w3 | 0000ffe0-0000-1000-8000-00805f9b34fb | 0000ffe2-0000-1000-8000-00805f9b34fb | 0000ffe1-0000-1000-8000-00805f9b34fb | 6E |
+| w4 | 0000fff0-0000-1000-8000-00805f9b34fb | 0000fff2-0000-1000-8000-00805f9b34fb | 0000fff1-0000-1000-8000-00805f9b34fb | 6E |
+| w5 | 0000e0ff-3c17-d293-8e48-14fe2e4da212 | 00000002-3c17-d293-8e48-14fe2e4da212 | 00000003-3c17-d293-8e48-14fe2e4da212 | 6E |
+
+| Control | Gesture | Nordic | Left | Right | Program (left) |
+|---|---|---|---|---|---|
+| head_up | sustainPress | `24` | `6E 01 00 24 93` | `6E 01 01 24 94` | none |
+| head_down | sustainPress | `25` | `6E 01 00 25 94` | `6E 01 01 25 95` | none |
+| foot_up | sustainPress | `26` | `6E 01 00 26 95` | `6E 01 01 26 96` | none |
+| foot_down | sustainPress | `27` | `6E 01 00 27 96` | `6E 01 01 27 97` | none |
+| head_foot_up | sustainPress | `29` | `6E 01 00 29 98` | `6E 01 01 29 99` | none |
+| head_foot_down | sustainPress | `2A` | `6E 01 00 2A 99` | `6E 01 01 2A 9A` | none |
+| lumbar_up | sustainPress | `3F` | `6E 01 00 3F AE` | `6E 01 01 3F AF` | none |
+| lumbar_down | sustainPress | `40` | `6E 01 00 40 AF` | `6E 01 01 40 B0` | none |
+| pillow_up | sustainPress | `41` | `6E 01 00 41 B0` | `6E 01 01 41 B1` | none |
+| pillow_down | sustainPress | `42` | `6E 01 00 42 B1` | `6E 01 01 42 B2` | none |
+| reset | shortPress | `31` | `6E 01 00 31 A0` | `6E 01 01 31 A1` | none |
+| light | shortPress | `3C` | `6E 01 00 3C AB` | `6E 01 01 3C AC` | none |
+| massage_head | shortPress | `4C` | `6E 01 00 4C BB` | `6E 01 01 4C BC` | none |
+| massage_foot | shortPress | `4E` | `6E 01 00 4E BD` | `6E 01 01 4E BE` | none |
+| massage_mode | shortPress | `48` | `6E 01 00 48 B7` | `6E 01 01 48 B8` | none |
+| massage_off | shortPress | `5E` | `6E 01 00 5E CD` | `6E 01 01 5E CE` | none |
+| massage_10 | shortPress | `5F` | `6E 01 00 5F CE` | `6E 01 01 5F CF` | none |
+| massage_20 | shortPress | `63` | `6E 01 00 63 D2` | `6E 01 01 63 D3` | none |
+| massage_30 | shortPress | `61` | `6E 01 00 61 D0` | `6E 01 01 61 D1` | none |
+| anti_snore | shortAndLongPress | `46` | `6E 01 00 46 B5` | `6E 01 01 46 B6` | `6E 01 00 69 D8` |
+| zero_gravity | shortAndLongPress | `45` | `6E 01 00 45 B4` | `6E 01 01 45 B5` | `6E 01 00 66 D5` |
+| tv | shortAndLongPress | `58` | `6E 01 00 58 C7` | `6E 01 01 58 C8` | `6E 01 00 64 D3` |
+| memory_1 | shortAndLongPress | `2E` | `6E 01 00 2E 9D` | `6E 01 01 2E 9E` | `6E 01 00 2B 9A` |
+| memory_2 | shortAndLongPress | `2F` | `6E 01 00 2F 9E` | `6E 01 01 2F 9F` | `6E 01 00 2C 9B` |
+
+| Startup | Framed | Nordic |
+|---|---|---|
+| deviceFunctionItemExitLimit | `6E 02 01 00 71` | `00` |
+| deviceFunctionItemCheckClock | `6E 08 01 01 78` | `01` |
+| deviceFunctionItemCheckLight | `6E 0A 00 01 79` | `01` |
+
+| Helper / example | Characteristic write |
+|---|---|
+| STOP left | `6E 01 00 6E DD` |
+| STOP right | `6E 01 01 6E DE` |
+| Light off left | `6E 01 00 75 E4` |
+| Light off right | `6E 01 01 75 E5` |
+| Light timeout 0 min | `6E 0B FF FF 77` |
+| Light timeout 5 min | `6E 0B 01 2C A6` |
+| RGB red | `6E 0C FF FF 78 6E 0D 00 00 7B` |
+| Repeat list | `6E 20 08 05 01 00 00 9C` |
+| Delete id 3 | `6E 20 08 05 02 01 03 A1` |
+| Local calendar, 2026-11-17 16:00:00 | `6E 20 0D 08 03 01 38 0B 11 10 00 00 0B` |
+
+| Rule | Value |
+|---|---|
+| Scan (case-sensitive substring) | QRRM, COOL, MPE_, 209A, BED- |
+| Refresh / FIFO pacing | 100 ms |
+| Program threshold | 3000 ms |
+| Light timeout update delay | 200 ms |
+| Partial notification expiry | 0.5 s |
+| Public timeout choices, minutes | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 |
+<!-- /generated -->
+
+Every product offers head/foot movement, reset, two custom memories, TV,
+zero gravity and anti-snore recall/programming; each preset's long press is its
+**Save** button. Ultra adds combined head/foot, lumbar, pillow and massage. Elite
+retains its direct bed-light button.
+The normal light menu appears only after the connected bed reports it.
+
+#### Timing
+
+The generated table states the app intervals. Movement first refreshes after
+one tick. Finite HA movement budgets start after that nominal startup tick,
+with a fixed admission end anchored before waiting. New movement is admitted
+strictly before that end, without queued catch-up or per-tick grace. Renewable
+controls retain HA's absolute admitted hold lease. Cleanup begins at the finite
+end (or earlier on STOP/cancellation), retains the source FIFO spacing and can
+submit STOP after that end. The public action drains the submitted
+write and its captured-link STOP even if the caller is cancelled. The app's
+FIFO can leave older movement ahead of STOP; HA does not retain that backlog.
+One-shot reset/massage/light actions have no additional release. Presets recall
+once on a short press or save at the long-press threshold, suppressing recall.
+
+#### Notifications
+
+The status sensor exposes connection-scoped BED events, motor-index feedback,
+massage, lighting, alarm records and lock state as attributes. Motor indices
+and height-like values are retained without calibrated physical-axis claims.
+Diagnostic and anti-snore configuration event payloads retain raw fields.
+No setter is inferred from a receiver. Partial receive bytes expire and old
+callbacks cannot publish into a replacement session. The app's exact snore
+capability literal conflicts with its type-21 framing; no corrected frame is invented.
+
+#### Services
+
+`adjustable_bed.bobpowerbase` exposes repeat alarm list/add/delete, local clock
+sync, light color, light timeout and light off. Alarm actions are `anti_snore`,
+`zero_gravity`, `tv`, `memory_1` and `memory_2`. Weekdays are Monday=0 through
+Sunday=6; an empty list means once, and `enabled` occupies the low repeat bit.
+New alarms use the first unused observed id from 1 through 7; this app allocation
+range does not establish controller capacity. An explicit `alarm_id` avoids
+relying on an incomplete notification list. Light timeout accepts whole minutes
+from 0 through 15, supplied as seconds, with zero selecting the always-on sentinel.
+Color is two frames in one characteristic write. All requested targets and
+operands are checked before control writes use the coordinator scheduler.
+
+#### Analysis provenance
+
+Based on Power Bob Base 1.0.9 (10900) (`com.richmat.bobpowerbase`).
+
 ## Notes
 
 ### Analysis provenance
@@ -8657,3 +9106,3243 @@ Retains its accepted UYRM/VYRM shared BED action without accessory settings.
 #### Evidence
 
 Based on Zero Gravity 1.0.3 (4).
+
+### Okimiki
+
+**App:** [Okimiki](https://play.google.com/store/apps/details?id=com.richmat.okimiki)
+1.0.1 (10101), `com.richmat.okimiki`
+
+**Status:** ❓ Needs testing. Hardware unverified.
+
+#### Setup
+
+Choose **Okimiki app**, then the exact product code shown in the app. Configure,
+import and restored entries retain that product independently for each bed.
+Shared Bluetooth names/services do not select a product. Case-sensitive scan
+keywords match anywhere in the name; manual setup also accepts these candidates.
+
+<!-- generated:okimiki-products -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Axes | Memory slots | Alarm | Light |
+|---|---|---|---|---|
+| HCRN | head, foot | 2 | none | RGB/timer after capability reply |
+| IPRM | head, foot | 0 | none | RGB/timer after capability reply |
+| IQRM | head, foot | 2 | single | RGB/timer after capability reply |
+| KWRN | head, foot | 2 | repeat | RGB/timer after capability reply |
+<!-- /generated -->
+
+The first eligible fixed-UUID write and first notify-capable characteristic are
+selected across recognized services. The last matched service selects raw
+Nordic versus framed basic commands. Dedicated light, clock and alarm records
+remain full frames on every route. There is no PIN handshake or position read.
+A physical address exposes side 0 only. Two separately configured beds can use
+Home Assistant's native paired devices with independent settings and sessions.
+
+#### Controls
+
+All four products expose head/back, foot/legs, combined movement and flat. The
+product table and command table describe their memory and preset controls.
+Lighting appears only after the connected bed reports its light capability.
+The native RGB light and duration number show requested values; they do not
+claim confirmed light-state feedback. Zero duration means always on. On KWRN the
+Alarms diagnostic sensor (disabled by default) counts the alarm records read
+this session and lists each slot's time, wake action, weekdays and on/off as
+attributes. Other decoded events stay in diagnostics.
+
+After discovery, the light and duration entities keep their registry identities
+and customizations through an idle disconnect. They remain unavailable until
+that physical bed reports light support again. Changing the address or product
+starts a separate discovery; remembered identities never authorize commands.
+
+<!-- generated:okimiki-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Control | Recall byte | Save byte | Gesture |
+|---|---|---|---|
+| head_up | `24` | none | 100 ms held refresh, then STOP |
+| head_down | `25` | none | 100 ms held refresh, then STOP |
+| foot_up | `26` | none | 100 ms held refresh, then STOP |
+| foot_down | `27` | none | 100 ms held refresh, then STOP |
+| head_foot_up | `29` | none | 100 ms held refresh, then STOP |
+| head_foot_down | `2A` | none | 100 ms held refresh, then STOP |
+| flat | `31` | none | flat on down, STOP on release |
+| memory_1 | `2E` | `2B` | save at 3 s, recall on early release |
+| memory_2 | `2F` | `2C` | save at 3 s, recall on early release |
+| lounge | `59` | `65` | save at 3 s, recall on early release |
+| zero_gravity | `45` | `66` | save at 3 s, recall on early release |
+<!-- /generated -->
+
+#### Timing
+
+Held motors start after the first tick and release with STOP. Flat sends its
+command on press and STOP on release. A preset released before the save
+threshold recalls once. Save fires at the threshold with no later recall or
+STOP. Explicit save buttons wait for that same threshold and can be cancelled.
+Subscription precedes ExitLimit and, where offered, clock synchronization;
+clock/light checks follow once each. The BED queue spaces submissions without
+app-specific retries. Duration changes retain the slider-end delay.
+
+<!-- generated:okimiki-timing -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Operation | Interval |
+|---|---|
+| Held refresh and FIFO | 100 ms |
+| Save threshold | 3 s |
+| Menu query spacing | 300 ms |
+| Light duration delay | 200 ms |
+<!-- /generated -->
+
+#### Notifications
+
+Common notifications consume the entire available buffer. Extended inbound
+records use `6E 20 LENGTH`, distinct from outbound `6E LENGTH 20`. Add/cancel
+replies are alarm acknowledgments, never music or confirmation of a particular
+scheduled time. Recurring list items and updates retain all returned fields.
+Capabilities and observed alarms are cleared when their session ends. Local
+RGB/duration requests may restore, but are never replayed on reconnect.
+
+#### Services
+
+`adjustable_bed.okimiki` exposes bounded presses, explicit saves, lighting,
+clock synchronization, IQRM's one-shot lounge alarm and KWRN's recurring list,
+add/edit, enable and delete operations. Alarm actions require the clock
+capability reply. HCRN and IPRM have no alarm page. These alarms stay on this
+action rather than the shared `set_alarm`: that action does not yet keep the
+safeguards these record edits need across a paired hand-over, between check and
+write, and when Stop interrupts the check.
+
+Read KWRN's list before editing or deleting by ID; the Alarms sensor shows the
+received slots. An edit retains the returned reserved byte; omitted fields retain
+the received values. Weekdays are names, Monday to Sunday; an empty list means
+once, and leaving the field out keeps an edited alarm's days. The four modes are lounge, zero gravity, memory 1 and memory 2. Choose an
+explicit `alarm_id` from 1 through 7 when creating a recurring alarm. The list
+has no completion marker, so Home Assistant does not infer a free slot from
+missing or delayed replies. The app's exhausted allocator serializes FF; that
+evidence is retained in codec tests, but Home Assistant requires an explicit
+slot instead.
+
+A one-shot alarm uses the selected local time and a minute countdown; a positive
+subminute interval rolls to the next day. Clock sync sends epoch seconds with
+a truncated whole-hour timezone, then a local calendar frame. Service requests
+retain their physical owner through admission, validation, writes and cleanup.
+
+#### Evidence
+
+The app's original and continuation literals match the production Richmat codec
+byte for byte; no existing profile's frames change. Hardware behavior, effective
+STOP, RGB/timer and firmware alarm execution still need testing on real beds.
+Shared passive bed effects add no controls and assume no single-address pairing.
+
+Based on Okimiki 1.0.1 (`com.richmat.okimiki`).
+
+### Nisco
+
+**App:** Nisco 1.1.1 (code 3), `com.richmat.nisco`
+
+**Status:** ❓ Needs testing (APK-verified; hardware unverified)
+
+#### Setup
+
+Choose **Nisco app (Richmat)** explicitly. Auto uses the first four Bluetooth
+name characters, lowercased, as the surface identifier. A saved explicit model
+wins over the name. QRRM asks for a real model. The six short identifiers
+3i/4i/4it/5i/6i/7i are dormant in this app and are not offered. Shared UUIDs and
+brand names do not select this app. Configure, import and restore retain the
+app/model profile; a two-address pair retains each physical side's selection.
+
+Choose **Separate HJ_Bed sleep and intervention receiver** for the separate
+sensing module. That receiver has no motor controls. Two physical bed addresses
+can use Home Assistant's parent/Left/Right pairing. Transmit modes 0, 1 and 2
+remain app modes and do not create single-address native sides. They and the
+app's motor group are not entities: set them with the `richmat_mh_control`
+action's `app_mode`.
+
+#### Controls
+
+The selected model's own ordered functions, aliases and page maps determine
+motors, presets, recall/program slots, massage, locks and other bed controls.
+The generated tables below list each app separately. Nisco CFRM retains its
+catalog LOCK entry. The transmit mode changes ordinary command and release
+frames. Snore intervention samples the current mode at the final dispatch
+boundary, including a mode changed while its write waited for the BLE lane.
+The dedicated `13`-family setting is separate from normal anti-snore recall/save.
+
+Button names come from the catalog's command names, shown in the Richmat MH
+buttons' wording; the catalog labels stay as recorded. For example `Massage Head
+Intensity Inc` is Massage: Head Up, `Massage 10Min` is Massage: Timer 10 Minutes,
+`Zg2 Back`/`Zg2 Set` are Zero Gravity 2 and Save Zero Gravity 2, and `Ubl Off` is
+Underbed light off.
+
+Nisco's light timer preserves the high and low duration bytes. Normal and
+waist mattress controls are dormant, even though startup probes and shared
+checksum/parser effects exist. Parsed mattress frames remain controller state;
+the sibling's detailed offsets and controls are not borrowed.
+
+#### Timing
+
+Ordinary KEEP uses the selected widget's interval. Fixed-layout remotes use
+150 ms refresh; their long-save gesture waits three one-second ticks and sends
+a checksummed save, followed by the 150 ms release sequence. The generic
+LONG-worker's malformed checksum-zero example is evidence of a distinct path,
+not a reason to corrupt all saves or assume firmware tolerance.
+HA does not expose that raw threshold path, which no current Nisco widget is
+shown to use. Ordinary programming and the separately attached, checksummed
+fixed-remote saves remain available.
+
+`set_alarm` writes the ordinary alarm page's two-phase frames 300 ms apart.
+The app's mode page sends the same frames 150 ms apart; Home Assistant uses the
+alarm page's timing for both.
+
+Startup subscribes, waits 300 ms, queries the version, waits 300 ms, then runs
+the old or new ordered query schedule with 300 ms slots. Aroma and speech
+infrastructure probes are excluded; their schedule slots remain. Queries target
+one physical receiver. Group membership and physical recipients are independent
+of transmit mode.
+
+HA bounds light timers to 0..300 seconds, finite holds to elapsed time and
+renewable holds to the scheduler's current deadline. These are HA choices, not
+Android validation or a hardware watchdog guarantee. In-flight writes drain
+before cancellation cleanup; source-defined releases use an independent cancel
+event and cannot migrate into a replacement BLE session.
+
+#### Notifications
+
+The shared classifier retains exact version handling, INIT checksum/length
+gates, mode, signed angle, massage, memory and alarm/snore state. The identical
+massage/UBL-lock prefix remains shadowed; no missing lock decoder is invented.
+Nisco's waist combined forms are 14, 15 and 19 bytes, distinct from MLILY
+Supreme's 14, 18 and 19. Nisco has no detailed diagnostic result consumer or
+mattress cache offsets.
+
+The sleep receiver retains local rates, occupancy, movement, user mode and
+intervention settings. The raw `Std` value is the disabled-by-default
+diagnostic Left/Right sleep receiver state sensor. Wi-Fi, network/mesh administration, cloud,
+accounts, firmware administration, scoring, reports and phone/media features
+are excluded. A source-proven BED effect remains included even when its caller
+sits beside excluded infrastructure.
+
+#### Services
+
+`richmat_mh_control` runs a declared current-page opcode, its attached
+fixed-remote long-save caller, or an included query. Arbitrary opcodes and
+unavailable model controls are rejected. Standard preset/memory actions,
+`set_alarm` and `richmat_mh_light_color` use the same family runtime. Service
+admission captures all physical targets and STOP epochs before lazy imports.
+
+#### Evidence
+
+Based on Nisco 1.1.1 (3).
+
+### MLILY Supreme
+
+**App:** MLILY Supreme 1.3.1 (code 5), `com.richmat.mlily_supreme`
+
+**Status:** ❓ Needs testing (APK-verified; hardware unverified)
+
+#### Setup
+
+Choose **MLILY Supreme app (Richmat)** explicitly. This is a separate profile
+from MLILY Control and other same-brand integrations. The name rule and GATT
+priority match Nisco's established common domains. Unlike Nisco, the six short
+manual surface identifiers are selectable. Choose the explicit normal-mattress
+variant only for that app-selected extra; a powered initialization must still
+arrive. Waist powered initialization admits its own area. Configure and paired
+side storage retain these choices independently.
+
+#### Controls
+
+Use this app's own table. CFRM lacks Nisco's catalog LOCK entry. Its dedicated
+smart-light-lock caller is independently available on the admitted CFRM light
+page, preserves fixed mode 00 and sends once without motor release.
+
+The light timer's final high byte is the current transmit mode, including its
+zero-duration form; it is not Nisco's duration-high-byte behavior. Motor target
+and massage builders preserve their own masks and packed fields. Normal
+mattress pressure, warmth, zone, duration, mode, leg/pillow movement and alarm
+controls require the normal-mattress selection and initialization. Waist mode,
+warmth, pressure, duration and alarms retain their separate left/right/both
+setting domains. Pad selectors do not create another BLE recipient.
+
+#### Timing
+
+The shared query schedule and ordinary/fixed-remote caller timings apply only
+where established. Two-phase alarms use 300 ms. Mattress initialization
+consumers run 300 ms after their admitted frames. Mattress commands are one-shot;
+mode zero and leg/pillow zero are explicit stop values.
+
+#### Notifications
+
+The diagnostic INIT decoder checks exact capability, start and stop replies
+before result-prefix decoding. Results use the low nibble of byte 2, high
+nibble of byte 3 and low nibble of byte 3. The guarded consumer appends recognized
+motor1..5, massager1..2, UBL and controller USB results. Repeated components
+remain repeated rows; unknown type/number pairs append nothing. Unknown result
+nibbles remain raw. Only result 1 is a pass. Start clears rows and resets progress;
+stop resets progress and retains rows. Other valid INIT frames keep their generic
+fallback. The source length/checksum gate covers the whole accumulated buffer.
+
+Normal/waist cache keys, alarm tails and the source's fixed-end-index resync
+quirk remain distinct from Nisco's bounded evidence. Coalesced waist lengths are
+14, 18 and 19 bytes. The separate sleep receiver's live consumer requires a
+saved physical receiver; `Std` defaults to 1. HA rejects signed-length overflow
+headers and bounds malformed buffering rather than claiming Android recovered
+those inputs. Bleak owns subscription descriptors; HA does not write arbitrary
+non-CCCD descriptors. Missing preferred characteristics fail safely, without a
+guaranteed Android fallback-recovery claim.
+
+#### Services
+
+The family control and light-color actions and `set_alarm` target the
+selected physical bed or paired child. Every target is validated before the
+first control frame, and stale ownership or a later STOP invalidates admission.
+No Wi-Fi, SSID, mesh, cloud, account, OTA, audio or accessory administration
+service is provided.
+
+#### Evidence
+
+Based on MLILY Supreme 1.3.1 (5).
+
+#### Nisco and MLILY Supreme control tables
+
+<!-- generated:richmat-mh-apps -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+**Nisco**
+
+| Models | Page | Control | Gesture | Mode 0 bytes | Refresh ms |
+|---|---|---|---|---|---|
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Back | up | 6E 01 00 24 93 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Back | down | 6E 01 00 25 94 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Foot | up | 6E 01 00 26 95 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Foot | down | 6E 01 00 27 96 | 150 |
+| 6BRM, BQRM | Legacy | Head Foot Both | up | 6E 01 00 29 98 | 150 |
+| 6BRM, BQRM | Legacy | Head Foot Both | down | 6E 01 00 2A 99 | 150 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Back | up | 6E 01 00 24 93 | 100 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Back | down | 6E 01 00 25 94 | 100 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Foot | up | 6E 01 00 26 95 | 100 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Foot | down | 6E 01 00 27 96 | 100 |
+| 6CRM, 6DRM, B0RM, BKRM, D7RM, M6RM, M7RM, U8RM, V5RM, V6RM, VARM | Legacy | Head Foot Both | press | 6E 01 00 29 98 | 100 |
+| 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, A0RM, A1RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B7RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IKRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OWRM, OXRM, OYRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T2RM, T3RM, T5RM, T6RM, T7RM, T9RM, TARM, TBRM, THRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA2, ZRI0 | Legacy | Flat | press | 6E 01 00 31 A0 | once |
+| 6DRM, 6ERM, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, EHRM, ELRM, F0RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O4RM, O7RM, O8RM, OARM, OQRM, OTRM, OYRM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UCRM, UDRM, UGRM, UIRM, UJRM, UKRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VSRM, VVRM, VWRM, WCRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, XCRM, XFRM, XGRM, XLRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZR40, ZR50, ZR51, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Anti-Snore | recall | 6E 01 00 46 B5 | once |
+| 6DRM, 6ERM, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, CFRM, CWRM, CXRM, D0RM, D1RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, EHRM, F0RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O4RM, O7RM, O8RM, OARM, OQRM, OTRM, OYRM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UCRM, UDRM, UGRM, UIRM, UJRM, UKRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VSRM, VVRM, VWRM, WCRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, XCRM, XFRM, XGRM, XLRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZR40, ZR50, ZR51, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Anti-Snore | save | 6E 01 00 69 D8 | once |
+| 6DRM, 6ERM, 6HRM, A0RM, A1RM, A3RM, A6RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EFRM, ELRM, F0RM, FIRM, FJRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, S9RM, SARM, T3RM, T4RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Zero Gravity | recall | 6E 01 00 45 B4 | once |
+| 6DRM, 6ERM, 6HRM, A0RM, A1RM, A3RM, A6RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, ELRM, F0RM, FIRM, FJRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Zero Gravity | save | 6E 01 00 66 D5 | once |
+| 6ERM, 6FRM, A1RM, A3RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AWRM, AXRM, B1RM, B4RM, BDRM, BERM, BHRM, BIRM, BJRM, BLRM, BMRM, BNRM, BZRM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DZRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FJRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IMRM, ISRM, M3RM, M5RM, M6RM, M7RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, ORRM, OSRM, OTRM, OYRM, OZRM, P0RM, P1RM, P2RM, P6RM, R2RM, R5RM, T1RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, TLRM, U1RM, U2RM, U3RM, U4RM, U5RM, U7RM, U8RM, U9RM, UARM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UVRM, UWRM, UYRM, V0RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WORM, WSRM, WURM, WVRM, WXRM, WYRM, XCRM, XFRM, XLRM, Y2RM, Y3RM, Y6RM, Y8RM, YARM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZQRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZR60, ZRA0, ZRI0 | Legacy | Ubl On Off | press | 6E 01 00 3C AB | once |
+| 6HRM, A2RM, A3RM, AARM, AWRM, B6RM, B6RU, B7RM, BFRM, BGRM, BHRM, BNRM, BZRM, CERM, D2RM, D5RM, DFRM, EFRM, ELRM, FIRM, FRRM, GMRM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, MMRM, O1RM, O2RM, O3RM, O9RM, OARM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, R6RM, S9RM, SARM, T4RM, T8RM, TARM, TLRM, TWRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UQRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WLRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, Y3RM, Y4RM, YHRM, YJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2 | Legacy | Head Foot Both | up | 6E 01 00 29 98 | 100 |
+| 6HRM, A2RM, A3RM, AARM, AWRM, B6RM, B6RU, B7RM, BFRM, BGRM, BHRM, BNRM, BZRM, CERM, D2RM, D5RM, DFRM, EFRM, ELRM, FIRM, FRRM, GMRM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, MMRM, O1RM, O2RM, O3RM, O9RM, OARM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, R6RM, S9RM, SARM, T4RM, T8RM, TARM, TLRM, TWRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UQRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WLRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, Y3RM, Y4RM, YHRM, YJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2 | Legacy | Head Foot Both | down | 6E 01 00 2A 99 | 100 |
+| 6HRM, UZRM | Legacy | Reading | recall | 6E 01 00 58 C7 | once |
+| 6HRM, A0RM, A3RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AWRM, AXRM, B4RM, B5RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CXRM, D2RM, D4RM, DFRM, DNRM, DZRM, E1RM, EARM, EBRM, EFRM, ELRM, F0RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, ISRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O9RM, OARM, OMRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R2RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WIRM, WJRM, WLRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XFRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | TV | save | 6E 01 00 64 D3 | once |
+| 6HRM, UZRM | Legacy | Yoga | recall | 6E 01 00 59 C8 | once |
+| 6HRM, A3RM, ACRM, ADRM, B4RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BZRM, IGRM, IRRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O6RM, O9RM, OMRM, OSRM, OXRM, OZRM, P1RM, R2RM, R5RM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, UZRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WDRM, WERM, WLRM, WQRM, WSRM, WTRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YORM, YPRM, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | Lounge | save | 6E 01 00 65 D4 | once |
+| 6HRM, UZRM | Legacy | Movie | recall | 6E 01 00 2E 9D | once |
+| 6HRM, A0RM, A1RM, A2RM, A3RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VSRM, VVRM, VWRM, VXRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0 | Legacy | M1 | save | 6E 01 00 2B 9A | once |
+| 6HRM, UZRM | Legacy | Lactation | recall | 6E 01 00 2F 9E | once |
+| 6HRM, A0RM, A1RM, A2RM, A3RM, A9RM, ADRM, AERM, AFRM, AGRM, AWRM, AXRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CXRM, D0RM, D1RM, D2RM, D4RM, DNRM, E6RM, EARM, EBRM, EFRM, ELRM, FIRM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UWRM, UXRM, UZRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VWRM, VXRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WLRM, WNRM, WPRM, WSRM, WURM, WXRM, XCRM, XFRM, Y4RM, Y5RM, Y6RM, Y8RM, YERM, YFRM, YGRM, YHRM, YJRM, YMRM, YPRM, ZR12, ZR50, ZR51, ZR80, ZRA2 | Legacy | M2 | save | 6E 01 00 2C 9B | once |
+| 6HRM, UZRM | Legacy | Anti Snore3 | recall | 6E 01 00 30 9F | once |
+| 6HRM, A0RM, A2RM, ADRM, BMRM, BNRM, BZRM, DFRM, DGRM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, UZRM, V7RM, VWRM, VXRM, W5RM, W7RM, WLRM, Y4RM, YPRM, ZQRM, ZRA2 | Legacy | M3 | save | 6E 01 00 2D 9C | once |
+| 6HRM, ABRM, ACRM, ADRM, B9TT, D7RM, I0RM, I4RM, I5RM, M9RM, MLRM, O1RM, OTRM, S9RM, U0RM, U7RM, U8RM, U9RM, UARM, UJRM, UNRM, UZRM, V0RM, V1RM, V6RM, V7RM, VARM, VKRM, YHRM, ZR21, ZR90, ZRI0 | Legacy | Factory Reset | press | 6E 01 00 62 D1 | once |
+| 6HRM, A2RM, A3RM, BZRM, M6RM, MMRM, O1RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM, U1RM, U2RM, UKRM, UZRM, W7RM, WDRM, WERM | Legacy | Massage Head Foot Intensity Inc | press | 6E 01 00 34 A3 | once |
+| 6HRM, A2RM, A3RM, BZRM, M6RM, MMRM, O1RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM, U1RM, U2RM, UKRM, UZRM, W7RM | Legacy | Massage Head Foot Intensity Dec | press | 6E 01 00 35 A4 | once |
+| 6HRM, A0RM, A1RM, A3RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, B8RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VRRM, VSRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51 | Legacy | Massage Mode | press | 6E 01 00 48 B7 | once |
+| 6HRM, A3RM, A9RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, D2RM, D4RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IARM, IBRM, IORM, ISRM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R2RM, R5RM, T5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 10Min | press | 6E 01 00 5F CE | once |
+| 6HRM, A3RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IBRM, M3RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 20Min | press | 6E 01 00 63 D2 | once |
+| 6HRM, A3RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IBRM, ILRM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 30Min | press | 6E 01 00 61 D0 | once |
+| A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AXRM, BDRM, BERM, BGRM, BIRM, BLRM, BMRM, CFRM, CWRM, D4RM, D6RM, E1RM, E6RM, EERM, EFRM, EHRM, F0RM, GARM, I0RM, I4RM, I5RM, I6RM, ICRM, IGRM, M3RM, M5RM, MRRM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TZRM, U2RM, U3RM, U5RM, U9RM, UARM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WTRM, WWRM, WXRM, XCRM, XLRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, ZR11, ZR50, ZR51, ZRA0, ZRI0 | Legacy | Pillow | up | 6E 01 00 3F AE | 100 |
+| A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AXRM, BDRM, BERM, BGRM, BIRM, BLRM, BMRM, CFRM, CWRM, D4RM, D6RM, E1RM, E6RM, EERM, EFRM, EHRM, F0RM, GARM, I0RM, I4RM, I5RM, I6RM, ICRM, IGRM, M3RM, M5RM, MRRM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TZRM, U2RM, U3RM, U5RM, U9RM, UARM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WTRM, WWRM, WXRM, XCRM, XLRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, ZR11, ZR50, ZR51, ZRA0, ZRI0 | Legacy | Pillow | down | 6E 01 00 40 AF | 100 |
+| A0RM, A3RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AWRM, AXRM, B4RM, B5RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, D2RM, D4RM, DFRM, DZRM, E1RM, EFRM, ELRM, F0RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, ISRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O9RM, OARM, OMRM, ONRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R2RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, THRM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WIRM, WJRM, WLRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XFRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | TV | recall | 6E 01 00 58 C7 | once |
+| A0RM, A1RM, A2RM, A3RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DNRM, DZRM, E6RM, EARM, EBRM, EFRM, EHRM, ELRM, F0RM, FIRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VSRM, VVRM, VWRM, VXRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0 | Legacy | M1 | recall | 6E 01 00 2E 9D | once |
+| A0RM, A1RM, A2RM, A3RM, A9RM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, D0RM, D1RM, D2RM, D4RM, DNRM, E6RM, EARM, EBRM, EFRM, ELRM, FIRM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UWRM, UXRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VWRM, VXRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WLRM, WNRM, WPRM, WSRM, WURM, WXRM, XCRM, XFRM, Y4RM, Y5RM, Y6RM, Y8RM, YERM, YFRM, YGRM, YHRM, YJRM, YMRM, YPRM, ZR12, ZR50, ZR51, ZR80, ZRA2 | Legacy | M2 | recall | 6E 01 00 2F 9E | once |
+| A0RM, A2RM, ADRM, BMRM, BNRM, BZRM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, V7RM, VWRM, VXRM, W5RM, W7RM, WLRM, Y4RM, YPRM, ZQRM, ZRA2 | Legacy | M3 | recall | 6E 01 00 30 9F | once |
+| A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, BDRM, BERM, CFRM, CWRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R2RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, U3RM, U4RM, U5RM, U9RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, X2RM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage Head Intensity Inc | press | 6E 01 00 4C BB | once |
+| A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, B8TT, B9TT, BDRM, BERM, CFRM, CWRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R2RM, R5RM, T5RM, T7RM, TARM, TBRM, THRM, U3RM, U4RM, U5RM, U9RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR50, ZR51, ZRI0 | Legacy | Massage Foot Intensity Inc | press | 6E 01 00 4E BD | once |
+| A0RM, A1RM, AARM, AERM, AFRM, BGRM, CFRM, CWRM, D0RM, D1RM, E1RM, F0RM, I1RM, IERM, IGRM, M6RM, M7RM, MARM, O8RM, P1RM, P6RM, T7RM, U4RM, U5RM, URRM, UTRM, UYRM, VBRM, VKRM, VLRM, VPRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VZRM, W6RM, W7RM, W9RM, WHRM, WJRM, WKRM, WLRM, WNRM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YIRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51 | Legacy | Massage Head Foot Both Off | press | 6E 01 00 5E CD | once |
+| A1RM, AARM, AHRM, BDRM, BERM, BIRM, CFRM, D4RM, E1RM, E6RM, EERM, EHRM, GARM, I5RM, O5RM, ORRM, P6RM, T1RM, U3RM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, YARM, YIRM, YORM, YPRM, ZR50, ZRA0 | Legacy | Lumbar | up | 6E 01 00 41 B0 | 100 |
+| A1RM, AARM, AHRM, BDRM, BERM, BIRM, CFRM, D4RM, E1RM, E6RM, EERM, EHRM, GARM, I5RM, O5RM, ORRM, P6RM, T1RM, U3RM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, YARM, YIRM, YORM, YPRM, ZR50, ZRA0 | Legacy | Lumbar | down | 6E 01 00 42 B1 | 100 |
+| A2RM, O4RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Head Foot Speed Inc | press | 6E 01 00 36 A5 | once |
+| A2RM, O4RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Head Foot Speed Dec | press | 6E 01 00 37 A6 | once |
+| A2RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Pulse | press | 6E 01 00 38 A7 | once |
+| A2RM, I0RM, I4RM, I5RM, MLRM, O0RM, O6RM, OMRM, ONRM, OORM, OTRM, OYRM, R6RM, THRM, U9RM, UARM, UJRM, V7RM, ZRI0 | Legacy | Massage Wave | press | 6E 01 00 39 A8 | once |
+| A2RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Constant | press | 6E 01 00 3A A9 | once |
+| A3RM, ACRM, ADRM, B4RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BZRM, IGRM, IRRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O6RM, O9RM, OMRM, ONRM, OORM, OSRM, OXRM, OZRM, P1RM, R2RM, R5RM, TBRM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WDRM, WERM, WLRM, WQRM, WSRM, WTRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YORM, YPRM, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | Lounge | recall | 6E 01 00 59 C8 | once |
+| ACRM, ADRM, BERM, D7RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, R2RM, T9RM, U9RM, UARM, UJRM, ULRM, V7RM, VQRM, W5RM, Y3RM, YGRM | Legacy | Massage Head Intensity Dec | press | 6E 01 00 4D BC | once |
+| ACRM, ADRM, B8TT, B9TT, BERM, D7RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, R2RM, U9RM, UARM, UJRM, V7RM, VQRM, W5RM, Y3RM, YGRM | Legacy | Massage Foot Intensity Dec | press | 6E 01 00 4F BE | once |
+| AERM, AGRM | Legacy | Pillow | up | 6E 01 00 3F AE | 150 |
+| AERM, AGRM | Legacy | Pillow | down | 6E 01 00 40 AF | 150 |
+| AERM, Y1RM, YGRM | Legacy | Head Up Foot Up | press | 6E 01 00 23 92 | once |
+| AERM | Legacy | Lumbar | recall | 6E 01 00 91 00 | once |
+| AERM | Legacy | Lumbar | save | 6E 01 00 92 01 | once |
+| AFRM, AGRM | Legacy | Head Up Foot Up | press | 6E 01 00 23 92 | 150 |
+| AHRM, B9TT, I2RM, I7RM, I8RM, ICRM, IERM, IFRM, IHRM, IIRM, IRRM, O5RM, V9RM, VIRM, VNRM, WIRM, YGRM | Legacy | Massage Head Foot Both On | press | 6E 01 00 5D CC | once |
+| AWRM, AXRM, DFRM, EARM, EBRM, EERM, EFRM, EHRM, GARM, UFRM | Legacy | All massage off | press | 6E 01 00 5E CD | once |
+| B1RM, I9RM, INRM, O6RM, OMRM, OORM, R6RM, VGRM, WDRM, WERM | Legacy | Massage Head On Off | press | 6E 01 00 32 A1 | once |
+| B1RM, O6RM, OMRM, OORM, R6RM | Legacy | Massage Foot On Off | press | 6E 01 00 33 A2 | once |
+| B1RM | Legacy | Massage Off Reset | press | 6E 01 00 5A C9 | once |
+| B1RM, R2RM | Legacy | Massage Intensity3 | press | 6E 01 00 68 D7 | once |
+| B1RM, R2RM | Legacy | Massage Intensity1 | press | 6E 01 00 67 D6 | once |
+| B4RM, B9RM, ISRM, ORRM, P2RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 | Legacy | Pillow Lumbar Both | up | 6E 01 00 43 B2 | 100 |
+| B4RM, B9RM, ISRM, ORRM, P2RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 | Legacy | Pillow Lumbar Both | down | 6E 01 00 44 B3 | 100 |
+| B8RM | Legacy | Massage Wave3 | press | 6E 01 00 4B BA | once |
+| B9TT, BHRM, BIRM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OURM, OWRM, OYRM, P5RM, U9RM, UARM, UJRM, V6RM, V7RM, YERM, YGRM, ZRI0 | Legacy | Massage Off | press | 6E 01 00 47 B6 | once |
+| BGRM, BHRM, BIRM, BLRM, BNRM | Legacy | Massage Head Intensity Inc2 | press | 6E 01 00 A4 13 | once |
+| BGRM, BHRM, BIRM, BLRM, BNRM | Legacy | Massage Foot Intensity Inc2 | press | 6E 01 00 A5 14 | once |
+| BZRM | Legacy | Relax | press | 6E 01 00 70 DF | once |
+| CERM, ELRM | Entity | Head | up | 6E 01 00 24 93 | 100 |
+| CERM, ELRM | Entity | Head | down | 6E 01 00 25 94 | 100 |
+| CERM, ELRM | Entity | Foot | up | 6E 01 00 26 95 | 100 |
+| CERM, ELRM | Entity | Foot | down | 6E 01 00 27 96 | 100 |
+| CERM, ELRM | Entity | Head Foot Both | up | 6E 01 00 29 98 | 100 |
+| CERM, ELRM | Entity | Head Foot Both | down | 6E 01 00 2A 99 | 100 |
+| CERM, ELRM | Entity | Flat | press | 6E 01 00 31 A0 | once |
+| CERM, ELRM | Entity | TV | recall | 6E 01 00 58 C7 | once |
+| CERM, ELRM | Entity | TV | save | 6E 01 00 64 D3 | once |
+| CERM, ELRM | Entity | Zero Gravity | recall | 6E 01 00 45 B4 | once |
+| CERM, ELRM | Entity | Zero Gravity | save | 6E 01 00 66 D5 | once |
+| CERM, ELRM | Entity | Anti-Snore | recall | 6E 01 00 46 B5 | once |
+| CERM, ELRM | Entity | M1 | recall | 6E 01 00 2E 9D | once |
+| CERM, ELRM | Entity | M1 | save | 6E 01 00 2B 9A | once |
+| CERM, ELRM | Entity | M2 | recall | 6E 01 00 2F 9E | once |
+| CERM, ELRM | Entity | M2 | save | 6E 01 00 2C 9B | once |
+| CFRM, E6RM, EERM, GARM, M5RM, U3RM | Legacy | Motor5 | up | 6E 01 00 71 E0 | 100 |
+| CFRM, E6RM, EERM, GARM, M5RM, U3RM | Legacy | Motor5 | down | 6E 01 00 72 E1 | 100 |
+| CFRM, ZQRM | Legacy | Lock | press | 6E 01 00 84 F3 | once |
+| CFRM, E1RM, EERM, GARM | Legacy | Memory1 | recall | 6E 01 00 2E 9D | once |
+| CXRM, DNRM | Legacy | Movie Watching | recall | 6E 01 00 58 C7 | once |
+| CXRM | Legacy | Yoga | recall | 6E 01 00 2F 9E | once |
+| DFRM, DGRM | Legacy | Yoga | recall | 6E 01 00 30 9F | once |
+| DNRM | Legacy | Xiaofeiyan | recall | 6E 01 00 F0 5F | once |
+| DNRM, DZRM, EARM, EBRM | Legacy | Yoga | save | 6E 01 00 F1 60 | once |
+| DZRM, EARM, EBRM | Legacy | Yoga | recall | 6E 01 00 F0 5F | once |
+| E6RM, M5RM | Legacy | Motor6 | up | 6E 01 00 73 E2 | 100 |
+| E6RM, M5RM | Legacy | Motor6 | down | 6E 01 00 74 E3 | 100 |
+| EARM, EBRM | Legacy | Zero gravity | recall | 6E 01 00 45 B4 | once |
+| EARM, EBRM | Legacy | Movie viewing | recall | 6E 01 00 58 C7 | once |
+| FIRM, FRRM | Legacy | Read | recall | 6E 01 00 F2 61 | once |
+| FIRM, FRRM | Legacy | Read | save | 6E 01 00 F3 62 | once |
+| FIRM, FRRM | Legacy | Recline | recall | 6E 01 00 F6 65 | once |
+| FIRM, FRRM | Legacy | Flat Sleep | save | 6E 01 00 F7 66 | once |
+| FJRM | Legacy | Both massage off | press | 6E 01 00 34 A3 | once |
+| GARM | Legacy | Music Vibration Mode | press | 6E 01 00 D6 45 | once |
+| OORM, OURM, OWRM, YFRM, YGRM | Legacy | Head Up Foot Down | press | 6E 01 00 21 90 | once |
+| OURM, OWRM, YFRM, YGRM | Legacy | Head Down Foot Up | press | 6E 01 00 22 91 | once |
+| OWRM, XFRM, XGRM, XLRM, YIRM, YMRM, YNRM, YORM, YPRM | Legacy | Head Up Only | press | 6E 01 00 3D AC | once |
+| OWRM | Legacy | Foot Up Only | press | 6E 01 00 3E AD | once |
+| P2RM, ZR70, ZR80 | Legacy | Pillow Lumbar Both Tilt Up | press | 6E 01 00 5B CA | once |
+| P2RM, ZR70, ZR80 | Legacy | Pillow Lumbar Both Tilt Down | press | 6E 01 00 5C CB | once |
+| P2RM, ZRA0 | Legacy | Ubl Off | press | 6E 01 00 75 E4 | once |
+| R2RM | Legacy | Massage Intensity2 | press | 6E 01 00 AF 1E | once |
+| T3RM | Legacy | Both massage off | press | 6E 01 00 5D CC | once |
+| U3RM | Legacy | Zg2 Back | press | 6E 01 00 6B DA | once |
+| U3RM | Legacy | Zg2 Set | press | 6E 01 00 6A D9 | once |
+| VRRM | Legacy | Flat2 | press | 6E 01 00 6C DB | once |
+| WYRM | Legacy | Pillow | press | 6E 01 00 3F AE | 100 |
+| Y2RM | Legacy | Head Foot On Off | press | 6E 01 00 6F DE | once |
+| ZQRM | Legacy | M4 | recall | 6E 01 00 B2 21 | once |
+| ZQRM | Legacy | M4 | save | 6E 01 00 B3 22 | once |
+
+| Model | Alarm operands | Snore operands | Angle targets | Motor modes |
+|---|---|---|---|---|
+| 6BRM |  |  |  |  |
+| 6CRM |  |  |  |  |
+| 6DRM |  |  |  |  |
+| 6ERM |  |  |  |  |
+| 6FRM |  |  |  |  |
+| 6HRM |  |  |  | SINGLE: LEFT, RIGHT |
+| A0RM |  |  |  |  |
+| A1RM |  |  |  |  |
+| A2RM |  |  |  |  |
+| A3RM |  |  |  |  |
+| A6RM |  |  |  |  |
+| A7RM |  |  |  |  |
+| A8RM |  |  |  |  |
+| A9RM |  |  |  |  |
+| AARM |  |  |  |  |
+| ABRM |  |  |  |  |
+| ACRM |  |  |  |  |
+| ADRM |  |  |  |  |
+| AERM |  |  |  |  |
+| AFRM |  |  |  |  |
+| AGRM |  |  |  |  |
+| AHRM |  |  |  |  |
+| AIRM |  |  |  |  |
+| AJRM |  |  |  |  |
+| AKRM |  |  |  |  |
+| AWRM |  |  |  |  |
+| AXRM |  |  |  |  |
+| B0RM |  |  |  |  |
+| B1RM |  |  |  |  |
+| B2RM |  |  |  |  |
+| B3RM |  |  |  |  |
+| B4RM |  |  |  |  |
+| B5RM |  |  |  |  |
+| B6RM |  |  |  |  |
+| B6RU |  |  |  |  |
+| B7RM |  |  |  |  |
+| B8RM |  |  |  |  |
+| B8TT |  |  |  |  |
+| B9RM |  |  |  |  |
+| B9TT |  |  |  |  |
+| BARM |  |  |  |  |
+| BBRM |  |  |  |  |
+| BCRM |  |  |  |  |
+| BDRM |  |  |  |  |
+| BERM |  |  |  |  |
+| BFRM |  |  |  |  |
+| BGRM |  |  |  |  |
+| BHRM |  |  |  |  |
+| BIRM |  |  |  |  |
+| BJRM |  |  |  |  |
+| BKRM |  |  |  |  |
+| BLRM |  |  |  |  |
+| BMRM |  |  |  |  |
+| BNRM |  |  |  |  |
+| BPRM |  |  |  |  |
+| BQRM |  |  |  |  |
+| BZRM |  |  |  |  |
+| CERM | 58, 45, 46, 2E, 2F |  | Back 0..58, Foot 0..42 |  |
+| CFRM | 46, 45, 2E | 46, 45 |  |  |
+| CWRM |  |  |  |  |
+| CXRM | 45, 46, 58, 2F, 2E |  |  |  |
+| D0RM |  |  |  |  |
+| D1RM |  |  |  |  |
+| D2RM |  |  |  |  |
+| D4RM |  |  |  |  |
+| D5RM |  |  |  |  |
+| D6RM |  |  |  |  |
+| D7RM |  |  |  |  |
+| DFRM | 58, 46, 45, 2E, 4C, 4E |  |  |  |
+| DGRM | 46, 45 |  |  |  |
+| DNRM |  |  |  |  |
+| DZRM | 45, 46, 58, F0, 2E |  |  |  |
+| E1RM | 46, 45, 2E | 46, 45 |  |  |
+| E6RM |  |  |  |  |
+| EARM | 45, 46, 58, F0, 2E, 2F |  |  |  |
+| EBRM | 45, 46, 58, F0, 2E, 2F |  |  | GROUP_SPLIT: LEFT, RIGHT |
+| EERM | 2E |  |  |  |
+| EFRM | 45, 46, 58, 2E, 2F |  |  |  |
+| EHRM |  |  |  |  |
+| ELRM | 58, 45, 46, 2E, 2F |  | Back 0..59, Foot 0..34 |  |
+| F0RM |  |  |  |  |
+| FIRM |  |  |  |  |
+| FJRM |  |  |  |  |
+| FRRM |  |  |  |  |
+| GARM | 2E | 46 |  |  |
+| GMRM |  |  |  |  |
+| I0RM |  |  |  |  |
+| I1RM |  |  |  |  |
+| I2RM |  |  |  |  |
+| I3RM |  |  |  |  |
+| I4RM |  |  |  |  |
+| I5RM |  |  |  |  |
+| I6RM |  |  |  |  |
+| I7RM |  |  |  |  |
+| I8RM |  |  |  |  |
+| I9RM |  |  |  |  |
+| IARM |  |  |  |  |
+| IBRM |  |  |  |  |
+| ICRM |  |  |  |  |
+| IDRM |  |  |  |  |
+| IERM |  |  |  |  |
+| IFRM |  |  |  |  |
+| IGRM |  |  |  |  |
+| IHRM |  |  |  |  |
+| IIRM |  |  |  |  |
+| IJRM |  |  |  |  |
+| IKRM |  |  |  |  |
+| ILRM |  |  |  |  |
+| IMRM |  |  |  |  |
+| INRM |  |  |  |  |
+| IORM |  |  |  |  |
+| IPRM |  |  |  |  |
+| IQRM |  |  |  |  |
+| IRRM |  |  |  |  |
+| ISRM |  |  |  |  |
+| M3RM |  |  |  |  |
+| M4RM |  |  |  |  |
+| M5RM |  |  |  |  |
+| M6RM |  |  |  |  |
+| M7RM |  |  |  |  |
+| M9RM |  |  |  |  |
+| MARM |  |  |  |  |
+| MLRM |  |  |  |  |
+| MMRM |  |  |  |  |
+| MRRM |  |  |  |  |
+| O0RM |  |  |  |  |
+| O1RM |  |  |  |  |
+| O2RM |  |  |  |  |
+| O3RM |  |  |  |  |
+| O4RM |  |  |  |  |
+| O5RM |  |  |  |  |
+| O6RM |  |  |  |  |
+| O7RM |  |  |  |  |
+| O8RM |  |  |  |  |
+| O9RM | 58, 45, 59, 2E, 2F, 4C, 4E |  |  |  |
+| OARM |  |  |  |  |
+| OMRM |  |  |  |  |
+| ONRM |  |  |  |  |
+| OORM |  |  |  |  |
+| OQRM |  |  |  |  |
+| ORRM |  |  |  |  |
+| OSRM |  |  |  |  |
+| OTRM | 45, 46, 2E, 4C, 4E |  |  |  |
+| OURM |  |  |  |  |
+| OVRM |  |  |  |  |
+| OWRM |  |  |  |  |
+| OXRM |  |  |  |  |
+| OYRM |  |  |  |  |
+| OZRM |  |  |  |  |
+| P0RM |  |  |  |  |
+| P1RM | 58, 45, 59, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P2RM |  |  |  |  |
+| P3RM |  |  |  |  |
+| P4RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P5RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P6RM |  |  |  |  |
+| P9RM |  |  |  |  |
+| R2RM |  |  |  |  |
+| R5RM | 58, 45, 59, 2E, 2F |  |  |  |
+| R6RM |  |  |  |  |
+| S9RM |  |  |  |  |
+| SARM |  |  |  |  |
+| T0RM |  |  |  |  |
+| T1RM |  |  |  |  |
+| T2RM |  |  |  |  |
+| T3RM |  |  |  |  |
+| T4RM |  |  |  |  |
+| T5RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| T6RM |  |  |  |  |
+| T7RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| T8RM |  |  |  |  |
+| T9RM | 45, 46, 2E, 4C, 4D |  |  |  |
+| TARM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| TBRM |  |  |  |  |
+| THRM |  |  |  |  |
+| TLRM |  |  |  |  |
+| TWRM |  |  |  |  |
+| TZRM |  |  |  |  |
+| U0RM |  |  |  |  |
+| U1RM |  |  |  |  |
+| U2RM |  |  |  |  |
+| U3RM |  |  |  |  |
+| U4RM |  |  |  |  |
+| U5RM |  |  |  |  |
+| U6RM | 45, 46, 2E |  |  |  |
+| U7RM |  |  |  |  |
+| U8RM |  |  |  |  |
+| U9RM |  |  |  |  |
+| UARM |  |  |  |  |
+| UCRM |  |  |  |  |
+| UDRM |  |  |  |  |
+| UERM |  |  |  |  |
+| UFRM | 58, 45, 59, 2E, 2F, 4C, 4E |  |  |  |
+| UGRM |  |  |  |  |
+| UHRM |  |  |  |  |
+| UIRM |  |  |  |  |
+| UJRM |  |  |  |  |
+| UKRM |  |  |  |  |
+| ULRM |  |  |  |  |
+| UMRM |  |  |  |  |
+| UNRM |  |  |  |  |
+| UORM |  |  |  |  |
+| UPRM |  |  |  |  |
+| UQRM |  |  |  |  |
+| URRM | 46, 2E, 4C, 4E |  |  |  |
+| UTRM |  |  |  |  |
+| UURM |  |  |  |  |
+| UVRM | 58, 45, 46, 2E, 2F |  |  |  |
+| UWRM |  |  |  |  |
+| UXRM |  |  |  |  |
+| UYRM |  |  |  |  |
+| UZRM |  |  |  |  |
+| V0RM |  |  |  |  |
+| V1RM | 45, 46, 2E |  |  |  |
+| V2RM |  |  |  |  |
+| V3RM |  |  |  |  |
+| V4RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| V5RM |  |  |  |  |
+| V6RM |  |  |  |  |
+| V7RM |  |  |  |  |
+| V8RM |  |  |  |  |
+| V9RM |  |  |  |  |
+| VARM |  |  |  |  |
+| VBRM |  |  |  |  |
+| VCRM |  |  |  |  |
+| VDRM |  |  |  |  |
+| VERM |  |  |  |  |
+| VFRM |  |  |  |  |
+| VGRM |  |  |  |  |
+| VHRM |  |  |  |  |
+| VIRM |  |  |  |  |
+| VJRM |  |  |  |  |
+| VKRM |  |  |  |  |
+| VLRM |  |  |  |  |
+| VMRM |  |  |  |  |
+| VNRM |  |  |  |  |
+| VORM |  |  |  |  |
+| VPRM |  |  |  |  |
+| VQRM |  |  |  |  |
+| VRRM |  |  |  |  |
+| VSRM |  |  |  |  |
+| VTRM |  |  |  |  |
+| VURM |  |  |  |  |
+| VVRM |  |  |  |  |
+| VWRM |  |  |  |  |
+| VXRM |  |  |  |  |
+| VYRM |  |  |  |  |
+| VZRM |  |  |  |  |
+| W0RM |  |  |  |  |
+| W1RM |  |  |  |  |
+| W2RM | 58, 45, 59, 2E, 2F |  |  |  |
+| W3RM |  |  |  |  |
+| W4RM |  |  |  |  |
+| W5RM |  |  |  |  |
+| W6RM |  |  |  |  |
+| W7RM |  |  |  |  |
+| W8RM |  |  |  |  |
+| W9RM |  |  |  |  |
+| WARM |  |  |  |  |
+| WBRM |  |  |  |  |
+| WCRM |  |  |  |  |
+| WDRM |  |  |  |  |
+| WERM |  |  |  |  |
+| WGRM |  |  |  |  |
+| WHRM |  |  |  |  |
+| WIRM |  |  |  |  |
+| WJRM | 58, 45, 46, 2E, 4C, 4E |  |  |  |
+| WKRM | 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WLRM | 58, 45, 46, 59, 2F, 30, 4C, 4E |  |  |  |
+| WMRM |  |  |  |  |
+| WNRM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WORM |  |  |  |  |
+| WPRM |  |  |  |  |
+| WQRM |  |  |  |  |
+| WRRM |  |  |  |  |
+| WSRM | 58, 45, 59, 2E, 2F |  |  |  |
+| WTRM |  |  |  |  |
+| WURM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WVRM |  |  |  |  |
+| WWRM |  |  |  |  |
+| WXRM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WYRM |  |  |  |  |
+| WZRM |  |  |  |  |
+| X1RM | 45, 46 |  |  |  |
+| X2RM |  |  |  |  |
+| XCRM | 45, 46, 4C, 4E |  |  |  |
+| XFRM | 58, 45, 46, 4C, 4E |  |  |  |
+| XGRM | 45, 46, 2E |  |  |  |
+| XLRM | 58, 45, 46, 4C, 4E |  |  |  |
+| Y0RM |  |  |  |  |
+| Y1RM | 45, 46, 2E |  |  |  |
+| Y2RM |  |  |  |  |
+| Y3RM |  |  |  |  |
+| Y4RM | 58, 45, 46, 59, 2F, 30 |  |  |  |
+| Y5RM |  |  |  |  |
+| Y6RM | 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| Y7RM | 45, 46, 2E |  |  |  |
+| Y8RM | 58, 45, 46, 59, 2E, 2F, 4C, 4E |  |  |  |
+| Y9RM | 45, 46, 2E |  |  |  |
+| YARM |  |  |  |  |
+| YBRM |  |  |  |  |
+| YCRM |  |  |  |  |
+| YDRM |  |  |  |  |
+| YERM | 58, 45, 46, 59, 2E, 2F, 4C, 4E |  |  |  |
+| YFRM |  |  |  |  |
+| YGRM |  |  |  |  |
+| YHRM |  |  |  |  |
+| YIRM | B0, B1 |  |  |  |
+| YJRM |  |  |  |  |
+| YKRM |  |  |  |  |
+| YMRM |  |  |  |  |
+| YNRM |  |  |  |  |
+| YORM | B0, B1 |  |  |  |
+| YPRM | B0, B1 |  |  |  |
+| ZQRM | 30, B2 |  |  |  |
+| ZR00 |  |  |  |  |
+| ZR01 |  |  |  |  |
+| ZR10 |  |  |  |  |
+| ZR11 |  |  |  |  |
+| ZR12 |  |  |  |  |
+| ZR20 |  |  |  |  |
+| ZR21 |  |  |  |  |
+| ZR30 |  |  |  |  |
+| ZR40 |  |  |  |  |
+| ZR50 |  |  |  |  |
+| ZR51 |  |  |  |  |
+| ZR60 |  |  |  |  |
+| ZR70 |  |  |  |  |
+| ZR80 |  |  |  |  |
+| ZR90 |  |  |  |  |
+| ZRA0 |  |  |  |  |
+| ZRA1 |  |  |  |  |
+| ZRA2 |  |  |  |  |
+| ZRI0 |  |  |  |  |
+
+**MLILY Supreme**
+
+| Models | Page | Control | Gesture | Mode 0 bytes | Refresh ms |
+|---|---|---|---|---|---|
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Back | up | 6E 01 00 24 93 | 100 |
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B2RM, B3RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IJRM, IKRM, ILRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OVRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WMRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR00, ZR01, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Back | down | 6E 01 00 25 94 | 100 |
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Foot | up | 6E 01 00 26 95 | 100 |
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B6RM, B6RU, B7RM, B8RM, B8TT, B9RM, B9TT, BARM, BBRM, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, GMRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M4RM, M5RM, M6RM, M7RM, M9RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T1RM, T2RM, T3RM, T4RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, THRM, TLRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V3RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W8RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WGRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR00, ZR10, ZR11, ZR12, ZR20, ZR21, ZR30, ZR40, ZR50, ZR51, ZR60, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2, ZRI0 | Legacy | Foot | down | 6E 01 00 27 96 | 100 |
+| 3I, 4I, 4IT, 5I, 6CRM, 6DRM, 6ERM, 6FRM, 6HRM, 6I, 7I, A0RM, A1RM, A3RM, A6RM, A7RM, A8RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B0RM, B1RM, B4RM, B5RM, B7RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BMRM, BPRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FJRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IGRM, IHRM, IIRM, IKRM, IMRM, INRM, IORM, IPRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, ORRM, OSRM, OTRM, OWRM, OXRM, OYRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, S9RM, SARM, T0RM, T2RM, T3RM, T5RM, T6RM, T7RM, T9RM, TARM, TBRM, THRM, TWRM, TZRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UHRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, WZRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YBRM, YCRM, YDRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZQRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA2, ZRI0 | Legacy | Flat | press | 6E 01 00 31 A0 | once |
+| 3I, 4I, 4IT, 5I, 6DRM, 6ERM, 6HRM, 6I, 7I, A0RM, A1RM, A3RM, A6RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EFRM, ELRM, F0RM, FIRM, FJRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, S9RM, SARM, T3RM, T4RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Zero Gravity | recall | 6E 01 00 45 B4 | once |
+| 3I, 4I, 4IT, 5I, 6DRM, 6ERM, 6HRM, 6I, 7I, A0RM, A1RM, A3RM, A6RM, A8RM, A9RM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, B5RM, B8RM, B8TT, B9RM, B9TT, BCRM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, ELRM, F0RM, FIRM, FJRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, U9RM, UARM, UCRM, UDRM, UERM, UFRM, UGRM, UIRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V0RM, V1RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VQRM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W5RM, W6RM, WARM, WBRM, WCRM, WDRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WORM, WQRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, X2RM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y2RM, Y3RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YCRM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR21, ZR40, ZR50, ZR51, ZR60, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Zero Gravity | save | 6E 01 00 66 D5 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DNRM, DZRM, E6RM, EARM, EBRM, EFRM, EHRM, ELRM, F0RM, FIRM, FRRM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VSRM, VVRM, VWRM, VXRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0 | Legacy | M1 | recall | 6E 01 00 2E 9D | once |
+| 3I, 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A7RM, A9RM, ABRM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, B4RM, B9TT, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CFRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EERM, EFRM, EHRM, ELRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, I9RM, IARM, IBRM, ICRM, IDRM, IERM, IFRM, IHRM, IIRM, IKRM, ILRM, INRM, IORM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, M7RM, M9RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, OQRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P6RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, T9RM, TARM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VIRM, VJRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VQRM, VSRM, VVRM, VWRM, VXRM, VYRM, W0RM, W1RM, W2RM, W3RM, W4RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WPRM, WQRM, WRRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XCRM, XFRM, XGRM, XLRM, Y0RM, Y1RM, Y5RM, Y6RM, Y7RM, Y8RM, Y9RM, YBRM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YKRM, YMRM, YNRM, YORM, YPRM, ZR10, ZR12, ZR50, ZR51, ZR60, ZR80, ZRA2, ZRI0 | Legacy | M1 | save | 6E 01 00 2B 9A | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A9RM, ADRM, AERM, AFRM, AGRM, AIRM, AJRM, AWRM, AXRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, D0RM, D1RM, D2RM, D4RM, DNRM, E6RM, EARM, EBRM, EFRM, ELRM, FIRM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UWRM, UXRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VWRM, VXRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WLRM, WNRM, WPRM, WSRM, WURM, WXRM, XCRM, XFRM, Y4RM, Y5RM, Y6RM, Y8RM, YERM, YFRM, YGRM, YHRM, YJRM, YMRM, YPRM, ZR12, ZR50, ZR51, ZR80, ZRA2 | Legacy | M2 | recall | 6E 01 00 2F 9E | once |
+| 3I, 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A1RM, A2RM, A3RM, A9RM, ADRM, AERM, AFRM, AGRM, AWRM, AXRM, BJRM, BKRM, BLRM, BMRM, BNRM, BPRM, BZRM, CERM, CXRM, D0RM, D1RM, D2RM, D4RM, DNRM, E6RM, EARM, EBRM, EFRM, ELRM, FIRM, I1RM, I2RM, I3RM, I5RM, I6RM, IARM, ILRM, IQRM, IRRM, ISRM, M3RM, M5RM, M6RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, OQRM, OSRM, OXRM, OZRM, P0RM, P1RM, P2RM, P4RM, P5RM, P9RM, R2RM, R5RM, R6RM, T1RM, T3RM, T5RM, T6RM, T7RM, T8RM, TARM, TBRM, U0RM, U1RM, U2RM, U5RM, UERM, UFRM, UGRM, UHRM, UIRM, UKRM, ULRM, UMRM, UNRM, UORM, UQRM, UTRM, UVRM, UWRM, UXRM, UZRM, V4RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VWRM, VXRM, W2RM, W3RM, W5RM, W6RM, W7RM, WDRM, WERM, WIRM, WKRM, WLRM, WNRM, WPRM, WSRM, WURM, WXRM, XCRM, XFRM, Y4RM, Y5RM, Y6RM, Y8RM, YERM, YFRM, YGRM, YHRM, YJRM, YMRM, YPRM, ZR12, ZR50, ZR51, ZR80, ZRA2 | Legacy | M2 | save | 6E 01 00 2C 9B | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, A0RM, A2RM, ADRM, BMRM, BNRM, BZRM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, V7RM, VWRM, VXRM, W5RM, W7RM, WLRM, Y4RM, YPRM, ZQRM, ZRA2 | Legacy | M3 | recall | 6E 01 00 30 9F | once |
+| 3I, 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A2RM, ADRM, BMRM, BNRM, BZRM, DFRM, DGRM, ILRM, M5RM, O3RM, OQRM, OSRM, OXRM, R6RM, U0RM, UERM, UHRM, UKRM, ULRM, UZRM, V7RM, VWRM, VXRM, W5RM, W7RM, WLRM, Y4RM, YPRM, ZQRM, ZRA2 | Legacy | M3 | save | 6E 01 00 2D 9C | once |
+| 3I, 4IT, ZQRM | Legacy | M4 | recall | 6E 01 00 B2 21 | once |
+| 3I, 4IT, ZQRM | Legacy | M4 | save | 6E 01 00 B3 22 | once |
+| 3I, 4IT | Legacy | M5 | recall | 6E 01 00 F4 63 | once |
+| 3I, 4IT | Legacy | M5 | save | 6E 01 00 F5 64 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Head | up | 6E 01 00 24 93 | 100 |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Head | down | 6E 01 00 25 94 | 100 |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Foot | up | 6E 01 00 26 95 | 100 |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Foot | down | 6E 01 00 27 96 | 100 |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Flat | press | 6E 01 00 31 A0 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Zero Gravity | recall | 6E 01 00 45 B4 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Zero Gravity | save | 6E 01 00 66 D5 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | M1 | recall | 6E 01 00 2E 9D | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | M1 | save | 6E 01 00 2B 9A | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | M2 | recall | 6E 01 00 2F 9E | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | M2 | save | 6E 01 00 2C 9B | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M3 | recall | 6E 01 00 30 9F | once |
+| 3I | Entity | M3 | save | 6E 01 00 B3 22 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M4 | recall | 6E 01 00 B2 21 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M4 | save | 6E 01 00 B3 22 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M5 | recall | 6E 01 00 F4 63 | once |
+| 3I, 4I, 4IT, 5I, 6I, 7I | Entity | M5 | save | 6E 01 00 F5 64 | once |
+| 4I, 5I, 6HRM, A2RM, A3RM, AARM, AWRM, B6RM, B6RU, B7RM, BFRM, BGRM, BHRM, BNRM, BZRM, CERM, D2RM, D5RM, DFRM, EFRM, ELRM, FIRM, FRRM, GMRM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, MMRM, O1RM, O2RM, O3RM, O9RM, OARM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, R6RM, S9RM, SARM, T4RM, T8RM, TARM, TLRM, TWRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UQRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WLRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, Y3RM, Y4RM, YHRM, YJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2 | Legacy | Head Foot Both | up | 6E 01 00 29 98 | 100 |
+| 4I, 5I, 6HRM, A2RM, A3RM, AARM, AWRM, B6RM, B6RU, B7RM, BFRM, BGRM, BHRM, BNRM, BZRM, CERM, D2RM, D5RM, DFRM, EFRM, ELRM, FIRM, FRRM, GMRM, I2RM, I3RM, IARM, IDRM, IIRM, IPRM, IQRM, IRRM, M4RM, MARM, MMRM, O1RM, O2RM, O3RM, O9RM, OARM, OQRM, OXRM, P0RM, P2RM, P3RM, P4RM, P5RM, R2RM, R5RM, R6RM, S9RM, SARM, T4RM, T8RM, TARM, TLRM, TWRM, U0RM, U1RM, U4RM, UCRM, UFRM, UJRM, UKRM, ULRM, UPRM, UQRM, UTRM, UVRM, UWRM, UXRM, UYRM, UZRM, V3RM, V4RM, VXRM, VYRM, W0RM, W2RM, W5RM, W6RM, W7RM, WERM, WKRM, WLRM, WRRM, WSRM, WTRM, WURM, WVRM, WZRM, Y3RM, Y4RM, YHRM, YJRM, ZR10, ZR20, ZR30, ZR51, ZR70, ZR80, ZR90, ZRA0, ZRA1, ZRA2 | Legacy | Head Foot Both | down | 6E 01 00 2A 99 | 100 |
+| 4I, 4IT, 5I, 6ERM, 6FRM, 6I, 7I, A1RM, A3RM, A9RM, AARM, ABRM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AWRM, AXRM, B1RM, B4RM, BDRM, BERM, BHRM, BIRM, BJRM, BLRM, BMRM, BNRM, BZRM, CFRM, CWRM, CXRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, DZRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FJRM, FRRM, GARM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I6RM, I7RM, I8RM, IARM, IBRM, ICRM, IDRM, IERM, IGRM, IHRM, IMRM, ISRM, M3RM, M5RM, M6RM, M7RM, MARM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OMRM, ONRM, OORM, ORRM, OSRM, OTRM, OYRM, OZRM, P0RM, P1RM, P2RM, P6RM, R2RM, R5RM, T1RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, TLRM, U1RM, U2RM, U3RM, U4RM, U5RM, U7RM, U8RM, U9RM, UARM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UMRM, UNRM, UORM, UPRM, UQRM, URRM, UTRM, UVRM, UWRM, UYRM, V0RM, V2RM, V4RM, V5RM, V6RM, V7RM, V8RM, V9RM, VARM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WNRM, WORM, WSRM, WURM, WVRM, WXRM, WYRM, XCRM, XFRM, XLRM, Y2RM, Y3RM, Y6RM, Y8RM, YARM, YERM, YFRM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZQRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZR60, ZRA0, ZRI0 | Legacy | Ubl On Off | press | 6E 01 00 3C AB | once |
+| 4I, 4IT, 5I, 6DRM, 6ERM, 6I, 7I, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, CERM, CFRM, CWRM, CXRM, D0RM, D1RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, EHRM, ELRM, F0RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O4RM, O7RM, O8RM, OARM, OQRM, OTRM, OYRM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UCRM, UDRM, UGRM, UIRM, UJRM, UKRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VSRM, VVRM, VWRM, WCRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, XCRM, XFRM, XGRM, XLRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZR40, ZR50, ZR51, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Anti-Snore | recall | 6E 01 00 46 B5 | once |
+| 4I, 4IT, 5I, 6DRM, 6ERM, 6I, 7I, A0RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AIRM, AJRM, AKRM, AWRM, AXRM, B4RM, BDRM, BFRM, BGRM, BHRM, BIRM, BNRM, CFRM, CWRM, CXRM, D0RM, D1RM, D4RM, D7RM, DFRM, DGRM, DNRM, DZRM, E1RM, E6RM, EARM, EBRM, EFRM, EHRM, F0RM, I0RM, I1RM, I2RM, I3RM, I4RM, I5RM, I7RM, I8RM, I9RM, IBRM, ICRM, IERM, IFRM, IGRM, IHRM, IRRM, M6RM, MLRM, O0RM, O4RM, O7RM, O8RM, OARM, OQRM, OTRM, OYRM, P1RM, P2RM, P3RM, P4RM, P5RM, P6RM, P9RM, S9RM, SARM, T3RM, T5RM, T7RM, T9RM, TARM, TBRM, U3RM, U4RM, U5RM, U6RM, U7RM, U8RM, UARM, UCRM, UDRM, UGRM, UIRM, UJRM, UKRM, ULRM, UNRM, UORM, URRM, UTRM, UURM, UVRM, UWRM, UXRM, UYRM, V1RM, V4RM, V6RM, V7RM, V9RM, VARM, VBRM, VERM, VGRM, VHRM, VIRM, VKRM, VLRM, VMRM, VNRM, VSRM, VVRM, VWRM, WCRM, WERM, WIRM, WJRM, WKRM, WLRM, WNRM, WURM, WVRM, WWRM, WXRM, WYRM, X1RM, XCRM, XFRM, XGRM, XLRM, Y1RM, Y4RM, Y6RM, Y7RM, Y8RM, Y9RM, YARM, YDRM, YERM, YGRM, YHRM, YIRM, YJRM, YORM, YPRM, ZR40, ZR50, ZR51, ZR90, ZRA0, ZRA2, ZRI0 | Legacy | Anti-Snore | save | 6E 01 00 69 D8 | once |
+| 4I, 4IT, 5I, 6I, 7I, A0RM, A3RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AWRM, AXRM, B4RM, B5RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, D2RM, D4RM, DFRM, DZRM, E1RM, EFRM, ELRM, F0RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, ISRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O9RM, OARM, OMRM, ONRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R2RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, THRM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WIRM, WJRM, WLRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XFRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | TV | recall | 6E 01 00 58 C7 | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A3RM, A9RM, ACRM, ADRM, AERM, AFRM, AGRM, AHRM, AWRM, AXRM, B4RM, B5RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BNRM, BZRM, CERM, CXRM, D2RM, D4RM, DFRM, DNRM, DZRM, E1RM, EARM, EBRM, EFRM, ELRM, F0RM, I1RM, I2RM, I3RM, IARM, IBRM, IDRM, IGRM, IORM, IRRM, ISRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O6RM, O7RM, O9RM, OARM, OMRM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P3RM, P4RM, P5RM, R2RM, R5RM, T3RM, T5RM, T7RM, TARM, TBRM, U1RM, U2RM, U3RM, U4RM, U5RM, UCRM, UERM, UFRM, UGRM, UIRM, UMRM, UNRM, UORM, UPRM, UQRM, UVRM, UWRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VHRM, VKRM, VMRM, VORM, VSRM, VTRM, VURM, VVRM, VWRM, VYRM, VZRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WCRM, WDRM, WIRM, WJRM, WLRM, WNRM, WPRM, WSRM, WTRM, WURM, WVRM, WWRM, WXRM, WYRM, XFRM, Y3RM, Y4RM, Y8RM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR10, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | TV | save | 6E 01 00 64 D3 | once |
+| 4I, 4IT, 5I, 6I, 7I, A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, BDRM, BERM, CFRM, CWRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R2RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, THRM, U3RM, U4RM, U5RM, U9RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, X2RM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage Head Intensity Inc | press | 6E 01 00 4C BB | once |
+| 4I, 4IT, 5I, 6I, 7I, A0RM, A1RM, A2RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, B8TT, B9TT, BDRM, BERM, CFRM, CWRM, D0RM, D1RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I5RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IIRM, IORM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MLRM, MRRM, O0RM, O2RM, O3RM, O4RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R2RM, R5RM, T5RM, T7RM, TARM, TBRM, THRM, U3RM, U4RM, U5RM, U9RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UNRM, URRM, UTRM, UVRM, UYRM, V0RM, V2RM, V4RM, V6RM, V7RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VQRM, VRRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZR50, ZR51, ZRI0 | Legacy | Massage Foot Intensity Inc | press | 6E 01 00 4E BD | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A0RM, A1RM, A3RM, A9RM, AARM, ACRM, ADRM, AFRM, AGRM, AHRM, AIRM, AJRM, AWRM, AXRM, B4RM, B8RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, D2RM, D4RM, D7RM, DFRM, E1RM, EARM, EBRM, EERM, EFRM, EHRM, F0RM, FIRM, FRRM, GARM, I0RM, I1RM, I2RM, I4RM, I7RM, I8RM, IARM, IBRM, ICRM, IERM, IGRM, IHRM, IRRM, ISRM, M3RM, M6RM, M7RM, MARM, MMRM, MRRM, O1RM, O2RM, O3RM, O4RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, P6RM, R5RM, T5RM, T7RM, T9RM, TARM, TBRM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, V9RM, VBRM, VCRM, VDRM, VERM, VFRM, VIRM, VKRM, VLRM, VNRM, VORM, VPRM, VRRM, VSRM, VURM, VVRM, VWRM, VXRM, VYRM, VZRM, W0RM, W2RM, W3RM, W5RM, W6RM, W7RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WHRM, WIRM, WJRM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51 | Legacy | Massage Mode | press | 6E 01 00 48 B7 | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A3RM, A9RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, D2RM, D4RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IARM, IBRM, IORM, ISRM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, ONRM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R2RM, R5RM, T5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, ULRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VDRM, VERM, VFRM, VORM, VRRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y3RM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 10Min | press | 6E 01 00 5F CE | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A3RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IBRM, M3RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OXRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UERM, UFRM, UGRM, UHRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YGRM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 20Min | press | 6E 01 00 63 D2 | once |
+| 4I, 4IT, 5I, 6HRM, 6I, 7I, A3RM, AERM, AFRM, AGRM, AWRM, AXRM, B4RM, BDRM, BERM, BGRM, BHRM, BIRM, BLRM, BNRM, BZRM, CFRM, CWRM, D0RM, DFRM, E1RM, EARM, EBRM, EERM, EHRM, F0RM, FIRM, FRRM, GARM, I1RM, IBRM, ILRM, M3RM, MLRM, MMRM, MRRM, O0RM, O1RM, O2RM, O3RM, O5RM, O7RM, O8RM, O9RM, OARM, OQRM, ORRM, OSRM, OTRM, OXRM, OYRM, OZRM, P0RM, P1RM, P4RM, P5RM, R5RM, T7RM, T9RM, TARM, U1RM, U2RM, U3RM, U4RM, U5RM, UARM, UERM, UFRM, UGRM, UHRM, UJRM, UKRM, UNRM, URRM, UTRM, UVRM, UYRM, UZRM, V0RM, V2RM, V4RM, V8RM, VCRM, VFRM, VSRM, VTRM, VYRM, W0RM, W2RM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WERM, WKRM, WLRM, WNRM, WSRM, WURM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YERM, YHRM, YIRM, YJRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51, ZRI0 | Legacy | Massage 30Min | press | 6E 01 00 61 D0 | once |
+| 4I, 4IT, 5I, 6I, 7I, AWRM, AXRM, DFRM, EARM, EBRM, EERM, EFRM, EHRM, GARM, UFRM | Legacy | All massage off | press | 6E 01 00 5E CD | once |
+| 4I, 5I, CERM, ELRM | Entity | Head Foot Both | up | 6E 01 00 29 98 | 100 |
+| 4I, 5I, CERM, ELRM | Entity | Head Foot Both | down | 6E 01 00 2A 99 | 100 |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Ubl On Off | press | 6E 01 00 3C AB | once |
+| 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | Anti-Snore | recall | 6E 01 00 46 B5 | once |
+| 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | TV | recall | 6E 01 00 58 C7 | once |
+| 4I, 4IT, 5I, 6I, 7I, CERM, ELRM | Entity | TV | save | 6E 01 00 64 D3 | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | M3 | save | 6E 01 00 2D 9C | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage Head Intensity Inc | press | 6E 01 00 4C BB | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage Foot Intensity Inc | press | 6E 01 00 4E BD | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage Mode | press | 6E 01 00 48 B7 | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage 10Min | press | 6E 01 00 5F CE | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage 20Min | press | 6E 01 00 63 D2 | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage 30Min | press | 6E 01 00 61 D0 | once |
+| 4I, 4IT, 5I, 6I, 7I | Entity | Massage Head Foot Both Off | press | 6E 01 00 5E CD | once |
+| 4IT, 6I, 7I, A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AXRM, BDRM, BERM, BGRM, BIRM, BLRM, BMRM, CFRM, CWRM, D4RM, D6RM, E1RM, E6RM, EERM, EFRM, EHRM, F0RM, GARM, I0RM, I4RM, I5RM, I6RM, ICRM, IGRM, M3RM, M5RM, MRRM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TZRM, U2RM, U3RM, U5RM, U9RM, UARM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WTRM, WWRM, WXRM, XCRM, XLRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, ZR11, ZR50, ZR51, ZRA0, ZRI0 | Legacy | Pillow | up | 6E 01 00 3F AE | 100 |
+| 4IT, 6I, 7I, A0RM, A1RM, A9RM, AARM, ABRM, ACRM, ADRM, AHRM, AIRM, AXRM, BDRM, BERM, BGRM, BIRM, BLRM, BMRM, CFRM, CWRM, D4RM, D6RM, E1RM, E6RM, EERM, EFRM, EHRM, F0RM, GARM, I0RM, I4RM, I5RM, I6RM, ICRM, IGRM, M3RM, M5RM, MRRM, O5RM, O7RM, O8RM, ORRM, P6RM, T0RM, T1RM, T2RM, T9RM, TZRM, U2RM, U3RM, U5RM, U9RM, UARM, UERM, UGRM, UHRM, UNRM, URRM, V0RM, V2RM, V7RM, V8RM, V9RM, VCRM, VDRM, VERM, VFRM, VIRM, VLRM, VMRM, VNRM, VORM, VPRM, VRRM, VSRM, VTRM, VURM, VVRM, VZRM, W3RM, W9RM, WARM, WBRM, WCRM, WDRM, WHRM, WIRM, WJRM, WNRM, WTRM, WWRM, WXRM, XCRM, XLRM, Y3RM, Y6RM, YARM, YIRM, YMRM, YORM, YPRM, ZR11, ZR50, ZR51, ZRA0, ZRI0 | Legacy | Pillow | down | 6E 01 00 40 AF | 100 |
+| 4IT, 6I, 7I | Entity | Pillow | up | 6E 01 00 3F AE | 100 |
+| 4IT, 6I, 7I | Entity | Pillow | down | 6E 01 00 40 AF | 100 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Back | up | 6E 01 00 24 93 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Back | down | 6E 01 00 25 94 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Foot | up | 6E 01 00 26 95 | 150 |
+| 6BRM, AERM, AFRM, AGRM, BQRM, Y1RM | Legacy | Foot | down | 6E 01 00 27 96 | 150 |
+| 6BRM, BQRM | Legacy | Head Foot Both | up | 6E 01 00 29 98 | 150 |
+| 6BRM, BQRM | Legacy | Head Foot Both | down | 6E 01 00 2A 99 | 150 |
+| 6CRM, 6DRM, B0RM, BKRM, D7RM, M6RM, M7RM, U8RM, V5RM, V6RM, VARM | Legacy | Head Foot Both | press | 6E 01 00 29 98 | 100 |
+| 6HRM, UZRM | Legacy | Reading | recall | 6E 01 00 58 C7 | once |
+| 6HRM, UZRM | Legacy | Yoga | recall | 6E 01 00 59 C8 | once |
+| 6HRM, A3RM, ACRM, ADRM, B4RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BZRM, IGRM, IRRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O6RM, O9RM, OMRM, OSRM, OXRM, OZRM, P1RM, R2RM, R5RM, TBRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, UZRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WDRM, WERM, WLRM, WQRM, WSRM, WTRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YORM, YPRM, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | Lounge | save | 6E 01 00 65 D4 | once |
+| 6HRM, UZRM | Legacy | Movie | recall | 6E 01 00 2E 9D | once |
+| 6HRM, UZRM | Legacy | Lactation | recall | 6E 01 00 2F 9E | once |
+| 6HRM, UZRM | Legacy | Anti Snore3 | recall | 6E 01 00 30 9F | once |
+| 6HRM, ABRM, ACRM, ADRM, B9TT, D7RM, I0RM, I4RM, I5RM, M9RM, MLRM, O1RM, OTRM, S9RM, U0RM, U7RM, U8RM, U9RM, UARM, UJRM, UNRM, UZRM, V0RM, V1RM, V6RM, V7RM, VARM, VKRM, YHRM, ZR21, ZR90, ZRI0 | Legacy | Factory Reset | press | 6E 01 00 62 D1 | once |
+| 6HRM, A2RM, A3RM, BZRM, M6RM, MMRM, O1RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM, U1RM, U2RM, UKRM, UZRM, W7RM, WDRM, WERM | Legacy | Massage Head Foot Intensity Inc | press | 6E 01 00 34 A3 | once |
+| 6HRM, A2RM, A3RM, BZRM, M6RM, MMRM, O1RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM, U1RM, U2RM, UKRM, UZRM, W7RM | Legacy | Massage Head Foot Intensity Dec | press | 6E 01 00 35 A4 | once |
+| 7I, A1RM, AARM, AHRM, BDRM, BERM, BIRM, CFRM, D4RM, E1RM, E6RM, EERM, EHRM, GARM, I5RM, O5RM, ORRM, P6RM, T1RM, U3RM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, YARM, YIRM, YORM, YPRM, ZR50, ZRA0 | Legacy | Lumbar | up | 6E 01 00 41 B0 | 100 |
+| 7I, A1RM, AARM, AHRM, BDRM, BERM, BIRM, CFRM, D4RM, E1RM, E6RM, EERM, EHRM, GARM, I5RM, O5RM, ORRM, P6RM, T1RM, U3RM, U5RM, U9RM, UHRM, URRM, V0RM, V2RM, VERM, VFRM, VIRM, VORM, VPRM, VRRM, VTRM, VURM, VZRM, WBRM, WCRM, WHRM, WTRM, YARM, YIRM, YORM, YPRM, ZR50, ZRA0 | Legacy | Lumbar | down | 6E 01 00 42 B1 | 100 |
+| A0RM, A1RM, AARM, AERM, AFRM, BGRM, CFRM, CWRM, D0RM, D1RM, E1RM, F0RM, I1RM, IERM, IGRM, M6RM, M7RM, MARM, O8RM, P1RM, P6RM, T7RM, U4RM, U5RM, URRM, UTRM, UYRM, VBRM, VKRM, VLRM, VPRM, VSRM, VTRM, VURM, VVRM, VWRM, VXRM, VZRM, W6RM, W7RM, W9RM, WHRM, WJRM, WKRM, WLRM, WNRM, WXRM, XCRM, XFRM, XLRM, Y4RM, Y6RM, Y8RM, YARM, YIRM, YMRM, YORM, YPRM, ZQRM, ZR50, ZR51 | Legacy | Massage Head Foot Both Off | press | 6E 01 00 5E CD | once |
+| A2RM, O4RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Head Foot Speed Inc | press | 6E 01 00 36 A5 | once |
+| A2RM, O4RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Head Foot Speed Dec | press | 6E 01 00 37 A6 | once |
+| A2RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Pulse | press | 6E 01 00 38 A7 | once |
+| A2RM, I0RM, I4RM, I5RM, MLRM, O0RM, O6RM, OMRM, ONRM, OORM, OTRM, OYRM, R6RM, THRM, U9RM, UARM, UJRM, V7RM, ZRI0 | Legacy | Massage Wave | press | 6E 01 00 39 A8 | once |
+| A2RM, O6RM, OMRM, ONRM, OORM, R6RM, THRM | Legacy | Massage Constant | press | 6E 01 00 3A A9 | once |
+| A3RM, ACRM, ADRM, B4RM, BDRM, BERM, BFRM, BGRM, BHRM, BIRM, BJRM, BKRM, BLRM, BZRM, IGRM, IRRM, M3RM, M5RM, MMRM, MRRM, O1RM, O2RM, O3RM, O5RM, O6RM, O9RM, OMRM, ONRM, OORM, OSRM, OXRM, OZRM, P1RM, R2RM, R5RM, TBRM, THRM, U0RM, U1RM, U2RM, U3RM, U4RM, UCRM, UERM, UFRM, UIRM, UMRM, UPRM, UQRM, UXRM, V0RM, V2RM, V8RM, VBRM, VCRM, VVRM, VWRM, VYRM, W0RM, W2RM, W3RM, W6RM, WARM, WBRM, WDRM, WERM, WLRM, WQRM, WSRM, WTRM, Y4RM, Y8RM, YERM, YIRM, YMRM, YORM, YPRM, ZR11, ZR12, ZR50, ZR51, ZRA0 | Legacy | Lounge | recall | 6E 01 00 59 C8 | once |
+| ACRM, ADRM, BERM, D7RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, R2RM, T9RM, U9RM, UARM, UJRM, ULRM, V7RM, VQRM, W5RM, Y3RM, YGRM | Legacy | Massage Head Intensity Dec | press | 6E 01 00 4D BC | once |
+| ACRM, ADRM, B8TT, B9TT, BERM, D7RM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OYRM, R2RM, U9RM, UARM, UJRM, V7RM, VQRM, W5RM, Y3RM, YGRM | Legacy | Massage Foot Intensity Dec | press | 6E 01 00 4F BE | once |
+| AERM, AGRM | Legacy | Pillow | up | 6E 01 00 3F AE | 150 |
+| AERM, AGRM | Legacy | Pillow | down | 6E 01 00 40 AF | 150 |
+| AERM, Y1RM, YGRM | Legacy | Head Up Foot Up | press | 6E 01 00 23 92 | once |
+| AERM | Legacy | Lumbar | recall | 6E 01 00 91 00 | once |
+| AERM | Legacy | Lumbar | save | 6E 01 00 92 01 | once |
+| AFRM, AGRM | Legacy | Head Up Foot Up | press | 6E 01 00 23 92 | 150 |
+| AHRM, B9TT, I2RM, I7RM, I8RM, ICRM, IERM, IFRM, IHRM, IIRM, IRRM, O5RM, V9RM, VIRM, VNRM, WIRM, YGRM | Legacy | Massage Head Foot Both On | press | 6E 01 00 5D CC | once |
+| B1RM, I9RM, INRM, O6RM, OMRM, OORM, R6RM, VGRM, WDRM, WERM | Legacy | Massage Head On Off | press | 6E 01 00 32 A1 | once |
+| B1RM, O6RM, OMRM, OORM, R6RM | Legacy | Massage Foot On Off | press | 6E 01 00 33 A2 | once |
+| B1RM, R2RM | Legacy | Massage Intensity3 | press | 6E 01 00 68 D7 | once |
+| B1RM, R2RM | Legacy | Massage Intensity1 | press | 6E 01 00 67 D6 | once |
+| B4RM, B9RM, ISRM, ORRM, P2RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 | Legacy | Pillow Lumbar Both | up | 6E 01 00 43 B2 | 100 |
+| B4RM, B9RM, ISRM, ORRM, P2RM, VRRM, VZRM, WHRM, WTRM, ZR70, ZR80 | Legacy | Pillow Lumbar Both | down | 6E 01 00 44 B3 | 100 |
+| B9TT, BHRM, BIRM, I0RM, I4RM, I5RM, MLRM, O0RM, O4RM, OTRM, OURM, OWRM, OYRM, P5RM, U9RM, UARM, UJRM, V6RM, V7RM, YERM, YGRM, ZRI0 | Legacy | Massage Off | press | 6E 01 00 47 B6 | once |
+| BGRM, BHRM, BIRM, BLRM, BNRM | Legacy | Massage Head Intensity Inc2 | press | 6E 01 00 A4 13 | once |
+| BGRM, BHRM, BIRM, BLRM, BNRM | Legacy | Massage Foot Intensity Inc2 | press | 6E 01 00 A5 14 | once |
+| BZRM | Legacy | Relax | press | 6E 01 00 70 DF | once |
+| CFRM, E6RM, EERM, GARM, M5RM, U3RM | Legacy | Motor5 | up | 6E 01 00 71 E0 | 100 |
+| CFRM, E6RM, EERM, GARM, M5RM, U3RM | Legacy | Motor5 | down | 6E 01 00 72 E1 | 100 |
+| CFRM, E1RM, EERM, GARM | Legacy | Memory1 | recall | 6E 01 00 2E 9D | once |
+| CXRM, DNRM | Legacy | Movie Watching | recall | 6E 01 00 58 C7 | once |
+| CXRM | Legacy | Yoga | recall | 6E 01 00 2F 9E | once |
+| DFRM, DGRM | Legacy | Yoga | recall | 6E 01 00 30 9F | once |
+| DNRM | Legacy | Xiaofeiyan | recall | 6E 01 00 F0 5F | once |
+| DNRM, DZRM, EARM, EBRM | Legacy | Yoga | save | 6E 01 00 F1 60 | once |
+| DZRM, EARM, EBRM | Legacy | Yoga | recall | 6E 01 00 F0 5F | once |
+| E6RM, M5RM | Legacy | Motor6 | up | 6E 01 00 73 E2 | 100 |
+| E6RM, M5RM | Legacy | Motor6 | down | 6E 01 00 74 E3 | 100 |
+| EARM, EBRM | Legacy | Zero gravity | recall | 6E 01 00 45 B4 | once |
+| EARM, EBRM | Legacy | Movie viewing | recall | 6E 01 00 58 C7 | once |
+| FIRM, FRRM | Legacy | Read | recall | 6E 01 00 F2 61 | once |
+| FIRM, FRRM | Legacy | Read | save | 6E 01 00 F3 62 | once |
+| FIRM, FRRM | Legacy | Recline | recall | 6E 01 00 F6 65 | once |
+| FIRM, FRRM | Legacy | Flat Sleep | save | 6E 01 00 F7 66 | once |
+| FJRM | Legacy | Both massage off | press | 6E 01 00 34 A3 | once |
+| OORM, OURM, OWRM, YFRM, YGRM | Legacy | Head Up Foot Down | press | 6E 01 00 21 90 | once |
+| OURM, OWRM, YFRM, YGRM | Legacy | Head Down Foot Up | press | 6E 01 00 22 91 | once |
+| OWRM, XFRM, XGRM, XLRM, YIRM, YMRM, YNRM, YORM, YPRM | Legacy | Head Up Only | press | 6E 01 00 3D AC | once |
+| OWRM | Legacy | Foot Up Only | press | 6E 01 00 3E AD | once |
+| P2RM, ZR70, ZR80 | Legacy | Pillow Lumbar Both Tilt Up | press | 6E 01 00 5B CA | once |
+| P2RM, ZR70, ZR80 | Legacy | Pillow Lumbar Both Tilt Down | press | 6E 01 00 5C CB | once |
+| P2RM, ZRA0 | Legacy | Ubl Off | press | 6E 01 00 75 E4 | once |
+| R2RM | Legacy | Massage Intensity2 | press | 6E 01 00 AF 1E | once |
+| T3RM | Legacy | Both massage off | press | 6E 01 00 5D CC | once |
+| VRRM | Legacy | Flat2 | press | 6E 01 00 6C DB | once |
+| WYRM | Legacy | Pillow | press | 6E 01 00 3F AE | 100 |
+| Y2RM | Legacy | Head Foot On Off | press | 6E 01 00 6F DE | once |
+| ZQRM | Legacy | Lock | press | 6E 01 00 84 F3 | once |
+
+| Model | Alarm operands | Snore operands | Angle targets | Motor modes |
+|---|---|---|---|---|
+| 3I | 2E |  |  | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 4I |  |  | Back 0..35, Foot 0..30 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 4IT |  |  | Back 0..75, Foot 0..30, Pillow 0..25 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 5I |  |  | Back 0..70, Foot 0..45 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 6BRM |  |  |  |  |
+| 6CRM |  |  |  |  |
+| 6DRM |  |  |  |  |
+| 6ERM |  |  |  |  |
+| 6FRM |  |  |  |  |
+| 6HRM |  |  |  | SINGLE: LEFT, RIGHT |
+| 6I |  |  | Back 0..70, Foot 0..45, Pillow 0..25 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| 7I |  |  | Back 0..70, Foot 0..45 | GROUP_SYNC: Mode1, Mode2, Mode3; GROUP_SPLIT: Mode1, Mode3 |
+| A0RM |  |  |  |  |
+| A1RM |  |  |  |  |
+| A2RM |  |  |  |  |
+| A3RM |  |  |  |  |
+| A6RM |  |  |  |  |
+| A7RM |  |  |  |  |
+| A8RM |  |  |  |  |
+| A9RM |  |  |  |  |
+| AARM |  |  |  |  |
+| ABRM |  |  |  |  |
+| ACRM |  |  |  |  |
+| ADRM |  |  |  |  |
+| AERM |  |  |  |  |
+| AFRM |  |  |  |  |
+| AGRM |  |  |  |  |
+| AHRM |  |  |  |  |
+| AIRM |  |  |  |  |
+| AJRM |  |  |  |  |
+| AKRM |  |  |  |  |
+| AWRM |  |  |  |  |
+| AXRM |  |  |  |  |
+| B0RM |  |  |  |  |
+| B1RM |  |  |  |  |
+| B2RM |  |  |  |  |
+| B3RM |  |  |  |  |
+| B4RM |  |  |  |  |
+| B5RM |  |  |  |  |
+| B6RM |  |  |  |  |
+| B6RU |  |  |  |  |
+| B7RM |  |  |  |  |
+| B8RM |  |  |  |  |
+| B8TT |  |  |  |  |
+| B9RM |  |  |  |  |
+| B9TT |  |  |  |  |
+| BARM |  |  |  |  |
+| BBRM |  |  |  |  |
+| BCRM |  |  |  |  |
+| BDRM |  |  |  |  |
+| BERM |  |  |  |  |
+| BFRM |  |  |  |  |
+| BGRM |  |  |  |  |
+| BHRM |  |  |  |  |
+| BIRM |  |  |  |  |
+| BJRM |  |  |  |  |
+| BKRM |  |  |  |  |
+| BLRM |  |  |  |  |
+| BMRM |  |  |  |  |
+| BNRM |  |  |  |  |
+| BPRM |  |  |  |  |
+| BQRM |  |  |  |  |
+| BZRM |  |  |  |  |
+| CERM | 58, 45, 46, 2E, 2F |  | Back 0..58, Foot 0..42 |  |
+| CFRM | 46, 45, 2E | 46, 45 |  |  |
+| CWRM |  |  |  |  |
+| CXRM | 45, 46, 58, 2F, 2E |  |  |  |
+| D0RM |  |  |  |  |
+| D1RM |  |  |  |  |
+| D2RM |  |  |  |  |
+| D4RM |  |  |  |  |
+| D5RM |  |  |  |  |
+| D6RM |  |  |  |  |
+| D7RM |  |  |  |  |
+| DFRM | 58, 46, 45, 2E, 4C, 4E |  |  |  |
+| DGRM | 46, 45 |  |  |  |
+| DNRM |  |  |  |  |
+| DZRM | 45, 46, 58, F0, 2E |  |  |  |
+| E1RM | 46, 45, 2E | 46, 45 |  |  |
+| E6RM |  |  |  |  |
+| EARM | 45, 46, 58, F0, 2E, 2F |  |  |  |
+| EBRM | 45, 46, 58, F0, 2E, 2F |  |  | GROUP_SPLIT: LEFT, RIGHT |
+| EERM | 2E |  |  |  |
+| EFRM | 45, 46, 58, 2E, 2F |  |  |  |
+| EHRM |  |  |  |  |
+| ELRM | 58, 45, 46, 2E, 2F |  | Back 0..59, Foot 0..34 |  |
+| F0RM |  |  |  |  |
+| FIRM |  |  |  |  |
+| FJRM |  |  |  |  |
+| FRRM |  |  |  |  |
+| GARM | 2E | 46 |  |  |
+| GMRM |  |  |  |  |
+| I0RM |  |  |  |  |
+| I1RM |  |  |  |  |
+| I2RM |  |  |  |  |
+| I3RM |  |  |  |  |
+| I4RM |  |  |  |  |
+| I5RM |  |  |  |  |
+| I6RM |  |  |  |  |
+| I7RM |  |  |  |  |
+| I8RM |  |  |  |  |
+| I9RM |  |  |  |  |
+| IARM |  |  |  |  |
+| IBRM |  |  |  |  |
+| ICRM |  |  |  |  |
+| IDRM |  |  |  |  |
+| IERM |  |  |  |  |
+| IFRM |  |  |  |  |
+| IGRM |  |  |  |  |
+| IHRM |  |  |  |  |
+| IIRM |  |  |  |  |
+| IJRM |  |  |  |  |
+| IKRM |  |  |  |  |
+| ILRM |  |  |  |  |
+| IMRM |  |  |  |  |
+| INRM |  |  |  |  |
+| IORM |  |  |  |  |
+| IPRM |  |  |  |  |
+| IQRM |  |  |  |  |
+| IRRM |  |  |  |  |
+| ISRM |  |  |  |  |
+| M3RM |  |  |  |  |
+| M4RM |  |  |  |  |
+| M5RM |  |  |  |  |
+| M6RM |  |  |  |  |
+| M7RM |  |  |  |  |
+| M9RM |  |  |  |  |
+| MARM |  |  |  |  |
+| MLRM |  |  |  |  |
+| MMRM |  |  |  |  |
+| MRRM |  |  |  |  |
+| O0RM |  |  |  |  |
+| O1RM |  |  |  |  |
+| O2RM |  |  |  |  |
+| O3RM |  |  |  |  |
+| O4RM |  |  |  |  |
+| O5RM |  |  |  |  |
+| O6RM |  |  |  |  |
+| O7RM |  |  |  |  |
+| O8RM |  |  |  |  |
+| O9RM | 58, 45, 59, 2E, 2F, 4C, 4E |  |  |  |
+| OARM |  |  |  |  |
+| OMRM |  |  |  |  |
+| ONRM |  |  |  |  |
+| OORM |  |  |  |  |
+| OQRM |  |  |  |  |
+| ORRM |  |  |  |  |
+| OSRM |  |  |  |  |
+| OTRM | 45, 46, 2E, 4C, 4E |  |  |  |
+| OURM |  |  |  |  |
+| OVRM |  |  |  |  |
+| OWRM |  |  |  |  |
+| OXRM |  |  |  |  |
+| OYRM |  |  |  |  |
+| OZRM |  |  |  |  |
+| P0RM |  |  |  |  |
+| P1RM | 58, 45, 59, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P2RM |  |  |  |  |
+| P3RM |  |  |  |  |
+| P4RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P5RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| P6RM |  |  |  |  |
+| P9RM |  |  |  |  |
+| R2RM |  |  |  |  |
+| R5RM | 58, 45, 59, 2E, 2F |  |  |  |
+| R6RM |  |  |  |  |
+| S9RM |  |  |  |  |
+| SARM |  |  |  |  |
+| T0RM |  |  |  |  |
+| T1RM |  |  |  |  |
+| T2RM |  |  |  |  |
+| T3RM |  |  |  |  |
+| T4RM |  |  |  |  |
+| T5RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| T6RM |  |  |  |  |
+| T7RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| T8RM |  |  |  |  |
+| T9RM | 45, 46, 2E, 4C, 4D |  |  |  |
+| TARM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| TBRM |  |  |  |  |
+| THRM |  |  |  |  |
+| TLRM |  |  |  |  |
+| TWRM |  |  |  |  |
+| TZRM |  |  |  |  |
+| U0RM |  |  |  |  |
+| U1RM |  |  |  |  |
+| U2RM |  |  |  |  |
+| U3RM |  |  |  |  |
+| U4RM |  |  |  |  |
+| U5RM |  |  |  |  |
+| U6RM | 45, 46, 2E |  |  |  |
+| U7RM |  |  |  |  |
+| U8RM |  |  |  |  |
+| U9RM |  |  |  |  |
+| UARM |  |  |  |  |
+| UCRM |  |  |  |  |
+| UDRM |  |  |  |  |
+| UERM |  |  |  |  |
+| UFRM | 58, 45, 59, 2E, 2F, 4C, 4E |  |  |  |
+| UGRM |  |  |  |  |
+| UHRM |  |  |  |  |
+| UIRM |  |  |  |  |
+| UJRM |  |  |  |  |
+| UKRM |  |  |  |  |
+| ULRM |  |  |  |  |
+| UMRM |  |  |  |  |
+| UNRM |  |  |  |  |
+| UORM |  |  |  |  |
+| UPRM |  |  |  |  |
+| UQRM |  |  |  |  |
+| URRM | 46, 2E, 4C, 4E |  |  |  |
+| UTRM |  |  |  |  |
+| UURM |  |  |  |  |
+| UVRM | 58, 45, 46, 2E, 2F |  |  |  |
+| UWRM |  |  |  |  |
+| UXRM |  |  |  |  |
+| UYRM |  |  |  |  |
+| UZRM |  |  |  |  |
+| V0RM |  |  |  |  |
+| V1RM | 45, 46, 2E |  |  |  |
+| V2RM |  |  |  |  |
+| V3RM |  |  |  |  |
+| V4RM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| V5RM |  |  |  |  |
+| V6RM |  |  |  |  |
+| V7RM |  |  |  |  |
+| V8RM |  |  |  |  |
+| V9RM |  |  |  |  |
+| VARM |  |  |  |  |
+| VBRM |  |  |  |  |
+| VCRM |  |  |  |  |
+| VDRM |  |  |  |  |
+| VERM |  |  |  |  |
+| VFRM |  |  |  |  |
+| VGRM |  |  |  |  |
+| VHRM |  |  |  |  |
+| VIRM |  |  |  |  |
+| VJRM |  |  |  |  |
+| VKRM |  |  |  |  |
+| VLRM |  |  |  |  |
+| VMRM |  |  |  |  |
+| VNRM |  |  |  |  |
+| VORM |  |  |  |  |
+| VPRM |  |  |  |  |
+| VQRM |  |  |  |  |
+| VRRM |  |  |  |  |
+| VSRM |  |  |  |  |
+| VTRM |  |  |  |  |
+| VURM |  |  |  |  |
+| VVRM |  |  |  |  |
+| VWRM |  |  |  |  |
+| VXRM |  |  |  |  |
+| VYRM |  |  |  |  |
+| VZRM |  |  |  |  |
+| W0RM |  |  |  |  |
+| W1RM |  |  |  |  |
+| W2RM | 58, 45, 59, 2E, 2F |  |  |  |
+| W3RM |  |  |  |  |
+| W4RM |  |  |  |  |
+| W5RM |  |  |  |  |
+| W6RM |  |  |  |  |
+| W7RM |  |  |  |  |
+| W8RM |  |  |  |  |
+| W9RM |  |  |  |  |
+| WARM |  |  |  |  |
+| WBRM |  |  |  |  |
+| WCRM |  |  |  |  |
+| WDRM |  |  |  |  |
+| WERM |  |  |  |  |
+| WGRM |  |  |  |  |
+| WHRM |  |  |  |  |
+| WIRM |  |  |  |  |
+| WJRM | 58, 45, 46, 2E, 4C, 4E |  |  |  |
+| WKRM | 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WLRM | 58, 45, 46, 59, 2F, 30, 4C, 4E |  |  |  |
+| WMRM |  |  |  |  |
+| WNRM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WORM |  |  |  |  |
+| WPRM |  |  |  |  |
+| WQRM |  |  |  |  |
+| WRRM |  |  |  |  |
+| WSRM | 58, 45, 59, 2E, 2F |  |  |  |
+| WTRM |  |  |  |  |
+| WURM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WVRM |  |  |  |  |
+| WWRM |  |  |  |  |
+| WXRM | 58, 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| WYRM |  |  |  |  |
+| WZRM |  |  |  |  |
+| X1RM | 45, 46 |  |  |  |
+| X2RM |  |  |  |  |
+| XCRM | 45, 46, 4C, 4E |  |  |  |
+| XFRM | 58, 45, 46, 4C, 4E |  |  |  |
+| XGRM | 45, 46, 2E |  |  |  |
+| XLRM | 58, 45, 46, 4C, 4E |  |  |  |
+| Y0RM |  |  |  |  |
+| Y1RM | 45, 46, 2E |  |  |  |
+| Y2RM |  |  |  |  |
+| Y3RM |  |  |  |  |
+| Y4RM | 58, 45, 46, 59, 2F, 30 |  |  |  |
+| Y5RM |  |  |  |  |
+| Y6RM | 45, 46, 2E, 2F, 4C, 4E |  |  |  |
+| Y7RM | 45, 46, 2E |  |  |  |
+| Y8RM | 58, 45, 46, 59, 2E, 2F, 4C, 4E |  |  |  |
+| Y9RM | 45, 46, 2E |  |  |  |
+| YARM |  |  |  |  |
+| YBRM |  |  |  |  |
+| YCRM |  |  |  |  |
+| YDRM |  |  |  |  |
+| YERM | 58, 45, 46, 59, 2E, 2F, 4C, 4E |  |  |  |
+| YFRM |  |  |  |  |
+| YGRM |  |  |  |  |
+| YHRM |  |  |  |  |
+| YIRM | B0, B1 |  |  |  |
+| YJRM |  |  |  |  |
+| YKRM |  |  |  |  |
+| YMRM |  |  |  |  |
+| YNRM |  |  |  |  |
+| YORM | B0, B1 |  |  |  |
+| YPRM | B0, B1 |  |  |  |
+| ZQRM | 30, B2 |  |  |  |
+| ZR00 |  |  |  |  |
+| ZR01 |  |  |  |  |
+| ZR10 |  |  |  |  |
+| ZR11 |  |  |  |  |
+| ZR12 |  |  |  |  |
+| ZR20 |  |  |  |  |
+| ZR21 |  |  |  |  |
+| ZR30 |  |  |  |  |
+| ZR40 |  |  |  |  |
+| ZR50 |  |  |  |  |
+| ZR51 |  |  |  |  |
+| ZR60 |  |  |  |  |
+| ZR70 |  |  |  |  |
+| ZR80 |  |  |  |  |
+| ZR90 |  |  |  |  |
+| ZRA0 |  |  |  |  |
+| ZRA1 |  |  |  |  |
+| ZRA2 |  |  |  |  |
+| ZRI0 |  |  |  |  |
+<!-- /generated -->
+
+### SleepEvolution / W.Silver Products 3.x
+
+**Status:** ❓ Needs testing (APK-verified; hardware unverified).
+
+| App | Version (code) | Package ID |
+|---|---|---|
+| [SleepEvolution](https://play.google.com/store/apps/details?id=com.richmat.nu503) | 3.5.5 (13) | `com.richmat.nu503` |
+| [W.Silver Products](https://play.google.com/store/apps/details?id=com.richmat.silver) | 3.3.7 (9) | `com.richmat.silver` |
+
+Physical directions, preset, massage, light and reset effects, radio delivery
+and STOP response are not yet verified on hardware.
+
+#### Setup
+
+Search **SleepEvolution** or **W.Silver Products 3.x** under **Richmat** in setup
+or **Reconfigure**, then select the exact case-sensitive two-character name
+prefix. A matching name can suggest a prefix only after app selection. Shared
+prefixes and Nordic UART services cannot choose between the apps. The newer
+W.Silver MH app remains a separate choice. `Ml`, `Mr` and `Ms` are case
+sensitive; `0B` is an alias for M4. A6, U3, U5 and X1 belong only to
+SleepEvolution. BE includes its separate massage screen.
+
+Each receiver in a two-address pair keeps its own app and prefix. The apps have
+no bed-side field, so single-address paired addressing is unsupported. A
+sequential connection cannot run a held batch on both sides. HA owns Bluetooth
+adapter/proxy discovery, connection admission and handoff.
+
+#### Controls
+
+| Feature | Availability |
+|---|---|
+| Movement | Paired head/foot direction graphics are covers. Other direction graphics are held buttons named for what they show (Head and foot up, Upper Section Up, ...), without inferring physical motor count. |
+| Presets and memory | Exact named actions in the selected profile, including separate Save buttons where programming is proven. No universal slot count or numeric memory namespace. |
+| Massage and bed light | Profile-specific request buttons; local icon/flag changes do not confirm remote state. |
+| Factory Reset | Only where listed; requires confirmation in the native card, as do Save buttons. |
+| Position and device state feedback | None. |
+| Renewable holds | Proven motion controls only. Countdown, massage, programming and local selectors remain finite. |
+
+The command tables below describe raw single-character ASCII String bytes over
+Nordic UART. There is no packet envelope, terminator, checksum, sequence, side
+field or authentication exchange. Each listed byte is a separate write,
+including adjacent triplicate recalls, with no added interwrite delay. `$` is
+byte `24` and character `1` is byte `31`; uppercase and lowercase commands
+remain distinct. The live characteristic's properties select ATT write mode;
+radio delivery remains hardware unverified.
+
+Control keys identify the selected profile's app labels/artwork, rather than a
+universal command map. For example, A1 and A2 recall the same displayed slots
+but have different M2/M3 save associations. BZ's displayed M2/M3 associations
+also remain exactly as listed. The source field name alone does not identify a
+control: M5's `h26_flat` is bed-light artwork.
+
+GV's head/foot flag selects an axis, never a bed side. SleepEvolution defaults
+to foot (flag 1); W.Silver defaults to head (flag 0). Home Assistant has no axis
+picker: GV's position, massage power and +/− controls are separate Head and
+Foot buttons that choose the axis, then press. Likewise U3's selected-axis
+arrows are Lumbar, Tilt and Lounge Up/Down buttons for modes 1, 2 and 3. Their GV periodic maps and
+schedules differ, including W.Silver's off pictogram with no periodic write.
+Use only the chosen app's table. U3 starts in mode 0; its local lumbar selector
+selects mode 1, while mode 2/3 selectors also perform the listed bed writes.
+U5's LED request flag alternates locally. These choices reset with the physical
+session and are not confirmed device state.
+
+States without a listed timer arm have no periodic write. **Bed release
+gesture** retains the direct bed effects of phone-torch handlers: `m`/`n`,
+release only, or cancellation only as listed. Phone torch is excluded and is
+never exposed as a bed light or phone control. Local-only selectors and
+cancellation-only actions send no wire packet of their own. These, controls
+that send only the `m`/`n` wake and release (such as the release gesture) and
+U3's tilt selector (the Lounge recall without its release) remain
+`richmat_legacy` action controls but are not buttons. Network, SSID,
+password, cloud, account, OTA and unrelated phone, audio, accessory and seating
+functions are excluded from these direct BLE bed profiles.
+
+<!-- generated:richmat-legacy-ascii -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Service | Write | Local notify target (no subscription handshake) |
+|---|---|---|
+| `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+
+##### App and prefix catalog
+
+| App | Profile key | Exact name prefixes | Screen: initial / period (ms) |
+|---|---|---|---|
+| SleepEvolution | `sleep_evolution:A1` | `A1*` | A1: 0 / 100 |
+| SleepEvolution | `sleep_evolution:A2` | `A2*` | A2: 0 / 100 |
+| SleepEvolution | `sleep_evolution:A6` | `A6*` | A6: 500 / 100 |
+| SleepEvolution | `sleep_evolution:B1` | `B1*` | B1: 0 / 150 |
+| SleepEvolution | `sleep_evolution:B2` | `B2*` | B2: 0 / 100 |
+| SleepEvolution | `sleep_evolution:B6` | `B6*` | B6: 500 / 100 |
+| SleepEvolution | `sleep_evolution:B7` | `B7*` | B7: 500 / 100 |
+| SleepEvolution | `sleep_evolution:BZ` | `BZ*` | BZ: 0 / 100 |
+| SleepEvolution | `sleep_evolution:6B` | `6B*` | 6B: 0 / 300 |
+| SleepEvolution | `sleep_evolution:TH` | `TH*` | TH: 0 / 300 |
+| SleepEvolution | `sleep_evolution:ON` | `ON*` | ON: 0 / 300 |
+| SleepEvolution | `sleep_evolution:D2` | `D2*` | D2: 0 / 100 |
+| SleepEvolution | `sleep_evolution:D4` | `D4*` | D4: 0 / 100 |
+| SleepEvolution | `sleep_evolution:GV` | `GV*` | GV: 500 / 100 |
+| SleepEvolution | `sleep_evolution:M2` | `M2*` | M2: 0 / 150 |
+| SleepEvolution | `sleep_evolution:M3` | `M3*` | M3: 0 / 100 |
+| SleepEvolution | `sleep_evolution:M4` | `M4*`, `0B*` | M4: 0 / 100 |
+| SleepEvolution | `sleep_evolution:M5` | `M5*` | M5: 0 / 100 |
+| SleepEvolution | `sleep_evolution:M9` | `M9*` | M9: 0 / 300 |
+| SleepEvolution | `sleep_evolution:Ml` | `Ml*` | Ml: 0 / 100 |
+| SleepEvolution | `sleep_evolution:Mr` | `Mr*` | Mr: 0 / 100 |
+| SleepEvolution | `sleep_evolution:Ms` | `Ms*` | Ms: 0 / 100 |
+| SleepEvolution | `sleep_evolution:LP` | `LP*` | LP: 0 / 300 |
+| SleepEvolution | `sleep_evolution:P9` | `P9*` | P9: 0 / 100 |
+| SleepEvolution | `sleep_evolution:R5` | `R5*` | R5: 0 / 100 |
+| SleepEvolution | `sleep_evolution:S9` | `S9*` | S9: 0 / 300 |
+| SleepEvolution | `sleep_evolution:TL` | `TL*` | TL: 0 / 300 |
+| SleepEvolution | `sleep_evolution:T3` | `T3*` | T3: 0 / 300 |
+| SleepEvolution | `sleep_evolution:T4` | `T4*` | T4: 0 / 300 |
+| SleepEvolution | `sleep_evolution:TW` | `TW*` | TW: 500 / 100 |
+| SleepEvolution | `sleep_evolution:TZ` | `TZ*` | TZ: 0 / 300 |
+| SleepEvolution | `sleep_evolution:U1` | `U1*` | U1: 0 / 100 |
+| SleepEvolution | `sleep_evolution:U2` | `U2*` | U2: 0 / 100 |
+| SleepEvolution | `sleep_evolution:U3` | `U3*` | U3: 0 / 100 |
+| SleepEvolution | `sleep_evolution:U5` | `U5*` | U5: 0 / 100 |
+| SleepEvolution | `sleep_evolution:W2` | `W2*` | W2: 0 / 100 |
+| SleepEvolution | `sleep_evolution:X1` | `X1*` | X1: 0 / 300 |
+| SleepEvolution | `sleep_evolution:Y2` | `Y2*` | Y2: 0 / 100 |
+| SleepEvolution | `sleep_evolution:Y3` | `Y3*` | Y3: 0 / 150 |
+| SleepEvolution | `sleep_evolution:BE` | `BE*` | BE: 0 / 300; BE_massage: 0 / 300 |
+| SleepEvolution | `sleep_evolution:Z4` | `Z4*` | Z4: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:A1` | `A1*` | A1: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:A2` | `A2*` | A2: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:B1` | `B1*` | B1: 0 / 150 |
+| W.Silver Products (3.x) | `wsilver_legacy:B2` | `B2*` | B2: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:B6` | `B6*` | B6: 500 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:B7` | `B7*` | B7: 500 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:BZ` | `BZ*` | BZ: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:6B` | `6B*` | 6B: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:TH` | `TH*` | TH: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:ON` | `ON*` | ON: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:D2` | `D2*` | D2: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:D4` | `D4*` | D4: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:GV` | `GV*` | GV: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:M2` | `M2*` | M2: 0 / 150 |
+| W.Silver Products (3.x) | `wsilver_legacy:M3` | `M3*` | M3: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:M4` | `M4*`, `0B*` | M4: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:M5` | `M5*` | M5: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:M9` | `M9*` | M9: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:Ml` | `Ml*` | Ml: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:Mr` | `Mr*` | Mr: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:Ms` | `Ms*` | Ms: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:LP` | `LP*` | LP: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:P9` | `P9*` | P9: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:R5` | `R5*` | R5: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:S9` | `S9*` | S9: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:TL` | `TL*` | TL: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:T3` | `T3*` | T3: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:T4` | `T4*` | T4: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:TW` | `TW*` | TW: 500 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:TZ` | `TZ*` | TZ: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:U1` | `U1*` | U1: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:U2` | `U2*` | U2: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:W2` | `W2*` | W2: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:Y2` | `Y2*` | Y2: 0 / 100 |
+| W.Silver Products (3.x) | `wsilver_legacy:Y3` | `Y3*` | Y3: 0 / 150 |
+| W.Silver Products (3.x) | `wsilver_legacy:BE` | `BE*` | BE: 0 / 300; BE_massage: 0 / 300 |
+| W.Silver Products (3.x) | `wsilver_legacy:Z4` | `Z4*` | Z4: 0 / 300 |
+
+##### SleepEvolution
+
+###### A1
+
+Exact name gates: `A1*`. Schedules (screen, initial/period ms): A1: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | A1 | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | M1 | A1 | none | 32: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | M2 | A1 | none | 33: `2C` from event 21 (threshold 20) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | M3 | A1 | none | 34: `2D` from event 21 (threshold 20) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | A1 | `24` | 35: `24` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | A1 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | A1 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | A1 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | A1 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mhinc` | HEAD massage | A1 | `32` | 46: `32` | none | `6E` | none |
+| `h26_moff` | INTENSITY up | A1 | `34` | 52: `34` | none | `6E` | none |
+| `h26_mfinc` | SPEED up | A1 | `36` | 48: `36` | none | `6E` | none |
+| `h26_mhdec` | FOOT massage | A1 | `33` | 49: `33` | none | `6E` | none |
+| `h26_mode` | INTENSITY down | A1 | `35` | 50: `35` | none | `6E` | none |
+| `h26_mfdec` | SPEED down | A1 | `37` | 51: `37` | none | `6E` | none |
+| `h26_min10` | PULSE | A1 | `38` | 53: `38` | none | `6E` | none |
+| `h26_min20` | WAVE | A1 | `39` | 54: `39` | none | `6E` | none |
+| `h26_min30` | CONSTANT | A1 | `3A` | 55: `3A` | none | `6E` | none |
+
+###### A2
+
+Exact name gates: `A2*`. Schedules (screen, initial/period ms): A2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_lounge` | M1 | A2 | none | 32: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | M2 | A2 | none | 33: `2D` from event 21 (threshold 20) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | M3 | A2 | none | 34: `2C` from event 21 (threshold 20) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | A2 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | A2 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | A2 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | A2 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | A2 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | A2 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mhinc` | HEAD massage | A2 | `32` | 46: `32` | none | `6E` | none |
+| `h26_moff` | INTENSITY up | A2 | `34` | 52: `34` | none | `6E` | none |
+| `h26_mfinc` | SPEED up | A2 | `36` | 48: `36` | none | `6E` | none |
+| `h26_mhdec` | FOOT massage | A2 | `33` | 49: `33` | none | `6E` | none |
+| `h26_mode` | INTENSITY down | A2 | `35` | 50: `35` | none | `6E` | none |
+| `h26_mfdec` | SPEED down | A2 | `37` | 51: `37` | none | `6E` | none |
+| `h26_min10` | PULSE | A2 | `38` | 53: `38` | none | `6E` | none |
+| `h26_min20` | WAVE | A2 | `39` | 54: `39` | none | `6E` | none |
+| `h26_min30` | CONSTANT | A2 | `3A` | 55: `3A` | none | `6E` | none |
+
+###### A6
+
+Exact name gates: `A6*`. Schedules (screen, initial/period ms): A6: 500/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | Head up | A6 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | Head down | A6 | `25` | 2: `25` | none | `6E` | none |
+| `iv_post3` | Foot up | A6 | `26` | 3: `26` | none | `6E` | none |
+| `iv_post4` | Foot down | A6 | `27` | 4: `27` | none | `6E` | none |
+| `iv_post5` | Flat | A6 | `31` / `31` / `31` | none | none | `6E` | none |
+| `iv_post6` | Zero gravity | A6 | none | 6: `66` from event 21 (threshold 20) | `45` / `45` / `45` / `6E` if counter <15 | `6E` | reset screen counter on release |
+
+###### B1
+
+Exact name gates: `B1*`. Schedules (screen, initial/period ms): B1: 0/150.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | B1 | `31` | 31: `31` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | B1 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | three intensity arcs | B1 | `68` | 104: `68` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | B1 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | B1 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | one intensity arc | B1 | `67` | 103: `67` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | B1 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | B1 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | massage OFF | B1 | `5A` | 90: `5A` | none | `6E` | none |
+| `h26_mfinc` | head massage ON/OFF | B1 | `32` | 32: `32` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | B1 | `6D` | none | none | `6E` | none |
+| `h26_mfdec` | foot massage ON/OFF | B1 | `33` | 33: `33` | none | `6E` | none |
+
+###### B2
+
+Exact name gates: `B2*`. Schedules (screen, initial/period ms): B2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | B2 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | B2 | `25` | 2: `25` | none | `6E` | none |
+
+###### B6
+
+Exact name gates: `B6*`. Schedules (screen, initial/period ms): B6: 500/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | B6 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | B6 | `25` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | B6 | `26` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | B6 | `27` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | B6 | `29` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | B6 | `2A` | 6: `2A` | none | `6E` | none |
+
+###### B7
+
+Exact name gates: `B7*`. Schedules (screen, initial/period ms): B7: 500/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | B7 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | B7 | `25` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | B7 | `26` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | B7 | `27` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | B7 | `29` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | B7 | `2A` | 6: `2A` | none | `6E` | none |
+| `iv_post8` | FLAT | B7 | `31` | 8: `31` | none | `6E` | none |
+
+###### BZ
+
+Exact name gates: `BZ*`. Schedules (screen, initial/period ms): BZ: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | BZ | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | BZ | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | BZ | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | BZ | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | BZ | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | RELAX | BZ | `70` | 36: `70` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | BZ | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | BZ | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | M2 | BZ | none | 39: `2D` from event 16 (threshold 15) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_ftdn` | foot down pictogram | BZ | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | BZ | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M3 | BZ | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | BZ | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | BZ | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | + | BZ | `34` | 48: `34` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | BZ | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | BZ | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | − | BZ | `35` | 51: `35` | none | `6E` | none |
+| `h26_min10` | 10MIN | BZ | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | BZ | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | BZ | `61` | 54: `61` | none | `6E` | none |
+
+###### 6B
+
+Exact name gates: `6B*`. Schedules (screen, initial/period ms): 6B: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | 6B | `6D` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | 6B | `6D` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | 6B | `6D` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | 6B | `6D` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | 6B | `6D` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | 6B | `6D` | 6: `2A` | none | `6E` | none |
+
+###### TH
+
+Exact name gates: `TH*`. Schedules (screen, initial/period ms): TH: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `post1` | POST1 | TH | `6D` | 31: `2E` | none | `6E` | none |
+| `post2` | POST2 | TH | `6D` | 32: `2F` | none | `6E` | none |
+| `post3` | POST3 | TH | `6D` | 33: `30` | none | `6E` | none |
+| `set` | SET | TH | `6D` | 35: none | none | `6E` | none |
+| `hdup` | head up pictogram | TH | `6D` | 34: `24` | none | `6E` | none |
+| `hddn` | foot up pictogram | TH | `6D` | 36: `25` | none | `6E` | none |
+| `ftup` | head down pictogram | TH | `6D` | 37: `26` | none | `6E` | none |
+| `ftdn` | foot down pictogram | TH | `6D` | 41: `27` | none | `6E` | none |
+| `syup` | Additional up arrow | TH | `6D` | 38: `29` | none | `6E` | none |
+| `sydn` | Additional down arrow | TH | `6D` | 39: `2A` | none | `6E` | none |
+| `mhon` | head massage ON/OFF | TH | `6D` | 42: `32` | none | `6E` | none |
+| `mfon` | foot massage ON/OFF | TH | `6D` | 44: `33` | none | `6E` | none |
+| `ledb` | under-bed light pictogram | TH | `6D` | 43: `3C` | none | `6E` | none |
+| `wave` | WAVE | TH | `6D` | 45: `39` | none | `6E` | none |
+| `puls` | PULSE | TH | `6D` | 46: `38` | none | `6E` | none |
+| `cnst` | CONSTANT | TH | `6D` | 47: `3A` | none | `6E` | none |
+| `sinc` | Speed + | TH | `6D` | 48: `36` | none | `6E` | none |
+| `sdec` | Speed − | TH | `6D` | 49: `37` | none | `6E` | none |
+| `iinc` | Intensity + | TH | `6D` | 50: `34` | none | `6E` | none |
+| `idec` | Intensity − | TH | `6D` | 51: `35` | none | `6E` | none |
+
+###### ON
+
+Exact name gates: `ON*`. Schedules (screen, initial/period ms): ON: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `post1` | POST1 | ON | `6D` | 31: `21` | none | `6E` | none |
+| `post2` | POST2 | ON | `6D` | 32: none | none | `6E` | none |
+| `post3` | POST3 | ON | `6D` | 33: `23` | none | `6E` | none |
+| `set` | SET | ON | `6D` | 35: none | none | `6E` | none |
+| `hdup` | head up pictogram | ON | `6D` | 34: `24` | none | `6E` | none |
+| `hddn` | foot up pictogram | ON | `6D` | 36: `25` | none | `6E` | none |
+| `ftup` | head down pictogram | ON | `6D` | 37: `26` | none | `6E` | none |
+| `ftdn` | foot down pictogram | ON | `6D` | 41: `27` | none | `6E` | none |
+| `syup` | Additional up arrow | ON | `6D` | 38: `31` | none | `6E` | none |
+| `sydn` | Additional down arrow | ON | `6D` | 39: `2E` | none | `6E` | none |
+| `mhon` | head massage ON/OFF | ON | `6D` | 42: `32` | none | `6E` | none |
+| `mfon` | foot massage ON/OFF | ON | `6D` | 44: `33` | none | `6E` | none |
+| `ledb` | under-bed light pictogram | ON | `6D` | 43: `3C` | none | `6E` | none |
+| `wave` | WAVE | ON | `6D` | 45: `39` | none | `6E` | none |
+| `puls` | PULSE | ON | `6D` | 46: `38` | none | `6E` | none |
+| `cnst` | CONSTANT | ON | `6D` | 47: `3A` | none | `6E` | none |
+| `sinc` | Speed + | ON | `6D` | 48: `36` | none | `6E` | none |
+| `sdec` | Speed − | ON | `6D` | 49: `37` | none | `6E` | none |
+| `iinc` | Intensity + | ON | `6D` | 50: `34` | none | `6E` | none |
+| `idec` | Intensity − | ON | `6D` | 51: `35` | none | `6E` | none |
+
+###### D2
+
+Exact name gates: `D2*`. Schedules (screen, initial/period ms): D2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | D2 | `31` | 31: `31` | none | `6E` | none |
+| `h26_tv` | TV | D2 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | D2 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | D2 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | D2 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | D2 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | D2 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | D2 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | D2 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | D2 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | D2 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | D2 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | D2 | `5F` | 52: none | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | D2 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | D2 | none | none | none | `6E` | none |
+| `h26_mode` | MODE massage | D2 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | D2 | `4E` | 51: `4E` | none | `6E` | none |
+
+###### D4
+
+Exact name gates: `D4*`. Schedules (screen, initial/period ms): D4: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | D4 | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | Anti Snore | D4 | `46` | 70: `46` | none | `6E` | none |
+| `h26_tv` | TV | D4 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | D4 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | D4 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | TILT up | D4 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | D4 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | D4 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | TILT down | D4 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | D4 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | D4 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | D4 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | D4 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | D4 | `5F` | 52: none | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | D4 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | D4 | none | none | none | `6E` | none |
+| `h26_mode` | MODE massage | D4 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | D4 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | LUMBAR up | D4 | `41` | 65: `41` | none | `6E` | none |
+| `h26_min30` | LUMBAR down | D4 | `42` | 66: `42` | none | `6E` | none |
+
+###### GV
+
+Exact name gates: `GV*`. Schedules (screen, initial/period ms): GV: 500/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `btn_plus` | + | GV | `6D` | 37: `37`; 39: `39` | none | `6E` | axis 0: state 37; axis 1: state 39 |
+| `btn_power` | massage power pictogram | GV | `6D` | 35: `35`; 36: `36` | none | `6E` | axis 0: state 35; axis 1: state 36 |
+| `btn_substract` | − | GV | `6D` | 38: `38`; 41: `41` | none | `6E` | axis 0: state 38; axis 1: state 41 |
+| `btn_tv` | TV | GV | `6D` | 42: `42` | none | `6E` | none |
+| `btn_lounge` | LOUNGE | GV | `6D` | 43: `43` | none | `6E` | none |
+| `btn_gravity` | 0 GRAVITY | GV | `6D` | 44: `44` | none | `6E` | none |
+| `btn_flat` | FLAT | GV | `6D` | 45: `45` | none | `6E` | none |
+| `btn_posup` | POS up | GV | `6D` | 31: `31`; 33: `33` | none | `6E` | axis 0: state 31; axis 1: state 33 |
+| `btn_posdown` | POS down | GV | `6D` | 32: `32`; 34: `34` | none | `6E` | axis 0: state 32; axis 1: state 34 |
+| `btn_light` | under-bed light pictogram | GV | `6D` | 46: `46` | none | `6E` | none |
+| `btn_poweroff` | prohibited / off pictogram | GV | `6D` | 47: `47` | none | `6E` | none |
+| `select_head` | Select head axis | GV | none | none | none | none | select local axis 0 |
+| `select_foot` | Select foot axis | GV | none | none | none | none | select local axis 1 |
+
+###### M2
+
+Exact name gates: `M2*`. Schedules (screen, initial/period ms): M2: 0/150.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | M2 | `6D` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | M2 | `6D` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | M2 | `6D` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | M2 | none | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | M2 | `6D` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | M2 | `6D` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | M2 | `6D` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | M2 | `6D` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | M2 | `6D` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | M2 | `6D` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | M2 | `6D` | 42: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | M2 | `6D` | 44: `2C` from event 21 (threshold 20) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | M2 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | M2 | `6D` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | M2 | `6D` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | M2 | `6D` | none | none | `6E` | none |
+| `h26_mode` | massage mode pictogram | M2 | `6D` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | M2 | `6D` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | M2 | `6D` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | M2 | `6D` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | M2 | `6D` | 54: `61` | none | `6E` | none |
+
+###### M3
+
+Exact name gates: `M3*`. Schedules (screen, initial/period ms): M3: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | M3 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | M3 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | M3 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | M3 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | M3 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | M3 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | M3 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | M3 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | M3 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | M3 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | M3 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | M3 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | M3 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | M3 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | M3 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | M3 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | M3 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | M3 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | M3 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | M3 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | M3 | `61` | 54: `61` | none | `6E` | none |
+
+###### M4
+
+Exact name gates: `M4*`, `0B*`. Schedules (screen, initial/period ms): M4: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | M4 | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | M4 | none | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | M4 | none | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | M4 | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | M4 | `6D` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | M4 | `6D` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | M4 | `6D` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | M4 | `6D` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | M4 | `6D` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | M4 | `6D` | 41: `27` | none | `6E` | none |
+| `h26_mema` | lower-bed segment up pictogram | M4 | `6D` | 42: `41` | none | `6E` | none |
+| `h26_memb` | lower-bed segment down pictogram | M4 | `6D` | 44: `42` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | M4 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | M4 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | M4 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | M4 | `6D` | none | none | `6E` | none |
+| `h26_mode` | massage mode pictogram | M4 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | M4 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | M4 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | M4 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | M4 | `61` | 54: `61` | none | `6E` | none |
+
+###### M5
+
+Exact name gates: `M5*`. Schedules (screen, initial/period ms): M5: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | under-bed light pictogram | M5 | `3C` | 31: `3C` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | M5 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | READ TV | M5 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | RELAX | M5 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | M5 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | ZG up | M5 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | M5 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | M5 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | ZG down | M5 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | M5 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | M5 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | M5 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | M3 | M5 | none | 46: `2D` from event 16 (threshold 15) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_moff` | LUMBAR down | M5 | `72` | 52: `72` | none | `6E` | none |
+| `h26_mfinc` | LUMBAR up | M5 | `71` | 48: `71` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | M5 | `6D` | none | none | `6E` | none |
+| `h26_mode` | HEAD REST down | M5 | `74` | 50: `74` | none | `6E` | none |
+| `h26_mfdec` | HEAD REST up | M5 | `73` | 51: `73` | none | `6E` | none |
+
+###### M9
+
+Exact name gates: `M9*`. Schedules (screen, initial/period ms): M9: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_tv` | MEM | M9 | none | 33: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | M9 | none | 34: `6A` from event 21 (threshold 20) | `6B` / `6B` / `6B` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | M9 | `24` | 35: `24` | none | `6E` | none |
+| `h26_ftup` | head down pictogram | M9 | `25` | 37: `25` | none | `6E` | none |
+| `h26_moff` | Factory Reset | M9 | `62` | 52: `62` | none | `6E` | none |
+| `h26_mfinc` | foot up pictogram | M9 | `26` | 48: `26` | none | `6E` | none |
+| `h26_mode` | FLAT | M9 | `31` | 50: `31` | none | `6E` | none |
+| `h26_mfdec` | foot down pictogram | M9 | `27` | 51: `27` | none | `6E` | none |
+
+###### Ml
+
+Exact name gates: `Ml*`. Schedules (screen, initial/period ms): Ml: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Ml | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | Anti Snore | Ml | none | 32: `69` from event 21 (threshold 20) | `46` / `46` / `46` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | Ml | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | Ml | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | Factory Reset | Ml | `62` | 36: `62` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Ml | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Ml | `25` | 38: `25` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Ml | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | MEM | Ml | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | UBL | Ml | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | down arrow | Ml | `4D` | 47: `4D` | none | `6E` | none |
+| `h26_mfinc` | up arrow | Ml | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | ALL OFF | Ml | `47` | 49: `47` | none | `6E` | none |
+| `h26_mode` | down arrow | Ml | `4F` | 50: `4F` | none | `6E` | none |
+| `h26_mfdec` | up arrow | Ml | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 15MIN | Ml | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 30MIN | Ml | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | WAVE | Ml | `48` | 54: `48` | none | `6E` | none |
+
+###### Mr
+
+Exact name gates: `Mr*`. Schedules (screen, initial/period ms): Mr: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Mr | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | compound posture pictogram hufu | Mr | none | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | compound posture pictogram hufd | Mr | none | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | compound posture pictogram hdfu | Mr | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | Mr | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | Mr | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Mr | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Mr | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | Mr | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Mr | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | Mr | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | Mr | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | Mr | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | Mr | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | Mr | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | Mr | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | Mr | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | Mr | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | Mr | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | Mr | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | Mr | `61` | 54: `61` | none | `6E` | none |
+
+###### Ms
+
+Exact name gates: `Ms*`. Schedules (screen, initial/period ms): Ms: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Ms | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | Anti Snore | Ms | `46` | 32: `46` | none | `6E` | none |
+| `h26_tv` | TV | Ms | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | Ms | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | Ms | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | Ms | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Ms | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Ms | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | Ms | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Ms | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | Ms | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | Ms | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | M3 | Ms | none | 46: `2D` from event 16 (threshold 15) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_moff` | TIMER / ALL OFF | Ms | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | Ms | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | Ms | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | Ms | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | Ms | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | Ms | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | Ms | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | Ms | `61` | 54: `61` | none | `6E` | none |
+
+###### LP
+
+Exact name gates: `LP*`. Schedules (screen, initial/period ms): LP: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `hdup` | head up pictogram | LP | `6D` | 31: `31` | none | `6E` | none |
+| `stop` | STOP | LP | `6D` | 32: `32` | none | `6E` | none |
+| `hddn` | head down pictogram | LP | `6D` | 34: `34` | none | `6E` | none |
+| `ftup` | foot up pictogram | LP | `6D` | 33: `33` | none | `6E` | none |
+| `flat` | FLAT | LP | `6D` | 35: `35` | none | `6E` | none |
+| `ftdn` | foot down pictogram | LP | `6D` | 36: `36` | none | `6E` | none |
+| `m1` | M1 | LP | `6D` | 37: `37` | none | `6E` | none |
+| `m2` | M2 | LP | `6D` | 38: `38` | none | `6E` | none |
+| `m3` | M3 | LP | `6D` | 39: `39` | none | `6E` | none |
+| `hdinc` | head massage increase pictogram | LP | `6D` | 41: `41` | none | `6E` | none |
+| `set` | SET | LP | `6D` | 42: `42` | none | `6E` | none |
+| `ftinc` | foot massage increase pictogram | LP | `6D` | 43: `43` | none | `6E` | none |
+| `hddec` | head massage decrease pictogram | LP | `6D` | 44: `44` | none | `6E` | none |
+| `swicth` | ON/OFF | LP | `6D` | 45: `45` | none | `6E` | none |
+| `ftdec` | foot massage decrease pictogram | LP | `6D` | 46: `46` | none | `6E` | none |
+| `add` | Gentle Touch + | LP | `6D` | 47: `47` | none | `6E` | none |
+| `led` | LED | LP | `6D` | 48: `48` | none | `6E` | none |
+| `sub` | Gentle Touch − | LP | `6D` | 49: `49` | none | `6E` | none |
+
+###### P9
+
+Exact name gates: `P9*`. Schedules (screen, initial/period ms): P9: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_tv` | P2 | P9 | none | 33: `2C` from event 21 (threshold 20) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | P1 | P9 | none | 34: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | P9 | `24` | 35: `24` | none | `6E` | none |
+| `h26_ftup` | head down pictogram | P9 | `25` | 37: `25` | none | `6E` | none |
+| `h26_mfinc` | foot up pictogram | P9 | `26` | 48: `26` | none | `6E` | none |
+| `h26_mode` | FLAT | P9 | `31` | 50: `31` | none | `6E` | none |
+| `h26_mfdec` | foot down pictogram | P9 | `27` | 51: `27` | none | `6E` | none |
+| `cancel_refresh` | Cancel app refresh | P9 | none | none | none | none | cancel screen refresh; no wire write |
+
+###### R5
+
+Exact name gates: `R5*`. Schedules (screen, initial/period ms): R5: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | R5 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | R5 | none | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | R5 | none | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | R5 | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | R5 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | R5 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | R5 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | R5 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | R5 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | R5 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | R5 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | R5 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | R5 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | R5 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | R5 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | R5 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE | R5 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | R5 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | R5 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | R5 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | R5 | `61` | 54: `61` | none | `6E` | none |
+
+###### S9
+
+Exact name gates: `S9*`. Schedules (screen, initial/period ms): S9: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_tv` | SNORE | S9 | none | 33: `69` from event 21 (threshold 20) | `46` / `46` / `46` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | S9 | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | S9 | `24` | 35: `24` | none | `6E` | none |
+| `h26_ftup` | head down pictogram | S9 | `25` | 37: `25` | none | `6E` | none |
+| `h26_moff` | Factory Reset | S9 | `62` | 52: `62` | none | `6E` | none |
+| `h26_mfinc` | foot up pictogram | S9 | `26` | 48: `26` | none | `6E` | none |
+| `h26_mode` | FLAT | S9 | `31` | 50: `31` | none | `6E` | none |
+| `h26_mfdec` | foot down pictogram | S9 | `27` | 51: `27` | none | `6E` | none |
+
+###### TL
+
+Exact name gates: `TL*`. Schedules (screen, initial/period ms): TL: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | TL | `6D` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | TL | `6D` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | TL | `6D` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | TL | `6D` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | TL | `6D` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | TL | `6D` | 6: `2A` | none | `6E` | none |
+| `iv_post7` | Bed release gesture | TL | `6D` | 7: none | none | `6E` | none |
+| `iv_post8` | under-bed light pictogram | TL | `32` | none | none | `6E` | none |
+
+###### T3
+
+Exact name gates: `T3*`. Schedules (screen, initial/period ms): T3: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_lounge` | M2 | T3 | `6D` | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | M1 | T3 | `6D` | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | SET | T3 | `6D` | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | T3 | `6D` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | T3 | `6D` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | T3 | `6D` | 37: `26` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | T3 | `6D` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | T3 | `6D` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | T3 | `6D` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | T3 | `6D` | none | none | `6E` | none |
+| `h26_mode` | massage mode pictogram | T3 | `6D` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | T3 | `6D` | 51: `4E` | none | `6E` | none |
+
+###### T4
+
+Exact name gates: `T4*`. Schedules (screen, initial/period ms): T4: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | T4 | `6D` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | T4 | `6D` | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | T4 | `6D` | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | T4 | `6D` | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | T4 | `6D` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | T4 | `6D` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | T4 | `6D` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | T4 | `6D` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | T4 | `6D` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | T4 | `6D` | 41: `27` | none | `6E` | none |
+| `h26_mema` | lower-bed segment up pictogram | T4 | `6D` | 42: `41` | none | `6E` | none |
+| `h26_memb` | lower-bed segment down pictogram | T4 | `6D` | 44: `42` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | T4 | `6D` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | T4 | `6D` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | T4 | `6D` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | T4 | `6D` | none | none | `6E` | none |
+| `h26_mode` | massage mode pictogram | T4 | `6D` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | T4 | `6D` | 51: `4E` | none | `6E` | none |
+
+###### TW
+
+Exact name gates: `TW*`. Schedules (screen, initial/period ms): TW: 500/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | TW | `6D` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | TW | `6D` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | TW | `6D` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | TW | `6D` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | TW | `6D` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | TW | `6D` | 6: `2A` | none | `6E` | none |
+| `iv_post7` | Bed release gesture | TW | `6D` | 7: none | none | `6E` | none |
+| `iv_post8` | FLAT | TW | `6D` | 8: `31` | none | `6E` | none |
+
+###### TZ
+
+Exact name gates: `TZ*`. Schedules (screen, initial/period ms): TZ: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | TZ | `6D` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | TZ | `6D` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | TZ | `6D` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | TZ | `6D` | 4: `27` | none | `6E` | none |
+| `iv_post5` | ZG UP | TZ | `6D` | 5: `3F` | none | `6E` | none |
+| `iv_post6` | ZG DOWN | TZ | `6D` | 6: `40` | none | `6E` | none |
+| `iv_post7` | Bed release gesture | TZ | `6D` | 7: none | none | `6E` | none |
+| `iv_post8` | FLAT | TZ | `6D` | 8: `31` | none | `6E` | none |
+
+###### U1
+
+Exact name gates: `U1*`. Schedules (screen, initial/period ms): U1: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | U1 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | U1 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | U1 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | U1 | none | 34: `2D` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | U1 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | U1 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | U1 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | U1 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | U1 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | U1 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | U1 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | U1 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | U1 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | ALL OFF | U1 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | + | U1 | `34` | 48: `34` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | U1 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE / ALL ON | U1 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | − | U1 | `35` | 51: `35` | none | `6E` | none |
+| `h26_min10` | 10MIN | U1 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | U1 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | U1 | `61` | 54: `61` | none | `6E` | none |
+
+###### U2
+
+Exact name gates: `U2*`. Schedules (screen, initial/period ms): U2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | U2 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | U2 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | U2 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | U2 | none | 34: `2D` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | U2 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | ZG up | U2 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | U2 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | U2 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | ZG down | U2 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | U2 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | U2 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | U2 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | U2 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | U2 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | + | U2 | `34` | 48: `34` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | U2 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | U2 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | − | U2 | `35` | 51: `35` | none | `6E` | none |
+| `h26_min10` | 10MIN | U2 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | U2 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | U2 | `61` | 54: `61` | none | `6E` | none |
+
+###### U3
+
+Exact name gates: `U3*`. Schedules (screen, initial/period ms): U3: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | U3 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | Tilt ZG selector (mode 2) | U3 | `59` / `59` / `59` | none | none | none | set local mode 2 |
+| `h26_zg` | Lounge | U3 | `59` / `59` / `59` | none | none | `6E` | set local mode 3 |
+| `h26_hdup` | head up pictogram | U3 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | Selected axis up | U3 | flag 0: none; flag 1: `3F`; flag 2: `41`; flag 3: none | 61: `3F`; 63: `41`; 65: `71` | none | `6E` | mode 0: state 0; mode 1: state 61; mode 2: state 63; mode 3: state 65 |
+| `h26_ftup` | foot up pictogram | U3 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | U3 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | Selected axis down | U3 | flag 0: none; flag 1: `40`; flag 2: `42`; flag 3: `72` | 62: `40`; 64: `42`; 66: `72` | none | `6E` | mode 0: state 0; mode 1: state 62; mode 2: state 64; mode 3: state 66 |
+| `h26_ftdn` | foot down pictogram | U3 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | U3 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | U3 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | Bed light | U3 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | U3 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | Head massage | U3 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | U3 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | U3 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | Foot massage | U3 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | U3 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | U3 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | U3 | `61` | 54: `61` | none | `6E` | none |
+| `select_lumbar` | Select lumbar (mode 1) | U3 | none | none | none | none | set local mode 1 |
+
+###### U5
+
+Exact name gates: `U5*`. Schedules (screen, initial/period ms): U5: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | U5 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | Anti snore | U5 | none | 32: `69` from event 21 (threshold 20) | `46` / `46` / `46` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | U5 | none | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | Zero gravity | U5 | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `neckinc` | lower-bed segment up pictogram | U5 | `3F` | 70: `3F` | none | `6E` | none |
+| `neckdec` | lower-bed segment down pictogram | U5 | `40` | 71: `40` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | U5 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | U5 | `41` | 63: `41` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | U5 | `42` | 64: `42` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | U5 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | U5 | `25` | 38: `25` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | U5 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | U5 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | U5 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | Bed light | U5 | flag 0: `3C` / `3C` / `3C`; flag 1: `75` / `75` / `75` | none | none | `6E` | alternate local LED request flag |
+| `h26_moff` | ALL OFF | U5 | `5E` | 72: `5E` | none | `6E` | none |
+| `h26_mfinc` | Head massage | U5 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | U5 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | U5 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | Foot massage | U5 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | U5 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | U5 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | U5 | `61` | 54: `61` | none | `6E` | none |
+
+###### W2
+
+Exact name gates: `W2*`. Schedules (screen, initial/period ms): W2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | W2 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | W2 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | W2 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | W2 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | W2 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | W2 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | W2 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | W2 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | W2 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | W2 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | W2 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | W2 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | W2 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | W2 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | W2 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | W2 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | W2 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | W2 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | W2 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | W2 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | W2 | `61` | 54: `61` | none | `6E` | none |
+
+###### X1
+
+Exact name gates: `X1*`. Schedules (screen, initial/period ms): X1: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | Head up | X1 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | Foot up | X1 | `26` | 2: `26` | none | `6E` | none |
+| `iv_post3` | Head down | X1 | `25` | 3: `25` | none | `6E` | none |
+| `iv_post4` | Foot down | X1 | `27` | 4: `27` | none | `6E` | none |
+| `iv_post5` | Zero gravity | X1 | none | 5: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `iv_post6` | Anti snore | X1 | none | 6: `69` from event 21 (threshold 20) | `46` / `46` / `46` if counter <15 | `6E` | reset screen counter on release |
+| `iv_post8` | Flat | X1 | `31` | 8: `31` | none | `6E` | none |
+
+###### Y2
+
+Exact name gates: `Y2*`. Schedules (screen, initial/period ms): Y2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | Y2 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | Y2 | `25` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | Y2 | `26` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | Y2 | `27` | 4: `27` | none | `6E` | none |
+| `iv_post5` | bed/massage ON/OFF pictogram | Y2 | `6F` | 5: `6F` | none | `6E` | none |
+| `iv_post6` | under-bed light pictogram | Y2 | `3C` | 6: `3C` | none | `6E` | none |
+| `iv_post7` | FLAT | Y2 | `31` | 7: `31` | none | `6E` | none |
+| `iv_post8` | ZERO/G | Y2 | none | 8: `2D` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+
+###### Y3
+
+Exact name gates: `Y3*`. Schedules (screen, initial/period ms): Y3: 0/150.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Y3 | `31` | 31: `31` | none | `6E` | none |
+| `h26_tv` | TV | Y3 | none | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | Y3 | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | Y3 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | Y3 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Y3 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Y3 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | Y3 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Y3 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | whole-bed tilt up pictogram | Y3 | `3F` | 63: `3F` | none | `6E` | none |
+| `h26_memb` | whole-bed tilt down pictogram | Y3 | `40` | 64: `40` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | Y3 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | massage OFF | Y3 | `5A` | 90: `5A` | none | `6E` | none |
+| `h26_mfinc` | head massage + | Y3 | `4C` | 76: `4C` | none | `6E` | none |
+| `h26_lounge` | head massage − | Y3 | `4D` | 77: `4D` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | Y3 | `6D` | none | none | `6E` | none |
+| `h26_mode` | foot massage − | Y3 | `4F` | 79: `4F` | none | `6E` | none |
+| `h26_mfdec` | foot massage + | Y3 | `4E` | 78: `4E` | none | `6E` | none |
+
+###### BE
+
+Exact name gates: `BE*`. Schedules (screen, initial/period ms): BE: 0/300; BE_massage: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | BE | `6D` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | BE | `6D` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | BE | `6D` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | BE | `6D` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | BE | `6D` | 35: `24` | none | `6E` | none |
+| `h26_led` | under-bed light pictogram | BE | `6D` | 36: `3C` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | BE | `6D` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | BE | `6D` | 38: `25` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | BE | `6D` | 41: `27` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | BE | `6D` | 42: `3F` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | BE | `6D` | 43: `40` | none | `6E` | none |
+| `h26_lrup` | lower-bed segment up pictogram | BE | `6D` | 44: `41` | none | `6E` | none |
+| `h26_lrdn` | lower-bed segment down pictogram | BE | `6D` | 45: `42` | none | `6E` | none |
+| `massage_h26_mhinc` | head massage increase pictogram | BE_massage | `6D` | 46: `4C` | none | `6E` | none |
+| `massage_h26_moff` | ALL OFF | BE_massage | `6D` | 47: `5E` | none | `6E` | none |
+| `massage_h26_mfinc` | foot massage increase pictogram | BE_massage | `6D` | 48: `4E` | none | `6E` | none |
+| `massage_h26_mhdec` | head massage decrease pictogram | BE_massage | `6D` | 49: `4D` | none | `6E` | none |
+| `massage_h26_mode` | massage mode pictogram | BE_massage | `6D` | 50: `48` | none | `6E` | none |
+| `massage_h26_mfdec` | foot massage decrease pictogram | BE_massage | `6D` | 51: `4F` | none | `6E` | none |
+| `massage_h26_min10` | 10MIN | BE_massage | `6D` | 52: `5F` | none | `6E` | none |
+| `massage_h26_min20` | 20MIN | BE_massage | `6D` | 53: `63` | none | `6E` | none |
+| `massage_h26_min30` | 30MIN | BE_massage | `6D` | 54: `41` | none | `6E` | none |
+
+###### Z4
+
+Exact name gates: `Z4*`. Schedules (screen, initial/period ms): Z4: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Z4 | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | M | Z4 | none | 32: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | Z4 | `58` | 33: `58` | none | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | Z4 | `45` | 34: `45` | none | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | Z4 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | TILT up | Z4 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Z4 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Z4 | `6D` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | TILT down | Z4 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Z4 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | LUMBAR up | Z4 | `41` | 42: `41` | none | `6E` | none |
+| `h26_memb` | LUMBAR down | Z4 | `42` | 44: `42` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | Z4 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | Z4 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | Z4 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mode` | MODE massage | Z4 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | Z4 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | Z4 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | Z4 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | Z4 | `61` | 54: `61` | none | `6E` | none |
+| `cancel_refresh` | Cancel app refresh | Z4 | none | none | none | none | cancel screen refresh; no wire write |
+
+
+##### W.Silver Products (3.x)
+
+###### A1
+
+Exact name gates: `A1*`. Schedules (screen, initial/period ms): A1: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | A1 | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | M1 | A1 | none | 32: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | M2 | A1 | none | 33: `2C` from event 21 (threshold 20) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | M3 | A1 | none | 34: `2D` from event 21 (threshold 20) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | A1 | `24` | 35: `24` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | A1 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | A1 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | A1 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | A1 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mhinc` | HEAD massage | A1 | `32` | 46: `32` | none | `6E` | none |
+| `h26_moff` | INTENSITY up | A1 | `34` | 52: `34` | none | `6E` | none |
+| `h26_mfinc` | SPEED up | A1 | `36` | 48: `36` | none | `6E` | none |
+| `h26_mhdec` | FOOT massage | A1 | `33` | 49: `33` | none | `6E` | none |
+| `h26_mode` | INTENSITY down | A1 | `35` | 50: `35` | none | `6E` | none |
+| `h26_mfdec` | SPEED down | A1 | `37` | 51: `37` | none | `6E` | none |
+| `h26_min10` | PULSE | A1 | `38` | 53: `38` | none | `6E` | none |
+| `h26_min20` | WAVE | A1 | `39` | 54: `39` | none | `6E` | none |
+| `h26_min30` | CONSTANT | A1 | `3A` | 55: `3A` | none | `6E` | none |
+
+###### A2
+
+Exact name gates: `A2*`. Schedules (screen, initial/period ms): A2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_lounge` | M1 | A2 | none | 32: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | M2 | A2 | none | 33: `2D` from event 21 (threshold 20) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | M3 | A2 | none | 34: `2C` from event 21 (threshold 20) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | A2 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | A2 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | A2 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | A2 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | A2 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | A2 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mhinc` | HEAD massage | A2 | `32` | 46: `32` | none | `6E` | none |
+| `h26_moff` | INTENSITY up | A2 | `34` | 52: `34` | none | `6E` | none |
+| `h26_mfinc` | SPEED up | A2 | `36` | 48: `36` | none | `6E` | none |
+| `h26_mhdec` | FOOT massage | A2 | `33` | 49: `33` | none | `6E` | none |
+| `h26_mode` | INTENSITY down | A2 | `35` | 50: `35` | none | `6E` | none |
+| `h26_mfdec` | SPEED down | A2 | `37` | 51: `37` | none | `6E` | none |
+| `h26_min10` | PULSE | A2 | `38` | 53: `38` | none | `6E` | none |
+| `h26_min20` | WAVE | A2 | `39` | 54: `39` | none | `6E` | none |
+| `h26_min30` | CONSTANT | A2 | `3A` | 55: `3A` | none | `6E` | none |
+
+###### B1
+
+Exact name gates: `B1*`. Schedules (screen, initial/period ms): B1: 0/150.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | B1 | `31` | 31: `31` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | B1 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | three intensity arcs | B1 | `68` | 104: `68` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | B1 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | B1 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | one intensity arc | B1 | `67` | 103: `67` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | B1 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | B1 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | massage OFF | B1 | `5A` | 90: `5A` | none | `6E` | none |
+| `h26_mfinc` | head massage ON/OFF | B1 | `32` | 32: `32` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | B1 | `6D` | none | none | `6E` | none |
+| `h26_mfdec` | foot massage ON/OFF | B1 | `33` | 33: `33` | none | `6E` | none |
+
+###### B2
+
+Exact name gates: `B2*`. Schedules (screen, initial/period ms): B2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | B2 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | B2 | `25` | 2: `25` | none | `6E` | none |
+
+###### B6
+
+Exact name gates: `B6*`. Schedules (screen, initial/period ms): B6: 500/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | B6 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | B6 | `25` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | B6 | `26` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | B6 | `27` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | B6 | `29` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | B6 | `2A` | 6: `2A` | none | `6E` | none |
+
+###### B7
+
+Exact name gates: `B7*`. Schedules (screen, initial/period ms): B7: 500/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | B7 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | B7 | `25` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | B7 | `26` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | B7 | `27` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | B7 | `29` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | B7 | `2A` | 6: `2A` | none | `6E` | none |
+| `iv_post8` | FLAT | B7 | `31` | 8: `31` | none | `6E` | none |
+
+###### BZ
+
+Exact name gates: `BZ*`. Schedules (screen, initial/period ms): BZ: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | BZ | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | BZ | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | BZ | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | BZ | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | BZ | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | RELAX | BZ | `70` | 36: `70` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | BZ | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | BZ | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | M2 | BZ | none | 39: `2D` from event 16 (threshold 15) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_ftdn` | foot down pictogram | BZ | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | BZ | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M3 | BZ | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | BZ | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | BZ | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | + | BZ | `34` | 48: `34` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | BZ | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | BZ | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | − | BZ | `35` | 51: `35` | none | `6E` | none |
+| `h26_min10` | 10MIN | BZ | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | BZ | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | BZ | `61` | 54: `61` | none | `6E` | none |
+
+###### 6B
+
+Exact name gates: `6B*`. Schedules (screen, initial/period ms): 6B: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | 6B | `6D` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | 6B | `6D` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | 6B | `6D` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | 6B | `6D` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | 6B | `6D` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | 6B | `6D` | 6: `2A` | none | `6E` | none |
+
+###### TH
+
+Exact name gates: `TH*`. Schedules (screen, initial/period ms): TH: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `post1` | POST1 | TH | `6D` | 31: `2E` | none | `6E` | none |
+| `post2` | POST2 | TH | `6D` | 32: `2F` | none | `6E` | none |
+| `post3` | POST3 | TH | `6D` | 33: `30` | none | `6E` | none |
+| `set` | SET | TH | `6D` | 35: none | none | `6E` | none |
+| `hdup` | head up pictogram | TH | `6D` | 34: `24` | none | `6E` | none |
+| `hddn` | foot up pictogram | TH | `6D` | 36: `25` | none | `6E` | none |
+| `ftup` | head down pictogram | TH | `6D` | 37: `26` | none | `6E` | none |
+| `ftdn` | foot down pictogram | TH | `6D` | 41: `27` | none | `6E` | none |
+| `syup` | Additional up arrow | TH | `6D` | 38: `29` | none | `6E` | none |
+| `sydn` | Additional down arrow | TH | `6D` | 39: `2A` | none | `6E` | none |
+| `mhon` | head massage ON/OFF | TH | `6D` | 42: `32` | none | `6E` | none |
+| `mfon` | foot massage ON/OFF | TH | `6D` | 44: `33` | none | `6E` | none |
+| `ledb` | under-bed light pictogram | TH | `6D` | 43: `3C` | none | `6E` | none |
+| `wave` | WAVE | TH | `6D` | 45: `39` | none | `6E` | none |
+| `puls` | PULSE | TH | `6D` | 46: `38` | none | `6E` | none |
+| `cnst` | CONSTANT | TH | `6D` | 47: `3A` | none | `6E` | none |
+| `sinc` | Speed + | TH | `6D` | 48: `36` | none | `6E` | none |
+| `sdec` | Speed − | TH | `6D` | 49: `37` | none | `6E` | none |
+| `iinc` | Intensity + | TH | `6D` | 50: `34` | none | `6E` | none |
+| `idec` | Intensity − | TH | `6D` | 51: `35` | none | `6E` | none |
+
+###### ON
+
+Exact name gates: `ON*`. Schedules (screen, initial/period ms): ON: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `post1` | POST1 | ON | `6D` | 31: `21` | none | `6E` | none |
+| `post2` | POST2 | ON | `6D` | 32: none | none | `6E` | none |
+| `post3` | POST3 | ON | `6D` | 33: `23` | none | `6E` | none |
+| `set` | SET | ON | `6D` | 35: none | none | `6E` | none |
+| `hdup` | head up pictogram | ON | `6D` | 34: `24` | none | `6E` | none |
+| `hddn` | foot up pictogram | ON | `6D` | 36: `25` | none | `6E` | none |
+| `ftup` | head down pictogram | ON | `6D` | 37: `26` | none | `6E` | none |
+| `ftdn` | foot down pictogram | ON | `6D` | 41: `27` | none | `6E` | none |
+| `syup` | Additional up arrow | ON | `6D` | 38: `31` | none | `6E` | none |
+| `sydn` | Additional down arrow | ON | `6D` | 39: `2E` | none | `6E` | none |
+| `mhon` | head massage ON/OFF | ON | `6D` | 42: `32` | none | `6E` | none |
+| `mfon` | foot massage ON/OFF | ON | `6D` | 44: `33` | none | `6E` | none |
+| `ledb` | under-bed light pictogram | ON | `6D` | 43: `3C` | none | `6E` | none |
+| `wave` | WAVE | ON | `6D` | 45: `39` | none | `6E` | none |
+| `puls` | PULSE | ON | `6D` | 46: `38` | none | `6E` | none |
+| `cnst` | CONSTANT | ON | `6D` | 47: `3A` | none | `6E` | none |
+| `sinc` | Speed + | ON | `6D` | 48: `36` | none | `6E` | none |
+| `sdec` | Speed − | ON | `6D` | 49: `37` | none | `6E` | none |
+| `iinc` | Intensity + | ON | `6D` | 50: `34` | none | `6E` | none |
+| `idec` | Intensity − | ON | `6D` | 51: `35` | none | `6E` | none |
+
+###### D2
+
+Exact name gates: `D2*`. Schedules (screen, initial/period ms): D2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | D2 | `31` | 31: `31` | none | `6E` | none |
+| `h26_tv` | TV | D2 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | D2 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | D2 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | D2 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | D2 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | D2 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | D2 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | D2 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | D2 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | D2 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | D2 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | D2 | `5F` | 52: none | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | D2 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | D2 | none | none | none | `6E` | none |
+| `h26_mode` | MODE massage | D2 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | D2 | `4E` | 51: `4E` | none | `6E` | none |
+
+###### D4
+
+Exact name gates: `D4*`. Schedules (screen, initial/period ms): D4: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | D4 | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | Anti Snore | D4 | `46` | 70: `46` | none | `6E` | none |
+| `h26_tv` | TV | D4 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | D4 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | D4 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | TILT up | D4 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | D4 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | D4 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | TILT down | D4 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | D4 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | D4 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | D4 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | D4 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | D4 | `5F` | 52: none | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | D4 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | D4 | none | none | none | `6E` | none |
+| `h26_mode` | MODE massage | D4 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | D4 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | LUMBAR up | D4 | `41` | 65: `41` | none | `6E` | none |
+| `h26_min30` | LUMBAR down | D4 | `42` | 66: `42` | none | `6E` | none |
+
+###### GV
+
+Exact name gates: `GV*`. Schedules (screen, initial/period ms): GV: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `btn_plus` | + | GV | `6D` | 37: `4C`; 39: `4E` | none | `6E` | axis 0: state 37; axis 1: state 39 |
+| `btn_power` | massage power pictogram | GV | `6D` | 35: `32`; 36: `33` | none | `6E` | axis 0: state 35; axis 1: state 36 |
+| `btn_substract` | − | GV | `6D` | 38: `4D`; 41: `4F` | none | `6E` | axis 0: state 38; axis 1: state 41 |
+| `btn_tv` | TV | GV | `6D` | 42: `58` | none | `6E` | none |
+| `btn_lounge` | LOUNGE | GV | `6D` | 43: `59` | none | `6E` | none |
+| `btn_gravity` | 0 GRAVITY | GV | `6D` | 44: `45` | none | `6E` | none |
+| `btn_flat` | FLAT | GV | `6D` | 45: `31` | none | `6E` | none |
+| `btn_posup` | POS up | GV | `6D` | 31: `24`; 33: `26` | none | `6E` | axis 0: state 31; axis 1: state 33 |
+| `btn_posdown` | POS down | GV | `6D` | 32: `25`; 34: `27` | none | `6E` | axis 0: state 32; axis 1: state 34 |
+| `btn_light` | under-bed light pictogram | GV | `6D` | 46: `3C` | none | `6E` | none |
+| `btn_poweroff` | prohibited / off pictogram | GV | `6D` | 47: none | none | `6E` | none |
+| `select_head` | Select head axis | GV | none | none | none | none | select local axis 0 |
+| `select_foot` | Select foot axis | GV | none | none | none | none | select local axis 1 |
+
+###### M2
+
+Exact name gates: `M2*`. Schedules (screen, initial/period ms): M2: 0/150.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | M2 | `6D` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | M2 | `6D` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | M2 | `6D` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | M2 | none | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | M2 | `6D` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | M2 | `6D` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | M2 | `6D` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | M2 | `6D` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | M2 | `6D` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | M2 | `6D` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | M2 | `6D` | 42: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | M2 | `6D` | 44: `2C` from event 21 (threshold 20) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | M2 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | M2 | `6D` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | M2 | `6D` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | M2 | `6D` | none | none | `6E` | none |
+| `h26_mode` | massage mode pictogram | M2 | `6D` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | M2 | `6D` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | M2 | `6D` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | M2 | `6D` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | M2 | `6D` | 54: `61` | none | `6E` | none |
+
+###### M3
+
+Exact name gates: `M3*`. Schedules (screen, initial/period ms): M3: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | M3 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | M3 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | M3 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | M3 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | M3 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | M3 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | M3 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | M3 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | M3 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | M3 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | M3 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | M3 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | M3 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | M3 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | M3 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | M3 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | M3 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | M3 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | M3 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | M3 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | M3 | `61` | 54: `61` | none | `6E` | none |
+
+###### M4
+
+Exact name gates: `M4*`, `0B*`. Schedules (screen, initial/period ms): M4: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | M4 | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | M4 | none | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | M4 | none | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | M4 | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | M4 | `6D` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | M4 | `6D` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | M4 | `6D` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | M4 | `6D` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | M4 | `6D` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | M4 | `6D` | 41: `27` | none | `6E` | none |
+| `h26_mema` | lower-bed segment up pictogram | M4 | `6D` | 42: `41` | none | `6E` | none |
+| `h26_memb` | lower-bed segment down pictogram | M4 | `6D` | 44: `42` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | M4 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | M4 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | M4 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | M4 | `6D` | none | none | `6E` | none |
+| `h26_mode` | massage mode pictogram | M4 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | M4 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | M4 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | M4 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | M4 | `61` | 54: `61` | none | `6E` | none |
+
+###### M5
+
+Exact name gates: `M5*`. Schedules (screen, initial/period ms): M5: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | under-bed light pictogram | M5 | `3C` | 31: `3C` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | M5 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | READ TV | M5 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | RELAX | M5 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | M5 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | ZG up | M5 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | M5 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | M5 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | ZG down | M5 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | M5 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | M5 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | M5 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | M3 | M5 | none | 46: `2D` from event 16 (threshold 15) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_moff` | LUMBAR down | M5 | `72` | 52: `72` | none | `6E` | none |
+| `h26_mfinc` | LUMBAR up | M5 | `71` | 48: `71` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | M5 | `6D` | none | none | `6E` | none |
+| `h26_mode` | HEAD REST down | M5 | `74` | 50: `74` | none | `6E` | none |
+| `h26_mfdec` | HEAD REST up | M5 | `73` | 51: `73` | none | `6E` | none |
+
+###### M9
+
+Exact name gates: `M9*`. Schedules (screen, initial/period ms): M9: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_tv` | MEM | M9 | none | 33: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | M9 | none | 34: `6A` from event 21 (threshold 20) | `6B` / `6B` / `6B` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | M9 | `24` | 35: `24` | none | `6E` | none |
+| `h26_ftup` | head down pictogram | M9 | `25` | 37: `25` | none | `6E` | none |
+| `h26_moff` | Factory Reset | M9 | `62` | 52: `62` | none | `6E` | none |
+| `h26_mfinc` | foot up pictogram | M9 | `26` | 48: `26` | none | `6E` | none |
+| `h26_mode` | FLAT | M9 | `31` | 50: `31` | none | `6E` | none |
+| `h26_mfdec` | foot down pictogram | M9 | `27` | 51: `27` | none | `6E` | none |
+
+###### Ml
+
+Exact name gates: `Ml*`. Schedules (screen, initial/period ms): Ml: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Ml | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | Anti Snore | Ml | none | 32: `69` from event 21 (threshold 20) | `46` / `46` / `46` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | Ml | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | Ml | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | Factory Reset | Ml | `62` | 36: `62` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Ml | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Ml | `25` | 38: `25` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Ml | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | MEM | Ml | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | UBL | Ml | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | down arrow | Ml | `4D` | 47: `4D` | none | `6E` | none |
+| `h26_mfinc` | up arrow | Ml | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | ALL OFF | Ml | `47` | 49: `47` | none | `6E` | none |
+| `h26_mode` | down arrow | Ml | `4F` | 50: `4F` | none | `6E` | none |
+| `h26_mfdec` | up arrow | Ml | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 15MIN | Ml | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 30MIN | Ml | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | WAVE | Ml | `48` | 54: `48` | none | `6E` | none |
+
+###### Mr
+
+Exact name gates: `Mr*`. Schedules (screen, initial/period ms): Mr: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Mr | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | compound posture pictogram hufu | Mr | none | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | compound posture pictogram hufd | Mr | none | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | compound posture pictogram hdfu | Mr | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | Mr | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | Mr | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Mr | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Mr | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | Mr | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Mr | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | Mr | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | Mr | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | Mr | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | Mr | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | Mr | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | Mr | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | Mr | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | Mr | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | Mr | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | Mr | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | Mr | `61` | 54: `61` | none | `6E` | none |
+
+###### Ms
+
+Exact name gates: `Ms*`. Schedules (screen, initial/period ms): Ms: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Ms | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | Anti Snore | Ms | `46` | 32: `46` | none | `6E` | none |
+| `h26_tv` | TV | Ms | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | Ms | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | Ms | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | Ms | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Ms | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Ms | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | Ms | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Ms | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | Ms | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | Ms | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | M3 | Ms | none | 46: `2D` from event 16 (threshold 15) | `30` / `30` / `30` if counter <15 | `6E` | reset screen counter on release |
+| `h26_moff` | TIMER / ALL OFF | Ms | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | Ms | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | Ms | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | Ms | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | Ms | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | Ms | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | Ms | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | Ms | `61` | 54: `61` | none | `6E` | none |
+
+###### LP
+
+Exact name gates: `LP*`. Schedules (screen, initial/period ms): LP: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `hdup` | head up pictogram | LP | `6D` | 31: `31` | none | `6E` | none |
+| `stop` | STOP | LP | `6D` | 32: `32` | none | `6E` | none |
+| `hddn` | head down pictogram | LP | `6D` | 34: `34` | none | `6E` | none |
+| `ftup` | foot up pictogram | LP | `6D` | 33: `33` | none | `6E` | none |
+| `flat` | FLAT | LP | `6D` | 35: `35` | none | `6E` | none |
+| `ftdn` | foot down pictogram | LP | `6D` | 36: `36` | none | `6E` | none |
+| `m1` | M1 | LP | `6D` | 37: `37` | none | `6E` | none |
+| `m2` | M2 | LP | `6D` | 38: `38` | none | `6E` | none |
+| `m3` | M3 | LP | `6D` | 39: `39` | none | `6E` | none |
+| `hdinc` | head massage increase pictogram | LP | `6D` | 41: `41` | none | `6E` | none |
+| `set` | SET | LP | `6D` | 42: `42` | none | `6E` | none |
+| `ftinc` | foot massage increase pictogram | LP | `6D` | 43: `43` | none | `6E` | none |
+| `hddec` | head massage decrease pictogram | LP | `6D` | 44: `44` | none | `6E` | none |
+| `swicth` | ON/OFF | LP | `6D` | 45: `45` | none | `6E` | none |
+| `ftdec` | foot massage decrease pictogram | LP | `6D` | 46: `46` | none | `6E` | none |
+| `add` | Gentle Touch + | LP | `6D` | 47: `47` | none | `6E` | none |
+| `led` | LED | LP | `6D` | 48: `48` | none | `6E` | none |
+| `sub` | Gentle Touch − | LP | `6D` | 49: `49` | none | `6E` | none |
+
+###### P9
+
+Exact name gates: `P9*`. Schedules (screen, initial/period ms): P9: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_tv` | P2 | P9 | none | 33: `2C` from event 21 (threshold 20) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | P1 | P9 | none | 34: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | P9 | `24` | 35: `24` | none | `6E` | none |
+| `h26_ftup` | head down pictogram | P9 | `25` | 37: `25` | none | `6E` | none |
+| `h26_mfinc` | foot up pictogram | P9 | `26` | 48: `26` | none | `6E` | none |
+| `h26_mode` | FLAT | P9 | `31` | 50: `31` | none | `6E` | none |
+| `h26_mfdec` | foot down pictogram | P9 | `27` | 51: `27` | none | `6E` | none |
+| `cancel_refresh` | Cancel app refresh | P9 | none | none | none | none | cancel screen refresh; no wire write |
+
+###### R5
+
+Exact name gates: `R5*`. Schedules (screen, initial/period ms): R5: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | R5 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | R5 | none | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | R5 | none | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | R5 | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | R5 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | R5 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | R5 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | R5 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | R5 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | R5 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | R5 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | R5 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | R5 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | R5 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | R5 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | R5 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE | R5 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | R5 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | R5 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | R5 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | R5 | `61` | 54: `61` | none | `6E` | none |
+
+###### S9
+
+Exact name gates: `S9*`. Schedules (screen, initial/period ms): S9: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_tv` | SNORE | S9 | none | 33: `69` from event 21 (threshold 20) | `46` / `46` / `46` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | S9 | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | S9 | `24` | 35: `24` | none | `6E` | none |
+| `h26_ftup` | head down pictogram | S9 | `25` | 37: `25` | none | `6E` | none |
+| `h26_moff` | Factory Reset | S9 | `62` | 52: `62` | none | `6E` | none |
+| `h26_mfinc` | foot up pictogram | S9 | `26` | 48: `26` | none | `6E` | none |
+| `h26_mode` | FLAT | S9 | `31` | 50: `31` | none | `6E` | none |
+| `h26_mfdec` | foot down pictogram | S9 | `27` | 51: `27` | none | `6E` | none |
+
+###### TL
+
+Exact name gates: `TL*`. Schedules (screen, initial/period ms): TL: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | TL | `6D` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | TL | `6D` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | TL | `6D` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | TL | `6D` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | TL | `6D` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | TL | `6D` | 6: `2A` | none | `6E` | none |
+| `iv_post7` | Bed release gesture | TL | `6D` | 7: none | none | `6E` | none |
+| `iv_post8` | under-bed light pictogram | TL | `32` | none | none | `6E` | none |
+
+###### T3
+
+Exact name gates: `T3*`. Schedules (screen, initial/period ms): T3: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_lounge` | LOUNGE | T3 | `6D` | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | T3 | `6D` | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | T3 | `6D` | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | T3 | `6D` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | T3 | `6D` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | T3 | `6D` | 37: `26` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | T3 | `6D` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | T3 | `6D` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | T3 | `6D` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | T3 | `6D` | none | none | `6E` | none |
+| `h26_mode` | massage mode pictogram | T3 | `6D` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | T3 | `6D` | 51: `4E` | none | `6E` | none |
+
+###### T4
+
+Exact name gates: `T4*`. Schedules (screen, initial/period ms): T4: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | T4 | `6D` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | T4 | `6D` | 32: `65` from event 21 (threshold 20) | `59` / `59` / `59` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | T4 | `6D` | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | T4 | `6D` | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | T4 | `6D` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | T4 | `6D` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | T4 | `6D` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | T4 | `6D` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | T4 | `6D` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | T4 | `6D` | 41: `27` | none | `6E` | none |
+| `h26_mema` | lower-bed segment up pictogram | T4 | `6D` | 42: `41` | none | `6E` | none |
+| `h26_memb` | lower-bed segment down pictogram | T4 | `6D` | 44: `42` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | T4 | `6D` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | T4 | `6D` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD | T4 | `6D` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | T4 | `6D` | none | none | `6E` | none |
+| `h26_mode` | massage mode pictogram | T4 | `6D` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT | T4 | `6D` | 51: `4E` | none | `6E` | none |
+
+###### TW
+
+Exact name gates: `TW*`. Schedules (screen, initial/period ms): TW: 500/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | TW | `6D` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | TW | `6D` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | TW | `6D` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | TW | `6D` | 4: `27` | none | `6E` | none |
+| `iv_post5` | head and foot up pictogram | TW | `6D` | 5: `29` | none | `6E` | none |
+| `iv_post6` | head and foot down pictogram | TW | `6D` | 6: `2A` | none | `6E` | none |
+| `iv_post7` | Bed release gesture | TW | `6D` | 7: none | none | `6E` | none |
+| `iv_post8` | FLAT | TW | `6D` | 8: `31` | none | `6E` | none |
+
+###### TZ
+
+Exact name gates: `TZ*`. Schedules (screen, initial/period ms): TZ: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | TZ | `6D` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | TZ | `6D` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | TZ | `6D` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | TZ | `6D` | 4: `27` | none | `6E` | none |
+| `iv_post5` | ZG UP | TZ | `6D` | 5: `3F` | none | `6E` | none |
+| `iv_post6` | ZG DOWN | TZ | `6D` | 6: `40` | none | `6E` | none |
+| `iv_post7` | Bed release gesture | TZ | `6D` | 7: none | none | `6E` | none |
+| `iv_post8` | FLAT | TZ | `6D` | 8: `31` | none | `6E` | none |
+
+###### U1
+
+Exact name gates: `U1*`. Schedules (screen, initial/period ms): U1: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | U1 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | U1 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | U1 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | U1 | none | 34: `2D` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | U1 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | U1 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | U1 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | U1 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | U1 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | U1 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | U1 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | U1 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | U1 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | ALL OFF | U1 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | + | U1 | `34` | 48: `34` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | U1 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE / ALL ON | U1 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | − | U1 | `35` | 51: `35` | none | `6E` | none |
+| `h26_min10` | 10MIN | U1 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | U1 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | U1 | `61` | 54: `61` | none | `6E` | none |
+
+###### U2
+
+Exact name gates: `U2*`. Schedules (screen, initial/period ms): U2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | U2 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | U2 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | U2 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | U2 | none | 34: `2D` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | U2 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | ZG up | U2 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | U2 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | U2 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | ZG down | U2 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | U2 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | U2 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | U2 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | U2 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | U2 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | + | U2 | `34` | 48: `34` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | U2 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | U2 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | − | U2 | `35` | 51: `35` | none | `6E` | none |
+| `h26_min10` | 10MIN | U2 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | U2 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | U2 | `61` | 54: `61` | none | `6E` | none |
+
+###### W2
+
+Exact name gates: `W2*`. Schedules (screen, initial/period ms): W2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | W2 | none | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | W2 | `59` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | W2 | `58` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | W2 | `45` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | W2 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | W2 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | W2 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | W2 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | W2 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | W2 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | M1 | W2 | none | 42: `2B` from event 16 (threshold 15) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_memb` | M2 | W2 | none | 44: `2C` from event 16 (threshold 15) | `2F` / `2F` / `2F` if counter <15 | `6E` | reset screen counter on release |
+| `h26_mhinc` | under-bed light pictogram | W2 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | W2 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | W2 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | W2 | `6D` | none | none | `6E` | none |
+| `h26_mode` | MODE massage | W2 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | W2 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | W2 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | W2 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | W2 | `61` | 54: `61` | none | `6E` | none |
+
+###### Y2
+
+Exact name gates: `Y2*`. Schedules (screen, initial/period ms): Y2: 0/100.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `iv_post1` | head up pictogram | Y2 | `24` | 1: `24` | none | `6E` | none |
+| `iv_post2` | head down pictogram | Y2 | `25` | 2: `25` | none | `6E` | none |
+| `iv_post3` | foot up pictogram | Y2 | `26` | 3: `26` | none | `6E` | none |
+| `iv_post4` | foot down pictogram | Y2 | `27` | 4: `27` | none | `6E` | none |
+| `iv_post5` | bed/massage ON/OFF pictogram | Y2 | `6F` | 5: `6F` | none | `6E` | none |
+| `iv_post6` | under-bed light pictogram | Y2 | `3C` | 6: `3C` | none | `6E` | none |
+| `iv_post7` | FLAT | Y2 | `31` | 7: `31` | none | `6E` | none |
+| `iv_post8` | ZERO/G | Y2 | none | 8: `2D` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+
+###### Y3
+
+Exact name gates: `Y3*`. Schedules (screen, initial/period ms): Y3: 0/150.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Y3 | `31` | 31: `31` | none | `6E` | none |
+| `h26_tv` | TV | Y3 | none | 33: `64` from event 21 (threshold 20) | `58` / `58` / `58` if counter <15 | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | Y3 | none | 34: `66` from event 21 (threshold 20) | `45` / `45` / `45` if counter <15 | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | Y3 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | double up arrows | Y3 | `29` | 36: `29` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Y3 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Y3 | `25` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | double down arrows | Y3 | `2A` | 39: `2A` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Y3 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | whole-bed tilt up pictogram | Y3 | `3F` | 63: `3F` | none | `6E` | none |
+| `h26_memb` | whole-bed tilt down pictogram | Y3 | `40` | 64: `40` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | Y3 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | massage OFF | Y3 | `5A` | 90: `5A` | none | `6E` | none |
+| `h26_mfinc` | head massage + | Y3 | `4C` | 76: `4C` | none | `6E` | none |
+| `h26_lounge` | head massage − | Y3 | `4D` | 77: `4D` | none | `6E` | none |
+| `h26_mhdec` | Bed release gesture | Y3 | `6D` | none | none | `6E` | none |
+| `h26_mode` | foot massage − | Y3 | `4F` | 79: `4F` | none | `6E` | none |
+| `h26_mfdec` | foot massage + | Y3 | `4E` | 78: `4E` | none | `6E` | none |
+
+###### BE
+
+Exact name gates: `BE*`. Schedules (screen, initial/period ms): BE: 0/300; BE_massage: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | BE | `6D` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | LOUNGE | BE | `6D` | 32: `59` | none | `6E` | none |
+| `h26_tv` | TV | BE | `6D` | 33: `58` | none | `6E` | none |
+| `h26_zg` | ZG | BE | `6D` | 34: `45` | none | `6E` | none |
+| `h26_hdup` | head up pictogram | BE | `6D` | 35: `24` | none | `6E` | none |
+| `h26_led` | under-bed light pictogram | BE | `6D` | 36: `3C` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | BE | `6D` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | BE | `6D` | 38: `25` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | BE | `6D` | 41: `27` | none | `6E` | none |
+| `h26_tiltup` | upper-bed segment up pictogram | BE | `6D` | 42: `3F` | none | `6E` | none |
+| `h26_tiltdn` | upper-bed segment down pictogram | BE | `6D` | 43: `40` | none | `6E` | none |
+| `h26_lrup` | lower-bed segment up pictogram | BE | `6D` | 44: `41` | none | `6E` | none |
+| `h26_lrdn` | lower-bed segment down pictogram | BE | `6D` | 45: `42` | none | `6E` | none |
+| `massage_h26_mhinc` | head massage increase pictogram | BE_massage | `6D` | 46: `4C` | none | `6E` | none |
+| `massage_h26_moff` | ALL OFF | BE_massage | `6D` | 47: `5E` | none | `6E` | none |
+| `massage_h26_mfinc` | foot massage increase pictogram | BE_massage | `6D` | 48: `4E` | none | `6E` | none |
+| `massage_h26_mhdec` | head massage decrease pictogram | BE_massage | `6D` | 49: `4D` | none | `6E` | none |
+| `massage_h26_mode` | massage mode pictogram | BE_massage | `6D` | 50: `48` | none | `6E` | none |
+| `massage_h26_mfdec` | foot massage decrease pictogram | BE_massage | `6D` | 51: `4F` | none | `6E` | none |
+| `massage_h26_min10` | 10MIN | BE_massage | `6D` | 52: `5F` | none | `6E` | none |
+| `massage_h26_min20` | 20MIN | BE_massage | `6D` | 53: `63` | none | `6E` | none |
+| `massage_h26_min30` | 30MIN | BE_massage | `6D` | 54: `41` | none | `6E` | none |
+
+###### Z4
+
+Exact name gates: `Z4*`. Schedules (screen, initial/period ms): Z4: 0/300.
+
+| Control key | App label / artwork | Screen | DOWN attempts | Periodic state: attempts | Short release | Unconditional release | Local effects |
+|---|---|---|---|---|---|---|---|
+| `h26_flat` | FLAT | Z4 | `31` | 31: `31` | none | `6E` | none |
+| `h26_lounge` | M | Z4 | none | 32: `2B` from event 21 (threshold 20) | `2E` / `2E` / `2E` if counter <15 | `6E` | reset screen counter on release |
+| `h26_tv` | TV | Z4 | `58` | 33: `58` | none | `6E` | reset screen counter on release |
+| `h26_zg` | ZG | Z4 | `45` | 34: `45` | none | `6E` | reset screen counter on release |
+| `h26_hdup` | head up pictogram | Z4 | `24` | 35: `24` | none | `6E` | none |
+| `h26_tiltup` | TILT up | Z4 | `3F` | 36: `3F` | none | `6E` | none |
+| `h26_ftup` | foot up pictogram | Z4 | `26` | 37: `26` | none | `6E` | none |
+| `h26_hddn` | head down pictogram | Z4 | `6D` | 38: `25` | none | `6E` | none |
+| `h26_tiltdn` | TILT down | Z4 | `40` | 39: `40` | none | `6E` | none |
+| `h26_ftdn` | foot down pictogram | Z4 | `27` | 41: `27` | none | `6E` | none |
+| `h26_mema` | LUMBAR up | Z4 | `41` | 42: `41` | none | `6E` | none |
+| `h26_memb` | LUMBAR down | Z4 | `42` | 44: `42` | none | `6E` | none |
+| `h26_mhinc` | under-bed light pictogram | Z4 | `3C` | 46: `3C` | none | `6E` | none |
+| `h26_moff` | TIMER / ALL OFF | Z4 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_mfinc` | HEAD massage | Z4 | `4C` | 48: `4C` | none | `6E` | none |
+| `h26_mode` | MODE massage | Z4 | `48` | 50: `48` | none | `6E` | none |
+| `h26_mfdec` | FOOT massage | Z4 | `4E` | 51: `4E` | none | `6E` | none |
+| `h26_min10` | 10MIN | Z4 | `5F` | 52: `5F` | none | `6E` | none |
+| `h26_min20` | 20MIN | Z4 | `63` | 53: `63` | none | `6E` | none |
+| `h26_min30` | 30MIN | Z4 | `61` | 54: `61` | none | `6E` | none |
+| `cancel_refresh` | Cancel app refresh | Z4 | none | none | none | none | cancel screen refresh; no wire write |
+
+<!-- /generated -->
+
+#### Timing
+
+The generated catalog lists each screen's initialization delay and period.
+Timers start from screen initialization, not universally from DOWN. HA creates
+separate per-screen epochs and local flags for each physical session, including
+BE's motor and massage screens, and activates a control only while a serialized
+operation owns it. The next eligible event can occur almost immediately.
+
+Motion with only `m` on DOWN waits for its first actual movement refresh before
+its requested active elapsed window starts. Slow writes consume that window;
+missed refresh intervals are skipped rather than backfilled. Other finite wire
+gestures retain their requested DOWN-to-release separation. A missing timer arm
+does not acquire a repeated command.
+
+Short recall and long save use independent event-count guards, not one common
+wall-clock duration:
+
+- Threshold 20 first sends save on event 21. A short guard `<15` permits recall
+  at counts 0–14, leaving events 15–20 with neither recall nor save.
+- Threshold 15 first sends save on event 16. With the same short guard, event 15
+  has neither recall nor save.
+- Further eligible events repeat save during a deliberate long gesture. The
+  dedicated **Save** action instead stops after the first completed save write,
+  within a bounded budget of `(threshold + 2)` periods plus five seconds,
+  measured from the next eligible timer event.
+- Counter reset is per control, as shown in the local-effects column. There is
+  no universal counter reset on DOWN or shared counter between receivers.
+
+Release remains control-specific, including the count gaps. M4 lounge, M9 ZG
+and Touch3 (T3) lounge retain unconditional `n` (`6E`) after long holds. A6 ZG
+retains its extra short `n`; U3's mode-2 selector retains no release. LP's
+explicit STOP request remains distinct from ordinary release. No global
+command deduplication changes these events.
+
+Cleanup uses the captured physical connection and a fresh cancellation event.
+Already-submitted GATT work and the complete release batch drain independently
+of cancellation; unconditional cleanup is attempted even if a short-recall
+write fails. A stale callback cannot write to a replacement bed. These rules
+do not establish a mechanical stop guarantee.
+
+#### Notifications
+
+The apps declare a local notify target but no application subscription
+handshake, ACK parser, position schema or device-state feedback. HA does not
+enable a peripheral subscription merely because Android locally enabled
+notifications after writes. There are no startup, read, authentication or
+position-query packets.
+
+#### Services
+
+`adjustable_bed.richmat_legacy` runs a listed `control` with a finite
+`operation: gesture`, or `operation: program` for a proven save. Gesture
+`duration_ms` is 1–60000, default 1000; program uses its event budget instead.
+Programming cancellation suppresses short recall. Finite `hold_control`
+gestures retain their original recall/save boundary; renewable holds admit
+proven motion only. All batch targets pass admission before writes.
+
+Use named catalog actions for the displayed memory slots, rather than generic
+numeric memory services. See [Actions and Automations](../SERVICES.md#richmat_legacy)
+for fields and an A1 recall/save example. There is no arbitrary-command interface.
+
+#### Evidence
+
+Based on SleepEvolution 3.5.5 (13) and W.Silver Products 3.3.7 (9).

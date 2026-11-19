@@ -90,7 +90,15 @@ def _solace_census(profile: profiles.SolaceProfile) -> set[bytes]:
 
 
 def _census(key: str) -> set[str]:
-    if key == "bedsense":
+    if key == "sophie":
+        from custom_components.adjustable_bed.profiles.sophie import (
+            SYNC_OFF,
+            SYNC_ON,
+            SYNC_QUERY,
+        )
+
+        frames = _solace_census(profiles.SOLACE_PROFILES[key]) | {SYNC_OFF, SYNC_ON, SYNC_QUERY}
+    elif key == "bedsense":
         frames = {action.frame for action in profiles.BEDSENSE.actions.values()}
     elif key == "motion_bed":
         frames = {*profiles.MOTION_BED.commands.values(), profiles.MOTION_BED.stop}
