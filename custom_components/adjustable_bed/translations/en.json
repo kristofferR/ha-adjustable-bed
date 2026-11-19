@@ -10461,16 +10461,6 @@
           "recommendation_changed": "This recommendation is no longer available or the configuration changed. Open the current notice to review it."
         }
       }
-    },
-    "app_profile_woosa": {
-      "fix_flow": {
-        "step": {
-          "managed": {
-            "data": {}
-          }
-        },
-        "abort": {}
-      }
     }
   },
   "selector": {
