@@ -301,3 +301,22 @@ async def test_all_off_resets_the_timer_and_both_levels(clock):
         "massage_head_intensity": 0,
         "massage_foot_intensity": 0,
     }
+
+
+@pytest.mark.parametrize("product", ["FARM", "JLRM", "JGRN", "JHRN"])
+async def test_every_offered_massage_level_and_timer_sends_a_frame(clock, product):
+    obj, c = make(product)
+    await obj.start_notify()
+    for zone in obj.massage_intensity_zones:
+        low = obj.massage_intensity_min(zone)
+        # A zone offers off only with its own off key.
+        assert low == (0 if any(k.key == f"{zone}_massage_off" for k in obj.layout.controls) else 1)
+        for level in range(low, obj.massage_intensity_max + 1):
+            c.client.write_gatt_char.reset_mock()
+            await obj.set_massage_intensity(zone, level)
+            assert written(c), (zone, level)
+    timers = [*obj.massage_timer_options, *((0,) if obj.massage_timer_can_turn_off else ())]
+    for minutes in timers:
+        c.client.write_gatt_char.reset_mock()
+        await obj.set_massage_timer(minutes)
+        assert written(c), minutes

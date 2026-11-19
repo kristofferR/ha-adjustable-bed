@@ -406,7 +406,9 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                         key=massage_desc.key,
                         translation_key=massage_desc.translation_key,
                         icon=massage_desc.icon,
-                        native_min_value=0,
+                        native_min_value=controller.massage_intensity_min(
+                            massage_desc.massage_zone
+                        ),
                         native_max_value=max_intensity,
                         native_step=1,
                         mode=massage_desc.mode,

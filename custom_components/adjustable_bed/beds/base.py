@@ -2339,6 +2339,11 @@ class BedController(GattWriter):
         """
         return 10
 
+    def massage_intensity_min(self, zone: str) -> int:
+        """Return the lowest level ``zone`` accepts; 0 is off where the zone can turn off."""
+        del zone
+        return 0
+
     @property
     def supports_massage_timer(self) -> bool:
         """Return True if bed supports setting massage timer directly."""

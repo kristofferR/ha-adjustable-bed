@@ -391,7 +391,8 @@ async def test_p2_massage_timer_select_holds_the_app_timer_key():
             await c.set_massage_timer(0)
     # The same held keys the timer buttons pressed, one per duration.
     assert held == ["timer10", "timer20", "timer30"]
-    c._coordinator.handle_controller_state_update.assert_called_with("massage_timer", 30)
+    (update,) = c._coordinator.handle_controller_state_updates.call_args.args
+    assert (update.key, update.value) == ("massage_timer", 30)
 
 
 async def test_notification_busy_timer_is_cancelled_on_disconnect():
@@ -452,10 +453,8 @@ async def test_declared_entity_actions_revalidate_current_profile_and_serialize(
     # Level 3 is the head's third dedicated key, as the old "Level 3" option sent.
     await level.async_set_native_value(3)
     assert c.write_command.call_args.args[0] == bytes.fromhex("e5fe1610000012e4")
-    assert c._coordinator.handle_controller_state_update.call_args.args == (
-        "adjustamattress_head_massage",
-        3,
-    )
+    (update,) = c._coordinator.handle_controller_state_updates.call_args.args
+    assert (update.key, update.value) == ("adjustamattress_head_massage", 3)
     runtime.async_execute_controller_command.assert_awaited_once()
     c.write_command.reset_mock()
     number = AdjustableBedControllerNumber(runtime, c.controller_number_specs[0])

@@ -307,6 +307,10 @@ class MajesticHomeController(GoodVibeController):
     def massage_intensity_max(self) -> int:
         return 3
 
+    def massage_intensity_min(self, zone: str) -> int:
+        # Only a product with the zone's own off key offers 0; All Off stops the rest.
+        return 0 if self._has(f"{zone}_massage_off") else 1
+
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         key = f"{zone}_massage_{level}" if level else f"{zone}_massage_off"
         if zone not in self.massage_intensity_zones or not self._has(key):
