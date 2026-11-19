@@ -122,34 +122,6 @@ def _xxtea_encrypt(data: bytes, key: tuple[int, int, int, int]) -> bytes:
     return struct.pack(f"<{n}I", *v)
 
 
-def _xxtea_decrypt(data: bytes, key: tuple[int, int, int, int]) -> bytes:
-    """Decrypt data using Corrected Block TEA (XXTEA)."""
-    if len(data) < _XXTEA_MIN_BYTES or len(data) % 4 != 0:
-        raise ValueError(
-            f"XXTEA input must be >= {_XXTEA_MIN_BYTES} bytes and multiple of 4, got {len(data)}"
-        )
-
-    n = len(data) // 4
-    v = list(struct.unpack(f"<{n}I", data))
-
-    rounds = 6 + 52 // n
-    total = (rounds * _XXTEA_DELTA) & _U32_MASK
-
-    for _ in range(rounds):
-        e = (total >> 2) & 3
-        for p in range(n - 1, -1, -1):
-            y = v[(p + 1) % n]
-            z = v[(p - 1) % n]
-            mx = (
-                ((z >> 5 ^ y << 2) + (y >> 3 ^ z << 4))
-                ^ ((total ^ y) + (key[(p & 3) ^ e] ^ z))
-            ) & _U32_MASK
-            v[p] = (v[p] - mx) & _U32_MASK
-        total = (total - _XXTEA_DELTA) & _U32_MASK
-
-    return struct.pack(f"<{n}I", *v)
-
-
 def _slip_encode(data: bytes) -> bytes:
     """Apply SLIP framing to data.
 

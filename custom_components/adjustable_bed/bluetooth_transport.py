@@ -29,7 +29,6 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any, TypeGuard
 
 from homeassistant.components import bluetooth
-from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.core import HomeAssistant, callback
 
 from .const import ADAPTER_AUTO
@@ -511,20 +510,6 @@ async def async_clear_proxy_gatt_cache(client: Any, path: ConnectionPath | None)
             path.display_name,
         )
     return cleared
-
-
-def path_from_service_info(
-    hass: HomeAssistant,
-    service_info: BluetoothServiceInfoBleak | None,
-) -> ConnectionPath | None:
-    """Build a path from an advertisement snapshot (used by the freshness gate)."""
-    if service_info is None:
-        return None
-    return async_path_for_source(
-        hass,
-        getattr(service_info, "source", None),
-        rssi=_rssi(getattr(service_info, "rssi", None)),
-    )
 
 
 # --- User-facing description -------------------------------------------------

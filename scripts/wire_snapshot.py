@@ -473,8 +473,9 @@ def _betterliving2_historical_actions(plan: list[Command], protocol: str) -> lis
     """Preserve function-wire contract IDs after UI entities become fixed actions.
 
     The button:/number: names below are historical snapshot row IDs, NOT current
-    HA entities. These operations remain public via the typed diagnostic action
-    or sync_clock. Do not reconstruct removed entities to satisfy the snapshot.
+    HA entities. Queries use the current diagnostic action; raw timer rows only
+    exercise their frozen encodings, with no duration or effect claimed. Do not
+    reconstruct removed entities or actions to satisfy the snapshot.
     """
     from custom_components.adjustable_bed.beds.keeson.betterliving2 import require
     from custom_components.adjustable_bed.beds.keeson.betterliving2_services import (
@@ -503,9 +504,7 @@ def _betterliving2_historical_actions(plan: list[Command], protocol: str) -> lis
     query_and_clock = [
         Command(
             "button:betterliving2_refresh_alarm",
-            lambda ctrl: execute_diagnostic_action(
-                require(ctrl), DiagnosticAction.REFRESH_ALARM, None
-            ),
+            lambda ctrl: execute_diagnostic_action(require(ctrl), DiagnosticAction.REFRESH_ALARM),
             True,
         ),
         Command("button:betterliving2_sync_clock", lambda ctrl: require(ctrl).sync_clock(), True),
@@ -516,9 +515,7 @@ def _betterliving2_historical_actions(plan: list[Command], protocol: str) -> lis
         result.extend(
             Command(
                 f"number:betterliving2_massage_timer={value}",
-                lambda ctrl, value=value: execute_diagnostic_action(
-                    require(ctrl), DiagnosticAction.SET_MASSAGE_TIMER, value
-                ),
+                lambda ctrl, value=value: require(ctrl).set_level("timer", value),
                 True,
             )
             for value in (-1, 2)
@@ -528,7 +525,7 @@ def _betterliving2_historical_actions(plan: list[Command], protocol: str) -> lis
             Command(
                 "button:betterliving2_refresh_massage",
                 lambda ctrl: execute_diagnostic_action(
-                    require(ctrl), DiagnosticAction.REFRESH_MASSAGE, None
+                    require(ctrl), DiagnosticAction.REFRESH_MASSAGE
                 ),
                 True,
             )

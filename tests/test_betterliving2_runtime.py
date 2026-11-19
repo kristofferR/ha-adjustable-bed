@@ -41,6 +41,18 @@ COMMANDS = json.loads((FIXTURES / "commands.json").read_text())
 NOW = datetime(2026, 7, 14, 12, 30, 45)
 
 
+@pytest.mark.parametrize("stopped", (False, True))
+async def test_pause_preserves_task_cancellation_when_stop_arrives(stopped):
+    event = asyncio.Event()
+    waiting = asyncio.create_task(runtime.pause(60, event))
+    await asyncio.sleep(0)
+    if stopped:
+        event.set()
+    waiting.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await waiting
+
+
 def data(wire="p1", layout="2", address="AA:BB:CC:DD:08:21"):
     return {
         "address": address,

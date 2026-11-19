@@ -282,6 +282,8 @@ class PositionStatus:
 _STATUS_LENGTHS: Final = {0xED: 16, 0xF0: 19, 0xF1: 20}
 
 
+# Ergomotion position encoding (based on the AlexxIT/Ergomotion implementation):
+# 16-bit little-endian values, 0xFFFF means inactive.
 def parse_position_status(data: bytes) -> PositionStatus | None:
     """Parse a status notification; ``FFFF`` positions read as zero."""
     length = _STATUS_LENGTHS.get(data[0]) if data else None

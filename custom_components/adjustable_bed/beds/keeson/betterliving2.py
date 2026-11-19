@@ -30,6 +30,7 @@ from ...profiles import betterliving2 as app
 from ...profiles.keeson import BETTERLIVING2, Preset
 from ..base import BedController
 from ..builder import BuildContext
+from ..cancellation import cancellable, settled
 from ..catalog_buttons import Kind, catalog_button, massage_button, save_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -92,26 +93,22 @@ async def pause(seconds: float, event: asyncio.Event) -> bool:
         return True
     if seconds > 0:
         try:
-            await asyncio.wait_for(event.wait(), seconds)
+            await cancellable(asyncio.sleep(seconds), event)
+        except asyncio.CancelledError:
+            task = asyncio.current_task()
+            if not event.is_set() or task is not None and task.cancelling():
+                raise
             return True
-        except TimeoutError:
-            pass
     return event.is_set()
 
 
 async def drain(task: asyncio.Task[None]) -> None:
     """Complete bounded owned writes even through repeated caller cancellation."""
-    interrupted = False
-    while not task.done():
-        try:
-            await asyncio.shield(task)
-        except asyncio.CancelledError:
-            interrupted = True
-        except Exception:
-            break
-    task.result()
-    if interrupted:
-        raise asyncio.CancelledError
+
+    async def finish() -> None:
+        await task
+
+    await settled(finish())
 
 
 class BetterLiving2Controller(KeesonController):

@@ -63,8 +63,6 @@ STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CON
 CONF_MOTION_BED_RESTORED: Final = "motion_bed_restored"
 CONF_MOTION_BED_PRESET: Final = "motion_bed_preset"
 CONF_MOTION_BED_MOVEMENT: Final = "motion_bed_movement"
-# The app's identity is the exact advertised name, stored as ble_device_name.
-MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED})
 
 CONF_STARCODE_M5X5_PROFILE: Final = "starcode_m5x5_profile"
 CONF_STARCODE_M1X12_PROFILE: Final = "starcode_m1x12_profile"
@@ -155,8 +153,6 @@ LOGICDATA_APP_PROFILES: Final = {
     "tablet": "MOTIONrelax tablet app",
     "sleep_smart": "Sleep Smart Air Mattress app (bed base)",
 }
-# Sleep Smart's final movement layout is always two motors; series picks massage zones.
-LOGICDATA_SLEEP_SMART_LAYOUTS: Final = frozenset({"standard_2", "split_series"})
 LOGICDATA_APP_FAMILIES: Final = {"p1": "P1 (standard)", "p2": "P2 (middle)"}
 LOGICDATA_APP_LAYOUTS: Final = {
     "standard_2": "Back and legs (2 motors)",
@@ -351,7 +347,6 @@ CONF_PROFILE_MIGRATION: Final = "profile_migration"
 # pair_mode values: one shared BLE link vs two separate per-side links.
 PAIR_MODE_SINGLE_ADDRESS: Final = "single_address"
 PAIR_MODE_SEPARATE_ADDRESS: Final = "separate_address"
-PAIR_MODES: Final = (PAIR_MODE_SINGLE_ADDRESS, PAIR_MODE_SEPARATE_ADDRESS)
 
 # Side vocabulary — central, so no module invents ad-hoc magic strings.
 SIDE_LEFT: Final = "left"
@@ -739,8 +734,6 @@ HAS_LIGHT_DEFAULTS: Final[dict[str, bool]] = {
     BED_TYPE_FSM_RELAX: False,
     BED_TYPE_LIMOSS_REMOTE: False,
 }
-# Apps that drive chairs and beds (CONF_PRODUCT_TYPE, CONF_REVERSE_MOTORS).
-CHAIR_AND_BED_APP_BED_TYPES: Final = frozenset({BED_TYPE_FSM_RELAX, BED_TYPE_LIMOSS_REMOTE})
 
 # All supported bed types (includes both protocol-based and legacy names)
 BED_TYPE_TEMPUR_CURVE: Final = 'tempur_curve'
@@ -1073,7 +1066,6 @@ LINAK_CONTROL_SERVICE_UUID: Final = "99fa0001-338a-1024-8a49-009c0215f78a"
 LINAK_CONTROL_CHAR_UUID: Final = "99fa0002-338a-1024-8a49-009c0215f78a"
 LINAK_ERROR_CHAR_UUID: Final = "99fa0003-338a-1024-8a49-009c0215f78a"
 
-LINAK_CONFIG_SERVICE_UUID: Final = "99fa0010-338a-1024-8a49-009c0215f78a"
 LINAK_CONFIG_CHAR_UUID: Final = "99fa0011-338a-1024-8a49-009c0215f78a"
 
 LINAK_POSITION_SERVICE_UUID: Final = "99fa0020-338a-1024-8a49-009c0215f78a"
@@ -1093,13 +1085,9 @@ LINAK_VARIANT_PERFORMANCE: Final = "performance_legacy"
 
 # Linak position calibration
 LINAK_BACK_MAX_POSITION: Final = 820
-LINAK_BACK_MAX_ANGLE: Final = 68
 LINAK_LEG_MAX_POSITION: Final = 548
-LINAK_LEG_MAX_ANGLE: Final = 45
 LINAK_HEAD_MAX_POSITION: Final = 820
-LINAK_HEAD_MAX_ANGLE: Final = 68
 LINAK_FEET_MAX_POSITION: Final = 548
-LINAK_FEET_MAX_ANGLE: Final = 45
 
 # Nordic UART Service UUIDs (used by multiple protocols)
 NORDIC_UART_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
@@ -1123,8 +1111,6 @@ BEDTECH_MANUFACTURER_ID: Final = 0x4C57
 # WiLinke variants (5-byte commands with checksum)
 # Source: com.desarketing.gmmotor (Germany Motions) APK blutter decompilation
 # The app supports 6 BLE variants (Nordic + W1-W5), we track the WiLinke ones here
-# W1 is the default fallback when no specific service is found
-RICHMAT_WILINKE_W1_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
 # W4 uses the generic FFF0 short UUID, which countless non-bed BLE devices also
 # advertise (a "NO_DVR-*" camera system in issue #418, plus LED strips, scales,
 # etc.), so it is NOT bed-unique. All known W4 beds are Germany Motions units
@@ -1171,7 +1157,6 @@ KEESON_KSBT_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Extended Nordic UART variant (Ergomotion/SFD beds)
 KEESON_EXTENDED_NORDIC_SERVICE_UUID: Final = "6e400020-b5a3-f393-e0a9-e50e24dcca9e"
-KEESON_EXTENDED_NORDIC_CHAR_UUID: Final = "6e400021-b5a3-f393-e0a9-e50e24dcca9e"
 
 # KSBT fallback service/characteristic UUIDs
 # Some KSBT devices advertise with different service UUIDs but still use KSBT protocol
@@ -1212,14 +1197,7 @@ KEESON_BETTERLIVING_SERVICE_UUIDS: Final = frozenset(
 CB1322_MANUFACTURER_MARKERS: Final = ("ble-4.0 module", "dewertokin")
 
 # Ergomotion specific UUIDs (same protocol as Keeson Base, but with position feedback)
-ERGOMOTION_SERVICE_UUID: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
 ERGOMOTION_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
-ERGOMOTION_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
-
-# Ergomotion position calibration (based on AlexxIT/Ergomotion implementation)
-# Position values are 16-bit little-endian, 0xFFFF means inactive
-ERGOMOTION_MAX_POSITION: Final = 100  # Position values normalized to 0-100
-ERGOMOTION_MAX_MASSAGE: Final = 6  # Massage levels 0-6
 
 # Solace specific UUIDs
 SOLACE_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
@@ -1234,8 +1212,6 @@ MOTOSLEEP_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 # notifications, requests MTU 250, and writes commands to FFF2. The separate
 # FFE0 service is selected for SUTA smart-mattress/accessory families.
 SUTA_SERVICE_UUID: Final = "0000fff0-0000-1000-8000-00805f9b34fb"
-SUTA_NOTIFY_CHAR_UUID: Final = "0000fff1-0000-1000-8000-00805f9b34fb"
-SUTA_DEFAULT_WRITE_CHAR_UUID: Final = "0000fff2-0000-1000-8000-00805f9b34fb"
 
 # BedJet PowerLayer UUIDs.
 # The frame and the BedJet climate blower both ADVERTISE the 1000 service, so the
@@ -1299,7 +1275,6 @@ LEGGETT_OKIN_REVISION_SELECTOR_CHAR_UUID: Final = "00001721-0000-1000-8000-00805
 
 # Leggett & Platt Richmat variant (WiLinke protocol, discrete massage commands)
 # Uses same service/char as Richmat WiLinke but with L&P-specific features
-LEGGETT_RICHMAT_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
 LEGGETT_RICHMAT_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
 
 # Reverie specific UUIDs (Protocol 108 - XOR checksum)
@@ -1326,11 +1301,6 @@ REVERIE_STK_SIDE_NO_DATA_UUID: Final = "db8010a6-f324-29c3-38d1-85c0c2e86885"
 
 # Reverie Pairlink central and explicit local BlueZ host-peripheral roles.
 REVERIE_PAIRLINK_SERVICE_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc0386f"
-REVERIE_PAIRLINK_WRITE_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc1386f"
-REVERIE_PAIRLINK_NOTIFY_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc2386f"
-REVERIE_PAIRLINK_LP_SERVICE_UUID: Final = "0000ffd0-0000-1000-8000-00805f9b34fb"
-REVERIE_PAIRLINK_LP_WRITE_UUID: Final = "0000ffd1-0000-1000-8000-00805f9b34fb"
-REVERIE_PAIRLINK_LP_NOTIFY_UUID: Final = "0000ffd2-0000-1000-8000-00805f9b34fb"
 CONF_PAIRLINK_ROLE: Final = "pairlink_role"
 CONF_PAIRLINK_HOST_SOURCE: Final = "pairlink_host_source"
 CONF_PAIRLINK_HOME_ID: Final = "pairlink_home_id"
@@ -1361,7 +1331,6 @@ NORDIC_DFU_SERVICE_UUID: Final = "00001530-1212-efde-1523-785feabcd123"
 
 # OKIN position feedback UUIDs (used by Lucid, some Okimat beds)
 # Reference: https://github.com/richardhopton/smartbed-mqtt/issues/53
-OKIN_POSITION_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 OKIN_POSITION_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 
 # OKIN position calibration
@@ -1397,11 +1366,6 @@ COMFORT_MOTION_PEILIN_CHAR_UUID: Final = "88121427-11e2-52a2-4615-ff00dec16801"
 LIMOSS_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 LIMOSS_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
-# DewertOkin specific (A H Beard, HankookGallery beds)
-# Legacy handle from older traces. Handles are device/firmware-specific; the
-# controller writes to the stable shared Okin characteristic UUID instead.
-DEWERTOKIN_WRITE_HANDLE: Final = 0x0013
-
 # DewertOkin manufacturer data (BLE Company ID)
 # Source: com.dewertokin.okinsmartcomfort app disassembly
 MANUFACTURER_ID_DEWERTOKIN: Final = 1643  # 0x066B
@@ -1424,10 +1388,6 @@ DEWERTOKIN_RF_GATEWAY_MODEL: Final = "Bluetooth RF-Gateway"
 DEWERTOKIN_RF_GATEWAY_SERVICE_UUID: Final = "92111420-72ab-4564-62ef-2a881286a6b0"
 DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID: Final = "92111422-72ab-4564-62ef-2a881286a6b0"
 
-# Serta Motion Perfect III specific
-# Uses handle-based writes rather than UUID
-SERTA_WRITE_HANDLE: Final = 0x0020
-
 # Octo specific UUIDs
 # Standard Octo variant
 OCTO_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
@@ -1446,7 +1406,6 @@ OCTO_VARIANT_STAR2: Final = "star2"
 # Mattress Firm 900 / Okin Nordic specific UUIDs
 # Protocol reverse-engineered by David Delahoz (https://github.com/daviddelahoz/BLEAdjustableBase)
 # Uses Nordic UART Service with custom 7-byte command format
-MATTRESSFIRM_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_WRITE_CHAR_UUID: Final = MATTRESSFIRM_CHAR_UUID  # Alias for protocol clarity
 
@@ -1471,20 +1430,17 @@ NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 # Detection: Service UUID or scan record bytes 9-10 = 0x4F 0x4B ("OK")
 OKIN_ORE_SERVICE_UUID: Final = "00001000-0000-1000-8000-00805f9b34fb"
 OKIN_ORE_WRITE_CHAR_UUID: Final = "00001001-0000-1000-8000-00805f9b34fb"
-OKIN_ORE_READ_CHAR_UUID: Final = "00001002-0000-1000-8000-00805f9b34fb"
 
 # Malouf NEW_OKIN specific UUIDs
 # Protocol reverse-engineered from Malouf Base app
 # Uses a unique advertised service UUID for detection plus Nordic UART for commands
 MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID: Final = "01000001-0000-1000-8000-00805f9b34fb"
 MALOUF_NEW_OKIN_WRITE_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-MALOUF_NEW_OKIN_NOTIFY_CHAR_UUID: Final = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Malouf LEGACY_OKIN specific UUIDs
 # Uses FFE5 service (similar to Keeson) but with different 9-byte command format
 MALOUF_LEGACY_OKIN_SERVICE_UUID: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
 MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
-MALOUF_LEGACY_OKIN_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 
 # Detection name patterns for beds sharing the OKIN service UUID
 # Multiple bed types share the same UUID (62741523-...), so name patterns help disambiguate:
@@ -1517,11 +1473,6 @@ OKIMAT_NAME_PATTERNS: Final = (
 # are present.
 OKIMAT_NAME_ONLY_PATTERNS: Final = ("okin-receiver", "okin - receiver", "okin receiver")
 OKIN_GENERIC_NAME_PATTERNS: Final = ("okin-",)
-
-# OKIN 64-bit name patterns (from com.okin.bedding.adjustbed app disassembly)
-# Note: Most OKIN 64-bit devices don't have distinctive names - they require
-# post-connection characteristic detection (presence of 62741625 read char)
-OKIN_64BIT_NAME_PATTERNS: Final[tuple[str, ...]] = ()  # No reliable name patterns found
 
 # BedTech name patterns (shares FEE9 service UUID with Richmat WiLinke)
 # Keep this narrow: model-number aliases like BT6500 are also seen on beds
@@ -1689,12 +1640,6 @@ JENSEN_NAME_PATTERNS: Final = ("jmc",)  # JMC400, JMC300, etc.
 # Adjustable Sleep 2.0.29 accepts "JMC400" anywhere in the name, case-insensitively.
 JENSEN_NAME_FRAGMENT: Final = "jmc400"
 
-# SUTA Smart Home name patterns.
-# Note: The integration currently targets the bed-frame AT protocol (FFF0 service).
-# Accessory/mattress subtypes use a different binary protocol and are excluded.
-SUTA_NAME_PATTERNS: Final = ("suta-",)
-SUTA_UNSUPPORTED_NAME_PREFIXES: Final = ("suta-draw",)
-
 # BedJet PowerLayer advertised local names. "BEDJET_BF" is the factory name of the
 # frame; the climate blower advertises its own BEDJET_* name on the same service,
 # so only this prefix may claim the frame. Renaming the frame from the remote
@@ -1776,7 +1721,6 @@ VIBRADORM_NAME_PATTERNS: Final = ("vmat",)
 # Uses 8-byte (both sides) or 9-byte (single side) packets with ~sum checksum
 RONDURE_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 RONDURE_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
-RONDURE_READ_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 # Also supports Nordic UART as an alternative (same UUIDs as NORDIC_UART_*)
 
 # Rondure side selection variants

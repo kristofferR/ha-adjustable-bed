@@ -1461,6 +1461,7 @@ async def build_controller(ctx: BuildContext) -> MotionBedController:
     from .models import select_motion_bed
 
     data = ctx.data
+    # The app's identity is the exact advertised name, stored as ble_device_name.
     selection = select_motion_bed(
         data.get(CONF_BLE_DEVICE_NAME, data.get(CONF_NAME, "")),
         restored=data.get(CONF_MOTION_BED_RESTORED, False),

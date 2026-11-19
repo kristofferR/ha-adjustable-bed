@@ -4,15 +4,10 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Final
+from typing import Any, Final
 
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.helpers.selector import SelectOptionDict
-
-if TYPE_CHECKING:
-    from bleak import BleakClient
-
-from bleak.exc import BleakError
 
 from .app_families import FAMILY_STEP_ROUTES, family_member_rows, family_row_label
 from .beds.cheerssleep.catalog import advertisement as cheerssleep_advertisement
@@ -181,7 +176,6 @@ from .const import (
     BEDTECH_MANUFACTURER_ID,
     BEDTECH_NAME_PATTERNS,
     BEDTECH_SERVICE_UUID,
-    BEDTECH_WRITE_CHAR_UUID,
     COMFORT_MOTION_LIERDA3_SERVICE_UUID,
     COMFORT_MOTION_SERVICE_UUID,
     COOLBASE_NAME_PATTERNS,
@@ -254,7 +248,6 @@ from .const import (
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_NAME_ONLY_PATTERNS,
     OKIMAT_NAME_PATTERNS,
-    OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_SERVICE_UUID,
     OKIMAT_VARIANTS,
     OKIMAT_WRITE_CHAR_UUID,
@@ -3221,65 +3214,3 @@ def _detect_bed_type_detailed(
 
     _LOGGER.debug("Device %s does not match any known bed types", service_info.address)
     return DetectionResult(bed_type=None, confidence=0.0, signals=signals)
-
-
-async def detect_bed_type_by_characteristics(
-    client: BleakClient,
-    initial_detection: str,
-) -> str | None:
-    """Refine bed type detection by examining characteristics after connection.
-
-    This function should be called when initial detection was ambiguous
-    (e.g., FEE9 could be Richmat or BedTech, 62741523 could be Okimat or OKIN 64-bit).
-
-    Args:
-        client: Connected BleakClient instance with services already discovered
-        initial_detection: The bed type from initial detection (e.g., BED_TYPE_RICHMAT)
-
-    Returns:
-        Refined bed type if characteristics indicate a different type,
-        or None if the initial detection should be kept.
-    """
-    try:
-        gatt_detection = detect_bed_type_from_gatt_services(client.services)
-        if gatt_detection.bed_type == BED_TYPE_OKIN_RF_ECO_BT:
-            return None  # Shared receiver characteristics do not prove topology.
-        if gatt_detection.bed_type == BED_TYPE_OKIN_CST:
-            return None  # CSS plus Nordic DFU does not prove CST either (#555).
-
-        # Build a set of all characteristic UUIDs for easy lookup
-        all_chars: set[str] = set()
-        for service in client.services:
-            for char in service.characteristics:
-                all_chars.add(char.uuid.lower())
-
-        # For FEE9 service (Richmat WiLinke): Check if BedTech characteristic exists
-        if initial_detection == BED_TYPE_RICHMAT:
-            # BedTech has a specific write characteristic
-            if BEDTECH_WRITE_CHAR_UUID.lower() in all_chars:
-                _LOGGER.info("Refined detection: BedTech characteristic found (was Richmat)")
-                return BED_TYPE_BEDTECH
-
-        # For OKIN service (62741523): Check for 64-bit read characteristic
-        if initial_detection == BED_TYPE_OKIMAT:
-            # OKIN 64-bit has the response/notify characteristic (62741625)
-            if OKIMAT_NOTIFY_CHAR_UUID.lower() in all_chars:
-                # The presence of 62741625 doesn't definitively mean 64-bit
-                # (Okimat also has this), but we can note it for logging
-                _LOGGER.debug("OKIN notify characteristic found - could be Okimat or OKIN 64-bit")
-                # To truly distinguish, we'd need to try sending a command
-                # and check the response format (6-byte vs 10-byte)
-                # For now, keep as Okimat since it's more common
-
-        # For Nordic UART service: Check for specific protocol indicators
-        if initial_detection == BED_TYPE_RICHMAT:
-            # Nordic UART is used by Richmat, Keeson KSBT, Mattress Firm, OKIN 64-bit
-            # Without actually sending commands, we can't reliably distinguish
-            pass
-
-    except BleakError as err:
-        _LOGGER.debug("Characteristic detection failed (BLE error): %s", err)
-    except AttributeError as err:
-        _LOGGER.debug("Characteristic detection failed (malformed service): %s", err)
-
-    return None

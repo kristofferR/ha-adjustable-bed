@@ -362,16 +362,8 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
 
     @callback
     def _handle_controller_state_update(self, state: ControllerState) -> None:
-        if self._spec.state_key in state or self._spec.is_available is not None:
+        if self._spec.state_key in state:
             self.async_write_ha_state()
-
-    @property
-    def available(self) -> bool:
-        if self._spec.is_available is None:
-            return super().available
-        with self._side_scope():
-            controller = self._coordinator.capability_controller
-            return super().available and controller is not None and self._spec.is_available(controller)
 
     @property
     def current_option(self) -> str | None:

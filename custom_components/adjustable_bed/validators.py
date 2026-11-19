@@ -223,11 +223,6 @@ def get_variants_for_bed_type(bed_type: str | None) -> dict[str, str] | None:
     return VARIANTS_BY_BED_TYPE.get(bed_type)
 
 
-def bed_type_has_variants(bed_type: str) -> bool:
-    """Check if a bed type has multiple protocol variants."""
-    return bed_type in VARIANTS_BY_BED_TYPE
-
-
 def is_valid_variant_for_bed_type(bed_type: str, variant: str) -> bool:
     """Check if a protocol variant is valid for a given bed type."""
     if variant == VARIANT_AUTO:
