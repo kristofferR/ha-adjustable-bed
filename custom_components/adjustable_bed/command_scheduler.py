@@ -596,9 +596,6 @@ class CommandContext:
     # stopped it from sending; together they say what reached the bed.
     frames_written: int = 0
     frames_skipped: int = 0
-    # Above zero while the command prepares its link (connect, startup,
-    # authentication): those writes are not the command's frames.
-    preparing_link: int = 0
 
     def request_cancel(self, outcome: CommandOutcome) -> None:
         """Distinguish repeated cancellations of this exact resource admission."""
@@ -712,22 +709,31 @@ class Delivery(StrEnum):
     """Cancelled before any frame went out."""
 
 
+# The command whose link this task is preparing (connect, startup,
+# authentication): its writes here are not that command's frames.
+_PREPARING_LINK: ContextVar[CommandContext | None] = ContextVar(
+    "adjustable_bed_preparing_link", default=None
+)
+
+
 @contextlib.contextmanager
 def command_frames_not_counted() -> Iterator[None]:
     """Send link preparation (connect, startup, session join, PIN) uncounted.
 
-    Marks the running command itself, not the task context, so a task created
-    meanwhile (a scheduler worker, a background read) never inherits it.
+    Names the running command, so only this task's preparation for it is
+    uncounted: a task started meanwhile that runs another command (a scheduler
+    worker) counts normally, and the command's own frames sent from another
+    task are never suppressed.
     """
-    context = current_command_context()
-    if context is None:
-        yield
-        return
-    context.preparing_link += 1
+    token = _PREPARING_LINK.set(current_command_context())
     try:
         yield
     finally:
-        context.preparing_link -= 1
+        _PREPARING_LINK.reset(token)
+
+
+def _preparing_link(context: CommandContext) -> bool:
+    return _PREPARING_LINK.get() is context
 
 
 _FRAMES_COUNTED: ContextVar[bool] = ContextVar("adjustable_bed_frames_counted", default=False)
@@ -754,7 +760,7 @@ def note_frame_written(cancel_event: asyncio.Event | None) -> None:
     if (
         context is not None
         and (cancel_event is context.cancel_event or _FRAMES_COUNTED.get())
-        and not context.preparing_link
+        and not _preparing_link(context)
     ):
         context.frames_written += 1
 
@@ -771,7 +777,7 @@ def note_write_not_counted() -> None:
 def note_frame_skipped() -> None:
     """Record, inside a command, that a cancellation stopped a frame being sent."""
     context = current_command_context()
-    if context is not None and not context.preparing_link:
+    if context is not None and not _preparing_link(context):
         context.frames_skipped += 1
 
 

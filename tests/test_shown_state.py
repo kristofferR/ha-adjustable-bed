@@ -215,7 +215,7 @@ async def test_controller_publishes_no_setting_after_its_command_was_cancelled()
     ctrl._parse_notification(app.SYNC_ON)
     cancelled = MagicMock()
     cancelled.cancel_event.is_set.return_value = True
-    cancelled.frames_written = cancelled.frames_skipped = cancelled.preparing_link = 0
+    cancelled.frames_written = cancelled.frames_skipped = 0
     with patch(
         "custom_components.adjustable_bed.command_scheduler.current_command_context",
         return_value=cancelled,
@@ -388,7 +388,7 @@ async def test_controller_publishes_setting_sent_during_cancellation() -> None:
     ctrl = next(sophie.__wrapped__())
     ctrl._parse_notification(app.SYNC_ON)
     event = ctrl._coordinator.cancel_command
-    context = MagicMock(cancel_event=event, frames_written=0, frames_skipped=0, preparing_link=0)
+    context = MagicMock(cancel_event=event, frames_written=0, frames_skipped=0)
     ctrl.client.write_gatt_char.side_effect = lambda *_args, **_kwargs: event.set()
     with patch(
         "custom_components.adjustable_bed.command_scheduler.current_command_context",
@@ -647,3 +647,31 @@ async def test_a_command_that_raises_after_its_frame_still_shows_what_was_sent(
             # The cancellation still ended the command: it did not complete.
             record = bed._command_scheduler.recent_records[-1]
             assert record.outcome is not CommandOutcome.COMPLETED
+
+
+async def test_preparing_the_link_in_another_task_never_hides_the_commands_frame() -> None:
+    from custom_components.adjustable_bed import command_scheduler as scheduler
+
+    cancel = asyncio.Event()
+    command = _running_command(cancel)
+    token = scheduler._CURRENT_COMMAND_CONTEXT.set(command)
+    try:
+        preparing, release = asyncio.Event(), asyncio.Event()
+
+        async def background_session_ping() -> None:
+            # A task that inherited the command, preparing its link meanwhile.
+            with scheduler.command_frames_not_counted():
+                preparing.set()
+                await release.wait()
+
+        task = asyncio.create_task(background_session_ping())
+        await preparing.wait()
+        scheduler.note_frame_written(cancel)  # The command's own frame.
+        assert command.frames_written == 1
+        release.set()
+        await task
+        with scheduler.command_frames_not_counted():
+            scheduler.note_frame_written(cancel)  # This task's own preparation.
+        assert command.frames_written == 1
+    finally:
+        scheduler._CURRENT_COMMAND_CONTEXT.reset(token)
