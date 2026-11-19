@@ -267,6 +267,18 @@ def test_hub_sync_clock_sets_only_the_active_module(
             controller.validate_clock_sync()
 
 
+async def test_hub_switched_to_air_after_the_check_is_refused(hass: HomeAssistant) -> None:
+    controller = make_target(hass, "TL-Q").controller
+    controller._module_present = lambda module: True
+    controller._active_module = "motor"
+    controller.validate_clock_sync()
+    controller._active_module = "air"
+    controller.async_execute_motion_bed_write = AsyncMock()
+    with pytest.raises(ValueError, match="motor or heating module"):
+        await controller.sync_clock()
+    controller.async_execute_motion_bed_write.assert_not_awaited()
+
+
 def test_idle_hub_sets_the_clock_of_the_module_it_remembers(hass: HomeAssistant) -> None:
     """After an idle disconnect only the remembered module is known; it is the one to set."""
     controller = make_target(hass, "TL-Q").controller

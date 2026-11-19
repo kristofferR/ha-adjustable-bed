@@ -1104,6 +1104,8 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             raise ValueError("Select the hub's motor or heating module first, then set its clock")
 
     async def sync_clock(self) -> None:
+        # The module in use can change after the call was checked; check it again.
+        self.validate_clock_sync()
         for write in self._clock_writes():
             await self.async_execute_motion_bed_write(write)
 
