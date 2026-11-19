@@ -501,6 +501,8 @@ async def handle_group(call: ServiceCall) -> None:
             call.hass, entry.entry_id, entry.data.get(CONF_STARCODE_LIFT_ENTRIES, [])
         )
         return
+    if entry.data.get(CONF_BED_TYPE) not in STARCODE_GROUP_BED_TYPES:
+        raise invalid("action_for_other_beds", beds="StarCode beds")
     await run_group(_resolve(call.hass, entry.entry_id), call.data["action"])
 
 

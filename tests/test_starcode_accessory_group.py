@@ -479,3 +479,21 @@ def test_a_configured_lift_that_is_missing_or_another_bed_says_which(hass: HomeA
         accessory_group._resolve(hass, "missing")
     with raises_key("lifts_not_configured", ServiceValidationError):
         accessory_group._resolve(hass, "other")
+
+
+async def test_lifts_action_on_another_bed_names_the_beds_it_is_for(hass: HomeAssistant) -> None:
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed.beds.starcode import accessory_group
+    from custom_components.adjustable_bed.const import BED_TYPE_LINAK
+    from tests.error_helpers import raises_key
+
+    entry = MockConfigEntry(domain="adjustable_bed", data={"bed_type": BED_TYPE_LINAK})
+    call = MagicMock(hass=hass, data={"device_id": "linak", "action": "up"})
+    with (
+        patch.object(
+            accessory_group, "async_get_device_and_config_entry", return_value=(None, entry)
+        ),
+        raises_key("action_for_other_beds", ServiceValidationError),
+    ):
+        await accessory_group.handle_group(call)
