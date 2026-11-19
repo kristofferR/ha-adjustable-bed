@@ -1347,7 +1347,7 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             self._attr_entity_category = EntityCategory.CONFIG
         if spec.diagnostic or not spec.entity_registry_enabled_default:
             self._attr_entity_registry_enabled_default = False
-        if spec.release_only or spec.key == "hjbed_release":
+        if spec.release_only:
             # The card presses it to end a held gesture, so it stays enabled
             # but is not a control a person picks from a dashboard.
             self._attr_entity_registry_visible_default = False
@@ -1414,17 +1414,6 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
                 await self._coordinator.async_stop_command()
             finally:
                 CONTROLLER_GESTURE_RELEASE.reset(token)
-            return
-        if self._spec.key == "hjbed_release":
-            from .beds.hjbed.state import GESTURE_RELEASE
-
-            # STOP admission also invalidates a hold still awaiting Bluetooth
-            # preflight. Only its action cleanup may send a release packet.
-            token = GESTURE_RELEASE.set(True)
-            try:
-                await self._coordinator.async_stop_command()
-            finally:
-                GESTURE_RELEASE.reset(token)
             return
         press_fn = self._spec.press_fn
         if self._spec.invalidates_position or _moves_untimed(
