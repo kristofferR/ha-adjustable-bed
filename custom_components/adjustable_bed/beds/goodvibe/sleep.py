@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Never
 
 from ...codec import sleep_envelope
+from ..entity_specs import sleep_rate_value
 from .schemas import parse_schema
 
 
@@ -86,13 +87,6 @@ def new_day_schema(version: str) -> bool:
     return parts + [0] * (length - len(parts)) >= other + [0] * (length - len(other))
 
 
-def _rate(text: str) -> int | None:
-    try:
-        return round(float(text))
-    except ValueError, OverflowError:
-        return None
-
-
 @dataclass
 class Realtime:
     heart: str = "--"
@@ -142,8 +136,8 @@ class Realtime:
     def typed(self) -> dict[str, int | bool | None]:
         """The readings as Home Assistant state; the app's "--" is unknown."""
         return {
-            "heart": _rate(self.heart),
-            "respiration": _rate(self.respiration),
+            "heart": sleep_rate_value(self.heart),
+            "respiration": sleep_rate_value(self.respiration),
             "occupancy": {"On Bed": True, "Off Bed": False}.get(self.occupancy),
             "movement": {"Body Move": True, "No Body Move": False}.get(self.movement),
             "snore": {"Snoring": True, "No Snoring": False}.get(self.snore),

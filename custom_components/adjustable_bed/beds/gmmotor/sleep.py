@@ -25,6 +25,7 @@ from ..entity_specs import (
     SleepFlag,
     sleep_flag_binary_sensor_spec,
     sleep_rate_sensor_spec,
+    sleep_rate_value,
 )
 from .notifications import Value
 from .protocol import MalformedNotification
@@ -95,19 +96,12 @@ def _flag_key(side: str, field: str) -> StateKey[bool | None]:
     return StateKey[bool | None](f"gmmotor_sleep_{side}_{field}")
 
 
-def _rate(text: str | None) -> int | None:
-    try:
-        return None if text is None else round(float(text))
-    except ValueError, OverflowError:
-        return None
-
-
 def _live_updates(side: str, state: LiveState) -> list[StateUpdate]:
     """One side's display record, plus the typed readings the entities show."""
     return [
         _live_key(side)(asdict(state)),
-        _rate_key(side, "heart_rate")(_rate(state.first_value)),
-        _rate_key(side, "breathing_rate")(_rate(state.second_value)),
+        _rate_key(side, "heart_rate")(sleep_rate_value(state.first_value)),
+        _rate_key(side, "breathing_rate")(sleep_rate_value(state.second_value)),
         _flag_key(side, "on_bed")(state.on_bed),
         _flag_key(side, "moving")(state.moving),
         _flag_key(side, "snoring")(state.snoring),

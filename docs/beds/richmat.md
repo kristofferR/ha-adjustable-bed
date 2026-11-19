@@ -6670,6 +6670,9 @@ title is not an action. Flat is the reachable MotorReset control.
 
 Native motor entities expose each product's held directions. Presets and their
 separate save buttons, light toggle and every massage action are product-gated.
+The massage timer keys are one **Massage timer** select (Off sends All Off), and
+each zone's level keys are one head or foot massage number (0 sends that zone's
+off key where the product has one).
 Saving uses the source long operand with a single short action, not a timed long
 press. There are no inferred brightness/RGB setters, calibration, position seeking,
 extra memory slots, single-address split controls or factory reset.

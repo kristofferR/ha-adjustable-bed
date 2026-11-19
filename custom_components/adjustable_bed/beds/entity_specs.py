@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Awaitable, Callable, Coroutine, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -246,9 +247,7 @@ class ControllerStateSensorSpec:
     # Controller state is diagnostic; the card shows only what a spec places.
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
     state_class: SensorStateClass | None = field(default=None, kw_only=True)
-    entity_category: EntityCategory | None = field(
-        default=EntityCategory.DIAGNOSTIC, kw_only=True
-    )
+    entity_category: EntityCategory | None = field(default=EntityCategory.DIAGNOSTIC, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,9 +263,7 @@ class ControllerStateBinarySensorSpec:
     entity_registry_enabled_default: bool = False
     card: CardPlacement = field(default=CARD_HIDDEN, kw_only=True)
     device_class: BinarySensorDeviceClass | None = field(default=None, kw_only=True)
-    entity_category: EntityCategory | None = field(
-        default=EntityCategory.DIAGNOSTIC, kw_only=True
-    )
+    entity_category: EntityCategory | None = field(default=EntityCategory.DIAGNOSTIC, kw_only=True)
 
 
 # Sleep-monitor readings: one shape and one name on every bed. ``side`` names a
@@ -284,6 +281,32 @@ _SLEEP_FLAGS: Final[dict[str, BinarySensorDeviceClass]] = {
     "snoring": BinarySensorDeviceClass.SOUND,
     "body_movement": BinarySensorDeviceClass.MOTION,
 }
+
+
+def sleep_rate_value(value: object) -> int | None:
+    """A rate the app displays as text ("72", "72.0", "0x48") in whole per-minute units.
+
+    The apps show whole beats and breaths per minute, so a fraction rounds. The
+    app's "--", an empty or unparsable text, a negative or non-finite value is
+    unknown.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+        try:
+            number = (
+                float(int(text, 0)) if text.lower().lstrip("+-").startswith("0x") else float(text)
+            )
+        except ValueError:
+            return None
+    elif isinstance(value, (int, float)):
+        number = float(value)
+    else:
+        return None
+    if not math.isfinite(number) or number < 0:
+        return None
+    return round(number)
 
 
 def _sleep_translation_key(kind: str, side: SleepSide) -> str:

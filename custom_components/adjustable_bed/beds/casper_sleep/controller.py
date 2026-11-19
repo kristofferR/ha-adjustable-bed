@@ -19,6 +19,7 @@ from ..entity_specs import (
     SleepRate,
     sleep_flag_binary_sensor_spec,
     sleep_rate_sensor_spec,
+    sleep_rate_value,
 )
 from .protocol import (
     NOTIFY,
@@ -65,12 +66,7 @@ def _flag_key(side: str, field: str) -> StateKey[bool | None]:
 def _typed_live(field: str, value: object) -> int | bool | None:
     """The app shows "--" for an unknown reading; Home Assistant shows unknown."""
     if field in ("heart", "breath"):
-        if not isinstance(value, str):
-            return None
-        try:
-            return int(value, 0) if value.strip().lower().startswith(("0x", "+0x", "-0x")) else int(value)
-        except ValueError:
-            return None
+        return sleep_rate_value(value)
     return value if isinstance(value, bool) else None
 
 

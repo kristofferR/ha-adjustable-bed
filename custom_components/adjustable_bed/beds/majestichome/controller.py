@@ -22,6 +22,7 @@ from ...command_scheduler import CommandOutcome, current_command_context
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
 from ...profiles.majestichome import LAYOUTS, STOP, TICK_MS, catalog, resolve_layout
+from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
 from ..entity_specs import (
@@ -57,6 +58,17 @@ class Plan:
     records: tuple[Alarm, ...]
     stale: frozenset[int]
 
+
+_TIMERS: Final = (10, 20, 30)
+# Controls the shared timer select and massage level numbers send instead of buttons.
+_FOLDED: Final = frozenset(
+    {
+        *(f"massage_{minutes}" for minutes in _TIMERS),
+        *(f"{zone}_massage_{level}" for zone in ("head", "foot") for level in (1, 2, 3)),
+        "head_massage_off",
+        "foot_massage_off",
+    }
+)
 
 @dataclass(frozen=True, slots=True)
 class Intent:
@@ -248,6 +260,59 @@ class MajesticHomeController(GoodVibeController):
     def held_control_options(self) -> tuple[str, ...]:
         return tuple(c.key for c in self.layout.controls if c.held)
 
+    def _has(self, key: str) -> bool:
+        return any(control.key == key for control in self.layout.controls)
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The app always shows the massage controls of a layout that has them.
+        return any(control.group == "massage" for control in self.layout.controls)
+
+    # Each timer key sets its duration, so they are one timer select.
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self.massage_timer_options)
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [minutes for minutes in _TIMERS if self._has(f"massage_{minutes}")]
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return self._has("massage_off")
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        if minutes == 0 and self.massage_timer_can_turn_off:
+            await self.action("massage_off")
+        elif minutes in self.massage_timer_options:
+            await self.action(f"massage_{minutes}")
+        else:
+            raise ValueError("Choose a massage timer this Majestic Home model offers")
+        # The bed reports no timer; a STOP or replacing command sends nothing.
+        if not self._coordinator.cancel_command.is_set():
+            self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, minutes)
+
+    # Each level key sets that zone's level, so the levels are one number per zone.
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        return bool(self.massage_intensity_zones)
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        return [zone for zone in ("head", "foot") if self._has(f"{zone}_massage_1")]
+
+    @property
+    def massage_intensity_max(self) -> int:
+        return 3
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        key = f"{zone}_massage_{level}" if level else f"{zone}_massage_off"
+        if zone not in self.massage_intensity_zones or not self._has(key):
+            raise ValueError("This Majestic Home model has no such massage level")
+        await self.action(key)
+        if not self._coordinator.cancel_command.is_set():
+            self.forward_controller_state_update(massage_intensity(zone), level)
+
     @property
     def execution(self) -> ExecutionCapabilities:
         return (
@@ -384,8 +449,8 @@ class MajesticHomeController(GoodVibeController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         buttons = []
         for control in self.layout.controls:
-            if control.held:
-                continue  # Native motor entities own these held controls.
+            if control.held or control.key in _FOLDED:
+                continue  # Native motor entities, the timer select and level numbers own these.
             for save in (False, True) if control.save is not None else (False,):
                 label = control.label
                 if save:
