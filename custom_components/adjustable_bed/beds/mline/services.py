@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util.json import JsonValueType
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
@@ -44,7 +44,7 @@ async def handle_command(call: ServiceCall) -> ServiceResponse:
     from .controller import MLineController
 
     if action.startswith("history_") and sum(len(_command_targets(p, s)) for p, s in targets) != 1:
-        raise ServiceValidationError("Raw M Line history requires exactly one physical bed side")
+        raise invalid("one_bed_only")
     results: list[JsonValueType] = []
 
     def validate(c: MLineController) -> None:

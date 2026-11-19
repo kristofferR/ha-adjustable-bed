@@ -7,10 +7,10 @@ from typing import cast
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...paired_coordinator import BedChild, PairedBedCoordinator
 from ...services import (
@@ -79,11 +79,11 @@ async def handle_richmat_rise(call: ServiceCall) -> None:
             if offline is None:
                 offline = await _get_controller_for_service(target)
             if not isinstance(offline, RichmatClassicController):
-                raise ServiceValidationError("Choose a Luuna Rise or Power Cool bed")
+                raise invalid("action_for_other_beds", beds="Luuna Rise and Power Cool beds")
             try:
                 offline.validate_richmat_rise_request(request, live=False)
             except ValueError as error:
-                raise ServiceValidationError(str(error)) from error
+                raise rejected(error) from error
 
     for coordinator, side in targets:
         for target in _command_targets(coordinator, side):
@@ -91,7 +91,7 @@ async def handle_richmat_rise(call: ServiceCall) -> None:
 
             async def query(controller: BedController) -> RichmatClassicController:
                 if not isinstance(controller, RichmatClassicController):
-                    raise ServiceValidationError("The selected app controller changed")
+                    raise invalid("bed_changed")
                 controller.validate_richmat_rise_request(request)
                 return controller
 
@@ -107,9 +107,9 @@ async def handle_richmat_rise(call: ServiceCall) -> None:
                 else:
                     await inspect(target)
             except ValueError as error:
-                raise ServiceValidationError(str(error)) from error
+                raise rejected(error) from error
             if not refreshed:
-                raise ServiceValidationError("Bed capability preflight was interrupted")
+                raise invalid("action_stopped")
 
     await _execute_preflighted(
         targets, [], _family_command(RichmatClassicController, "Luuna Rise / Power Cool bed settings", lambda controller: controller.async_execute_richmat_rise_request(request)),

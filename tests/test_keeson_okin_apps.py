@@ -61,6 +61,7 @@ from custom_components.adjustable_bed.profiles.keeson import (
     encode,
 )
 from tests.app_state_helpers import stored_app_state
+from tests.error_helpers import raises_key
 
 Action = Callable[[OkinAppKeesonController], Awaitable[None]]
 ZERO = "e5fe160000000006"
@@ -801,7 +802,7 @@ async def test_hold_service(
 
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_BASE})
     mock_bleak_client.write_gatt_char.reset_mock()
-    with pytest.raises(ServiceValidationError, match="has no held controls"):
+    with raises_key("held_controls_not_supported", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
             "hold_control",

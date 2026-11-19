@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_co
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.profile_id import with_profile_ids
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 from tests.test_majestichome import GATT, notify, written
 from tests.test_majestichome import clock as clock
@@ -209,7 +210,7 @@ async def test_stop_during_lazy_import_and_invalid_second_target_never_mutate(ha
     resolve.return_value = ([(target, "both"), (bad, "both")], [])
     with (
         patch.object(services, "async_import_modules", AsyncMock()) as importing,
-        pytest.raises(ServiceValidationError, match="Select Majestic Home"),
+        raises_key("action_for_other_beds", ServiceValidationError),
     ):
         await settings(hass, "set", alarm_id=1)
     importing.assert_not_awaited()

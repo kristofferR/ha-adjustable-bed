@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.state_keys import (
     UNDER_BED_LIGHTS_RGB,
 )
 from tests.cheerssleep_vectors import MODELS
+from tests.error_helpers import raises_key
 from tests.test_controller_contract import _FactoryCoordinator
 
 
@@ -569,7 +570,7 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
     entry.mock_state(hass, ConfigEntryState.LOADED)
     try:
         assert _resolve_sided_targets(hass, [right.id], None)[0] == [(pair, "right")]
-        with pytest.raises(ServiceValidationError, match="conflicts"):
+        with raises_key("side_selection_conflict", ServiceValidationError):
             _resolve_sided_targets(hass, [right.id], "left")
         from custom_components.adjustable_bed.beds.cheerssleep.services import register_services
 
@@ -902,12 +903,12 @@ async def test_native_p2_light_desired_state_requires_current_feedback(hass, clo
 
     action = light.async_turn_on if desired else light.async_turn_off
     try:
-        with pytest.raises(ServiceValidationError, match="unknown"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await action()
         assert frames(c) == []
         if ctrl.model.split:
             report(not desired, selected=2)
-            with pytest.raises(ServiceValidationError, match="unknown"):
+            with raises_key("light_state_unknown", ServiceValidationError):
                 await action()
             assert light.is_on is None
         report(desired)
@@ -921,10 +922,10 @@ async def test_native_p2_light_desired_state_requires_current_feedback(hass, clo
         ] * 4
         assert frames(c) == expected
         assert light.is_on is not desired  # No optimistic state after the write.
-        with pytest.raises(ServiceValidationError, match="Awaiting"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await action()
         report(not desired)  # A stale pre-toggle echo cannot admit a second toggle.
-        with pytest.raises(ServiceValidationError, match="Awaiting"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await action()
         assert frames(c) == expected
         report(desired)
@@ -933,7 +934,7 @@ async def test_native_p2_light_desired_state_requires_current_feedback(hass, clo
         ctrl.on_disconnect()
         await ctrl.start_notify()
         report(not desired)  # Callback from the old physical session is ignored.
-        with pytest.raises(ServiceValidationError, match="unknown"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await action()
         assert frames(c) == expected
     finally:
@@ -1075,7 +1076,7 @@ async def test_native_rgb_turn_on_uses_guarded_power_before_color(hass, clock, k
     light.async_get_last_state = AsyncMock(return_value=None)
     await light.async_added_to_hass()
     try:
-        with pytest.raises(ServiceValidationError, match="unknown"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await light.async_turn_on(rgb_color=(9, 8, 7))
         assert not frames(c) and not light.is_on
         callback = c.client.start_notify.call_args.args[1]
@@ -1089,7 +1090,7 @@ async def test_native_rgb_turn_on_uses_guarded_power_before_color(hass, clock, k
             + ["ee02050509080700c0"] * 3
             + ["ee0205aa00000000c0"] * 4
         )
-        with pytest.raises(ServiceValidationError, match="Awaiting"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await light.async_turn_on(rgb_color=(9, 8, 7))
         assert len(frames(c)) == 14
         data[4:7] = bytes((9, 8, 7))
@@ -1179,7 +1180,7 @@ async def test_native_paired_lights_keep_independent_feedback_and_action_sides(h
             + ["ee010500000000bbc0"] * 4
         )
         report(0xAA, False)  # Stale left echo must not acknowledge the pending toggle.
-        with pytest.raises(ServiceValidationError, match="Awaiting"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await lights["left"].async_turn_on()
         assert lights["right"].is_on is True
         report(0xAA, True)
@@ -1191,7 +1192,7 @@ async def test_native_paired_lights_keep_independent_feedback_and_action_sides(h
         await ctrl.start_notify()
         report(0xBB, True)  # Old callback is tied to the previous physical link.
         assert lights["left"].is_on is None and lights["right"].is_on is None
-        with pytest.raises(ServiceValidationError, match="unknown"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await lights["right"].async_turn_on()
     finally:
         for light in lights.values():
@@ -1256,17 +1257,17 @@ async def test_native_paired_rgb_off_waits_for_shared_receiver_feedback(hass, cl
     data = bytearray.fromhex("eed00000112233000100003c0100000001")
     toggle = ["ee01050002000000c0"] * 3 + ["ee01050000000000c0"] * 4
     try:
-        with pytest.raises(ServiceValidationError, match="unknown"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await lights["left"].async_turn_off()
         assert not frames(transport)
         callback(None, data)
         assert all(light.is_on for light in lights.values())
         await lights["left"].async_turn_off()
         assert frames(transport) == toggle
-        with pytest.raises(ServiceValidationError, match="Awaiting"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await lights["right"].async_turn_off()
         callback(None, data)  # An old on report cannot acknowledge the pending off.
-        with pytest.raises(ServiceValidationError, match="Awaiting"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await lights["right"].async_turn_off()
         assert frames(transport) == toggle
         data[16] = 0
@@ -1279,7 +1280,7 @@ async def test_native_paired_rgb_off_waits_for_shared_receiver_feedback(hass, cl
         await ctrl.start_notify()
         data[16] = 1
         callback(None, data)  # Previous-session feedback cannot re-enable either light.
-        with pytest.raises(ServiceValidationError, match="unknown"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await lights["right"].async_turn_off()
         assert frames(transport) == toggle
     finally:

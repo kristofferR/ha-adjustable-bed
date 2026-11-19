@@ -5,9 +5,9 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...paired_coordinator import BedChild
 from ...services import (
@@ -37,25 +37,21 @@ async def handle_leggett_sleep_timer(call: ServiceCall) -> None:
     if start and minutes is None:
         from ...services import _invalid
 
-        raise _invalid("timer_minutes_required", "Starting a timer requires minutes")
+        raise _invalid("timer_minutes_required")
     memory_num = call.data.get(ATTR_PRESET, 1)
     label = "Leggett sleep timers"
 
     def check(target: BedChild, controller: BedController) -> None:
         leggett = controller_as(controller, LeggettOkinController)
         if leggett is None or not leggett.supports_sleep_timer:
-            raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
+            raise invalid("feature_not_supported", device_name=target.name, feature=label)
         if not start:
             return
         if memory_num not in leggett.sleep_timer_memory_options:
-            raise ServiceValidationError(
-                f"Device '{target.name}' does not support sleep action {memory_num}"
-            )
+            raise invalid("feature_not_supported", device_name=target.name, feature=f"sleep action {memory_num}")
         options = leggett.sleep_timer_duration_options
         if options and minutes not in options:
-            raise ServiceValidationError(
-                f"Device '{target.name}' requires a sleep duration from {options} minutes"
-            )
+            raise invalid("choose_one_of", device_name=target.name, options=", ".join(map(str, options)) + " minutes")
 
     async def timer(controller: LeggettOkinController) -> None:
         if start:

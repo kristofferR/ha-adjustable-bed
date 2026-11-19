@@ -42,6 +42,7 @@ from custom_components.adjustable_bed.validators import (
     is_valid_variant_for_bed_type,
 )
 from tests.conftest import make_controller_mock
+from tests.error_helpers import raises_key
 from tests.test_adjustable_lumbar import make_controller
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_malouf_app_entities import configure_entity_runtime
@@ -161,7 +162,7 @@ def _service_target(profile=BED_TYPE_ADJUSTABLE_LUMBAR):
 
 @pytest.mark.parametrize(
     ("control", "error"),
-    [("save_lounge", None), ("massage_stop", "does not support held control"), ("tv", "does not support held control")],
+    [("save_lounge", None), ("massage_stop", "held_control_not_supported"), ("tv", "held_control_not_supported")],
 )
 async def test_hold_service_preflights_before_writing(hass, control, error):
     await async_register_services(hass)
@@ -172,7 +173,7 @@ async def test_hold_service_preflights_before_writing(hass, control, error):
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         if error:
-            with pytest.raises(ServiceValidationError, match=error):
+            with raises_key(error, ServiceValidationError):
                 await hass.services.async_call(
                     DOMAIN, "hold_control", call, blocking=True
                 )
@@ -195,7 +196,7 @@ async def test_hold_service_refuses_a_mixed_selection_before_any_write(hass):
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(lumbar, SIDE_BOTH), (other, SIDE_BOTH)], []),
         ),
-        pytest.raises(ServiceValidationError, match="has no held controls"),
+        raises_key("held_controls_not_supported", ServiceValidationError),
     ):
         await hass.services.async_call(
             DOMAIN,

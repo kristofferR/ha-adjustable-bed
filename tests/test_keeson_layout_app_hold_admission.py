@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordin
 from custom_components.adjustable_bed.paired_devices import child_device_info
 from custom_components.adjustable_bed.profiles.keeson import app_profile
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 from .test_keeson_layout_app import coordinator as mock_transport
 
@@ -211,7 +212,7 @@ async def test_hold_preflight_failure_or_cancellation_never_admits(
             await service
         resume_preflight.set()
     else:
-        with pytest.raises(ServiceValidationError, match="unable to connect"):
+        with raises_key("bed_unavailable", ServiceValidationError):
             await service
 
     assert held == []

@@ -7,9 +7,9 @@ from decimal import Decimal, InvalidOperation
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...services import (
     ATTR_DURATION,
@@ -48,9 +48,7 @@ async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
 
     def validate(controller: LogicdataAppController) -> None:
         if preset not in controller.held_preset_options:
-            raise ServiceValidationError(
-                f"The selected app profile cannot hold the {preset} preset"
-            )
+            raise invalid("not_supported_by_bed", feature=f"holding the {preset} preset")
 
     await _preflight_and_execute(
         _call_targets(call),

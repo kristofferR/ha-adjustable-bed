@@ -189,7 +189,7 @@ async def test_real_pair_preserves_app_and_side(clock, hass, side, fallback):
                     await task
                 error = rejected.value.side_errors[SIDE_LEFT]
                 assert isinstance(error, ServiceValidationError)
-                assert "sequential" in str(error)
+                assert error.translation_key == "hold_needs_concurrent"
         else:
             if fallback:
                 pair._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL

@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_casper_base import char
 
@@ -141,7 +142,7 @@ async def test_renewable_motion_expires_but_programming_never_renews(runtime):
     record = c._command_scheduler.recent_records[-1]
     assert record.kind is CommandKind.HOLD and record.outcome is CommandOutcome.EXPIRED
     client.write_gatt_char.reset_mock()
-    with pytest.raises(ServiceValidationError, match="renewable"):
+    with raises_key("hold_renewal_not_supported", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
             "hold_control",

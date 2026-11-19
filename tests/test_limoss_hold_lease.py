@@ -55,6 +55,7 @@ from custom_components.adjustable_bed.profiles.limoss import (
     LIMOSS_REMOTE,
 )
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.limoss_vectors import FROZEN_BODIES
 
@@ -275,7 +276,7 @@ async def test_an_undeclared_profile_refuses_a_lease_before_writing(bed: Bed) ->
             new_callable=PropertyMock,
             return_value=NO_EXECUTION_CAPABILITIES,
         ),
-        pytest.raises(ServiceValidationError, match="renewable holds"),
+        raises_key("hold_renewal_not_supported", ServiceValidationError),
     ):
         await _hold(bed, 9)
     assert bed.writes == []

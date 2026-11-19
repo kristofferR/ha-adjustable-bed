@@ -5,10 +5,10 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...services import (
     ATTR_ACTION,
@@ -41,9 +41,9 @@ async def handle_solace_audio(call: ServiceCall) -> None:
     track = call.data.get(ATTR_TRACK)
     volume = call.data.get(ATTR_VOLUME)
     if action in {"select", "preview"} and track is None:
-        raise ServiceValidationError(f"Solace audio action '{action}' requires track")
+        raise invalid("field_required", field="a track")
     if action == "set_volume" and volume is None:
-        raise ServiceValidationError("Solace audio action 'set_volume' requires volume")
+        raise invalid("field_required", field="a volume")
     track_value = int(track) if track is not None else 0
     volume_value = int(volume) if volume is not None else 0
 

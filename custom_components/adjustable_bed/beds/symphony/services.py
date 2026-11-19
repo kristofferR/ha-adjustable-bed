@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, TypedDict
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...command_scheduler import PreparedCommandInvalidated
 from ...const import DOMAIN, PAIR_CONNECTION_MODE_SEQUENTIAL, SIDE_BOTH
+from ...errors import rejected
 from ...import_executor import async_import_modules
 from ...paired_coordinator import PairedBedCoordinator
 
@@ -169,7 +169,7 @@ async def _dispatch(
             admissions=admissions,
         )
     except ValueError as error:
-        raise ServiceValidationError(str(error)) from error
+        raise rejected(error) from error
     finally:
         await _release_preflighted(opened)
 

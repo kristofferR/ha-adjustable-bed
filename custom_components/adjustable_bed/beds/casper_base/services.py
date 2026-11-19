@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, cast
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import rejected
 from .protocol import ALARM_MODES, CasperBaseActions, Request
 
 if TYPE_CHECKING:
@@ -88,7 +88,7 @@ async def handle(call: ServiceCall, *, hush: bool = False, luuna: bool = False) 
         try:
             date(request.year, request.month, request.day)
         except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
+            raise rejected(err) from err
     if luuna:
         from ..luuna.services import async_handle_request
 

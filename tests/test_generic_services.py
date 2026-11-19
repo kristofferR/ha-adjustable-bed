@@ -28,6 +28,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 ROOT = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 
@@ -408,7 +409,7 @@ async def test_percentage_bed_without_sliders_accepts_no_set_position_motor() ->
     coordinator.entry = SimpleNamespace(data={"bed_type": BED_TYPE_SLEEP_NUMBER})
     coordinator.capability_controller = controller
     coordinator.disable_angle_sensing = False
-    with pytest.raises(ServiceValidationError, match="Motor 'back' is not valid"):
+    with raises_key("invalid_motor_for_bed_type", ServiceValidationError):
         await services._set_position_plan(coordinator, coordinator, [], "back", 50)
 
 

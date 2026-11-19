@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, Literal, cast
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import rejected
 from ...import_executor import async_import_modules
 from .protocol import FREQUENCIES, PRESETS, FanSide, Request
 
@@ -72,7 +72,7 @@ async def handle_sleeptracker(call: ServiceCall) -> None:
     try:
         request = build_request(call.service, call.data)
     except (ValueError, KeyError) as err:
-        raise ServiceValidationError(str(err)) from err
+        raise rejected(err) from err
     await _preflight_and_execute(
         _call_targets(call),
         SleeptrackerController,

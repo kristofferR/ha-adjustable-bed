@@ -31,6 +31,7 @@ from ...const import (
 )
 from ...controller_factory import create_controller
 from ...coordinator import AdjustableBedCoordinator
+from ...errors import not_ready
 from ...import_executor import async_import_modules
 from ...pairing import KEY_ABSORBED_ENTRY_ID, get_child, is_paired
 
@@ -78,14 +79,14 @@ def _trusted_absorbed_single(
             and descriptor.get("origin_unique_id") != original.unique_id
         )
     ):
-        raise ConfigEntryNotReady("Absorbed bed identity does not match its paired side")
+        raise not_ready("setup_retry")
     coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
     if coordinator is not None and (
         not isinstance(coordinator, AdjustableBedCoordinator)
         or coordinator.entry is not original
         or coordinator.address != child.address
     ):
-        raise ConfigEntryNotReady("Absorbed bed runtime does not match its config entry")
+        raise not_ready("setup_retry")
     return original, coordinator
 
 
@@ -143,7 +144,7 @@ async def async_restore_pairlink_local_sources(
                 await parent.async_remove_child(transfer.side)
             leases = hass.data[DOMAIN][PAIRLINK_LOCAL_PROFILE_LEASES_KEY]
             if leases.get(transfer.adapter) != transfer.owner:
-                raise ConfigEntryNotReady("Pairlink transfer reservation changed before rollback")
+                raise not_ready("setup_retry")
             current = hass.data[DOMAIN].get(entry.entry_id)
             unloaded = (
                 current is None
@@ -151,15 +152,15 @@ async def async_restore_pairlink_local_sources(
                 and entry.state is ConfigEntryState.NOT_LOADED
             )
             if current is not original and not unloaded:
-                raise ConfigEntryNotReady("Pairlink source runtime changed before rollback")
+                raise not_ready("setup_retry")
             leases[transfer.adapter] = entry.entry_id
             if unloaded:
                 if not await hass.config_entries.async_setup(entry.entry_id):
-                    raise ConfigEntryNotReady("Could not reload the original Pairlink local entry")
+                    raise not_ready("setup_retry")
             elif transfer.runtime.is_closed:
                 async with original._command_lock, original._lock:
                     if original._pairlink_runtime is not None:
-                        raise ConfigEntryNotReady("Pairlink source runtime changed during rollback")
+                        raise not_ready("setup_retry")
                     await async_start_paired_pairlink_local_child(
                         hass, original, host_adapter_source=transfer.source,
                         adapter_inventory=inventory,
@@ -207,9 +208,7 @@ async def async_setup_pairlink_local_entry(
 
     host_adapter_source = data.get(CONF_PAIRLINK_HOST_SOURCE)
     if not isinstance(host_adapter_source, str) or not host_adapter_source:
-        raise ConfigEntryNotReady(
-            "Select the exact active local Bluetooth source for Pairlink peripheral mode"
-        )
+        raise not_ready("pairlink_source_required")
 
     adapter_inventory = pairlink_host_adapter_inventory(hass)
     source_matches = [
@@ -221,19 +220,15 @@ async def async_setup_pairlink_local_entry(
         or not source_matches[0].active
         or re.fullmatch(r"hci[0-9]+", source_matches[0].adapter) is None
     ):
-        raise ConfigEntryNotReady(
-            "The selected Pairlink source must map to one active local BlueZ adapter"
-        )
+        raise not_ready("pairlink_source_required")
     adapter = source_matches[0].adapter
 
     leases = hass.data[DOMAIN].setdefault(PAIRLINK_LOCAL_PROFILE_LEASES_KEY, {})
     if not isinstance(leases, dict):
-        raise ConfigEntryNotReady("Pairlink local profile ownership state is unavailable")
+        raise not_ready("setup_retry")
     current_owner = leases.get(adapter)
     if current_owner is not None and current_owner != entry.entry_id:
-        raise ConfigEntryNotReady(
-            "Another Adjustable Bed entry already owns a Pairlink local profile on this adapter"
-        )
+        raise not_ready("pairlink_adapter_in_use")
     leases[adapter] = entry.entry_id
     entry.async_on_unload(
         lambda: release_pairlink_local_profile_lease(
@@ -267,7 +262,7 @@ async def async_setup_pairlink_local_entry(
             ),
         )
         if not isinstance(controller, ReveriePairlinkController):
-            raise ConfigEntryNotReady("Pairlink factory returned an incompatible controller")
+            raise not_ready("setup_retry")
         coordinator._controller = controller
         await controller.async_start_peripheral(
             host_adapter_source=host_adapter_source,
@@ -285,9 +280,7 @@ async def async_setup_pairlink_local_entry(
             raise
         if isinstance(err, ConfigEntryNotReady):
             raise
-        raise ConfigEntryNotReady(
-            f"Could not start Pairlink peripheral on the selected local Bluetooth source: {err}"
-        ) from err
+        raise not_ready("pairlink_start_failed", error=err) from err
     return True
 
 
@@ -317,9 +310,7 @@ async def async_preflight_paired_pairlink_local_roles(
             continue
         source = data.get(CONF_PAIRLINK_HOST_SOURCE)
         if not isinstance(source, str) or not source:
-            raise ConfigEntryNotReady(
-                f"Select an exact active local Bluetooth source for the {side} Pairlink child"
-            )
+            raise not_ready("pairlink_source_required")
         matches = [item for item in inventory if item.source == source]
         if (
             len(matches) != 1
@@ -327,18 +318,14 @@ async def async_preflight_paired_pairlink_local_roles(
             or not matches[0].active
             or re.fullmatch(r"hci[0-9]+", matches[0].adapter) is None
         ):
-            raise ConfigEntryNotReady(
-                f"The {side} Pairlink source must map to one active local BlueZ adapter"
-            )
+            raise not_ready("pairlink_source_required")
         adapter = matches[0].adapter
         owner = f"{entry.entry_id}:{side}:{child.address.upper()}"
         selected.append((side, child, source, adapter, owner))
 
     adapters = [item[3] for item in selected]
     if len(set(adapters)) != len(adapters):
-        raise ConfigEntryNotReady(
-            "Paired Pairlink local children need distinct unambiguous BlueZ adapters"
-        )
+        raise not_ready("pairlink_source_required")
     if not selected:
         return inventory, selected, transfers
 
@@ -349,7 +336,7 @@ async def async_preflight_paired_pairlink_local_roles(
     domain_data = hass.data.setdefault(DOMAIN, {})
     leases = domain_data.setdefault(PAIRLINK_LOCAL_PROFILE_LEASES_KEY, {})
     if not isinstance(leases, dict):
-        raise ConfigEntryNotReady("Pairlink local profile ownership state is unavailable")
+        raise not_ready("setup_retry")
     for side, _child, source, adapter, owner in selected:
         current_owner = leases.get(adapter)
         original, coordinator = originals[side]
@@ -364,16 +351,14 @@ async def async_preflight_paired_pairlink_local_roles(
                 or runtime.host_adapter_path != f"/org/bluez/{adapter}"
                 or {**original.data, **original.options}.get(CONF_PAIRLINK_ROLE) != PAIRLINK_ROLE_PERIPHERAL
             ):
-                raise ConfigEntryNotReady(
-                    "Another Adjustable Bed entry already owns a Pairlink local profile on this adapter"
-                )
+                raise not_ready("pairlink_adapter_in_use")
             transfers.append(PairlinkLocalLeaseTransfer(
                 side, coordinator, original, runtime, source, adapter, owner,
             ))
         elif coordinator is not None and coordinator._pairlink_runtime is not None:
             runtime = coordinator._pairlink_runtime
             if runtime.peripheral_backend is not None:
-                raise ConfigEntryNotReady("Absorbed local backend has no matching source lease")
+                raise not_ready("setup_retry")
 
     for _side, _child, _source, adapter, owner in selected:
         leases[adapter] = owner
@@ -398,7 +383,7 @@ async def async_start_paired_pairlink_local_child(
 
     address = child.entry.data.get(CONF_ADDRESS)
     if not isinstance(address, str):
-        raise ConfigEntryNotReady("Paired Pairlink child has no physical address")
+        raise not_ready("setup_retry")
     service_info = bluetooth.async_last_service_info(hass, address, connectable=True)
     manufacturer_data = (
         getattr(service_info, "manufacturer_data", None) if service_info is not None else None
@@ -415,7 +400,7 @@ async def async_start_paired_pairlink_local_child(
         ),
     )
     if not isinstance(controller, ReveriePairlinkController):
-        raise ConfigEntryNotReady("Pairlink factory returned an incompatible child controller")
+        raise not_ready("setup_retry")
     child._controller = controller
     await controller.async_start_peripheral(
         host_adapter_source=host_adapter_source,

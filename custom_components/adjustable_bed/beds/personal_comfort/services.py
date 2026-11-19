@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...command_scheduler import CommandOutcome, current_command_context
 from ...const import DOMAIN, PAIR_CONNECTION_MODE_CONCURRENT, SIDE_BOTH
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...paired_coordinator import PairedBedCoordinator
 from ...services import (
@@ -171,10 +171,7 @@ async def handle_sequence(call: ServiceCall) -> None:
 
             await _execute_sided(parent, scope, execute, admission=admission)
     except (ValueError, TypeError, NotImplementedError, ConnectionError) as error:
-        raise ServiceValidationError(
-            translation_domain=DOMAIN,
-            translation_key="personal_comfort_sequence",
-        ) from error
+        raise invalid("personal_comfort_sequence") from error
     finally:
         await _release_preflighted(preflighted)
 

@@ -89,6 +89,7 @@ from .const import (
 )
 from .download import register_download
 from .entity_runtime import controller_side_scope
+from .errors import invalid, rejected
 from .execution import HOLD_CEILING_MS
 from .import_executor import async_import_modules
 from .paired_coordinator import (
@@ -113,6 +114,8 @@ if TYPE_CHECKING:
     from .beds.limoss.remote import LimossRemoteController
     from .beds.svane.controller import SvaneHoldAdmission
 
+# Bed service modules build their errors with this name.
+_invalid = invalid
 _LOGGER = logging.getLogger(__name__)
 
 # A service target: a single bed's coordinator, or a paired bed's parent.
@@ -290,11 +293,7 @@ def _resolve_sided_target(
             if domain == DOMAIN
         }
         if inferred_side is None and not identifiers.intersection(parent_identifiers):
-            raise ServiceValidationError(
-                "The selected bed side is unavailable",
-                translation_domain=DOMAIN,
-                translation_key="side_unavailable",
-            )
+            raise invalid("side_unavailable")
     return coordinator, inferred_side
 
 
@@ -324,12 +323,7 @@ def _resolve_sided_targets(
             and explicit_side is not None
             and explicit_side != inferred_side
         ):
-            raise ServiceValidationError(
-                f"The selected {inferred_side} child device conflicts with side {explicit_side}",
-                translation_domain=DOMAIN,
-                translation_key="side_selection_conflict",
-                translation_placeholders={"inferred_side": inferred_side, "side": explicit_side},
-            )
+            raise invalid("side_selection_conflict", inferred_side=inferred_side, side=explicit_side)
         key = id(coordinator)
         if key not in by_key:
             by_key[key] = (coordinator, set())
@@ -352,16 +346,6 @@ def _resolve_sided_targets(
     return targets, missing
 
 
-def _invalid(key: str, message: str, **placeholders: object) -> ServiceValidationError:
-    """Build a translated validation error; ``message`` is the English fallback."""
-    return ServiceValidationError(
-        message,
-        translation_domain=DOMAIN,
-        translation_key=key,
-        translation_placeholders={name: str(value) for name, value in placeholders.items()},
-    )
-
-
 def _whole_number(value: object) -> int:
     """Accept a whole number, also as 2.0 or "2"; reject Booleans and fractions."""
     if isinstance(value, str) and value.strip().isdigit():
@@ -373,7 +357,7 @@ def _whole_number(value: object) -> int:
         or (isinstance(value, float) and not math.isfinite(value))
         or value != int(value)
     ):
-        raise _invalid("whole_number_required", f"Use a whole number instead of {value!r}", value=value)
+        raise invalid("whole_number_required", value=value)
     return int(value)
 
 
@@ -381,23 +365,13 @@ def _validation_error(err: ValueError) -> ServiceValidationError:
     """Turn a controller's rejection into a validation error, translated where it can be."""
     key = getattr(err, "translation_key", None)
     if key is None:
-        return ServiceValidationError(str(err))
-    return ServiceValidationError(
-        str(err),
-        translation_domain=DOMAIN,
-        translation_key=key,
-        translation_placeholders=getattr(err, "translation_placeholders", None),
-    )
+        return rejected(err)
+    return invalid(key, **(getattr(err, "translation_placeholders", None) or {}))
 
 
 def _missing_device_error(device_id: str) -> ServiceValidationError:
     """Build the error for a service target that resolved to no bed."""
-    return ServiceValidationError(
-        f"Could not find Adjustable Bed device with ID {device_id}",
-        translation_domain=DOMAIN,
-        translation_key="device_not_found",
-        translation_placeholders={"device_id": device_id},
-    )
+    return invalid("device_not_found", device_id=device_id)
 
 
 def _get_support_bundle_target_from_device(
@@ -428,12 +402,7 @@ def _get_support_bundle_target_from_device(
             # The synthetic parent device (pair_id identifier) covers both
             # sides; a bundle is per-address, so make the user pick one
             # side's device instead of silently capturing only the first.
-            raise ServiceValidationError(
-                f"{entry.title} is a combined bed; choose one side's device for the support bundle.",
-                translation_domain=DOMAIN,
-                translation_key="bundle_needs_side_for_paired",
-                translation_placeholders={"device_name": entry.title},
-            )
+            raise invalid("bundle_needs_side_for_paired", device_name=entry.title)
     if not isinstance(address, str):
         return None
 
@@ -455,9 +424,8 @@ def _get_support_bundle_target_from_device(
 def _require_disconnected_transport_ready(target: BedChild, controller: BedController) -> None:
     """Refuse a controller whose selected non-central transport cannot take commands."""
     if controller.requires_disconnected_transport and not controller.disconnected_transport_ready:
-        raise _invalid(
+        raise invalid(
             "pairlink_not_ready",
-            f"Device '{target.name}' is not ready over Pairlink yet; wait, then try again",
             device_name=target.name,
         )
 
@@ -482,9 +450,8 @@ async def _get_controller_for_service(
         return capability_controller
 
     if coordinator.pairlink_peripheral:
-        raise _invalid(
+        raise invalid(
             "pairlink_not_ready",
-            f"Device '{coordinator.name}' is not ready over Pairlink yet; wait, then try again",
             device_name=coordinator.name,
         )
 
@@ -495,9 +462,8 @@ async def _get_controller_for_service(
     connected = await coordinator.async_ensure_connected(reset_timer=False)
     controller = coordinator.controller
     if not connected or controller is None:
-        raise _invalid(
+        raise invalid(
             "bed_unavailable",
-            f"Device '{coordinator.name}' is currently unavailable (unable to connect)",
             device_name=coordinator.name,
         )
     return controller
@@ -543,20 +509,11 @@ def _command_targets(coordinator: BedTarget, side: str) -> list[BedChild]:
             return list(coordinator.children.values())
         child = coordinator.child_for_side(side)
         if child is None:
-            raise ServiceValidationError(
-                f"This bed has no {side} side",
-                translation_domain=DOMAIN,
-                translation_key="side_not_available",
-                translation_placeholders={"side": side},
-            )
+            raise invalid("side_not_available", side=side)
         return [child]
 
     if side != SIDE_BOTH:
-        raise ServiceValidationError(
-            "This bed has no separate sides; leave the side empty",
-            translation_domain=DOMAIN,
-            translation_key="side_not_supported",
-        )
+        raise invalid("side_not_supported")
     return [coordinator]
 
 
@@ -614,24 +571,23 @@ async def _execute_sided_translated(
     command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
     **kwargs: Any,
 ) -> None:
-    """Run ``_execute_sided``, surfacing a combined bed's translated side error.
+    """Run ``_execute_sided``, surfacing a combined bed's one translated side error.
 
-    A combined bed wraps each side's failure in one untranslated error. Raise
-    the first translated side error instead, with the combined one as cause.
+    A combined bed wraps each side's failure in one combined error. When only
+    one thing failed and it is a request the user can correct, raise that error
+    instead, with the combined one as cause. More failures keep the combined
+    error, which names each one.
     """
     try:
         await _execute_sided(coordinator, side, command_fn, **kwargs)
     except PairedSideError as err:
-        translated = next(
-            (
-                error
-                for error in err.side_errors.values()
-                if isinstance(error, ServiceValidationError) and error.translation_key
-            ),
-            None,
-        )
-        if translated is not None:
-            raise translated from err
+        [*errors] = err.side_errors.values()
+        if (
+            len(errors) == 1
+            and isinstance(errors[0], ServiceValidationError)
+            and errors[0].translation_key
+        ):
+            raise errors[0] from err
         raise
 
 
@@ -677,7 +633,7 @@ class _LiveCheck:
 
 
 def _bed_changed() -> ServiceValidationError:
-    return _invalid("bed_changed", "The bed changed while the action was being checked; try again")
+    return invalid("bed_changed")
 
 
 def _pair_mode(parent: BedTarget) -> str | None:
@@ -817,17 +773,7 @@ def _require_preset_slot(target: BedChild, controller: BedController, preset: in
     """Reject a memory preset beyond the controller's slot count."""
     slot_count = controller.memory_slot_count
     if preset > slot_count:
-        raise ServiceValidationError(
-            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
-            f"Preset {preset} is not available for this bed type.",
-            translation_domain=DOMAIN,
-            translation_key="invalid_preset_number",
-            translation_placeholders={
-                "device_name": target.name,
-                "max_preset": str(slot_count),
-                "requested_preset": str(preset),
-            },
-        )
+        raise invalid("invalid_preset_number", device_name=target.name, max_preset=str(slot_count), requested_preset=str(preset))
 
 
 async def handle_goto_preset(call: ServiceCall) -> None:
@@ -858,24 +804,14 @@ async def handle_goto_preset(call: ServiceCall) -> None:
 
     def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_memory_presets:
-            raise ServiceValidationError(
-                f"Device '{target.name}' does not support memory presets",
-                translation_domain=DOMAIN,
-                translation_key="memory_presets_not_supported",
-                translation_placeholders={"device_name": target.name},
-            )
+            raise invalid("memory_presets_not_supported", device_name=target.name)
         _require_preset_slot(target, controller, preset)
         if hold_ms is not None and not controller.supports_held_memory_recall:
-            raise ServiceValidationError(
-                f"Device '{target.name}' does not accept a preset hold duration",
-                translation_domain=DOMAIN,
-                translation_key="preset_duration_not_supported",
-                translation_placeholders={"device_name": target.name},
-            )
+            raise invalid("preset_duration_not_supported", device_name=target.name)
         try:
             controller.validate_memory_recall(preset)
         except ValueError as error:
-            raise ServiceValidationError(str(error)) from error
+            raise rejected(error) from error
 
     async def recall(controller: BedController) -> None:
         if hold_ms is None:
@@ -926,12 +862,7 @@ async def handle_save_preset(call: ServiceCall) -> None:
 
     def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_memory_programming:
-            raise ServiceValidationError(
-                f"Device '{target.name}' does not support programming memory presets",
-                translation_domain=DOMAIN,
-                translation_key="memory_programming_not_supported",
-                translation_placeholders={"device_name": target.name},
-            )
+            raise invalid("memory_programming_not_supported", device_name=target.name)
         _require_preset_slot(target, controller, preset)
 
     def validate_remote_slot(controller: LimossRemoteController) -> None:
@@ -988,12 +919,7 @@ async def handle_stop_all(call: ServiceCall) -> None:
     stop_errors = [r for r in results if isinstance(r, BaseException)]
 
     if missing_device_ids:
-        raise ServiceValidationError(
-            f"Could not find Adjustable Bed device(s) with ID(s): {', '.join(missing_device_ids)}",
-            translation_domain=DOMAIN,
-            translation_key="devices_not_found",
-            translation_placeholders={"device_ids": ", ".join(missing_device_ids)},
-        )
+        raise invalid("devices_not_found", device_ids=", ".join(missing_device_ids))
 
     if stop_errors:
         # Every target was attempted; surface the first failure.
@@ -1030,21 +956,11 @@ def _position_config(
         not bed_type_has_position_feedback(bed_type, protocol_variant)
         and not supports_direct_position_control
     ):
-        raise ServiceValidationError(
-            f"Device '{coordinator.name}' does not report motor positions",
-            translation_domain=DOMAIN,
-            translation_key="position_feedback_not_supported",
-            translation_placeholders={"device_name": coordinator.name},
-        )
+        raise invalid("position_feedback_not_supported", device_name=coordinator.name)
 
     # Validate angle sensing is enabled
     if coordinator.disable_angle_sensing:
-        raise ServiceValidationError(
-            f"Angle sensing is disabled for device '{coordinator.name}'",
-            translation_domain=DOMAIN,
-            translation_key="angle_sensing_disabled",
-            translation_placeholders={"device_name": coordinator.name},
-        )
+        raise invalid("angle_sensing_disabled", device_name=coordinator.name)
 
     # Define motor configurations.
     # Direct setters with percentage sliders (Kaidi, BOX25 and others) and
@@ -1141,17 +1057,7 @@ def _position_config(
 
     # Validate motor is valid for this bed
     if motor not in valid_motors:
-        raise ServiceValidationError(
-            f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
-            f"Valid motors: {', '.join(sorted(valid_motors))}",
-            translation_domain=DOMAIN,
-            translation_key="invalid_motor_for_bed_type",
-            translation_placeholders={
-                "motor": motor,
-                "device_name": coordinator.name,
-                "valid_motors": ", ".join(sorted(valid_motors)),
-            },
-        )
+        raise invalid("invalid_motor_for_bed_type", motor=motor, device_name=coordinator.name, valid_motors=", ".join(sorted(valid_motors)))
 
     config = motor_configs[motor]
     max_value = config["max_value"]
@@ -1163,18 +1069,7 @@ def _position_config(
             if controller.reports_percentage_position is True
             else POSITION_UNIT_DEGREES
         )
-        raise ServiceValidationError(
-            f"Position {position} is out of range for motor '{motor}'. "
-            f"Valid range: 0-{max_value}{unit}",
-            translation_domain=DOMAIN,
-            translation_key="invalid_position_range",
-            translation_placeholders={
-                "position": str(position),
-                "motor": motor,
-                "max_value": str(max_value),
-                "unit": unit,
-            },
-        )
+        raise invalid("invalid_position_range", position=str(position), motor=motor, max_value=str(max_value), unit=unit)
 
     return config
 
@@ -1211,8 +1106,8 @@ async def handle_set_positions(call: ServiceCall) -> None:
     ]
     motors = [motor for motor, _ in requests]
     if len(motors) != len(set(motors)):
-        raise _invalid(
-            "duplicate_motor_positions", "Each motor may appear only once; remove the duplicate"
+        raise invalid(
+            "duplicate_motor_positions"
         )
     _LOGGER.info(
         "Service set_positions called: motors=%s (side=%s)",
@@ -1370,17 +1265,7 @@ async def _timed_move_plan(
 
         # Validate motor is valid for this bed
         if motor not in valid_motors:
-            raise ServiceValidationError(
-                f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
-                f"Valid motors: {', '.join(sorted(valid_motors))}",
-                translation_domain=DOMAIN,
-                translation_key="invalid_motor_for_bed_type",
-                translation_placeholders={
-                    "motor": motor,
-                    "device_name": coordinator.name,
-                    "valid_motors": ", ".join(sorted(valid_motors)),
-                },
-            )
+            raise invalid("invalid_motor_for_bed_type", motor=motor, device_name=coordinator.name, valid_motors=", ".join(sorted(valid_motors)))
 
         spec = motor_specs[motor]
         if hold_lease:
@@ -1392,7 +1277,7 @@ async def _timed_move_plan(
         try:
             controller.validate_timed_movement(motor, direction, duration_ms)
         except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
+            raise rejected(err) from err
 
         if (
             shared_motors is not None
@@ -1429,7 +1314,7 @@ async def _timed_move_plan(
             try:
                 controller.validate_hold_control(hold_control, duration_ms)
             except ValueError as err:
-                raise ServiceValidationError(str(err)) from err
+                raise rejected(err) from err
 
         move_fn = spec.open_fn if direction == "up" else spec.close_fn
         stop_fn = spec.stop_fn
@@ -1444,13 +1329,11 @@ async def _timed_move_plan(
 
         if hold_control is not None:
             if hold_control not in controller.held_control_options:
-                raise ServiceValidationError(
-                    f"Motor '{motor}' declares unsupported held control '{hold_control}'"
-                )
+                raise invalid("action_rejected", reason=f"Motor '{motor}' declares unsupported held control '{hold_control}'")
             try:
                 controller.validate_hold_control(hold_control, duration_ms)
             except ValueError as err:
-                raise ServiceValidationError(str(err)) from err
+                raise rejected(err) from err
 
         # Preserve the controller's repeat planning and cadence. An elapsed
         # ceiling below also bounds slow acknowledged writes and proxy latency.
@@ -1561,9 +1444,8 @@ def _hold_lease(call: ServiceCall, action: str, duration_ms: int) -> HoldLease |
     if owner is None:
         return None
     if not MIN_HOLD_LEASE_MS <= duration_ms <= MAX_HOLD_LEASE_MS:
-        raise _invalid(
+        raise invalid(
             "hold_lease_duration",
-            f"A held move lasts {MIN_HOLD_LEASE_MS} to {MAX_HOLD_LEASE_MS} ms per call",
             min=MIN_HOLD_LEASE_MS,
             max=MAX_HOLD_LEASE_MS,
         )
@@ -1591,9 +1473,8 @@ def _require_hold_execution(
     scoped to some controls refuses the others exactly as an undeclared one.
     """
     if controller.execution.hold_for(control) is None:
-        raise _invalid(
+        raise invalid(
             "hold_renewal_not_supported",
-            f"Device '{target.name}' does not support renewable holds; use a fixed duration",
             device_name=target.name,
         )
 
@@ -1612,14 +1493,13 @@ async def _async_with_hold_lease(
     extend the reservation and a STOP before admission ends it.
     """
     if len(targets) != 1:
-        raise _invalid("hold_one_bed", "A held move can control one bed at a time")
+        raise invalid("hold_one_bed")
     _require_hold_topology(targets)
     coordinator, side = targets[0]
     if (isinstance(coordinator, PairedBedCoordinator) and side == SIDE_BOTH
             and coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL):
-        raise _invalid(
+        raise invalid(
             "hold_needs_concurrent",
-            "Holding both sides needs both beds connected at once; select one side",
         )
     # Key every claim by the target that executes the command: a native
     # single-address Both runs once on its combined side view.
@@ -1629,8 +1509,8 @@ async def _async_with_hold_lease(
         else _command_targets(coordinator, side)
     )
     if len(executing) > 1 and isinstance(coordinator, PairedBedCoordinator) and not coordinator.supports_simultaneous_side_holds:
-        raise _invalid(
-            "hold_select_side", "This bed holds one side at a time; select Left or Right"
+        raise invalid(
+            "hold_select_side"
         )
     physical = [(target, resource_for(target)) for target in executing]
     if (
@@ -1639,9 +1519,8 @@ async def _async_with_hold_lease(
         and len(executing) > 1
         and coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
     ):
-        raise _invalid(
+        raise invalid(
             "hold_needs_concurrent",
-            "Holding both sides needs both beds connected at once; select one side",
         )
     claims = [
         target.claim_hold_lease(lease, resource=resource, reserve=False)
@@ -1653,22 +1532,22 @@ async def _async_with_hold_lease(
                 target.claim_hold_lease(lease, resource=resource)
         return
     if HoldClaim.STALE in claims:
-        raise _invalid("hold_ended", "This held move has already stopped; start a new one")
+        raise invalid("hold_ended")
     modes = {
         controller.execution.hold
         for target, _resource in physical
         if (controller := target.capability_controller) is not None
     }
     if len(modes) > 1:
-        raise _invalid(
-            "hold_modes_differ", "The two sides hold moves differently; hold one side at a time"
+        raise invalid(
+            "hold_modes_differ"
         )
     for target, resource in physical:
         target.claim_hold_lease(lease, resource=resource)
     try:
         await start()
     except StaleHoldLease as err:
-        raise ServiceValidationError(str(err)) from err
+        raise rejected(err) from err
     finally:
         for target, resource in physical:
             target.release_hold_claim(lease, resource=resource)
@@ -1781,8 +1660,8 @@ async def _async_timed_move(
                     plans[_plan_key(target)][3] for target in _command_targets(coordinator, side)
                 }
             if actual_resources != set(admission.resources):
-                raise _invalid(
-                    "bed_changed", "The bed's motors changed while checking the move; try again"
+                raise invalid(
+                    "bed_changed"
                 )
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
@@ -1924,9 +1803,8 @@ async def _preflight_capability[T](
     def check(target: BedChild, controller: BedController) -> None:
         family = controller_as(controller, interface)
         if family is None or (supported is not None and not supported(family)):
-            raise _invalid(
+            raise invalid(
                 "feature_not_supported",
-                f"Device '{target.name}' does not support {label}",
                 device_name=target.name,
                 feature=label,
             )
@@ -1944,9 +1822,8 @@ def _family_command[T](
     async def execute(controller: BedController) -> None:
         family = controller_as(controller, interface)
         if family is None:
-            raise _invalid(
+            raise invalid(
                 "feature_not_supported",
-                f"This bed does not support {label}",
                 device_name="This bed",
                 feature=label,
             )
@@ -2075,12 +1952,7 @@ def _profile_route(
         for target in _command_targets(coordinator, side)
     }
     if len(selected) > 1:
-        raise ServiceValidationError(
-            f"These beds use different app profiles; call {action} separately for each",
-            translation_domain=DOMAIN,
-            translation_key="mixed_profile_targets",
-            translation_placeholders={"action": action},
-        )
+        raise invalid("mixed_profile_targets", action=action)
     return next(iter(selected), None)
 
 
@@ -2110,12 +1982,7 @@ async def handle_rename(call: ServiceCall) -> None:
 
     def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_device_rename:
-            raise ServiceValidationError(
-                f"Device '{target.name}' does not support Bluetooth rename",
-                translation_domain=DOMAIN,
-                translation_key="device_rename_not_supported",
-                translation_placeholders={"device_name": target.name},
-            )
+            raise invalid("device_rename_not_supported", device_name=target.name)
         # Each app has its own name rule; reject before any target writes.
         controller.validate_device_rename(name)
 
@@ -2188,9 +2055,8 @@ async def handle_hold_control(call: ServiceCall) -> None:
     lease = _hold_lease(call, control, duration_ms)
     if lease is not None:
         if route == "svane" or control == "floor_hold":
-            raise _invalid(
+            raise invalid(
                 "control_hold_renewal_not_supported",
-                "This control does not support renewable holds; use a fixed duration",
             )
         held = lease
         await _async_with_hold_lease(
@@ -2227,24 +2093,9 @@ def _require_held_control(
     """Reject a control the target's controller does not declare, listing valid ones."""
     options = controller.held_control_options
     if not options:
-        raise ServiceValidationError(
-            f"Device '{target.name}' has no held controls",
-            translation_domain=DOMAIN,
-            translation_key="held_controls_not_supported",
-            translation_placeholders={"device_name": target.name},
-        )
+        raise invalid("held_controls_not_supported", device_name=target.name)
     if control not in options:
-        raise ServiceValidationError(
-            f"Device '{target.name}' does not support held control '{control}'. "
-            f"Valid controls: {', '.join(options)}",
-            translation_domain=DOMAIN,
-            translation_key="held_control_not_supported",
-            translation_placeholders={
-                "device_name": target.name,
-                "control": control,
-                "valid_controls": ", ".join(options),
-            },
-        )
+        raise invalid("held_control_not_supported", device_name=target.name, control=control, valid_controls=", ".join(options))
 
 
 def _require_hold_topology(targets: list[tuple[BedTarget, str]]) -> None:
@@ -2255,9 +2106,8 @@ def _require_hold_topology(targets: list[tuple[BedTarget, str]]) -> None:
         and coordinator.connection_mode == "sequential"
         for coordinator, side in targets
     ):
-        raise _invalid(
+        raise invalid(
             "hold_needs_concurrent",
-            "Hold one side at a time with a sequential Bluetooth connection",
         )
 
 
@@ -2368,15 +2218,9 @@ def _alarm_request(call: ServiceCall) -> AlarmRequest:
     enabled = data[ATTR_ENABLED]
     alarm_time = data.get(ATTR_TIME)
     if enabled and alarm_time is None:
-        raise ServiceValidationError(
-            "Choose an alarm time", translation_domain=DOMAIN, translation_key="alarm_time_required"
-        )
+        raise invalid("alarm_time_required")
     if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
-        raise ServiceValidationError(
-            "Alarm times are set in whole minutes",
-            translation_domain=DOMAIN,
-            translation_key="alarm_time_whole_minutes",
-        )
+        raise invalid("alarm_time_whole_minutes")
     optional = {name: data[name] for name in ALARM_OPTIONAL_FIELDS if name in data}
     if "weekdays" in optional:
         optional["weekdays"] = tuple(sorted({ALARM_WEEKDAYS.index(day) for day in optional["weekdays"]}))
@@ -2395,45 +2239,20 @@ def _check_alarm(
     """Validate one physical target's alarm and return it with its defaults filled in."""
     capability = controller.alarm_capability
     if capability is None:
-        raise ServiceValidationError(
-            f"Device '{device_name}' has no alarm",
-            translation_domain=DOMAIN,
-            translation_key="alarm_not_supported",
-            translation_placeholders={"device_name": device_name},
-        )
+        raise invalid("alarm_not_supported", device_name=device_name)
     for name in given:
         if not capability.accepts(name):
-            raise ServiceValidationError(
-                f"Device '{device_name}' has no alarm option '{name}'. Remove it and try again",
-                translation_domain=DOMAIN,
-                translation_key="alarm_option_not_supported",
-                translation_placeholders={"device_name": device_name, "option": name},
-            )
+            raise invalid("alarm_option_not_supported", device_name=device_name, option=name)
     wake_action = alarm.wake_action if "wake_action" in given else None
     if wake_action is not None and wake_action not in capability.wake_actions:
-        raise ServiceValidationError(
-            f"Device '{device_name}' cannot wake with '{wake_action}'. "
-            f"Choose one of: {', '.join(capability.wake_actions)}",
-            translation_domain=DOMAIN,
-            translation_key="alarm_wake_action_not_supported",
-            translation_placeholders={
-                "device_name": device_name,
-                "wake_action": wake_action,
-                "wake_actions": ", ".join(capability.wake_actions),
-            },
-        )
+        raise invalid("alarm_wake_action_not_supported", device_name=device_name, wake_action=wake_action, wake_actions=", ".join(capability.wake_actions))
     if (
         alarm.enabled
         and capability.requires_wake_action
         and wake_action is None
         and "mattress_side" not in given
     ):
-        raise ServiceValidationError(
-            f"Choose a wake action for '{device_name}'",
-            translation_domain=DOMAIN,
-            translation_key="alarm_wake_action_required",
-            translation_placeholders={"device_name": device_name},
-        )
+        raise invalid("alarm_wake_action_required", device_name=device_name)
     limits = (
         ("slot", alarm.slot, capability.first_slot, capability.slots),
         ("head_massage_level", alarm.head_massage_level, 0, capability.massage_levels),
@@ -2442,65 +2261,22 @@ def _check_alarm(
     )
     for name, value, low, high in limits:
         if name in given and not low <= value <= high:
-            raise ServiceValidationError(
-                f"Device '{device_name}' accepts {name} {low} to {high}",
-                translation_domain=DOMAIN,
-                translation_key="alarm_value_out_of_range",
-                translation_placeholders={
-                    "device_name": device_name,
-                    "option": name,
-                    "min": str(low),
-                    "max": str(high),
-                },
-            )
+            raise invalid("alarm_value_out_of_range", device_name=device_name, option=name, min=str(low), max=str(high))
     if "massage_duration" in given and alarm.massage_duration not in capability.massage_durations:
-        raise ServiceValidationError(
-            f"Device '{device_name}' accepts massage durations of "
-            f"{', '.join(map(str, capability.massage_durations))} minutes",
-            translation_domain=DOMAIN,
-            translation_key="alarm_massage_duration_not_supported",
-            translation_placeholders={
-                "device_name": device_name,
-                "durations": ", ".join(map(str, capability.massage_durations)),
-            },
-        )
+        raise invalid("alarm_massage_duration_not_supported", device_name=device_name, durations=", ".join(map(str, capability.massage_durations)))
     if "massage_zone" in given and alarm.massage_zone not in capability.massage_zones:
-        raise ServiceValidationError(
-            f"Device '{device_name}' cannot massage '{alarm.massage_zone}' at wake-up",
-            translation_domain=DOMAIN,
-            translation_key="alarm_massage_zone_not_supported",
-            translation_placeholders={"device_name": device_name, "zone": str(alarm.massage_zone)},
-        )
+        raise invalid("alarm_massage_zone_not_supported", device_name=device_name, zone=str(alarm.massage_zone))
     if "mattress_side" in given and alarm.mattress_side not in capability.mattress_sides:
-        raise ServiceValidationError(
-            f"Device '{device_name}' has no mattress alarm on side '{alarm.mattress_side}'",
-            translation_domain=DOMAIN,
-            translation_key="alarm_mattress_side_not_supported",
-            translation_placeholders={
-                "device_name": device_name,
-                "mattress_side": str(alarm.mattress_side),
-            },
-        )
+        raise invalid("alarm_mattress_side_not_supported", device_name=device_name, mattress_side=str(alarm.mattress_side))
     if "sound" in given and alarm.sound not in capability.sounds:
-        raise ServiceValidationError(
-            f"Device '{device_name}' cannot play sound '{alarm.sound}'",
-            translation_domain=DOMAIN,
-            translation_key="alarm_sound_not_supported",
-            translation_placeholders={"device_name": device_name, "sound": alarm.sound},
-        )
+        raise invalid("alarm_sound_not_supported", device_name=device_name, sound=alarm.sound)
     resolved = _with_bed_defaults(alarm, capability, given)
     if (
         resolved.enabled
         and resolved.wake_action in capability.confirm_actions
         and not resolved.confirm_custom_position
     ):
-        raise ServiceValidationError(
-            f"Waking '{device_name}' at its saved position can be unsafe at extreme angles. "
-            "Check the saved position, then turn on the confirmation",
-            translation_domain=DOMAIN,
-            translation_key="alarm_confirmation_required",
-            translation_placeholders={"device_name": device_name},
-        )
+        raise invalid("alarm_confirmation_required", device_name=device_name)
     controller.validate_alarm(resolved)
     return resolved
 
@@ -2574,12 +2350,7 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         _check_alarm(target.name, controller, alarm, given)
         capability = cast("AlarmCapability", controller.alarm_capability)
         if not alarm.enabled and capability.time_to_turn_off and ATTR_TIME not in call.data:
-            raise ServiceValidationError(
-                f"Choose the time of the alarm to turn off on {target.name}",
-                translation_domain=DOMAIN,
-                translation_key="alarm_time_required_to_turn_off",
-                translation_placeholders={"device_name": target.name},
-            )
+            raise invalid("alarm_time_required_to_turn_off", device_name=target.name)
         plans[id(target)] = capability
 
     preflighted = await _preflight_each(targets, check)
@@ -2795,12 +2566,7 @@ async def handle_sync_clock(call: ServiceCall) -> None:
 
     def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_clock_sync:
-            raise ServiceValidationError(
-                f"Device '{target.name}' does not support clock synchronization",
-                translation_domain=DOMAIN,
-                translation_key="clock_sync_not_supported",
-                translation_placeholders={"device_name": target.name},
-            )
+            raise invalid("clock_sync_not_supported", device_name=target.name)
 
         controller.validate_clock_sync()
 
@@ -2893,26 +2659,14 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
         address = str(target_address).upper().replace("-", ":")
         if not is_valid_mac_address(address):
-            raise ServiceValidationError(
-                f"Invalid MAC address format: {target_address}. "
-                "Please provide a valid MAC address in the format "
-                "XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX.",
-                translation_domain=DOMAIN,
-                translation_key="invalid_mac_address",
-                translation_placeholders={"address": str(target_address)},
-            )
+            raise invalid("invalid_mac_address", address=str(target_address))
         _LOGGER.info(
             "Generating support bundle for unconfigured device at %s",
             address,
         )
     elif device_ids:
         if len(device_ids) > 1:
-            raise ServiceValidationError(
-                "Support bundle generation only supports one configured device at a time. "
-                "Select a single device or use target_address for an unconfigured bed.",
-                translation_domain=DOMAIN,
-                translation_key="multiple_device_targets_not_supported",
-            )
+            raise invalid("multiple_device_targets_not_supported")
         # str() narrows the untyped service-call value for the str-typed parameter
         selected_device_id = str(device_ids[0])
         target = _get_support_bundle_target_from_device(hass, selected_device_id)
@@ -2927,12 +2681,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         else:
             raise _missing_device_error(selected_device_id)
     else:
-        raise ServiceValidationError(
-            "No device_id or target_address was provided. "
-            "Please specify either a configured device or a target MAC address.",
-            translation_domain=DOMAIN,
-            translation_key="missing_target",
-        )
+        raise invalid("missing_target")
 
     assert address is not None
 

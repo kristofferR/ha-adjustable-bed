@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
@@ -69,13 +69,13 @@ async def handle_control(call: ServiceCall) -> None:
     motor_group = str(group).upper() if group is not None else None
     if action == "app_mode":
         if control is not None or query is not None or (transmit_mode is None and motor_group is None):
-            raise ServiceValidationError("Choose a transmit mode or motor group")
+            raise invalid("field_required", field="a transmit mode or motor group")
     elif transmit_mode is not None or motor_group is not None:
-        raise ServiceValidationError("Transmit mode and motor group belong to the app_mode action")
+        raise invalid("field_not_used", field="the transmit mode and motor group")
     elif (action == "query" and (query is None or control is not None)) or (
         action != "query" and (control is None or query is not None)
     ):
-        raise ServiceValidationError("Choose a setting to read, or a control to run")
+        raise invalid("field_required", field="a setting to read, or a control to run")
     await async_import_modules(call.hass, "beds.richmat_mh.app_controller")
     from .app_controller import RichmatMHAppController
 
@@ -87,9 +87,9 @@ async def handle_control(call: ServiceCall) -> None:
             for target in _command_targets(parent, side):
                 controller = controller_as(target.capability_controller, RichmatMHAppController)
                 if controller is None:
-                    raise ServiceValidationError(f"Device '{target.name}' has no Nisco or MLILY Supreme app profile")
+                    raise invalid("action_for_other_beds", beds="Nisco and MLILY Supreme beds")
                 if motor_group is not None and motor_group not in controller.motor_groups:
-                    raise ServiceValidationError(f"Device '{target.name}' declares no {group} motor group")
+                    raise invalid("feature_not_supported", device_name=target.name, feature=f"the {group} motor group")
                 controllers.append(controller)
         for controller in controllers:
             if transmit_mode is not None:

@@ -5,10 +5,10 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...profiles.sonicsleep import PRESETS
 
@@ -44,11 +44,11 @@ async def handle_request(call: ServiceCall) -> None:
         for child in _command_targets(parent, side):
             controller = child.capability_controller
             if not isinstance(controller, SonicSleepController):
-                raise ServiceValidationError("Select SonicSleep for this action")
+                raise invalid("action_for_other_beds", beds="SonicSleep beds")
             try:
                 controller.validate_request(request)
             except ValueError as error:
-                raise ServiceValidationError(str(error)) from error
+                raise rejected(error) from error
     # Only after every local child/ID/form constraint passes may live queries run.
     preflighted = []
     plans: dict[SonicSleepController, PreparedRequest] = {}
@@ -60,17 +60,16 @@ async def handle_request(call: ServiceCall) -> None:
                     if not isinstance(controller, SonicSleepController):
                         raise _invalid(
                             "bed_changed",
-                            "The bed changed while the action was being checked; try again",
                         )
                     try:
                         plans[controller] = await controller.prepare_plan(request)
                     except ValueError as error:
-                        raise ServiceValidationError(str(error)) from error
+                        raise rejected(error) from error
                     return True
 
                 async def inspect(target):
                     if not await target.async_execute_controller_query(query, cancel_running=False):
-                        raise ServiceValidationError("SonicSleep preflight was interrupted")
+                        raise invalid("action_stopped")
 
                 if isinstance(parent, PairedBedCoordinator):
                     child_side = next(
@@ -89,7 +88,7 @@ async def handle_request(call: ServiceCall) -> None:
 
         async def execute(controller: SonicSleepController) -> None:
             if controller not in plans:
-                raise ServiceValidationError("SonicSleep controller changed after preflight")
+                raise invalid("bed_changed")
             await controller.execute_prepared(plans[controller])
 
         await _execute_preflighted(

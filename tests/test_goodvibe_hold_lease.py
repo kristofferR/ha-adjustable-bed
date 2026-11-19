@@ -37,6 +37,7 @@ from custom_components.adjustable_bed.execution import (
     HOLD_CEILING_MS,
     NO_EXECUTION_CAPABILITIES,
 )
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import intervals, leased_hold, virtual_clock
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_goodvibe_ha import runtime as goodvibe_runtime
@@ -257,7 +258,7 @@ async def test_a_gesture_control_refuses_a_lease_as_an_undeclared_bed_does(
     bed: Any, clock: Any, control: str
 ) -> None:
     hass, _coordinator, writes = bed
-    with pytest.raises(ServiceValidationError, match="does not support renewable holds"):
+    with raises_key("hold_renewal_not_supported", ServiceValidationError):
         await _hold_control(hass, control, 1)
     assert writes == []
     # Its finite gesture is unchanged: one short operand when released early.
@@ -286,7 +287,7 @@ async def test_the_memory_control_moves_its_positions_out_of_the_lease(
     assert "hold_lease_mode" not in buttons[MEMORY_1].extra_state_attributes
     assert buttons[E3RM_HEAD_UP].extra_state_attributes["hold_lease_mode"] == "stream"
     writes.clear()
-    with pytest.raises(ServiceValidationError, match="does not support renewable holds"):
+    with raises_key("hold_renewal_not_supported", ServiceValidationError):
         await _hold_control(hass, MEMORY_1, 1)
     assert writes == []
     assert controller.choices.memory

@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_state import ControllerState
 from custom_components.adjustable_bed.profiles import onlysnore as app
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_controller_contract import _FactoryCoordinator
 
@@ -568,7 +569,7 @@ async def test_real_registry_parent_and_child_alarm_targets_keep_side_and_confli
         )
         physical["left"][1].set_alarm.assert_awaited_once()
         physical["right"][1].set_alarm.assert_not_awaited()
-        with pytest.raises(Exception, match="conflicts"):
+        with raises_key("side_selection_conflict", Exception):
             await hass.services.async_call(
                 DOMAIN,
                 "onlysnore_set_alarm",
@@ -615,7 +616,7 @@ async def test_stop_during_lazy_import_rejects_all_targets_before_execution(hass
             "custom_components.adjustable_bed.beds.onlysnore.services.async_import_modules",
             side_effect=import_then_stop,
         ),
-        pytest.raises(Exception, match="STOP"),
+        raises_key("bed_changed", Exception),
     ):
         await hass.services.async_call(
             DOMAIN, "onlysnore_set_alarm", {"device_id": "one", "time": "07:30"}, blocking=True
@@ -641,7 +642,7 @@ async def test_sequential_both_lease_rejects_before_claim_and_finite_buttons_rem
     parent.children = dict(zip(("left", "right"), sides, strict=True))
     parent._targets_for.return_value = [("left", sides[0]), ("right", sides[1])]
     start = AsyncMock()
-    with pytest.raises(Exception, match="concurrent|sequential|Both"):
+    with raises_key("hold_needs_concurrent", Exception):
         await _async_with_hold_lease(
             [(parent, "both")],
             HoldLease(owner="test", generation=1, action="back_up", duration_s=1),

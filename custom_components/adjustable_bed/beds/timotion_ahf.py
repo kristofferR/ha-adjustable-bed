@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
-from homeassistant.exceptions import HomeAssistantError
 
 from ..const import (
     TIMOTION_AHF_NOTIFY_CHAR_UUID,
@@ -25,6 +24,7 @@ from ..const import (
     TIMOTION_AHF_WRITE_CHAR_UUID,
 )
 from ..controller_state import StateKey
+from ..errors import failed
 from ..execution import ExecutionCapabilities
 from .base import BedController
 from .catalog_buttons import Kind, catalog_button
@@ -663,7 +663,7 @@ class TiMOTIONAhfController(BedController):
         try:
             await self._send_action(_CONTROL_ACTION_BY_KEY[key])
         except ValueError as err:
-            raise HomeAssistantError(str(err)) from err
+            raise failed("action_rejected", reason=err) from err
 
     # Covers created by earlier releases keep their entity IDs (#615, #669,
     # #670). Their axis names are legacy labels for app Controls 1-5.
@@ -735,7 +735,7 @@ def _press_action(key: str) -> Callable[[BedController], Coroutine[Any, Any, Non
 
     async def press(controller: BedController) -> None:
         if not isinstance(controller, TiMOTIONAhfController):
-            raise HomeAssistantError("The active controller is not TiMOTION AHF")
+            raise failed("bed_changed")
         await controller.run_action(key)
 
     return press
