@@ -3530,6 +3530,27 @@
       },
       "betterliving2_all_sections_down": {
         "name": "Lower all sections"
+      },
+      "enso_head_massage_increase": {
+        "name": "Increase head massage"
+      },
+      "enso_head_massage_decrease": {
+        "name": "Decrease head massage"
+      },
+      "enso_foot_massage_increase": {
+        "name": "Increase foot massage"
+      },
+      "enso_foot_massage_decrease": {
+        "name": "Decrease foot massage"
+      },
+      "enso_massage_level": {
+        "name": "Cycle massage intensity"
+      },
+      "enso_timer_massage_page": {
+        "name": "Cycle massage timer"
+      },
+      "enso_massage_mode": {
+        "name": "Cycle massage mode"
       }
     },
     "cover": {
@@ -5053,6 +5074,9 @@
       },
       "paramount_current_height": {
         "name": "Current bed height"
+      },
+      "enso_massage_timer": {
+        "name": "Massage timer"
       }
     },
     "light": {
@@ -5470,6 +5494,9 @@
       },
       "under_bed_light_state": {
         "name": "Under-bed light state"
+      },
+      "enso_light": {
+        "name": "Light"
       }
     },
     "number": {
@@ -9848,6 +9875,21 @@
     },
     "pair_transfer_failed": {
       "message": "The combined bed {name} could not take over either of its beds. Home Assistant will try again; if it keeps failing, separate the beds and combine them again."
+    },
+    "enso_session_changed": {
+      "message": "The bed disconnected or its Bluetooth session changed. Reconnect and try again."
+    },
+    "enso_gatt_missing": {
+      "message": "The bed must expose writable and notification characteristics. Check the selected device."
+    },
+    "enso_control_invalid": {
+      "message": "This control is not available for the selected bed layout."
+    },
+    "enso_name_invalid": {
+      "message": "Enter a Bluetooth name with 1 to 14 characters."
+    },
+    "enso_duration_invalid": {
+      "message": "Choose a hold duration between 1 and 60000 milliseconds."
     }
   },
   "issues": {

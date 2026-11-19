@@ -250,6 +250,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_LINX: replace(_NO_ANGLES_SCOPED, connection_timeout=10.0, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY_SLEEP: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, connection_timeout=8.0),
+    "enso": _NO_ANGLES_SCOPED,
     BED_TYPE_YAMADA: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_BETTERLIVING2: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_CASPER_BASE: _NO_ANGLES,

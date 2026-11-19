@@ -161,6 +161,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "ormatek": SideProfile("OrmatekTechnoSmart", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "nerum": SideProfile("Nerum", variant_owned=True),
     "cheerssleep": SideProfile("CheersSleep"),
+    "enso": SideProfile("Enso Remote", frozenset({CONF_MOTOR_COUNT})),
     "agingplace": SideProfile("Aging in Place / Dawn House"),
     "onlysnore": SideProfile("Snore Monitor 2.3.8"),
     "smart_sleep": SideProfile("OKIN Smart Sleep", variant_owned=True),
