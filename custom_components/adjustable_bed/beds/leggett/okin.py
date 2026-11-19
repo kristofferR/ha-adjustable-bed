@@ -22,7 +22,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
@@ -41,6 +40,7 @@ from ...codec.okin_nframe import (
 )
 from ...const import CONF_LEGGETT_APP_PROFILE, DEVICE_INFO_READ_TIMEOUT, LEGGETT_APP_DEFAULT_PROFILE
 from ...controller_state import StateKey
+from ...errors import failed
 from ...profiles.okin_nframe import (
     LEGGETT_FLAT_HOLD_MS,
     LEGGETT_PROFILES,
@@ -1034,10 +1034,7 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
             key == "control_mode_press_and_hold"
             and not self.supports_control_mode_press_and_hold
         ):
-            raise HomeAssistantError(
-                "Press-and-hold mode selection is disabled for Prodigy CE: "
-                "the SET+FLAT command can factory-reset the bed and erase its presets"
-            )
+            raise failed("prodigy_hold_mode_blocked")
         mode = self.profile.control_mode
         assert mode is not None
         command = self.profile.keys[key]
@@ -1112,10 +1109,7 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
             await self.lights_toggle()
             return
         if self._light_is_on is None:
-            raise HomeAssistantError(
-                "Light state is unknown. Use Toggle Light or the physical remote "
-                "to obtain a current status notification."
-            )
+            raise failed("light_state_unknown")
         if self._light_is_on == is_on:
             return
         try:
@@ -1127,7 +1121,7 @@ class LeggettOkinController(ProfileExecution[OkinNFrameProfile], BedController):
         except TimeoutError as err:
             self._light_is_on = None
             self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)
-            raise HomeAssistantError("The bed did not confirm the requested light state") from err
+            raise failed("light_not_confirmed") from err
         except (asyncio.CancelledError, BleakError, ConnectionError):
             self._light_is_on = None
             self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, None)

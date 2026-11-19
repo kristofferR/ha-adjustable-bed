@@ -37,6 +37,7 @@ from custom_components.adjustable_bed.execution import (
 )
 from custom_components.adjustable_bed.position_estimate import EstimateState
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_controller_contract import _ContractController
 
@@ -207,7 +208,7 @@ async def test_late_renewal_after_stop_is_refused_without_motion(runtime, clock)
 async def test_controller_without_hold_rejects_a_lease(runtime, clock) -> None:
     hass, coordinator = runtime
     controller = _install(coordinator, NO_EXECUTION_CAPABILITIES)
-    with pytest.raises(ServiceValidationError, match="renewable holds"):
+    with raises_key("hold_renewal_not_supported", ServiceValidationError):
         await _timed(hass, 1)
     assert controller.frames == []
     # The refused start ended its generation; the next press uses a new one.
@@ -252,7 +253,7 @@ async def test_hold_control_lease_renews_and_rejects_long_leases(runtime, clock)
             blocking=True,
         )
 
-    with pytest.raises(ServiceValidationError, match="30000 ms"):
+    with raises_key("hold_lease_duration", ServiceValidationError):
         await hold(45)
     began = clock.time()
     start = asyncio.create_task(hold(0.1))
@@ -318,7 +319,7 @@ async def test_native_both_claims_once_on_the_executing_side_view() -> None:
     both = MagicMock()
     both.claim_hold_lease.return_value = HoldClaim.START
     paired = MagicMock(spec=PairedBedCoordinator)
-    paired._targets_for.return_value = [("left", both), ("right", both)]
+    paired.targets_for.return_value = [("left", both), ("right", both)]
     started = []
 
     async def start() -> None:

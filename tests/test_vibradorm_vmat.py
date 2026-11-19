@@ -10,10 +10,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from custom_components.adjustable_bed.beds.vibradorm import vmat_setup
 from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
 from custom_components.adjustable_bed.beds.vibradorm.vmat_setup import (
     DIS,
     DIS_FIELDS,
+    VMAT_SETTLE_S,
     validate_vmat_roles,
 )
 from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
@@ -31,6 +33,8 @@ from custom_components.adjustable_bed.profiles.vibradorm import (
     VMAT_REMOTES,
     validate_vibradorm_app_profile,
 )
+
+pytestmark = pytest.mark.usefixtures("instant_vmat_settle")
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/vibradorm_vmat_vectors.json").read_text())
 
@@ -81,7 +85,9 @@ async def test_ordinary_notification_startup_remains_cancellable(cancel_kind):
         hold = asyncio.Event()
 
         async def sleep(delay):
-            assert delay == 0.5
+            # The module skips the settle wait; the shipped value stays 500 ms.
+            assert delay == vmat_setup.VMAT_SETTLE_S
+            assert VMAT_SETTLE_S == 0.5
             settling.set()
             await hold.wait()
 

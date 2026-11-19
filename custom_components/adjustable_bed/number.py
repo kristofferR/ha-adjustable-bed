@@ -17,7 +17,6 @@ from homeassistant.components.number import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ServiceValidationError
 
 from .bed_traits import bed_type_has_position_feedback
 from .beds.entity_specs import ControllerNumberSpec, PositionNumberSpec
@@ -34,7 +33,6 @@ from .const import (
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_PROTOCOL_VARIANT,
-    DOMAIN,
     SIDE_BOTH,
 )
 from .controller_state import ControllerState, StateKey, sided
@@ -42,12 +40,14 @@ from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope, named_for_side, own_sides
 from .entity_sweep import PlatformEntities, records_entities
+from .errors import invalid
 from .paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
     entity_runtimes,
 )
 from .position_estimate_entities import async_setup_estimate_numbers
+from .runtime_data import entry_runtime
 from .state_keys import (
     FAN_LEVEL,
     LIGHT_LEVEL,
@@ -333,7 +333,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed number entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     # Opt-in travel-time estimates and saved positions (#601).
     async_setup_estimate_numbers(hass, entry, async_add_entities)
     for runtime in entity_runtimes(coordinator):
@@ -576,14 +576,14 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         if not _valid_controller_number_value(self._spec, value):
-            raise ServiceValidationError("Value is outside this controller's range or step")
+            raise invalid("value_out_of_range", min=self._spec.native_min_value, max=self._spec.native_max_value, step=self._spec.native_step)
 
         async def set_value(ctrl: BedController) -> None:
             live = next(
                 (spec for spec in ctrl.controller_number_specs if spec.key == self._spec.key), None
             )
             if live is None or not _valid_controller_number_value(live, value):
-                raise ServiceValidationError("Controller no longer supports this value")
+                raise invalid("option_unavailable")
             await live.set_fn(ctrl, value)
 
         await self._coordinator.async_execute_controller_command(set_value)
@@ -935,7 +935,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
                 self.native_max_value,
             )
         ):
-            raise ServiceValidationError("Value is outside this light slider's integer range")
+            raise invalid("value_out_of_range", min=self.native_min_value, max=self.native_max_value, step=1)
         level = round(value)
 
         _LOGGER.info(
@@ -953,7 +953,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
                     value, ctrl.light_level_min, ctrl.light_level_max
                 )
             ):
-                raise ServiceValidationError("Value is outside the current light slider's range")
+                raise invalid("value_out_of_range", min=ctrl.light_level_min, max=ctrl.light_level_max, step=1)
             number_spec = next(
                 (
                     spec
@@ -964,9 +964,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
             )
             if number_spec is not None:
                 if not _valid_controller_number_value(number_spec, value):
-                    raise ServiceValidationError(
-                        "Value is outside the current controller's light level range"
-                    )
+                    raise invalid("value_out_of_range", min=number_spec.native_min_value, max=number_spec.native_max_value, step=number_spec.native_step)
                 await number_spec.set_fn(ctrl, value)
                 return
             await self.entity_description.set_fn(ctrl, level)

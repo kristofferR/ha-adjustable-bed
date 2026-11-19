@@ -5,7 +5,9 @@ light) or gets a new unique ID gets a new registry row. Before the platforms
 add entities, the old row is replaced by a new one with its object ID and the
 settings the user gave it.
 Automations cannot be rewritten across a domain change, so a repair lists the
-ones that still name an old entity.
+ones that still name an old entity. The new row remembers the old entity ID in
+its own options, so the repair is raised again after every startup, also after
+a restart that cut the first one short, until nothing names the old entity.
 """
 
 from __future__ import annotations
@@ -122,6 +124,11 @@ NOW_ENABLED: Final[tuple[tuple[str, str], ...]] = (
 )
 
 ISSUE_PREFIX: Final = "retyped_entities_"
+# Kept in the new registry row's options (namespace DOMAIN) until nothing names
+# the old entity: its entity ID and registry ID, and whether only the options changed.
+RETYPED_FROM: Final = "retyped_from"
+RETYPED_FROM_ID: Final = "retyped_from_id"
+RETYPED_OPTIONS: Final = "retyped_options_changed"
 
 
 @callback
@@ -132,33 +139,30 @@ def async_carry_over_retyped_entities(
 ) -> None:
     """Give each retyped entity's new row the old row's ID and user settings."""
     registry = er.async_get(hass)
-    moved: list[Moved] = []
     for runtime in entity_runtimes(coordinator):
         for retype in RETYPES:
             if runtime.bed_type in retype.keep_on:
                 continue
-            new = _carry_over(
+            _carry_over(
                 registry,
                 entry,
                 retype,
                 runtime.entity_unique_id(retype.old_key),
                 runtime.entity_unique_id(retype.new_key),
             )
-            if new is not None:
-                moved.append(new)
         for domain, key in NOW_ENABLED:
             entity_id = registry.async_get_entity_id(domain, DOMAIN, runtime.entity_unique_id(key))
             row = registry.async_get(entity_id) if entity_id else None
             if row is not None and row.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
                 registry.async_update_entity(row.entity_id, disabled_by=None)
-    if moved:
 
-        @callback
-        def report(_hass: HomeAssistant) -> None:
-            _async_report_references(hass, entry, moved)
+    @callback
+    def report(_hass: HomeAssistant) -> None:
+        _async_report_references(hass, entry)
 
-        # Automations and scripts load after integrations at startup.
-        async_at_started(hass, report)
+    # Automations and scripts load after integrations at startup. Every startup
+    # reports from the rows' own record, so a cut-short first one loses nothing.
+    async_at_started(hass, report)
 
 
 @callback
@@ -189,7 +193,11 @@ def _reported_moves(hass: HomeAssistant, entry: ConfigEntry) -> list[dict[str, s
     except ValueError:
         return []
     return [
-        {key: str(move[key]) for key in ("line", "domain", "unique_id")}
+        {
+            key: str(move[key])
+            for key in ("line", "domain", "unique_id", "kept", "tracked")
+            if key in move
+        }
         for move in moves
         if isinstance(move, dict) and {"line", "domain", "unique_id"} <= move.keys()
     ]
@@ -221,36 +229,24 @@ def _async_update_issue(
     )
 
 
-@dataclass(frozen=True, slots=True)
-class Moved:
-    """An old entity a user's automations may still name, and what replaced it."""
-
-    old_entity_id: str
-    old_registry_id: str
-    new_entity_id: str
-    new_domain: str
-    new_unique_id: str
-    # The same platform with a new unique ID: only the options changed.
-    options_changed: bool
-
-
 def _carry_over(
     registry: er.EntityRegistry,
     entry: ConfigEntry,
     retype: Retype,
     old_unique_id: str,
     new_unique_id: str,
-) -> Moved | None:
+) -> None:
     """Move the old row's identity and user settings to the new entity."""
     old_id = registry.async_get_entity_id(retype.old_domain, DOMAIN, old_unique_id)
     if old_id is None or registry.async_get_entity_id(retype.new_domain, DOMAIN, new_unique_id):
-        return None
+        return
     old = registry.async_get(old_id)
     assert old is not None
     if retype.old_domain == retype.new_domain:
         # The row itself carries over, with its entity ID and every setting.
         registry.async_update_entity(old_id, new_unique_id=new_unique_id)
-        return Moved(old_id, old.id, old_id, retype.new_domain, new_unique_id, options_changed=True)
+        _remember(registry, old_id, old_id, old.id, options_changed=True)
+        return
     object_id = split_entity_id(old_id)[1]
     taken = registry.async_is_registered(f"{retype.new_domain}.{object_id}")
     user = er.RegistryEntryDisabler.USER
@@ -286,40 +282,106 @@ def _carry_over(
             registry.async_update_entity_options(new.entity_id, namespace, dict(options))
     # Nothing builds the old entity any more.
     registry.async_remove(old_id)
-    return Moved(
-        old_id, old.id, new.entity_id, retype.new_domain, new_unique_id, options_changed=False
+    _remember(registry, new.entity_id, old_id, old.id, options_changed=False)
+
+
+@callback
+def _remember(
+    registry: er.EntityRegistry,
+    entity_id: str,
+    old_entity_id: str,
+    old_registry_id: str,
+    *,
+    options_changed: bool,
+) -> None:
+    """Record on the new row which entity it replaced, until nothing names that one."""
+    row = registry.async_get(entity_id)
+    assert row is not None
+    registry.async_update_entity_options(
+        entity_id,
+        DOMAIN,
+        {
+            **row.options.get(DOMAIN, {}),
+            RETYPED_FROM: old_entity_id,
+            RETYPED_FROM_ID: old_registry_id,
+            RETYPED_OPTIONS: options_changed,
+        },
     )
 
 
 @callback
-def _async_report_references(hass: HomeAssistant, entry: ConfigEntry, moved: list[Moved]) -> None:
-    """Raise one repair per bed naming the automations and scripts to update."""
+def _async_report_references(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Raise one repair per bed naming the automations and scripts to update.
+
+    Built from the rows that still record an old entity. A row whose old entity
+    nothing names any more forgets it, so its line and the repair go away. A
+    row that kept its entity ID and only changed its options is still named by
+    automations the user already fixed, so its line is raised once and kept.
+    """
     from homeassistant.components.automation import automations_with_entity  # noqa: PLC0415
     from homeassistant.components.script import scripts_with_entity  # noqa: PLC0415
 
     registry = er.async_get(hass)
-    moves = _reported_moves(hass, entry)
-    for item in moved:
-        # A replacement the bed does not provide was already swept.
-        if registry.async_get_entity_id(item.new_domain, DOMAIN, item.new_unique_id) is None:
+    reported = _reported_moves(hass, entry)
+    rows = er.async_entries_for_config_entry(registry, entry.entry_id)
+    recorded = {
+        (row.domain, row.unique_id)
+        for row in rows
+        if isinstance(row.options.get(DOMAIN, {}).get(RETYPED_FROM), str)
+    }
+    # Kept lines stay, and so do lines an earlier version raised without a row
+    # record. A tracked line whose record is gone was resolved: it goes, even if
+    # a crash saved the cleared record before the issue.
+    moves = [
+        move
+        for move in reported
+        if move.get("kept")
+        or not move.get("tracked")
+        and (move["domain"], move["unique_id"]) not in recorded
+    ]
+    for row in rows:
+        options = row.options.get(DOMAIN, {})
+        old_entity_id = options.get(RETYPED_FROM)
+        if not isinstance(old_entity_id, str):
             continue
+        references = (old_entity_id, options.get(RETYPED_FROM_ID))
         users = {
             user
-            for reference in (item.old_entity_id, item.old_registry_id)
+            for reference in references
+            if isinstance(reference, str)
             for user in (
                 *automations_with_entity(hass, reference),
                 *scripts_with_entity(hass, reference),
             )
         }
-        if not users:
-            continue
+        options_changed = bool(options.get(RETYPED_OPTIONS))
+        if not users or options_changed:
+            # Reported once (an options change), or nothing names the old entity.
+            registry.async_update_entity_options(
+                row.entity_id,
+                DOMAIN,
+                {
+                    key: value
+                    for key, value in options.items()
+                    if key not in (RETYPED_FROM, RETYPED_FROM_ID, RETYPED_OPTIONS)
+                },
+            )
+            if not users:
+                continue
         change = (
-            f"{item.old_entity_id} (its options changed)"
-            if item.options_changed
-            else f"{item.old_entity_id} → {item.new_entity_id}"
+            f"{old_entity_id} (its options changed)"
+            if options_changed
+            else f"{old_entity_id} → {row.entity_id}"
         )
         line = f"- {change}: {', '.join(sorted(users))}"
         if all(move["line"] != line for move in moves):
-            moves.append({"line": line, "domain": item.new_domain, "unique_id": item.new_unique_id})
-    if moves != _reported_moves(hass, entry):
+            moves.append(
+                {
+                    "line": line,
+                    "domain": row.domain,
+                    "unique_id": row.unique_id,
+                    **({"kept": "1"} if options_changed else {"tracked": "1"}),
+                }
+            )
+    if moves != reported:
         _async_update_issue(hass, entry, moves)

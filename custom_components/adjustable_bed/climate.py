@@ -17,12 +17,12 @@ from homeassistant.const import Platform, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 
 from .card import CARD_CLIMATE
-from .const import DOMAIN
 from .controller_state import AnyStateKey, ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_runtime import EntityRuntime, named_for_side, own_sides
 from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
+from .runtime_data import entry_runtime
 from .state_keys import (
     FOOTWARMING_HVAC_MODE,
     FOOTWARMING_LEVEL,
@@ -173,7 +173,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed climate entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     async_add_entities([
         entity
         for runtime in entity_runtimes(coordinator)

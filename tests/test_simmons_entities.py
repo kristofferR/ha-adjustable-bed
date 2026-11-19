@@ -24,9 +24,10 @@ async def test_buttons_follow_the_bed_layout(hass, variant, present, absent):
         "preset_memory_1",
         "program_memory_1",
         "toggle_light",
-        "simmons_sync_clock",
         "simmons_refresh_alarms",
     } <= keys
+    # The shared sync_clock action sets the clock (test_clock_sync_frames).
+    assert "simmons_sync_clock" not in keys
     assert not {key for key in keys if key.startswith("massage")}
     app_buttons = {
         entity.unique_id: entity.translation_key

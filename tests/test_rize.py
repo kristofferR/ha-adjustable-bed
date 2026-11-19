@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.profiles.kaidi import (
     rize_advertisement,
     validate_rize_profile,
 )
+from tests.error_helpers import raises_key
 from tests.rize_vectors import COMMANDS, VECTORS
 from tests.test_isleep import make_controller as make_isleep
 from tests.test_isleep import notify, packets
@@ -346,7 +347,7 @@ async def test_program_service_rejects_ambiguous_pair_before_admission(hass):
     call = ServiceCall(hass, const.DOMAIN, "rize_program_preset", {"preset": "book", "confirm": True})
     pair = MagicMock(spec=PairedBedCoordinator)
     with patch.object(rize_services, "_call_targets", return_value=[(pair,"both")]), patch.object(rize_services, "_preflight_capability", new_callable=AsyncMock) as preflight:
-        with pytest.raises(ServiceValidationError, match="one physical"):
+        with raises_key("one_bed_only", ServiceValidationError):
             await rize_services.handle_rize_program_preset(call)
         preflight.assert_not_awaited()
 

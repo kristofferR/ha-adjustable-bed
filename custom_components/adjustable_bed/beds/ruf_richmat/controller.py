@@ -6,6 +6,8 @@ import asyncio
 import re
 from typing import TYPE_CHECKING, Final
 
+from homeassistant.const import EntityCategory
+
 from ...alarm import AlarmCapability, AlarmError
 from ...alarm import AlarmRequest as SharedAlarm
 from ...card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
@@ -717,14 +719,14 @@ class RufRichmatController(RichmatMhController):
                     "mdi:alarm",
                     attribute_keys=(CALENDAR_ALARMS,),
                     card=CARD_UTILITY,
-                    entity_registry_enabled_default=True,
+                    entity_registry_enabled_default=False,
                 )
             )
         if self._normal_ready:
             for side in ("left", "right"):
                 key = _mattress_alarm_key(side)
                 specs.append(
-                    ControllerStateSensorSpec(key, key, key, "mdi:alarm", card=CARD_UTILITY, entity_registry_enabled_default=True)
+                    ControllerStateSensorSpec(key, key, key, "mdi:alarm", card=CARD_UTILITY, entity_registry_enabled_default=False)
                 )
         return tuple(specs)
 
@@ -744,8 +746,11 @@ class RufRichmatController(RichmatMhController):
                             lambda ctrl, option, s=side, f=setting: _invoke(
                                 ctrl, "normal_setting", s, f, option
                             ),
-                            # Each side's settings drive one mattress pad.
+                            # Each side's settings drive one mattress pad; its mode is
+                            # the dashboard control, the other settings are there to enable.
                             card=CARD_MASSAGE,
+                            entity_category=None if setting == "mode" else EntityCategory.CONFIG,
+                            entity_registry_enabled_default=setting == "mode",
                         )
                     )
         return tuple(specs)

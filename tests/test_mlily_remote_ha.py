@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.paired_coordinator import (
     PairedSideProxy,
     SingleAddressPairedCoordinator,
 )
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 
 
@@ -318,7 +319,7 @@ async def test_default_left_intervention_resolves_real_registry_targets_before_a
 
         with patch.object(mlily_services, "async_import_modules", import_after_admission), virtual_clock():
             if selection == "right":
-                with pytest.raises(ServiceValidationError, match="cannot target Right"):
+                with raises_key("left_side_only", ServiceValidationError):
                     await hass.services.async_call(const.DOMAIN, "mlily_remote", data, blocking=True)
                 capture.assert_not_called()
                 assert not frames(c)

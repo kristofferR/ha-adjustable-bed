@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...alarm import WEEKDAYS
@@ -19,6 +18,7 @@ from ...const import (
     PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
 )
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...profile_id import profile_route_from_data
 
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
     from ...command_scheduler import CommandHandle, CommandRecord
     from ...coordinator import AdjustableBedCoordinator
-    from ...paired_topology import _SequentialCycle
+    from ...paired_topology import SequentialCycle
     from ..base import BedController
 
 
@@ -62,7 +62,7 @@ class _Session:
         return cls(
             receiver.client,
             receiver.controller,
-            receiver._position_connection_generation,
+            receiver.connection_generation,
             getattr(receiver.controller, "_generation", None),
             receiver.client is not None and receiver.client.is_connected,
         )
@@ -92,24 +92,24 @@ class _Owner:
 
     @classmethod
     def capture(cls, receiver: AdjustableBedCoordinator) -> _Owner:
-        scheduler = receiver._command_scheduler
+        scheduler = receiver.command_scheduler
         return cls(
             receiver,
             _route(receiver),
             scheduler.token,
             receiver.stop_epoch,
             scheduler.recent_records,
-            scheduler._active,
+            scheduler.active,
             _Session.capture(receiver),
         )
 
     def check_route(self) -> None:
         if (
             _route(self.receiver) != self.route
-            or self.receiver._command_scheduler.token is not self.token
+            or self.receiver.command_scheduler.token is not self.token
             or self.receiver.stop_epoch != self.stop_epoch
         ):
-            raise ServiceValidationError("BED route, product or STOP ownership changed")
+            raise invalid("bed_changed")
 
     def check_session(
         self,
@@ -134,7 +134,7 @@ class _Owner:
             and getattr(expected.controller, "_generation", 0) > expected.notifications
             and self.receiver.client is None
             and self.receiver.controller is None
-            and self.receiver._position_connection_generation == expected.generation
+            and self.receiver.connection_generation == expected.generation
             and self.receiver.last_disconnect_reason == "sequential_switch"
         ):
             # Only the native one-link cycle may retire this captured session.
@@ -148,7 +148,7 @@ class _Owner:
             and context is not None
             and context.scheduler_token is self.token
             and switch_task is not None
-            and self.receiver._connection_creator_task is switch_task
+            and self.receiver.connection_creator_task is switch_task
         )
         # An admitted offline receiver can construct its first live session.
         # Once bound, later reconnects/replacements are not the admitted owner.
@@ -158,11 +158,11 @@ class _Owner:
             and self.receiver.controller is not None
             and self.receiver.client is not None
             and self.receiver.client.is_connected
-            and self.receiver._position_connection_generation == baseline.generation + 1
+            and self.receiver.connection_generation == baseline.generation + 1
         ):
             self.connected = _Session.capture(self.receiver)
             return
-        raise ServiceValidationError("BED controller or connection changed after alarm preflight")
+        raise invalid("bed_changed")
 
 
 def register_services(hass: HomeAssistant) -> None:
@@ -190,9 +190,7 @@ def register_services(hass: HomeAssistant) -> None:
             physical = tuple(_command_targets(parent, side))
             for child in physical:
                 if not isinstance(child, AdjustableBedCoordinator):
-                    raise ServiceValidationError(
-                        "Snore Monitor alarms require physical BED receivers"
-                    )
+                    raise invalid("action_for_other_beds", beds="Snore Monitor beds")
                 owners.setdefault(child, _Owner.capture(child))
             roster.append(physical)
             if (
@@ -215,45 +213,35 @@ def register_services(hass: HomeAssistant) -> None:
                 tuple(_command_targets(parent, side)) != admitted
                 for (parent, side), admitted in zip(targets, roster, strict=True)
             ):
-                raise ServiceValidationError("BED target roster changed during alarm admission")
+                raise invalid("bed_changed")
             if any(
                 parent.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
                 for parent, _physical, _ready in linked
             ):
-                raise ServiceValidationError(
-                    "BED connection topology changed during alarm admission"
-                )
+                raise invalid("bed_changed")
             if any(
                 parent.connection_mode != PAIR_CONNECTION_MODE_SEQUENTIAL
                 for parent in sequential.values()
             ):
-                raise ServiceValidationError(
-                    "BED connection topology changed during alarm admission"
-                )
+                raise invalid("bed_changed")
 
         check_roster()
         for owner in owners.values():
             owner.check_route()
             if (
                 not owner.initial.matches(owner.receiver)
-                or owner.receiver._command_scheduler.recent_records != owner.records
-                or owner.receiver._command_scheduler._active is not owner.active
+                or owner.receiver.command_scheduler.recent_records != owner.records
+                or owner.receiver.command_scheduler.active is not owner.active
             ):
-                raise ServiceValidationError("BED ownership changed during alarm admission")
+                raise invalid("bed_changed")
         if any(
             _capture_command_admission(parent, side) != admission
             for (parent, side), admission in zip(targets, admissions, strict=True)
         ):
-            raise ServiceValidationError(
-                "BED STOP or pair ownership changed during alarm admission"
-            )
+            raise invalid("bed_changed")
         time = call.data["time"]
         if time.second or time.microsecond:
-            raise ServiceValidationError(
-                "Alarm times are set in whole minutes",
-                translation_domain=DOMAIN,
-                translation_key="alarm_time_whole_minutes",
-            )
+            raise invalid("alarm_time_whole_minutes")
         args: AlarmArguments = {
             "slot": call.data["slot"],
             "enabled": call.data["enabled"],
@@ -267,33 +255,33 @@ def register_services(hass: HomeAssistant) -> None:
         prepared: set[AdjustableBedCoordinator] = set()
         mutation_started = False
 
-        def cycle_for(owner: _Owner) -> _SequentialCycle | None:
+        def cycle_for(owner: _Owner) -> SequentialCycle | None:
             parent = sequential.get(owner.receiver)
             if parent is None:
                 return None
-            cycle = parent._sequential._cycle
+            cycle = parent.sequential_cycle
             if cycle is None or cycle.task is not call_task:
                 return None
-            if not cycle.matches(parent._admission):
-                raise ServiceValidationError("BED pair STOP or ownership changed after preflight")
+            if not parent.cycle_is_current(cycle):
+                raise invalid("bed_changed")
             return cycle
 
         def owner_for(ctrl: OnlySnoreController, *, bind_switch: bool = False) -> _Owner:
             owner = owners.get(ctrl._coordinator)
             if owner is None:
-                raise ServiceValidationError("BED controller belongs to another physical receiver")
+                raise invalid("bed_changed")
             parent = sequential.get(owner.receiver)
             cycle = cycle_for(owner)
             owner.check_session(
                 planned_switch=cycle is not None
                 and parent is not None
-                and owner.receiver in parent._admission.active_children,
+                and parent.is_admitted_child(owner.receiver),
                 bind_switch=bind_switch,
                 switch_task=cycle.task if cycle is not None else None,
             )
             product = owner.route[3]
             if isinstance(product, str) and ctrl.model != product:
-                raise ServiceValidationError("BED controller product changed after alarm admission")
+                raise invalid("bed_changed")
             return owner
 
         def validate(ctrl: OnlySnoreController) -> None:
@@ -304,9 +292,9 @@ def register_services(hass: HomeAssistant) -> None:
         def recheck(admitted: _Owner, *, bind_switch: bool = False) -> None:
             candidate = admitted.receiver.controller or validated.get(admitted.receiver)
             if not isinstance(candidate, OnlySnoreController):
-                raise ServiceValidationError("BED alarm preflight is incomplete")
+                raise invalid("bed_changed")
             if candidate._coordinator is not admitted.receiver:
-                raise ServiceValidationError("BED controller belongs to another physical receiver")
+                raise invalid("bed_changed")
             owner_for(candidate, bind_switch=bind_switch)
             candidate.alarm_frame(**args)
 
@@ -315,7 +303,7 @@ def register_services(hass: HomeAssistant) -> None:
             check_roster()
             owner = owner_for(ctrl, bind_switch=True)
             if owner.receiver.controller is not ctrl:
-                raise ServiceValidationError("BED controller changed after alarm preflight")
+                raise invalid("bed_changed")
             parent = sequential.get(owner.receiver)
             if parent is not None and cycle_for(owner) is not None:
                 for peer in owners.values():

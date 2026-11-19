@@ -66,7 +66,6 @@ async def _execute_zseries_alarm(
                 if live is None:
                     raise _invalid(
                         "feature_not_supported",
-                        f"Device '{target.name}' does not support {label}",
                         device_name=target.name,
                         feature=label,
                     )
@@ -80,21 +79,17 @@ async def _execute_zseries_alarm(
                     if released is False or target.is_connected:
                         raise _invalid(
                             "bed_release_failed",
-                            f"Could not release '{target.name}' before checking the next bed",
                             device_name=target.name,
                         )
                     preflighted[:] = [item for item in preflighted if item[1] is not target]
             if state is None:
                 raise _invalid(
                     "zseries_alarm_unknown",
-                    f"Could not read the manufacturer string of '{target.name}' that "
-                    "enables Z-Series alarms; try again",
                     device_name=target.name,
                 )
             if not state:
                 raise _invalid(
                     "feature_not_supported",
-                    f"Device '{target.name}' does not support {label}",
                     device_name=target.name,
                     feature=label,
                 )

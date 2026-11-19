@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
-from homeassistant.exceptions import HomeAssistantError
 
 from ..card import CARD_MASSAGE, CARD_UTILITY
 from ..const import (
@@ -36,6 +35,7 @@ from ..const import (
     KEESON_BASE_WRITE_CHAR_UUID,
 )
 from ..controller_state import StateKey
+from ..errors import failed
 from ..profiles import keeson as keeson_profiles
 from ..state_keys import UNDER_BED_LIGHTS_ON
 from .base import BedController, ProfileExecution
@@ -602,9 +602,7 @@ class CoolBaseController(ProfileExecution[keeson_profiles.KeesonProfile], BedCon
                 async with asyncio.timeout(_LIGHT_STATE_WAIT):
                     await self._status_received.wait()
         if self._light_on is None:
-            raise HomeAssistantError(
-                "Cool Base light state is unknown; no status reply was received."
-            )
+            raise failed("light_state_unknown")
         if self._light_on != is_on:
             await self.lights_toggle()
 

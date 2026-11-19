@@ -51,6 +51,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import detect_bed_type
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 NAME = "base-i4.00002574"
 ZERO = "e5fe160000000006"
@@ -545,8 +546,8 @@ def _service_target(coordinator: AdjustableBedCoordinator, variant: str):
     [
         (KEESON_VARIANT_RESTONIC_A, "zero_g", None),
         (KEESON_VARIANT_RESTONIC_B, "zzz", None),
-        (KEESON_VARIANT_RESTONIC_A, "zzz", "does not support held control 'zzz'"),
-        (KEESON_VARIANT_BASE, "flat", "has no held controls"),
+        (KEESON_VARIANT_RESTONIC_A, "zzz", "held_control_not_supported"),
+        (KEESON_VARIANT_BASE, "flat", "held_controls_not_supported"),
     ],
 )
 async def test_hold_service_preflights_before_writing(
@@ -560,7 +561,7 @@ async def test_hold_service_preflights_before_writing(
         return_value=([(target, SIDE_BOTH)], []),
     ):
         if error:
-            with pytest.raises(ServiceValidationError, match=error):
+            with raises_key(error, ServiceValidationError):
                 await hass.services.async_call(
                     DOMAIN, "hold_control", data, blocking=True
                 )

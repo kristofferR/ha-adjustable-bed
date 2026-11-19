@@ -719,9 +719,7 @@ class CoordinatorPositionsMixin:
                     )
                     return
                 if current_angle is None and not supports_direct_position_control:
-                    raise PositionFeedbackError(
-                        f"Cannot seek {position_key}: no fresh position feedback available"
-                    )
+                    raise PositionFeedbackError("position_feedback_missing", motor=position_key)
 
                 # Check if already at target (per the policy's completion band)
                 if current_angle is not None and policy.accepts_position(
@@ -841,9 +839,7 @@ class CoordinatorPositionsMixin:
                 if result.outcome is SeekOutcome.POSITION_LOST:
                     # The runner has completed protocol-owned cleanup before
                     # paired/service callers receive this failure.
-                    raise PositionFeedbackError(
-                        f"Lost fresh position feedback for {position_key} during seek"
-                    )
+                    raise PositionFeedbackError("position_feedback_lost", motor=position_key)
 
             finally:
                 # Seeks own their lock lifecycle instead of going through

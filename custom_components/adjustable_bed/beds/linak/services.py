@@ -5,10 +5,10 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...paired_coordinator import BedChild
 from ...services import (
     ATTR_DURATION_MS,
@@ -36,17 +36,15 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
     second_up = call.data[ATTR_SECOND_DIRECTION] == "up"
     duration_ms = call.data[ATTR_DURATION_MS]
     if first_motor == second_motor:
-        raise ServiceValidationError("Select two different motors")
+        raise invalid("motors_must_differ")
 
     def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_simultaneous_movement:
-            raise ServiceValidationError(
-                f"Device '{target.name}' does not support simultaneous movement"
-            )
+            raise invalid("feature_not_supported", device_name=target.name, feature="moving two motors together")
         unavailable = {first_motor, second_motor} - set(controller.simultaneous_movement_axes)
         if unavailable:
             axes = ", ".join(sorted(unavailable))
-            raise ServiceValidationError(f"Device '{target.name}' cannot combine motor: {axes}")
+            raise invalid("feature_not_supported", device_name=target.name, feature=f"moving {axes} together")
 
     async def move(controller: BedController) -> None:
         await controller.move_simultaneously(

@@ -31,6 +31,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.position_seek import PositionFeedbackError, PositionSeekPolicy
 from tests.coordinator_patches import patch_coordinator_global
+from tests.error_helpers import raises_key
 
 from .conftest import TEST_ADDRESS, TEST_NAME, make_controller_mock
 
@@ -119,7 +120,7 @@ class TestCoordinatorPositionSeek:
                 "_async_read_positions",
                 new=AsyncMock(),
             ) as read_positions,
-            pytest.raises(PositionFeedbackError, match="no fresh position feedback available"),
+            raises_key("position_feedback_missing", PositionFeedbackError),
         ):
             await coordinator.async_seek_position(
                 "back",

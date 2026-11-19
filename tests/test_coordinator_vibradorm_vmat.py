@@ -24,6 +24,8 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.profiles.vibradorm import VMAT_QUERY_STAGES as QUERY_STAGES
 from tests.test_vibradorm_vmat import frames, make_vmat
 
+pytestmark = pytest.mark.usefixtures("instant_vmat_settle")
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("retained", [False, True])

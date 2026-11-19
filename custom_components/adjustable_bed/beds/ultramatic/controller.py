@@ -678,14 +678,6 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
                 for kind in ("massage", "alarm")
             ),
             ControllerButtonSpec(
-                "ultramatic_clock",
-                "Sync bed clock",
-                lambda c: require_controller(c, UltramaticController).sync_clock(),
-                translation_key="ultramatic_clock",
-                scheduler_resource="*",
-                card=CARD_UTILITY,
-            ),
-            ControllerButtonSpec(
                 "ultramatic_release",
                 "Release held control",
                 lambda c: c.stop_all(),

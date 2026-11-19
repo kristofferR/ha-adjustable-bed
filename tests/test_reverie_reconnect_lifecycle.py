@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator, ChildEntryView
 from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
 from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
+from tests.error_helpers import raises_key
 from tests.test_reverie_routines import _pairlink_runtime
 from tests.test_reverie_session_lane import _central
 
@@ -264,7 +265,7 @@ async def test_stk_local_selection_uses_reconnected_controller_without_ble(hass,
     )
     assert coordinator.client.write_gatt_char.call_args.args[1] == bytes((2, 17))
     coordinator._controller = ReverieNightstandController(coordinator, model="R510L")
-    with pytest.raises(ServiceValidationError, match="no longer supports"):
+    with raises_key("option_unavailable", ServiceValidationError):
         await entity.async_select_option("3")
     await coordinator.async_shutdown()
 

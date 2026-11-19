@@ -20,13 +20,13 @@ from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 
 from .card import CARD_UTILITY, CardPlacement, CardSection
-from .const import DOMAIN
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, named_for_side, own_sides
 from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
+from .runtime_data import entry_runtime
 from .state_keys import BED_PRESENCE, BED_PRESENCE_SIDE
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed binary sensor entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
             entry, runtime, async_add_entities, partial(_binary_sensor_entities_for, hass, runtime)

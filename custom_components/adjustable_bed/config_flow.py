@@ -387,6 +387,7 @@ from .profile_migration import (
     async_control_changes,
     reconfigure_family,
 )
+from .runtime_data import loaded_runtime
 from .setup_operation import (
     BluetoothOperationMixin,
     ConnectionLifetimePolicy,
@@ -1570,7 +1571,7 @@ def starcode_live_transport_valid(hass: HomeAssistant, entry_id: str, selector: 
 
     from .coordinator import AdjustableBedCoordinator
 
-    runtime = hass.data.get(DOMAIN, {}).get(entry_id)
+    runtime = loaded_runtime(hass, entry_id)
     if not isinstance(runtime, AdjustableBedCoordinator):
         return None
     client = runtime.client
@@ -2723,9 +2724,13 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if self._migration is None:
             yield
             return
+        from .coordinator import AdjustableBedCoordinator
+        from .paired_coordinator import SingleAddressPairedCoordinator
+
         entry = self._get_reconfigure_entry()
-        runtime = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
-        if runtime is not None:
+        runtime = loaded_runtime(self.hass, entry.entry_id)
+        # A two-link pair is split before its migration reaches this step.
+        if isinstance(runtime, AdjustableBedCoordinator | SingleAddressPairedCoordinator):
             async with runtime.async_transport_operation("profile_migration"):
                 yield
         else:
@@ -2857,7 +2862,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             {**self._migration.data, **self._migration.options}, {**data, **options}
         )
         if kept is not None and not await _async_turn_off_limoss_remote_features(
-            self.hass.data.get(DOMAIN, {}).get(entry.entry_id), *kept
+            loaded_runtime(self.hass, entry.entry_id), *kept
         ):
             # Leaving enabled Limoss Remote features needs their OFF commands;
             # the saved setup stays until they succeed.
@@ -3662,7 +3667,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """
         if entry.data.get(CONF_BED_TYPE) != BED_TYPE_OCTO:
             return None
-        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        coordinator = loaded_runtime(self.hass, entry.entry_id)
         snapshot_fn = getattr(getattr(coordinator, "controller", None), "capability_snapshot", None)
         live = snapshot_fn() if callable(snapshot_fn) else None
         if isinstance(live, dict):
@@ -3749,9 +3754,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         from .beds.octo.runtime import octo_controller
         from .coordinator import AdjustableBedCoordinator
 
-        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
-        controller = getattr(coordinator, "capability_controller", None)
-        if controller is None and not isinstance(coordinator, AdjustableBedCoordinator):
+        coordinator = loaded_runtime(self.hass, entry.entry_id)
+        if not isinstance(coordinator, AdjustableBedCoordinator):
             coordinator = await AdjustableBedCoordinator.async_create(self.hass, entry)
         if coordinator.capability_controller is None:
             await coordinator.async_prime_offline_controller()
@@ -4797,7 +4801,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             left_layout = await self._pair_layout_snapshot(left) if left is not None else None
             right_layout = await self._pair_layout_snapshot(right) if right is not None else None
             if left is None or right is None:
-                errors["base"] = "unknown"
+                errors["base"] = "pair_bed_missing"
             elif left.entry_id == right.entry_id:
                 errors[CONF_PAIR_SELECTION] = "same_device"
             elif (left.data.get(CONF_ADDRESS) or "").upper() == (
@@ -7685,7 +7689,7 @@ class AdjustableBedOptionsFlow(
                     # Light or massage turned off on this receiver: its OFF
                     # commands run first, and a failure keeps the saved setup.
                     if await _async_turn_off_limoss_remote_features(
-                        self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id),
+                        loaded_runtime(self.hass, self.config_entry.entry_id),
                         *kept,
                         side=side,
                     ):
@@ -7769,7 +7773,7 @@ class AdjustableBedOptionsFlow(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Enable the reversible left/right/both surface on one BLE address."""
-        runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        runtime = loaded_runtime(self.hass, self.config_entry.entry_id)
         controller = getattr(runtime, "capability_controller", None)
         needs_casper_transport_proof = self.config_entry.data.get(CONF_BED_TYPE) in {"casper_base", "hush_base"}
         casper_not_connected = False
@@ -7876,7 +7880,9 @@ class AdjustableBedOptionsFlow(
 
     async def _async_side_transport_worker(self) -> OperationResult:
         """Read side support from the live controller during one command."""
-        runtime = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        from .coordinator import AdjustableBedCoordinator
+
+        runtime = loaded_runtime(self.hass, self.config_entry.entry_id)
         supported: bool | None = None
 
         async def probe(controller: BedController) -> None:
@@ -7884,7 +7890,8 @@ class AdjustableBedOptionsFlow(
             supported = bool(getattr(controller, "supports_single_address_pairing", False))
 
         try:
-            if runtime is not None:
+            # Side detection runs on one standalone bed; a pair has no such probe.
+            if isinstance(runtime, AdjustableBedCoordinator):
                 await runtime.async_execute_controller_command(
                     probe,
                     cancel_running=False,
@@ -8274,7 +8281,7 @@ class AdjustableBedOptionsFlow(
                     return self.async_show_form(
                         step_id=step_id,
                         data_schema=vol.Schema(schema_dict),
-                        errors={"base": "invalid_variant"},
+                        errors={"base": "invalid_variant_for_bed_type"},
                     )
                 if svane_variant != SVANE_VARIANT_JENSEN_LINON:
                     user_input.update(
@@ -8534,7 +8541,7 @@ class AdjustableBedOptionsFlow(
 
     def _bond_target_coordinator(self) -> Any | None:
         """Return the coordinator whose locks and runtime state own the target."""
-        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        coordinator = loaded_runtime(self.hass, self.config_entry.entry_id)
         side = self._bond_removal_side
         if coordinator is None or side is None:
             return coordinator
@@ -8778,7 +8785,7 @@ class AdjustableBedOptionsFlow(
         self._bond_removal_state_applied = True
         side = self._bond_removal_side
         if side is not None:
-            parent = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+            parent = loaded_runtime(self.hass, self.config_entry.entry_id)
             child_for_side = getattr(parent, "child_for_side", None)
             child = child_for_side(side) if callable(child_for_side) else None
             apply_removal = getattr(child, "apply_confirmed_bond_removal", None)

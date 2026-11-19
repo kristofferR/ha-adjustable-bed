@@ -49,6 +49,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 
 async def _target(
@@ -581,7 +582,7 @@ async def test_octo_enroll_pin_requires_matching_four_ascii_digits(
                 blocking=True,
             )
 
-        with pytest.raises(ServiceValidationError, match="ASCII digits"):
+        with raises_key("pin_invalid", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 "octo_enroll_pin",
@@ -679,7 +680,7 @@ async def test_octo_enroll_pin_is_not_persisted_when_scheduler_skips_callback(
             "custom_components.adjustable_bed.beds.octo.services._call_targets",
             return_value=[(coordinator, SIDE_BOTH)],
         ),
-        pytest.raises(ServiceValidationError, match="cancelled before the PIN was sent"),
+        raises_key("action_stopped", ServiceValidationError),
     ):
         await hass.services.async_call(
             DOMAIN,
@@ -850,7 +851,7 @@ async def test_octo_enroll_pin_rejects_multiple_selected_receivers(
             "custom_components.adjustable_bed.beds.octo.services._call_targets",
             return_value=[(coordinator, SIDE_BOTH), (coordinator, SIDE_BOTH)],
         ),
-        pytest.raises(ServiceValidationError, match="exactly one"),
+        raises_key("one_bed_only", ServiceValidationError),
     ):
         await hass.services.async_call(
             DOMAIN,
@@ -906,7 +907,7 @@ async def test_stop_during_paired_octo_hold_preflight_preserves_new_child_hold(
         await original_hold(control, duration_ms)
 
     monkeypatch.setattr(controller, "hold_control", track_hold)
-    right_generation = paired._pair_cancel_generation(SIDE_RIGHT, ("*",))
+    right_generation = paired.pair_cancel_generation(SIDE_RIGHT, ("*",))
 
     def service(service: str, duration: float | None = None) -> asyncio.Task[object]:
         data: dict[str, object] = {"device_id": parent.id, "side": SIDE_LEFT}
@@ -929,7 +930,7 @@ async def test_stop_during_paired_octo_hold_preflight_preserves_new_child_hold(
         new_hold = service("hold_control", 60)
         await asyncio.wait_for(new_hold_started.wait(), timeout=2)
         assert hold_calls == [("back_up", 60_000)]
-        assert paired._pair_cancel_generation(SIDE_RIGHT, ("*",)) == right_generation
+        assert paired.pair_cancel_generation(SIDE_RIGHT, ("*",)) == right_generation
 
         resume_preflight.set()
         await old_hold
@@ -1106,7 +1107,7 @@ async def test_octo_lookup_hands_back_a_link_it_opened_for_the_wrong_controller(
             "custom_components.adjustable_bed.beds.octo.services._call_targets",
             return_value=[(coordinator, SIDE_BOTH)],
         ),
-        pytest.raises(ServiceValidationError, match="selected OCTO variant"),
+        raises_key("not_supported_by_bed", ServiceValidationError),
     ):
         await hass.services.async_call(
             DOMAIN,

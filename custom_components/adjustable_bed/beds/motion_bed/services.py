@@ -5,10 +5,10 @@ from collections.abc import Mapping
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import rejected
 from ...import_executor import async_import_modules
 from .protocol import (
     AirMode,
@@ -161,7 +161,7 @@ async def handle_motion_bed_configuration(call: ServiceCall) -> None:
     try:
         request = build_motion_bed_request(call.service, call.data)
     except (ValueError, KeyError) as err:
-        raise ServiceValidationError(str(err)) from err
+        raise rejected(err) from err
     await _execute(call, request)
 
 

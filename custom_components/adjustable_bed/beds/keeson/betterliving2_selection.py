@@ -13,10 +13,11 @@ from bleak import BleakClient
 from homeassistant.exceptions import ServiceValidationError
 
 from ...command_scheduler import CommandContext, _first_set, current_command_context
-from ...const import DOMAIN
+from ...const import PAIR_CONNECTION_MODE_SEQUENTIAL
 from ...coordinator import AdjustableBedCoordinator
+from ...errors import invalid
 from ...paired_coordinator import PairedBedCoordinator
-from ...paired_topology import SequentialTwoLinkTopology
+from ...runtime_data import loaded_runtime
 from ...services import BedTarget, _CommandAdmission
 from ..base import BedController
 from .betterliving2_admission import SELECTION
@@ -26,12 +27,15 @@ if TYPE_CHECKING:
 
 
 def _selection_error(reason: str) -> ServiceValidationError:
-    return ServiceValidationError(
-        reason,
-        translation_domain=DOMAIN,
-        translation_key="betterliving2_selection_changed",
-        translation_placeholders={"reason": reason},
-    )
+    return invalid("betterliving2_selection_changed", reason=reason)
+
+
+def _captured_link(controller: BedController | None) -> object | None:
+    if controller is None:
+        return None
+    from .betterliving2 import BetterLiving2Controller
+
+    return controller._link if isinstance(controller, BetterLiving2Controller) else None
 
 
 class PreparationCancelled(asyncio.CancelledError):
@@ -50,8 +54,9 @@ class Batch:
     admission: _CommandAdmission
     data: Mapping[str, object]
     roster: tuple[tuple[str, AdjustableBedCoordinator], ...]
-    topology: object | None
+    connection_mode: str | None
     sequential: bool
+    stop_counts: dict[str, int]
     preemption_admitted: bool = False
     dispatched: bool = False
     ready: asyncio.Event = field(default_factory=asyncio.Event)
@@ -95,7 +100,7 @@ class Selection:
             if not isinstance(parent, (AdjustableBedCoordinator, PairedBedCoordinator)):
                 raise _selection_error("BetterLiving2 requires physical receiver targets")
             paired = isinstance(parent, PairedBedCoordinator)
-            members = parent._targets_for(side) if paired else [("both", parent)]
+            members = parent.targets_for(side) if paired else [("both", parent)]
             roster = tuple(parent.children.items()) if paired else (("both", parent),)
             if any(not isinstance(child, AdjustableBedCoordinator) for _, child in roster):
                 raise _selection_error("BetterLiving2 requires physical receiver targets")
@@ -110,8 +115,11 @@ class Selection:
                 admission,
                 deepcopy(dict(parent.entry.data)),
                 physical,
-                parent._topology if paired else None,
-                paired and isinstance(parent._topology, SequentialTwoLinkTopology),
+                parent.connection_mode if paired else None,
+                paired and parent.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL,
+                {name: parent.stop_count(name) for name, _ in members}
+                if isinstance(parent, PairedBedCoordinator)
+                else {},
             )
             self.batches.append(batch)
             for _, child in members:
@@ -128,17 +136,17 @@ class Selection:
                     and wire != required_wire
                 ):
                     raise _selection_error("Choose an exact supported BetterLiving2 profile")
-                controller, client = child._controller, child.client
+                controller, client = child.controller, child.client
                 self.owners[id(child)] = Owner(
                     child,
                     batch,
                     data,
                     child.address.upper(),
                     child.stop_epoch,
-                    child._command_scheduler.token,
+                    child.command_scheduler.token,
                     controller,
                     client,
-                    getattr(controller, "_link", None),
+                    _captured_link(controller),
                     not child.is_connected,
                 )
         self.check()
@@ -178,7 +186,7 @@ class Selection:
                 # Native Both has reserved every worker before committing any.
                 # Capture even a peer whose operation callback has not run yet.
                 for peer in peers:
-                    handle = peer.child._command_scheduler._active
+                    handle = peer.child.command_scheduler.active
                     if (
                         handle is None
                         or context.group_id is None
@@ -204,7 +212,7 @@ class Selection:
         if not isinstance(parent, PairedBedCoordinator):
             return {}, before
         current = {
-            side: parent._pair_cancel_generation(side, batch.admission.resources) for side in before
+            side: parent.pair_cancel_generation(side, batch.admission.resources) for side in before
         }
         admitted = {side: (value[0] + 1,) for side, value in before.items()}
         if not batch.preemption_admitted and current == admitted and self._owned(batch):
@@ -212,6 +220,14 @@ class Selection:
         return current, admitted if batch.preemption_admitted else before
 
     def _owner_cancelled(self, owner: Owner) -> bool:
+        parent = owner.batch.parent
+        if isinstance(parent, PairedBedCoordinator) and any(
+            child is owner.child
+            and side in owner.batch.stop_counts
+            and parent.stop_count(side) != owner.batch.stop_counts[side]
+            for side, child in owner.batch.roster
+        ):
+            return True
         if owner.child.stop_epoch != owner.stop_epoch or (
             owner.context is not None and owner.context.cancel_event.is_set()
         ):
@@ -264,17 +280,17 @@ class Selection:
         context = current_command_context()
         selected = [owner.child for owner in self.owners.values() if owner.batch is batch]
         if context is not None and any(
-            context.scheduler_token is child._command_scheduler.token for child in selected
+            context.scheduler_token is child.command_scheduler.token for child in selected
         ):
             return True
         parent = batch.parent
-        topology = parent._topology if isinstance(parent, PairedBedCoordinator) else None
         return (
             batch.sequential
             and isinstance(parent, PairedBedCoordinator)
-            and isinstance(topology, SequentialTwoLinkTopology)
-            and parent._admission.active_children == set(selected)
-            and topology.command_lock.locked()
+            and parent.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
+            and parent.sequential_cycle is not None
+            and {child for child in parent.children.values() if parent.is_admitted_child(child)}
+            == set(selected)
         )
 
     def _check(
@@ -319,13 +335,13 @@ class Selection:
         for batch in self.batches:
             parent = batch.parent
             if (
-                parent.hass.data.get(DOMAIN, {}).get(parent.entry.entry_id) is not parent
+                loaded_runtime(parent.hass, parent.entry.entry_id) is not parent
                 or dict(parent.entry.data) != batch.data
             ):
                 raise _selection_error("BetterLiving2 entry/roster changed")
             if isinstance(parent, PairedBedCoordinator):
                 if (
-                    parent._topology is not batch.topology
+                    parent.connection_mode != batch.connection_mode
                     or tuple(parent.children) != tuple(side for side, _ in batch.roster)
                     or any(parent.children.get(side) is not child for side, child in batch.roster)
                 ):
@@ -351,7 +367,7 @@ class Selection:
             if (
                 child.address.upper() != owner.address
                 or dict(child.entry.data) != owner.data
-                or child._command_scheduler.token is not owner.scheduler_token
+                or child.command_scheduler.token is not owner.scheduler_token
             ):
                 raise _selection_error("BetterLiving2 physical owner/profile/STOP changed")
             if (
@@ -376,24 +392,24 @@ class Selection:
                 owner.preparing
                 and owner.binding_allowed
                 and owner.controller is None
-                and child._controller is None
+                and child.controller is None
             ):
                 continue
             if owner.retiring is not None:
                 old_controller, old_client = owner.retiring
-                if child._controller is old_controller and child.client is old_client:
+                if child.controller is old_controller and child.client is old_client:
                     continue
                 if (
                     not old_client.is_connected
-                    and child._controller is None
+                    and child.controller is None
                     and child.client is None
                 ):
                     continue
                 raise _selection_error("Unowned BetterLiving2 reconnect during selection")
             if (
-                child._controller is not owner.controller
+                child.controller is not owner.controller
                 or child.client is not owner.client
-                or getattr(child._controller, "_link", None) is not owner.link
+                or _captured_link(child.controller) is not owner.link
             ):
                 raise _selection_error("BetterLiving2 captured session changed")
         return cancelled_startup is not None

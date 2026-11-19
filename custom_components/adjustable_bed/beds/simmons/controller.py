@@ -17,14 +17,12 @@ from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_PRESETS
 from ...const import (
     CONF_BLE_DEVICE_NAME,
-    DOMAIN,
     SIMMONS_VARIANT_INCLINED,
     SIMMONS_VARIANT_INCLINED_OKIN,
     SIMMONS_VARIANT_INCLINED_SMARTBED,
@@ -33,6 +31,7 @@ from ...const import (
 )
 from ...controller_state import StateKey, StateUpdate
 from ...detection import is_mac_like_name
+from ...errors import invalid
 from ...profiles.okin_nframe import (
     SIMMONS_PROFILES,
     SIMMONS_REFRESH_MS,
@@ -345,16 +344,6 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
         )
         return (
             *inclined,
-            ControllerButtonSpec(
-                "simmons_sync_clock",
-                "Sync Clock",
-                _action("sync_clock"),
-                translation_key="simmons_sync_clock",
-                diagnostic=True,
-                icon="mdi:clock-check",
-                cancel_movement=False,
-                scheduler_resource="configuration",
-            ),
             ControllerButtonSpec(
                 "simmons_refresh_alarms",
                 "Refresh Alarms",
@@ -735,11 +724,7 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
                 pass
         first, second = self._reported
         if first is None or second is None:
-            raise ServiceValidationError(
-                "The bed did not report both alarm records in this connection; nothing was written",
-                translation_domain=DOMAIN,
-                translation_key="simmons_alarm_not_reported",
-            )
+            raise invalid("simmons_alarm_not_reported")
         return first, second
 
     async def check_simmons_alarm(

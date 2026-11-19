@@ -44,7 +44,7 @@ async def test_pair_conversion_rechecks_group_members_without_absorbing_ids(
             {"left_entry": member.entry.entry_id, "right_entry": free[0].entry.entry_id}
         )
         assert result["type"] == FlowResultType.FORM
-        assert result["errors"] == {"base": "unknown"}
+        assert result["errors"] == {"base": "pair_bed_missing"}
         assert hass.config_entries.async_get_entry(member.entry.entry_id) is member.entry
     assert list(main.entry.data[CONF_STARCODE_LIFT_ENTRIES]) == [
         lift.entry.entry_id for lift in lifts

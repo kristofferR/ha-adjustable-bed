@@ -16,7 +16,6 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -26,6 +25,7 @@ from .const import CONF_BACK_MAX_ANGLE, CONF_LEGS_MAX_ANGLE, DOMAIN
 from .coordinator import AdjustableBedCoordinator
 from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace
 from .entity_runtime import EntityRuntime
+from .errors import failed
 from .paired_coordinator import PairedBedCoordinator, entity_runtimes
 from .position_estimate import (
     BedEstimate,
@@ -37,6 +37,7 @@ from .position_estimate import (
     async_recall_position,
     position_estimates,
 )
+from .runtime_data import entry_runtime
 
 # The card draws a dashed estimate only for an axis whose maximum angle the
 # user configured; percent of travel is not an angle otherwise.
@@ -60,7 +61,7 @@ def _estimated_beds(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> tuple[PositionEstimates, list[tuple[EntityRuntime, BedEstimate]]] | None:
     manager = position_estimates(hass, entry.entry_id)
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     if manager is None:
         return None
     beds = [
@@ -150,11 +151,7 @@ class EstimatedPositionNumber(_ListensToEstimates, AdjustableBedEntity, NumberEn
 
     async def async_set_native_value(self, value: float) -> None:
         if not await async_move_bed(self.hass, self._manager, self._bed, {self._motor: value}):
-            raise HomeAssistantError(
-                "The estimated position was not reached",
-                translation_domain=DOMAIN,
-                translation_key="estimated_position_not_reached",
-            )
+            raise failed("estimated_position_not_reached")
 
 
 class SetReferenceButton(_ListensToEstimates, AdjustableBedEntity, ButtonEntity):
@@ -300,7 +297,7 @@ def async_setup_estimate_sensors(
     manager = position_estimates(hass, entry.entry_id)
     if manager is None or not manager.active:
         return
-    async_add_entities([SavedPositionsSensor(hass.data[DOMAIN][entry.entry_id], manager)])
+    async_add_entities([SavedPositionsSensor(entry_runtime(hass, entry.entry_id), manager)])
 
 
 def async_setup_estimate_buttons(
@@ -318,7 +315,7 @@ def async_setup_estimate_buttons(
         entities.append(RemoteUsedButton(runtime, bed))
     async_add_entities(entities)
 
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     buttons: dict[str, SavedPositionButton] = {}
 
     @callback

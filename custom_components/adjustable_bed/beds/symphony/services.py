@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, TypedDict
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...command_scheduler import PreparedCommandInvalidated
 from ...const import DOMAIN, PAIR_CONNECTION_MODE_SEQUENTIAL, SIDE_BOTH
+from ...errors import rejected
 from ...import_executor import async_import_modules
 from ...paired_coordinator import PairedBedCoordinator
 
@@ -68,15 +68,15 @@ async def _dispatch(
     def admit_all(*, check_pair: bool = True) -> bool:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
             if isinstance(coordinator, PairedBedCoordinator):
-                invalidated = check_pair and coordinator._pair_admission_was_cancelled(
-                    coordinator._targets_for(side),
+                invalidated = check_pair and coordinator.pair_admission_was_cancelled(
+                    coordinator.targets_for(side),
                     admission.resources,
                     admission.expected_pair_generations,
                     admission.expected_stop_epochs,
                 )
                 invalidated = invalidated or any(
                     child.stop_epoch != admission.expected_stop_epochs[target_side]
-                    for target_side, child in coordinator._targets_for(side)
+                    for target_side, child in coordinator.targets_for(side)
                 )
             else:
                 invalidated = (
@@ -169,7 +169,7 @@ async def _dispatch(
             admissions=admissions,
         )
     except ValueError as error:
-        raise ServiceValidationError(str(error)) from error
+        raise rejected(error) from error
     finally:
         await _release_preflighted(opened)
 

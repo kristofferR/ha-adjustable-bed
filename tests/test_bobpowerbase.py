@@ -44,6 +44,7 @@ from custom_components.adjustable_bed.profiles.bobpowerbase import (
 )
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 from custom_components.adjustable_bed.setup_questions import setup_profile
+from tests.error_helpers import raises_key
 
 REAL_SLEEP = asyncio.sleep
 
@@ -313,7 +314,7 @@ async def test_sequential_renewable_both_rejects_before_claim_or_preflight(hass,
     entry = MockConfigEntry(domain=DOMAIN, data={"pair_id": "bob-two"})
     pair = PairedBedCoordinator(hass, entry, {"left": left, "right": right}, connection_mode="sequential")
     with patch.object(left, "claim_hold_lease") as claim:
-        with pytest.raises(ServiceValidationError, match="sequential"):
+        with raises_key("hold_needs_concurrent", ServiceValidationError):
             await services._async_with_hold_lease([(pair, "both")], HoldLease("card", 1, "goodvibe_head_up", 1), lambda _: None, AsyncMock())
         claim.assert_not_called()
     left.client.write_gatt_char.assert_not_awaited()
@@ -460,6 +461,6 @@ async def test_stop_during_first_lazy_import_invalidates_every_admitted_target(h
     async def stopped(*args):
         c._command_scheduler._stop_epoch += 1
 
-    with patch.object(configuration, "async_import_modules", stopped), pytest.raises(ServiceValidationError, match="interrupted"):
+    with patch.object(configuration, "async_import_modules", stopped), raises_key("action_stopped", ServiceValidationError):
         await hass.services.async_call(DOMAIN, "bobpowerbase", {"device_id": "bed", "operation": "alarms"}, blocking=True)
     c.client.write_gatt_char.assert_not_awaited()

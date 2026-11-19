@@ -44,7 +44,9 @@ from ...const import (
     NORDIC_UART_SERVICE_UUID,
     NORDIC_UART_WRITE_CHAR_UUID,
     OKIMAT_SERVICE_UUID,
+    OKIMAT_VARIANTS,
     OKIMAT_WRITE_CHAR_UUID,
+    OKIN_DOT_VARIANTS,
     OKIN_FOOT_MAX_ANGLE,
     OKIN_FOOT_MAX_RAW,
     OKIN_HEAD_MAX_ANGLE,
@@ -57,12 +59,7 @@ from ..builder import BuildContext
 from ..entity_specs import MotorControlSpec
 from ..furnimove.profiles import FURNIMOVE_PRODUCTION_IDS, FurniMoveProfile, get_furnimove_profile
 from ..okin_nframe import OkinNFrameController
-from .remotes import (
-    DEFAULT_OKIN_UUID_REMOTE,
-    OKIN_DOT_VARIANT_LABELS,
-    OKIN_UUID_REMOTE_DATA,
-    OKIN_UUID_VARIANT_LABELS,
-)
+from .remotes import DEFAULT_OKIN_UUID_REMOTE, OKIN_UUID_REMOTE_DATA
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -212,8 +209,10 @@ def _furnimove_remote(profile: FurniMoveProfile, *, dot: bool) -> OkinUuidRemote
 # standard handsets on this route, which adds the BLE bond and FFE4 position
 # feedback the FurniMove app profile lacks. The DOT handsets move to FurniMove,
 # whose per-consumer framing is the app's exact behavior.
-FURNIMOVE_STANDARD_HANDSETS: Final = FURNIMOVE_PRODUCTION_IDS & frozenset(OKIN_UUID_VARIANT_LABELS)
-FURNIMOVE_DOT_HANDSETS: Final = FURNIMOVE_PRODUCTION_IDS & frozenset(OKIN_DOT_VARIANT_LABELS)
+_STANDARD_CODES: Final = OKIMAT_VARIANTS.keys() - {VARIANT_AUTO}
+_DOT_CODES: Final = OKIN_DOT_VARIANTS.keys() - {VARIANT_AUTO}
+FURNIMOVE_STANDARD_HANDSETS: Final = FURNIMOVE_PRODUCTION_IDS & _STANDARD_CODES
+FURNIMOVE_DOT_HANDSETS: Final = FURNIMOVE_PRODUCTION_IDS & _DOT_CODES
 
 OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
     code: (
@@ -221,7 +220,7 @@ OKIN_UUID_REMOTES: dict[str, OkinUuidRemoteConfig] = {
         if code in FURNIMOVE_PRODUCTION_IDS
         else _remote_config(OKIN_UUID_REMOTE_DATA[code])
     )
-    for code in sorted({*OKIN_UUID_VARIANT_LABELS, *OKIN_DOT_VARIANT_LABELS}, key=int)
+    for code in sorted(_STANDARD_CODES | _DOT_CODES, key=int)
 }
 
 # Default remote for auto-detect (most common/basic)

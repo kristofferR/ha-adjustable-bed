@@ -14,7 +14,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -86,6 +86,7 @@ from .entity_retypes import async_carry_over_retyped_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import async_sweep_after_setup
 from .entry_hooks import ENTRY_PREPARE_STEPS, entry_hooks
+from .errors import not_ready, setup_stopped
 from .frontend import async_register_frontend
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .paired_devices import async_register_children
@@ -126,6 +127,7 @@ from .repairs import (
     async_setup_combine_beds_issue,
     async_track_combine_beds_issue,
 )
+from .runtime_data import domain_registry, loaded_runtime
 from .services import (
     ATTR_ACTION,
     ATTR_ACTIONS,
@@ -1113,7 +1115,7 @@ async def _async_release_absorbed_singles(
             original = hass.config_entries.async_get_entry(absorbed_id)
             if original is None or is_paired(original.data):
                 continue
-            original_coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
+            original_coordinator = loaded_runtime(hass, absorbed_id)
             if not isinstance(original_coordinator, AdjustableBedCoordinator):
                 continue
             try:
@@ -1124,7 +1126,7 @@ async def _async_release_absorbed_singles(
                 if local_transfers and absorbed_id in {
                     item.original.entry.entry_id for item in local_transfers
                 } and transfer is None:
-                    raise ConfigEntryNotReady("Absorbed local runtime changed before transfer")
+                    raise not_ready("setup_retry")
                 if transfer is not None:
                     released = await original_coordinator.async_release_for_pairing_transfer(
                         expected_pairlink_runtime=transfer.runtime,
@@ -1134,23 +1136,17 @@ async def _async_release_absorbed_singles(
                 if released is not False:
                     transferring.append(original_coordinator)
                 if released is False or original_coordinator.is_connected:
-                    raise ConfigEntryNotReady(
-                        f"Could not release {original.title} before paired setup"
-                    )
+                    raise not_ready("pair_side_busy", name=original.title)
                 _LOGGER.debug(
                     "Released absorbed single %s's BLE link before paired connect",
                     absorbed_id,
                 )
             except PairingOnlyConnectionActiveError as err:
-                raise ConfigEntryNotReady(
-                    f"Cannot transfer {original.title} while its pairing-only connection is active"
-                ) from err
+                raise not_ready("pair_side_busy", name=original.title) from err
             except ConfigEntryNotReady:
                 raise
             except Exception as err:  # noqa: BLE001 - retain both working originals
-                raise ConfigEntryNotReady(
-                    f"Could not release {original.title} before paired setup: {err}"
-                ) from err
+                raise not_ready("pair_side_busy", name=original.title) from err
     except (Exception, asyncio.CancelledError):
         for coordinator in transferring:
             coordinator.finish_pairing_transfer()
@@ -1194,7 +1190,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             )
     children = _build_paired_children(hass, entry)
     if not children:
-        raise ConfigEntryError(translation_domain=DOMAIN, translation_key="paired_entry_has_no_sides")
+        raise setup_stopped("paired_entry_has_no_sides")
 
     # Observe the first connection too: sequential pairing may disconnect one
     # side before platform setup, taking its live controller with it.
@@ -1256,8 +1252,9 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                     else:
                         transferring = await _async_release_absorbed_singles(hass, entry)
                     for _side, child, source, adapter, owner in pairlink_local_roles:
-                        if hass.data[DOMAIN][PAIRLINK_LOCAL_PROFILE_LEASES_KEY].get(adapter) != owner:
-                            raise ConfigEntryNotReady("Pairlink local reservation changed before startup")
+                        leases = domain_registry(hass, PAIRLINK_LOCAL_PROFILE_LEASES_KEY, dict)
+                        if leases.get(adapter) != owner:
+                            raise not_ready("setup_retry")
                         await async_start_paired_pairlink_local_child(
                             hass,
                             child,
@@ -1281,9 +1278,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 await _pairing_repairs_for_unconnected()
                 await _shutdown_failed_pair()
                 release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
-                raise ConfigEntryNotReady(
-                    f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
-                ) from None
+                raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint="") from None
             except (Exception, asyncio.CancelledError):
                 await _shutdown_failed_pair()
                 release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
@@ -1297,9 +1292,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 # single bed.
                 await _shutdown_failed_pair()
                 release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
-                raise ConfigEntryNotReady(
-                    f"No side of paired bed {entry.title} could be connected"
-                )
+                raise not_ready("pair_sides_unavailable", name=entry.title)
 
             # Some sides cannot recreate their extra controls without discovery. A
             # concurrent side can lose its first race with the standalone receiver's
@@ -1336,10 +1329,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                         capability_controller is None
                         or not capability_controller.controller_entity_discovery_complete
                     ):
-                        raise ConfigEntryNotReady(
-                            f"Paired bed {entry.title} needs {child.name} to connect "
-                            "and finish discovering its controls before they can be restored"
-                        )
+                        raise not_ready("pair_side_discovering", name=entry.title, side=child.name)
             except (Exception, asyncio.CancelledError):
                 await _shutdown_failed_pair()
                 release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
@@ -1380,9 +1370,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             hass.data[DOMAIN].pop(entry.entry_id, None)
             await _shutdown_failed_pair()
             release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
-            raise ConfigEntryNotReady(
-                f"Could not absorb either standalone side of paired bed {entry.title}"
-            )
+            raise not_ready("pair_transfer_failed", name=entry.title)
         # A just-absorbed concurrent side may have failed its initial connect ONLY
         # because its original single was still holding the (single-link) BLE — which
         # the absorb above has now freed. Retry such a side once so a non-offline-
@@ -1445,7 +1433,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     except BaseException:
         # Source removal commits registry ownership even if setup is cancelled.
         # Stop the failed pair without reclaiming committed or restored singles.
-        if hass.data[DOMAIN].get(entry.entry_id) is coordinator:
+        if loaded_runtime(hass, entry.entry_id) is coordinator:
             hass.data[DOMAIN].pop(entry.entry_id)
         cleanup_task = hass.async_create_task(
             _shutdown_failed_pair(), "adjustable_bed.failed_pair_shutdown"
@@ -1480,20 +1468,16 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
             connected = await coordinator.async_connect()
     except TimeoutError:
         await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(
-            f"Single-address paired bed {entry.title} timed out connecting"
-        ) from None
+        raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint="") from None
     if not connected:
         await _maybe_create_pairing_issue_for(hass, inner)
         await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(f"Bed {entry.title} could not be connected")
+        raise not_ready("setup_connect_failed", name=entry.title, hint="")
 
     controller = inner.controller
     if controller is not None and not getattr(controller, "supports_single_address_pairing", True):
         await coordinator.async_shutdown()
-        raise ConfigEntryError(
-            translation_domain=DOMAIN, translation_key="single_address_pair_unsupported"
-        )
+        raise setup_stopped("single_address_pair_unsupported")
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
     try:
@@ -1632,9 +1616,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         # A failed setup must not leave a reconnect timer or bond task behind:
         # Home Assistant's retry builds a new coordinator for the same bed,
         # which accepts one connection.
-        domain_data = hass.data.get(DOMAIN, {})
-        if domain_data.get(entry.entry_id) is coordinator:
-            domain_data.pop(entry.entry_id)
+        if loaded_runtime(hass, entry.entry_id) is coordinator:
+            hass.data[DOMAIN].pop(entry.entry_id)
 
         async def _bounded_shutdown() -> None:
             # A stalled disconnect must not block the setup retry.
@@ -1721,26 +1704,14 @@ async def _async_setup_standalone_entry(
             )
             return
         if initial_connection_timed_out:
-            raise ConfigEntryNotReady(
-                f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after "
-                f"{SETUP_TIMEOUT:.0f}s.{_connection_failure_hint(coordinator)}"
-            ) from None
+            raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint=_connection_failure_hint(coordinator)) from None
         if _bond_gated_unbonded(coordinator):
-            raise ConfigEntryNotReady(
-                f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}."
-                f"{_connection_failure_hint(coordinator)}"
-            )
+            raise not_ready("setup_connect_failed", name=entry.title, hint=_connection_failure_hint(coordinator))
         last_attempt = (coordinator.connection_attempt_details or [{}])[-1]
         if last_attempt.get("connect_elapsed_seconds") is not None and last_attempt.get("error"):
             # The link came up, so range/power advice would mislead.
-            raise ConfigEntryNotReady(
-                f"Connected to bed at {entry.data.get(CONF_ADDRESS)}, but its startup "
-                f"failed: {last_attempt['error']}.{_connection_failure_hint(coordinator)}"
-            )
-        raise ConfigEntryNotReady(
-            f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}. "
-            "Check that the bed is powered on and in range of your Bluetooth adapter/proxy."
-        )
+            raise not_ready("setup_startup_failed", name=entry.title, error=last_attempt['error'], hint=_connection_failure_hint(coordinator))
+        raise not_ready("setup_connect_failed", name=entry.title, hint="")
 
     # The connection proves an advertisement, which the review may still need.
     async_refresh_profile_review_issue(hass, entry)
@@ -1828,7 +1799,7 @@ def _entry_addresses(entry: ConfigEntry) -> list[str]:
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle options updates."""
-    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    coordinator = loaded_runtime(hass, entry.entry_id)
     if coordinator is not None and coordinator.consume_internal_entry_update(entry):
         # The coordinator recorded its own BLE bond marker. Reloading for that
         # would disconnect the bed, which is fatal for a bed that only grants

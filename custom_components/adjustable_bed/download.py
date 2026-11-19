@@ -13,10 +13,10 @@ from aiohttp import web
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.http import HomeAssistantView
 
-from .const import DOMAIN
+from .runtime_data import DomainKey, domain_registry, domain_value
 
 # Storage key for download tokens within hass.data[DOMAIN]
-DATA_DOWNLOAD_TOKENS = "download_tokens"
+DATA_DOWNLOAD_TOKENS: DomainKey[dict[str, DownloadGrant]] = DomainKey("download_tokens")
 DOWNLOAD_TOKEN_TTL = 60 * 60
 MAX_DOWNLOAD_TOKENS = 32
 _NO_STORE = {"Cache-Control": "no-store"}
@@ -60,9 +60,7 @@ class SupportBundleDownloadView(HomeAssistantView):
     async def get(self, request: web.Request, token: str) -> web.Response:
         """Handle download request."""
         hass: HomeAssistant = request.app["hass"]
-        tokens: dict[str, DownloadGrant] = hass.data.get(DOMAIN, {}).get(
-            DATA_DOWNLOAD_TOKENS, {}
-        )
+        tokens = domain_value(hass, DATA_DOWNLOAD_TOKENS) or {}
 
         _prune_expired(tokens)
         grant = tokens.get(token)
@@ -96,7 +94,7 @@ class SupportBundleDownloadView(HomeAssistantView):
 def register_download(hass: HomeAssistant, filepath: Path) -> str:
     """Register a reusable one-hour download, retaining at most 32 grants."""
     token = secrets.token_urlsafe(32)
-    tokens: dict[str, DownloadGrant] = hass.data[DOMAIN].setdefault(DATA_DOWNLOAD_TOKENS, {})
+    tokens = domain_registry(hass, DATA_DOWNLOAD_TOKENS, dict)
     _prune_expired(tokens)
     while len(tokens) >= MAX_DOWNLOAD_TOKENS:
         del tokens[next(iter(tokens))]

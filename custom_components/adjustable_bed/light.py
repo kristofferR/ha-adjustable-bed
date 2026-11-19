@@ -21,19 +21,20 @@ from homeassistant.components.light.const import ColorMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_OFF, STATE_ON, Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING
 from .command_scheduler import Delivery, delivered
-from .const import DOMAIN
 from .controller_state import ControllerState, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
+from .errors import invalid
 from .paired_coordinator import entity_runtimes
+from .runtime_data import entry_runtime
 from .state_keys import (
     LIGHT_INTENSITY,
     LIGHT_LEVEL,
@@ -111,7 +112,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed light entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
             entry,
@@ -934,12 +935,12 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 await ctrl.lights_toggle()
             elif ctrl.supports_discrete_light_control:
                 if not isinstance(self.is_on, bool):
-                    raise ServiceValidationError("Light state is unknown; use turn_on or turn_off")
+                    raise invalid("light_toggle_state_unknown")
                 if self.is_on:
                     await ctrl.lights_off()
                 else:
                     await ctrl.lights_on()
             else:
-                raise ServiceValidationError("No supported light toggle action")
+                raise invalid("not_supported_by_bed", feature="toggling the light")
 
         await self._coordinator.async_execute_controller_command(toggle, cancel_running=False)

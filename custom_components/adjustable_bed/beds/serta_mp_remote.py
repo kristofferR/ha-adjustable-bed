@@ -289,7 +289,7 @@ class SertaMPRemoteController(AppController):
             # Local editing sends no intermediate movement or zero-key frame.
             # A valid current session receives one pulse target on release.
             if not self._session_cancel.is_set():
-                scheduler = self._coordinator._command_scheduler
+                scheduler = self._coordinator.command_scheduler
                 stop_epoch = scheduler.stop_epoch
                 table = HEAD_TABLE if motor == "back" else FOOT_TABLE
                 await self.write_command(

@@ -11,7 +11,6 @@ from uuid import uuid4
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...alarm import AlarmRequest
 from ...command_scheduler import (
@@ -22,6 +21,7 @@ from ...command_scheduler import (
 )
 from ...const import DOMAIN
 from ...coordinator import AdjustableBedCoordinator
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...paired_coordinator import PairedBedCoordinator
 from ...services import (
@@ -63,7 +63,7 @@ async def _run_owned(
                 selection.finished(child)
 
     context = current_command_context()
-    if context is not None and context.scheduler_token is child._command_scheduler.token:
+    if context is not None and context.scheduler_token is child.command_scheduler.token:
         await admitted()
         return
     handle = await child.async_prepare_command_operation(
@@ -107,12 +107,7 @@ async def _execute_selection(
 
     async def child_operation(child: BedChild) -> None:
         if not isinstance(child, AdjustableBedCoordinator):
-            raise ServiceValidationError(
-                "Choose a physical receiver",
-                translation_domain=DOMAIN,
-                translation_key="betterliving2_selection_changed",
-                translation_placeholders={"reason": "Choose a physical receiver"},
-            )
+            raise invalid("betterliving2_selection_changed", reason="Choose a physical receiver")
 
         async def operation() -> None:
             await child.async_execute_controller_command(
@@ -211,11 +206,7 @@ async def set_alarm(call: ServiceCall, alarm: AlarmRequest, given: list[str]) ->
         and call.data.get("time") is None
         and any(owner.data.get("protocol_variant") == "p3" for owner in selection.owners.values())
     ):
-        raise ServiceValidationError(
-            "Choose an alarm time",
-            translation_domain=DOMAIN,
-            translation_key="alarm_time_required",
-        )
+        raise invalid("alarm_time_required")
     with selection.scope():
         await _set_alarm(call, targets, admissions, selection, alarm, given)
 
@@ -243,11 +234,7 @@ async def _set_alarm(
     async def execute(controller: BetterLiving2Controller) -> None:
         owner = id(controller._coordinator)
         if owner not in plans:
-            raise ServiceValidationError(
-                "BetterLiving2 owner changed during alarm admission",
-                translation_domain=DOMAIN,
-                translation_key="betterliving2_alarm_owner_changed",
-            )
+            raise invalid("betterliving2_alarm_owner_changed")
         selection.start(controller)
         # Only the cohort can admit the native same-owner sequential switch.
         await controller.set_alarm(replace(plans[owner], link=controller._live()))
@@ -285,11 +272,7 @@ async def _massage(
         owner = id(controller._coordinator)
         selection.start(controller)
         if owner not in layouts or controller.wire != "P1" or controller.layout != layouts[owner]:
-            raise ServiceValidationError(
-                "BetterLiving2 owner changed during massage admission",
-                translation_domain=DOMAIN,
-                translation_key="betterliving2_massage_owner_changed",
-            )
+            raise invalid("betterliving2_massage_owner_changed")
         controller._live()
         await controller.massage_pair(call.data["head"], call.data["feet"])
 

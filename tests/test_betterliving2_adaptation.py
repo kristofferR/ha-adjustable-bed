@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath,
 from custom_components.adjustable_bed.command_scheduler import CommandKind, current_command_context
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.errors import invalid
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.paired_topology import PairedSideError
 from custom_components.adjustable_bed.profiles import betterliving2 as app
@@ -252,7 +253,7 @@ async def test_pre_dispatch_generation_yield_is_quiet_before_child_cancel(hass, 
         if controller is not None and controller._coordinator is children[peer_side]:
             owner = selection.owners[id(children[stopped_side])]
             baseline = owner.batch.admission.expected_pair_generations[stopped_side][0] + 1
-            generation = parent._pair_cancel_generation(
+            generation = parent.pair_cancel_generation(
                 stopped_side, owner.batch.admission.resources
             )[0]
             if (
@@ -327,7 +328,7 @@ async def test_sequential_native_cold_start_retires_offline_peer_stop(hass, prof
         try:
             await original_query(controller)
         except ServiceValidationError as err:
-            guard_errors.append(str(err))
+            guard_errors.append((err.translation_key, err.translation_placeholders))
             raise
 
     async def select(_hass, address, *_args, **_kwargs):
@@ -408,7 +409,16 @@ async def test_sequential_native_cold_start_retires_offline_peer_stop(hass, prof
                     "Expected cancellation must not retry the native connection"
                 )
                 clients[0].stop_notify.assert_awaited_once()
-            assert guard_errors == (["BetterLiving2 entry/roster changed"] if profile_drift else [])
+            assert guard_errors == (
+                [
+                    (
+                        "betterliving2_selection_changed",
+                        {"reason": "BetterLiving2 entry/roster changed"},
+                    )
+                ]
+                if profile_drift
+                else []
+            )
             assert all(not client.is_connected for client in clients)
             for client in clients:
                 client.disconnect.assert_awaited_once()
@@ -703,10 +713,13 @@ async def test_cancelled_startup_revalidates_drift_during_notification_setup(has
                         await task
                 failed = children["left"]._connection_attempt_details[0]
                 assert failed["error_type"] == "ServiceValidationError"
-                assert failed["error"] == (
-                    "BetterLiving2 entry/roster changed"
-                    if drift == "profile"
-                    else "BetterLiving2 captured session changed"
+                assert failed["error"] == str(
+                    invalid(
+                        "betterliving2_selection_changed",
+                        reason="BetterLiving2 entry/roster changed"
+                        if drift == "profile"
+                        else "BetterLiving2 captured session changed",
+                    )
                 )
                 assert not any(isinstance(frame, bytes) for _address, _client, frame in events)
                 assert all(not client.is_connected for _owner, client in clients)
@@ -749,7 +762,7 @@ async def test_cancelled_startup_cleanup_surfaces_late_drift(hass, drift):
             return original_check(selection, *args, **kwargs)
         except ServiceValidationError as err:
             if kwargs.get("releasing"):
-                errors.append(str(err))
+                errors.append((err.translation_key, err.translation_placeholders))
             raise
 
     with ExitStack() as stack, virtual_clock():
@@ -783,9 +796,14 @@ async def test_cancelled_startup_cleanup_surfaces_late_drift(hass, drift):
                     with pytest.raises(ServiceValidationError, match="selection was retired"):
                         await task
                 assert errors == [
-                    "BetterLiving2 entry/roster changed"
-                    if drift == "profile"
-                    else "BetterLiving2 captured session changed"
+                    (
+                        "betterliving2_selection_changed",
+                        {
+                            "reason": "BetterLiving2 entry/roster changed"
+                            if drift == "profile"
+                            else "BetterLiving2 captured session changed"
+                        },
+                    )
                 ]
                 assert selections[0].invalid and not selections[0].active
                 assert not any(isinstance(frame, bytes) for _address, _client, frame in events)
@@ -805,7 +823,7 @@ async def test_cancelled_startup_cleanup_surfaces_late_drift(hass, drift):
 
 
 async def test_sequential_peer_stop_before_later_worker_dispatch_is_quiet(hass):
-    events, stops = [], []
+    events, stops, released_marks = [], [], []
     with ExitStack() as stack, virtual_clock():
         parent, children, device, _ = await native_pair(
             hass, stack, "alarm", "sequential", "offline", events
@@ -813,6 +831,8 @@ async def test_sequential_peer_stop_before_later_worker_dispatch_is_quiet(hass):
         original_commit = children["right"].commit_prepared_command
 
         def commit(handle):
+            assert not children["left"].is_connected
+            released_marks.append((children["left"].stop_epoch, parent.stop_count("left")))
             stops.append(
                 asyncio.create_task(
                     hass.services.async_call(
@@ -829,6 +849,10 @@ async def test_sequential_peer_stop_before_later_worker_dispatch_is_quiet(hass):
                     await call_app(hass, device, "alarm")
                     await asyncio.gather(*stops)
                 assert stops
+                assert len(released_marks) == 1
+                epoch, count = released_marks[0]
+                assert children["left"].stop_epoch == epoch
+                assert parent.stop_count("left") == count + 1
                 assert len(action_frames(events, children["left"], "alarm")) == 2
                 assert not action_frames(events, children["right"], "alarm")
                 assert not any(

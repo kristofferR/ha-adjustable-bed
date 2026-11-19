@@ -10,6 +10,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.const import BED_TYPE_FURNIMOVE, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.test_furnimove import GAP_NAME, WRITE, char, fast_controller, written
 
 
@@ -137,7 +138,7 @@ async def test_advisory_duration_updates_disconnected_receiver_and_survives_reco
 async def test_advisory_duration_validates_all_profiles_before_updating_any(hass):
     first, controller = await target("12234")
     second, _ = await target("00000")
-    with pytest.raises(ServiceValidationError, match="no supported local massage duration"):
+    with raises_key("feature_not_supported", ServiceValidationError):
         await invoke(hass, [first, second], "furnimove_massage_duration", {"minutes": 20})
     first.async_set_furnimove_massage_duration.assert_not_awaited()
     assert controller.persisted_app_state == {"duration_minutes": 15}
@@ -159,7 +160,7 @@ async def test_duplicate_or_current_rename_rejected_before_any_connection(hass):
     entry.add_to_hass(hass)
     coordinator, controller = await target(rename=True)
     for name in (" bed ", " TAKEN "):
-        with pytest.raises(ServiceValidationError, match="unique"):
+        with raises_key("name_not_unique", ServiceValidationError):
             await invoke(hass, [coordinator], "rename", {"name": name})
     coordinator.async_ensure_connected.assert_not_awaited()
     assert not written(controller)

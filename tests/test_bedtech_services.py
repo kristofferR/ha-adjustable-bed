@@ -38,10 +38,10 @@ def pair(left, right):
     children = {SIDE_LEFT: left, SIDE_RIGHT: right}
     parent.children = children
     parent.child_for_side.side_effect = children.get
-    parent._targets_for.side_effect = lambda side: (
+    parent.targets_for.side_effect = lambda side: (
         list(children.items()) if side == SIDE_BOTH else [(side, children[side])]
     )
-    parent._pair_cancel_generation.return_value = (0,)
+    parent.pair_cancel_generation.return_value = (0,)
 
     async def execute(command, *, side, **kwargs):
         for selected in children if side == SIDE_BOTH else [side]:

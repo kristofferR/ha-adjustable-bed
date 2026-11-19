@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.services import (
     SERVICE_TIMED_MOVE,
     async_register_services,
 )
+from tests.error_helpers import raises_key
 
 
 @pytest.fixture
@@ -107,7 +108,7 @@ async def test_alarm_preset_is_validated_on_every_target_before_writing(hass, se
     second.operation_identity = 2
     coordinator.operation_identity = 1
     resolve.return_value = ([(coordinator, SIDE_BOTH), (second, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="cannot wake with 'memory_2'"):
+    with raises_key("alarm_wake_action_not_supported", ServiceValidationError):
         await hass.services.async_call(DOMAIN, SERVICE_SET_ALARM, {
             "device_id": ["bed", "second"], "enabled": True, "time": "07:00:00",
             "wake_action": "memory_2",
@@ -128,7 +129,7 @@ async def test_clock_sync_is_serialized(hass, service_target):
 async def test_clock_sync_rejects_transport_without_clock_before_any_write(hass, service_target):
     _, controller, _ = service_target
     controller.supports_clock_sync = False
-    with pytest.raises(ServiceValidationError, match="does not support clock synchronization"):
+    with raises_key("clock_sync_not_supported", ServiceValidationError):
         await hass.services.async_call(DOMAIN, SERVICE_SYNC_CLOCK,
                                       {"device_id": "bed"}, blocking=True)
     controller.sync_clock.assert_not_awaited()

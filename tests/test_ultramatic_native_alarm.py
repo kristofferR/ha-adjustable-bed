@@ -115,6 +115,16 @@ def error_text(error):
     return str(error)
 
 
+def changed_or_stopped(error) -> bool:
+    """The action refused because the bed changed or a STOP came, by key or own reason."""
+    return bool(error_keys(error) & {"bed_changed", "action_stopped"}) or "Ultramatic" in error_text(error)
+
+
+def error_keys(error):
+    errors = error.side_errors.values() if isinstance(error, PairedSideError) else (error,)
+    return {getattr(item, "translation_key", None) for item in errors}
+
+
 async def wait_at_boundary(task, event):
     """Surface a public-call exception instead of hanging on an unmet fixture wait."""
     waiting = asyncio.create_task(event.wait())
@@ -144,7 +154,7 @@ async def test_registered_native_parent_both_uses_one_combined_sequence(native_a
 
     client.write_gatt_char.side_effect = observe
     generation = inner.controller.operation_generation
-    assert pair._targets_for("both")[0][1] is pair._single_both
+    assert pair.targets_for("both")[0][1] is pair._single_both
     with clocked(hass):
         await alarm(hass, [devices["parent"]], operation)
     assert writes(client) == expected(operation)
@@ -194,14 +204,14 @@ async def test_registered_native_both_and_standalone_use_distinct_current_plans(
     check_restored(inner, standalone)
 
 
-REFRESH = "Refresh alarms on this connection before turning the alarm off"
+REFRESH = "alarm_refresh_needed"
 
 
 @pytest.mark.parametrize(
     "bad_report,refusal",
     [
         # Its B record is off, so turning B off is refused before AB is checked.
-        (ALARM_REPORT, "The alarm is already off, so nothing was sent"),
+        (ALARM_REPORT, "alarm_already_off"),
         # Both sides on but unequal: the new report revokes AB permission.
         (bytes.fromhex("ed8003017f0106300001027f0106450001"), REFRESH),
         (bytes.fromhex("ed8003027f0106300001027f0106300001"), REFRESH),
@@ -218,7 +228,7 @@ async def test_registered_native_both_invalid_disable_blocks_earlier_standalone(
     report(client, bad_report)
     with clocked(hass), pytest.raises((HomeAssistantError, ValueError)) as caught:
         await alarm(hass, [devices["standalone"], devices["parent"]], "disable")
-    assert refusal in error_text(caught.value)
+    assert refusal in error_keys(caught.value)
     assert writes(client) == writes(other_client) == []
     inner.async_ensure_connected.assert_not_awaited()
     standalone.async_ensure_connected.assert_not_awaited()
@@ -266,7 +276,7 @@ async def test_registered_native_alarm_rejects_preflight_owner_and_route_changes
             release.set()
             with pytest.raises((HomeAssistantError, ConnectionError, ValueError)) as caught:
                 await task
-            assert "Ultramatic" in error_text(caught.value)
+            assert changed_or_stopped(caught.value)
             assert writes(client) == ([app.control("STOP")] if change == "stop" else [])
             assert writes(other_client) == []
             check_restored(inner, standalone)
@@ -311,7 +321,7 @@ async def test_registered_native_alarm_rechecks_queued_wire_route_and_client(nat
             queued.release()
             with pytest.raises((HomeAssistantError, ConnectionError, ValueError)) as caught:
                 await task
-            assert "Ultramatic" in error_text(caught.value)
+            assert changed_or_stopped(caught.value)
             assert all(frame == app.control("STOP") for frame in writes(client))
             assert writes(other_client) == []
             check_restored(inner)

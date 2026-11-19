@@ -675,7 +675,7 @@ async def test_native_both_rejects_later_owner_drift_before_mutation(hass, actio
                 with pytest.raises(ServiceValidationError):
                     await bind(right, right.entry.data["protocol_variant"], history, events)
             if roster_fault:
-                assert [child for _, child in parent._targets_for("both")] == list(
+                assert [child for _, child in parent.targets_for("both")] == list(
                     live_roster.values()
                 )
             boundary.append(len(events))
@@ -689,7 +689,10 @@ async def test_native_both_rejects_later_owner_drift_before_mutation(hass, actio
                     with pytest.raises(ServiceValidationError) as rejected:
                         await call_app(hass, device, action)
                     if roster_fault:
-                        assert str(rejected.value) == "BetterLiving2 physical roster changed"
+                        assert rejected.value.translation_key == "betterliving2_selection_changed"
+                        assert rejected.value.translation_placeholders == {
+                            "reason": "BetterLiving2 physical roster changed"
+                        }
             if roster_fault:
                 assert hook_calls == [drift]
                 assert tuple(history) == original_history

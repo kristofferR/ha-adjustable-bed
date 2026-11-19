@@ -2,10 +2,10 @@
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN, SIDE_BOTH, SIDE_LEFT, SIDE_RIGHT
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...paired_coordinator import SingleAddressPairedCoordinator
 from ..casper_base.protocol import ALARM_MODES, Request
@@ -18,7 +18,7 @@ async def handle(call: ServiceCall) -> None:
     if call.data["operation"] == "anti_snore":
         for parent, side in targets:
             if isinstance(parent, SingleAddressPairedCoordinator) and side == SIDE_RIGHT:
-                raise ServiceValidationError("The default-left intervention cannot target Right")
+                raise invalid("left_side_only")
         # This callback has no side operand. Bind parent/Both to its one physical
         # left owner before STOP admission, rather than fan it out to both children.
         targets = [
@@ -30,9 +30,7 @@ async def handle(call: ServiceCall) -> None:
         # target the bed itself and run once, never once per side.
         for parent, side in targets:
             if isinstance(parent, SingleAddressPairedCoordinator) and side != SIDE_BOTH:
-                raise ServiceValidationError(
-                    "The alarm belongs to the whole bed; select the bed, not one side"
-                )
+                raise invalid("whole_bed_only")
         targets = [
             (parent, SIDE_LEFT if isinstance(parent, SingleAddressPairedCoordinator) else side)
             for parent, side in targets
@@ -72,16 +70,16 @@ async def handle(call: ServiceCall) -> None:
 
                 async def query(controller: BedController) -> bool:
                     if not isinstance(controller, MlilyRemoteController):
-                        raise ServiceValidationError("MLILY Remote controller changed")
+                        raise invalid("bed_changed")
                     try:
                         await controller.async_prepare_request(request)
                     except ValueError as error:
-                        raise ServiceValidationError(str(error)) from error
+                        raise rejected(error) from error
                     return True
 
                 async def inspect(target: BedChild) -> None:
                     if not await target.async_execute_controller_query(query, cancel_running=False):
-                        raise ServiceValidationError("MLILY Remote preflight was interrupted")
+                        raise invalid("action_stopped")
 
                 if isinstance(parent, PairedBedCoordinator):
                     child_side = next(

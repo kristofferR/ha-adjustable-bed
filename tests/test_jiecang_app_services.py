@@ -27,6 +27,7 @@ from custom_components.adjustable_bed.services import (
     async_register_services,
 )
 from tests.alarm_helpers import use_shared_alarm_writer
+from tests.error_helpers import raises_key
 
 
 @pytest.fixture
@@ -144,7 +145,7 @@ async def test_yoga_alarm_validates_every_target_before_writing(
         ),
     )
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="cannot wake with 'yoga'"):
+    with raises_key("alarm_wake_action_not_supported", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
             SERVICE_SET_ALARM,
@@ -216,7 +217,7 @@ async def test_all_targets_are_validated_before_writing(
         **{capability: None if capability == "alarm_capability" else False},
     )
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="does not support|has no alarm"):
+    with raises_key({"feature_not_supported", "alarm_not_supported", "device_rename_not_supported"}, ServiceValidationError):
         await hass.services.async_call(
             DOMAIN, service, {"device_id": ["bed", "other"], **data}, blocking=True
         )

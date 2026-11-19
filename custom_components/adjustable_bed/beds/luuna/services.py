@@ -1,8 +1,8 @@
 """Live Luuna capability admission through the physical receiver's query lane."""
 
 from homeassistant.core import ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
+from ...errors import invalid, rejected
 from ...paired_coordinator import BedChild, PairedBedCoordinator
 from ..base import BedController
 from ..casper_base.protocol import Request
@@ -24,16 +24,16 @@ async def async_handle_request(call: ServiceCall, request: Request) -> None:
 
             async def query(controller: BedController) -> bool:
                 if not isinstance(controller, LuunaController):
-                    raise ServiceValidationError("Select a Luuna + product for this action")
+                    raise invalid("action_for_other_beds", beds="Luuna + beds")
                 try:
                     await controller.async_prepare_request(request)
                 except ValueError as error:
-                    raise ServiceValidationError(str(error)) from error
+                    raise rejected(error) from error
                 return True
 
             async def inspect(child: BedChild) -> None:
                 if not await child.async_execute_controller_query(query, cancel_running=False):
-                    raise ServiceValidationError("Luuna capability preflight was interrupted")
+                    raise invalid("action_stopped")
 
             if isinstance(parent, PairedBedCoordinator):
                 child_side = next(key for key, child in parent.children.items() if child is target)

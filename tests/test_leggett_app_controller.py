@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
     OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
 )
+from tests.error_helpers import raises_key
 from tests.state_helpers import published
 
 
@@ -567,7 +568,7 @@ async def test_unknown_or_unconfirmed_light_state_never_causes_a_retry_toggle():
     from homeassistant.exceptions import HomeAssistantError
 
     controller = make_controller()
-    with pytest.raises(HomeAssistantError, match="unknown"):
+    with raises_key("light_state_unknown", HomeAssistantError):
         await controller.lights_on()
     controller.write_command.assert_not_awaited()
     report_cu170(controller, 0)
@@ -578,7 +579,7 @@ async def test_unknown_or_unconfirmed_light_state_never_causes_a_retry_toggle():
     ):
         await controller.lights_on()
     controller._tap_keycode.assert_awaited_once()
-    with pytest.raises(HomeAssistantError, match="unknown"):
+    with raises_key("light_state_unknown", HomeAssistantError):
         await controller.lights_on()
     controller._tap_keycode.assert_awaited_once()
 
@@ -628,7 +629,7 @@ async def test_cu170_reset_chord_is_not_exposed_and_cannot_be_sent():
     descriptions = {item.key: item for item in BUTTON_DESCRIPTIONS}
     assert not _should_add_button(descriptions["control_mode_press_and_hold"], controller, True)
     assert _should_add_button(descriptions["control_mode_press_and_release"], controller, True)
-    with pytest.raises(HomeAssistantError, match="factory-reset"):
+    with raises_key("prodigy_hold_mode_blocked", HomeAssistantError):
         await controller.set_control_mode_press_and_hold()
     controller.write_command.assert_not_awaited()
     await controller.set_control_mode_press_and_release()

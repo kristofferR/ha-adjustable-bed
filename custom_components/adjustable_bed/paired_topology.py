@@ -47,6 +47,7 @@ from .const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
+from .errors import failed, keyed
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -76,8 +77,10 @@ class PairedSideError(HomeAssistantError):
     def __init__(self, action: str, side_errors: Mapping[str, BaseException]) -> None:
         self.action = action
         self.side_errors = dict(side_errors)
-        sides = ", ".join(sorted(side_errors))
-        super().__init__(f"Paired {action} failed on side(s): {sides}")
+        # Each side's own reason, cleanup failures included ("left (stop)").
+        reasons = "; ".join(f"{side}: {error}" for side, error in sorted(side_errors.items()))
+        message, keywords = keyed("pair_side_failed", reasons=reasons)
+        super().__init__(message, **keywords)
 
 
 def merge_stop_errors(
@@ -199,7 +202,7 @@ class PairAdmission:
 
 # ---------------------------------------------------------------------------
 @dataclass(frozen=True)
-class _SequentialCycle:
+class SequentialCycle:
     task: asyncio.Task[object] | None
     generations: tuple[tuple[str, tuple[int, ...]], ...]
     resources: frozenset[str]
@@ -1132,7 +1135,12 @@ class SequentialTwoLinkTopology(PairTopology):
         super().__init__(pair)
         # Orders connection switching; one command cycle owns the link lane.
         self.command_lock = asyncio.Lock()
-        self._cycle: _SequentialCycle | None = None
+        self._cycle: SequentialCycle | None = None
+
+    @property
+    def cycle(self) -> SequentialCycle | None:
+        """Return the command cycle that owns the link lane, if one runs."""
+        return self._cycle
 
     def check_admission(self, targets: Collection[PairTarget]) -> None:
         if len(targets) > 1 and linked_readiness_required(targets):
@@ -1173,7 +1181,7 @@ class SequentialTwoLinkTopology(PairTopology):
                 return
 
             admission.active_children = {child for _, child in targets}
-            self._cycle = _SequentialCycle(
+            self._cycle = SequentialCycle(
                 asyncio.current_task(), tuple(entry_cancel.items()), resources
             )
             try:
@@ -1239,9 +1247,7 @@ class SequentialTwoLinkTopology(PairTopology):
             # may have been connected out-of-band, e.g. a per-side diagnostic
             # Connect button) before opening this link, so we never hold two.
             if not await self._release_other_sides(child):
-                errors[side] = HomeAssistantError(
-                    "could not release the other side before switching"
-                )
+                errors[side] = failed("side_not_released", side="other")
                 break
 
             try:
@@ -1250,7 +1256,7 @@ class SequentialTwoLinkTopology(PairTopology):
                 errors[side] = err
                 break
             if not connected:
-                errors[side] = HomeAssistantError(f"{side} side of the pair could not be connected")
+                errors[side] = failed("side_not_connected", side=side)
                 break
 
             # A STOP (or newer command) may have landed WHILE we were connecting —
@@ -1261,10 +1267,7 @@ class SequentialTwoLinkTopology(PairTopology):
                 if not local_role and not await safe_disconnect(side, child):
                     # The post-cancel release raised — surface it; the one-link
                     # guard may have failed.
-                    errors[side] = HomeAssistantError(
-                        f"{side} side failed to disconnect after cancellation "
-                        "— aborting to keep one link"
-                    )
+                    errors[side] = failed("side_not_released", side=side)
                 break
 
             op_error: BaseException | None = None
@@ -1283,22 +1286,13 @@ class SequentialTwoLinkTopology(PairTopology):
             # side onto a possibly-still-live/moving link.
             disconnected = local_role or await safe_disconnect(side, child)
             if op_error is not None or not disconnected:
-                if op_error is not None and not disconnected:
-                    # Both failed: the command erred AND the release that should
-                    # have halted/released the side also failed — surface both, as
-                    # the link may still be live/moving (the more critical fact).
-                    err = HomeAssistantError(
-                        f"{side} side command failed and its release also failed "
-                        f"— the link may still be live"
-                    )
-                    err.__cause__ = op_error
-                    errors[side] = err
-                elif op_error is not None:
+                if op_error is not None:
                     errors[side] = op_error
-                else:
-                    errors[side] = HomeAssistantError(
-                        f"{side} side failed to disconnect — aborting to keep one link"
-                    )
+                if not disconnected:
+                    # The release that halts the side failed too, so the link may
+                    # still be live: its own entry, beside the command's reason.
+                    key = side if op_error is None else f"{side} (disconnect)"
+                    errors[key] = failed("side_not_released", side=side)
                 break
         if errors:
             raise PairedSideError(action, errors)
@@ -1410,7 +1404,7 @@ class SingleLinkSideAwareTopology(_SideLaneTopology):
 
     @property
     def shared_command_timer(self) -> bool:
-        controller = self._single._single_inner.capability_controller
+        controller = self._single.inner.capability_controller
         return controller is not None and controller.commands_share_timer is True
 
     def targets_for(self, side: str) -> list[PairTarget]:
@@ -1489,7 +1483,7 @@ class SingleLinkSideAwareTopology(_SideLaneTopology):
             # once, then preserve and serialize both side-bound STOP writes.
             # Letting each wrapper cancel independently can remove the STOP that
             # the previous wrapper just queued.
-            self._single._single_inner.request_command_cancel()
+            self._single.inner.request_command_cancel()
             errors: dict[str, BaseException] = {}
             for side, child in targets:
                 assert isinstance(child, SingleAddressSideCoordinator)
@@ -1509,4 +1503,4 @@ class SingleLinkSideAwareTopology(_SideLaneTopology):
     async def connect_children(self, *, started_local_sides: Collection[str] = ()) -> bool:
         """Connect the one physical link shared by both logical sides."""
         del started_local_sides
-        return await self._single._single_inner.async_connect()
+        return await self._single.inner.async_connect()

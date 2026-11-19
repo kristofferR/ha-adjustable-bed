@@ -498,7 +498,7 @@ def test_single_receiver_sides_share_one_ha_callback_owner():
     # The existing topology contracts exercise replacement and STOP fan-out
     # for this declaration; this app must opt in even with independent op banks.
     pair = MagicMock()
-    pair._single_inner.capability_controller = c
+    pair.inner.capability_controller = c
     assert SingleLinkSideAwareTopology(pair, native_both=True).shared_command_timer
 
 

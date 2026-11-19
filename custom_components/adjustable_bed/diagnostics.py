@@ -47,6 +47,7 @@ from .paired_coordinator import PairedBedCoordinator
 from .pairing import get_child
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data
+from .runtime_data import entry_runtime
 
 
 def _normalize_ble_address(value: Any) -> str | None:
@@ -140,7 +141,7 @@ async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    stored = hass.data[DOMAIN][entry.entry_id]
+    stored = entry_runtime(hass, entry.entry_id)
     if isinstance(stored, PairedBedCoordinator):
         # A paired entry stores a PairedBedCoordinator, which has no client /
         # controller / position_data — aggregate per side instead of crashing.
