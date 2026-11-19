@@ -295,10 +295,6 @@ class SleepNumberMcrController(BedController, SleepNumberActions):
         return bool(self._foundation_features and self._foundation_features.light)
 
     @property
-    def exposes_discrete_light_as_light(self) -> bool:
-        return True
-
-    @property
     def supports_discrete_light_control(self) -> bool:
         """The BAM/MCR bed has separate under-bed light on/off writes."""
         return self.supports_lights

@@ -5,12 +5,12 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 
-from ...card import CARD_MASSAGE
 from ...codec import richmat as codec
 from ...const import BEDTECH_WRITE_CHAR_UUID, CONF_PROTOCOL_VARIANT, SIDE_LEFT, SIDE_RIGHT
 from ...profiles.richmat import BEDTECH, BEDTECH_APP_PROFILES, Button
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..builder import BuildContext
-from ..entity_specs import ControllerButtonSpec, MotorControlSpec
+from ..entity_specs import MotorControlSpec
 from ..richmat.controller import RichmatProfileController
 from .routing import APP_ACTIONS
 
@@ -174,27 +174,34 @@ class BedTechController(RichmatProfileController):
         return "massage_mode" in (self.profile.codes or {})
 
     @property
-    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        if not self._supports_button("massage_timer_20"):
-            return ()
-        return (
-            ControllerButtonSpec(
-                "bedtech_massage_timer_20",
-                "Massage 20 minutes",
-                lambda controller: controller.set_massage_timer(20),
-                icon="mdi:timer-outline",
-                translation_key="bedtech_massage_timer_20",
-                card=CARD_MASSAGE,
-            ),
-        )
+    def supports_massage_timer(self) -> bool:
+        return self._supports_button("massage_timer_20")
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        # The app's only timer key is 20 minutes.
+        return [20] if self.supports_massage_timer else []
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return self.supports_massage_off_control
 
     async def set_massage_timer(self, minutes: int) -> None:
+        if minutes == 0 and self.supports_massage_off_control:
+            await self.massage_off()
+            return
         if minutes != 20 or not self._supports_button("massage_timer_20"):
             raise ValueError("This BedTech model only exposes the 20-minute timer")
         await self._send("massage_timer_20")
+        # The bed reports no timer, so the select shows the last one sent.
+        self._publish_timer(20)
 
     async def massage_off(self) -> None:
         await self._send("massage_off")
+        self._publish_timer(0)
+
+    def _publish_timer(self, minutes: int) -> None:
+        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
 
     async def lights_on(self) -> None:
         """The OEM app offers a toggle, without a discrete ON."""

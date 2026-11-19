@@ -24,6 +24,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.hass_dict import HassKey
 
 from .const import CONF_SIDE, DOMAIN
+from .entity_retypes import async_retyped_entities_built
 from .entity_runtime import controller_side_scope
 from .paired_coordinator import PairedBedCoordinator, entity_runtimes
 from .pairing import iter_children
@@ -119,7 +120,9 @@ class EntityLedger:
         retained = _retained_identities(self._entry, self.coordinator)
         if retained is None:
             return
-        created = retained.union(*self._records.values())
+        built = frozenset[EntityIdentity]().union(*self._records.values())
+        async_retyped_entities_built(self.hass, self._entry, built, retained)
+        created = retained | built
         if created == self._swept:
             return
         self._swept = created

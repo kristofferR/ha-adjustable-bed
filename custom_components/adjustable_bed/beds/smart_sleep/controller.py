@@ -686,8 +686,10 @@ class SmartSleepController(ProfileExecution[app.SmartSleepProfile], BedControlle
                 hold=ControllerHoldSpec(f"massage_{name}"),
                 card=CARD_MASSAGE_TIMER if name == "timer" else CARD_MASSAGE,
             )
-            # Massage on/off is the massage switch.
+            # Massage on/off is the massage switch. P2 sets each of these
+            # directly with its select, so only P1 keeps the cycle buttons.
             for name in ("wave", "timer", "head_strength", "foot_strength")
+            if self.profile.key == "p1"
         )
         return tuple(specs)
 

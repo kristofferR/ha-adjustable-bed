@@ -10,6 +10,7 @@ from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import ESHINE, Button, RichmatProfile
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -100,9 +101,12 @@ EXTRA_BUTTONS: Final[dict[str, tuple[str, Button]]] = {
     "save_anti_snore": ("Save anti-snore", "save_anti_snore"),
     "massage_head_strength": ("Cycle head massage strength", "massage_head"),
     "massage_foot_strength": ("Cycle foot massage strength", "massage_foot"),
-    "massage_10_minutes": ("Massage 10 minutes", "massage_timer_10"),
-    "massage_20_minutes": ("Massage 20 minutes", "massage_timer_20"),
-    "massage_30_minutes": ("Massage 30 minutes", "massage_timer_30"),
+}
+# The massage timer select's durations, each the app's own timer button.
+TIMERS: Final[dict[int, Button]] = {
+    10: "massage_timer_10",
+    20: "massage_timer_20",
+    30: "massage_timer_30",
 }
 type Action = Button | Literal["stop"]
 
@@ -473,6 +477,26 @@ class EshineController(ProfileExecution[RichmatProfile], BedController):
 
     async def massage_off(self) -> None:
         await self.execute_action("massage_off")
+        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(0))
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return True
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return list(TIMERS)
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """A timer button, or Off as the app's massage off."""
+        if minutes == 0:
+            await self.massage_off()
+            return
+        if minutes not in TIMERS:
+            raise ValueError("Choose 10, 20 or 30 minutes")
+        await self.execute_action(TIMERS[minutes])
+        # The bed reports no timer; show the last choice sent.
+        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
 
     async def massage_mode_step(self) -> None:
         await self.execute_action("massage_mode")

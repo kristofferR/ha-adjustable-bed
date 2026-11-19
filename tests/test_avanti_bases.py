@@ -312,10 +312,10 @@ async def test_avanti_entities_and_serialized_actions(
         entity("button", key)
     for zone in LEVELS:
         entity("number", f"controller_number_ore_comfort_massage_{zone}")
-    entity("select", f"controller_select_{STATE_TIMER}")
+    entity("select", "massage_timer")
     for key in ("back_position", "legs_position", "head_position", "lumbar_position"):
         assert registry.async_get_entity_id("number", DOMAIN, f"{address}_{key}") is None
-    light = entity("switch", "under_bed_lights")
+    light = entity("light", "under_bed_lights")
     assert hass.states.get(light).state == STATE_UNKNOWN
     assert hass.states.get(light).attributes[ATTR_ASSUMED_STATE] is True
     mock_bleak_client.write_gatt_char.reset_mock()

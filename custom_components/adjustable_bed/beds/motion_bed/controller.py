@@ -6,16 +6,30 @@ import re
 from collections.abc import Callable, Coroutine, Mapping
 from contextvars import ContextVar
 from dataclasses import dataclass, fields, replace
-from functools import lru_cache
+from functools import lru_cache, partial
 from hashlib import sha256
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...command_scheduler import note_frame_skipped, note_frame_written, note_write_not_counted
+from ...card import (
+    CARD_CLIMATE,
+    CARD_LIGHT_LEVEL,
+    CARD_LIGHTING,
+    CARD_MASSAGE,
+    CARD_UTILITY,
+    CardPlacement,
+)
+from ...command_scheduler import (
+    Delivery,
+    command_delivery,
+    note_frame_skipped,
+    note_frame_written,
+    note_write_not_counted,
+)
 from ...const import (
     CONF_BLE_DEVICE_NAME,
     CONF_MOTION_BED_MOVEMENT,
@@ -24,14 +38,17 @@ from ...const import (
 )
 from ...controller_state import StateKey
 from ...profiles.ff_frame import MOTION_BED, MotionBedProfile
+from ...state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
+    ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
@@ -119,13 +136,71 @@ _NOT_BUTTONS: Final = frozenset(
     {*(f"motion_bed_audio_preview_{index}" for index in range(1, 6)), "motion_bed_audio_stop"}
 )
 
+# App buttons that set one value become one control, sending the same action.
+# The massage timer select's durations:
+_MASSAGE_TIMERS: Final[Mapping[int, str]] = {
+    10: "motion_bed_10time",
+    20: "motion_bed_20time",
+    30: "motion_bed_30time",
+}
+# The light timer select's options:
+_LIGHT_TIMERS: Final[Mapping[str, str]] = {
+    "10 min": "motion_bed_tv_10fenzhong",
+    "8 hours": "motion_bed_tv_8xiaoshi",
+    "10 hours": "motion_bed_tv_10xiaoshi",
+}
+# The brightness number's levels:
+_BRIGHTNESS: Final[Mapping[int, str]] = {
+    level: f"motion_bed_brightness_{level}" for level in range(11)
+}
+
+
+@dataclass(frozen=True, slots=True)
+class _Switch:
+    """An on/off setting the bed reports, sent with its app action(s)."""
+
+    field: str
+    on: str
+    # None: ``on`` is the app's one toggle, whose frame follows the reported state.
+    off: str | None = None
+    card: CardPlacement = CARD_UTILITY
+
+
+# Each switch shows the reported field it is keyed by.
+_SWITCHES: Final[tuple[_Switch, ...]] = (
+    _Switch("night_light_enabled", "motion_bed_night_light", card=CARD_LIGHTING),
+    _Switch("sleep_enabled", "motion_bed_sleepmian"),
+    _Switch(
+        "motor_light_enabled",
+        "motion_bed_light_enabled_on",
+        "motion_bed_light_enabled_off",
+        CARD_LIGHTING,
+    ),
+    _Switch(
+        "motor_massage_enabled",
+        "motion_bed_massage_enabled_on",
+        "motion_bed_massage_enabled_off",
+        CARD_MASSAGE,
+    ),
+    _Switch(
+        "thermal_timer_enabled",
+        "motion_bed_thermal_timer_on",
+        "motion_bed_thermal_timer_off",
+        CARD_CLIMATE,
+    ),
+    _Switch("air_adaptive", "motion_bed_air_adaptive_on", "motion_bed_air_adaptive_off", CARD_MASSAGE),
+)
+_CONTROL_KEYS: Final = frozenset(
+    {
+        *_MASSAGE_TIMERS.values(),
+        *_LIGHT_TIMERS.values(),
+        *_BRIGHTNESS.values(),
+        *(key for switch in _SWITCHES for key in (switch.on, switch.off) if key),
+    }
+)
+
 # Entity names for app labels that are unclear, shouted or shared by two buttons.
 _BUTTON_NAMES: Mapping[str, str] = {
-    "motion_bed_10time": "Massage timer 10 minutes",
-    "motion_bed_20time": "Massage timer 20 minutes",
-    "motion_bed_30time": "Massage timer 30 minutes",
-    "motion_bed_air_adaptive_off": "Adaptive air massage off",
-    "motion_bed_air_adaptive_on": "Adaptive air massage on",
     "motion_bed_air_back": "Air wave massage",
     "motion_bed_air_fangqi": "Deflate",
     "motion_bed_air_full": "Air combination massage",
@@ -142,7 +217,6 @@ _BUTTON_NAMES: Mapping[str, str] = {
     "motion_bed_legsxunhuan": "Legs cycle",
     "motion_bed_lumbarxunhuan": "Lumbar cycle",
     "motion_bed_upperxunhuan": "Head cycle",
-    **{f"motion_bed_brightness_{level}": f"Light brightness {level}" for level in range(11)},
     "motion_bed_calibration_flat_position": "Calibrate sleep sensor flat",
     "motion_bed_calibration_next_position": "Calibrate sleep sensor side",
     "motion_bed_coupled_flat": "Both sides flat",
@@ -163,10 +237,6 @@ _BUTTON_NAMES: Mapping[str, str] = {
     "motion_bed_flat": "Flat",
     "motion_bed_houqing": "Tilt backward",
     "motion_bed_legsrelax": "Leg relax",
-    "motion_bed_light_enabled_off": "Light off",
-    "motion_bed_light_enabled_on": "Light on",
-    "motion_bed_massage_enabled_off": "Massage off",
-    "motion_bed_massage_enabled_on": "Massage on",
     "motion_bed_massage_lower_decrease": "Decrease leg massage",
     "motion_bed_massage_lower_increase": "Increase leg massage",
     "motion_bed_massage_upper_decrease": "Decrease back massage",
@@ -175,18 +245,11 @@ _BUTTON_NAMES: Mapping[str, str] = {
     "motion_bed_massage_wave_increase": "Increase massage frequency",
     "motion_bed_memory1": "Memory 1",
     "motion_bed_music": "Sleep music",
-    "motion_bed_night_light": "Toggle night light",
-    "motion_bed_sleepmian": "Toggle smart sleep",
     "motion_bed_sync": "Toggle sync",
     "motion_bed_sleep_adjust_stop": "Stop sleep adjustment",
     "motion_bed_snore": "Anti-snore",
     "motion_bed_thermal_gear_4": "Climate off",
-    "motion_bed_thermal_timer_off": "Climate timer off",
-    "motion_bed_thermal_timer_on": "Climate timer on",
     "motion_bed_tv": "TV",
-    "motion_bed_tv_10fenzhong": "Light timer 10 minutes",
-    "motion_bed_tv_8xiaoshi": "Light timer 8 hours",
-    "motion_bed_tv_10xiaoshi": "Light timer 10 hours",
     "motion_bed_wholeflat": "All flat",
     "motion_bed_wholeshangsheng": "Rise",
     "motion_bed_wholexiajiang": "Lower",
@@ -232,6 +295,14 @@ def button_actions_for(owners: frozenset[str]) -> Mapping[str, MotionBedAction]:
     return MappingProxyType(chosen)
 
 
+async def _set_switch(controller: BedController, on: bool, *, switch: _Switch) -> None:
+    await require_controller(controller, MotionBedController).set_motion_bed_switch(switch, on)
+
+
+async def _set_brightness(controller: BedController, value: float) -> None:
+    await require_controller(controller, MotionBedController).set_motion_bed_brightness(int(value))
+
+
 def _action_callback(key: str) -> MotorCommandCallable:
     async def invoke(controller: BedController) -> None:
         await require_controller(controller, MotionBedController).async_execute_motion_bed_action(
@@ -275,12 +346,12 @@ _AUDIO_SOUNDS: Final = {
 # Preset-selected flags, raw readbacks, calibration samples and module inventory
 # details stay in diagnostics.
 _SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
-    ("upper_massage", True, ()),
-    ("lower_massage", True, ()),
-    ("massage_wave", True, ()),
-    ("massage_timer", True, ()),
-    ("brightness", True, ()),
-    ("light_timer", False, ()),
+    # Massage levels only mirror the step buttons; the bed takes no direct level.
+    ("upper_massage", False, ()),
+    ("lower_massage", False, ()),
+    ("massage_wave", False, ()),
+    # The massage and light timer selects and the brightness number show those,
+    # so the bed's raw light timer stays in diagnostics.
     ("audio_volume", False, ()),
     ("audio_track", False, ()),
     ("sleep_timer", False, ()),
@@ -302,17 +373,14 @@ _SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
         ),
     ),
 )
+# The switches show the night light, smart sleep, module light and massage and
+# adaptive air settings; the climate timer keeps its schedule as attributes.
 _BINARY_SENSORS: Final[tuple[tuple[str, bool, tuple[str, ...]], ...]] = (
-    ("motor_light_enabled", True, ()),
-    ("motor_massage_enabled", True, ()),
-    ("night_light_enabled", True, ()),
-    ("sleep_enabled", False, ()),
     ("sync_enabled", False, ()),
-    ("air_adaptive", True, ()),
     ("thermal_low_water", True, ()),
     (
         "thermal_timer_enabled",
-        True,
+        False,
         ("thermal_timer_hour", "thermal_timer_minute", "thermal_timer_mode", "thermal_timer_gear"),
     ),
     (
@@ -352,6 +420,13 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         self._operation_generation: ContextVar[int | None] = ContextVar("motion_bed_operation", default=None)
         self._started_modules: set[str] = set()
         self._active_module: str | None = None
+        # The massage timer the select shows: the last one the bed reported or
+        # the last one set here, whichever is newer. The home screen's timer
+        # keys are not always reported back.
+        self._reported_massage_timer: int | None = None
+        self._shown_massage_timer: int | None = None
+        # The screen state a timer key's frame is chosen from, while one is pressed.
+        self._selection_state: MotionBedState | None = None
         self._audio_preference = False
         self._held_session: _HeldSession | None = None
         self._module_generation = 0
@@ -459,7 +534,20 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         # A hub reports its modules after connecting; keep each module's controls.
         if self.selection.surface != "hub":
             return frozenset()
-        return frozenset(("button", key) for key in button_actions_for(_HUB_OWNERS))
+        actions = button_actions_for(_HUB_OWNERS)
+        return frozenset(
+            {
+                *(("button", key) for key in actions if key not in _CONTROL_KEYS),
+                *(
+                    ("switch", f"controller_switch_motion_bed_{switch.field}")
+                    for switch in _SWITCHES
+                    if switch.on in actions
+                ),
+                *((("number", "controller_number_motion_bed_brightness"),) if _BRIGHTNESS[0] in actions else ()),
+                *((("select", "massage_timer"),) if _MASSAGE_TIMERS[10] in actions else ()),
+                *((("select", "light_timer"),) if _LIGHT_TIMERS["10 min"] in actions else ()),
+            }
+        )
 
     def _active_owners(self) -> frozenset[str]:
         owners: set[str] = {"Setting2Activity"}
@@ -512,7 +600,135 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                 enabled="_brightness_" not in key and not _FIXED_TIMER.search(key),
             )
             for key, action in button_actions_for(self._active_owners()).items()
+            if key not in _CONTROL_KEYS
         )
+
+    @property
+    def has_dynamic_controller_entities(self) -> bool:
+        # A hub reports its modules after connecting; their switches, timers
+        # and brightness then appear.
+        return self.selection.surface == "hub"
+
+    def _actions_present(self, *keys: str) -> bool:
+        actions = button_actions_for(self._active_owners())
+        return all(key in actions for key in keys)
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        return tuple(
+            ControllerSwitchSpec(
+                f"motion_bed_{switch.field}",
+                f"motion_bed_{switch.field}",
+                partial(_set_switch, switch=switch),
+                StateKey[bool | None]("motion_bed_" + switch.field),
+                card=switch.card,
+            )
+            for switch in _SWITCHES
+            if self._actions_present(switch.on, *((switch.off,) if switch.off else ()))
+        )
+
+    async def set_motion_bed_switch(self, switch: _Switch, on: bool) -> None:
+        """Send the setting's on or off action, or its toggle when the state differs."""
+        if switch.off is not None:
+            await self.async_execute_motion_bed_action(self._function_action(switch.on if on else switch.off))
+            return
+        current = getattr(self._state, switch.field)
+        if current is on:
+            return
+        if current is None and not on:
+            # The toggle's frame follows the reported state; unknown would send "on".
+            raise ValueError("The bed has not reported this setting yet")
+        await self.async_execute_motion_bed_action(self._function_action(switch.on))
+
+    def _function_action(self, key: str) -> str:
+        action = button_actions_for(self._active_owners()).get(key)
+        if action is None:
+            raise ValueError("This control is unavailable in the selected Motion Bed profile")
+        return action.key
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # The massage screens always show their timer; no setup question needed.
+        return self.supports_massage_timer
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self._actions_present(*_MASSAGE_TIMERS.values())
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return list(_MASSAGE_TIMERS) if self.supports_massage_timer else []
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Each timer key starts its duration, or turns off the timer it shows.
+
+        The app picks a key's frame from the timer its screen shows: the
+        reported one, or, on screens the bed never reports to, the one chosen
+        last. Pressing the shown timer's key turns it off.
+        """
+        reported = self._state.massage_timer
+        shown = reported if reported is not None else self._shown_massage_timer
+        if minutes == 0:
+            if shown not in _MASSAGE_TIMERS:
+                raise ValueError("No massage timer is running to turn off")
+            key = _MASSAGE_TIMERS[shown]
+        elif minutes not in _MASSAGE_TIMERS:
+            raise ValueError("Choose 10, 20 or 30 minutes")
+        elif shown == minutes:
+            if self._shown_massage_timer == minutes:
+                return
+            # Pressing the reported timer's key would turn it off.
+            raise ValueError("The bed has not reported the last timer change yet; try again shortly")
+        else:
+            key = _MASSAGE_TIMERS[minutes]
+        self._selection_state = replace(self._state, massage_timer=shown)
+        try:
+            await self.async_execute_motion_bed_action(self._function_action(key))
+        finally:
+            self._selection_state = None
+        delivery = command_delivery()
+        if delivery is not Delivery.NONE:
+            # A timer sent only in part is unknown.
+            self._shown_massage_timer = (minutes or None) if delivery is Delivery.SENT else None
+            self._publish()
+
+    @property
+    def supports_light_timer(self) -> bool:
+        return self._actions_present(*_LIGHT_TIMERS.values())
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        return list(_LIGHT_TIMERS) if self.supports_light_timer else []
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        if timer_option not in _LIGHT_TIMERS:
+            raise ValueError("Choose 10 minutes, 8 hours or 10 hours")
+        await self.async_execute_motion_bed_action(self._function_action(_LIGHT_TIMERS[timer_option]))
+        # The reported light timer's values have no proven option mapping.
+        self.forward_sent_state_updates(LIGHT_TIMER_OPTION(timer_option))
+
+    @property
+    def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
+        if not self._actions_present(*_BRIGHTNESS.values()):
+            return ()
+        return (
+            ControllerNumberSpec(
+                "motion_bed_brightness",
+                "motion_bed_brightness",
+                # The status parser publishes the level with the other fields.
+                cast(StateKey[int | None], _field_key("brightness")),
+                0,
+                10,
+                1,
+                _set_brightness,
+                card=CARD_LIGHT_LEVEL,
+            ),
+        )
+
+    async def set_motion_bed_brightness(self, level: int) -> None:
+        if level not in _BRIGHTNESS:
+            raise ValueError("Brightness is 0 to 10")
+        await self.async_execute_motion_bed_action(self._function_action(_BRIGHTNESS[level]))
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -587,9 +803,13 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         )
 
     def _publish(self) -> None:
+        if self._state.massage_timer != self._reported_massage_timer:
+            self._reported_massage_timer = self._shown_massage_timer = self._state.massage_timer
+        timer = self._shown_massage_timer
         self.forward_controller_state_updates(
             *(_field_key(name)(value) for name, value in self._state.to_updates().items()),
             ACTIVE_MODULE(self._active_module),
+            MASSAGE_TIMER_MINUTES(timer if timer in _MASSAGE_TIMERS else None),
         )
 
     async def async_discover_capabilities(self) -> None:
@@ -994,7 +1214,9 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             module = _MODULE_OWNERS.get(action.owner)
             if module is not None:
                 await self.set_motion_bed_surface(module)
-        source_ids = action.select(self._state, self.selection.alternate_identity, branch=branch)
+        source_ids = action.select(
+            self._selection_state or self._state, self.selection.alternate_identity, branch=branch
+        )
         commands = tuple(dict.fromkeys(SOURCE_COMMANDS[source_id] for source_id in source_ids))
         if action.kind == "held":
             client, characteristic = self._current_session()

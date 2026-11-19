@@ -143,21 +143,21 @@ async def test_profile_change_builds_only_the_current_app_namespace(hass, factor
     assert not {unique_id for unique_id in remaining if f"_{prefix}_" in unique_id}
 
 
-@pytest.mark.parametrize(("factory", "has_switch"), [(tranquil, True), (lambda: zseries("z230"), False)])
-async def test_discrete_light_switch_only_where_the_app_has_on_off(hass, factory, has_switch):
-    from custom_components.adjustable_bed.switch import _switch_entities_for
+@pytest.mark.parametrize(("factory", "has_light"), [(tranquil, True), (lambda: zseries("z230"), False)])
+async def test_discrete_light_only_where_the_app_has_on_off(hass, factory, has_light):
+    from custom_components.adjustable_bed.light import AdjustableBedOnOffLight, _light_entities_for
 
     controller = factory()
-    bed_type = BED_TYPE_TRANQUIL if has_switch else BED_TYPE_ZSERIES
+    bed_type = BED_TYPE_TRANQUIL if has_light else BED_TYPE_ZSERIES
     runtime = configure_entity_runtime(hass, controller, bed_type)
     runtime.bed_type = bed_type
-    switches = [
-        switch for switch in _switch_entities_for(hass, runtime)
-        if switch.entity_description.key == "under_bed_lights"
+    lights = [
+        light for light in _light_entities_for(hass, runtime)
+        if isinstance(light, AdjustableBedOnOffLight)
     ]
-    assert bool(switches) is has_switch
-    if switches:
-        assert switches[0].is_on is None and switches[0].assumed_state is True
+    assert bool(lights) is has_light
+    if lights:
+        assert lights[0].is_on is None and lights[0].assumed_state is True
 
 
 def _target(bed_type, controller):

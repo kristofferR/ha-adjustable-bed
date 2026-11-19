@@ -264,3 +264,59 @@ def test_preset_saves_use_the_save_placement():
         else:
             assert spec.card == CARD_PRESET_SAVE and spec.translation_key == "catalog_save"
             assert spec.requires_confirmation
+
+
+async def test_timer_keys_are_one_select_and_level_keys_one_number_per_zone(clock):
+    obj, c = make("FARM")
+    await obj.start_notify()
+    keys = {spec.key for spec in obj.controller_button_specs}
+    assert not keys & {f"majestichome_{key}" for key in bed._FOLDED}
+    assert "majestichome_massage_off" in keys
+    assert obj.auto_enable_massage and obj.massage_timer_can_turn_off
+    assert obj.massage_timer_options == [10, 20, 30]
+    assert obj.massage_intensity_zones == ["head", "foot"] and obj.massage_intensity_max == 3
+    cases = [
+        (lambda: obj.set_massage_timer(20), "massage_20"),
+        (lambda: obj.set_massage_timer(0), "massage_off"),
+        (lambda: obj.set_massage_intensity("head", 2), "head_massage_2"),
+        (lambda: obj.set_massage_intensity("foot", 3), "foot_massage_3"),
+    ]
+    for call, key in cases:
+        c.client.write_gatt_char.reset_mock()
+        await call()
+        sent = written(c)
+        c.client.write_gatt_char.reset_mock()
+        await obj.action(key)
+        assert sent == written(c), key
+
+
+async def test_all_off_resets_the_timer_and_both_levels(clock):
+    obj, c = make("FARM")
+    await obj.start_notify()
+    c.handle_controller_state_updates.reset_mock()
+    await obj.action("massage_off")
+    (updates,) = [call.args for call in c.handle_controller_state_updates.call_args_list][-1:]
+    assert {str(update.key): update.value for update in updates} == {
+        "massage_timer": 0,
+        "massage_head_intensity": 0,
+        "massage_foot_intensity": 0,
+    }
+
+
+@pytest.mark.parametrize("product", ["FARM", "JLRM", "JGRN", "JHRN"])
+async def test_every_offered_massage_level_and_timer_sends_a_frame(clock, product):
+    obj, c = make(product)
+    await obj.start_notify()
+    for zone in obj.massage_intensity_zones:
+        low = obj.massage_intensity_min(zone)
+        # A zone offers off only with its own off key.
+        assert low == (0 if any(k.key == f"{zone}_massage_off" for k in obj.layout.controls) else 1)
+        for level in range(low, obj.massage_intensity_max + 1):
+            c.client.write_gatt_char.reset_mock()
+            await obj.set_massage_intensity(zone, level)
+            assert written(c), (zone, level)
+    timers = [*obj.massage_timer_options, *((0,) if obj.massage_timer_can_turn_off else ())]
+    for minutes in timers:
+        c.client.write_gatt_char.reset_mock()
+        await obj.set_massage_timer(minutes)
+        assert written(c), minutes

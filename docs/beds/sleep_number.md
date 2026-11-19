@@ -323,10 +323,10 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 
 | Entity | Transport | Notes |
 |--------|-----------|-------|
-| `Under Bed Lights` switch | Fuzion, MCR | |
+| `Under Bed Lights` light | Fuzion, MCR | |
 | `Light Level` number | Fuzion | Values `0-3` |
 | `Light Timer` select | Fuzion | `Off`, `15 min`, `30 min`, `45 min`, `1 hr`, `2 hr`, and `3 hr` |
-| `Left Bed Presence` / `Right Bed Presence` binary sensors | Fuzion | Disabled by default. They update only while the bed is connected and never keep it connected |
+| `Left in bed` / `Right in bed` binary sensors | Fuzion | Enabled by default. They update only while the bed is connected and never keep it connected |
 | `Sleep Number Setting` number | Fuzion | Configured side |
 | `Sleep Number Setting Left` / `Sleep Number Setting Right` numbers | MCR | |
 | `Foundation Preset Left` / `Foundation Preset Right` selects | MCR | `Favorite`, `Read`, `Watch TV`, `Flat`, `Zero G`, `Snore`, as supported |

@@ -693,7 +693,7 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
         assert found is not None
         return found
 
-    light = entity_id("switch", "under_bed_lights")
+    light = entity_id("light", "under_bed_lights")
     entity_id("number", "light_level")
     for key, label in preset_labels.items():
         preset_id = entity_id("button", key)
@@ -713,14 +713,14 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     def capture_auto_off(
         delay: float, callback: Callable[..., None], *args: object
     ) -> object:
-        if getattr(callback, "__name__", "") == "auto_off_callback":
+        if getattr(callback, "__name__", "") == "expire":
             scheduled_auto_off.append(lambda: callback(*args))
             scheduled_delays.append(delay)
             return MagicMock()
         return original_call_later(delay, callback, *args)
 
     with patch.object(hass.loop, "call_later", side_effect=capture_auto_off):
-        await hass.services.async_call("switch", "turn_on", {"entity_id": light}, blocking=True)
+        await hass.services.async_call("light", "turn_on", {"entity_id": light}, blocking=True)
         assert scheduled_auto_off
         coordinator = hass.data[DOMAIN][entry.entry_id]
         deadline = coordinator.controller_state["woosa_light_deadline"]
@@ -741,7 +741,7 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     mock_bleak_client.write_gatt_char.assert_any_call(
         SOLACE_CHAR_UUID, bytes.fromhex("FFFFFFFF050000001916CA"), response=True
     )
-    await hass.services.async_call("switch", "turn_off", {"entity_id": light}, blocking=True)
+    await hass.services.async_call("light", "turn_off", {"entity_id": light}, blocking=True)
     assert hass.states.get(entity_id("select", "light_timer")).state == "Off"
     mock_bleak_client.write_gatt_char.assert_any_call(
         SOLACE_CHAR_UUID, bytes.fromhex("FFFFFFFF050000004B9737"), response=True

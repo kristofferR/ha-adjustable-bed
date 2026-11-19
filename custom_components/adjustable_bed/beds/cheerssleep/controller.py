@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from time import monotonic
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal, cast
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -30,6 +30,9 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
+    SleepRate,
+    sleep_flag_binary_sensor_spec,
+    sleep_rate_sensor_spec,
 )
 from ..lifecycle import ControllerSession
 from . import state_keys as keys
@@ -70,6 +73,8 @@ class Request:
     up: bool = True
     position: int = 1
     sleeper: str | None = None
+
+_RATE_FIELDS: Final[tuple[tuple[str, SleepRate], ...]] = (("heart", "heart_rate"), ("breath", "breathing_rate"))
 
 
 class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedController):
@@ -1061,33 +1066,62 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             for key in (sided(key, self.command_side),)
         ]
         # Sleep notifications name their side; a native side device shows only its own.
-        for fields in self._sleep_fields():
+        for side, fields in self._sleep_fields():
+            result.extend(
+                sleep_rate_sensor_spec(
+                    kind,
+                    str(fields[name]),
+                    cast(StateKey[int | None], fields[name]),
+                    side,
+                    has_unit=False,
+                )
+                for name, kind in _RATE_FIELDS
+            )
             result.extend(
                 ControllerStateSensorSpec(
-                    str(key), str(key), key, "mdi:bed", entity_registry_enabled_default=False
+                    str(fields[name]),
+                    str(fields[name]),
+                    fields[name],
+                    "mdi:bed",
+                    entity_registry_enabled_default=False,
                 )
-                for name, key in fields.items()
-                if name not in keys.SLEEP_FLAGS
+                for name in ("snore_count", "snore_power")
             )
         return tuple(result)
 
-    def _sleep_fields(self) -> list[dict[str, StateKey[int | bool | None]]]:
+    def _sleep_fields(
+        self,
+    ) -> list[tuple[Literal["left", "right"], dict[str, StateKey[int | bool | None]]]]:
         if self.model.format != "p1":
             return []
-        if self.command_side in keys.SLEEP_KEYS:
-            return [keys.SLEEP_KEYS[self.command_side]]
-        return list(keys.SLEEP_KEYS.values())
+        return [
+            (side, keys.SLEEP_KEYS[side])
+            for side in keys.SIDES
+            if self.command_side not in keys.SIDES or side == self.command_side
+        ]
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return tuple(
-            ControllerStateBinarySensorSpec(
-                str(key), str(key), key, "mdi:bed", entity_registry_enabled_default=False
+        specs: list[ControllerStateBinarySensorSpec] = []
+        for side, fields in self._sleep_fields():
+            specs.append(
+                sleep_flag_binary_sensor_spec(
+                    "bed_presence",
+                    str(fields["on_bed"]),
+                    cast(StateKey[bool | None], fields["on_bed"]),
+                    side,
+                )
             )
-            for fields in self._sleep_fields()
-            for name, key in fields.items()
-            if name in keys.SLEEP_FLAGS
-        )
+            specs.append(
+                ControllerStateBinarySensorSpec(
+                    str(fields["asleep"]),
+                    str(fields["asleep"]),
+                    fields["asleep"],
+                    "mdi:sleep",
+                    entity_registry_enabled_default=False,
+                )
+            )
+        return tuple(specs)
 
 
 async def _pause(seconds: float, cancel: asyncio.Event) -> bool:

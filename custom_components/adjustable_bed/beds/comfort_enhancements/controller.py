@@ -459,12 +459,6 @@ class ComfortEnhancementsController(ProfileExecution[keeson_profiles.KeesonProfi
             self._timer = minutes
             self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(minutes))
 
-    async def _timer_click(self) -> None:
-        if self._levels["head"] or self._levels["foot"]:
-            await self.massage_off()
-        else:
-            await self.set_massage_timer(self._timer % 30 + 10)
-
     @property
     def supports_clock_sync(self) -> bool:
         return True
@@ -530,11 +524,6 @@ class ComfortEnhancementsController(ProfileExecution[keeson_profiles.KeesonProfi
                         lambda c: cast(ComfortEnhancementsController, c)._zone_click(
                             "foot", cycle=True
                         ),
-                    ),
-                    button(
-                        "comfort_enhancements_timer_cycle",
-                        "Massage timer / stop",
-                        lambda c: cast(ComfortEnhancementsController, c)._timer_click(),
                     ),
                 )
             )

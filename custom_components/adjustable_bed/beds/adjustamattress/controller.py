@@ -17,6 +17,7 @@ from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...detection import is_mac_like_name
 from ...profiles import keeson as keeson_profiles
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
@@ -115,7 +116,7 @@ def _button_card(key: str) -> CardPlacement:
         return CARD_PRESETS
     if key == "underbed_lighting":
         return CARD_LIGHTING
-    if key in _MASSAGE_BUTTONS or key.startswith(("timer", "query_massage")):
+    if key in _MASSAGE_BUTTONS or key.startswith("query_massage"):
         return CARD_MASSAGE
     return CARD_UTILITY
 
@@ -647,11 +648,8 @@ class AdjustaMattressController(
         actions: dict[str, str] = {}
         if self.model != "P2":
             actions["query_massage"] = "Refresh massage"
-        if self._dedicated:
-            actions.update(
-                {a: f"Massage timer {10 * (i + 1)} minutes" for i, a in enumerate(TIMERS)}
-            )
-        else:
+        # Dedicated timer keys are the massage timer select's durations.
+        if not self._dedicated:
             actions.update(
                 zip(
                     CYCLIC,
@@ -734,29 +732,11 @@ class AdjustaMattressController(
         ]
         if self._snore:
             definitions += [("strength_setting", ("0", "1", "2"), True)]
-        if self._dedicated:
-            definitions += [
-                (zone + "_selector", ("0", "1", "2", "3"), False)
-                for zone in ("head", "foot", "wave")
-            ]
         specs = []
         for key, options, local in definitions:
 
             async def select(ctrl: BedController, option: str, key: str = key) -> None:
-                target = cast(AdjustaMattressController, ctrl)
-                if key.endswith("_selector"):
-                    if not target._dedicated or option not in ("0", "1", "2", "3"):
-                        raise ValueError("Dedicated massage selector is unavailable")
-                    actions = tuple(
-                        a
-                        for a in DEDICATED
-                        if a.startswith(key.split("_")[0])
-                        or (key == "wave_selector" and a == "WaveOne")
-                    )
-                    await target.execute_action(actions[int(option)])
-                    target.forward_controller_state_update(_option_key(key), option)
-                else:
-                    await target.set_setting(key, option)
+                await cast(AdjustaMattressController, ctrl).set_setting(key, option)
 
             specs.append(
                 ControllerSelectSpec(
@@ -768,7 +748,6 @@ class AdjustaMattressController(
                     local_select_fn=(lambda option, key=key: self._live_local_setting(key, option))
                     if local
                     else None,
-                    card=CARD_MASSAGE if key.endswith("_selector") else CARD_UTILITY,
                 )
             )
         return tuple(specs)
@@ -784,7 +763,61 @@ class AdjustaMattressController(
             specs.append(
                 ControllerNumberSpec(NS + key, NS + key, _number_key(key), 0, high, 1, set_value)
             )
+        if self._dedicated:
+            # Each level is its own app key; the bed reports none of them back.
+            for zone in ("head", "foot", "wave"):
+
+                async def set_level(ctrl: BedController, value: float, zone: str = zone) -> None:
+                    await cast(AdjustaMattressController, ctrl).set_massage_level(zone, int(value))
+
+                specs.append(
+                    ControllerNumberSpec(
+                        NS + zone + "_massage",
+                        f"massage_{zone}_intensity",
+                        _number_key(zone + "_massage"),
+                        1,
+                        4,
+                        1,
+                        set_level,
+                        card=CARD_MASSAGE,
+                    )
+                )
         return tuple(specs)
+
+    async def set_massage_level(self, zone: str, level: int) -> None:
+        """Send the dedicated level key (1-4) for the head, foot or wave."""
+        if not self._dedicated or zone not in ("head", "foot", "wave") or not 1 <= level <= 4:
+            raise ValueError("Dedicated massage level is unavailable")
+        actions = tuple(
+            a for a in DEDICATED if a.startswith(zone) or (zone == "wave" and a == "WaveOne")
+        )
+        await self.execute_action(actions[level - 1])
+        self.forward_sent_state_updates(_number_key(zone + "_massage")(level))
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        # Every model's app page has massage keys (dedicated or cyclic).
+        return True
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self._dedicated
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [10 * (index + 1) for index in range(len(TIMERS))] if self._dedicated else []
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return False  # The dedicated keys are durations only.
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Hold the dedicated 10, 20 or 30 minute key, as its app button does."""
+        timer = f"timer{minutes}"
+        if not self._dedicated or timer not in TIMERS:
+            raise ValueError("Choose 10, 20 or 30 minutes")
+        await self.execute_action(timer)
+        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
 
     @property
     def _sensor_fields(self) -> list[str]:
@@ -817,7 +850,8 @@ class AdjustaMattressController(
                 _field_key(key),
                 "mdi:information-outline",
                 native_unit_of_measurement="min" if key == "massage_time" else None,
-                entity_registry_enabled_default=key in _MASSAGE_FIELDS,
+                # Readbacks of the step buttons, which take no direct value.
+                entity_registry_enabled_default=False,
                 card=CARD_MASSAGE if key in _MASSAGE_FIELDS else CARD_UTILITY,
             )
             for key in self._sensor_fields

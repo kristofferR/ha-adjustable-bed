@@ -2424,6 +2424,7 @@ async def test_real_native_light_entity_remembers_slider_and_repeats_requested_b
     )
     runtime = c._coordinator
     runtime.capability_controller = c
+    runtime.controller = c
     runtime.entity_side = None
 
     async def dispatch(operation, **kwargs):
