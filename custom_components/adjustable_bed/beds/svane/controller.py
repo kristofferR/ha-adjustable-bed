@@ -28,6 +28,7 @@ from ...profiles.jmc import SVANE_REMOTE
 from ...state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
@@ -280,11 +281,13 @@ class SvaneController(BedController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return tuple(
-            ControllerButtonSpec(f"svane_{key}", label, _action(key), diagnostic=key == "refresh")
+            spec
             for key, label in (
                 ("light_toggle", "Toggle light"),
                 ("refresh", "Refresh device information"),
             )
+            if (spec := catalog_button(f"svane_{key}", label, _action(key), diagnostic=key == "refresh"))
+            is not None
         )
 
     @property

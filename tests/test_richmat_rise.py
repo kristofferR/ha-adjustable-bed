@@ -153,6 +153,10 @@ async def test_music_short_exclusion_does_not_consume_lock_long(app, instant):
     assert packets(coord) == ["6e010084f3", "6e01006edd"]
     keys = {s.key for s in ctrl.controller_button_specs}
     assert "richmat_classic_1_long" in keys and "richmat_classic_1" not in keys
+    # The long press is the button's only action, so it is named for the control.
+    assert next(s for s in ctrl.controller_button_specs if s.key == "richmat_classic_1_long").name == (
+        "Music lock"
+    )
 
 
 @pytest.mark.parametrize("app", ["luunarise2", "powercool"])

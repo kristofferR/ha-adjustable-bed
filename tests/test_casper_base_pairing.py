@@ -1,4 +1,4 @@
-"""Row101 independent-review regressions through coordinator, flow and live consumers."""
+"""Casper Base 1.0.8 pairing, side routing and flow paths through real coordinators."""
 
 from __future__ import annotations
 
@@ -155,7 +155,7 @@ async def test_eligible_pair_options_create_side_entities_and_route_actions(
         assert any(entity.unique_id.endswith("_" + side) for entity in buttons)
         assert any(entity.unique_id.endswith("_" + side) for entity in covers)
     target = next(
-        entity for entity in buttons if entity.unique_id.endswith("_casper_motorreset_right")
+        entity for entity in buttons if entity.unique_id.endswith("_preset_flat_right")
     )
     inner.client.write_gatt_char.reset_mock()
     with patch.object(inner, "async_connect", AsyncMock(return_value=True)):

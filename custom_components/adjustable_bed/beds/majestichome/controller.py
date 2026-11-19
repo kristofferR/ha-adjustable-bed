@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_PRESET_SAVE, CardPlacement, CardSection, memory_card
 from ...codec import richmat as codec
 from ...command_scheduler import CommandOutcome, current_command_context
 from ...controller_state import StateKey
@@ -25,6 +24,7 @@ from ...profiles.majestichome import LAYOUTS, STOP, TICK_MS, catalog, resolve_la
 from ...state_keys import MASSAGE_TIMER_MINUTES, massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -48,6 +48,8 @@ FIRST_WRITE_MS: Final = 100
 ALARM_OBSERVATION_S: Final = 5.0  # HA observation window; no list-completeness proof.
 READ_GUARD_S: Final = 0.1  # Recheck local ownership while waiting, without polling the bed.
 MIN_FINITE_HOLD_MS: Final = 200
+# What each app group is; presets and memories are read from their labels.
+_KINDS: Final = {"massage": Kind.MASSAGE, "light": Kind.LIGHT}
 
 
 @dataclass(frozen=True, slots=True)
@@ -454,7 +456,7 @@ class MajesticHomeController(GoodVibeController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        buttons = []
+        buttons: list[ControllerButtonSpec | None] = []
         for control in self.layout.controls:
             if control.held or control.key in _FOLDED:
                 continue  # Native motor entities, the timer select and level numbers own these.
@@ -463,39 +465,15 @@ class MajesticHomeController(GoodVibeController):
                 if save:
                     # Match the shared "Save to Memory N" buttons.
                     label = ("Save to " if control.key.startswith("memory_") else "Save ") + label
-                section = (
-                    CardSection.MASSAGE
-                    if control.group == "massage"
-                    else CardSection.LIGHTING
-                    if control.group == "light"
-                    else CardSection.PRESETS
-                )
-                placement = (
-                    memory_card(int(control.key[-1]), save=save)
-                    if control.key.startswith("memory_")
-                    else CARD_PRESET_SAVE
-                    if save
-                    else CardPlacement(section)
-                )
-                translation = "majestichome_" + (
-                    control.key + ("_save" if save else "")
-                    if control.key.startswith("memory_")
-                    else "save_action"
-                    if save
-                    else control.group + "_action"
-                )
                 buttons.append(
-                    ControllerButtonSpec(
+                    catalog_button(
                         "majestichome_" + control.key + ("_save" if save else ""),
                         label,
                         partial(_action, key=control.key, save=save),
-                        translation_key=translation,
-                        translation_placeholders={"action": label},
-                        requires_confirmation=save,
-                        card=placement,
+                        kind=Kind.SAVE if save else _KINDS.get(control.group),
                     )
                 )
-        return tuple(buttons)
+        return unique_buttons(buttons)
 
     def validate_request(self, request: Request) -> None:
         if request.operation not in ("list", "set", "new", "toggle", "delete", "sync_clock"):

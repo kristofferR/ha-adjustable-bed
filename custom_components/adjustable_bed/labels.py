@@ -45,6 +45,8 @@ def display_label(label: str) -> str:
     if named := _NAMES.get(label):
         return named
     text = _NOTES.sub("", label.replace("_", " ")).strip()
+    # A number run into a word: "Mode1" is "Mode 1".
+    text = re.sub(r"(?<=[a-z]{2})(?=\d)", " ", text)
     for pattern, replacement in _PHRASES:
         text = pattern.sub(replacement, text)
     # Some catalogs repeat a label as its own heading: "Music: Music".

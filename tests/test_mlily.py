@@ -1,4 +1,4 @@
-"""MLILY Control 5.0.2, frozen row159 literals and complete product contracts.
+"""MLILY Control 5.0.2, frozen literals and complete product contracts.
 
 Fixtures retain literal inputs/results from reconciliation002, manifest SHA256
 8c7de25122ef3af4a43fe2aa38e0aec0ae95b8a697a1dbfd66801378ec3fcfdd.

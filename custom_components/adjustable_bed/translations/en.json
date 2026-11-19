@@ -1892,6 +1892,192 @@
       "remote_action": {
         "name": "Remote action"
       },
+      "catalog_action": {
+        "name": "{action}"
+      },
+      "catalog_preset": {
+        "name": "{action}"
+      },
+      "catalog_save": {
+        "name": "Save {preset}"
+      },
+      "catalog_massage": {
+        "name": "{action}"
+      },
+      "catalog_light": {
+        "name": "{action}"
+      },
+      "catalog_climate": {
+        "name": "{action}"
+      },
+      "control_1_up": {
+        "name": "Control 1 up"
+      },
+      "control_1_down": {
+        "name": "Control 1 down"
+      },
+      "control_2_up": {
+        "name": "Control 2 up"
+      },
+      "control_2_down": {
+        "name": "Control 2 down"
+      },
+      "control_3_up": {
+        "name": "Control 3 up"
+      },
+      "control_3_down": {
+        "name": "Control 3 down"
+      },
+      "control_4_up": {
+        "name": "Control 4 up"
+      },
+      "control_4_down": {
+        "name": "Control 4 down"
+      },
+      "control_5_up": {
+        "name": "Control 5 up"
+      },
+      "control_5_down": {
+        "name": "Control 5 down"
+      },
+      "extra_up": {
+        "name": "Extra motor up"
+      },
+      "extra_down": {
+        "name": "Extra motor down"
+      },
+      "head_tilt_up": {
+        "name": "Head tilt up"
+      },
+      "head_tilt_down": {
+        "name": "Head tilt down"
+      },
+      "headrest_up": {
+        "name": "Headrest up"
+      },
+      "headrest_down": {
+        "name": "Headrest down"
+      },
+      "lounge_up": {
+        "name": "Lounge up"
+      },
+      "lounge_down": {
+        "name": "Lounge down"
+      },
+      "lower_section_up": {
+        "name": "Lower section up"
+      },
+      "lower_section_down": {
+        "name": "Lower section down"
+      },
+      "lumbar_pillow_up": {
+        "name": "Lumbar and pillow up"
+      },
+      "lumbar_pillow_down": {
+        "name": "Lumbar and pillow down"
+      },
+      "main_motor_up": {
+        "name": "Main motor up"
+      },
+      "main_motor_down": {
+        "name": "Main motor down"
+      },
+      "mid_body_up": {
+        "name": "Mid-body up"
+      },
+      "mid_body_down": {
+        "name": "Mid-body down"
+      },
+      "motor_1_up": {
+        "name": "Motor 1 up"
+      },
+      "motor_1_down": {
+        "name": "Motor 1 down"
+      },
+      "motor_2_up": {
+        "name": "Motor 2 up"
+      },
+      "motor_2_down": {
+        "name": "Motor 2 down"
+      },
+      "motor_4_up": {
+        "name": "Motor 4 up"
+      },
+      "motor_4_down": {
+        "name": "Motor 4 down"
+      },
+      "motor_5_up": {
+        "name": "Motor 5 up"
+      },
+      "motor_5_down": {
+        "name": "Motor 5 down"
+      },
+      "motor_6_up": {
+        "name": "Motor 6 up"
+      },
+      "motor_6_down": {
+        "name": "Motor 6 down"
+      },
+      "motor_7_up": {
+        "name": "Motor 7 up"
+      },
+      "motor_7_down": {
+        "name": "Motor 7 down"
+      },
+      "motors_1_2_up": {
+        "name": "Motors 1 and 2 up"
+      },
+      "motors_1_2_down": {
+        "name": "Motors 1 and 2 down"
+      },
+      "motors_2_3_up": {
+        "name": "Motors 2 and 3 up"
+      },
+      "motors_2_3_down": {
+        "name": "Motors 2 and 3 down"
+      },
+      "motors_3_4_up": {
+        "name": "Motors 3 and 4 up"
+      },
+      "motors_3_4_down": {
+        "name": "Motors 3 and 4 down"
+      },
+      "pillow_2_up": {
+        "name": "Pillow 2 up"
+      },
+      "pillow_2_down": {
+        "name": "Pillow 2 down"
+      },
+      "pillow_lumbar_tilt_up": {
+        "name": "Pillow and lumbar tilt up"
+      },
+      "pillow_lumbar_tilt_down": {
+        "name": "Pillow and lumbar tilt down"
+      },
+      "storage_lift_up": {
+        "name": "Storage lift up"
+      },
+      "storage_lift_down": {
+        "name": "Storage lift down"
+      },
+      "t_flat_up": {
+        "name": "T-flat up"
+      },
+      "t_flat_down": {
+        "name": "T-flat down"
+      },
+      "upper_section_up": {
+        "name": "Upper section up"
+      },
+      "upper_section_down": {
+        "name": "Upper section down"
+      },
+      "zero_gravity_up": {
+        "name": "Zero gravity up"
+      },
+      "zero_gravity_down": {
+        "name": "Zero gravity down"
+      },
       "vibradorm_app_mood_toggle": {
         "name": "Toggle mood light"
       },
@@ -2156,18 +2342,6 @@
       "logicdata_air_pump_save_memory": {
         "name": "Save pressure memory"
       },
-      "richmat_mh_massage": {
-        "name": "{action}"
-      },
-      "richmat_mh_preset": {
-        "name": "{action}"
-      },
-      "richmat_mh_save": {
-        "name": "{action}"
-      },
-      "richmat_mh_action": {
-        "name": "{action}"
-      },
       "richmat_mh_start_detection": {
         "name": "Start component check"
       },
@@ -2357,18 +2531,6 @@
       "isleep_enroll": {
         "name": "Add bed to room"
       },
-      "bedsense_action": {
-        "name": "{action}"
-      },
-      "bedsense_massage": {
-        "name": "{action}"
-      },
-      "bedsense_light": {
-        "name": "{action}"
-      },
-      "casper_base_action": {
-        "name": "{action}"
-      },
       "bf_cherish_both_up": {
         "name": "Back and legs up"
       },
@@ -2377,15 +2539,6 @@
       },
       "bf_query_alarm": {
         "name": "Refresh alarm"
-      },
-      "doublesleep_action": {
-        "name": "{action}"
-      },
-      "doublesleep_massage_action": {
-        "name": "{action}"
-      },
-      "doublesleep_light_action": {
-        "name": "{action}"
       },
       "adjustamattress_lift_up": {
         "name": "Lift up"
@@ -2426,9 +2579,6 @@
       "adjustamattress_lift_foot": {
         "name": "Lift foot"
       },
-      "hjbed_action": {
-        "name": "{action}"
-      },
       "hjbed_release": {
         "name": "Release held control"
       },
@@ -2446,9 +2596,6 @@
       },
       "estimate_remote_used": {
         "name": "I used the remote"
-      },
-      "goodvibe_action": {
-        "name": "{action}"
       },
       "goodvibe_release": {
         "name": "Release held control"
@@ -2474,20 +2621,11 @@
       "eshine_okin_massage_timer": {
         "name": "Cycle massage timer"
       },
-      "richmat_classic_action": {
-        "name": "{action}"
-      },
       "richmat_classic_release": {
         "name": "Release held control"
       },
-      "motomotion_action": {
-        "name": "{action}"
-      },
       "motomotion_release": {
         "name": "Release held control"
-      },
-      "hush_base_action": {
-        "name": "{action}"
       },
       "motion_bed_left_legs_down": {
         "name": "Left legs Down"
@@ -2951,12 +3089,6 @@
       "resident_sync_clock": {
         "name": "Sync clock"
       },
-      "luuna_preset": {
-        "name": "{action}"
-      },
-      "luuna_massage": {
-        "name": "{action}"
-      },
       "comfortbase_save_flat": {
         "name": "Save flat"
       },
@@ -2965,9 +3097,6 @@
       },
       "comfortbase_save_anti_snore": {
         "name": "Save anti-snore"
-      },
-      "richmat_app_action": {
-        "name": "{action}"
       },
       "richmat_app_release": {
         "name": "Release held control"
@@ -3149,9 +3278,6 @@
       "rize_remedy_ii_wave_3": {
         "name": "Massage wave 3"
       },
-      "apex_group": {
-        "name": "{action}"
-      },
       "apex_tilt": {
         "name": "Tilt"
       },
@@ -3196,18 +3322,6 @@
       },
       "symphony_sync_clock": {
         "name": "Sync clock"
-      },
-      "symphony_utility_action": {
-        "name": "{action}"
-      },
-      "symphony_presets_action": {
-        "name": "{action}"
-      },
-      "symphony_lighting_action": {
-        "name": "{action}"
-      },
-      "symphony_massage_action": {
-        "name": "{action}"
       },
       "symphony_head_up": {
         "name": "Head up"
@@ -3278,12 +3392,6 @@
       "bedgear_combined_down": {
         "name": "Head and foot down"
       },
-      "sonicsleep_action": {
-        "name": "{action}"
-      },
-      "sonicsleep_save": {
-        "name": "{action}"
-      },
       "starcode_abm5_4_light_on": {
         "name": "Turn floor light on"
       },
@@ -3296,131 +3404,14 @@
       "rize_pattern_off": {
         "name": "Massage pattern off"
       },
-      "symphony_save_action": {
-        "name": "{action}"
-      },
-      "okin_bedding_app_save": {
-        "name": "{action}"
-      },
       "richmat_mh_toggle_smart_set_lock": {
         "name": "Toggle smart set lock"
-      },
-      "hjbed_save": {
-        "name": "{action}"
-      },
-      "richmat_app_save": {
-        "name": "{action}"
-      },
-      "woosa_program_love": {
-        "name": "Save anti-snore position"
-      },
-      "woosa_program_tv": {
-        "name": "Save TV position"
-      },
-      "woosa_program_zero_g": {
-        "name": "Save zero gravity position"
-      },
-      "customatic_save_zg": {
-        "name": "Save zero G"
-      },
-      "customatic_save_incline": {
-        "name": "Save incline"
       },
       "malouf_oz_save_memory_2": {
         "name": "Save memory 2"
       },
-      "mlily_remote_bedlight": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massageheadinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massagefootinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massagemodechange": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massagemodealloff": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massage10minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massage20minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_cooling_massage30minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_zerogravity": {
-        "name": "{action}"
-      },
-      "mlily_remote_zerogravity_save": {
-        "name": "{action}"
-      },
-      "mlily_remote_antisnoring": {
-        "name": "{action}"
-      },
-      "mlily_remote_antisnoring_save": {
-        "name": "{action}"
-      },
-      "mlily_remote_massageheadinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_massagefootinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_massagemodechange": {
-        "name": "{action}"
-      },
-      "mlily_remote_massagemodealloff": {
-        "name": "{action}"
-      },
-      "mlily_remote_massage10minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_massage20minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_massage30minutetimer": {
-        "name": "{action}"
-      },
-      "mlily_remote_massagelumbarinstensitystrengthen": {
-        "name": "{action}"
-      },
-      "mlily_remote_tvposition": {
-        "name": "{action}"
-      },
-      "mlily_remote_tvposition_save": {
-        "name": "{action}"
-      },
-      "mlily_remote_loungeposition": {
-        "name": "{action}"
-      },
-      "mlily_remote_loungeposition_save": {
-        "name": "{action}"
-      },
-      "richmat_legacy_lighting": {
-        "name": "{action}"
-      },
-      "richmat_legacy_massage": {
-        "name": "{action}"
-      },
-      "richmat_legacy_presets": {
-        "name": "{action}"
-      },
-      "richmat_legacy_utility": {
-        "name": "{action}"
-      },
-      "richmat_legacy_save": {
-        "name": "{action}"
-      },
       "richmat_mh_toggle_smart_light_lock": {
         "name": "Toggle smart light lock"
-      },
-      "goodvibe_save_action": {
-        "name": "{action}"
       },
       "onlysnore_massage_timer_next": {
         "name": "Cycle massage timer"
@@ -3638,29 +3629,14 @@
       "cheerssleep_lift_foot_down": {
         "name": "Foot lift down"
       },
-      "okimiki_action": {
-        "name": "{action}"
-      },
-      "comfortfurniture_save": {
-        "name": "{action}"
-      },
       "comfortfurniture_reset": {
         "name": "Reset"
       },
       "comfortfurniture_preset_stop": {
         "name": "Stop preset"
       },
-      "suta_action": {
-        "name": "{action}"
-      },
       "suta_release": {
         "name": "Release held control"
-      },
-      "suta_preset": {
-        "name": "{action}"
-      },
-      "suta_save": {
-        "name": "{action}"
       },
       "somos_head_massage": {
         "name": "Head massage"
@@ -3737,12 +3713,6 @@
       "sophie_program_anti_snore": {
         "name": "Save or clear anti-snore position"
       },
-      "personal_comfort_action": {
-        "name": "{action}"
-      },
-      "ormatek_action": {
-        "name": "{action}"
-      },
       "ormatek_light": {
         "name": "Toggle light"
       },
@@ -3754,30 +3724,6 @@
       },
       "l2motion_save_snore": {
         "name": "Save anti-snore position"
-      },
-      "majestichome_preset_action": {
-        "name": "{action}"
-      },
-      "majestichome_massage_action": {
-        "name": "{action}"
-      },
-      "majestichome_light_action": {
-        "name": "{action}"
-      },
-      "majestichome_memory_1": {
-        "name": "{action}"
-      },
-      "majestichome_memory_1_save": {
-        "name": "{action}"
-      },
-      "majestichome_memory_2": {
-        "name": "{action}"
-      },
-      "majestichome_memory_2_save": {
-        "name": "{action}"
-      },
-      "majestichome_save_action": {
-        "name": "{action}"
       }
     },
     "cover": {

@@ -15,8 +15,8 @@ from custom_components.adjustable_bed.beds.richmat_mh.app_sleep import (
 )
 from custom_components.adjustable_bed.beds.ruf_richmat.protocol import sleep_frame
 from custom_components.adjustable_bed.beds.ruf_richmat.sleep import CHARACTERISTIC
-from tests.test_richmat_cluster022 import make
 from tests.test_richmat_mh import sleeps as sleeps
+from tests.test_richmat_nisco_supreme import make
 
 
 def receiver(app="nisco"):

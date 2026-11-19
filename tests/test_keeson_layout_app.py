@@ -345,7 +345,8 @@ async def test_cancelled_hold_has_fresh_release_and_no_late_control_packets(app)
 async def test_mx_memory1_is_opaque_held_action_and_release_has_no_zero():
     ctrl, coord = await ready("qplus_app", "MX")
     memory = next(s for s in ctrl.controller_button_specs if s.key == "mx_memory1")
-    assert memory.name == "MX Memory 1"
+    # An opaque app preset: shown as the app labels it, never as a memory slot.
+    assert (memory.name, memory.translation_key) == ("Memory 1", "catalog_preset")
     assert not ctrl.supports_memory_presets and not ctrl.supports_memory_programming
     await memory.press_fn(ctrl)
     assert packets(coord) == [bytes.fromhex("040200010000")] * 3 + [b"\0\xb0"] * 3

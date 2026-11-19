@@ -13,12 +13,13 @@ from typing import TYPE_CHECKING, Final, cast
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_CONTROLLED_SIDE, CARD_HIDDEN, CARD_PRESET_SAVE
+from ...card import CARD_CONTROLLED_SIDE, CARD_HIDDEN
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.richmat import RICHMAT_APP, RichmatProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -678,7 +679,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        rows = []
+        rows: list[ControllerButtonSpec | None] = []
         motors = {str(d) for m in self.route["motors"] for d in m[1:3]}
         selector = "0xdd2d" if self.version == 1 else "0x1230d"
         for detail in sorted(self._allowed() - motors):
@@ -688,25 +689,20 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                 if any(row[0] == detail for row in self.route["presets"])
                 else ("0xf761" if self.version == 1 else "0xeea5"),
             )
+            meaning = action_name(ACTIONS[detail])
             rows.append(
-                ControllerButtonSpec(
-                    "richmat_app_" + detail,
-                    label,
-                    partial(_press, detail=detail),
-                    translation_key="richmat_app_action",
-                    translation_placeholders={"action": label},
+                catalog_button(
+                    "richmat_app_" + detail, label, partial(_press, detail=detail), meaning=meaning
                 )
             )
             if any(row[0] == detail and row[1] for row in self.route["presets"]):
                 rows.append(
-                    ControllerButtonSpec(
+                    catalog_button(
                         "richmat_app_save_" + detail,
                         "Save " + label,
                         partial(_press, detail=detail, save=True),
-                        translation_key="richmat_app_save",
-                        translation_placeholders={"action": "Save " + label},
-                        requires_confirmation=True,
-                        card=CARD_PRESET_SAVE,
+                        kind=Kind.SAVE,
+                        meaning="Save " + meaning,
                     )
                 )
         rows.append(
@@ -719,7 +715,7 @@ class RichmatAppController(ProfileExecution[RichmatProfile], BedController):
                 card=CARD_HIDDEN,
             )
         )
-        return tuple(rows)
+        return unique_buttons(rows)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:

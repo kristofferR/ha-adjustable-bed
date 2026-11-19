@@ -15,13 +15,18 @@ from typing import TYPE_CHECKING, Any, Final, cast
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
+from ...card import (
+    CARD_MASSAGE,
+    CARD_PRESETS,
+    CARD_UTILITY,
+)
 from ...codec.keeson import comfortfurniture_cancels_hold
 from ...const import KEESON_BASE_NOTIFY_CHAR_UUID, KEESON_VARIANT_COMFORTFURNITURE
 from ...controller_state import StateKey
 from ...profiles.comfortfurniture import PROFILE
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
+from ..catalog_buttons import save_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -412,15 +417,11 @@ class ComfortFurnitureController(OreComfortBedController):
         # Stop only sends preset stop for a preset this BLE session started.
         return (
             *(
-                ControllerButtonSpec(
-                    key=f"comfortfurniture_save_{name}",
-                    name=label,
-                    press_fn=_save_named(name),
+                save_button(
+                    f"comfortfurniture_save_{name}",
+                    label,
+                    _save_named(name),
                     icon="mdi:content-save",
-                    requires_confirmation=True,
-                    translation_key="comfortfurniture_save",
-                    translation_placeholders={"action": label},
-                    card=CARD_PRESET_SAVE,
                 )
                 for name, label in SAVE_LABELS.items()
             ),

@@ -1,7 +1,7 @@
 """Frozen Hush Base frames, the vectors the codec must reproduce.
 
 Each frame is the expected bytes of a test vector in the accepted Hush Base
-1.0.5 report (``com.richmat.hushbase``, row126), workspace
+1.0.5 report (``com.richmat.hushbase``), workspace
 ``com.richmat.hushbase-1.0.5-2026-11-03-afk-003``. The report is sharded and
 was accepted at its root; the shards keep their historical labels. Frames come
 from the latest continuation of each shard:

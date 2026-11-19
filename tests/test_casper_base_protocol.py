@@ -1,4 +1,4 @@
-"""Accepted row101 packet, receive, and sequential consumer vectors."""
+"""Casper Base 1.0.8 packet, receive, and sequential consumer vectors."""
 
 from __future__ import annotations
 

@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
 
-from ...card import CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import okin_nframe as codec
 from ...codec.okin_nframe import SERVICE_UUID, WRITE_UUID
 from ...controller_state import StateKey
@@ -23,6 +22,7 @@ from ...profiles.okin_nframe import (
     OkinNFrameProfile,
 )
 from ..base import BedController, ProfileExecution
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     POSITION_AXIS_COMMANDS,
     ControllerButtonSpec,
@@ -437,7 +437,7 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        buttons = [
+        buttons: list[ControllerButtonSpec | None] = [
             ControllerButtonSpec(
                 "customatic_refresh_device_info",
                 "Refresh device information",
@@ -449,11 +449,12 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
         ]
         if not self._has_memory_page:
             buttons.append(
-                ControllerButtonSpec(
+                catalog_button(
                     "customatic_restored_flat",
-                    "Restored Flat",
+                    "Restore flat",
                     _button_callback("restored_flat"),
-                    "mdi:bed",
+                    kind=Kind.PRESET,
+                    icon="mdi:bed",
                 )
             )
         else:
@@ -466,21 +467,17 @@ class CustomaticController(ProfileExecution[OkinNFrameProfile], BedController):
                 ("program+incline", "Save Incline"),
                 ("flat+program", "Reset"),
             ):
-                # Programming and reset overwrite stored positions: ask first.
-                saves = "program" in action
                 buttons.append(
-                    ControllerButtonSpec(
+                    catalog_button(
                         f"customatic_{name.lower().replace(' ', '_')}",
                         name,
                         _button_callback(action),
-                        translation_key=f"customatic_{name.lower().replace(' ', '_')}"
-                        if action.startswith("program+")
-                        else None,
-                        requires_confirmation=saves,
-                        card=CARD_PRESET_SAVE if action.startswith("program+") else CARD_UTILITY,
+                        kind=Kind.SAVE if action.startswith("program+") else None,
+                        # Programming and reset overwrite stored positions: ask first.
+                        requires_confirmation="program" in action,
                     )
                 )
-        return tuple(buttons)
+        return tuple(button for button in buttons if button is not None)
 
     async def execute_app_control(self, action: str) -> None:
         if action == "refresh_device_info":

@@ -216,7 +216,21 @@ phone app's internals.
 - **Refresh, query and clock-sync buttons are diagnostic** and disabled by
   default where the bed reports the value itself. So is the generic **Wake
   controller** button.
-- **Preset save buttons ask for confirmation** in the dashboard card.
+- **Buttons named after an app's controls show what they are.** On beds whose
+  buttons come from an app or remote layout, motor up and down buttons sit in
+  the card's motor rows, presets and memories in their tiles, and massage and
+  light controls in their sections. A preset, memory or massage step every bed
+  has takes the shared name (**Zero Gravity**, **Memory 1**, **Massage: Head
+  Up**); other buttons keep the app's label without internal identifiers
+  ("MasFootAdd" is **Increase foot massage**, "Ubb" is **Under-bed light**).
+  Where an app lists two controls under one label, the second is numbered
+  (**Wave 2**).
+- **App extras start disabled** on new installs: music, fan, heating,
+  aromatherapy, Bluetooth, reset and similar buttons. Enable them under the
+  device's entities if you use them.
+- **Saves follow one rule.** A preset save sits with the presets, is a
+  configuration entity and asks for confirmation in the dashboard card. A
+  memory save is offered in the card's Set mode and no longer asks twice.
 - **Bed occupancy sensors** (Sleep Number) update only while the bed is
   connected. In 4.x their 30-second poll connected the bed and kept it
   connected; it no longer extends **Seconds to stay connected**.
@@ -385,14 +399,18 @@ Beds that 4.x supported. Renamed entities are not listed: they keep their IDs.
 | Bed or app | Removed | Replaced |
 |------------|---------|----------|
 | AdjustaMattress | Privacy-agreement select, reported alarm and strength sensors, sleeping, alarm, anti-snore and auxiliary status binary sensors, clock sync, alarm query and massage query buttons | Alarm commit and anti-snore selects and the sleep button became the **Alarm**, **Intelligent anti-snore** and **Sleep mode** switches |
-| BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons | |
-| DoubleSleep (OKIN SleepEase) | Four flag binary sensors, parser-error and privacy sensors | Child lock select and privacy buttons became switches |
+| BedSense | Head and wave bar sensors, memory indicator refresh and background tap buttons; the memory recall buttons of slots 3 to 5 | **TV**, **Zero Gravity** and **Anti-Snore** (**Flat** on layouts 6 and 8) recall those slots; their saves stay |
+| Casper Base, Hush Base | "Memory position 1-3", "Save Memory position 1-3" and "Motor reset" buttons | **Memory 1-3**, **Save to Memory 1-3** and **Flat** send the same commands |
+| DoubleSleep (OKIN SleepEase) | Four flag binary sensors, parser-error and privacy sensors | Child lock select and privacy buttons became switches; the app's "Stop all" is the disabled **Stop movement** (**Stop All** stops the bed) |
 | eShine OKIN | Alarm refresh button | |
+| Good Vibe Sleep | "No action", "Logo" and "… menu" buttons from empty app slots; "(long press)" buttons whose long press sends nothing of its own; a control the app lists twice | A preset's long press that sends its save is the **Save …** button |
+| Keeson app layouts (TEMPUR, Ergomotion, Q-Plus, Serta MP Remote, Omazz, ROW Control, Ergo Slim) | The app's Flat button | **Flat** |
 | FSM Relax | 11 count, acknowledgement, calibration, information and raw motor sensors | |
 | FurniMove | Action rows a standard entity already sends (Flat, ZeroGravity, Snore, TV, Memo1-4, MemoSave, UBL, Sync, ChildLock, SwitchToPH/PR), function-result sensor | |
 | Limoss Remote | Repeated motor channel buttons, capability count, calibration reply and raw position sensors | Covers are named **Motor 1** to **Motor 4** |
 | Motion Bed app | 83 state sensors (preset-selected flags, raw positions, calibration samples, day and month report arrays, module and pressure readings), alarm-sound preview buttons | Alarm, climate timer, fault and sleep report details became attributes of their sensors |
-| OKIN bedding apps (Jordan's Serenity and Tranquil, Customatic Z-Series) | Status, timer and save-event code sensors | |
+| OKIN bedding apps (Jordan's Serenity and Tranquil, Customatic Z-Series) | Status, timer and save-event code sensors; Z-Series "Toggle light" | **Toggle Light** |
+| OKIN CST | Memory recall buttons for slots a named preset recalls | **Zero Gravity**, **Incline**, **Reading** or **Lounge**; the slot's save stays |
 | Reverie, Pairlink | Wave sensor, Pairlink massage mode and timer sensors (the select and number show them) | Pairlink massage rhythm select became the **Massage rhythm** switch |
 | Richmat sleep receiver | | Left and right intervention selects became the **Left snore intervention** and **Right snore intervention** switches |
 | RMControl | Protocol version, bed mode and last alarm record sensors | |

@@ -15,7 +15,6 @@ from homeassistant.util import dt as dt_util
 from homeassistant.util.json import JsonValueType
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...codec import mline as codec
 from ...command_scheduler import current_command_context
 from ...const import CONF_BLE_DEVICE_NAME, CONF_HAS_MASSAGE, CONF_PRODUCT_TYPE
@@ -23,6 +22,7 @@ from ...controller_state import AnyStateKey
 from ...profiles import mline as app
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -414,12 +414,12 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        specs = [
-            ControllerButtonSpec(
+        specs: list[ControllerButtonSpec | None] = [
+            catalog_button(
                 "mline_light",
                 "Toggle light",
                 lambda c: require(c).one_shot("light"),
-                card=CARD_UTILITY,
+                kind=Kind.LIGHT,
             ),
             ControllerButtonSpec(
                 "mline_settings_refresh",
@@ -436,11 +436,11 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
         ]
         if self._coordinator.entry.data.get(CONF_HAS_MASSAGE, False):
             specs.extend(
-                ControllerButtonSpec(
+                catalog_button(
                     f"mline_massage_{key}",
                     _MASSAGE_LABELS[key],
                     lambda c, action=action: require(c).one_shot(action),
-                    card=CARD_MASSAGE,
+                    kind=Kind.MASSAGE,
                 )
                 for key, action in app.MASSAGE.items()
             )
@@ -453,7 +453,7 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
                     diagnostic=True,
                 )
             )
-        return tuple(specs)
+        return tuple(spec for spec in specs if spec is not None)
 
     async def check_state(self) -> None:
         if (retry := self.profile.status_retry_ms) is not None:

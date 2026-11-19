@@ -17,10 +17,10 @@ from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_UTILITY
 from ...codec import keeson
 from ...const import CONF_PRODUCT_TYPE
 from ...controller_state import StateKey
-from ...labels import display_label
 from ...profiles import ormatek as app
 from ..base import BedController, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import massage_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -540,13 +540,10 @@ class OrmatekController(KeesonController):
                 hold=ControllerHoldSpec("light_toggle"),
             ),
             *(
-                ControllerButtonSpec(
+                massage_button(
                     f"ormatek_{action}",
-                    display_label(label),
+                    label,
                     lambda c, action=action: selected(c).massage_action(action),
-                    translation_key="ormatek_action",
-                    translation_placeholders={"action": display_label(label)},
-                    card=CARD_MASSAGE,
                     hold=ControllerHoldSpec(
                         "head_massage" if action == "strengthHeadUp" else "foot_massage"
                     )

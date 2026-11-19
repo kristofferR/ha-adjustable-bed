@@ -1107,6 +1107,11 @@ def _should_add_button(
     if description.memory_slot is not None and controller is not None:
         if description.memory_slot > controller.memory_slot_count:
             return False
+        if (
+            not description.is_program_button
+            and description.memory_slot in controller.memory_slots_recalled_by_presets
+        ):
+            return False
 
     if description.is_program_button and controller is not None:
         # Per-slot, not controller-wide: a bed can report some slots as locked
@@ -1258,8 +1263,6 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         controller = self._coordinator.capability_controller
         hold = controller.standard_button_hold_spec(self.entity_description.key) if controller else None
-        if controller and controller.standard_button_requires_confirmation(self.entity_description.key):
-            attributes["requires_confirmation"] = True
         if hold is not None:
             attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
                               hold_release_delay_ms=hold.release_delay_ms)
@@ -1339,6 +1342,10 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         self._attr_icon = spec.icon
         if spec.diagnostic:
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        elif spec.card.role is CardRole.SAVE:
+            # Like the shared memory saves: it changes the bed's settings.
+            self._attr_entity_category = EntityCategory.CONFIG
+        if spec.diagnostic or not spec.entity_registry_enabled_default:
             self._attr_entity_registry_enabled_default = False
         if spec.release_only or spec.key == "hjbed_release":
             # The card presses it to end a held gesture, so it stays enabled
@@ -1454,6 +1461,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         if self._spec.requires_confirmation:
             attributes["requires_confirmation"] = True
+        if self._spec.card.role in (CardRole.UP, CardRole.DOWN):
+            # An app's motor action is pressed, never replaced by a timed motor move.
+            attributes["timed_move"] = False
         hold = self._current_hold_spec()
         if hold is not None:
             attributes.update(
@@ -1581,12 +1591,6 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
         """Expose a bounded Both timed move when both sides own that motor."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         action = self.entity_description.key
-        if any(
-            child.capability_controller is not None
-            and child.capability_controller.standard_button_requires_confirmation(action)
-            for child in self._coordinator.children.values()
-        ):
-            attributes["requires_confirmation"] = True
         motor = next(
             (candidate for candidate in ("head", "legs") if action.startswith(f"{candidate}_")),
             None,

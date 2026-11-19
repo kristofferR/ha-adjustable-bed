@@ -6,7 +6,7 @@ hardware captures. Nisco 1.1.1 (code 3) has 396 vector records; MLILY Supreme
 Counts overlap wire, parser and parameter domains, and are not feature counts.
 
 The artifacts came from the frozen 2026-07-14 delivery. Hardware is unverified;
-there is no fresh latest-version claim. `richmat_cluster022_proof.py` checks
+there is no fresh latest-version claim. `richmat_nisco_supreme_proof.py` checks
 production builders against outbound literals before choosing a runtime.
 
 The Nisco five-case repair records current dispatch mode, including a mode

@@ -27,6 +27,7 @@ from ...profiles.casper import (
 )
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorControlSpec
 from ..richmat.labels import function_label
 from .protocol import (
@@ -74,6 +75,10 @@ class ProductProfile(ExecutionProfile, Protocol):
 
     @property
     def row(self) -> ProductRow: ...
+
+
+# Memory slots the shared memory buttons recall and save.
+_GENERIC_MEMORY: Final = frozenset(f"MemoryPosition{slot}" for slot in range(1, 4))
 
 
 def action_label(name: str) -> str:
@@ -265,36 +270,35 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        specs: list[ControllerButtonSpec] = []
+        specs: list[ControllerButtonSpec | None] = []
         for name, (_short, long) in self.actions.items():
             if name.endswith(("Up", "Down")) and not name.startswith("Music"):
+                continue
+            # The shared Flat and memory buttons already send these.
+            if name == "MotorReset" or name in _GENERIC_MEMORY:
                 continue
             for save in (False, True) if long is not None else (False,):
                 key = name.lower() + ("_save" if save else "")
                 label = ("Save " if save else "") + action_label(name)
                 specs.append(
-                    ControllerButtonSpec(
+                    catalog_button(
                         "casper_" + key,
                         label,
                         partial(invoke, action=name, save=save),
-                        translation_key="casper_base_action",
-                        translation_placeholders={"action": label},
+                        kind=Kind.SAVE if save else None,
                     )
                 )
         if self.product[8]:
             for name, _, _ in self.action_catalog:
                 if name.startswith("Music"):
-                    label = action_label(name)
                     specs.append(
-                        ControllerButtonSpec(
+                        catalog_button(
                             "casper_music_page_" + name.lower(),
-                            label,
+                            action_label(name),
                             partial(invoke, action=name, music_page=True),
-                            translation_key="casper_base_action",
-                            translation_placeholders={"action": label},
                         )
                     )
-        return tuple(specs)
+        return unique_buttons(specs)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

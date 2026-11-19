@@ -1,4 +1,4 @@
-"""Catalog selection, gestures, state gates and independent sleep sessions (row173)."""
+"""Catalog selection, gestures, state gates and independent sleep sessions."""
 
 from __future__ import annotations
 

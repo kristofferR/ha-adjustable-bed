@@ -119,7 +119,8 @@ async def test_registered_runtime_entities_alarm_light_and_timed_callers(hass, r
         for entity in _button_entities_for(hass, target)
         if entity.unique_id.endswith("program_memory_1")
     )
-    assert button.extra_state_attributes["requires_confirmation"]
+    # The card offers a memory save only in Set mode; it needs no second prompt.
+    assert "requires_confirmation" not in button.extra_state_attributes
     client.write_gatt_char.reset_mock()
     await button.async_press()
     assert written(client) == ["6e01002b9a"]
