@@ -1548,7 +1548,7 @@ export class AdjustableBedCard extends LitElement {
     return html`
       ${this._heading("section.lighting")}
       ${l.mood && floor ? this._subheading("lighting.floor") : nothing}
-      ${main ? (main === l.switch ? this._switchRow(main) : this._toggleRow(main)) : nothing}
+      ${main ? this._switchRow(main) : nothing}
       ${l.switches?.map((id) => this._switchRow(id))}
       ${l.state ? this._moreInfoRow(l.state) : nothing}
       ${l.states?.map((id) => this._moreInfoRow(id))}
@@ -1695,6 +1695,8 @@ export class AdjustableBedCard extends LitElement {
     const st = this._state(entityId);
     if (st?.attributes.assumed_state !== true && (st?.state === "on" || st?.state === "off"))
       return this._toggleRow(entityId);
+    // An assumed or unknown state gets explicit On and Off, for a switch or a light.
+    const domain = entityId.split(".", 1)[0];
     const name = entityLabel(this.hass, entityId);
     const off = this._t("action.off");
     const on = this._t("action.on");
@@ -1708,9 +1710,9 @@ export class AdjustableBedCard extends LitElement {
           </span>
         </button>
         <button class="dialog-btn" aria-label=${`${name}: ${off}`}
-          @click=${() => this._call("switch", "turn_off", entityId)}>${off}</button>
+          @click=${() => this._call(domain, "turn_off", entityId)}>${off}</button>
         <button class="dialog-btn" aria-label=${`${name}: ${on}`}
-          @click=${() => this._call("switch", "turn_on", entityId)}>${on}</button>
+          @click=${() => this._call(domain, "turn_on", entityId)}>${on}</button>
       </div>
     `;
   }

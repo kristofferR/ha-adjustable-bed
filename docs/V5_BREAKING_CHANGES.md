@@ -272,6 +272,55 @@ phone app's internals.
   as Home Assistant 2026.11 does, so the card no longer shows doubled names
   such as "Bed Left Back".
 
+### One shape per control
+
+The same control now looks the same on every bed:
+
+- **Sleep-monitor readings are dashboard entities.** Heart rate and breathing
+  rate are numeric sensors (bpm and breaths/min where the bed's unit is known)
+  with history graphs; a reading the bed does not have shows unknown instead of
+  "--". In bed, snoring and body movement are binary sensors with the occupancy,
+  sound and motion device classes. They are enabled and no longer under
+  Diagnostic. Every bed uses the same names ("Left heart rate", "Right in bed").
+  Heart and breathing rate sensors keep their entity IDs and settings. In-bed,
+  snoring and movement readings that were text sensors become binary sensors
+  with the same object ID (`sensor.bed_left_occupancy` becomes
+  `binary_sensor.bed_left_occupancy`), keeping the name, area, labels, icon
+  and aliases you gave them, and staying disabled or hidden if you made them
+  so. A reading that an earlier version created disabled is enabled once, as
+  on a new installation. The DoubleSleep breathing rate's unit changes from
+  brpm to breaths/min, and Home Assistant offers to update its statistics.
+- **Sleep Number bed presence is enabled by default** and named "In bed",
+  "Left in bed" and "Right in bed", like every other bed's occupancy. It
+  updates only while the bed is connected (see Bed occupancy sensors above).
+- **Every on/off under-bed light is a `light` entity.** It was a switch
+  (`switch.<bed>_under_bed_lights`) on 32 bed types and is now
+  `light.<bed>_under_bed_lights`, with the same object ID and the name, area,
+  labels, icon, aliases and disabled or hidden state you gave the switch.
+  Automations and scripts that call `switch.turn_on` or `switch.turn_off` on
+  it must call `light.turn_on` or `light.turn_off` instead: a repair lists
+  each one that still names the old switch. The same happens for the other
+  controls that changed type (Heal Every Night settings, Motion Bed toggles,
+  AdjustaMattress massage levels and per-bed massage timers). Beds that cannot report the light's state show
+  it as assumed, as the switch did. Octo keeps its switch: its light depends on the Octo PIN session
+  and the bed's own light timer, which the switch handles.
+- **Keeson, Serta, Ergomotion and OKIN FFE beds have a Stop button**, like the
+  other beds on the same receiver. It sends the release key the remote sends
+  when a button is let go. Profiles whose app has no release key (Adjustable
+  Lite and the KSBT remotes) still have none.
+- **Logicdata beds show their two memory slots** (recall and save), which the
+  guide and controller always supported.
+- **One massage timer and one light timer select.** Where the bed can set a
+  duration directly, fixed-duration buttons ("Massage 20 minutes") and
+  bed-specific timer selects became the shared **Massage timer** and
+  **Light timer** selects. A bed without an off command offers only its
+  durations. A bed that can only step through its timers keeps one "Cycle
+  massage timer" button.
+- **A settable massage level is a number.** Where a bed has an intensity
+  number, the up and down step buttons for the same zone are gone; beds that
+  can only step keep the buttons. Sensors that only mirrored a control start
+  disabled or are gone.
+
 [Appendix A](#appendix-a-removed-and-replaced-entities-by-bed) lists the
 removed and replaced entities by bed.
 
@@ -408,6 +457,22 @@ Beds that 4.x supported. Renamed entities are not listed: they keep their IDs.
 | SUTA Smart Home | Controls the bed's model does not have, query buttons, the **Model** sensor | Lock and unlock became a switch with a new entity ID |
 | Svane | Head, feet and position byte sensors | |
 | V-MAT Basic | ED motor status binary sensor | |
+| Sleep sensors (Casper and Hush sleep modules, Good Vibe and MLILY sleep devices, CheersSleep, RUF and Richmat sleep receivers, DoubleSleep, Aging in Place, M Line) | | Heart and breathing rate sensors became the shared **Heart rate** and **Breathing rate** sensors (same entity IDs); in-bed, snoring and movement text sensors became **In bed**, **Snoring** and **Body movement** binary sensors |
+| GM Control sleep module | Time and Query part buttons (the clock is set on every connection; the `gmmotor` action still queries the part) | Start and stop live data buttons became the **Live sleep data** switch; new heart rate, breathing rate, in bed, snoring and body movement entities |
+| Under-bed light on CheersSleep, SUTA, Cherish, Comfort Enhancements, KomfyD, ComfyDS, iSleep, Kaidi, Keeson, Logicdata, MattressFirm, Nectar, OKIN 64-bit, 7-byte, CB24, CB35, CST and Nordic, Remacro, Rize, Rize Remedy II, Serenity, Tranquil, Sleep Number, SleepStar, Sleepy's Box25 and Elite app, Solace, Svane, Vibradorm and Vibradorm app | `switch.<bed>_under_bed_lights` | `light.<bed>_under_bed_lights` |
+| Heal Every Night (OKIN apps) | | Installation and actuator direction selects became the **Reversed installation**, **Reverse actuator 1** and **Reverse actuator 2** switches |
+| Snore Monitor | Alarm enabled binary sensors | Whether each alarm is on is an attribute of its alarm time sensor |
+| StarCode ABM5-4, ORE comfort-bed apps (Avanti, Bedsense, Dynasty), ComfortFurniture, ORE Ultramatic P1 | Bed-specific massage timer select | Shared **Massage timer** select (durations only) |
+| eShine | Massage 10, 20 and 30 minute buttons | Shared **Massage timer** select, with Off |
+| BedTech | Massage 20 minutes button | Shared **Massage timer** select |
+| AdjustaMattress | Timer 10, 20 and 30 buttons; head, foot and wave selector selects | Shared **Massage timer** select; head, foot and wave massage numbers (1-4) |
+| Sleepy's Elite app | Massage timer code select, cycle massage timer button | Shared **Massage timer** select (10, 20, 30 min) |
+| Comfort Enhancements | Cycle massage timer button (the timer select already sets it) | |
+| Smart Sleep (P2) | Wave, timer, head and foot strength cycle buttons (their selects set them directly) | |
+| BedSense | Massage timer and cancel buttons, light 10 min, 8 h and 10 h buttons, massage timer and light duration sensors | Shared **Massage timer** and **Light timer** selects |
+| Motion Bed app | Massage timer, light timer and brightness 0-10 buttons, massage timer and brightness sensors, five mirror binary sensors | Shared timer selects, **Light brightness** number; night light, smart sleep, module light, module massage, climate timer and adaptive air toggles or on/off pairs became switches |
+| DoubleSleep (SleepEase) | Massage and sonic running sensors | Massage and sonic on/off buttons became the **Massage** and **Sonic massage** switches |
+| Reverie, Reverie Nightstand, Pairlink, Jiecang app | Head and foot massage up/down buttons where an intensity number exists | |
 
 **SUTA Smart Home** now offers the controls the SUTA app shows for your model,
 which it reads from the bed's Bluetooth name (for example `SUTA-B202B`). 4.x

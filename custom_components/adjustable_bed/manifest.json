@@ -2,8 +2,10 @@
   "domain": "adjustable_bed",
   "name": "Adjustable Bed",
   "after_dependencies": [
+    "automation",
     "frontend",
-    "lovelace"
+    "lovelace",
+    "script"
   ],
   "bluetooth": [
     {

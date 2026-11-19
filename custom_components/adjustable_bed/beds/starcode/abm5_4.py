@@ -15,7 +15,6 @@ from ...card import (
     CARD_LIGHT_LEVEL,
     CARD_LIGHTING,
     CARD_MASSAGE,
-    CARD_MASSAGE_TIMER,
     CARD_PRESET_SAVE,
     CARD_UTILITY,
 )
@@ -38,13 +37,12 @@ from ...profiles.okin_nframe import (
     STARCODE_ABM5_4_SAVE_HOLD_MS,
     OkinNFrameProfile,
 )
-from ...state_keys import UNDER_BED_LIGHTS_ON
+from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
-    ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorControlSpec,
@@ -115,10 +113,6 @@ def _button(action: str) -> Callable[[BedController], Coroutine[object, object, 
         await _controller(controller).app_action(action)
 
     return press
-
-
-async def _timer(controller: BedController, option: str) -> None:
-    await _controller(controller).set_app_timer(option)
 
 
 async def _brightness(controller: BedController, value: float) -> None:
@@ -354,6 +348,21 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         return self.command_selector in _POSITIVE_SELECTORS
 
     @property
+    def supports_massage_timer(self) -> bool:
+        return self.command_selector in _POSITIVE_SELECTORS
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [10, 20, 30] if self.supports_massage_timer else []
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return False  # The app's timer frame has no Off.
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        await _controller(self).set_app_timer(str(minutes))
+
+    @property
     def memory_slot_count(self) -> int:
         return 1
 
@@ -435,21 +444,6 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         )
 
     @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        if self.command_selector not in _POSITIVE_SELECTORS:
-            return ()
-        return (
-            ControllerSelectSpec(
-                "starcode_abm5_4_massage_timer",
-                "starcode_abm5_4_massage_timer",
-                MASSAGE_TIMER,
-                ("10", "20", "30"),
-                _timer,
-                card=CARD_MASSAGE_TIMER,
-            ),
-        )
-
-    @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         if self.command_selector not in _POSITIVE_SELECTORS:
             return ()
@@ -468,8 +462,8 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        # Raw fields and selectors stay in diagnostics; the select and number
-        # show the timer and light level where the bed accepts them.
+        # Raw fields and selectors stay in diagnostics; the timer select and
+        # number show the timer and light level where the bed accepts them.
         positive = self.command_selector in _POSITIVE_SELECTORS
         keys: tuple[tuple[str, bool], ...] = (
             ("manufacturer", False),
@@ -957,6 +951,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
         self.forward_controller_state_updates(
             *(_field_key(k)(v) for k, v in values.items()),
             MASSAGE_TIMER(str(self._timer_index * 10) if self._timer_index else None),
+            MASSAGE_TIMER_MINUTES(self._timer_index * 10 if self._timer_index else None),
             LIGHT_LEVEL(self._level),
             *(
                 (UNDER_BED_LIGHTS_ON(self._light_on if self._ui_state_observed else None),)

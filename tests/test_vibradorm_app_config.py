@@ -42,12 +42,12 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.pairing import (
     build_pair_entry_data,
     supports_single_address_pairing,
 )
 from custom_components.adjustable_bed.setup_operation import OperationOutcome, OperationResult
-from custom_components.adjustable_bed.switch import _switch_entities_for
 from tests.form_helpers import finish_new_bed, start_new_bed
 from tests.hold_lease_wire import virtual_clock
 
@@ -273,17 +273,16 @@ async def test_enabling_restored_form_recomputes_hidden_floor_default(hass, opti
     controller = await create_controller(runtime, const.BED_TYPE_VIBRADORM_APP, None, client)
     assert isinstance(controller, VibradormAppController)
     runtime._controller = controller
-    switch = next(entity for entity in _switch_entities_for(hass, runtime)
-                  if entity.entity_description.key == "under_bed_lights")
-    switch.hass = hass
-    switch.async_write_ha_state = MagicMock()
+    (light,) = _light_entities_for(hass, runtime)
+    light.hass = hass
+    light.async_write_ha_state = MagicMock()
 
     async def execute(command, **kwargs):
         assert kwargs == {"cancel_running": False}
         await command(controller)
 
     with patch.object(runtime, "async_execute_controller_command", new=AsyncMock(side_effect=execute)) as dispatch:
-        await switch.async_turn_on()
+        await light.async_turn_on()
     dispatch.assert_awaited_once()
     assert written(controller) == ["c80000"]
 

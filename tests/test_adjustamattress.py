@@ -149,8 +149,15 @@ async def test_all_28_profile_gates_roles_and_native_entities(model, layout):
     await c.async_discover_capabilities()
     assert set(c.position_actions) == set(BASE_ACTIONS + LAYOUT_ACTIONS[layout])
     assert c.control_characteristic_uuid == (NUS_WRITE if model in ("P3", "P4") else FFE_WRITE)
-    keys = {s.key for s in c.controller_select_specs}
-    assert ("adjustamattress_head_selector" in keys) == dedicated_massage(model, layout)
+    numbers = {s.key for s in c.controller_number_specs}
+    assert ("adjustamattress_head_massage" in numbers) == dedicated_massage(model, layout)
+    # Dedicated timer keys are the massage timer select; cyclic beds keep their cycle.
+    assert c.supports_massage_timer == dedicated_massage(model, layout)
+    assert c.massage_timer_options == ([10, 20, 30] if c.supports_massage_timer else [])
+    assert not c.massage_timer_can_turn_off
+    buttons = {s.key for s in c.controller_button_specs}
+    assert not any(key.startswith("adjustamattress_timer") for key in buttons)
+    assert ("adjustamattress_massage_timer" in buttons) == (not dedicated_massage(model, layout))
     switches = {s.key for s in c.controller_switch_specs}
     assert ("adjustamattress_snore_control" in switches) == has_snore(model, layout)
     assert ("adjustamattress_sleep" in switches) == has_snore(model, layout)
@@ -353,7 +360,7 @@ async def test_alarm_switch_sends_the_set_alarm_and_anti_snore_needs_no_notice()
     assert c.persisted_app_state is None
 
 
-async def test_p2_alarm_disable_sentinel_and_selectors():
+async def test_p2_alarm_disable_sentinel_and_massage_levels():
     c = await ready("P2")
     c.write_command = AsyncMock()
     with patch.object(c, "_delay", new=AsyncMock()):
@@ -362,11 +369,30 @@ async def test_p2_alarm_disable_sentinel_and_selectors():
     assert c.write_command.call_args_list[0].args[0][9:13] == b"\xff" * 4
     for zone in ("head", "foot", "wave"):
         spec = next(
-            s for s in c.controller_select_specs if s.key == f"adjustamattress_{zone}_selector"
+            s for s in c.controller_number_specs if s.key == f"adjustamattress_{zone}_massage"
         )
-        for i in range(4):
-            await spec.select_fn(c, str(i))
+        assert (spec.native_min_value, spec.native_max_value) == (1, 4)
+        for level in range(1, 5):
+            await spec.set_fn(c, level)
         assert c.client.start_notify.await_count == 0
+
+
+async def test_p2_massage_timer_select_holds_the_app_timer_key():
+    c = await ready("P2", 1)
+    held = []
+
+    async def hold(control, duration_ms):
+        held.append(control)
+
+    with patch.object(c, "hold_control", new=hold):
+        for minutes in (10, 20, 30):
+            await c.set_massage_timer(minutes)
+        with pytest.raises(ValueError):
+            await c.set_massage_timer(0)
+    # The same held keys the timer buttons pressed, one per duration.
+    assert held == ["timer10", "timer20", "timer30"]
+    (update,) = c._coordinator.handle_controller_state_updates.call_args.args
+    assert (update.key, update.value) == ("massage_timer", 30)
 
 
 async def test_notification_busy_timer_is_cancelled_on_disconnect():
@@ -415,18 +441,20 @@ async def test_failed_nus_subscription_does_not_send_hydration():
 
 async def test_declared_entity_actions_revalidate_current_profile_and_serialize(hass):
     from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
-    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
     from tests.test_controller_custom_entities import runtime_for
 
     c = await ready("P2", 1)
     c.write_command = AsyncMock()
     runtime = runtime_for(hass, c)
-    select = AdjustableBedControllerSelect(
+    level = AdjustableBedControllerNumber(
         runtime,
-        next(s for s in c.controller_select_specs if s.key == "adjustamattress_head_selector"),
+        next(s for s in c.controller_number_specs if s.key == "adjustamattress_head_massage"),
     )
-    await select.async_select_option("2")
+    # Level 3 is the head's third dedicated key, as the old "Level 3" option sent.
+    await level.async_set_native_value(3)
     assert c.write_command.call_args.args[0] == bytes.fromhex("e5fe1610000012e4")
+    (update,) = c._coordinator.handle_controller_state_updates.call_args.args
+    assert (update.key, update.value) == ("adjustamattress_head_massage", 3)
     runtime.async_execute_controller_command.assert_awaited_once()
     c.write_command.reset_mock()
     number = AdjustableBedControllerNumber(runtime, c.controller_number_specs[0])
@@ -437,7 +465,7 @@ async def test_declared_entity_actions_revalidate_current_profile_and_serialize(
     from homeassistant.exceptions import ServiceValidationError
 
     with pytest.raises(ServiceValidationError):
-        await select.async_select_option("2")
+        await level.async_set_native_value(3)
 
 
 async def test_disabled_only_demonstration():

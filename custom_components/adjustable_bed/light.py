@@ -155,11 +155,7 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
         # registry identity and automations stable across this upgrade.
         return []
 
-    if (
-        controller.supports_light_state_feedback
-        or controller.exposes_discrete_light_as_light
-        and controller.supports_discrete_light_control
-    ):
+    if controller.supports_light_state_feedback or controller.supports_discrete_light_control:
         return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
     if toggle_only and controller.exposes_assumed_toggle_light:
@@ -757,8 +753,25 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         controller = coordinator.capability_controller
         self._feedback_only = controller is not None and controller.supports_light_state_feedback
         self._initialize_off = controller is not None and controller.light_state_starts_off
+        # The app's intended level stands in for a readback the bed never sends.
+        self._level_intent = (
+            controller is not None and controller.light_switch_follows_level_intent
+        )
+        self._attr_assumed_state = self._level_intent or (
+            controller is not None and controller.light_state_is_assumed
+        )
+        if self._level_intent:
+            self._attr_is_on = self._level_is_on(coordinator.controller_state.get(LIGHT_LEVEL))
+        self._auto_off_timer: asyncio.TimerHandle | None = None
+        # Counts published light state, so a command's assumed result never
+        # overwrites state the bed published while the command ran.
+        self._state_generation = 0
         self._unregister_callback: Callable[[], None] | None = None
         self._unregister_connection: Callable[[], None] | None = None
+
+    @staticmethod
+    def _level_is_on(level: object) -> bool | None:
+        return level > 0 if type(level) is int and level >= 0 else None
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to controller-state updates for the light."""
@@ -766,6 +779,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         if (
             not self._feedback_only
             and not self._initialize_off
+            and not self._attr_assumed_state
             and (last_state := await self.async_get_last_state()) is not None
             and last_state.state in (STATE_ON, STATE_OFF)
         ):
@@ -793,6 +807,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
     async def async_will_remove_from_hass(self) -> None:
         """Clean up controller-state callback registration."""
+        self._cancel_auto_off()
         if self._unregister_callback is not None:
             self._unregister_callback()
             self._unregister_callback = None
@@ -817,26 +832,69 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         Feedback controllers publish what the bed reported on the current link,
         so the light is unknown while no controller is connected.
         """
-        key = sided(UNDER_BED_LIGHTS_ON, self._coordinator.controller_side)
-        if key not in state:
-            key = UNDER_BED_LIGHTS_ON
-        if key not in state:
-            return
-        value = state[key]
-        if self._feedback_only and self._coordinator.controller is None:
-            value = None
-        self._attr_is_on = None if value is None else bool(value)
+        if self._level_intent:
+            if LIGHT_LEVEL not in state or (is_on := self._level_is_on(state[LIGHT_LEVEL])) is None:
+                return
+            self._attr_is_on = is_on
+        else:
+            key = sided(UNDER_BED_LIGHTS_ON, self._coordinator.controller_side)
+            if key not in state:
+                key = UNDER_BED_LIGHTS_ON
+            if key not in state:
+                return
+            value = state[key]
+            if self._feedback_only and self._coordinator.controller is None:
+                value = None
+            self._attr_is_on = None if value is None else bool(value)
+        self._state_generation += 1
+        self._schedule_auto_off()
         self.async_write_ha_state()
+
+    def _cancel_auto_off(self) -> None:
+        if self._auto_off_timer is not None:
+            self._auto_off_timer.cancel()
+            self._auto_off_timer = None
+
+    def _schedule_auto_off(self) -> None:
+        """Follow a bed whose light switches itself off after a set time."""
+        controller = self._coordinator.controller
+        if controller is None and self._attr_is_on:
+            return  # Offline: the bed's own timer keeps running, so keep ours.
+        self._cancel_auto_off()
+        if controller is None or not self._attr_is_on:
+            return
+        seconds = controller.light_auto_off_seconds
+        if seconds is None:
+            return
+
+        def expire() -> None:
+            # The bed's own timer runs on after an idle disconnect.
+            self._auto_off_timer = None
+            if not self._attr_is_on:
+                return
+            controller.on_light_auto_off()
+            self._attr_is_on = False
+            self.async_write_ha_state()
+
+        self._auto_off_timer = self.hass.loop.call_later(seconds, expire)
 
     async def async_turn_on(self, **kwargs: object) -> None:
         """Turn the under-bed light on."""
         del kwargs
 
         async def _turn_on(ctrl: BedController) -> None:
+            generation = self._state_generation
             await ctrl.lights_on()
             delivery = command_delivery()
-            if not self._feedback_only and delivery is not Delivery.NONE:
+            # Published state wins; a value sent only in part is unknown.
+            if (
+                not self._feedback_only
+                and delivery is not Delivery.NONE
+                and generation == self._state_generation
+            ):
                 self._attr_is_on = True if delivery is Delivery.SENT else None
+                if delivery is Delivery.SENT:
+                    self._schedule_auto_off()
                 self.async_write_ha_state()
 
         await self._coordinator.async_execute_controller_command(
@@ -849,10 +907,17 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         del kwargs
 
         async def _turn_off(ctrl: BedController) -> None:
+            generation = self._state_generation
             await ctrl.lights_off()
             delivery = command_delivery()
-            if not self._feedback_only and delivery is not Delivery.NONE:
+            if (
+                not self._feedback_only
+                and delivery is not Delivery.NONE
+                and generation == self._state_generation
+            ):
                 self._attr_is_on = False if delivery is Delivery.SENT else None
+                if delivery is Delivery.SENT:
+                    self._cancel_auto_off()
                 self.async_write_ha_state()
 
         await self._coordinator.async_execute_controller_command(

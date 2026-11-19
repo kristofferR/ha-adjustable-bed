@@ -320,6 +320,12 @@ async def test_all_real_entity_specs_build_and_actions_reach_wire(fmt, no_delays
     ctrl = controller(fmt)
     ctrl._wait_cancel = AsyncMock(return_value=False)
     ctrl._massage = codec.MassageState(True, 1, 1, 1, 1, 0)
+    # P2 sets wave, timer and strengths with selects, so only P1 keeps cycle buttons.
+    cycles = {
+        f"smart_sleep_massage_{n}" for n in ("wave", "timer", "head_strength", "foot_strength")
+    }
+    buttons = {spec.key for spec in ctrl.controller_button_specs}
+    assert (cycles <= buttons) == (fmt == "p1") and (not cycles & buttons) == (fmt == "p2")
     for spec in ctrl.motor_control_specs:
         description = _build_cover_description(spec)
         await description.open_fn(ctrl)

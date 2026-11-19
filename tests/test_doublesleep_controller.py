@@ -225,6 +225,41 @@ async def test_save_releases_and_massage_queries_follow_source_delay():
     assert bed.packets() == [bytes.fromhex("aa000002010150"), bytes.fromhex("2a000002810103")]
 
 
+@pytest.mark.parametrize("driver", ["p1", "p2"])
+async def test_massage_switches_send_the_on_and_off_keys_and_show_running(driver):
+    bed = Bed(driver)
+    await bed.connect()
+    specs = {s.key: s for s in bed.bed.controller_switch_specs}
+    domains = ("massage", "sonic") if driver == "p2" else ("massage",)
+    assert {f"doublesleep_{d}" for d in domains} <= specs.keys()
+    assert ("doublesleep_sonic" in specs) is (driver == "p2")
+    labels = {s.key for s in bed.bed.controller_button_specs}
+    assert not labels & {f"doublesleep_{i}" for i in (28, 29, 89, 90)}
+    for domain, (on, off) in (("massage", (28, 29)), ("sonic", (89, 90)))[: len(domains)]:
+        expected = []
+        for index in (on, off):
+            bed.client.write_gatt_char.reset_mock()
+            with patch(
+                "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+                new=AsyncMock(),
+            ):
+                await bed.bed.press(index)
+            expected.append(bed.packets())
+        sent = []
+        for value in (True, False):
+            bed.client.write_gatt_char.reset_mock()
+            with patch(
+                "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+                new=AsyncMock(),
+            ):
+                await specs[f"doublesleep_{domain}"].set_fn(bed.bed, value)
+            sent.append(bed.packets())
+        assert sent == expected
+        bed.bed.parser.state[f"{domain}_running"] = 1
+        bed.bed._publish()
+        assert bed.states[f"doublesleep_{domain}_on"] is True
+
+
 async def test_cancellation_before_first_fragment_does_not_publish_privacy():
     bed = Bed("p3", 11135)
     await bed.connect()
@@ -324,7 +359,7 @@ def test_child_lock_restore_and_local_change_do_not_republish_stale_sensor_state
     assert bed.states["doublesleep_child_lock"] == "on"
     bed.states["doublesleep_left_heart_rate"] = 77
     bed.bed.parser.state["left_heart_rate"] = 45
-    spec = bed.bed.controller_switch_specs[0]
+    spec = next(s for s in bed.bed.controller_switch_specs if s.key == "doublesleep_child_lock")
     assert spec.local_set_fn is not None
     spec.local_set_fn(False)
     assert bed.states["doublesleep_child_lock"] == "off"

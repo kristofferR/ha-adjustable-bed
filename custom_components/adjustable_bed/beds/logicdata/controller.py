@@ -194,6 +194,14 @@ class LogicdataController(BedController):
         return 2
 
     @property
+    def supports_memory_presets(self) -> bool:
+        return True
+
+    @property
+    def supports_memory_programming(self) -> bool:
+        return True
+
+    @property
     def supports_discrete_light_control(self) -> bool:
         """Return True - Logicdata supports on/off light commands."""
         return True

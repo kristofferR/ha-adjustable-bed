@@ -188,7 +188,7 @@ class BetterLiving2Controller(KeesonController):
         return self.wire != "P1"
 
     @property
-    def exposes_discrete_light_as_light(self) -> bool:
+    def light_state_is_assumed(self) -> bool:
         return self.wire == "P1"
 
     @property
@@ -790,7 +790,7 @@ class BetterLiving2Controller(KeesonController):
         finally:
             delivery = _value_delivery(before, finished)
             if delivery is not None:
-                self.forward_controller_state_updates(
+                self.forward_sent_state_updates(
                     LEVELS[zone](value if delivery is Delivery.SENT else None)
                 )
 
@@ -815,7 +815,7 @@ class BetterLiving2Controller(KeesonController):
             finally:
                 delivery = _value_delivery(before, finished)
                 if delivery is not None:
-                    self.forward_controller_state_updates(
+                    self.forward_sent_state_updates(
                         LEVELS[zone](value if delivery is Delivery.SENT else None)
                     )
 

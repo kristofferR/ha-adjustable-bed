@@ -1085,7 +1085,7 @@ levels into one, then writes the timer key, the wave, head and foot levels
 100 ms apart. The level sliders (head and foot 0-3, wave 1-4) and the +/- buttons
 then write one frame each; +/- clamp but still write. **Massage: Off** (or the
 timer's Off) writes head 0 and foot 0 and disables the page again, keeping the
-levels. The light switch writes the explicit on/off key. The bed reports no light
+levels. The light writes the explicit on/off key. The bed reports no light
 state, so the switch starts unknown and shows the commanded state as assumed.
 Preset selection, light state and massage levels change only once their frames
 are written, so a failed or cancelled write leaves the previous state for a
@@ -1388,7 +1388,7 @@ handshake, MTU request or initialization packet.
 
 Memory A and B are position slots, not bed sides. Flat and Zero G can be saved
 like the memory slots. The app toggles a local flag and sends explicit light on and
-off words, so the integration exposes an under-bed light switch with assumed state.
+off words, so the integration exposes an on/off under-bed light with assumed state.
 
 | Entity | Behavior |
 |--------|----------|

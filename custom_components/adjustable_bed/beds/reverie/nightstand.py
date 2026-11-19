@@ -19,6 +19,7 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...card import CARD_CONTROLLED_SIDE, CARD_MASSAGE, motor_card
 from ...command_scheduler import (
@@ -280,11 +281,12 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
 
     @property
     def supports_head_massage_intensity_step_control(self) -> bool:
-        return self.model.massage
+        # The head and foot intensity numbers set any level, so no step buttons.
+        return False
 
     @property
     def supports_foot_massage_intensity_step_control(self) -> bool:
-        return self.model.massage
+        return False
 
     @property
     def auto_enable_massage(self) -> bool:
@@ -425,6 +427,8 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         specs: list[ControllerNumberSpec] = []
         if self.model.massage:
             specs.append(
+                # The full raw wave byte, with no proven unit; the shared wave
+                # intensity number is the user control.
                 ControllerNumberSpec(
                     key="reverie_massage_wave",
                     translation_key="reverie_massage_wave",
@@ -436,6 +440,8 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                         "wave", int(value)
                     ),
                     card=CARD_MASSAGE,
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                    entity_registry_enabled_default=False,
                 )
             )
             if self.model.tandem:
@@ -453,6 +459,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                             ),
                             card=CARD_MASSAGE,
                         ),
+                        # 0-191 is only what fits the offset byte; no proven unit.
                         ControllerNumberSpec(
                             key="reverie_stk_global_massage",
                             translation_key="reverie_stk_global_massage",
@@ -464,6 +471,8 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                                 "stk_global", int(value)
                             ),
                             card=CARD_MASSAGE,
+                            entity_category=EntityCategory.DIAGNOSTIC,
+                            entity_registry_enabled_default=False,
                         ),
                     )
                 )

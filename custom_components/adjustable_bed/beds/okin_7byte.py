@@ -95,7 +95,7 @@ class Okin7ByteController(ProfileExecution[Okin5AProfile], BedController):
 
     @property
     def memory_slot_count(self) -> int:
-        return 2
+        return 2 if self.supports_memory_presets else 0
 
     async def write_command(
         self,

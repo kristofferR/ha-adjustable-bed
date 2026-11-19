@@ -7,13 +7,21 @@ import json
 import logging
 from collections.abc import Callable
 from datetime import datetime
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 
 from ...card import CARD_UTILITY
 from ...controller_state import StateKey, StateUpdate
 from ..base import BedController
 from ..builder import BuildContext
-from ..entity_specs import ControllerSelectSpec, ControllerStateSensorSpec, ControllerSwitchSpec
+from ..entity_specs import (
+    ControllerSelectSpec,
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    ControllerSwitchSpec,
+    SleepFlag,
+    sleep_flag_binary_sensor_spec,
+    sleep_rate_sensor_spec,
+)
 from .protocol import crc8, sleep_frame
 
 if TYPE_CHECKING:
@@ -46,9 +54,22 @@ def _setting_key(setting: str) -> StateKey[str | None]:
     return StateKey[str | None](f"ruf_richmat_sleep_{setting}")
 
 
-def _vital_key(side: str, kind: str) -> StateKey[int | bool]:
-    """A rate in per-minute units, or an occupancy/movement flag."""
-    return StateKey[int | bool](f"ruf_richmat_sleep_{side}_{kind}")
+_SIDES: Final[tuple[Literal["left", "right"], ...]] = ("left", "right")
+
+
+def _rate_key(side: str, kind: str) -> StateKey[int | None]:
+    """A rate in per-minute units."""
+    return StateKey[int | None](f"ruf_richmat_sleep_{side}_{kind}")
+
+
+def _flag_key(side: str, kind: str) -> StateKey[bool | None]:
+    """An occupancy or movement flag."""
+    return StateKey[bool | None](f"ruf_richmat_sleep_{side}_{kind}")
+
+_FLAG_FIELDS: Final[tuple[tuple[str, SleepFlag], ...]] = (
+    ("occupancy", "bed_presence"),
+    ("movement", "body_movement"),
+)
 
 
 class RufRichmatSleepController(BedController):
@@ -129,26 +150,13 @@ class RufRichmatSleepController(BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        rows = []
-        for side in ("left", "right"):
-            for kind, unit, icon in (
-                ("heart_rate", "bpm", "mdi:heart-pulse"),
-                ("breathing_rate", "breaths/min", "mdi:lungs"),
-                ("occupancy", None, "mdi:bed"),
-                ("movement", None, "mdi:motion-sensor"),
-            ):
-                key = f"ruf_richmat_sleep_{side}_{kind}"
-                rows.append(
-                    ControllerStateSensorSpec(
-                        key,
-                        key,
-                        _vital_key(side, kind),
-                        icon,
-                        native_unit_of_measurement=unit,
-                        card=CARD_UTILITY,
-                        entity_registry_enabled_default=True,
-                    )
-                )
+        rows = [
+            sleep_rate_sensor_spec(
+                kind, f"ruf_richmat_sleep_{side}_{kind}", _rate_key(side, kind), side
+            )
+            for side in _SIDES
+            for kind in ("heart_rate", "breathing_rate")
+        ]
         return tuple(rows) + (
             ControllerStateSensorSpec(
                 "ruf_richmat_sleep_attributes",
@@ -159,6 +167,16 @@ class RufRichmatSleepController(BedController):
                 card=CARD_UTILITY,
                 entity_registry_enabled_default=False,
             ),
+        )
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        return tuple(
+            sleep_flag_binary_sensor_spec(
+                kind, f"ruf_richmat_sleep_{side}_{name}", _flag_key(side, name), side
+            )
+            for side in _SIDES
+            for name, kind in _FLAG_FIELDS
         )
 
     async def async_discover_capabilities(self) -> None:
@@ -295,7 +313,9 @@ class RufRichmatSleepController(BedController):
                         if type(value) is not int or not -(2**31) <= value < 2**31:
                             continue
                         values.append(
-                            _vital_key(side, name)(value if name.endswith("rate") else value == 1)
+                            _rate_key(side, name)(value)
+                            if name.endswith("rate")
+                            else _flag_key(side, name)(value == 1)
                         )
                 self.forward_controller_state_updates(*values)
         elif kind == 0xA5 and len(frame) == 7 and payload[0] == 0x14:

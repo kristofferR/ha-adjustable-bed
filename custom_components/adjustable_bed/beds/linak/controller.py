@@ -410,10 +410,6 @@ class LinakController(BedController):
         return True
 
     @property
-    def exposes_discrete_light_as_light(self) -> bool:
-        return True
-
-    @property
     def light_state_starts_off(self) -> bool:
         return True
 

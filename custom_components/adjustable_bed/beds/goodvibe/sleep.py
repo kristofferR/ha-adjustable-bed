@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Never
 
 from ...codec import sleep_envelope
+from ..entity_specs import sleep_rate_value
 from .schemas import parse_schema
 
 
@@ -131,6 +132,16 @@ class Realtime:
             (str(value[2]), str(value[3])) if status != 0 else ("--", "--")
         )
         self.snore = "Snoring" if value[4] == 1 else "--"
+
+    def typed(self) -> dict[str, int | bool | None]:
+        """The readings as Home Assistant state; the app's "--" is unknown."""
+        return {
+            "heart": sleep_rate_value(self.heart),
+            "respiration": sleep_rate_value(self.respiration),
+            "occupancy": {"On Bed": True, "Off Bed": False}.get(self.occupancy),
+            "movement": {"Body Move": True, "No Body Move": False}.get(self.movement),
+            "snore": {"Snoring": True, "No Snoring": False}.get(self.snore),
+        }
 
 
 @dataclass

@@ -144,7 +144,8 @@ async def test_other_axis_stop_preempts_a_running_cover_through_production_sched
     assert len(frames) >= 3
 
 
-async def test_discrete_light_switch_tracks_only_commanded_intent(hass):
+async def test_discrete_light_tracks_only_commanded_intent(hass):
+    from custom_components.adjustable_bed.light import AdjustableBedOnOffLight
     from custom_components.adjustable_bed.switch import _switch_entities_for
 
     controller = make_controller()
@@ -155,13 +156,14 @@ async def test_discrete_light_switch_tracks_only_commanded_intent(hass):
         await command(controller)
 
     runtime.async_execute_controller_command = AsyncMock(side_effect=dispatch)
-    switches = _switch_entities_for(hass, runtime)
-    light = next(
-        switch for switch in switches if switch.entity_description.key == "under_bed_lights"
+    assert not any(
+        switch.entity_description.key == "under_bed_lights"
+        for switch in _switch_entities_for(hass, runtime)
     )
+    (light,) = _light_entities_for(hass, runtime)
+    assert isinstance(light, AdjustableBedOnOffLight)
     assert light.is_on is None
     assert light.assumed_state is True
-    assert _light_entities_for(hass, runtime) == []
     with patch.object(light, "async_write_ha_state", MagicMock()):
         await light.async_turn_on()
         assert light.is_on is True

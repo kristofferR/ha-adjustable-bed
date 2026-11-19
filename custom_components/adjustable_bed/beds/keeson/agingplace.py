@@ -35,6 +35,8 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    sleep_flag_binary_sensor_spec,
+    sleep_rate_sensor_spec,
 )
 from ..lifecycle import ControllerSession
 from .agingplace_state import CONNECTED, NUMBERS, OCCUPIED, TEXT, Observations, integer
@@ -648,21 +650,9 @@ class AgingPlaceController(KeesonController):
             *CONNECTED.values(),
         )
         return (
-            ControllerStateSensorSpec(
-                "agingplace_heart_rate",
-                "agingplace_heart_rate",
-                NUMBERS["heart_rate"],
-                "mdi:heart-pulse",
-                native_unit_of_measurement="bpm",
-                entity_registry_enabled_default=True,
-            ),
-            ControllerStateSensorSpec(
-                "agingplace_breathing_rate",
-                "agingplace_breathing_rate",
-                NUMBERS["breathing_rate"],
-                "mdi:lungs",
-                native_unit_of_measurement="breaths/min",
-                entity_registry_enabled_default=True,
+            sleep_rate_sensor_spec("heart_rate", "agingplace_heart_rate", NUMBERS["heart_rate"]),
+            sleep_rate_sensor_spec(
+                "breathing_rate", "agingplace_breathing_rate", NUMBERS["breathing_rate"]
             ),
             *(
                 ControllerStateSensorSpec(
@@ -672,6 +662,8 @@ class AgingPlaceController(KeesonController):
                     "mdi:timer-outline",
                     native_unit_of_measurement="s",
                     entity_registry_enabled_default=True,
+                    # Time left on a running program: a dashboard timer.
+                    entity_category=None,
                 )
                 for name in ("circulation", "sleep", "relax_cycle")
             ),
@@ -695,15 +687,7 @@ class AgingPlaceController(KeesonController):
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return (
-            ControllerStateBinarySensorSpec(
-                "agingplace_occupancy",
-                "agingplace_occupancy",
-                OCCUPIED,
-                "mdi:bed",
-                entity_registry_enabled_default=True,
-            ),
-        )
+        return (sleep_flag_binary_sensor_spec("bed_presence", "agingplace_occupancy", OCCUPIED),)
 
 
 async def build_controller(ctx: BuildContext) -> BedController:

@@ -532,8 +532,8 @@ async def test_real_entry_installs_native_entities_and_public_controls(
         "agingplace_brightness",
         "agingplace_massage_minutes",
         "agingplace_motion_minutes",
-        "agingplace_occupancy",
-        "agingplace_heart_rate",
+        "bed_presence",
+        "heart_rate",
         "agingplace_diagnostic_status",
     } <= keys
     assert (

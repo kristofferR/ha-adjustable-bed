@@ -316,6 +316,10 @@ class OreUltramaticController(OreComfortBedController):
             raise ValueError("P2 has no absolute massage levels")
         await super().set_massage_level(zone, level)
 
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self._route == "P1"
+
     async def set_massage_timer_option(self, option: str) -> None:
         if self._capture_link().route != "P1":
             raise ValueError("P2 has no absolute massage timer")
