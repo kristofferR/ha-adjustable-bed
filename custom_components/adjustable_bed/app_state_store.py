@@ -37,8 +37,9 @@ from homeassistant.helpers.storage import Store
 
 from .app_session import drop_app_sessions
 from .const import DOMAIN
+from .runtime_data import DomainKey, domain_registry
 
-_REGISTRY_KEY = "app_state_stores"
+_REGISTRY_KEY: DomainKey[dict[str, AppStateStore]] = DomainKey("app_state_stores")
 _LOGGER = logging.getLogger(__name__)
 PROFILE_DECISIONS_SLOT: Final = "profile_recommendations"
 
@@ -205,8 +206,7 @@ class AppStateStore:
 
 
 def _registry(hass: HomeAssistant) -> dict[str, AppStateStore]:
-    registry: dict[str, AppStateStore] = hass.data.setdefault(DOMAIN, {}).setdefault(_REGISTRY_KEY, {})
-    return registry
+    return domain_registry(hass, _REGISTRY_KEY, dict)
 
 
 def app_state_store(hass: HomeAssistant, address: str) -> AppStateStore:

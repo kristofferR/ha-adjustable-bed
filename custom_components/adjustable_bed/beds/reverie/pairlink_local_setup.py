@@ -26,7 +26,6 @@ from ...const import (
     CONF_PAIRLINK_HOST_SOURCE,
     CONF_PAIRLINK_ROLE,
     CONF_PROTOCOL_VARIANT,
-    DOMAIN,
     PAIRLINK_ROLE_PERIPHERAL,
 )
 from ...controller_factory import create_controller
@@ -34,6 +33,7 @@ from ...coordinator import AdjustableBedCoordinator
 from ...errors import not_ready
 from ...import_executor import async_import_modules
 from ...pairing import KEY_ABSORBED_ENTRY_ID, get_child, is_paired
+from ...runtime_data import DomainKey, domain_registry, domain_value, loaded_runtime
 
 if TYPE_CHECKING:
     from ...paired_coordinator import PairedBedCoordinator
@@ -42,7 +42,8 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-PAIRLINK_LOCAL_PROFILE_LEASES_KEY = "_pairlink_local_profile_leases"
+# Bluetooth adapter -> the config entry that holds its local Pairlink profile.
+PAIRLINK_LOCAL_PROFILE_LEASES_KEY: DomainKey[dict[str, str]] = DomainKey("_pairlink_local_profile_leases")
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,7 +81,7 @@ def _trusted_absorbed_single(
         )
     ):
         raise not_ready("setup_retry")
-    coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
+    coordinator = loaded_runtime(hass, absorbed_id)
     if coordinator is not None and (
         not isinstance(coordinator, AdjustableBedCoordinator)
         or coordinator.entry is not original
@@ -142,10 +143,10 @@ async def async_restore_pairlink_local_sources(
         try:
             if parent is not None:
                 await parent.async_remove_child(transfer.side)
-            leases = hass.data[DOMAIN][PAIRLINK_LOCAL_PROFILE_LEASES_KEY]
+            leases = domain_registry(hass, PAIRLINK_LOCAL_PROFILE_LEASES_KEY, dict)
             if leases.get(transfer.adapter) != transfer.owner:
                 raise not_ready("setup_retry")
-            current = hass.data[DOMAIN].get(entry.entry_id)
+            current = loaded_runtime(hass, entry.entry_id)
             unloaded = (
                 current is None
                 and original._shutting_down
@@ -179,11 +180,8 @@ def release_pairlink_local_profile_lease(
     adapter: str,
 ) -> None:
     """Release one integration-local lease after the entry-owned backend stops."""
-    domain_data = hass.data.get(DOMAIN)
-    if not isinstance(domain_data, dict):
-        return
-    leases = domain_data.get(PAIRLINK_LOCAL_PROFILE_LEASES_KEY)
-    if isinstance(leases, dict) and leases.get(adapter) == entry_id:
+    leases = domain_value(hass, PAIRLINK_LOCAL_PROFILE_LEASES_KEY)
+    if leases is not None and leases.get(adapter) == entry_id:
         leases.pop(adapter, None)
 
 
@@ -223,9 +221,7 @@ async def async_setup_pairlink_local_entry(
         raise not_ready("pairlink_source_required")
     adapter = source_matches[0].adapter
 
-    leases = hass.data[DOMAIN].setdefault(PAIRLINK_LOCAL_PROFILE_LEASES_KEY, {})
-    if not isinstance(leases, dict):
-        raise not_ready("setup_retry")
+    leases = domain_registry(hass, PAIRLINK_LOCAL_PROFILE_LEASES_KEY, dict)
     current_owner = leases.get(adapter)
     if current_owner is not None and current_owner != entry.entry_id:
         raise not_ready("pairlink_adapter_in_use")
@@ -333,10 +329,7 @@ async def async_preflight_paired_pairlink_local_roles(
         side: _trusted_absorbed_single(hass, entry, side, child)
         for side, child in children.items()
     }
-    domain_data = hass.data.setdefault(DOMAIN, {})
-    leases = domain_data.setdefault(PAIRLINK_LOCAL_PROFILE_LEASES_KEY, {})
-    if not isinstance(leases, dict):
-        raise not_ready("setup_retry")
+    leases = domain_registry(hass, PAIRLINK_LOCAL_PROFILE_LEASES_KEY, dict)
     for side, _child, source, adapter, owner in selected:
         current_owner = leases.get(adapter)
         original, coordinator = originals[side]

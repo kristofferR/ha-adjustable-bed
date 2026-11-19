@@ -27,7 +27,6 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING
 from .command_scheduler import Delivery, delivered
-from .const import DOMAIN
 from .controller_state import ControllerState, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
@@ -35,6 +34,7 @@ from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
 from .errors import invalid
 from .paired_coordinator import entity_runtimes
+from .runtime_data import entry_runtime
 from .state_keys import (
     LIGHT_INTENSITY,
     LIGHT_LEVEL,
@@ -112,7 +112,7 @@ async def async_setup_entry(
     async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed light entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
             entry,

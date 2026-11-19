@@ -35,6 +35,7 @@ from .position_estimate import (
     async_stop_bed,
     position_estimates,
 )
+from .runtime_data import loaded_runtime
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -108,7 +109,7 @@ class EstimatedPositionsFlowMixin:
 
     # ---------------------------------------------------------------- helpers
     def _estimate_runtime(self, side: str | None) -> Any:
-        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        coordinator = loaded_runtime(self.hass, self.config_entry.entry_id)
         if coordinator is None:
             return None
         if side is None:
