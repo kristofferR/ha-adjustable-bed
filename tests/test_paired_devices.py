@@ -15,6 +15,7 @@ from custom_components.adjustable_bed.paired_devices import (
     async_restore_full_device,
     side_identifier,
 )
+from tests.error_helpers import raises_key
 
 from .test_paired_registry import _registered_pair
 
@@ -294,17 +295,17 @@ async def test_native_child_service_targets_are_side_safe(hass, single_address):
             (coordinator, "both")
         ]
         assert _resolve_sided_targets(hass, [left.id, right.id], None)[0] == [(coordinator, "both")]
-        with pytest.raises(ServiceValidationError, match="conflicts") as error:
+        with raises_key("side_selection_conflict", ServiceValidationError) as error:
             _resolve_sided_targets(hass, [left.id], "right")
         assert error.value.translation_key == "side_selection_conflict"
         assert error.value.translation_placeholders == {"inferred_side": "left", "side": "right"}
-        with pytest.raises(ServiceValidationError, match="conflicts"):
+        with raises_key("side_selection_conflict", ServiceValidationError):
             _resolve_sided_targets(hass, [left.id], "both")
         with pytest.raises(ServiceValidationError) as error:
             _resolve_sided_targets(hass, [left.id, "missing"], None)
         assert error.value.translation_key == "service_device_not_found"
         await coordinator.async_remove_child("left")
-        with pytest.raises(ServiceValidationError, match="side is unavailable") as error:
+        with raises_key("side_unavailable", ServiceValidationError) as error:
             _resolve_sided_targets(hass, [left.id], None)
         assert error.value.translation_key == "side_unavailable"
     finally:

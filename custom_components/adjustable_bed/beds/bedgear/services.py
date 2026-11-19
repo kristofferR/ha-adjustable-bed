@@ -5,10 +5,10 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
@@ -64,16 +64,12 @@ async def _handle(call: ServiceCall, app: str) -> None:
         )
     except ValueError as err:
         if app == "l2motion":
-            raise ServiceValidationError(
-                translation_domain=DOMAIN, translation_key="l2motion_control_unavailable"
-            ) from err
-        raise ServiceValidationError(str(err)) from err
+            raise invalid("l2motion_control_unavailable") from err
+        raise rejected(err) from err
     if request.operation == "rgb" and request.rgb is None:
         if app == "l2motion":
-            raise ServiceValidationError(
-                translation_domain=DOMAIN, translation_key="l2motion_control_unavailable"
-            )
-        raise ServiceValidationError("RGB requires three color channels")
+            raise invalid("l2motion_control_unavailable")
+        raise invalid("field_required", field="a color")
 
     validated: list[BedgearController] = []
     links: dict[BedgearController, Link | None] = {}
@@ -82,17 +78,13 @@ async def _handle(call: ServiceCall, app: str) -> None:
 
     def validate(controller: BedgearController) -> None:
         if controller.profile.key != app:
-            raise ServiceValidationError(
-                translation_domain=DOMAIN, translation_key="l2motion_control_unavailable"
-            )
+            raise invalid("l2motion_control_unavailable")
         try:
             controller.validate_request(request)
         except ValueError as err:
             if app != "l2motion":
                 raise
-            raise ServiceValidationError(
-                translation_domain=DOMAIN, translation_key="l2motion_control_unavailable"
-            ) from err
+            raise invalid("l2motion_control_unavailable") from err
 
     def snapshot(controller: BedgearController) -> None:
         validate(controller)
@@ -110,9 +102,7 @@ async def _handle(call: ServiceCall, app: str) -> None:
             tuple(child.operation_identity for child in _command_targets(parent, side))
             for parent, side in targets
         ]:
-            raise ServiceValidationError(
-                translation_domain=DOMAIN, translation_key="l2motion_control_unavailable"
-            )
+            raise invalid("l2motion_control_unavailable")
         for controller in validated:
             if (link := links[controller]) is not None:
                 controller._check_link(link)
@@ -133,9 +123,7 @@ async def _handle(call: ServiceCall, app: str) -> None:
                     None,
                 )
                 if admitted is None or admitted.profile != controller.profile:
-                    raise ServiceValidationError(
-                        translation_domain=DOMAIN, translation_key="l2motion_control_unavailable"
-                    )
+                    raise invalid("l2motion_control_unavailable")
                 if (link := links[admitted]) is not None:
                     controller._check_link(link)
             validate(controller)

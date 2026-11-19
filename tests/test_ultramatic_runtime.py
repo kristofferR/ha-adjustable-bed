@@ -62,6 +62,7 @@ from custom_components.adjustable_bed.profile_id import entry_profile_id
 from custom_components.adjustable_bed.profiles import ultramatic as app
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.form_helpers import NEW_BED_ROUTES, form_fields, start_new_bed
 from tests.hold_lease_wire import virtual_clock
 from tests.test_controller_contract import _FactoryCoordinator
@@ -380,7 +381,7 @@ async def test_all_target_capability_and_alarm_state_before_any_writes(runtime):
             return_value=([(coord, "both"), (invalid, "both")], []),
         ),
         # set_alarm refuses the mixed profiles before Ultramatic's own all-target check.
-        pytest.raises(ServiceValidationError, match="different app profiles"),
+        raises_key("mixed_profile_targets", ServiceValidationError),
     ):
         await hass.services.async_call(
             DOMAIN,

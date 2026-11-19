@@ -4793,7 +4793,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             left_layout = await self._pair_layout_snapshot(left) if left is not None else None
             right_layout = await self._pair_layout_snapshot(right) if right is not None else None
             if left is None or right is None:
-                errors["base"] = "unknown"
+                errors["base"] = "pair_bed_missing"
             elif left.entry_id == right.entry_id:
                 errors[CONF_PAIR_SELECTION] = "same_device"
             elif (left.data.get(CONF_ADDRESS) or "").upper() == (
@@ -8270,7 +8270,7 @@ class AdjustableBedOptionsFlow(
                     return self.async_show_form(
                         step_id=step_id,
                         data_schema=vol.Schema(schema_dict),
-                        errors={"base": "invalid_variant"},
+                        errors={"base": "invalid_variant_for_bed_type"},
                     )
                 if svane_variant != SVANE_VARIANT_JENSEN_LINON:
                     user_input.update(

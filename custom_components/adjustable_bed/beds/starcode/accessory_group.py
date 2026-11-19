@@ -37,6 +37,7 @@ from ...const import (
     STARCODE_GROUP_BED_TYPES,
 )
 from ...coordinator import AdjustableBedCoordinator
+from ...errors import invalid
 from ...pairing import is_paired
 from ..base import BedController, controller_as
 from ..family_actions import StarcodeGroupMember
@@ -166,11 +167,10 @@ def lift_choices(
 
 def _resolve(hass: HomeAssistant, entry_id: str) -> AdjustableBedCoordinator:
     value = hass.data.get(DOMAIN, {}).get(entry_id)
-    if (
-        not isinstance(value, AdjustableBedCoordinator)
-        or value.bed_type not in STARCODE_GROUP_BED_TYPES
-    ):
-        raise ServiceValidationError("The selected AdjustableM5X5 bed is unavailable")
+    if not isinstance(value, AdjustableBedCoordinator):
+        raise invalid("bed_not_loaded")
+    if value.bed_type not in STARCODE_GROUP_BED_TYPES:
+        raise invalid("lifts_not_configured")
     return value
 
 
@@ -324,9 +324,9 @@ async def _stop_configured_group(
                 if entry_id not in ids:
                     ids.append(entry_id)
             else:
-                failures.append(ServiceValidationError("A configured lift ID is invalid"))
+                failures.append(invalid("lifts_not_configured"))
     else:
-        failures.append(ServiceValidationError("The configured lift selection is invalid"))
+        failures.append(invalid("lifts_not_configured"))
     epochs = _stop_epochs(hass)
     for entry_id in ids:
         epochs[entry_id] = epochs.get(entry_id, 0) + 1
@@ -376,14 +376,17 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
             hass, main.entry.entry_id, main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, [])
         )
         return
-    ids = validate_lift_entries(
-        hass,
-        main.entry.data,
-        main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
-        main_entry_id=main.entry.entry_id,
-    )
+    try:
+        ids = validate_lift_entries(
+            hass,
+            main.entry.data,
+            main.entry.data.get(CONF_STARCODE_LIFT_ENTRIES, []),
+            main_entry_id=main.entry.entry_id,
+        )
+    except ValueError as error:  # A lift was deleted or set up as another bed.
+        raise invalid("lifts_not_configured") from error
     if not ids:
-        raise ServiceValidationError("Configure at least one lift on the main bed")
+        raise invalid("lifts_not_configured")
     lifts = tuple(_resolve(hass, entry_id) for entry_id in ids)
     targets = (main, *lifts)
     target_ids = (main.entry.entry_id, *ids)
@@ -496,6 +499,8 @@ async def run_group(main: AdjustableBedCoordinator, action: str) -> None:
 
 async def handle_group(call: ServiceCall) -> None:
     _, entry = async_get_device_and_config_entry(call.hass, DOMAIN, call.data[CONF_DEVICE_ID])
+    if entry.data.get(CONF_BED_TYPE) not in STARCODE_GROUP_BED_TYPES:
+        raise invalid("action_for_other_beds", beds="StarCode beds")
     if call.data["action"] == "stop":
         await _stop_configured_group(
             call.hass, entry.entry_id, entry.data.get(CONF_STARCODE_LIFT_ENTRIES, [])

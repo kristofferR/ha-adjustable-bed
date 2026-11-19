@@ -87,6 +87,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.pairing import is_paired
 from custom_components.adjustable_bed.services import SERVICE_RENAME, SERVICE_SET_ALARM
+from tests.error_helpers import raises_key
 
 
 def _configure_linak_advanced(
@@ -1234,13 +1235,12 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Test generate_support_bundle validates raw MAC addresses."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        with pytest.raises(ServiceValidationError, match="Invalid MAC address format"):
+        with raises_key("invalid_mac_address", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_GENERATE_SUPPORT_BUNDLE,
@@ -1433,7 +1433,6 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Test goto_preset raises error when preset exceeds memory_slot_count."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -1459,7 +1458,7 @@ class TestServices:
             patch.object(
                 type(controller), "memory_slot_count", new_callable=lambda: property(lambda self: 3)
             ),
-            pytest.raises(ServiceValidationError, match="only supports memory presets 1-3"),
+            raises_key("invalid_preset_number", ServiceValidationError),
         ):
             await hass.services.async_call(
                 DOMAIN,
@@ -1602,7 +1601,7 @@ class TestServices:
         ].id
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        with pytest.raises(ServiceValidationError, match="cannot combine motor: base"):
+        with raises_key("feature_not_supported", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_LINAK_MOVE_SIMULTANEOUS,
@@ -1690,7 +1689,7 @@ class TestServices:
             0
         ].id
 
-        with pytest.raises(ServiceValidationError, match="Valid motors: back"):
+        with raises_key("invalid_motor_for_bed_type", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
@@ -2044,7 +2043,6 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Timed move should reject bed_height for beds that do not expose it."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -2057,7 +2055,7 @@ class TestServices:
         assert len(devices) == 1
         device_id = devices[0].id
 
-        with pytest.raises(ServiceValidationError, match="Valid motors: back, legs"):
+        with raises_key("invalid_motor_for_bed_type", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_TIMED_MOVE,
@@ -2192,7 +2190,6 @@ class TestServices:
         enable_custom_integrations,
     ):
         """BOX25 set_position should reject legacy back/legs motors."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
         entry = MockConfigEntry(
@@ -2225,7 +2222,7 @@ class TestServices:
         assert len(devices) == 1
         device_id = devices[0].id
 
-        with pytest.raises(ServiceValidationError, match="Valid motors: feet, head, lumbar"):
+        with raises_key("invalid_motor_for_bed_type", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
@@ -2276,13 +2273,9 @@ class TestServices:
         assert len(devices) == 1
         device_id = devices[0].id
 
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
-        with pytest.raises(
-            ServiceValidationError,
-            match="does not report motor positions",
-        ):
+        with raises_key("position_feedback_not_supported", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
@@ -2474,7 +2467,6 @@ class TestServices:
         hass: HomeAssistant,
     ):
         """Standard set_position validation should reject targets above configured calibration."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
         from homeassistant.helpers import device_registry as dr
 
@@ -2529,7 +2521,7 @@ class TestServices:
 
         await async_register_services(hass)
 
-        with pytest.raises(ServiceValidationError, match=r"Valid range: 0-50.0°"):
+        with raises_key("invalid_position_range", ServiceValidationError) as raised:
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
@@ -2540,6 +2532,7 @@ class TestServices:
                 },
                 blocking=True,
             )
+        assert raised.value.translation_placeholders["max_value"] == "50.0"
 
         # A failed validation must release the bed it reconnected for the check,
         # so it doesn't sit connected with no idle timer.

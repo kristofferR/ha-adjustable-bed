@@ -10,6 +10,7 @@ from homeassistant.exceptions import ServiceValidationError
 from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.services import _get_controller_for_service
+from tests.error_helpers import raises_key
 from tests.service_patches import patch_with_family
 from tests.test_svane import written
 from tests.test_svane_light_timed_host import runtime as svane_runtime
@@ -294,7 +295,7 @@ async def test_later_session_replacement_aborts_all_targets_before_dispatch(hass
         patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], [])),
         patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._get_controller_for_service", live),
-        pytest.raises(ServiceValidationError, match="reconnected while the action"),
+        raises_key("bed_changed", ServiceValidationError),
     ):
         await hass.services.async_call(DOMAIN, endpoint, data, blocking=True)
     one.client.write_gatt_char.assert_not_awaited()

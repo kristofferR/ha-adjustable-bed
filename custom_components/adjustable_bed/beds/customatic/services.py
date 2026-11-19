@@ -7,7 +7,6 @@ from collections.abc import Collection
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
@@ -15,6 +14,7 @@ from ...const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     DOMAIN,
 )
+from ...errors import invalid
 from ...services import (
     ATTR_ACTIONS,
     ATTR_DURATION,
@@ -87,9 +87,7 @@ async def _handle_customatic_hold(
     for coordinator, side in targets:
         for target in _command_targets(coordinator, side):
             if target.bed_type not in bed_types:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' does not support this Customatic action"
-                )
+                raise invalid("feature_not_supported", device_name=target.name, feature="this Customatic action")
     await _hold_targets(targets, control, duration_ms)
 
 

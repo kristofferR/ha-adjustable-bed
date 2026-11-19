@@ -40,6 +40,7 @@ from custom_components.adjustable_bed.detection import (
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
 from tests.conftest import make_controller_mock
+from tests.error_helpers import raises_key
 from tests.form_helpers import shown_markers
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_malouf_app_entities import configure_entity_runtime
@@ -182,7 +183,7 @@ def _target(bed_type, controller):
     [
         ("hold_control", BED_TYPE_TRANQUIL, tranquil, "save_lounge", None),
         ("hold_control", BED_TYPE_ZSERIES, lambda: zseries("z230"), "head_foot_up", None),
-        ("hold_control", BED_TYPE_ZSERIES, lambda: zseries("z230"), "memory_2", "does not support held control"),
+        ("hold_control", BED_TYPE_ZSERIES, lambda: zseries("z230"), "memory_2", "held_control_not_supported"),
     ],
 )
 async def test_hold_services_preflight_profile_and_literal_action(
@@ -198,7 +199,7 @@ async def test_hold_services_preflight_profile_and_literal_action(
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         if error:
-            with pytest.raises(ServiceValidationError, match=error):
+            with raises_key(error, ServiceValidationError):
                 await hass.services.async_call(DOMAIN, service, data, blocking=True)
             coordinator.async_execute_controller_command.assert_not_awaited()
         else:
@@ -455,7 +456,7 @@ async def test_unknown_state_that_cannot_be_read_fails_without_writing(hass):
     controller = zseries("z280")
     _persisting(controller, {})
     controller.client.read_gatt_char.side_effect = TimeoutError("still unreadable")
-    with pytest.raises(ServiceValidationError, match="Could not read the manufacturer"):
+    with raises_key("zseries_alarm_unknown", ServiceValidationError):
         await _set_alarm(hass, controller)
     assert written(controller) == []
 

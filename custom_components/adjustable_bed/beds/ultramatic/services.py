@@ -14,12 +14,12 @@ from typing import TYPE_CHECKING, Literal
 
 from homeassistant.const import ATTR_TIME
 from homeassistant.core import ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmRequest
 from ...const import BED_TYPE_ULTRAMATIC_SMART_BED, PAIR_CONNECTION_MODE_SEQUENTIAL
 from ...entity_runtime import controller_side_scope
+from ...errors import invalid
 from ...paired_coordinator import PairedBedCoordinator
 from ...profiles import ultramatic as app
 from ...services import (
@@ -53,9 +53,7 @@ class _Fence:
             self.controller.session_token is not self.link
             or self.controller.operation_generation != self.generation
         ):
-            raise ServiceValidationError(
-                "Ultramatic command or connection changed during alarm admission"
-            )
+            raise invalid("bed_changed")
         if self.link is not None:
             self.controller._live(self.link)
 
@@ -125,7 +123,7 @@ async def _run_alarm(
         child.bed_type != BED_TYPE_ULTRAMATIC_SMART_BED or child.capability_controller is None
         for child in runtimes
     ):
-        raise ServiceValidationError("Every target must use the Ultramatic Smart Bed app profile")
+        raise invalid("action_for_other_beds", beds="Ultramatic Smart Bed beds")
     # A configured capability instance already loaded its class in the factory.
     # This cached import belongs to the call, never service registration.
     from .controller import UltramaticController
@@ -149,9 +147,7 @@ async def _run_alarm(
     for child in runtimes:
         controller = child.capability_controller
         if not isinstance(controller, UltramaticController):
-            raise ServiceValidationError(
-                "Every target must use the Ultramatic Smart Bed app profile"
-            )
+            raise invalid("action_for_other_beds", beds="Ultramatic Smart Bed beds")
         check(child, controller)
         initial.append(
             _Fence(controller, controller.session_token, controller.operation_generation)
@@ -164,12 +160,12 @@ async def _run_alarm(
             parent.connection_mode if isinstance(parent, PairedBedCoordinator) else None
             for parent, _side in targets
         ]:
-            raise ServiceValidationError("Ultramatic alarm connection route changed")
+            raise invalid("bed_changed")
         current = [child for parent, side in targets for child in _command_targets(parent, side)]
         if len(current) != len(physical) or any(
             before is not after for before, after in zip(physical, current, strict=True)
         ):
-            raise ServiceValidationError("Ultramatic alarm target ownership changed")
+            raise invalid("bed_changed")
         for (parent, side), captured in zip(targets, dispatches, strict=True):
             current_dispatch = (
                 parent._targets_for(side)
@@ -182,19 +178,19 @@ async def _run_alarm(
                     captured, current_dispatch, strict=True
                 )
             ):
-                raise ServiceValidationError("Ultramatic alarm effective dispatch route changed")
+                raise invalid("bed_changed")
         for child in runtimes:
             controller = child.capability_controller
             if not isinstance(controller, UltramaticController):
-                raise ServiceValidationError("Ultramatic controller was replaced after validation")
+                raise invalid("bed_changed")
             with controller_side_scope(child):
                 route = (child.operation_identity, controller._side())
             if route != routes[id(child)]:
-                raise ServiceValidationError("Ultramatic alarm physical owner or side changed")
+                raise invalid("bed_changed")
         for index, ((parent, side), admission) in enumerate(zip(targets, admissions, strict=True)):
             current_admission = _capture_command_admission(parent, side)
             if current_admission.expected_stop_epochs != admission.expected_stop_epochs:
-                raise ServiceValidationError("Ultramatic alarm was stopped during admission")
+                raise invalid("action_stopped")
             # App commands reserve '*'. Paired admission advances its targeted
             # counter exactly once before releasing this group's child commands.
             # Predict that owned advance; never adopt a newer external epoch.
@@ -203,13 +199,13 @@ async def _run_alarm(
                 for target_side, generation in admission.expected_pair_generations.items()
             }
             if current_admission.expected_pair_generations != expected_pair:
-                raise ServiceValidationError("Ultramatic pair admission was superseded")
+                raise invalid("bed_changed")
 
     def check_initial() -> None:
         check_owners()
         for (parent, side), admission in zip(targets, admissions, strict=True):
             if _capture_command_admission(parent, side) != admission:
-                raise ServiceValidationError("Ultramatic alarm admission was superseded")
+                raise invalid("bed_changed")
         for fence in initial:
             if fence.link is not None:
                 fence.check()
@@ -231,9 +227,7 @@ async def _run_alarm(
     # before a preflight can open another connection and emit startup writes.
     if operation == "disable":
         if len({child.operation_identity for child in physical if id(child) in sequential}) > 1:
-            raise ServiceValidationError(
-                "Turning the alarm off requires current reports on concurrently live receivers"
-            )
+            raise invalid("needs_both_connected")
         for child in runtimes:
             controller = child.capability_controller
             assert isinstance(controller, UltramaticController)
@@ -276,11 +270,11 @@ async def _run_alarm(
                     check_initial()
                     preflighted.append((parent, child))
                     if not await child.async_ensure_connected(reset_timer=False):
-                        raise ServiceValidationError("Ultramatic receiver is unavailable")
+                        raise invalid("bed_not_connected")
                     check_initial()
                     controller = child.controller
                     if not isinstance(controller, UltramaticController):
-                        raise ServiceValidationError("Ultramatic live controller is unavailable")
+                        raise invalid("bed_not_connected")
                     await controller.async_validate_linked_readiness()
                     check_initial()
                     with controller_side_scope(child):
@@ -289,7 +283,7 @@ async def _run_alarm(
                 check_initial()
                 controller = child.controller
                 if not isinstance(controller, UltramaticController) or controller not in ready:
-                    raise ServiceValidationError("Ultramatic combined receiver was not validated")
+                    raise invalid("bed_changed")
                 with controller_side_scope(child):
                     prepare(controller)
         except BaseException:
@@ -303,16 +297,12 @@ async def _run_alarm(
                     continue
                 controller = child.controller
                 if not isinstance(controller, UltramaticController) or controller not in ready:
-                    raise ServiceValidationError(
-                        "Ultramatic controller was replaced after validation"
-                    )
+                    raise invalid("bed_changed")
                 ready[controller].check()
                 with controller_side_scope(child):
                     plan = plans.get((controller, controller._side()))
                     if plan is None:
-                        raise ServiceValidationError(
-                            "Ultramatic target side changed after validation"
-                        )
+                        raise invalid("bed_changed")
                     controller.validate_plan(plan)
 
         async def apply(controller: UltramaticController) -> None:
@@ -321,9 +311,7 @@ async def _run_alarm(
                 if not any(
                     id(child) in sequential and child.controller is controller for child in physical
                 ):
-                    raise ServiceValidationError(
-                        "Ultramatic command reached an unvalidated receiver"
-                    )
+                    raise invalid("bed_changed")
                 await controller.async_validate_linked_readiness()
                 check_all()
                 prepare(controller)
@@ -335,7 +323,7 @@ async def _run_alarm(
             ready[controller] = _Fence(controller, fence.link, fence.generation + 1)
             plan = plans.get((controller, controller._side()))
             if plan is None:
-                raise ServiceValidationError("Ultramatic alarm plan no longer matches the target")
+                raise invalid("bed_changed")
             await controller.set_alarm(plan, validate=check_all)
             ready[controller].check()
 

@@ -11,6 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.sleep_number import services
 from custom_components.adjustable_bed.beds.sleep_number.commands import SleepNumberActions
+from tests.error_helpers import raises_key
 
 
 def controller(side=None):
@@ -91,7 +92,7 @@ async def test_unsupported_bed_is_rejected_before_execution(hass):
         patch.object(services, "_command_targets", return_value=[target]),
         patch.object(services, "_validation_controller", return_value=unsupported),
         patch.object(services, "_execute_sided") as scheduler,
-        pytest.raises(ServiceValidationError, match="not supported"),
+        raises_key("sleep_number_command_not_supported", ServiceValidationError),
     ):
         await services.handle_sleep_number_command(call(hass))
     scheduler.assert_not_awaited()

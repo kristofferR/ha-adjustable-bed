@@ -3,10 +3,10 @@
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
@@ -29,7 +29,7 @@ async def handle_request(call: ServiceCall) -> None:
     from ...paired_coordinator import SingleAddressPairedCoordinator
 
     if any(isinstance(parent, SingleAddressPairedCoordinator) for parent, _ in targets):
-        raise ServiceValidationError("The fixed ASCII apps have no bed-side field")
+        raise invalid("side_not_supported")
     await async_import_modules(call.hass, "beds.richmat_legacy.controller")
     from .controller import RichmatLegacyController
 

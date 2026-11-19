@@ -10,13 +10,13 @@ from typing import TYPE_CHECKING, Final, Literal, cast
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
-from homeassistant.exceptions import ServiceValidationError
 
 from ...app_session import app_session
 from ...card import CARD_MASSAGE
 from ...codec import cheerssleep as codec
 from ...const import CONF_PRODUCT_TYPE
 from ...controller_state import StateKey, sided
+from ...errors import invalid
 from ...profiles import cheerssleep as app
 from ...state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import BedController, ProfileExecution, require_controller
@@ -536,10 +536,10 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             self._live()
             selected = 0 if self.model.rgb else self._side()
             if selected in self._light_pending:
-                raise ServiceValidationError("Awaiting CheersSleep light feedback")
+                raise invalid("light_state_unknown")
             observed = self._light_feedback.get(selected)
             if observed is None:
-                raise ServiceValidationError("CheersSleep light state is unknown; refresh first")
+                raise invalid("light_state_unknown")
             if observed != enabled:
                 await self._toggle_light(selected)
             return

@@ -33,11 +33,11 @@ from typing import TYPE_CHECKING, Any, Final, TypedDict
 from uuid import uuid4
 
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN, SIDE_BOTH
+from .errors import failed, invalid
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -486,12 +486,7 @@ class PositionEstimates:
             folded = reference.strip().casefold()
             found = next((item for item in self.positions if item.name.casefold() == folded), None)
         if found is None:
-            raise ServiceValidationError(
-                f"No saved position named {reference}",
-                translation_domain=DOMAIN,
-                translation_key="saved_position_not_found",
-                translation_placeholders={"position": reference},
-            )
+            raise invalid("saved_position_not_found", position=reference)
         return found
 
     def current_targets(self, beds: Iterable[BedEstimate]) -> dict[str, dict[str, float]]:
@@ -506,11 +501,7 @@ class PositionEstimates:
                 motor: round(bed.motors[motor].percent or 0.0, 1) for motor in motors
             }
         if not targets:
-            raise ServiceValidationError(
-                "No calibrated estimated motors to save",
-                translation_domain=DOMAIN,
-                translation_key="position_estimate_not_enabled",
-            )
+            raise invalid("position_estimate_not_enabled")
         return targets
 
     def save_position(
@@ -518,12 +509,7 @@ class PositionEstimates:
     ) -> SavedPosition:
         clean = _position_name(name)
         if any(item.name.casefold() == clean.casefold() for item in self.positions):
-            raise ServiceValidationError(
-                f"A saved position named {clean} already exists",
-                translation_domain=DOMAIN,
-                translation_key="saved_position_exists",
-                translation_placeholders={"position": clean},
-            )
+            raise invalid("saved_position_exists", position=clean)
         position = SavedPosition(uuid4().hex[:12], clean, button, self.current_targets(beds))
         self.positions.append(position)
         self.changed()
@@ -537,12 +523,7 @@ class PositionEstimates:
             item is not position and item.name.casefold() == clean.casefold()
             for item in self.positions
         ):
-            raise ServiceValidationError(
-                f"A saved position named {clean} already exists",
-                translation_domain=DOMAIN,
-                translation_key="saved_position_exists",
-                translation_placeholders={"position": clean},
-            )
+            raise invalid("saved_position_exists", position=clean)
         position.name = clean
         if button is not None:
             position.button = button
@@ -566,21 +547,13 @@ def storage_key(entry_id: str) -> str:
 def _position_name(name: str) -> str:
     clean = " ".join(name.split())
     if not clean or len(clean) > MAX_POSITION_NAME_LENGTH:
-        raise ServiceValidationError(
-            "Saved position names need 1 to 40 characters",
-            translation_domain=DOMAIN,
-            translation_key="saved_position_name_invalid",
-        )
+        raise invalid("saved_position_name_invalid")
     return clean
 
 
 def _require_tracking(bed: BedEstimate, motors: Iterable[str]) -> None:
     if not bed.tracking(motors):
-        raise ServiceValidationError(
-            "The estimated position is not confirmed. Set the reference first",
-            translation_domain=DOMAIN,
-            translation_key="position_estimate_not_tracking",
-        )
+        raise invalid("position_estimate_not_tracking")
 
 
 # ----------------------------------------------------------------- registry
@@ -826,7 +799,7 @@ def invalidate_on_command(
 def _parent(hass: HomeAssistant, manager: PositionEstimates) -> Any:
     parent = hass.data.get(DOMAIN, {}).get(manager.entry_id)
     if parent is None:
-        raise HomeAssistantError("The bed is not loaded")
+        raise failed("bed_not_loaded")
     return parent
 
 
@@ -865,11 +838,7 @@ async def async_stop_bed(hass: HomeAssistant, manager: PositionEstimates, bed: B
 def _require_idle(beds: Iterable[BedEstimate]) -> None:
     """Plan only from a settled estimate; a running move would add travel later."""
     if any(bed.moving for bed in beds):
-        raise ServiceValidationError(
-            "The bed is moving. Stop it, then try again",
-            translation_domain=DOMAIN,
-            translation_key="position_estimate_moving",
-        )
+        raise invalid("position_estimate_moving")
 
 
 def _epochs(
@@ -909,11 +878,7 @@ async def async_move_bed(
         if plan is not None and plan[1] * 1000 >= MIN_MOVE_MS:
             await _async_timed_move(parent, bed, motor, plan[0], plan[1])
         if estimate.state is not EstimateState.TRACKING:
-            raise HomeAssistantError(
-                "A movement failed, so the estimated position is unknown",
-                translation_domain=DOMAIN,
-                translation_key="position_estimate_move_failed",
-            )
+            raise failed("position_estimate_move_failed")
         if not _arrived(bed, motor, targets[motor]):
             return False
     return True
@@ -942,20 +907,11 @@ async def async_recall_position(
         # Every saved side and motor must still be estimated: recalling only
         # part of a position would report a position that was never reached.
         if bed is None or not targets or any(motor not in bed.motors for motor in targets):
-            raise ServiceValidationError(
-                f"{position.name} includes a motor that is no longer estimated",
-                translation_domain=DOMAIN,
-                translation_key="saved_position_unavailable",
-                translation_placeholders={"position": position.name},
-            )
+            raise invalid("saved_position_unavailable", position=position.name)
         _require_tracking(bed, targets)
         plans.append((bed, dict(targets)))
     if not plans:
-        raise ServiceValidationError(
-            "This saved position has no calibrated motors",
-            translation_domain=DOMAIN,
-            translation_key="position_estimate_not_enabled",
-        )
+        raise invalid("position_estimate_not_enabled")
     _require_idle(bed for bed, _targets in plans)
     epochs = _epochs(hass, manager, (bed for bed, _targets in plans))
     tasks = {
@@ -966,15 +922,15 @@ async def async_recall_position(
     }
     try:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
-        failed = next((task for task in done if task.exception() is not None), None)
-        if failed is not None:
+        failure = next((task for task in done if task.exception() is not None), None)
+        if failure is not None:
             for task in pending:
                 task.cancel()
             await asyncio.gather(*pending, return_exceptions=True)
             for task in pending:
                 with contextlib.suppress(Exception):
                     await async_stop_bed(hass, manager, tasks[task])
-            exception = failed.exception()
+            exception = failure.exception()
             assert exception is not None
             raise exception
     finally:
@@ -984,12 +940,7 @@ async def async_recall_position(
                 task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
     if not all(task.result() for task in tasks):
-        raise HomeAssistantError(
-            f"{position.name} was not reached",
-            translation_domain=DOMAIN,
-            translation_key="saved_position_not_reached",
-            translation_placeholders={"position": position.name},
-        )
+        raise failed("saved_position_not_reached", position=position.name)
 
 
 def lower_to_flat_seconds(estimate: MotorEstimate) -> float:
@@ -1030,11 +981,7 @@ async def async_lower_to_flat(
         )
     ]
     if not plans:
-        raise ServiceValidationError(
-            "No calibrated estimated motors to lower",
-            translation_domain=DOMAIN,
-            translation_key="position_estimate_not_enabled",
-        )
+        raise invalid("position_estimate_not_enabled")
     _require_idle(bed for bed, _motors in plans)
     epochs = _epochs(hass, manager, (bed for bed, _motors in plans))
     parent = _parent(hass, manager)

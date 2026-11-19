@@ -12,7 +12,6 @@ from homeassistant.components.switch import SwitchEntity, SwitchEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 
 from .beds.entity_specs import ControllerSwitchSpec
@@ -25,6 +24,7 @@ from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
+from .errors import invalid
 from .paired_coordinator import PairedSideError, entity_runtimes
 from .state_keys import (
     AUTOMATIC_LIGHT,
@@ -293,7 +293,7 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             specs = controller.controller_switch_specs if controller is not None else ()
             live = next((spec for spec in specs if spec.key == self._spec.key), None)
             if live is None or live.local_off_fn is None:
-                raise ServiceValidationError("Controller no longer supports this setting")
+                raise invalid("option_unavailable")
             live.local_off_fn()
             self._local_offs += 1
             return
@@ -303,7 +303,7 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             specs = controller.controller_switch_specs if controller is not None else ()
             live = next((spec for spec in specs if spec.key == self._spec.key), None)
             if live is None or live.local_set_fn is None:
-                raise ServiceValidationError("Controller no longer supports this setting")
+                raise invalid("option_unavailable")
             live.local_set_fn(on)
             return
 
@@ -316,7 +316,7 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
                 (spec for spec in ctrl.controller_switch_specs if spec.key == self._spec.key), None
             )
             if live is None:
-                raise ServiceValidationError("Controller no longer supports this setting")
+                raise invalid("option_unavailable")
             # Record it while the link that sent it is still up: a sequential
             # pair releases the side before the command returns, and that
             # release makes the value unknown again.
@@ -574,14 +574,8 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
                 raise
         except NotImplementedError as err:
             feature = self.entity_description.key.replace("_", " ")
-            raise ServiceValidationError(
-                f"{self._coordinator.name} does not support {feature}",
-                translation_domain=DOMAIN,
-                translation_key="feature_not_supported",
-                translation_placeholders={
-                    "device_name": self._coordinator.name,
-                    "feature": feature,
-                },
+            raise invalid(
+                "feature_not_supported", device_name=self._coordinator.name, feature=feature
             ) from err
         if delivery is Delivery.NONE:
             _LOGGER.debug("Switch %s command was cancelled", self.entity_description.key)

@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...services import SIDE_FIELD, _call_targets, _preflight_and_execute
 
@@ -52,7 +52,7 @@ async def _execute(
 def _require(call: ServiceCall, *fields: str) -> None:
     for field in fields:
         if field not in call.data:
-            raise ServiceValidationError(f"{call.data['operation']} requires {field}")
+            raise invalid("field_required", field=field)
 
 
 async def handle_rmcontrol_anti_snore(call: ServiceCall) -> None:

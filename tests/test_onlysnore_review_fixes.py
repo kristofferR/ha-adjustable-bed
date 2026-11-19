@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.paired_devices import async_register_children
 from custom_components.adjustable_bed.paired_topology import PairedSideError
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_onlysnore import controller as transport_template
 
@@ -527,7 +528,7 @@ async def test_all_target_barrier_rejects_drift_after_preflight_before_first_mut
                 await connect(items[1])
                 second._controller = OnlySnoreController(first, "single")
             release.set()
-            with pytest.raises(Exception, match="BED|receiver"), virtual_clock():
+            with raises_key("bed_changed", Exception), virtual_clock():
                 await task
             assert all(not item.mutations for item in items)
         finally:
@@ -551,7 +552,7 @@ async def test_native_paired_roster_replacement_invalidates_the_whole_selection(
             await alarm(hass, ids)
         assert error.value.side_errors
         assert all(
-            isinstance(cause, ServiceValidationError) and "roster" in str(cause)
+            isinstance(cause, ServiceValidationError) and cause.translation_key == "bed_changed"
             for cause in error.value.side_errors.values()
         )
         assert all(not item.mutations for item in items)
@@ -574,7 +575,7 @@ async def test_stop_during_lazy_import_cannot_start_any_mixed_receiver(hass):
                 with virtual_clock():
                     await items[0].coordinator.async_stop_command()
                 release.set()
-                with pytest.raises(Exception, match="STOP|ownership"):
+                with raises_key("bed_changed", Exception):
                     await task
                 assert all(not item.mutations for item in items)
             finally:
