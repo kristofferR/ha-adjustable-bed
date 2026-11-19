@@ -291,9 +291,8 @@ class MajesticHomeController(GoodVibeController):
             await self.action(f"massage_{minutes}")
         else:
             raise ValueError("Choose a massage timer this Majestic Home model offers")
-        # The bed reports no timer; a STOP or replacing command sends nothing.
-        if not self._coordinator.cancel_command.is_set():
-            self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, minutes)
+        # The bed reports no timer.
+        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
 
     # Each level key sets that zone's level, so the levels are one number per zone.
     @property
@@ -313,8 +312,7 @@ class MajesticHomeController(GoodVibeController):
         if zone not in self.massage_intensity_zones or not self._has(key):
             raise ValueError("This Majestic Home model has no such massage level")
         await self.action(key)
-        if not self._coordinator.cancel_command.is_set():
-            self.forward_controller_state_update(massage_intensity(zone), level)
+        self.forward_sent_state_updates(massage_intensity(zone)(level))
 
     @property
     def execution(self) -> ExecutionCapabilities:
@@ -400,9 +398,9 @@ class MajesticHomeController(GoodVibeController):
             ),
             link=link,
         )
-        if key == "massage_off" and not self._coordinator.cancel_command.is_set():
+        if key == "massage_off":
             # All Off stops the timer and both zones, whichever entity sent it.
-            self.forward_controller_state_updates(
+            self.forward_sent_state_updates(
                 MASSAGE_TIMER_MINUTES(0),
                 *(massage_intensity(zone)(0) for zone in self.massage_intensity_zones),
             )

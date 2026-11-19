@@ -792,7 +792,7 @@ class AdjustaMattressController(
             a for a in DEDICATED if a.startswith(zone) or (zone == "wave" and a == "WaveOne")
         )
         await self.execute_action(actions[level - 1])
-        self.forward_controller_state_update(_number_key(zone + "_massage"), level)
+        self.forward_sent_state_updates(_number_key(zone + "_massage")(level))
 
     @property
     def auto_enable_massage(self) -> bool:
@@ -817,8 +817,7 @@ class AdjustaMattressController(
         if not self._dedicated or timer not in TIMERS:
             raise ValueError("Choose 10, 20 or 30 minutes")
         await self.execute_action(timer)
-        if not self._coordinator.cancel_command.is_set():
-            self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, minutes)
+        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
 
     @property
     def _sensor_fields(self) -> list[str]:

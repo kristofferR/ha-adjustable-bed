@@ -23,6 +23,13 @@ from ...card import (
     CARD_UTILITY,
     CardPlacement,
 )
+from ...command_scheduler import (
+    Delivery,
+    command_delivery,
+    note_frame_skipped,
+    note_frame_written,
+    note_write_not_counted,
+)
 from ...const import (
     CONF_BLE_DEVICE_NAME,
     CONF_MOTION_BED_MOVEMENT,
@@ -679,9 +686,10 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             await self.async_execute_motion_bed_action(self._function_action(key))
         finally:
             self._selection_state = None
-        # A STOP or replacing command ends the write without sending it.
-        if not self._coordinator.cancel_command.is_set():
-            self._shown_massage_timer = minutes or None
+        delivery = command_delivery()
+        if delivery is not Delivery.NONE:
+            # A timer sent only in part is unknown.
+            self._shown_massage_timer = (minutes or None) if delivery is Delivery.SENT else None
             self._publish()
 
     @property
@@ -697,8 +705,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
             raise ValueError("Choose 10 minutes, 8 hours or 10 hours")
         await self.async_execute_motion_bed_action(self._function_action(_LIGHT_TIMERS[timer_option]))
         # The reported light timer's values have no proven option mapping.
-        if not self._coordinator.cancel_command.is_set():
-            self.forward_controller_state_updates(LIGHT_TIMER_OPTION(timer_option))
+        self.forward_sent_state_updates(LIGHT_TIMER_OPTION(timer_option))
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -859,6 +866,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         async with self._ble_lock:
             client, characteristic = self._current_session()
             if cancel.is_set():
+                note_frame_skipped()
                 return
             response = "write" in characteristic.properties
             self._coordinator.record_command_trace(
@@ -868,6 +876,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                 command_origin="motion_bed_current_target", controller_class=type(self).__name__,
             )
             await client.write_gatt_char(characteristic, command, response=response)
+            note_frame_written(cancel)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self._notifying:
@@ -934,6 +943,7 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
                 command_origin="motion_bed_original_hold_release", controller_class=type(self).__name__,
             )
             await session.client.write_gatt_char(session.characteristic, STOP, response=response)
+            note_write_not_counted()
 
     async def stop_notify(self) -> None:
         self._remember_module_capabilities()

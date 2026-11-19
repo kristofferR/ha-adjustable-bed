@@ -10,6 +10,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ...command_scheduler import note_write_not_counted
 from ...const import (
     OCTO_CHAR_UUID,
     OCTO_STAR2_CHAR_UUID,
@@ -140,6 +141,7 @@ async def async_verify_octo_pin(
                 codec._build_packet([0x20, OCTO_SYSTEM_PING]),
                 response=False,
             )
+            note_write_not_counted()
             try:
                 await asyncio.wait_for(
                     ping_reply_seen.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT
@@ -154,6 +156,7 @@ async def async_verify_octo_pin(
                 codec._build_packet([0x20, OCTO_SYSTEM_GET_DEVICEINFO]),
                 response=False,
             )
+            note_write_not_counted()
             try:
                 await asyncio.wait_for(
                     device_info_ready.wait(), timeout=OCTO_SESSION_RESPONSE_TIMEOUT
@@ -171,6 +174,7 @@ async def async_verify_octo_pin(
                 codec._build_packet([0x20, OCTO_SYSTEM_GET_CAPS]),
                 response=False,
             )
+            note_write_not_counted()
             await asyncio.wait_for(features_complete.wait(), timeout=OCTO_FEATURE_TIMEOUT)
             if malformed_capability or optional_reply_invalid() or codec._response_buffer:
                 return OctoPinStatus.INCONCLUSIVE
@@ -190,6 +194,7 @@ async def async_verify_octo_pin(
                 codec._build_packet([0x20, 0x43], [int(digit) for digit in pin]),
                 response=False,
             )
+            note_write_not_counted()
             status = await asyncio.wait_for(reply, timeout=PIN_VERIFICATION_TIMEOUT)
             return (
                 OctoPinStatus.INCONCLUSIVE

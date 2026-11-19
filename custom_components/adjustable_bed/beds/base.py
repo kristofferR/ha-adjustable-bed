@@ -34,7 +34,7 @@ from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
 from ..bed_traits import BedTraits
-from ..command_scheduler import current_command_context
+from ..command_scheduler import Delivery, command_delivery, current_command_context
 from ..controller_state import (
     StateKey,
     StateUpdate,
@@ -188,6 +188,20 @@ class BedController(GattWriter):
     def forward_controller_state_updates(self, *updates: StateUpdate) -> None:
         """Forward several ``KEY(value)`` updates at once."""
         self._coordinator.handle_controller_state_updates(*updates)
+
+    def forward_sent_state_updates(self, *updates: StateUpdate) -> None:
+        """Publish values the running command set but the bed does not report.
+
+        Only as far as the command reached the bed: nothing sent publishes
+        nothing, a command cut off between frames makes the values unknown.
+        """
+        delivery = command_delivery()
+        if delivery is Delivery.SENT:
+            self.forward_controller_state_updates(*updates)
+        elif delivery is Delivery.PARTIAL:
+            self.forward_controller_state_updates(
+                *(StateUpdate(update.key, None) for update in updates)
+            )
 
     @property
     def client(self) -> BleakClient | None:

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Final
 from homeassistant.util import dt as dt_util
 
 from ...codec import richmat as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import CONF_PRODUCT_TYPE
 from ...controller_state import StateKey
 from ...profiles.sonicsleep import (
@@ -277,6 +278,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
         cancel = self._coordinator.cancel_command
         delay = TICK_S if deadline is None else min(TICK_S, max(0, deadline - monotonic()))
         if await _pause(delay, cancel):
+            note_frame_skipped()
             return
         self._live(link)
         if deadline is not None and monotonic() >= deadline:
@@ -286,6 +288,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
             async with self._ble_lock:
                 self._live(link)
                 if cancel.is_set() or deadline is not None and monotonic() >= deadline:
+                    note_frame_skipped()
                     return
                 if plan is not None:
                     # Notifications may change the cache while the tick or BLE
@@ -299,6 +302,7 @@ class SonicSleepController(ProfileExecution[SonicSleepProfile], BedController):
                 self._record_command_trace(link.write.uuid, packet, response=response, characteristic=link.write)
                 async with asyncio.timeout(WRITE_TIMEOUT_S):
                     await link.client.write_gatt_char(link.write, packet, response=response)
+                    note_frame_written(cancel)
 
         # A cancelled owner must settle the write already handed to BLE. There
         # is no pending FIFO and no retry/backfill after a slow radio write.

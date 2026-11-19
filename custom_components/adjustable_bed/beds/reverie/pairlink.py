@@ -23,6 +23,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.helpers.storage import Store
 
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import CONF_SIDE
 from ...controller_state import StateKey, StateUpdate
 from ...state_keys import (
@@ -186,9 +187,12 @@ PairlinkMeshEventCallback = Callable[[int, bytes | None, bool], None]
 class _TracedCentralWriter:
     """Record each fragment ``send_central_frame`` writes, then write it."""
 
-    def __init__(self, controller: BedController, client: GattWriter) -> None:
+    def __init__(
+        self, controller: BedController, client: GattWriter, cancel: asyncio.Event | None
+    ) -> None:
         self._controller = controller
         self._client = client
+        self._cancel = cancel
 
     async def write_gatt_char(
         self, char_specifier: str, data: bytes, response: bool | None = None
@@ -197,6 +201,7 @@ class _TracedCentralWriter:
             char_specifier, data, response=bool(response), command_origin="pairlink"
         )
         await self._client.write_gatt_char(char_specifier, data, response=response)
+        note_frame_written(self._cancel)
 
 
 class ReveriePairlinkController(BedController, PairlinkComfortActions):
@@ -328,9 +333,14 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         """Never trace Pairlink frames: they are keyed by the home ID and password."""
         return {"hex": "**REDACTED**", "length": len(command), "ascii_preview": None}
 
-    def _central_writer(self, client: GattWriter) -> GattWriter:
-        """Wrap ``client`` so each central fragment reaches the command trace."""
-        return _TracedCentralWriter(self, client)
+    def _central_writer(
+        self, client: GattWriter, cancel: asyncio.Event | None = None
+    ) -> GattWriter:
+        """Wrap ``client`` so each central fragment reaches the command trace.
+
+        ``cancel`` is the event that gates the frame being sent.
+        """
+        return _TracedCentralWriter(self, client, cancel)
 
     @property
     def requires_disconnected_transport(self) -> bool:
@@ -2188,11 +2198,13 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
             )
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
         if cancel is not None and cancel.is_set():
+            note_frame_skipped()
             raise asyncio.CancelledError
 
         def validate_current() -> None:
             nonlocal snapshot
             if cancel is not None and cancel.is_set():
+                note_frame_skipped()
                 raise asyncio.CancelledError
             if refresh_telemetry or refresh_release_telemetry:
                 snapshot = self._refresh_comfort_snapshot(
@@ -2214,7 +2226,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                     if client is None or not client.is_connected:
                         raise ConnectionError("Pairlink central link ended before the write")
                     await send_central_frame(
-                        self._central_writer(client),
+                        self._central_writer(client, cancel),
                         outbound,
                         characteristic=self._write_uuid,
                         att_mtu=snapshot.mtu,
@@ -2223,6 +2235,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
                     await self._runtime.async_notify_to_peer(
                         snapshot, outbound, validate_send=validate_current
                     )
+                    note_frame_written(cancel)
             except BleakError:
                 _LOGGER.warning("Pairlink central GATT write failed")
                 raise

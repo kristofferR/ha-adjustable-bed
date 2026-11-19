@@ -18,14 +18,14 @@ from homeassistant.helpers import entity_registry as er
 from .beds.entity_specs import ControllerSwitchSpec
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
-from .command_scheduler import current_command_context
+from .command_scheduler import Delivery, command_delivery
 from .const import DOMAIN
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import PlatformEntities, records_entities
-from .paired_coordinator import entity_runtimes
+from .paired_coordinator import PairedSideError, entity_runtimes
 from .state_keys import (
     AUTOMATIC_LIGHT,
     LINAK_AUTOMATIC_DRIVE,
@@ -307,11 +307,9 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             live.local_set_fn(on)
             return
 
-        sent = False
         offs = self._local_offs
 
         async def apply(ctrl: BedController) -> None:
-            nonlocal sent
             if on and offs != self._local_offs:
                 return  # Turned off while this waited for the link.
             live = next(
@@ -320,15 +318,16 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             if live is None:
                 raise ServiceValidationError("Controller no longer supports this setting")
             await live.set_fn(ctrl, on)
-            # A writer returns quietly when STOP cancels it before the frame goes out.
-            context = current_command_context()
-            sent = context is None or not context.cancel_event.is_set()
+            # Record it while the link that sent it is still up: a sequential
+            # pair releases the side before the command returns, and that
+            # release makes the value unknown again.
+            delivery = command_delivery()
+            if delivery is not Delivery.NONE and self._spec.state_key is None:
+                # A value sent only in part is unknown.
+                self._commanded = on if delivery is Delivery.SENT else None
+                self.async_write_ha_state()
 
         await self._coordinator.async_execute_controller_command(apply)
-        # A STOP or a replacing command can settle the call without sending it.
-        if sent and self._spec.state_key is None:
-            self._commanded = on
-            self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._async_set(True)
@@ -529,47 +528,12 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             self.entity_description.key,
             self._coordinator.name,
         )
-
-        try:
-            _LOGGER.debug("Sending turn on command for %s", self.entity_description.key)
-            state_generation = self._state_update_generation
-            timer_was_running = self._auto_off_timer is not None
-
-            async def turn_on(controller: BedController) -> None:
-                nonlocal state_generation
-                state_generation = self._state_update_generation
-                await self.entity_description.turn_on_fn(controller)
-
-            await self._coordinator.async_execute_controller_command(
-                turn_on,
-                cancel_running=False,
-            )
-            # Preserve state published during the command, including a changed local side.
-            if (
-                self._supports_discrete_control()
-                and state_generation == self._state_update_generation
-            ):
-                self._attr_is_on = True
-                self.async_write_ha_state()
-            else:
-                _LOGGER.debug(
-                    "Keeping controller-published or toggle-only state for %s",
-                    self.entity_description.key,
-                )
-            if self._supports_discrete_control() and self._attr_is_on:
-                self._schedule_auto_off_timer(reset_octo_deadline=timer_was_running)
-            _LOGGER.debug("Switch %s turned on successfully", self.entity_description.key)
-        except NotImplementedError:
-            _LOGGER.warning(
-                "This bed does not support %s feature",
-                self.entity_description.key,
-            )
-        except Exception:
-            _LOGGER.exception(
-                "Failed to turn on switch %s",
-                self.entity_description.key,
-            )
-            raise
+        timer_was_running = self._auto_off_timer is not None
+        if not await self._async_switch(True, self.entity_description.turn_on_fn):
+            return
+        if self._supports_discrete_control() and self._attr_is_on:
+            self._schedule_auto_off_timer(reset_octo_deadline=timer_was_running)
+        _LOGGER.debug("Switch %s turned on successfully", self.entity_description.key)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
@@ -578,45 +542,65 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             self.entity_description.key,
             self._coordinator.name,
         )
+        if not await self._async_switch(False, self.entity_description.turn_off_fn):
+            return
+        _LOGGER.debug("Switch %s turned off successfully", self.entity_description.key)
+
+    async def _async_switch(
+        self, on: bool, command: Callable[[BedController], Coroutine[Any, Any, None]]
+    ) -> bool:
+        """Send one on/off command and show its state; return whether all of it was sent.
+
+        A STOP or a replacing command cancels it quietly: the switch keeps its
+        previous state when nothing was sent, and is unknown when only part was.
+        """
+        state_generation = self._state_update_generation
+
+        async def run(controller: BedController) -> None:
+            nonlocal state_generation
+            state_generation = self._state_update_generation
+            await command(controller)
 
         try:
-            _LOGGER.debug("Sending turn off command for %s", self.entity_description.key)
-            state_generation = self._state_update_generation
-
-            async def turn_off(controller: BedController) -> None:
-                nonlocal state_generation
-                state_generation = self._state_update_generation
-                await self.entity_description.turn_off_fn(controller)
-
-            await self._coordinator.async_execute_controller_command(
-                turn_off,
-                cancel_running=False,
-            )
-            # Fall back to assumed state only if no controller update arrived.
-            if (
-                self._supports_discrete_control()
-                and state_generation == self._state_update_generation
-            ):
-                # Cancel any pending auto-off timer only after the command succeeds.
+            try:
+                delivery = await self._async_send(run, cancel_running=False)
+            except PairedSideError as err:
+                # A sequential pair wraps the side's own error.
+                errors = list(err.side_errors.values())
+                if errors and all(isinstance(error, NotImplementedError) for error in errors):
+                    raise errors[0] from err
+                raise
+        except NotImplementedError as err:
+            feature = self.entity_description.key.replace("_", " ")
+            raise ServiceValidationError(
+                f"{self._coordinator.name} does not support {feature}",
+                translation_domain=DOMAIN,
+                translation_key="feature_not_supported",
+                translation_placeholders={
+                    "device_name": self._coordinator.name,
+                    "feature": feature,
+                },
+            ) from err
+        if delivery is Delivery.NONE:
+            _LOGGER.debug("Switch %s command was cancelled", self.entity_description.key)
+            return False
+        if delivery is Delivery.PARTIAL:
+            self._cancel_auto_off_timer()
+            self._attr_is_on = None
+            self.async_write_ha_state()
+            return False
+        # Preserve state published during the command, including a changed local side.
+        if self._supports_discrete_control() and state_generation == self._state_update_generation:
+            if not on:
+                # Cancel any pending auto-off timer only after the command was sent.
                 # If transport fails, keep the timer so HA can still reflect the
                 # hardware-enforced auto-off when it happens.
                 self._cancel_auto_off_timer()
-                self._attr_is_on = False
-                self.async_write_ha_state()
-            else:
-                _LOGGER.debug(
-                    "Keeping controller-published or toggle-only state for %s",
-                    self.entity_description.key,
-                )
-            _LOGGER.debug("Switch %s turned off successfully", self.entity_description.key)
-        except NotImplementedError:
-            _LOGGER.warning(
-                "This bed does not support %s feature",
+            self._attr_is_on = on
+            self.async_write_ha_state()
+        else:
+            _LOGGER.debug(
+                "Keeping controller-published or toggle-only state for %s",
                 self.entity_description.key,
             )
-        except Exception:
-            _LOGGER.exception(
-                "Failed to turn off switch %s",
-                self.entity_description.key,
-            )
-            raise
+        return True

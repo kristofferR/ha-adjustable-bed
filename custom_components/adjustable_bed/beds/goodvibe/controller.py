@@ -20,7 +20,12 @@ from ...card import (
     CARD_HIDDEN,
 )
 from ...codec import richmat as codec
-from ...command_scheduler import CommandContext, current_command_context
+from ...command_scheduler import (
+    CommandContext,
+    current_command_context,
+    note_frame_skipped,
+    note_frame_written,
+)
 from ...controller_state import StateKey
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import GOODVIBE, RichmatProfile
@@ -606,6 +611,7 @@ class GoodVibeController(BedController):
         link = link or self._current_link()
         cancel = asyncio.Event() if cleanup else self._coordinator.cancel_command
         if cancel.is_set():
+            note_frame_skipped()
             return False
         async with self._ble_lock:
             if release_gesture is not None and (
@@ -615,6 +621,7 @@ class GoodVibeController(BedController):
             if self._current_link() is not link:
                 raise ConnectionError("Good Vibe Sleep link was replaced")
             if cancel.is_set():
+                note_frame_skipped()
                 return False
             if self.catalog.reply_gated_menus or self.catalog.bed is not None:
                 loop = asyncio.get_running_loop()
@@ -624,6 +631,7 @@ class GoodVibeController(BedController):
                 if self._current_link() is not link:
                     raise ConnectionError("The BLE link changed while a write was queued")
                 if cancel.is_set():
+                    note_frame_skipped()
                     return False
                 tick = self.catalog.bed.tick_ms if self.catalog.bed is not None else QUEUE_MS
                 self._next_write_at = loop.time() + tick / 1000
@@ -633,6 +641,7 @@ class GoodVibeController(BedController):
             if self._current_link() is not link:
                 raise ConnectionError("Catalog link was replaced during pacing")
             if cancel.is_set():
+                note_frame_skipped()
                 return False
             if deadline is not None and monotonic() >= deadline:
                 return False
@@ -671,6 +680,7 @@ class GoodVibeController(BedController):
                 on_submit()
             if self.catalog.bed is None:
                 await link.client.write_gatt_char(link.tx, data, response=response)
+                note_frame_written(cancel)
             else:
                 write = asyncio.create_task(link.client.write_gatt_char(link.tx, data, response=response))
                 try:
@@ -685,7 +695,9 @@ class GoodVibeController(BedController):
                             if write.cancelled():
                                 raise
                     write.result()
+                    note_frame_written(cancel)
                     raise
+                note_frame_written(cancel)
             self._last_write = asyncio.get_running_loop().time()
         return True
 

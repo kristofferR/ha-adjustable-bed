@@ -13,6 +13,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ...codec import limoss as codec
+from ...command_scheduler import note_frame_written
 from ...const import (
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
@@ -408,6 +409,7 @@ class LimossRemoteController(ProfileExecution[LimossProfile], BedController):
                     self._request_reply = reply
                 self._last_write_started = asyncio.get_running_loop().time()
                 await client.write_gatt_char(char, packet, response=response)
+                note_frame_written(event)
 
     async def write_command(
         self,

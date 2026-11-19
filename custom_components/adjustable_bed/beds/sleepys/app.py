@@ -1235,7 +1235,7 @@ class SleepysEliteAppController(BedController):
         # HA value commits have no app gesture queue to retain or replay.
         await self._send_dynamic(route.builder, route.logical_values)
         self._app_fields["field_0x0b"] = code
-        self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(code * 10))
+        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(code * 10))
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone != "all":

@@ -11,6 +11,7 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_UTILITY
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
 from ...profiles.okin_nframe import ESHINE_PROFILES, ESHINE_REFRESH_MS
@@ -333,14 +334,18 @@ class EshineOkinController(BedController):
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
         for index in range(repeat_count):
             if cancel.is_set():
+                note_frame_skipped()
                 return
             if index and await self._pause(repeat_delay_ms / 1000, cancel):
+                note_frame_skipped()
                 return
             async with self._ble_lock:
                 self._live(session)
                 if cancel.is_set():
+                    note_frame_skipped()
                     return
                 await session.client.write_gatt_char(session.write, command, response=False)
+                note_frame_written(cancel)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback

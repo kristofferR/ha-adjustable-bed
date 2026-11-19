@@ -17,6 +17,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
+from ...command_scheduler import Delivery, command_delivery
 from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
@@ -1389,6 +1390,8 @@ class LinakController(BedController):
                     cancel_event=cancel_event,
                     log_errors=False,
                     on_write=mark_ready,
+                    # A readiness probe only prepares the link.
+                    track_command_write=False,
                 )
             except BleakError as err:
                 if not self._is_authentication_window_error(err):
@@ -2083,7 +2086,13 @@ class LinakController(BedController):
             LINAK_CONFIG_CHAR_UUID,
             build_automatic_drive(enabled),
         )
-        self.forward_controller_state_updates(LINAK_AUTOMATIC_DRIVE(enabled))
+        # A cancelled write returns without sending, so nothing changed; one
+        # sent only in part leaves the setting unknown.
+        delivery = command_delivery()
+        if delivery is not Delivery.NONE:
+            self.forward_controller_state_updates(
+                LINAK_AUTOMATIC_DRIVE(enabled if delivery is Delivery.SENT else None)
+            )
 
     async def rename_device(self, name: str) -> None:
         """Write the modern app's raw Generic Access device name."""

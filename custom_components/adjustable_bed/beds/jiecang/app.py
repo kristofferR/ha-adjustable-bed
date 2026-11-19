@@ -18,6 +18,7 @@ from homeassistant.util import dt as dt_util
 from ...alarm import AlarmCapability
 from ...codec import jiecang as codec
 from ...codec.jiecang import Notification, TransportKey, Wake
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import (
     BED_TYPE_JIECANG_APP,
     CONF_HAS_LIGHT,
@@ -652,6 +653,7 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
         response = "write" in characteristic.properties
         for offset in (0, 500):
             if await self._pause(offset, self._coordinator.cancel_command):
+                note_frame_skipped()
                 return
             self._record_command_trace(
                 self._name_uuid,
@@ -661,6 +663,7 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
             )
             async with self._ble_lock:
                 await self.client.write_gatt_char(self._name_uuid, command, response=response)
+                note_frame_written(self._coordinator.cancel_command)
 
     # Alarm and wake
 

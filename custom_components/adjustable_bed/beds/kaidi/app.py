@@ -15,6 +15,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ...card import CARD_HIDDEN, CARD_MASSAGE
 from ...codec import kaidi as codec
+from ...command_scheduler import command_frames_not_counted
 from ...const import SIDE_LEFT, SIDE_RIGHT
 from ...controller_state import StateUpdate, sided
 from ...execution import ExecutionCapabilities
@@ -394,7 +395,8 @@ class KaidiAppController(BedController):
             if not self._ready:
                 self._auth.clear()
                 self._auth_status = None
-                await self.write_command(codec.join(self.profile.room))
+                with command_frames_not_counted():
+                    await self.write_command(codec.join(self.profile.room))
                 await self._wait(self._auth, 5, generation)
                 if self._auth_status != 0:
                     raise ConnectionError(
@@ -405,7 +407,8 @@ class KaidiAppController(BedController):
                     await self._wait(self._own_event, 5, generation)
                 self._ready = True
             self._roster.clear()
-            await self.write_command(codec.ping(cast(int, self._own)))
+            with command_frames_not_counted():
+                await self.write_command(codec.ping(cast(int, self._own)))
             await self._wait(self._roster, 5, generation)
             await self._flush_pending_ack()
 

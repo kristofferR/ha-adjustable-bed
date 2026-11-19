@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from bleak.exc import BleakError
 
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -408,13 +409,16 @@ class ReverieController(BedController, ReverieComfortActions):
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
+                note_frame_skipped()
                 return
 
             try:
                 async with self._ble_lock:
                     if effective_cancel is not None and effective_cancel.is_set():
+                        note_frame_skipped()
                         return
                     await self.client.write_gatt_char(REVERIE_CHAR_UUID, command, response=True)
+                    note_frame_written(effective_cancel)
             except BleakError:
                 _LOGGER.exception("Failed to write command")
                 raise

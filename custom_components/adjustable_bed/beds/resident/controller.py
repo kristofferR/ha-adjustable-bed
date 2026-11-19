@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 from ...ble_auth import is_ble_authentication_error
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...codec import okin_nframe as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.okin_nframe import (
     RESIDENT,
@@ -222,11 +223,13 @@ class ResidentController(Okin64BitController):
         async with self._ble_lock:
             self._live(link)
             if cancel.is_set():
+                note_frame_skipped()
                 return
             self._record_command_trace(
                 link.write.uuid, command, response=True, characteristic=link.write
             )
             await link.client.write_gatt_char(link.write, command, response=True)
+            note_frame_written(cancel)
 
     async def write_command(
         self,
@@ -242,6 +245,7 @@ class ResidentController(Okin64BitController):
         for index in range(repeat_count):
             delay_ms = max(0.0, (started + index * repeat_delay_ms / 1000 - loop.time()) * 1000)
             if cancel.is_set() or index and await _pause(delay_ms, cancel):
+                note_frame_skipped()
                 return
             await self._write(link, command, cancel)
 

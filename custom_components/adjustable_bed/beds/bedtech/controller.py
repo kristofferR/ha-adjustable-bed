@@ -201,9 +201,7 @@ class BedTechController(RichmatProfileController):
         self._publish_timer(0)
 
     def _publish_timer(self, minutes: int) -> None:
-        # A STOP or replacing command ends the write without sending it.
-        if not self._coordinator.cancel_command.is_set():
-            self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, minutes)
+        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
 
     async def lights_on(self) -> None:
         """The OEM app offers a toggle, without a discrete ON."""
