@@ -8,11 +8,15 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.components.light import ColorMode
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.entity_specs import ControllerSwitchSpec
-from custom_components.adjustable_bed.command_scheduler import current_command_context
+from custom_components.adjustable_bed.command_scheduler import (
+    CommandOutcome,
+    current_command_context,
+)
 from custom_components.adjustable_bed.light import (
     LIGHT_DESCRIPTION,
     AdjustableBedAssumedLight,
@@ -20,6 +24,7 @@ from custom_components.adjustable_bed.light import (
     AdjustableBedOnOffLight,
 )
 from custom_components.adjustable_bed.paired_coordinator import entity_runtimes
+from custom_components.adjustable_bed.state_keys import LIGHT_LEVEL
 from custom_components.adjustable_bed.switch import (
     SWITCH_DESCRIPTIONS,
     AdjustableBedControllerSwitch,
@@ -557,11 +562,88 @@ async def test_sent_state_helper_after_a_reconnect_publishes_only_the_commands_f
 
         async def set_level(controller: SettingsController) -> None:
             # A select or number that publishes the value it commanded.
-            await controller._write("level 5")
-            controller.forward_sent_state_updates(LIGHT_LEVEL(5))
+            with controller.sent_state(LIGHT_LEVEL(5)):
+                await controller._write("level 5")
 
         bed.controller_state[LIGHT_LEVEL] = 3
         with virtual_clock():
             await bed.async_execute_controller_command(set_level, cancel_running=False)
         # Nothing of the command reached the bed: the previous value stays.
         assert bed.controller_state.get(LIGHT_LEVEL) == (3 if cancelled else 5)
+
+
+async def _fail_after_frame(controller: SettingsController) -> None:
+    """The link drops on the second frame of a two-frame value."""
+    if len(controller.bed.sent) > 1:  # type: ignore[attr-defined]
+        raise BleakError("link lost after the first frame")
+
+
+def _on_off_light(bed: Bed) -> Any:
+    light = _entity(AdjustableBedOnOffLight(bed, LIGHT_DESCRIPTION))
+    light._attr_is_on = False
+    return light
+
+
+def _controller_switch(bed: Bed) -> Any:
+    switch = _entity(AdjustableBedControllerSwitch(bed, MASSAGE))
+    switch._commanded = False
+    return switch
+
+
+async def _turn_on(entity: Any) -> None:
+    await entity.async_turn_on()
+
+
+async def _set_level(bed: Bed) -> None:
+    async def set_level(controller: SettingsController) -> None:
+        # A select or number that publishes the value it commanded.
+        with controller.sent_state(LIGHT_LEVEL(5)):
+            await controller._write("level 5")
+
+    await bed.async_execute_controller_command(set_level, cancel_running=False)
+
+
+@pytest.mark.parametrize("site", ["on_off_light", "controller_switch", "published_setting"])
+@pytest.mark.parametrize(
+    ("ending", "shown"),
+    # Cancelled after its only frame: sent. Failed after one of two frames: unknown.
+    [("cancelled", "new"), ("failed", "unknown")],
+)
+async def test_a_command_that_raises_after_its_frame_still_shows_what_was_sent(
+    hass, site, ending, shown
+) -> None:
+    async with beds(hass, 1) as made:
+        bed = made.items[0]
+        _settings(bed)
+        bed.frames = 1 if ending == "cancelled" else 2  # type: ignore[attr-defined]
+        if ending == "cancelled":
+            bed.after_write = _cancel_and_end_in_cleanup  # type: ignore[attr-defined]
+        else:
+            bed.after_frame = _fail_after_frame  # type: ignore[attr-defined]
+        bed.controller_state[LIGHT_LEVEL] = 3
+        entity = (
+            _on_off_light(bed)
+            if site == "on_off_light"
+            else _controller_switch(bed)
+            if site == "controller_switch"
+            else None
+        )
+        run = _set_level(bed) if entity is None else _turn_on(entity)
+        with virtual_clock():
+            if ending == "failed":
+                # The failure still reaches the caller.
+                with pytest.raises(BleakError):
+                    await run
+            else:
+                await run
+        # The frame went out (the failed second write was attempted, not sent).
+        assert len(bed.sent) == (1 if ending == "cancelled" else 2)  # type: ignore[attr-defined]
+        if entity is None:
+            value = bed.controller_state.get(LIGHT_LEVEL)
+            assert value == (5 if shown == "new" else None)
+        else:
+            assert entity.is_on is (True if shown == "new" else None)
+        if ending == "cancelled":
+            # The cancellation still ended the command: it did not complete.
+            record = bed._command_scheduler.recent_records[-1]
+            assert record.outcome is not CommandOutcome.COMPLETED

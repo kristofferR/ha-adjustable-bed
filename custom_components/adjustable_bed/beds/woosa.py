@@ -246,19 +246,23 @@ class WoosaController(SolaceController):
         await self.set_light_timer(self._coordinator.controller_state.get(LIGHT_TIMER, "10 min"))
 
     async def lights_off(self) -> None:
-        await self.write_command(WOOSA_LIGHT_OFF)
         # The bed reports no light state: show what the command delivered.
-        self.forward_sent_state_updates(
+        with self.sent_state(
             UNDER_BED_LIGHTS_ON(False), LIGHT_TIMER_OPTION("Off"), LIGHT_DEADLINE(None)
-        )
+        ):
+            await self.write_command(WOOSA_LIGHT_OFF)
 
     async def set_light_level(self, level: int) -> None:
-        await super().set_light_level(level)
-        if 0 <= level <= self.light_level_max:
-            self.forward_sent_state_updates(
+        updates = (
+            (
                 UNDER_BED_LIGHTS_ON(level > 0),
                 *((LIGHT_TIMER_OPTION("Off"), LIGHT_DEADLINE(None)) if level == 0 else ()),
             )
+            if 0 <= level <= self.light_level_max
+            else ()
+        )
+        with self.sent_state(*updates):
+            await super().set_light_level(level)
 
     async def set_light_timer(self, timer_option: str) -> None:
         if timer_option == "Off":
@@ -266,14 +270,14 @@ class WoosaController(SolaceController):
             return
         if timer_option not in self.light_timer_options:
             raise ValueError("Unsupported Woosa light timer")
-        await super().set_light_timer(timer_option)
         duration = {"10 min": 600, "8 hours": 28800, "10 hours": 36000}[timer_option]
-        self.forward_sent_state_updates(
+        with self.sent_state(
             LIGHT_TIMER(timer_option),
             LIGHT_TIMER_OPTION(timer_option),
             UNDER_BED_LIGHTS_ON(True),
             LIGHT_DEADLINE(asyncio.get_running_loop().time() + duration),
-        )
+        ):
+            await super().set_light_timer(timer_option)
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in {"head", "foot"} or not 0 <= level <= 3:

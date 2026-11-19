@@ -25,13 +25,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
+from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
 from ...codec import okin_5a as star
 from ...codec import okin_nframe as codec
-from ...command_scheduler import command_frames_written, frames_sent_since, note_frame_skipped
+from ...command_scheduler import Delivery, delivered, note_frame_skipped
 from ...const import (
     NORDIC_UART_WRITE_CHAR_UUID,
     SLEEPYS_BOX25_FIXED_STAR_NAME_PREFIXES,
@@ -39,6 +40,7 @@ from ...const import (
     SLEEPYS_BOX25_VARIANT_STAR,
     VARIANT_AUTO,
 )
+from ...controller_state import StateUpdate
 from ...execution import STREAM_HOLD, ExecutionCapabilities
 from ...profiles.okin_nframe import (
     SLEEPYS_BOX25_LEGACY,
@@ -669,48 +671,45 @@ class SleepysBox25Controller(BedController):
         is ignored on others (#702), so the light entity sends ON first and
         reapplies the selected colour and level afterwards.
         """
-        before = command_frames_written()
-        await self._write_massage_light_command(Box25Commands.LIGHT_ON_WHITE)
-        if not frames_sent_since(before):
-            return
-        self.forward_controller_state_updates(
-            UNDER_BED_LIGHTS_ON(True),
-            UNDER_BED_LIGHTS_RGB(_DEFAULT_LIGHT_RGB),
-        )
+        with self._sent_step(
+            UNDER_BED_LIGHTS_ON(True), UNDER_BED_LIGHTS_RGB(_DEFAULT_LIGHT_RGB)
+        ):
+            await self._write_massage_light_command(Box25Commands.LIGHT_ON_WHITE)
 
     async def lights_off(self) -> None:
-        before = command_frames_written()
-        await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
-        if frames_sent_since(before):
-            self.forward_controller_state_update(UNDER_BED_LIGHTS_ON, False)
+        with self._sent_step(UNDER_BED_LIGHTS_ON(False)):
+            await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
 
     async def lights_toggle(self) -> None:
         await self._write_massage_light_command(Box25Commands.LIGHT_TOGGLE)
 
+    def _sent_step(
+        self, *updates: StateUpdate, level: int | None = None
+    ) -> AbstractContextManager[None]:
+        """Publish one light step's state once its one frame went out."""
+
+        def show(delivery: Delivery) -> None:
+            if delivery is Delivery.NONE:
+                return
+            if level is not None:
+                self._light_level = level
+            self.forward_controller_state_updates(*updates)
+
+        return delivered(show)
+
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         """Show an RGB colour on lit LEDs; not every base turns on from it."""
         red, green, blue = (max(0, min(255, int(channel))) for channel in rgb_color)
-        before = command_frames_written()
-        await self._write_massage_light_command(star.extended(0x02, red, green, blue))
-        if not frames_sent_since(before):
-            return
-        self.forward_controller_state_updates(
-            UNDER_BED_LIGHTS_ON(True),
-            UNDER_BED_LIGHTS_RGB((red, green, blue)),
-        )
+        with self._sent_step(UNDER_BED_LIGHTS_ON(True), UNDER_BED_LIGHTS_RGB((red, green, blue))):
+            await self._write_massage_light_command(star.extended(0x02, red, green, blue))
 
     async def set_light_level(self, level: int) -> None:
         """Set the exact OEM 0-6 under-bed light brightness value."""
         normalized = max(0, min(self.light_level_max, int(level)))
-        before = command_frames_written()
-        await self._write_massage_light_command(star.extended(0x00, normalized))
-        if not frames_sent_since(before):
-            return
-        self._light_level = normalized
-        self.forward_controller_state_updates(
-            LIGHT_LEVEL(normalized),
-            UNDER_BED_LIGHTS_ON(normalized > 0),
-        )
+        with self._sent_step(
+            LIGHT_LEVEL(normalized), UNDER_BED_LIGHTS_ON(normalized > 0), level=normalized
+        ):
+            await self._write_massage_light_command(star.extended(0x00, normalized))
 
     # ─── Massage ─────────────────────────────────────────────────────────
 

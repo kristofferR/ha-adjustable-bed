@@ -97,10 +97,14 @@ def test_a_commanded_timer_is_published_only_as_far_as_it_was_sent(delivery, pub
     controller.forward_controller_state_updates = lambda *updates: (
         BedController.forward_controller_state_updates(controller, *updates)
     )
-    with patch(
-        "custom_components.adjustable_bed.beds.base.command_delivery", return_value=delivery
+    with (
+        patch(
+            "custom_components.adjustable_bed.command_scheduler._delivery_since",
+            return_value=delivery,
+        ),
+        BedController.sent_state(controller, MASSAGE_TIMER_MINUTES(20)),
     ):
-        BedController.forward_sent_state_updates(controller, MASSAGE_TIMER_MINUTES(20))
+        pass
     sent = [
         update.value
         for call in coordinator.handle_controller_state_updates.call_args_list

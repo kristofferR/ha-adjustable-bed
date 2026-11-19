@@ -17,7 +17,6 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
-from ...command_scheduler import Delivery, command_delivery
 from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
@@ -2082,16 +2081,12 @@ class LinakController(BedController):
         """Write modern Bed Control's automatic-drive configuration."""
         if not self.supports_automatic_drive:
             raise NotImplementedError("Automatic drive is not exposed by this profile")
-        await self._write_protected_characteristic(
-            LINAK_CONFIG_CHAR_UUID,
-            build_automatic_drive(enabled),
-        )
         # A cancelled write returns without sending, so nothing changed; one
         # sent only in part leaves the setting unknown.
-        delivery = command_delivery()
-        if delivery is not Delivery.NONE:
-            self.forward_controller_state_updates(
-                LINAK_AUTOMATIC_DRIVE(enabled if delivery is Delivery.SENT else None)
+        with self.sent_state(LINAK_AUTOMATIC_DRIVE(enabled)):
+            await self._write_protected_characteristic(
+                LINAK_CONFIG_CHAR_UUID,
+                build_automatic_drive(enabled),
             )
 
     async def rename_device(self, name: str) -> None:

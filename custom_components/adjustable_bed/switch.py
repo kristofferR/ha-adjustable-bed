@@ -18,7 +18,7 @@ from homeassistant.helpers import entity_registry as er
 from .beds.entity_specs import ControllerSwitchSpec
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
-from .command_scheduler import Delivery, command_delivery
+from .command_scheduler import Delivery, delivered
 from .const import DOMAIN
 from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
@@ -317,15 +317,17 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             )
             if live is None:
                 raise ServiceValidationError("Controller no longer supports this setting")
-            await live.set_fn(ctrl, on)
             # Record it while the link that sent it is still up: a sequential
             # pair releases the side before the command returns, and that
             # release makes the value unknown again.
-            delivery = command_delivery()
-            if delivery is not Delivery.NONE and self._spec.state_key is None:
-                # A value sent only in part is unknown.
-                self._commanded = on if delivery is Delivery.SENT else None
-                self.async_write_ha_state()
+            def show(delivery: Delivery) -> None:
+                if delivery is not Delivery.NONE and self._spec.state_key is None:
+                    # A value sent only in part is unknown.
+                    self._commanded = on if delivery is Delivery.SENT else None
+                    self.async_write_ha_state()
+
+            with delivered(show):
+                await live.set_fn(ctrl, on)
 
         await self._coordinator.async_execute_controller_command(apply)
 

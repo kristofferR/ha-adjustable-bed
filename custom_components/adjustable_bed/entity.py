@@ -10,12 +10,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 
 from .card import CARD_ATTRIBUTES, CardPlacement
-from .command_scheduler import (
-    Delivery,
-    command_cancelled,
-    command_delivery,
-    command_frames_written,
-)
+from .command_scheduler import Delivery, delivered
 from .const import TIMED_MOVE_MOTOR_OPTIONS
 from .entity_runtime import controller_side_scope
 from .execution import ExecutionCapabilities
@@ -130,26 +125,15 @@ class AdjustableBedEntity(RenamesInPlace, PlacedInCard):
         """
         delivery = Delivery.NONE
 
-        async def run(controller: BedController) -> None:
+        def show(result: Delivery) -> None:
             nonlocal delivery
-            try:
+            delivery = result
+            if on_delivery is not None:
+                on_delivery(result)
+
+        async def run(controller: BedController) -> None:
+            with delivered(show):
                 await command(controller)
-            except BaseException:
-                # A command cancelled during its release cleanup may already
-                # have sent its frame; one that failed sent at most part of it.
-                delivery = (
-                    command_delivery()
-                    if command_cancelled()
-                    else Delivery.PARTIAL
-                    if command_frames_written()
-                    else Delivery.NONE
-                )
-                raise
-            else:
-                delivery = command_delivery()
-            finally:
-                if on_delivery is not None:
-                    on_delivery(delivery)
 
         await self._coordinator.async_execute_controller_command(run, **kwargs)
         return delivery

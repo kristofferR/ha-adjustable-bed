@@ -775,44 +775,41 @@ def note_frame_skipped() -> None:
         context.frames_skipped += 1
 
 
-def command_cancelled() -> bool:
-    """Return whether STOP or a replacing command cancelled the running command."""
-    context = current_command_context()
-    return context is not None and context.cancel_event.is_set()
+def _delivery_since(
+    context: CommandContext | None, written: int, skipped: int, *, failed: bool
+) -> Delivery:
+    """What a command step that started at ``written``/``skipped`` delivered."""
+    if context is None:
+        return Delivery.NONE if failed else Delivery.SENT
+    sent = context.frames_written > written
+    if context.cancel_event.is_set():
+        if not sent:
+            return Delivery.NONE
+        return Delivery.PARTIAL if context.frames_skipped > skipped else Delivery.SENT
+    if failed:
+        # The step failed on its own: it reached the bed at most in part.
+        return Delivery.PARTIAL if sent else Delivery.NONE
+    return Delivery.SENT
 
 
-def command_frames_written() -> int:
-    """Return how many of its frames the running command has sent so far."""
-    context = current_command_context()
-    return context.frames_written if context is not None else 0
+@contextlib.contextmanager
+def delivered(show: Callable[[Delivery], None]) -> Iterator[None]:
+    """Run one step of a command, then ``show`` what of it reached the bed.
 
-
-def frames_sent_since(before: int) -> bool:
-    """Return whether one step of the running command reached the bed.
-
-    ``before`` is ``command_frames_written()`` taken before the step. For a
-    controller that publishes state after each step of a longer command.
+    The only way to read delivery (tests/test_frame_delivery_guard.py), so it is
+    always settled, also when the step raises: a step cancelled after its frame
+    went out was still sent, one that failed after a frame was sent in part.
+    The exception still propagates.
     """
     context = current_command_context()
-    return (
-        context is None
-        or not context.cancel_event.is_set()
-        or context.frames_written > before
-    )
-
-
-def command_delivery() -> Delivery:
-    """Return what the running command delivered so far.
-
-    A cancelled writer returns quietly instead of raising, so an entity checks
-    this before it shows the state it asked for.
-    """
-    context = current_command_context()
-    if context is None or not context.cancel_event.is_set():
-        return Delivery.SENT
-    if not context.frames_written:
-        return Delivery.NONE
-    return Delivery.PARTIAL if context.frames_skipped else Delivery.SENT
+    written = context.frames_written if context is not None else 0
+    skipped = context.frames_skipped if context is not None else 0
+    try:
+        yield
+    except BaseException:
+        show(_delivery_since(context, written, skipped, failed=True))
+        raise
+    show(_delivery_since(context, written, skipped, failed=False))
 
 
 def copy_context_without_command() -> Context:
