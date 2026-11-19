@@ -14,12 +14,8 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from ...codec import vibradorm as codec
 from ...command_scheduler import note_write_not_counted
 from ...profiles.vibradorm import VMAT_CLOSE, VMAT_QUERY_STAGES
-from .app import (
-    VibradormAppMetadata,
-    VibradormAppMetadataProgress,
-    _cancellable,
-    _shield_cleanup,
-)
+from ..cancellation import cancellable, settled
+from .app import VibradormAppMetadata, VibradormAppMetadataProgress
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,7 +84,7 @@ async def async_read_vmat_dis(
 ) -> VibradormAppMetadata:
     values: dict[str, str] = {}
     for field, uuid in DIS_FIELDS:
-        raw = await _cancellable(client.read_gatt_char(vmat_characteristic(client, uuid, "read")), cancel_event)
+        raw = await cancellable(client.read_gatt_char(vmat_characteristic(client, uuid, "read")), cancel_event)
         values[field] = codec.decode_text(bytes(raw))
         if progress is not None:
             progress(cast(VibradormAppMetadataProgress, {field: values[field]}))
@@ -116,8 +112,8 @@ async def async_prepare_vmat_pairing(
     subscribed = False
     try:
         async with asyncio.timeout_at(deadline):
-            await _cancellable(asyncio.sleep(VMAT_SETTLE_S), cancel_event)
-            await _cancellable(client.start_notify(notify, callback), cancel_event)
+            await cancellable(asyncio.sleep(VMAT_SETTLE_S), cancel_event)
+            await cancellable(client.start_notify(notify, callback), cancel_event)
             subscribed = True
             metadata = await async_read_vmat_dis(client, cancel_event, metadata_progress)
             article: str | None = None
@@ -125,7 +121,7 @@ async def async_prepare_vmat_pairing(
                 reply: asyncio.Future[str] = asyncio.get_running_loop().create_future()
                 current = (field, prefix, reply)
                 try:
-                    await _cancellable(client.write_gatt_char(
+                    await cancellable(client.write_gatt_char(
                         vmat_characteristic(client, codec.CBI_CHAR_UUID, "write-without-response"),
                         packet, response=False,
                     ), cancel_event)
@@ -136,7 +132,7 @@ async def async_prepare_vmat_pairing(
 
                     try:
                         async with asyncio.timeout(timeout):
-                            value = await _cancellable(receive(), cancel_event)
+                            value = await cancellable(receive(), cancel_event)
                     except TimeoutError:
                         pass  # Missing replies do not create an acknowledgment.
                     else:
@@ -158,7 +154,7 @@ async def async_prepare_vmat_pairing(
 
             original = sys.exception()
             try:
-                await _shield_cleanup(unsubscribe())
+                await settled(unsubscribe())
             except (Exception, asyncio.CancelledError):
                 if original is None:
                     raise
