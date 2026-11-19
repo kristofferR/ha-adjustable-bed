@@ -68,8 +68,8 @@ def _typed_live(field: str, value: object) -> int | bool | None:
         if not isinstance(value, str):
             return None
         try:
-            return int(value, 0) if value.strip().lower().startswith(("0x", "+0x", "-0x")) else int(value)
-        except ValueError:
+            return int(value, 0) if value.strip().lower().startswith(("0x", "+0x", "-0x")) else int(float(value))
+        except (ValueError, OverflowError):
             return None
     return value if isinstance(value, bool) else None
 

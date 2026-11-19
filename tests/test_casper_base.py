@@ -248,6 +248,30 @@ async def test_information_nullable_error_ignoring_merge():
     assert c.controller_state["casper_sleep_info"]["type"] == "bed-sensor"
 
 
+@pytest.mark.parametrize(
+    ("kind", "live", "expected"),
+    [
+        ("sxb", [0, 1, 72, 15, 1], (72, 15)),
+        ("sxb", [0, 1, 72.0, 15.0, 1], (72, 15)),
+        ("sxb", [0, 1, 72.75, 15.25, 1], (72, 15)),
+        ("sxb", [0, 0], (None, None)),
+        ("mm", "1-1-0x48-0x0f-1-0-0-0", (72, 15)),
+        ("mm", "0-1-72-15-1-0-0-0", (None, None)),
+    ],
+)
+async def test_live_notifications_publish_numeric_rates(kind, live, expected):
+    ctrl, c = make(kind=kind)
+    ctrl._receive.reset("q_realtime")
+    packet = envelope({"id": 1, "cmd": "q_realtime", "val": {"L": live, "R": live}}, 1)
+    ctrl._on_notification(None, bytearray(packet))
+
+    for side in ("L", "R"):
+        for field, value in zip(("heart", "breath"), expected, strict=True):
+            actual = c.controller_state[f"casper_sleep_{side}_{field}"]
+            assert actual == value
+            assert type(actual) is type(value)
+
+
 @pytest.mark.parametrize("kind", ["mm", "sxb"])
 async def test_sensor_report_handshake_and_decode(kind):
     ctrl, c = make(kind=kind)
