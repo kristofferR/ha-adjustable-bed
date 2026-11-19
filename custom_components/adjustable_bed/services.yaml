@@ -3280,6 +3280,54 @@ symphony_set_light:
           max: 80
           mode: box
 
+betterliving2_diagnostic_action:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      required: true
+      selector:
+        select:
+          translation_key: betterliving2_diagnostic_action
+          options: [refresh_alarm, refresh_massage]
+    side:
+      selector:
+        select:
+          translation_key: bed_side
+          options: [left, right, both]
+
+betterliving2_massage:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    head:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+    feet:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 3
+          step: 1
+    side:
+      selector:
+        select:
+          translation_key: bed_side
+          options: [left, right, both]
+
 majestichome:
   fields:
     device_id:

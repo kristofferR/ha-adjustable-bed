@@ -1,0 +1,500 @@
+[
+  {
+    "protocol": "P1",
+    "action": "head up",
+    "bytes": "e5fe160000000105",
+    "opcode": 1
+  },
+  {
+    "protocol": "P1",
+    "action": "head down",
+    "bytes": "e5fe160000000204",
+    "opcode": 2
+  },
+  {
+    "protocol": "P1",
+    "action": "foot up",
+    "bytes": "e5fe160000000402",
+    "opcode": 4
+  },
+  {
+    "protocol": "P1",
+    "action": "foot down",
+    "bytes": "e5fe1600000008fe",
+    "opcode": 8
+  },
+  {
+    "protocol": "P1",
+    "action": "head+foot up",
+    "bytes": "e5fe160000000501",
+    "opcode": 5
+  },
+  {
+    "protocol": "P1",
+    "action": "head+foot down",
+    "bytes": "e5fe160000000afc",
+    "opcode": 10
+  },
+  {
+    "protocol": "P1",
+    "action": "all up",
+    "bytes": "e5fe1600000010f6",
+    "opcode": 16
+  },
+  {
+    "protocol": "P1",
+    "action": "all down",
+    "bytes": "e5fe1600000020e6",
+    "opcode": 32
+  },
+  {
+    "protocol": "P1",
+    "action": "movement STOP/release",
+    "bytes": "e5fe160000000006",
+    "opcode": 0
+  },
+  {
+    "protocol": "P1",
+    "action": "zero gravity recall",
+    "bytes": "e5fe160100000104",
+    "opcode": 16777217
+  },
+  {
+    "protocol": "P1",
+    "action": "flat recall",
+    "bytes": "e5fe160100000203",
+    "opcode": 16777218
+  },
+  {
+    "protocol": "P1",
+    "action": "memory A recall",
+    "bytes": "e5fe1601000008fd",
+    "opcode": 16777224
+  },
+  {
+    "protocol": "P1",
+    "action": "memory B recall",
+    "bytes": "e5fe1601000009fc",
+    "opcode": 16777225
+  },
+  {
+    "protocol": "P1",
+    "action": "program zero gravity",
+    "bytes": "e5fe1620000001e5",
+    "opcode": 536870913
+  },
+  {
+    "protocol": "P1",
+    "action": "program memory A",
+    "bytes": "e5fe1620000008de",
+    "opcode": 536870920
+  },
+  {
+    "protocol": "P1",
+    "action": "program memory B",
+    "bytes": "e5fe1620000009dd",
+    "opcode": 536870921
+  },
+  {
+    "protocol": "P1",
+    "action": "stop active preset on second same recall tap",
+    "bytes": "e5fe160100000005",
+    "opcode": 16777216
+  },
+  {
+    "protocol": "P1",
+    "action": "head massage absolute level",
+    "bytes": "command(P1,0x10000010+level), level0..3",
+    "opcode": null
+  },
+  {
+    "protocol": "P1",
+    "action": "foot massage absolute level",
+    "bytes": "command(P1,0x11000010+level), level0..3",
+    "opcode": null
+  },
+  {
+    "protocol": "P1",
+    "action": "massage wave absolute level",
+    "bytes": "command(P1,0x10000020+level), level0..3",
+    "opcode": null
+  },
+  {
+    "protocol": "P1",
+    "action": "massage timer cycle",
+    "bytes": "command(P1,0x10000030+input), input=-1,0,1,2 from reachable UI sequence; initial-1 is preserved",
+    "opcode": null
+  },
+  {
+    "protocol": "P1",
+    "action": "light off/on",
+    "bytes": "command(P1,0x31000000+state),state0 or1",
+    "opcode": null
+  },
+  {
+    "protocol": "P1",
+    "action": "synchronize bed current time",
+    "bytes": "current_time(P1,now), see packet_format and reproduce.py",
+    "opcode": null
+  },
+  {
+    "protocol": "P1",
+    "action": "enable bed alarm",
+    "bytes": "clock(P1,hour,minute,week,massage,kind,now,enabled=True)",
+    "opcode": null
+  },
+  {
+    "protocol": "P1",
+    "action": "disable bed alarm",
+    "bytes": "clock(P1,hour,minute,week,massage,kind,now,enabled=False)",
+    "opcode": null
+  },
+  {
+    "protocol": "P2",
+    "action": "head up",
+    "bytes": "e6fe16010000000004",
+    "opcode": 1
+  },
+  {
+    "protocol": "P2",
+    "action": "head down",
+    "bytes": "e6fe16020000000003",
+    "opcode": 2
+  },
+  {
+    "protocol": "P2",
+    "action": "foot up",
+    "bytes": "e6fe16040000000001",
+    "opcode": 4
+  },
+  {
+    "protocol": "P2",
+    "action": "foot down",
+    "bytes": "e6fe160800000000fd",
+    "opcode": 8
+  },
+  {
+    "protocol": "P2",
+    "action": "head+foot up",
+    "bytes": "e6fe16050000000000",
+    "opcode": 5
+  },
+  {
+    "protocol": "P2",
+    "action": "head+foot down",
+    "bytes": "e6fe160a00000000fb",
+    "opcode": 10
+  },
+  {
+    "protocol": "P2",
+    "action": "all up",
+    "bytes": "e6fe161000000000f5",
+    "opcode": 16
+  },
+  {
+    "protocol": "P2",
+    "action": "all down",
+    "bytes": "e6fe162000000000e5",
+    "opcode": 32
+  },
+  {
+    "protocol": "P2",
+    "action": "movement STOP/release",
+    "bytes": "e6fe16000000000005",
+    "opcode": 0
+  },
+  {
+    "protocol": "P2",
+    "action": "zero gravity recall",
+    "bytes": "e6fe160010000000f5",
+    "opcode": 4096
+  },
+  {
+    "protocol": "P2",
+    "action": "flat recall",
+    "bytes": "e6fe160000000800fd",
+    "opcode": 134217728
+  },
+  {
+    "protocol": "P2",
+    "action": "memory A recall",
+    "bytes": "e6fe16000001000004",
+    "opcode": 65536
+  },
+  {
+    "protocol": "P2",
+    "action": "memory B recall",
+    "bytes": "e6fe16000004000001",
+    "opcode": 262144
+  },
+  {
+    "protocol": "P2",
+    "action": "program zero gravity",
+    "bytes": "e6fe160010000000f5",
+    "opcode": 4096
+  },
+  {
+    "protocol": "P2",
+    "action": "program memory A",
+    "bytes": "e6fe16000001000004",
+    "opcode": 65536
+  },
+  {
+    "protocol": "P2",
+    "action": "program memory B",
+    "bytes": "e6fe16000004000001",
+    "opcode": 262144
+  },
+  {
+    "protocol": "P2",
+    "action": "massage toggle",
+    "bytes": "e6fe16000100000004",
+    "opcode": 256
+  },
+  {
+    "protocol": "P2",
+    "action": "massage timer cycle",
+    "bytes": "e6fe16000200000003",
+    "opcode": 512
+  },
+  {
+    "protocol": "P2",
+    "action": "foot massage increment",
+    "bytes": "e6fe16000400000001",
+    "opcode": 1024
+  },
+  {
+    "protocol": "P2",
+    "action": "head massage increment",
+    "bytes": "e6fe160008000000fd",
+    "opcode": 2048
+  },
+  {
+    "protocol": "P2",
+    "action": "foot massage decrement",
+    "bytes": "e6fe16000000010004",
+    "opcode": 16777216
+  },
+  {
+    "protocol": "P2",
+    "action": "head massage decrement",
+    "bytes": "e6fe16000080000085",
+    "opcode": 8388608
+  },
+  {
+    "protocol": "P2",
+    "action": "massage wave cycle",
+    "bytes": "e6fe160000001000f5",
+    "opcode": 268435456
+  },
+  {
+    "protocol": "P2",
+    "action": "light toggle",
+    "bytes": "e6fe16000002000003",
+    "opcode": 131072
+  },
+  {
+    "protocol": "P2",
+    "action": "query massage",
+    "bytes": "e6fe160c00000000f9",
+    "opcode": 12
+  },
+  {
+    "protocol": "P2",
+    "action": "synchronize bed current time",
+    "bytes": "current_time(P2,now), see packet_format and reproduce.py",
+    "opcode": null
+  },
+  {
+    "protocol": "P2",
+    "action": "enable bed alarm",
+    "bytes": "clock(P2,hour,minute,week,massage,kind,now,enabled=True)",
+    "opcode": null
+  },
+  {
+    "protocol": "P2",
+    "action": "disable bed alarm",
+    "bytes": "clock(P2,hour,minute,week,massage,kind,now,enabled=False)",
+    "opcode": null
+  },
+  {
+    "protocol": "P2",
+    "action": "query bed alarm",
+    "bytes": "e180039b",
+    "opcode": null
+  },
+  {
+    "protocol": "P3",
+    "action": "head up",
+    "bytes": "05020000000100",
+    "opcode": 1
+  },
+  {
+    "protocol": "P3",
+    "action": "head down",
+    "bytes": "05020000000200",
+    "opcode": 2
+  },
+  {
+    "protocol": "P3",
+    "action": "foot up",
+    "bytes": "05020000000400",
+    "opcode": 4
+  },
+  {
+    "protocol": "P3",
+    "action": "foot down",
+    "bytes": "05020000000800",
+    "opcode": 8
+  },
+  {
+    "protocol": "P3",
+    "action": "head+foot up",
+    "bytes": "05020000000500",
+    "opcode": 5
+  },
+  {
+    "protocol": "P3",
+    "action": "head+foot down",
+    "bytes": "05020000000a00",
+    "opcode": 10
+  },
+  {
+    "protocol": "P3",
+    "action": "all up",
+    "bytes": "05020000001000",
+    "opcode": 16
+  },
+  {
+    "protocol": "P3",
+    "action": "all down",
+    "bytes": "05020000002000",
+    "opcode": 32
+  },
+  {
+    "protocol": "P3",
+    "action": "movement STOP/release",
+    "bytes": "05020000000000",
+    "opcode": 0
+  },
+  {
+    "protocol": "P3",
+    "action": "zero gravity recall",
+    "bytes": "05020000100000",
+    "opcode": 4096
+  },
+  {
+    "protocol": "P3",
+    "action": "flat recall",
+    "bytes": "05020800000000",
+    "opcode": 134217728
+  },
+  {
+    "protocol": "P3",
+    "action": "memory A recall",
+    "bytes": "05020001000000",
+    "opcode": 65536
+  },
+  {
+    "protocol": "P3",
+    "action": "memory B recall",
+    "bytes": "05020004000000",
+    "opcode": 262144
+  },
+  {
+    "protocol": "P3",
+    "action": "program zero gravity",
+    "bytes": "05020000100000",
+    "opcode": 4096
+  },
+  {
+    "protocol": "P3",
+    "action": "program memory A",
+    "bytes": "05020001000000",
+    "opcode": 65536
+  },
+  {
+    "protocol": "P3",
+    "action": "program memory B",
+    "bytes": "05020004000000",
+    "opcode": 262144
+  },
+  {
+    "protocol": "P3",
+    "action": "massage toggle",
+    "bytes": "05020000010000",
+    "opcode": 256
+  },
+  {
+    "protocol": "P3",
+    "action": "massage timer cycle",
+    "bytes": "05020000020000",
+    "opcode": 512
+  },
+  {
+    "protocol": "P3",
+    "action": "foot massage increment",
+    "bytes": "05020000040000",
+    "opcode": 1024
+  },
+  {
+    "protocol": "P3",
+    "action": "head massage increment",
+    "bytes": "05020000080000",
+    "opcode": 2048
+  },
+  {
+    "protocol": "P3",
+    "action": "foot massage decrement",
+    "bytes": "05020100000000",
+    "opcode": 16777216
+  },
+  {
+    "protocol": "P3",
+    "action": "head massage decrement",
+    "bytes": "05020080000000",
+    "opcode": 8388608
+  },
+  {
+    "protocol": "P3",
+    "action": "massage wave cycle",
+    "bytes": "05021000000000",
+    "opcode": 268435456
+  },
+  {
+    "protocol": "P3",
+    "action": "light toggle",
+    "bytes": "05020002000000",
+    "opcode": 131072
+  },
+  {
+    "protocol": "P3",
+    "action": "query massage",
+    "bytes": "00b0",
+    "opcode": null
+  },
+  {
+    "protocol": "P3",
+    "action": "synchronize bed current time",
+    "bytes": "current_time(P3,now), see packet_format and reproduce.py",
+    "opcode": null
+  },
+  {
+    "protocol": "P3",
+    "action": "enable bed alarm",
+    "bytes": "clock(P3,hour,minute,week,massage,kind,now,enabled=True)",
+    "opcode": null
+  },
+  {
+    "protocol": "P3",
+    "action": "disable bed alarm",
+    "bytes": "clock(P3,hour,minute,week,massage,kind,now,enabled=False)",
+    "opcode": null
+  },
+  {
+    "protocol": "P3",
+    "action": "query bed alarm",
+    "bytes": "00c0",
+    "opcode": null
+  }
+]
