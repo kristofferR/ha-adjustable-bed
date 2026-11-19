@@ -20,6 +20,8 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.profiles.vibradorm import VMAT_REMOTES
 from tests.test_vibradorm_vmat import make_vmat
 
+pytestmark = pytest.mark.usefixtures("instant_vmat_settle")
+
 
 @pytest.mark.parametrize("disconnect_kind", ["noop", "error", "cancel", "task_cancel"])
 @pytest.mark.parametrize("mode", ["pair", "replace_local"])

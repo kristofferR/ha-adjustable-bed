@@ -100,6 +100,8 @@ INFO_FIELDS: Final = tuple(
     )
 )
 _RELEASES: Final = (codec.motor(codec.STOP), codec.command(codec.STOP))
+# Delay between packet writes, including the refresh of a held control.
+_PACKET_GAP_S: Final = 0.1
 
 
 @dataclass(frozen=True, slots=True)
@@ -913,9 +915,9 @@ class VibradormAppController(BedController):
         if client is None:
             raise ConnectionError("Not connected")
         if self.profile.app_profile == "vmat":
-            from .vmat_setup import vmat_characteristic
+            from .vmat_setup import VMAT_SETTLE_S, vmat_characteristic
 
-            await _cancellable(asyncio.sleep(0.5), self._coordinator.cancel_command)
+            await _cancellable(asyncio.sleep(VMAT_SETTLE_S), self._coordinator.cancel_command)
             char = vmat_characteristic(client, codec.RESPONSE_CHAR_UUID, "notify")
             self._notify_generation += 1
             generation = self._notify_generation
@@ -1017,7 +1019,7 @@ class VibradormAppController(BedController):
             error: Exception | None = None
             for index in range(count):
                 if index:
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(_PACKET_GAP_S)
                 try:
                     async with asyncio.timeout(2):
                         await self._write(
@@ -1093,7 +1095,7 @@ class VibradormAppController(BedController):
                     )
                     while not event.is_set():
                         await self._write(self.control_characteristic_uuid, packet)
-                        await _cancellable(asyncio.sleep(0.1), event)
+                        await _cancellable(asyncio.sleep(_PACKET_GAP_S), event)
             except TimeoutError:
                 if not budget.expired():
                     raise
@@ -1155,7 +1157,7 @@ class VibradormAppController(BedController):
                 if self._coordinator.cancel_command.is_set():
                     break
                 await self._write(codec.CBI_CHAR_UUID, packet)
-                await _cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
+                await _cancellable(asyncio.sleep(_PACKET_GAP_S), self._coordinator.cancel_command)
         finally:
             await self._cleanup_preserving_error(4)
 
@@ -1321,7 +1323,7 @@ class VibradormAppController(BedController):
         try:
             for index, packet in enumerate(packets):
                 if index:
-                    await _cancellable(asyncio.sleep(0.1), self._coordinator.cancel_command)
+                    await _cancellable(asyncio.sleep(_PACKET_GAP_S), self._coordinator.cancel_command)
                 await self._write(codec.CBI_CHAR_UUID, packet)
         except BaseException:
             if self.profile.app_profile == "vmat":
