@@ -35,7 +35,7 @@
 - **Climate controls** - Cooling, heating and foot warming on supported beds
 - **Massage control** - Adjust massage intensity and patterns
 - **Position feedback** - See current angles on supported beds
-- **Presence sensors** - Occupancy sensors on supported beds
+- **Sleep sensors** - In bed, heart rate, breathing rate, snoring and body movement on supported beds
 - **Firmness controls** - Sleep Number settings on supported beds
 - **Automations** - "Flat when leaving", "TV mode at 8pm" and more
 

@@ -127,7 +127,7 @@ to that family's other routes.
    & Platt), **I don't know: keep the detected controls** (Okin, Keeson, Solace,
    Sleepy's Elite, Malouf / Lucid, LOGICDATA), **Keep the current app**
    (Customatic, Jordan's), **Keep the current controls** (Jensen / Svane,
-   Limoss) or **Keep current setup** (Vibradorm).
+   Limoss) or **Keep the current setup** (Vibradorm).
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
    Home Assistant releases its connection and checks the chosen setup. The
    check screen lists its steps. Nothing is saved yet.
@@ -137,7 +137,7 @@ to that family's other routes.
    control.
 4. **Apply this change** saves it, only if nobody changed the entry meanwhile.
    The last screen names the new setup and the previous one; to switch back,
-   run **Reconfigure** again. **Keep current setup** is the other answer on the
+   run **Reconfigure** again. **Keep the current setup** is the other answer on the
    review.
 
 A failed check shows **Nothing was changed** with **Try again** and **Keep
@@ -173,7 +173,7 @@ setup again, or the question's keep answer, keeps the current profile. Closing i
 leaves the notice open. A review about a Richmat remote setting alone opens
 Configure, where saving the settings confirms it.
 
-**Keep current profile** (or Ignore) dismisses the assessment across restarts and
+**Keep the current setup** (or Ignore) dismisses the assessment across restarts and
 updates. Only a materially different profile or candidate set may ask again.
 Notices for a combined bed name the physical bed and say whether you need to
 separate the beds or remove the Left, Right and Both controls first; neither

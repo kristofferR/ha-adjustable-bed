@@ -208,8 +208,8 @@ not establish the product. The repair offers these choices:
 A FurniMove entry without a captured handset gets the first two choices.
 
 An **Okin DOT** entry using handset 90167, 91983 or 93558 receives a separate
-fixable warning offering **Switch to the FurniMove profile** or **Keep current
-configuration**. Switching keeps the handset and derives the axes and massage
+fixable warning offering **Switch to the FurniMove profile** or **Keep the current
+setup**. Switching keeps the handset and derives the axes and massage
 availability from its table.
 
 An **Okin CST** entry whose drive reports an `OKIMAT` Device Information model

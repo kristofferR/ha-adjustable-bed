@@ -125,7 +125,7 @@ existing controller, features and Bluetooth pairing requirements.
 For an existing bed, open **Settings → Devices & services → Adjustable Bed**,
 then the entry's three-dot menu and **Reconfigure** (see
 [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
-The app review in Repairs opens the same wizard. Choose **Keep current setup**
+The app review in Repairs opens the same wizard. Choose **Keep the current setup**
 to keep your working controls and answer the review, or choose your app and
 remote/product.
 Keeping the same app seeds the form with your saved settings.

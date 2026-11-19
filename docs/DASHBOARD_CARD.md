@@ -221,6 +221,17 @@ Memory header, then tap the position you want to overwrite (tap **Cancel** to
 back out). The Save button only appears for beds that support saving. A button
 that overwrites a saved position asks for confirmation in the card first.
 
+**Buttons that ask first.** A button that asks for confirmation, such as a
+preset save or a reset, is always a plain tap: holding it never sends it, and
+nothing is sent until you confirm.
+
+**Other controls.** On a bed whose sides share one Bluetooth connection, the
+**Controlled side** select sits with the motor controls and picks the side
+they move. A light whose state the bed does not report gets separate On and
+Off buttons, like a switch. When a bed has two controls for one place in the
+card, such as a massage timer button and a remaining-time sensor, both are
+shown.
+
 **Names and icons follow your entities.** The card displays each control using
 its entity's own name and icon, so to relabel something you just rename the
 entity (Settings → Devices & Services → your bed → the entity → ⚙). For example,
