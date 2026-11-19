@@ -162,6 +162,7 @@ _EXTRA_WORDS: Final = re.compile(
     r"refresh|calibrate|clear|demonstration|beep|clock|smart sleep|adjustment)\b",
     re.IGNORECASE,
 )
+_CLOCK: Final = re.compile(r"\bclock\b", re.IGNORECASE)
 # Both ends moving in opposite directions: a one-touch position, not a motor row.
 _COMBO: Final = re.compile(
     r"(?:head|foot) (?:up|down)(?: and)? (?:head|foot) (?:up|down|stop)", re.IGNORECASE
@@ -311,6 +312,9 @@ def catalog_button(
     if control.card == CARD_PRESET_SAVE:
         # The card confirms a tap; a held gesture would send the save unasked.
         kwargs.pop("hold", None)
+    if control.kind is Kind.EXTRA and _CLOCK.search(control.name):
+        # Setting the clock is maintenance until the shared sync_clock action covers it.
+        kwargs.setdefault("diagnostic", True)
     return ControllerButtonSpec(
         key,
         label,

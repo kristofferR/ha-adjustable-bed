@@ -140,3 +140,9 @@ def test_a_confirmed_save_never_publishes_a_held_gesture() -> None:
     spec = catalog_button("save_zg", "Save Zero gravity", _press, kind=Kind.SAVE,
                           hold=ControllerHoldSpec("save_zg"))
     assert spec is not None and spec.hold is None and spec.requires_confirmation
+
+
+def test_a_catalog_clock_setter_is_a_disabled_diagnostic() -> None:
+    """SUTA's "Sync clock" until the shared sync_clock action covers the bed."""
+    spec = catalog_button("suta_set_date", "Sync clock", _press)
+    assert spec is not None and spec.diagnostic and not spec.entity_registry_enabled_default
