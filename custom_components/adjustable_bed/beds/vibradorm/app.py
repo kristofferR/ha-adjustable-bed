@@ -26,6 +26,7 @@ from ...card import (
     CardSection,
 )
 from ...codec import vibradorm as codec
+from ...command_scheduler import note_frame_skipped, note_frame_written, note_write_not_counted
 from ...const import (
     CONF_HAS_MASSAGE,
     CONF_VIBRADORM_APP_PROFILE,
@@ -265,6 +266,7 @@ async def _information_transaction(
                     ),
                     cancel_event,
                 )
+                note_write_not_counted()
 
                 async def receive(reply: asyncio.Future[str] = article_reply) -> str:
                     return await reply
@@ -842,6 +844,7 @@ class VibradormAppController(BedController):
                     controller_class=type(self).__name__,
                 )
             await client.write_gatt_char(char, packet, response=response)
+            note_frame_written(effective_event)
             if self.profile.app_profile == "vmat":
                 self._next_write_at = asyncio.get_running_loop().time() + 0.1
 
@@ -855,11 +858,13 @@ class VibradormAppController(BedController):
         effective_event = cancel_event or self._coordinator.cancel_command
         for index in range(repeat_count):
             if effective_event.is_set():
+                note_frame_skipped()
                 return
             try:
                 await self._write(self.control_characteristic_uuid, command, effective_event)
             except asyncio.CancelledError:
                 if effective_event.is_set():
+                    note_frame_skipped()
                     return
                 raise
             if index < repeat_count - 1:

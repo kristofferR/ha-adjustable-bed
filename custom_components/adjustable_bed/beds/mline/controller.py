@@ -16,7 +16,7 @@ from homeassistant.util.json import JsonValueType
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...codec import mline as codec
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_BLE_DEVICE_NAME, CONF_HAS_MASSAGE, CONF_PRODUCT_TYPE
 from ...controller_state import AnyStateKey
 from ...profiles import mline as app
@@ -177,11 +177,13 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
                 or deadline is not None
                 and asyncio.get_running_loop().time() >= deadline - 1e-9
             ):
+                note_frame_skipped()
                 return
             self._record_command_trace(
                 link.write.uuid, data, response=False, characteristic=link.write
             )
             await settled(link.client.write_gatt_char(link.write, data, response=False))
+            note_frame_written(cancel)
             self._live(link)
 
     async def write_command(
@@ -195,6 +197,7 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
         cancel = self._coordinator.cancel_command if cancel_event is None else cancel_event
         for index in range(repeat_count):
             if index and await self._pause(repeat_delay_ms / 1000, cancel):
+                note_frame_skipped()
                 return
             await self._write(link, bytes(command), cancel)
 

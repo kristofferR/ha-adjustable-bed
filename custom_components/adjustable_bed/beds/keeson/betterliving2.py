@@ -15,7 +15,18 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_HIDDEN, CARD_MASSAGE
-from ...command_scheduler import CommandContext, current_command_context
+from ...command_scheduler import (
+    CommandContext,
+    Delivery,
+    command_cancelled,
+    command_delivery,
+    command_frames_written,
+    current_command_context,
+    frames_sent_since,
+    note_frame_skipped,
+    note_frame_written,
+    note_write_not_counted,
+)
 from ...const import CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT
 from ...controller_state import StateKey
 from ...profiles import betterliving2 as app
@@ -104,6 +115,13 @@ async def drain(task: asyncio.Task[None]) -> None:
     task.result()
     if interrupted:
         raise asyncio.CancelledError
+
+
+def _value_delivery(before: int, finished: bool) -> Delivery | None:
+    """Delivery of this value, excluding earlier steps of the same command."""
+    if command_frames_written() > before or finished and frames_sent_since(before):
+        return command_delivery() if finished or command_cancelled() else Delivery.PARTIAL
+    return None
 
 
 class BetterLiving2Controller(KeesonController):
@@ -395,6 +413,7 @@ class BetterLiving2Controller(KeesonController):
         external_cancel: asyncio.Event | None = None,
     ) -> None:
         startup_cancel = None if cleanup else self._startup_cancel
+        track_command_write = not cleanup and startup_cancel is None
 
         def write_interrupted() -> bool:
             return (
@@ -413,20 +432,29 @@ class BetterLiving2Controller(KeesonController):
                 if serial is not None and serial != self._serial:
                     raise ConnectionError("BetterLiving2 command owner changed")
                 if write_interrupted():
+                    if track_command_write:
+                        note_frame_skipped()
                     return
                 selection = current_selection()
                 if selection is not None and not cleanup:
                     selection.check(self)
 
+                written = False
+
                 async def write() -> None:
+                    nonlocal written
                     self._live(link)
                     if write_interrupted():
+                        if track_command_write:
+                            note_frame_skipped()
                         return
                     if serial is not None and serial != self._serial:
                         raise ConnectionError("BetterLiving2 command owner changed")
                     if selection is not None and not cleanup:
                         selection.check(self)
                     if write_interrupted():
+                        if track_command_write:
+                            note_frame_skipped()
                         return
                     if on_write is not None:
                         on_write()
@@ -434,6 +462,14 @@ class BetterLiving2Controller(KeesonController):
                         link.write.uuid, frame, response=link.response, characteristic=link.write
                     )
                     await link.client.write_gatt_char(link.write, frame, response=link.response)
+                    if track_command_write:
+                        # _run bridges the scheduler's event into its local phase.
+                        note_frame_written(
+                            external_cancel if external_cancel is not None else cancel
+                        )
+                    else:
+                        note_write_not_counted()  # Startup queries and fresh-event cleanup.
+                    written = True
 
                 async with asyncio.timeout(WRITE_TIMEOUT):
                     writing = asyncio.create_task(write())
@@ -444,6 +480,12 @@ class BetterLiving2Controller(KeesonController):
                         )
                         if writing in done:
                             await writing
+                        elif track_command_write and not written:
+                            note_frame_skipped()
+                    except asyncio.CancelledError:
+                        if track_command_write and not written:
+                            note_frame_skipped()
+                        raise
                     finally:
                         writing.cancel()
                         interrupted.cancel()
@@ -466,9 +508,13 @@ class BetterLiving2Controller(KeesonController):
         deadline = asyncio.get_running_loop().time() + max(1, repeat_count) * repeat_delay_ms / 1000
         for index in range(repeat_count):
             if cancel.is_set() or index and asyncio.get_running_loop().time() >= deadline:
+                if self._startup_cancel is None:
+                    note_frame_skipped()
                 return
             await self._send(link, command, cancel)
             if index + 1 < repeat_count and await pause(repeat_delay_ms / 1000, cancel):
+                if self._startup_cancel is None:
+                    note_frame_skipped()
                 return
 
     async def _cleanup(
@@ -516,6 +562,7 @@ class BetterLiving2Controller(KeesonController):
         deadline = start + min(duration_ms, app.MOVEMENT_LIMIT_MS) / 1000 if duration_ms else None
         phase = asyncio.timeout_at(deadline if deadline is not None else start + LOCK_TIMEOUT)
         acquired = admitted = reached_wire = False
+        _frame_index = -1
         serial = self._serial
         context = current_command_context()
         bridge: asyncio.Task[None] | None = None
@@ -546,6 +593,8 @@ class BetterLiving2Controller(KeesonController):
                 acquired = True
                 self._live(link)
                 if external_cancel.is_set():
+                    if self._startup_cancel is None:
+                        note_frame_skipped()
                     return
                 self._serial += 1
                 serial = self._serial
@@ -557,7 +606,7 @@ class BetterLiving2Controller(KeesonController):
                     self._receive_kind = receive_kind
                 if deadline is None:
                     phase.reschedule(None)
-                for frame in frames:
+                for _frame_index, frame in enumerate(frames):
                     await self._send(
                         link,
                         frame,
@@ -587,6 +636,10 @@ class BetterLiving2Controller(KeesonController):
                         )
                 if recall:
                     await pause(app.RECALL_RELEASE_MS / 1000, cancel)
+        except asyncio.CancelledError:
+            if self._startup_cancel is None and _frame_index + 1 < len(frames):
+                note_frame_skipped()
+            raise
         except TimeoutError:
             if not phase.expired() or deadline is None:
                 raise
@@ -730,9 +783,16 @@ class BetterLiving2Controller(KeesonController):
             if not 0 <= value <= 3:
                 raise ValueError("P1 massage level must be 0..3")
             word = app.P1_MASSAGE_BASES[zone] + value
-        await self.tap(word)
-        if not self._cancel.is_set():
-            self.forward_controller_state_updates(LEVELS[zone](value))
+        before, finished = command_frames_written(), False
+        try:
+            await self.tap(word)
+            finished = True
+        finally:
+            delivery = _value_delivery(before, finished)
+            if delivery is not None:
+                self.forward_controller_state_updates(
+                    LEVELS[zone](value if delivery is Delivery.SENT else None)
+                )
 
     async def massage_pair(self, head: int, feet: int) -> None:
         if self.wire != "P1" or any(type(v) is not int or not 0 <= v <= 3 for v in (head, feet)):
@@ -741,10 +801,23 @@ class BetterLiving2Controller(KeesonController):
         for index, (zone, value) in enumerate((("head", head), ("feet", feet))):
             self._live(link)
             frame = app.command(self.wire, app.P1_MASSAGE_BASES[zone] + value)
-            await self._run((frame, frame), expected=link)
-            if index == 0 and await pause(app.MASSAGE_ZONE_GAP_MS / 1000, self._cancel):
-                return
-            self.forward_controller_state_updates(LEVELS[zone](value))
+            before, finished = command_frames_written(), False
+            try:
+                await self._run((frame, frame), expected=link)
+                finished = True
+                if index == 0 and await pause(app.MASSAGE_ZONE_GAP_MS / 1000, self._cancel):
+                    note_frame_skipped()  # The foot value has not been sent.
+                    return
+            except asyncio.CancelledError:
+                if index == 0:
+                    note_frame_skipped()
+                raise
+            finally:
+                delivery = _value_delivery(before, finished)
+                if delivery is not None:
+                    self.forward_controller_state_updates(
+                        LEVELS[zone](value if delivery is Delivery.SENT else None)
+                    )
 
     async def massage_step(self, word: int) -> None:
         if self.wire == "P1" or word not in app.STEP_MASSAGE.values():
@@ -843,15 +916,25 @@ class BetterLiving2Controller(KeesonController):
             raise ValueError("BetterLiving2 physical owner/profile changed after validation")
         link = self._live(plan.link)
         started = asyncio.get_running_loop().time()
-        await self._run((plan.frame, plan.frame), expected=link, receive_kind="alarm")
+        before, finished = command_frames_written(), False
+        try:
+            await self._run((plan.frame, plan.frame), expected=link, receive_kind="alarm")
+            finished = True
+        finally:
+            delivery = _value_delivery(before, finished)
+            if delivery is Delivery.SENT:
+                self._view = self._saved = plan.selected
+                self._publish_alarm()
+            elif delivery is Delivery.PARTIAL:
+                self._view = AlarmView()
+                self._observed_alarm = False
+                self._publish_alarm()
         if await pause(app.ALARM_SYNC_DELAY_MS / 1000, self._cancel):
             return
         self._live(link)
         await self.sync_clock()
         if self._cancel.is_set():
             return
-        self._view = self._saved = plan.selected
-        self._publish_alarm()
         if not await pause(
             max(0, started + app.ALARM_QUERY_DELAY_MS / 1000 - asyncio.get_running_loop().time()),
             self._cancel,

@@ -29,7 +29,7 @@ import contextlib
 import logging
 import time
 from collections import OrderedDict, deque
-from collections.abc import Awaitable, Callable, Collection, Coroutine
+from collections.abc import Awaitable, Callable, Collection, Coroutine, Iterator
 from contextvars import Context, ContextVar, Token, copy_context
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -592,6 +592,10 @@ class CommandContext:
     hold_deadline: float | None = None
     """Event-loop time at which a held command's lease expires, if any."""
     cancel_generation: int = 0
+    # Frames this operation handed to the bed, and frames a cancellation
+    # stopped it from sending; together they say what reached the bed.
+    frames_written: int = 0
+    frames_skipped: int = 0
 
     def request_cancel(self, outcome: CommandOutcome) -> None:
         """Distinguish repeated cancellations of this exact resource admission."""
@@ -692,6 +696,115 @@ def current_command_context() -> CommandContext | None:
     """Return the command context bound to the current task, if any."""
     context = _CURRENT_COMMAND_CONTEXT.get()
     return context if context is None or context.active else None
+
+
+class Delivery(StrEnum):
+    """What of a command reached the bed."""
+
+    SENT = "sent"
+    """It ran uncancelled, or was cancelled only after its last frame went out."""
+    PARTIAL = "partial"
+    """Cancelled between frames: some went out, a later one did not."""
+    NONE = "none"
+    """Cancelled before any frame went out."""
+
+
+_FRAMES_NOT_COUNTED: ContextVar[bool] = ContextVar("adjustable_bed_frames_not_counted", default=False)
+
+
+@contextlib.contextmanager
+def command_frames_not_counted() -> Iterator[None]:
+    """Send link preparation (session join, wake, PIN) without counting it as the command."""
+    token = _FRAMES_NOT_COUNTED.set(True)
+    try:
+        yield
+    finally:
+        _FRAMES_NOT_COUNTED.reset(token)
+
+
+_FRAMES_COUNTED: ContextVar[bool] = ContextVar("adjustable_bed_frames_counted", default=False)
+
+
+@contextlib.contextmanager
+def command_frames_counted() -> Iterator[None]:
+    """Count frames the command sends with an event of their own (STOP cannot stop them)."""
+    token = _FRAMES_COUNTED.set(True)
+    try:
+        yield
+    finally:
+        _FRAMES_COUNTED.reset(token)
+
+
+def note_frame_written(cancel_event: asyncio.Event | None) -> None:
+    """Record that a frame of the running command was handed to the bed.
+
+    ``cancel_event`` is the event the write was gated on. Only the command's
+    own event counts: a STOP or release frame sent with a fresh event during
+    cleanup is not the command's frame, and neither is link preparation.
+    """
+    context = current_command_context()
+    if (
+        context is not None
+        and (cancel_event is context.cancel_event or _FRAMES_COUNTED.get())
+        and not _FRAMES_NOT_COUNTED.get()
+    ):
+        context.frames_written += 1
+
+
+def note_write_not_counted() -> None:
+    """Declare a write that is not the running command's frame.
+
+    For writes that only prepare the link (wake, handshake, subscription),
+    cleanup frames, and writers whose caller counts the frame. It does
+    nothing: every write must say which it is (tests/test_frame_delivery_guard.py).
+    """
+
+
+def note_frame_skipped() -> None:
+    """Record, inside a command, that a cancellation stopped a frame being sent."""
+    context = current_command_context()
+    if context is not None:
+        context.frames_skipped += 1
+
+
+def command_cancelled() -> bool:
+    """Return whether STOP or a replacing command cancelled the running command."""
+    context = current_command_context()
+    return context is not None and context.cancel_event.is_set()
+
+
+def command_frames_written() -> int:
+    """Return how many of its frames the running command has sent so far."""
+    context = current_command_context()
+    return context.frames_written if context is not None else 0
+
+
+def frames_sent_since(before: int) -> bool:
+    """Return whether one step of the running command reached the bed.
+
+    ``before`` is ``command_frames_written()`` taken before the step. For a
+    controller that publishes state after each step of a longer command.
+    """
+    context = current_command_context()
+    return (
+        context is None
+        or not context.cancel_event.is_set()
+        or context.frames_written > before
+    )
+
+
+def command_delivery() -> Delivery:
+    """Return what the running command delivered so far.
+
+    A cancelled writer returns quietly instead of raising, so an entity checks
+    this before it shows the state it asked for.
+    """
+    context = current_command_context()
+    if context is None or not context.cancel_event.is_set():
+        return Delivery.SENT
+    if not context.frames_written:
+        return Delivery.NONE
+    return Delivery.PARTIAL if context.frames_skipped else Delivery.SENT
 
 
 def copy_context_without_command() -> Context:

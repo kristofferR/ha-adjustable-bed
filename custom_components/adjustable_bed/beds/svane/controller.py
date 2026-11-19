@@ -20,7 +20,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ...codec import jmc
-from ...command_scheduler import current_command_context
+from ...command_scheduler import current_command_context, note_frame_written
 from ...const import SVANE_VARIANT_JENSEN_LINON, SVANE_VARIANT_JMC, SVANE_VARIANT_MULTI
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
@@ -368,6 +368,7 @@ class SvaneController(BedController):
         self._record_command_trace(char, data, response=response, characteristic=role)
         async with self._ble_lock:
             await client.write_gatt_char(role, data, response=response)
+            note_frame_written(self._coordinator.cancel_command)
 
     async def _wait(self, seconds: float) -> bool:
         cancel = self._coordinator.cancel_command

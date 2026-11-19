@@ -226,6 +226,8 @@ class JensenController(BedController):
                 jmc.CHAR_UUID,
                 self._build_pin_unlock_command(),
                 response=self._write_with_response,
+                # The PIN only unlocks the link for the command.
+                track_command_write=False,
             )
         except (ValueError, BleakError) as err:
             _LOGGER.warning("Failed to send Jensen PIN unlock command: %s", err)

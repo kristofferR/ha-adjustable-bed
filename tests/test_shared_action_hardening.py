@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import services
@@ -23,6 +24,7 @@ from custom_components.adjustable_bed.alarm import AlarmCapability, AlarmRequest
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+from custom_components.adjustable_bed.paired_devices import async_register_children
 from tests.hold_lease_wire import virtual_clock
 from tests.test_controller_contract import _ContractController
 
@@ -84,6 +86,7 @@ class Bed(AdjustableBedCoordinator):
     recalls: list[int]
     # Holds the next connect until set, to press STOP while it waits.
     connect_gate: tuple[asyncio.Event, asyncio.Event] | None
+    controller_class: type[AlarmController] = AlarmController
 
     async def on_check(self, controller: AlarmController) -> None:
         del controller
@@ -107,7 +110,7 @@ class Bed(AdjustableBedCoordinator):
 
         client.disconnect = AsyncMock(side_effect=disconnect)
         self._client = client
-        self._controller = AlarmController(self, self.capability)
+        self._controller = self.controller_class(self, self.capability)
         self._position_connection_generation += 1
         self._connection_creator_task = asyncio.current_task()
         return True
@@ -156,9 +159,14 @@ async def beds(hass, count=2, *, capability=LIVE, topology=None, connected=True)
     if topology is not None:
         entry = MockConfigEntry(domain=DOMAIN, version=5, data={"pair_id": "alarm-pair"})
         entry.add_to_hass(hass)
+        entry.mock_state(hass, ConfigEntryState.LOADED)
         made.pair = PairedBedCoordinator(
             hass, entry, {"left": made.items[0], "right": made.items[1]}, connection_mode=topology
         )
+        dr.async_get(hass).async_get_or_create(
+            config_entry_id=entry.entry_id, **made.pair.device_info
+        )
+        async_register_children(hass, made.pair)
     try:
         yield made
     finally:

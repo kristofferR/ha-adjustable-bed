@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import (
     SVANE_CHAR_DOWN_UUID,
     SVANE_CHAR_MEMORY_UUID,
@@ -163,11 +164,13 @@ class JensenLinonController(BedController):
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
+                note_frame_skipped()
                 return
 
             try:
                 async with self._ble_lock:
                     await self.client.write_gatt_char(char, command, response=True)
+                    note_frame_written(effective_cancel)
             except BleakError:
                 _LOGGER.exception(
                     "Failed to write to service %s char %s",
