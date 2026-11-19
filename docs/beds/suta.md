@@ -25,7 +25,7 @@ Bluetooth name selects the panel. Legacy Dreams Sleepmotion / SUTA-B202B
 | Position feedback | RBHC BACK and FOOT signed degrees only |
 | Memory | Exact model-specific recall/program slots, M8 remains a named recall |
 | Presets | Model-specific, including named conversion actions |
-| Massage | Model-specific P1 zones or MOON side controls |
+| Massage | Model-specific P1 zones (head, foot and overall level numbers, 0-3) or MOON side controls (left and right intensity numbers, 1-3) |
 | Fans | F260 app steps |
 | Lights | Only layouts with a complete proven schedule |
 | Local clock / alarm | P1 date, list, set and disable |
@@ -903,7 +903,8 @@ RBHC reads signed big-endian 16-bit values at offsets 1, 3, 5 and 7.
 Only the first BACK and the third FOOT field are known to be degrees.
 N520's similarly shaped parser is not fed by its normal name route.
 
-MOON reports massage, strength, timer, adaptive mode/stiffness, automatic
+MOON reports massage, strength (shown by the side's massage intensity number,
+which shows a sent level until the next report), timer, adaptive mode/stiffness, automatic
 checkbox state, pressure floats, temperature, reset state, leak number and
 version. Pressure values retain their reported side and have no inferred
 unit. Temperature floats use the source's one-decimal HALF_UP rounding.
