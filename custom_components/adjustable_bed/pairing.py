@@ -45,6 +45,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_MAJESTICHOME,
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
@@ -110,6 +111,7 @@ from .const import (
 )
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
+from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
@@ -127,6 +129,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_YAMADA: frozenset({"p1", "p2"}),
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
     BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
+    BED_TYPE_MAJESTICHOME: frozenset(MAJESTICHOME_PROFILES),
     BED_TYPE_OKIMIKI: frozenset(OKIMIKI_PROFILES),
     "bobpowerbase": frozenset(BOB_PROFILES),
     BED_TYPE_MLILY_REMOTE: frozenset(MLILY_REMOTE_PROFILES),

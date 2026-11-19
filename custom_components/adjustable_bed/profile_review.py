@@ -61,6 +61,7 @@ from .const import (
     BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_MAJESTICHOME,
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
@@ -212,6 +213,7 @@ _V5_ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
             BED_TYPE_MLILY,
             BED_TYPE_MLILY_REMOTE,
             BED_TYPE_OKIMIKI,
+            BED_TYPE_MAJESTICHOME,
         ),
     ),
 )
