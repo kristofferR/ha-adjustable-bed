@@ -92,8 +92,6 @@ from .const import (
     KAIDI_VARIANT_SEAT_2,
     LIMOSS_REMOTE_CONFIG_KEYS,
     OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
-    OKIN_CB24_VARIANT_CB27NEW,
-    OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
@@ -237,6 +235,7 @@ def supports_single_address_pairing(
     protocol_variant: str | None = None,
     *,
     resolved_variant: str | None = None,
+    capabilities: object = None,
     product_type: str | None = None,
     ble_device_name: str | None = None,
 ) -> bool:
@@ -292,10 +291,13 @@ def supports_single_address_pairing(
             else protocol_variant
         )
         return effective_variant == KAIDI_VARIANT_SEAT_1_2
-    return not (
-        bed_type == BED_TYPE_OKIN_CB24
-        and protocol_variant in {OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW}
-    )
+    if bed_type == BED_TYPE_OKIN_CB24:
+        from .beds.smartbed.setup import verified_ab
+
+        return protocol_variant == "cb24_ab" or (
+            protocol_variant in (None, VARIANT_AUTO) and verified_ab(capabilities)
+        )
+    return True
 
 
 def is_paired(entry_data: Mapping[str, Any]) -> bool:
@@ -796,6 +798,7 @@ def build_single_address_pair_entry_data(
         bed_type,
         protocol_variant,
         resolved_variant=resolved_variant,
+        capabilities=single_data.get("capabilities"),
         product_type=single_data.get(CONF_PRODUCT_TYPE),
         ble_device_name=single_data.get(CONF_BLE_DEVICE_NAME),
     ):

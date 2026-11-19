@@ -1945,6 +1945,10 @@ OKIN_CB24_VARIANTS: Final = {
     OKIN_CB24_VARIANT_CB1221: "CB1221 control box",
     OKIN_CB24_VARIANT_DACHENG: "Dacheng control box",
     OKIN_CB24_VARIANT_CB27NEW: "CB27New control box",
+    "standard": "Standard receiver",
+    "cb": "CB receiver",
+    "headboard126": "Headboard 126",
+    "headboard265": "Headboard 265",
 }
 
 # Keeson variants

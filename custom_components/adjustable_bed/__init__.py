@@ -115,7 +115,7 @@ from .position_estimate import (
     async_setup_position_estimates,
     async_unload_position_estimates,
 )
-from .profile_id import migrate_v5_data, with_profile_ids
+from .profile_id import entry_profile_id, migrate_v5_data, profile_route, with_profile_ids
 from .profile_recommendations import async_watch_profile_recommendations
 from .profile_review import (
     async_refresh_profile_review_issue,
@@ -1064,15 +1064,17 @@ def _build_paired_children(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, AdjustableBedCoordinator]:
     """Build one child coordinator per side from the paired entry's descriptors."""
-    children: dict[str, AdjustableBedCoordinator] = {}
+    views: dict[str, ChildEntryView] = {}
     for side in PAIR_SIDES:
         descriptor = get_child(entry.data, side)
         if descriptor is None:
             continue
         child_data = effective_child_data(entry.data, side, entry.options)
-        view = ChildEntryView(entry, child_data, _make_child_persist_cb(hass, entry, side))
-        children[side] = AdjustableBedCoordinator(hass, view)
-    return children
+        validate = entry_hooks(profile_route(entry_profile_id(child_data)).bed_type).validate
+        if validate is not None:
+            validate(child_data)
+        views[side] = ChildEntryView(entry, child_data, _make_child_persist_cb(hass, entry, side))
+    return {side: AdjustableBedCoordinator(hass, view) for side, view in views.items()}
 
 
 def _async_ensure_paired_device_registry(

@@ -38,6 +38,7 @@ from custom_components.adjustable_bed.execution import (
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from custom_components.adjustable_bed.profiles import vibradorm as vibradorm_profiles
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
+from custom_components.adjustable_bed.profiles.smartbed import PROFILES as SMARTBED_PROFILES
 from custom_components.adjustable_bed.profiles.suta import PROFILES as SUTA_PROFILES
 from tests.codec_families import families
 from tests.test_controller_contract import (
@@ -110,6 +111,7 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 SUTA_STREAM = tuple(f"SutaProfile:{p.key}@{p.layout}" for p in SUTA_PROFILES.values() if p.execution.declared)
 
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"SmartBedProfile:{key}": {"hold": ("SmartBed 2.4.2: immediate movement refresh every 300ms, STOP 100ms after release",)} for key in SMARTBED_PROFILES},
     **{f"PersonalComfortProfile:{key}": {"hold": ("Personal Comfort 2.6.1",)}
        for key in ("malouf", "reverie_v1", "reverie_v2")},
 
@@ -340,6 +342,8 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "beds/smartbed/controller.py:<module>.OkinCB24Controller": tuple(f"SmartBedProfile:{key}" for key in SMARTBED_PROFILES),
+    "profiles/smartbed.py:<module>.SmartBedProfile": tuple(f"SmartBedProfile:{key}" for key in SMARTBED_PROFILES),
     "profiles/ormatek.py:<module>.PROFILES": ("KeesonProfile:ormatek_okin15", "KeesonProfile:ormatek_okin24"),
     "profiles/personal_comfort.py:<module>.MALOUF": ("PersonalComfortProfile:malouf",),
     "profiles/personal_comfort.py:<module>": ("PersonalComfortProfile:reverie_v1", "PersonalComfortProfile:reverie_v2"),

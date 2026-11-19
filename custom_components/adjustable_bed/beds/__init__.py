@@ -90,7 +90,6 @@ if TYPE_CHECKING:
     from .octo.controller import OctoController as OctoController
     from .okimiki.controller import OkimikiController as OkimikiController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
-    from .okin_cb24 import OkinCB24Controller as OkinCB24Controller
     from .okin_cb35 import OkinCB35Controller as OkinCB35Controller
     from .okin_cst import OkinCstController as OkinCstController
     from .okin_dot import OkinDotController as OkinDotController
@@ -136,6 +135,7 @@ if TYPE_CHECKING:
     from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
     from .smart_comfort.controller import SmartComfortController as SmartComfortController
     from .smart_sleep.controller import SmartSleepController as SmartSleepController
+    from .smartbed.controller import OkinCB24Controller as OkinCB24Controller
     from .solace.controller import SolaceController as SolaceController
     from .sonicsleep.controller import SonicSleepController as SonicSleepController
     from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
@@ -255,7 +255,7 @@ _EXPORT_MODULES = {
     "OctoController": "octo.controller",
     "OkimikiController": "okimiki.controller",
     "Okin7ByteController": "okin_7byte",
-    "OkinCB24Controller": "okin_cb24",
+    "OkinCB24Controller": "smartbed.controller",
     "OkinCB35Controller": "okin_cb35",
     "OkinCstController": "okin_cst",
     "OkinDotController": "okin_dot",

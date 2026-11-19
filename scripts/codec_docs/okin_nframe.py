@@ -130,7 +130,6 @@ _OKIN_GROUPS = {
     "RF ECO BT": (okin_profiles.RF_ECO_BT,),
     "Customatic": tuple(okin_profiles.CUSTOMATIC_PROFILES.values()),
     "Leggett Okin": tuple(okin_profiles.LEGGETT_PROFILES.values()),
-    "CB24": (okin_profiles.OKIN_CB24,),
     "DOT": (okin_profiles.OKIN_DOT,),
     "SIMMONS": tuple(okin_profiles.SIMMONS_PROFILES.values()),
     "SleepEase": (okin_profiles.DOUBLESLEEP,),
@@ -412,9 +411,7 @@ def render_okin_nframe_keys() -> str:
         "#### Leggett Okin keys",
         _okin_key_table(_OKIN_GROUPS["Leggett Okin"], envelope=True),
         "#### CB24 keys",
-        _okin_key_table(_OKIN_GROUPS["CB24"], envelope=False),
-        "Legacy CB24 replaces the last byte with `AA` (Side A) or `BB` (Side B) for one "
-        "side; held motors send the sum of their words.",
+        "SmartBed has [its own profile reference](smartbed.md), covering all five formats.",
         "#### SIMMONS keys",
         _okin_key_table(_OKIN_GROUPS["SIMMONS"], envelope=False),
         "SmartBed and unmatched names send the 40-bit frame, OKIN names the Keeson E6 "

@@ -2727,3 +2727,10 @@ class TestDetectionSignals:
         )
         result = detect_bed_type_detailed(service_info)
         assert f"manufacturer_id:{MANUFACTURER_ID_DEWERTOKIN}" in result.signals
+
+
+@pytest.mark.parametrize("name", ("Headboard126123", "Headboard265456"))
+def test_exact_headboard_name_precedes_its_shared_nordic_service(name):
+    from custom_components.adjustable_bed.const import NORDIC_UART_SERVICE_UUID
+    result = detect_bed_type_detailed(_make_service_info(name=name, service_uuids=[NORDIC_UART_SERVICE_UUID]))
+    assert result.bed_type == BED_TYPE_OKIN_CB24

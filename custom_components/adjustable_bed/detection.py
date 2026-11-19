@@ -648,7 +648,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_UUID: "Okin receiver (Okimat and Lucid remotes)",
     BED_TYPE_OKIN_7BYTE: "Okin receiver (Nectar beds)",
     BED_TYPE_OKIN_NORDIC: "Okin receiver (Mattress Firm 900 and iFlex beds)",
-    BED_TYPE_OKIN_CB24: "Okin receiver (SmartBed by Okin and Amada beds)",
+    BED_TYPE_OKIN_CB24: "SmartBed by Okin / Amada",
     BED_TYPE_OKIN_DOT: "Okin DOT remotes (RF1058, RF34 and RF6707)",
     BED_TYPE_OKIN_FFE: "Okin receiver (13 and 15 series)",
     BED_TYPE_OKIN_ORE: "Okin receiver (older ORE remotes)",
@@ -3110,6 +3110,10 @@ def _detect_bed_type_detailed(
         )
     if smart_sleep_advertisement(service_info.name or "", service_info.manufacturer_data or {}, service_info.address):
         return DetectionResult("smart_sleep", 0.9, ["name:smart_sleep", "manufacturer_id:89"])
+
+    if (service_info.name or "").startswith(("Headboard126", "Headboard265")):
+        return DetectionResult(bed_type=BED_TYPE_OKIN_CB24, confidence=0.9, signals=[*signals, "name:smartbed_headboard"])
+
 
     # Check for Richmat Nordic / Keeson KSBT / OKIN 64-bit (same UUID)
     # These share the Nordic UART service UUID

@@ -2071,6 +2071,18 @@ def build_scenarios() -> list[Scenario]:
                 protocol_variant=route, layout_id="linx",
                 entry_data={"product_type": model, "ble_device_name": "KSWF07D00000000"},
             ))
+    scenarios.extend((
+        Scenario(id="okin_cb24:five_motors", bed_type="okin_cb24", protocol_variant="cb24",
+                 layout_id="okin_cb24:cb24", entry_data={"motor_count": 5}),
+        Scenario(id="okin_cb24:sonic", bed_type="okin_cb24", protocol_variant="cb27new",
+                 layout_id="okin_cb24:cb27new", entry_data={"capabilities": {"okin_cb24": {
+                     "profile": "cb27new", "motors": 5, "massage_count": 2, "massage": True,
+                     "light": True, "rgb": True, "sonic": True}}},
+                 replies={
+                     "write:2a000005810901ffff00002225124b": "2a000005810003011f000002020000000000000000",
+                     "write:2a000005810902ffff00002225124b": "2a00000581000000010700000000000000000000",
+                 }),
+    ))
     scenarios.extend(ultramatic_scenarios())
     scenarios.extend(mh_app_scenarios())
     # Bedgear A12: each selected layout, dynamic zone array and independent M gate.

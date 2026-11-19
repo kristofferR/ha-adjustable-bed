@@ -410,11 +410,11 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Okin receiver (13 and 15 series) | `okin_ffe` | 7 | 150 ms |
 | Okin receiver (older ORE remotes) | `okin_ore` | 1 | 300 ms |
 | Okin receiver (Sealy Posturematic and DewertOkin Star beds) | `okin_cb35` | 3 | 300 ms |
-| Okin receiver (SmartBed by Okin and Amada beds) | `okin_cb24` | 3 | 300 ms |
 | Resident Adjustable Base app | `resident` | 4 | 300 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
+| SmartBed by Okin / Amada | `okin_cb24` | 3 | 300 ms |
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |

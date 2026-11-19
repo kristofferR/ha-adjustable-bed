@@ -429,7 +429,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_OCTO: _BuilderSpec("octo.controller"),
     BED_TYPE_OKIMAT: _BuilderSpec("okin_uuid.controller"),
     BED_TYPE_OKIN_64BIT: _BuilderSpec("okin_64bit"),
-    BED_TYPE_OKIN_CB24: _BuilderSpec("okin_cb24"),
+    BED_TYPE_OKIN_CB24: _BuilderSpec("smartbed.controller"),
     BED_TYPE_OKIN_CST: _BuilderSpec("okin_cst"),
     BED_TYPE_OKIN_DOT: _BuilderSpec("okin_dot"),
     BED_TYPE_OKIN_HANDLE: _BuilderSpec("okin_handle"),

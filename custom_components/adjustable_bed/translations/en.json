@@ -352,7 +352,6 @@
           "limoss_remote_theme": "App theme",
           "octo_pin": "Octo PIN",
           "octo_motor_count_override": "Octo motor count",
-          "cb24_bed_selection": "Bed side",
           "ergomotion4_model_keys": "Product features",
           "ergomotion4_massage_keys": "Massage features",
           "ergomotion4_rgb": "RGB lighting",
@@ -366,7 +365,8 @@
           "mline_child_mode": "Child mode",
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
-          "read_positions": "Read bed position"
+          "read_positions": "Read bed position",
+          "cb24_bed_selection": "Bed side"
         },
         "data_description": {
           "jiecang_app_layout": "The layout set in the app.",
@@ -409,7 +409,6 @@
           "limoss_remote_theme": "Optional: the theme chosen in the Limoss Remote app. It changes no controls.",
           "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
           "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
-          "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides.",
           "ergomotion4_model_keys": "The features of your product, in the order the app lists them.",
           "ergomotion4_massage_keys": "The massage features of your product.",
           "ergomotion4_product_name": "The product name exactly as the app shows it.",
@@ -421,7 +420,8 @@
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
           "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown when the bed has two sensors. It does not change which side the controls move.",
           "agingplace_selected_side": "The sensor side shown when Selectable side is chosen. This setting belongs to this physical bed.",
-          "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working."
+          "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
+          "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides."
         },
         "sections": {
           "advanced": {
@@ -447,7 +447,8 @@
               "serta_mp_memory_3_foot": "Memory 3 foot angle",
               "serta_mp_memory_4_head": "Memory 4 head angle",
               "serta_mp_memory_4_foot": "Memory 4 foot angle",
-              "agingplace_bed_mode": "Sensor display mode"
+              "agingplace_bed_mode": "Sensor display mode",
+              "cb24_bed_selection": "Bed side"
             },
             "data_description": {
               "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
@@ -470,7 +471,8 @@
               "serta_mp_memory_3_foot": "Only if you changed memory 3 in the app: its foot angle, in degrees.",
               "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
               "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
-              "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two."
+              "agingplace_bed_mode": "With two sensors, only the sensor side is shown; the other modes show every reading. Automatic shows every reading until the bed reports how many sensors it has, so choose Two sensors when you know it has two.",
+              "cb24_bed_selection": "Which side of a split bed this entry controls. Both moves both sides."
             }
           }
         }
@@ -3524,6 +3526,21 @@
       },
       "adjustamattress_lift_foot": {
         "name": "Lift foot"
+      },
+      "smartbed_left_up": {
+        "name": "Raise left headboard"
+      },
+      "smartbed_left_down": {
+        "name": "Lower left headboard"
+      },
+      "smartbed_right_up": {
+        "name": "Raise right headboard"
+      },
+      "smartbed_right_down": {
+        "name": "Lower right headboard"
+      },
+      "smartbed_alarm_refresh": {
+        "name": "Refresh alarm"
       }
     },
     "cover": {
@@ -3895,6 +3912,15 @@
       },
       "ormatek_both": {
         "name": "Head and feet"
+      },
+      "smartbed_left": {
+        "name": "Left headboard"
+      },
+      "smartbed_right": {
+        "name": "Right headboard"
+      },
+      "head_tilt": {
+        "name": "Head tilt"
       }
     },
     "sensor": {
@@ -5032,6 +5058,9 @@
       },
       "paramount_current_height": {
         "name": "Current bed height"
+      },
+      "smartbed_alarm_time": {
+        "name": "Alarm time"
       }
     },
     "light": {
@@ -5216,6 +5245,12 @@
       },
       "massage": {
         "name": "Massage"
+      },
+      "smartbed_massage": {
+        "name": "Massage"
+      },
+      "smartbed_sonic": {
+        "name": "Sonic massage"
       }
     },
     "binary_sensor": {
@@ -5449,6 +5484,9 @@
       },
       "under_bed_light_state": {
         "name": "Under-bed light state"
+      },
+      "smartbed_alarm_on": {
+        "name": "Alarm enabled"
       }
     },
     "number": {
@@ -5787,6 +5825,24 @@
       },
       "massage_left_intensity": {
         "name": "Left massage intensity"
+      },
+      "smartbed_wave": {
+        "name": "Massage wave"
+      },
+      "smartbed_sonic_head": {
+        "name": "Head sonic massage intensity"
+      },
+      "smartbed_sonic_foot": {
+        "name": "Foot sonic massage intensity"
+      },
+      "smartbed_sonic_wave": {
+        "name": "Sonic massage wave"
+      },
+      "smartbed_left_massage": {
+        "name": "Left massage intensity"
+      },
+      "smartbed_right_massage": {
+        "name": "Right massage intensity"
       }
     },
     "select": {
@@ -6414,6 +6470,21 @@
           "vocal": "Vocal",
           "cinema": "Cinema",
           "entertainment": "Entertainment"
+        }
+      },
+      "smartbed_sonic_mode": {
+        "name": "Sonic massage mode",
+        "state": {
+          "normal": "Normal",
+          "acoustic": "Acoustic"
+        }
+      },
+      "smartbed_sonic_timer": {
+        "name": "Sonic massage timer",
+        "state": {
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
         }
       }
     },
@@ -9715,6 +9786,12 @@
     },
     "pair_transfer_failed": {
       "message": "The combined bed {name} could not take over either of its beds. Home Assistant will try again; if it keeps failing, separate the beds and combine them again."
+    },
+    "smartbed_session_changed": {
+      "message": "The bed reconnected or its controls changed. Try the action again."
+    },
+    "smartbed_choose_receiver": {
+      "message": "Choose the exact SmartBed receiver in Reconfigure before using saved side controls. Select CB24AB only for a receiver that supports separate Left and Right controls."
     }
   },
   "issues": {

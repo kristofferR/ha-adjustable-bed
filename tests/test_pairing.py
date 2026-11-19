@@ -325,6 +325,7 @@ class TestSplitRetention:
             "address": LEFT_ADDR,
             "name": "Bed",
             "bed_type": "okin_cb24",
+            "protocol_variant": "cb24_ab",
             "preferred_adapter": "auto",
             "idle_disconnect_seconds": 40,
         }
@@ -380,6 +381,8 @@ class TestBuildSingleAddressPairEntryData:
             CONF_BED_TYPE: bed_type,
             "name": "One physical bed",
         }
+        if bed_type == BED_TYPE_OKIN_CB24:
+            original[CONF_PROTOCOL_VARIANT] = "cb24_ab"
         data = build_single_address_pair_entry_data(
             original, name="Master", origin_options={"motor_count": 2}
         )

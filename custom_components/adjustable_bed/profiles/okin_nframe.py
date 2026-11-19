@@ -7,7 +7,7 @@ selected handset's remote table. ``DEWERTOKIN`` serves ``dewertokin`` and
 apps. ``LEGGETT_PROFILES`` are Prodigy 2L 1.2, Prodigy 2 2.2.0, Prodigy CE 1.2.0
 and U Series 2.1, chosen by the ``leggett_okin`` entry's app profile.
 
-40-bit: ``OKIN_DOT`` (DOT handset tables), ``OKIN_CB24``, ``SIMMONS_PROFILES``
+40-bit: ``OKIN_DOT`` (DOT handset tables), ``SIMMONS_PROFILES``
 (chosen by the Bluetooth name), ``DOUBLESLEEP``, ``SLEEPYS_BOX25_LEGACY``,
 ``STARCODE_ABM5_4_PROFILES`` (one per command selector) and ``ESHINE_PROFILES``
 (the eShine app's product selectors).
@@ -36,7 +36,6 @@ from ..const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_64BIT,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_HANDLE,
@@ -51,9 +50,6 @@ from ..const import (
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_TRANQUIL,
     BED_TYPE_ZSERIES,
-    CB24_BED_SELECTION_A,
-    CB24_BED_SELECTION_B,
-    CB24_BED_SELECTION_DEFAULT,
     OKIN_CST_VARIANT_AVIADA,
     OKIN_CST_VARIANT_BOB,
     OKIN_CST_VARIANT_CAREFREE,
@@ -478,46 +474,6 @@ OKIN_DOT: Final = replace(
     envelope="plain",
     # Memory keys are tap-to-recall, hold-to-save: one press, then STOP.
     memory_recall=Tap(releases=1),
-)
-
-OKIN_CB24: Final = OkinNFrameProfile(
-    key="okin_cb24",
-    name="OKIN SmartBed CB24",
-    bed_types=(BED_TYPE_OKIN_CB24,),
-    width=5,
-    write="no_response",
-    envelope="plain",
-    axes=("head", "feet"),
-    keys=MappingProxyType(
-        {
-            "head_up": 0x1,
-            "head_down": 0x2,
-            "feet_up": 0x4,
-            "feet_down": 0x8,
-            "flat": 0x8000000,
-            "zero_g": 0x1000,
-            "memory_1": 0x2000,  # also Lounge
-            "memory_2": 0x4000,  # also TV/PC
-            "anti_snore": 0x8000,
-            "memory_3": 0x10000,
-            "light": 0x20000,
-            "massage_head_up": 0x800,
-            "massage_head_down": 0x800000,
-            "massage_foot_up": 0x400,
-            "massage_foot_down": 0x1000000,
-            "massage_toggle": 0x100,
-            "massage_off": 0x2000000,
-            "massage_wave_step": 0x10000000,
-            "massage_intensity_up": 0xC00,
-            "massage_intensity_down": 0x1800000,
-        }
-    ),
-    selectors=(CB24_BED_SELECTION_DEFAULT, CB24_BED_SELECTION_A, CB24_BED_SELECTION_B),
-    hold=Hold(repeat_ms=None, releases=1),
-    # One packet: the app repeats presets only while a finger is down, and a
-    # 5.2 s hold saves the position instead.
-    recall=Tap(),
-    memory_slots=3,
 )
 
 SIMMONS_REFRESH_MS: Final = 300

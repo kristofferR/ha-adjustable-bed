@@ -853,7 +853,10 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         """Return the zone's last published intensity."""
         key = sided(
             massage_intensity(self.entity_description.massage_zone),
-            massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
+            massage_state_side(
+                self._coordinator.bed_type, self._coordinator.entity_side,
+                controller_side=self._coordinator.controller_side,
+            ),
         )
         state = self._coordinator.controller_state
         if key not in state:

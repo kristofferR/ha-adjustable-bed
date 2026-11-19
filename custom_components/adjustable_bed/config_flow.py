@@ -1403,6 +1403,12 @@ def _motor_count_options(
         return [1]
     if bed_type == BED_TYPE_FURNIMOVE:
         return [1, 2, 3, 4]
+    if bed_type == BED_TYPE_OKIN_CB24:
+        if protocol_variant in ("headboard126", "headboard265", "cb1221"):
+            return [2]
+        if protocol_variant in ("standard", "cb", "dacheng"):
+            return [2, 3, 4]
+        return [2, 3, 4, 5]
     if bed_type == "symphony":
         # Hidden and derived by the explicit product, including SS800's fifth axis.
         return [2, 3, 4, 5]
@@ -7507,6 +7513,7 @@ class AdjustableBedOptionsFlow(
             data.get(CONF_BED_TYPE),
             data.get(CONF_PROTOCOL_VARIANT),
             resolved_variant=data.get(CONF_KAIDI_RESOLVED_VARIANT),
+            capabilities=data.get("capabilities"),
             product_type=data.get(CONF_PRODUCT_TYPE),
             ble_device_name=data.get(CONF_BLE_DEVICE_NAME),
         ):
@@ -8267,6 +8274,7 @@ class AdjustableBedOptionsFlow(
                     current_data.get(CONF_PROTOCOL_VARIANT, DEFAULT_PROTOCOL_VARIANT),
                 ),
                 resolved_variant=current_data.get(CONF_KAIDI_RESOLVED_VARIANT),
+                capabilities=current_data.get("capabilities"),
                 product_type=user_input.get(CONF_PRODUCT_TYPE, current_data.get(CONF_PRODUCT_TYPE)),
                 ble_device_name=user_input.get(CONF_BLE_DEVICE_NAME, current_data.get(CONF_BLE_DEVICE_NAME)),
             ):

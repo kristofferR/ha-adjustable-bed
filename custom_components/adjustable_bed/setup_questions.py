@@ -1996,6 +1996,15 @@ def _app_layout_profile(bed_type: str) -> SetupProfile:
     )
 
 
+def _smartbed_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
+    data = {**previous, **answers}
+    # Only CB24AB serializes a native side. A deliberate receiver change must
+    # not carry the old side into a profile whose normal commands force zero.
+    if data.get(CONF_PROTOCOL_VARIANT, "auto") not in ("auto", "cb24_ab"):
+        data[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_DEFAULT
+    return data
+
+
 def _asking(key: str, **declared: Any) -> SetupProfile:
     """Add questions and rules to a profile's owned-field declaration."""
     return replace(_BASE.get(key, SetupProfile()), **declared)
@@ -3184,9 +3193,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     ),
     BED_TYPE_OKIN_CB24: _asking(
         BED_TYPE_OKIN_CB24,
+        owns={CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True},
         questions=(
-            Question(CONF_CB24_BED_SELECTION, _CB24_SIDES, CB24_BED_SELECTION_DEFAULT),
+            Question(CONF_MOTOR_COUNT, _motor_counts(BED_TYPE_OKIN_CB24), 2),
+            Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),
+            Question(CONF_CB24_BED_SELECTION, _CB24_SIDES, CB24_BED_SELECTION_DEFAULT, advanced=True, when={"field": CONF_PROTOCOL_VARIANT, "value": "cb24_ab"}),
         ),
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        title=lambda _data: "SmartBed",
+        normalize=_smartbed_normalize,
     ),
     # The exact Bluetooth name selects MotoMotion's panel and its independent
     # feature flags; the app's own controls replace massage and angle sensing.

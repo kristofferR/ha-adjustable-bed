@@ -425,3 +425,10 @@ ORE controller extension owns route capabilities and session-fenced callbacks,
 with corrected fragment early returns in the Keeson parser. The full 91-vector
 harness and 12 parser observations remain fixtures, with
 explicit bounds-safe/session-lifetime differences for Home Assistant.
+
+SmartBed 2.4.2 adds ten typed receiver profiles after all 2016 frozen builder
+cases match the existing Okin ORE, Keeson E6, Okin N-frame and SoundWave record
+encoders. Its selected controller owns connection-fenced notification handlers,
+capability-page progression and source-specific release/query timing. The
+SmartBed profile, rather than transport resemblance, selects each builder.
+See [SmartBed](../beds/smartbed.md).

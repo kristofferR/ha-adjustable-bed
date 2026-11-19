@@ -592,6 +592,7 @@ class CommandContext:
     hold_deadline: float | None = None
     """Event-loop time at which a held command's lease expires, if any."""
     cancel_generation: int = 0
+    _cancel_changed: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
     # Frames this operation handed to the bed, and frames a cancellation
     # stopped it from sending; together they say what reached the bed.
     frames_written: int = 0
@@ -602,6 +603,20 @@ class CommandContext:
         self.cancel_generation += 1
         self.cancel_reason = outcome
         self.cancel_event.set()
+        self._cancel_changed.set()
+        self._cancel_changed = asyncio.Event()
+
+    def cancel_event_after(self, generation: int) -> asyncio.Event:
+        """Signal the next cancellation after an observed generation.
+
+        A normal hold expiry leaves ``cancel_event`` set. Follow-up work can
+        still stop immediately when a later STOP or replacement arrives.
+        """
+        if self.cancel_generation > generation:
+            already_cancelled = asyncio.Event()
+            already_cancelled.set()
+            return already_cancelled
+        return self._cancel_changed
 
 
 CommandOperation = Callable[[CommandContext], Awaitable[None]]
@@ -1625,6 +1640,10 @@ class DeviceCommandScheduler:
                 stream.retire(record.member, outcome)
             return
         if handle is None or handle.future.done():
+            return
+        # Expiry is a normal end only until an explicit cancellation wins.
+        # Its timer can run after STOP while controller cleanup still owns the lane.
+        if outcome is CommandOutcome.EXPIRED and handle.context.cancel_event.is_set():
             return
         handle.context.request_cancel(outcome)
         if handle in self._queue:

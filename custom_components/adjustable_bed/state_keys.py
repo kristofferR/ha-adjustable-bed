@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Final
 
-from .const import BED_TYPE_ISLEEP, BED_TYPE_RIZE
+from .const import BED_TYPE_ISLEEP, BED_TYPE_OKIN_CB24, BED_TYPE_RIZE
 from .controller_state import StateKey
 
 # Under-bed lights.
@@ -89,8 +89,12 @@ def massage_active(zone: str) -> StateKey[bool]:
     return StateKey[bool](f"{zone}_active")
 
 
-def massage_state_side(bed_type: str, entity_side: str | None) -> str | None:
+def massage_state_side(
+    bed_type: str, entity_side: str | None, *, controller_side: str | None = None
+) -> str | None:
     """Side whose massage keys an entity reads; ISleep publishes one per side."""
+    if bed_type == BED_TYPE_OKIN_CB24:
+        return controller_side if controller_side in ("left", "right") else None
     if bed_type not in (BED_TYPE_ISLEEP, BED_TYPE_RIZE):
         return None
     return entity_side or "both"

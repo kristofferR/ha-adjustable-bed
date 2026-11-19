@@ -226,6 +226,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.smart_comfort.controller import (
         SmartComfortController,
     )
+    from custom_components.adjustable_bed.beds.smartbed.controller import OkinCB24Controller
     from custom_components.adjustable_bed.beds.starcode.abm5_4 import (
         _POSITIVE_SELECTORS,
         StarcodeAbm5_4Controller,
@@ -245,6 +246,8 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     for controller in controllers:
         yield controller
+        if isinstance(controller, OkinCB24Controller) and controller.protocol == 5:
+            yield variant(controller, _sonic=True, _rgb=True, _motors=5)
         if isinstance(controller, SutaController):
             for route in SUTA_ROUTES:
                 name = "SUTA-unknown" if route == "fallback" else "SUTA" if route == "short-name" else route.split("*")[0]

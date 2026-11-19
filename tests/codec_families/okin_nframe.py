@@ -39,7 +39,7 @@ def _variant(key: str, bed_type: str) -> str | None:
 
 FAMILY = CodecFamily(
     profiles={
-        OkinNFrameProfile: {**FROZEN_FRAMES, **ULTRAMATIC_FRAMES},
+        OkinNFrameProfile: {**{k: v for k, v in FROZEN_FRAMES.items() if k != "okin_cb24"}, **ULTRAMATIC_FRAMES},
         AdjustableAppProfile: ADJUSTABLE_BED_FRAMES,
         RizeHomeProfile: RIZE_HOME_FRAMES,
     },
@@ -64,7 +64,6 @@ FAMILY = CodecFamily(
             "comfort_enhancement3",
             "n32_motion_bed",
             "okin_64bit",
-            "okin_cb24",
             "okin_cst",
             "okin_dot",
             "okin_handle",

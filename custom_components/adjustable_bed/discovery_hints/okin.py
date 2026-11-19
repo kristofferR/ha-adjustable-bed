@@ -14,6 +14,7 @@ from ..const import (
 from ._hints import Case, Hint, manufacturer, names, services
 
 HINTS: tuple[Hint, ...] = (
+    names("Headboard126", "Headboard265", bed_types={BED_TYPE_OKIN_CB24}),
     names("OKIN", case=Case.FOLD, bed_types={BED_TYPE_RIZE_REMEDY_II}),
     *services(
         OKIMAT_SERVICE_UUID,

@@ -61,6 +61,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Okin 5A](beds/okin-5a.md) | Nectar, Mattress Firm 900, Okin CB35 and DewertOkin ELEVATE | Shared |
 | [Okin N-frame](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CB24, CST and DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, SleepEase, StarCode AdjustableM5X4, Okin 64-Bit, eShine and other Okin apps | Shared |
 | [Okin SoundWave and Symphony](beds/okin-soundwave.md) | Symphony Sleep Sense and the SoundWave pages | Shared |
+| [SmartBed by Okin](beds/smartbed.md) | SmartBed receiver profiles and headboards | |
 | [OKIN Smart Sleep](beds/smart-sleep.md) | The OKIN Smart Sleep app | |
 | [Paramount](beds/paramount.md) | The Paramount bed operation app | |
 | [Personal Comfort](beds/personal-comfort.md) | Personal Comfort air units with their base | |

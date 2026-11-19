@@ -242,7 +242,6 @@ are unchanged.
 | Prodigy 2 | `prodigy2` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 4 |
 | Prodigy CE | `prodigy4` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow, lumbar | 4 |
 | U Series | `useries` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 2 |
-| OKIN SmartBed CB24 | `okin_cb24` | `okin_cb24` | 40-bit | plain frame | without response | head, feet | 3 |
 | DewertOkin DOT handset table | `okin_dot` | `okin_dot` | 40-bit | plain frame | without response | handset table | handset table |
 | SIMMONS SmartBed names | `simmons_smartbed` | `simmons` | 40-bit | plain frame | without response | back, legs | 1 |
 | SIMMONS OKIN names | `simmons_okin` | `simmons` | 40-bit | Keeson E6 frame; inclined keys plain | with response | back, legs | 1 |
@@ -309,7 +308,6 @@ are unchanged.
 | Prodigy 2 | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
 | Prodigy CE | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
 | U Series | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
-| OKIN SmartBed CB24 | entry pulse delay | entry pulse count | 1 STOP |
 | DewertOkin DOT handset table | entry pulse delay | entry pulse count | 1 STOP |
 | SIMMONS SmartBed names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
 | SIMMONS OKIN names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
@@ -378,7 +376,6 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Prodigy 2 | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
 | Prodigy CE | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
 | U Series | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | n/a |
-| OKIN SmartBed CB24 | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | DewertOkin DOT handset table | 100 × 300 ms, 1 STOP | once, 1 STOP | 10 × 200 ms, no STOP (or the handset's hold) | 60 × 100 ms, 1 STOP | once, no STOP | n/a |
 | SIMMONS SmartBed names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | SIMMONS OKIN names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
@@ -622,32 +619,7 @@ The stair profile has no STOP: release ends the refresh.
 
 #### CB24 keys
 
-| Command | Word | Frame |
-|---|---|---|
-| Head up | `0x0000000001` | `05 02 00 00 00 01 00` |
-| Head down | `0x0000000002` | `05 02 00 00 00 02 00` |
-| Feet up | `0x0000000004` | `05 02 00 00 00 04 00` |
-| Feet down | `0x0000000008` | `05 02 00 00 00 08 00` |
-| Flat | `0x0008000000` | `05 02 08 00 00 00 00` |
-| Zero-G | `0x0000001000` | `05 02 00 00 10 00 00` |
-| Memory 1 | `0x0000002000` | `05 02 00 00 20 00 00` |
-| Memory 2 | `0x0000004000` | `05 02 00 00 40 00 00` |
-| Anti-snore / Snore | `0x0000008000` | `05 02 00 00 80 00 00` |
-| Memory 3 | `0x0000010000` | `05 02 00 01 00 00 00` |
-| Under-bed light toggle | `0x0000020000` | `05 02 00 02 00 00 00` |
-| Head massage up | `0x0000000800` | `05 02 00 00 08 00 00` |
-| Head massage down | `0x0000800000` | `05 02 00 80 00 00 00` |
-| Foot massage up | `0x0000000400` | `05 02 00 00 04 00 00` |
-| Foot massage down | `0x0001000000` | `05 02 01 00 00 00 00` |
-| Massage toggle | `0x0000000100` | `05 02 00 00 01 00 00` |
-| Massage off | `0x0002000000` | `05 02 02 00 00 00 00` |
-| Massage wave mode step | `0x0010000000` | `05 02 10 00 00 00 00` |
-| Massage intensity up | `0x0000000C00` | `05 02 00 00 0C 00 00` |
-| Massage intensity down | `0x0001800000` | `05 02 01 80 00 00 00` |
-| STOP / release | `0x00000000` | `05 02 00 00 00 00 00` |
-
-Legacy CB24 replaces the last byte with `AA` (Side A) or `BB` (Side B) for one
-side; held motors send the sum of their words.
+SmartBed has [its own profile reference](smartbed.md), covering all five formats.
 
 #### SIMMONS keys
 
@@ -1901,48 +1873,33 @@ Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
 
 ### OKIN SmartBed CB24
 
-**App:** [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi), `com.okin.bedding.smartbedwifi`
+**App:** [SmartBed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) 2.4.2, `com.okin.bedding.smartbedwifi`
 
-**Status:** Tested (Lucid L600 beds in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) and [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309); presets on the Amada bed in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185) were not confirmed after the last fix)
+**Status:** Not yet tested (the expanded app profiles)
 
 #### Setup
 
-- Detection: the OKIN manufacturer ID (89) on a Nordic UART receiver. The
-  SmartBed app's product profile picks the variant: CB24, CB24AB, CB27, CB1221
-  and Dacheng (and the `cb_old` alias) send the legacy 40-bit frames; CB27New
-  (and `cb_new`) send CBNew packets.
-- Transport: the Nordic UART write characteristic, written without response.
-- Legacy CB24 has one-address side selectors: both sides `00`, Side A / Left
-  `AA`, Side B / Right `BB` (see
-  [single-address side controls](../CONFIGURATION.md#single-address-left--right-controls)).
-  CBNew packets have no selector.
+The complete [SmartBed guide](smartbed.md) covers all ten receiver profiles,
+including Standard, CB and the two headboards. CB24AB alone provides native
+single-address sides. Write mode follows the live GATT properties.
 
 #### Controls
 
-Legacy variants send the [CB24 keys](#cb24-keys) with the selector byte last.
-Held motors combine in one word. The CBNew variants send their own packets for
-motion, presets, lights and massage: `2A 00 00 01 01 04 <word, little-endian>`
-for motion, `2A 00 00 01 03 01 <index>` for presets, `AA 00 00 01 02 00` for
-STOP, `2A 00 00 02 01 01 <code>` for massage and a discrete
-`AA 00 00 04 01 05 00 <on> 00 00 00 00` light switch. Both families set an exact
-massage level with `03 03 <zone> <level> <selector>`.
-
-> [!WARNING]
-> On the CBNew variants, overall massage intensity up and down still send the
-> legacy [CB24 keys](#cb24-keys), and the exact massage level sends the legacy
-> `03 03` frame. Every other CBNew control uses CBNew packets. The SmartBed 2.4.2
-> analysis is incomplete, so whether CBNew
-> receivers accept these frames is unproven.
+P3/P4 reuse this codec; the remaining formats reuse the ORE, Keeson and
+SoundWave codecs. The SmartBed guide lists the corrected massage controls,
+actual M1/M2 slots, local alarms and sonic module controls.
 
 #### Timing
 
-Motors refresh at the entry's pulse settings, then one STOP. Presets and memory
-recalls are one packet; see [CB.24 Preset Safety](#cb24-preset-safety).
+Old recall taps send cleanup without crossing the long-save threshold.
+P5 recalls and saves use separate single frames. See [SmartBed timing](smartbed.md#timing).
 
 #### Evidence
 
-Frames are the pre-v5 controller's, frozen in `tests/okin_nframe_vectors.py`;
-`tests/test_okin_cb24.py` covers both packet families.
+Earlier Lucid L600 reports are in [#185](https://github.com/kristofferR/ha-adjustable-bed/issues/185)
+and [#309](https://github.com/kristofferR/ha-adjustable-bed/issues/309).
+Amada presets were not confirmed after the last earlier change. The expanded
+profiles remain unverified on hardware.
 
 ### Okin DOT
 
@@ -5723,12 +5680,11 @@ Extra motors in those apps: neck `0x00000010`/`0x00000020`, lumbar
 
 #### CB.24 Preset Safety
 
-CB.24 preset recalls are sent as a single frame. The SmartBed app repeats the
-same frame every 300 ms only while a touchscreen button remains held, and a
-5.2-second hold is the controller's memory-save gesture. Fixed-duration or
-automatically learned repeat streams can therefore overwrite the remote's stored
-presets. All CB.24 profile variants, including the legacy `cb_old` alias, use
-safe one-shot preset recall.
+CB.24 recall taps send one frame and release cleanup. Repeating a recall for
+5.2 seconds is the SmartBed app's save gesture, so save controls are separate
+and guarded by the card. See [SmartBed](smartbed.md#timing) for its per-profile
+recall and save behavior. Firmware interpretation of the old long gesture
+remains unverified.
 
 Other Okin formats, which share roots but not frames: [Nectar](okin-5a.md#nectar)
 (7 bytes), [Mattress Firm 900](okin-5a.md#mattress-firm-900--iflex) (7 bytes over Nordic UART),

@@ -445,7 +445,10 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         """Return the last published timer, unknown until the controller publishes one."""
         key = sided(
             MASSAGE_TIMER_MINUTES,
-            massage_state_side(self._coordinator.bed_type, self._coordinator.entity_side),
+            massage_state_side(
+                self._coordinator.bed_type, self._coordinator.entity_side,
+                controller_side=self._coordinator.controller_side,
+            ),
         )
         state = self._coordinator.controller_state
         if key not in state:
