@@ -471,8 +471,8 @@ async def test_registered_alarm_service_validates_every_target_before_writes(has
         target.controller_side = None
         target.capability_controller = target.controller = ctrl
         target.client = ctrl.client
-        target._position_connection_generation = 1
-        target._command_scheduler = MagicMock(token=object())
+        target.connection_generation = 1
+        target.command_scheduler = MagicMock(token=object())
         target.stop_epoch = 0
         ctrl._coordinator = target
 
@@ -599,8 +599,8 @@ async def test_stop_during_lazy_import_rejects_all_targets_before_execution(hass
     target.entry = ctrl._coordinator.entry
     target.client, target.controller = ctrl.client, ctrl
     target.capability_controller = ctrl
-    target._position_connection_generation = 1
-    target._command_scheduler = MagicMock(token=object())
+    target.connection_generation = 1
+    target.command_scheduler = MagicMock(token=object())
     target.stop_epoch = 0
     target.async_execute_controller_command = AsyncMock()
 
@@ -640,7 +640,7 @@ async def test_sequential_both_lease_rejects_before_claim_and_finite_buttons_rem
         for _ in range(2)
     ]
     parent.children = dict(zip(("left", "right"), sides, strict=True))
-    parent._targets_for.return_value = [("left", sides[0]), ("right", sides[1])]
+    parent.targets_for.return_value = [("left", sides[0]), ("right", sides[1])]
     start = AsyncMock()
     with raises_key("hold_needs_concurrent", Exception):
         await _async_with_hold_lease(

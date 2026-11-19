@@ -907,7 +907,7 @@ async def test_stop_during_paired_octo_hold_preflight_preserves_new_child_hold(
         await original_hold(control, duration_ms)
 
     monkeypatch.setattr(controller, "hold_control", track_hold)
-    right_generation = paired._pair_cancel_generation(SIDE_RIGHT, ("*",))
+    right_generation = paired.pair_cancel_generation(SIDE_RIGHT, ("*",))
 
     def service(service: str, duration: float | None = None) -> asyncio.Task[object]:
         data: dict[str, object] = {"device_id": parent.id, "side": SIDE_LEFT}
@@ -930,7 +930,7 @@ async def test_stop_during_paired_octo_hold_preflight_preserves_new_child_hold(
         new_hold = service("hold_control", 60)
         await asyncio.wait_for(new_hold_started.wait(), timeout=2)
         assert hold_calls == [("back_up", 60_000)]
-        assert paired._pair_cancel_generation(SIDE_RIGHT, ("*",)) == right_generation
+        assert paired.pair_cancel_generation(SIDE_RIGHT, ("*",)) == right_generation
 
         resume_preflight.set()
         await old_hold

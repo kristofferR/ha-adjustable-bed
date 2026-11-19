@@ -909,7 +909,7 @@ async def test_fresh_settings_after_native_cover_stop(
     await cover.async_stop_cover()
     assert live.pair.stop_count("left") == before_stops["left"] + 1
     assert live.pair.stop_count("right") == before_stops["right"]
-    assert live.pair._pair_cancel_generation("left", ("*",)) != (0,)
+    assert live.pair.pair_cancel_generation("left", ("*",)) != (0,)
     assert ("left", bytes.fromhex("6e01006edd")) in live.events
     live.events.clear()
     response = await hass.services.async_call(

@@ -942,6 +942,11 @@ class DeviceCommandScheduler:
         return tuple(self._recent_records)
 
     @property
+    def active(self) -> CommandHandle | None:
+        """Return the command currently running, if any."""
+        return self._active
+
+    @property
     def diagnostics(self) -> dict[str, object]:
         """Return a bounded snapshot suitable for integration diagnostics."""
         active_handles = [handle for handle, _task in self._active_stops.values()]

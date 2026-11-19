@@ -417,7 +417,7 @@ class OkinCstController(ProfileExecution[OkinNFrameProfile], BedController):
         """Send cleanup STOPs and remember that an explicit STOP may follow."""
         await self._send_stop_sequence()
         self._cleanup_stop_cancel_counter = (
-            self._coordinator._cancel_counter if self._coordinator.cancel_command.is_set() else None
+            self._coordinator.cancel_counter if self._coordinator.cancel_command.is_set() else None
         )
 
     async def _send_explicit_stop_sequence(self) -> None:
@@ -426,7 +426,7 @@ class OkinCstController(ProfileExecution[OkinNFrameProfile], BedController):
         self._cleanup_stop_cancel_counter = None
         if (
             cleanup_cancel_counter is not None
-            and cleanup_cancel_counter == self._coordinator._cancel_counter
+            and cleanup_cancel_counter == self._coordinator.cancel_counter
         ):
             return
         await self._send_stop_sequence()

@@ -632,7 +632,7 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
             assert frames(transport) == expected * 2
         assert live.commands_share_timer
         assert not pair._lanes.native_both
-        assert [side for side, _ in pair._targets_for("both")] == ["left", "right"]
+        assert [side for side, _ in pair.targets_for("both")] == ["left", "right"]
     finally:
         entry.mock_state(hass, ConfigEntryState.NOT_LOADED)
         await pair.async_shutdown()
