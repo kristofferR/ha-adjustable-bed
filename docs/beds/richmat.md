@@ -6870,7 +6870,7 @@ Based on Majestic Home 1.0.4 (10400).
 
 **App:** [L&P Adjustable Base](https://play.google.com/store/apps/details?id=com.richmat.lp2) 2.3.25, `com.richmat.lp2`
 
-**Status:** Not yet tested on hardware.
+**Status:** Not yet tested
 
 #### Setup
 
@@ -6886,7 +6886,7 @@ order. Third-service fallback requires the Advanced option.
 Each selected layout supplies its own motion, presets, saves, massage, light
 and extra controls. Saves use the card's save controls; long-press saves do not
 become renewable holds. On/off pairs use switches. Fixed massage durations
-use the massage timer select. APRM has conflicting duration labels and retains
+use the **Massage: Timer** select. APRM has conflicting duration labels and retains
 its individual timer controls. There are no app screen, arming or side pickers.
 
 <!-- generated:lp2-controls -->
@@ -7758,10 +7758,9 @@ layout-bound massage popups, timer controls and table operations.
 
 #### Evidence
 
-Based on L&P Adjustable Base 2.3.25 (`com.richmat.lp2`), from the frozen July
-2026 application corpus. This does not establish the latest store version
-or physical behavior. Wi-Fi, accounts and mesh network administration are
-outside the integration.
+Based on L&P Adjustable Base 2.3.25 (`com.richmat.lp2`). Hardware is not yet
+tested. Wi-Fi, accounts and mesh network administration are outside the
+integration.
 
 
 ## Notes
