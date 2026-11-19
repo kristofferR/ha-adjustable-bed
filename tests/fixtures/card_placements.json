@@ -1178,39 +1178,6 @@
   "card_role": "up",
   "card_motor": "main_motor"
  },
- "button:majestichome_light_action": {
-  "card_section": "lighting"
- },
- "button:majestichome_massage_action": {
-  "card_section": "massage"
- },
- "button:majestichome_memory_1": {
-  "card_section": "memory",
-  "card_role": "recall",
-  "card_slot": 1
- },
- "button:majestichome_memory_1_save": {
-  "card_section": "memory",
-  "card_role": "save",
-  "card_slot": 1
- },
- "button:majestichome_memory_2": {
-  "card_section": "memory",
-  "card_role": "recall",
-  "card_slot": 2
- },
- "button:majestichome_memory_2_save": {
-  "card_section": "memory",
-  "card_role": "save",
-  "card_slot": 2
- },
- "button:majestichome_preset_action": {
-  "card_section": "presets"
- },
- "button:majestichome_save_action": {
-  "card_section": "presets",
-  "card_role": "save"
- },
  "button:malouf_oz_save_memory_2": {
   "card_section": "presets",
   "card_role": "save"

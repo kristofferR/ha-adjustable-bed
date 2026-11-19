@@ -40,13 +40,13 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
 test("Majestic Home groups literal actions and retains the native child's motor lease", () => {
   const hass = hassWith([
     entry("cover.majestic_head", "head", "left"),
-    entry("button.majestic_flat", "majestichome_preset_action", "left"),
-    entry("button.majestic_light", "majestichome_light_action", "left"),
-    entry("button.majestic_massage", "majestichome_massage_action", "left"),
-    entry("button.majestic_memory", "majestichome_memory_1", "left"),
-    entry("button.majestic_save", "majestichome_memory_1_save", "left"),
+    entry("button.majestic_flat", "preset_flat", "left"),
+    entry("button.majestic_light", "catalog_light", "left"),
+    entry("button.majestic_massage", "catalog_massage", "left"),
+    entry("button.majestic_memory", "preset_memory_1", "left"),
+    entry("button.majestic_save", "program_memory_1", "left"),
     entry("sensor.majestic", "majestichome", "left"),
-    entry("button.other_light", "majestichome_light_action", "right"),
+    entry("button.other_light", "catalog_light", "right"),
   ]);
   hass.states["cover.majestic_head"] = {
     entity_id: "cover.majestic_head", state: "unknown", last_changed: "", last_updated: "",

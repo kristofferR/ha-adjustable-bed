@@ -91,7 +91,8 @@ async def test_real_factory_native_entities_services_and_timed_move(hass, runtim
     assert isinstance(ctrl, bed.MajesticHomeController)
     buttons = _button_entities_for(hass, target)
     save = next(b for b in buttons if b.unique_id.endswith("majestichome_memory_1_save"))
-    assert save.extra_state_attributes["requires_confirmation"]
+    # A memory save: the card's Set mode guards it, so it asks no second time.
+    assert "requires_confirmation" not in save.extra_state_attributes
     cover = AdjustableBedCover(target, _build_cover_description(ctrl.motor_control_specs[0]))
     cover.async_write_ha_state = MagicMock()
     client.write_gatt_char.reset_mock()

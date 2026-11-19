@@ -3751,30 +3751,6 @@
       },
       "l2motion_save_snore": {
         "name": "Save anti-snore position"
-      },
-      "majestichome_preset_action": {
-        "name": "{action}"
-      },
-      "majestichome_massage_action": {
-        "name": "{action}"
-      },
-      "majestichome_light_action": {
-        "name": "{action}"
-      },
-      "majestichome_memory_1": {
-        "name": "{action}"
-      },
-      "majestichome_memory_1_save": {
-        "name": "{action}"
-      },
-      "majestichome_memory_2": {
-        "name": "{action}"
-      },
-      "majestichome_memory_2_save": {
-        "name": "{action}"
-      },
-      "majestichome_save_action": {
-        "name": "{action}"
       }
     },
     "cover": {
