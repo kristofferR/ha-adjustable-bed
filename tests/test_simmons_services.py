@@ -11,6 +11,7 @@ from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import BED_TYPE_SIMMONS, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.test_simmons import make_controller
 
 
@@ -51,8 +52,8 @@ def _targets(coordinator):
     ("profile", "variant", "control", "error"),
     [
         (BED_TYPE_SIMMONS, None, "memory", None),
-        (BED_TYPE_SIMMONS, None, "inclined_left", "does not support held control"),
-        (BED_TYPE_SIMMONS, "simmons_inclined", "zero_g", "does not support held control"),
+        (BED_TYPE_SIMMONS, None, "inclined_left", "held_control_not_supported"),
+        (BED_TYPE_SIMMONS, "simmons_inclined", "zero_g", "held_control_not_supported"),
     ],
 )
 async def test_hold_control_preflights_profile_and_layout(hass, profile, variant, control, error):
@@ -61,7 +62,7 @@ async def test_hold_control_preflights_profile_and_layout(hass, profile, variant
     call = {"device_id": "bed", "control": control, "duration": 5.5}
     with _targets(coordinator):
         if error:
-            with pytest.raises(ServiceValidationError, match=error):
+            with raises_key(error, ServiceValidationError):
                 await hass.services.async_call(DOMAIN, "hold_control", call, blocking=True)
             coordinator.async_execute_controller_command.assert_not_awaited()
         else:

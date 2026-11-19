@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING, Any
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...command_scheduler import HoldLease
 from ...const import BED_TYPE_LIMOSS_REMOTE, DOMAIN
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...paired_coordinator import BedChild, PairedBedCoordinator
 from ...position_estimate import track_held_control
@@ -88,7 +88,7 @@ def _limoss_remote_controller(
 
     if isinstance(controller, LimossRemoteController):
         return controller
-    raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
+    raise invalid("action_for_other_beds", beds="Limoss Remote beds")
 
 
 @contextlib.asynccontextmanager
@@ -112,7 +112,7 @@ async def _limoss_remote_reload_transaction(
             physical.update((id(target), target) for target in selected)
         for _, target in sorted(physical.items()):
             if not isinstance(target, AdjustableBedCoordinator):
-                raise ServiceValidationError("Limoss Remote requires a physical receiver target")
+                raise invalid("one_bed_only")
             await stack.enter_async_context(target.async_defer_capability_reload())
         yield
 
@@ -160,11 +160,11 @@ async def _preflight_live_limoss_remote(
             else:
                 await inspect(target)
             if not refreshed:
-                raise ServiceValidationError("Limoss Remote capability preflight was interrupted")
+                raise invalid("action_stopped")
             try:
                 validate(refreshed[0])
             except ValueError as error:
-                raise ServiceValidationError(str(error)) from error
+                raise rejected(error) from error
 
 
 async def _execute_limoss_remote(
@@ -184,7 +184,7 @@ async def _execute_limoss_remote(
         try:
             validate(_limoss_remote_controller(controller))
         except ValueError as error:
-            raise ServiceValidationError(str(error)) from error
+            raise rejected(error) from error
 
     async with _limoss_remote_reload_transaction(targets):
         await _preflight_live_limoss_remote(targets, validate)
@@ -214,9 +214,7 @@ async def _execute_limoss_remote(
                 if lease is None and completed - before != len(
                     _command_targets(coordinator, side)
                 ):
-                    raise ServiceValidationError(
-                        "Limoss Remote action was interrupted before completion"
-                    )
+                    raise invalid("action_stopped")
         except Exception, asyncio.CancelledError:
             await _release_preflighted(preflighted)
             raise
@@ -229,7 +227,7 @@ def _limoss_remote_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
             target.bed_type != BED_TYPE_LIMOSS_REMOTE
             for target in _command_targets(coordinator, side)
         ):
-            raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
+            raise invalid("action_for_other_beds", beds="Limoss Remote beds")
     return targets
 
 
@@ -241,12 +239,12 @@ async def handle_limoss_remote_rename_memory(call: ServiceCall) -> None:
         for target in _command_targets(coordinator, side):
             controller = target.capability_controller
             if controller is None:
-                raise ServiceValidationError("This receiver has no cached memory capacity")
+                raise invalid("connect_first")
             local = _limoss_remote_controller(controller)
             try:
                 local._slot(slot)
             except ValueError as error:
-                raise ServiceValidationError(str(error)) from error
+                raise rejected(error) from error
             controllers.append(local)
     # No receiver access or suspension occurs during this local edit.
     for controller in controllers:
@@ -282,7 +280,7 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
             for target in physical_targets:
                 cached = target.capability_controller
                 if cached is None:
-                    raise ServiceValidationError("This receiver has no cached app profile")
+                    raise invalid("connect_first")
                 physical = _limoss_remote_controller(cached)
                 if (physical.underbed_light and not light) or (physical.massage and not massage):
                     disabling.append(target)
@@ -318,14 +316,12 @@ async def handle_limoss_remote_features(call: ServiceCall) -> None:
                 for target in local:
                     cached = target.capability_controller
                     if cached is None:
-                        raise ServiceValidationError("This receiver has no cached app profile")
+                        raise invalid("connect_first")
                     selected = _limoss_remote_controller(cached)
                     if (selected.underbed_light and not light) or (
                         selected.massage and not massage
                     ):
-                        raise ServiceValidationError(
-                            "The local feature selection changed; retry the action"
-                        )
+                        raise invalid("bed_changed")
                     await apply(selected)
                 for controller, _, _ in touched:
                     controller._coordinator.remember_limoss_remote_features(light, massage)

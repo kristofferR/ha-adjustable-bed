@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 
 def _target(*, invalid: bool = False, bed_type: str = BED_TYPE_REVERIE_NIGHTSTAND):
@@ -250,7 +251,7 @@ async def test_deferred_actions_preflight_pair_connection_policy(
         return_value=([(first, SIDE_BOTH), (pair, side)], []),
     ):
         if mode == "sequential" and not local_role:
-            with pytest.raises(ServiceValidationError, match="require concurrent"):
+            with raises_key("needs_both_connected", ServiceValidationError):
                 await hass.services.async_call(DOMAIN, service, data, blocking=True)
             first.async_execute_controller_command.assert_not_awaited()
             pair.async_execute_controller_command.assert_not_awaited()
@@ -299,7 +300,7 @@ async def test_comfort_rejects_only_deferred_sequential_targets(hass, bed_type, 
             blocking=True,
         )
         if rejected:
-            with pytest.raises(ServiceValidationError, match="require concurrent"):
+            with raises_key("needs_both_connected", ServiceValidationError):
                 await call
         else:
             await call

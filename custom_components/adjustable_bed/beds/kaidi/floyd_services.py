@@ -5,10 +5,10 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
@@ -39,7 +39,7 @@ async def handle_floyd_action(call: ServiceCall) -> None:
     if action == "assign_room" and (
         len(targets) != 1 or not isinstance(targets[0][0], AdjustableBedCoordinator)
     ):
-        raise ServiceValidationError("Assign one standalone Floyd bed at a time")
+        raise invalid("standalone_bed_only")
 
     def validate(controller: FloydController) -> None:
         controller.validate_floyd_action(action, internal_side, confirm, room_id)
@@ -70,7 +70,7 @@ async def handle_floyd_action(call: ServiceCall) -> None:
                     await coordinator.async_disconnect()
             if action == "assign_room":
                 if not assignment_completed:
-                    raise ServiceValidationError("Floyd room assignment was cancelled before acknowledgement")
+                    raise invalid("action_stopped")
                 await _execute_sided(
                     coordinator, side,
                     _family_command(

@@ -26,7 +26,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
-from homeassistant.exceptions import HomeAssistantError
 
 from ..card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ..const import (
@@ -42,6 +41,7 @@ from ..const import (
     KEESON_VARIANT_ORE_ULTRAMATIC,
 )
 from ..controller_state import StateKey
+from ..errors import failed
 from ..profiles import keeson as profiles
 from ..profiles.keeson import KeesonProfile
 from ..state_keys import MASSAGE_TIMER_MINUTES
@@ -182,9 +182,7 @@ class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
                     notify = char
         if write is None or notify is None:
             self.log_discovered_services(level=logging.INFO)
-            raise HomeAssistantError(
-                f"{self._app.name}: the bed must expose both FFE9 and FFE4 characteristics"
-            )
+            raise failed("bed_missing_service")
         props = {prop.lower() for prop in write.properties}
         self._write_with_response = "write-without-response" not in props
         self._write_char = write

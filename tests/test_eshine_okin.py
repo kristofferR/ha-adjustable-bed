@@ -36,6 +36,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+from tests.error_helpers import raises_key
 from tests.state_helpers import state_writer
 
 NOW = datetime.fromisoformat("2026-11-03T14:47:09+01:00")
@@ -470,7 +471,7 @@ async def test_alarm_service_validation_and_serialized_execution(hass, ha_target
         with pytest.raises(ServiceValidationError):
             await hass.services.async_call(DOMAIN, "set_alarm", invalid, blocking=True)
     coordinator._controller = EshineOkinController(coordinator, profile="eshine_e2000")
-    with pytest.raises(ServiceValidationError, match="cannot wake with 'massage'"):
+    with raises_key("alarm_wake_action_not_supported", ServiceValidationError):
         await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator._bed_type = "eshine"  # E6000 is a different app, despite shared branding.
     coordinator._controller = MagicMock(
@@ -576,7 +577,7 @@ async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, 
         "_call_targets",
         lambda call: [(coordinator, SIDE_BOTH), (other, SIDE_BOTH)],
     )
-    with pytest.raises(ServiceValidationError, match="cannot wake with 'massage'"):
+    with raises_key("alarm_wake_action_not_supported", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
             "set_alarm",

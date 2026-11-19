@@ -23,6 +23,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_state import ControllerState
 from custom_components.adjustable_bed.profiles import smart_sleep as app
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.error_helpers import raises_key
 from tests.test_controller_contract import _FactoryCoordinator
 
 ALARM = bytes.fromhex("2a0000038107017f0901061e00")
@@ -413,7 +414,7 @@ async def test_set_alarm_preflights_all_targets_before_any_write(hass):
         return_value=(targets, []),
     ):
         # The legacy format has no lounge position, so neither bed is written.
-        with pytest.raises(ServiceValidationError, match="cannot wake with 'lounge'"):
+        with raises_key("alarm_wake_action_not_supported", ServiceValidationError):
             await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         first.configure_clock_alarm.assert_not_awaited()
         second.configure_clock_alarm.assert_not_awaited()

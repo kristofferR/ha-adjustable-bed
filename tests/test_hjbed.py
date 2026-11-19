@@ -29,6 +29,7 @@ from custom_components.adjustable_bed.beds.hjbed.protocol import (
 from custom_components.adjustable_bed.beds.hjbed.receive import parse_frame
 from custom_components.adjustable_bed.beds.hjbed.requests import Request
 from custom_components.adjustable_bed.beds.hjbed.state import NonProgressFrame, State, Stream
+from tests.error_helpers import raises_key
 from tests.state_helpers import state_writer
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -1037,6 +1038,6 @@ async def test_local_layout_select_uses_replacement_controller(coordinator, inst
         with pytest.raises(ValueError, match="Normal layout"):
             live.validate_hjbed_request(Request("mode", mode="standard"))
     coordinator.capability_controller = None
-    with pytest.raises(ServiceValidationError, match="local option"):
+    with raises_key("option_unavailable", ServiceValidationError):
         await entity.async_select_option("Normal")
     assert live._motion

@@ -22,6 +22,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.profiles.suta import service_for_name
+from tests.error_helpers import raises_key
 from tests.form_helpers import finish_new_bed
 from tests.test_richmat_family_flow import setup_flow
 from tests.test_suta import clock as clock
@@ -93,7 +94,7 @@ async def test_all_targets_validate_before_any_connect_or_effect(hass, runtime):
     target, client, resolve = runtime
     wrong, _ = fake_target(name="other family")
     resolve.return_value = ([(target, "both"), (wrong, "both")], [])
-    with pytest.raises(ServiceValidationError, match="Select a SUTA"):
+    with raises_key("action_for_other_beds", ServiceValidationError):
         await action(hass, "both_tv")
     assert not target.is_connected
     assert not written(client)
@@ -264,7 +265,7 @@ async def test_renewable_timed_motor_uses_declared_native_hold_control(hass, run
 
 async def test_countdown_cannot_be_renewed_into_programming(hass, runtime):
     target, client, _ = runtime
-    with pytest.raises(ServiceValidationError, match="renewable"):
+    with raises_key("hold_renewal_not_supported", ServiceValidationError):
         await hass.services.async_call(
             const.DOMAIN, "hold_control",
             {"device_id": "bed", "control": "both_set_tv", "duration": 1,

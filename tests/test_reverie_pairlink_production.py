@@ -55,6 +55,7 @@ from custom_components.adjustable_bed.const import (
     PAIRLINK_ROLE_CENTRAL,
     PAIRLINK_ROLE_PERIPHERAL,
 )
+from tests.error_helpers import raises_key
 from tests.test_reverie_pairlink_transport import (
     _PEER_ADDRESS,
     _PEER_PATH,
@@ -1932,12 +1933,9 @@ async def test_all_target_pairlink_preflight_rejects_later_unready_or_unknown_be
     first_device = _device_for_address(hass, _BED_ADDRESS)
     second_device = _device_for_address(hass, second_address)
     assert first_device is not None and second_device is not None
-    expected_error = (
-        "Pairlink comfort cannot preserve foot_position"
-        if second_ready
-        else "local Pairlink session is not ready"
-    )
-    with pytest.raises(Exception, match=expected_error):
+    # A ready peer refuses with the bed's own reason; an unready one is not ready yet.
+    expected_key = "action_rejected" if second_ready else "pairlink_not_ready"
+    with raises_key(expected_key) as raised:
         await hass.services.async_call(
             DOMAIN,
             SERVICE_REVERIE_SET_COMFORT,
@@ -1947,6 +1945,8 @@ async def test_all_target_pairlink_preflight_rejects_later_unready_or_unknown_be
             },
             blocking=True,
         )
+    if second_ready:
+        assert "foot_position" in raised.value.translation_placeholders["reason"]
     assert first_coordinator._command_scheduler.has_pending is False
     assert second_coordinator._command_scheduler.has_pending is False
     with pytest.raises(BlockingIOError):
@@ -2087,7 +2087,7 @@ async def test_all_target_pairlink_preflight_revalidates_and_dispatches_both_liv
         second_coordinator,
         "async_prepare_command_operation",
         new=prepare_then_stale,
-    ), pytest.raises(ServiceValidationError, match="state changed during preflight"):
+    ), raises_key("bed_changed", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
             SERVICE_REVERIE_SET_COMFORT,
@@ -2244,7 +2244,7 @@ async def test_local_profile_reservation_covers_adapter_aliases_before_bus_open(
     )
     monkeypatch.setattr(transport, "_new_dbus_fast_bus", lambda: second_bus)
     second_coordinator = AdjustableBedCoordinator(hass, second_entry)
-    with pytest.raises(ConfigEntryNotReady, match="already owns a Pairlink local profile"):
+    with raises_key("pairlink_adapter_in_use", ConfigEntryNotReady):
         await async_setup_pairlink_local_entry(
             hass, second_entry, second_coordinator, AsyncMock()
         )

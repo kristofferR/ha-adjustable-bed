@@ -10,9 +10,9 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICE_ID, CONF_NAME
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...const import BED_TYPE_FURNIMOVE, DOMAIN
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...pairing import iter_children
 from ...services import (
@@ -100,12 +100,12 @@ async def _rename_furnimove(
     try:
         validate_furnimove_name(name)
     except ValueError as err:
-        raise ServiceValidationError(str(err)) from err
+        raise rejected(err) from err
     physical = [
         target for coordinator, side in targets for target in _command_targets(coordinator, side)
     ]
     if len(physical) != 1:
-        raise ServiceValidationError("Rename one physical FurniMove receiver at a time")
+        raise invalid("one_bed_only")
     names = {physical[0].name.strip().lower()}
     for entry in call.hass.config_entries.async_entries(DOMAIN):
         names.add(entry.title.strip().lower())
@@ -114,7 +114,7 @@ async def _rename_furnimove(
             if isinstance(stored, str):
                 names.add(stored.strip().lower())
     if name.strip().lower() in names:
-        raise ServiceValidationError("Choose a different, unique FurniMove name")
+        raise invalid("name_not_unique")
 
     def validate(controller: FurniMoveController) -> None:
         controller.validate_furnimove_rename(name)
@@ -126,7 +126,7 @@ async def _rename_furnimove(
 
     try:
         if not await physical[0].async_ensure_connected():
-            raise ServiceValidationError("Could not connect to the FurniMove receiver")
+            raise invalid("bed_not_connected")
         await _execute_furnimove(call, validate, execute)
     except Exception, asyncio.CancelledError:
         await _release_preflighted([(targets[0][0], physical[0])])
@@ -164,18 +164,18 @@ async def handle_furnimove_massage_duration(call: ServiceCall) -> None:
     for coordinator, side in _call_targets(call):
         for target in _command_targets(coordinator, side):
             if target.bed_type != BED_TYPE_FURNIMOVE:
-                raise ServiceValidationError(f"Device '{target.name}' is not a FurniMove profile")
+                raise invalid("action_for_other_beds", beds="FurniMove beds")
             if not isinstance(target, AdjustableBedCoordinator):
-                raise ServiceValidationError("FurniMove requires a physical receiver target")
+                raise invalid("one_bed_only")
             await target.async_prime_offline_controller()
             physical_targets.append(target)
 
     for target in physical_targets:
         controller = target.capability_controller
         if controller is None:
-            raise ServiceValidationError("No selected FurniMove handset is available")
+            raise invalid("connect_first")
         if not controller.supports_massage or minutes not in controller.massage_timer_options:
-            raise ServiceValidationError("This handset has no supported local massage duration")
+            raise invalid("feature_not_supported", device_name=target.name, feature="that massage duration")
 
     for target in physical_targets:
         await target.async_set_furnimove_massage_duration(minutes)

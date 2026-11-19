@@ -35,6 +35,7 @@ from custom_components.adjustable_bed.controller_factory import _create_from_reg
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.services import async_register_services
 from tests.alarm_helpers import call_set_alarm
+from tests.error_helpers import raises_key
 from tests.state_helpers import state_writer
 
 NOW = datetime(2026, 11, 1, 7, 5, 9, tzinfo=UTC)  # Sunday
@@ -445,11 +446,11 @@ async def test_set_alarm_writes_cherish_vector(hass):
 
 async def test_set_alarm_rejects_options_this_bed_lacks(hass):
     ctrl, owner, client = make_controller(hass, True)
-    with pytest.raises(ServiceValidationError, match="no alarm option 'weekdays'"):
+    with raises_key("alarm_option_not_supported", ServiceValidationError):
         await call_set_alarm(
             hass, ctrl, {"enabled": True, "time": "08:30:00", "weekdays": ["monday"]}, owner=owner
         )
-    with pytest.raises(ServiceValidationError, match="cannot wake with 'zero_g'"):
+    with raises_key("alarm_wake_action_not_supported", ServiceValidationError):
         await call_set_alarm(
             hass, ctrl, {"enabled": True, "time": "08:30:00", "wake_action": "zero_g"}, owner=owner
         )

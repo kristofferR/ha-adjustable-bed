@@ -5,10 +5,10 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN, SIDE_LEFT, SIDE_RIGHT
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
@@ -32,7 +32,7 @@ async def handle_rize_program_preset(call: ServiceCall) -> None:
     if len(targets) != 1 or (
         isinstance(targets[0][0], PairedBedCoordinator) and targets[0][1] not in (SIDE_LEFT, SIDE_RIGHT)
     ):
-        raise ServiceValidationError("Select one physical Rize bed or one paired side")
+        raise invalid("one_bed_only")
     preset, confirm = call.data["preset"], call.data["confirm"]
     label = "Rize default preset programming"
     preflighted = await _preflight_capability(

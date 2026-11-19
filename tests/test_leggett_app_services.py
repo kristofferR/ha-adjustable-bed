@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.services import (
     SERVICE_SET_ALARM,
     async_register_services,
 )
+from tests.error_helpers import raises_key
 
 LEGGETT_HELD_CONTROLS = (
     "flat",
@@ -131,11 +132,11 @@ async def test_useries_sleep_accepts_flat_and_timer_only_third_memory(
 
 
 @pytest.mark.parametrize(
-    ("minutes", "preset", "message"),
-    [(16, 1, "requires a sleep duration"), (15, 4, "does not support sleep action")],
+    ("minutes", "preset", "key"),
+    [(16, 1, "choose_one_of"), (15, 4, "feature_not_supported")],
 )
 async def test_profile_constraints_are_preflighted_before_any_device_write(
-    hass: HomeAssistant, service_target, minutes, preset, message
+    hass: HomeAssistant, service_target, minutes, preset, key
 ):
     coordinator, _, resolve = service_target
     useries = MagicMock(spec=AdjustableBedCoordinator)
@@ -150,7 +151,7 @@ async def test_profile_constraints_are_preflighted_before_any_device_write(
         sleep_timer_duration_options=(15, 30, 45, 60, 75, 90),
     )
     resolve.return_value = ([(coordinator, SIDE_BOTH), (useries, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match=message):
+    with raises_key(key, ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
             SERVICE_LEGGETT_SLEEP_TIMER,
@@ -221,7 +222,7 @@ async def test_start_requires_duration_before_resolving_targets(
     hass: HomeAssistant, service_target, service
 ):
     _, _, resolve = service_target
-    with pytest.raises(ServiceValidationError, match="requires minutes"):
+    with raises_key("timer_minutes_required", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN, service, {"device_id": "bed", "action": "start"}, blocking=True
         )
@@ -270,7 +271,7 @@ async def test_hold_store_rejects_profile_without_standalone_store(
 ):
     coordinator, controller, _ = service_target
     controller.held_control_options = ("flat", "snore")
-    with pytest.raises(ServiceValidationError, match="does not support held control 'store'"):
+    with raises_key("held_control_not_supported", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
             SERVICE_HOLD_CONTROL,

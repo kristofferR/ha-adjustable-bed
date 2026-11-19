@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.profiles.kaidi import resolve_kaidi_variant
+from tests.error_helpers import raises_key
 
 
 @pytest.fixture
@@ -556,7 +557,7 @@ async def test_preempted_assignment_never_persists_or_confirms(hass, floyd: Floy
         }, blocking=True))
         await asyncio.wait_for(sent.wait(), 1)
         target.request_command_cancel(resource="configuration")
-        with pytest.raises(ServiceValidationError, match="cancelled before acknowledgement"):
+        with raises_key("action_stopped", ServiceValidationError):
             await task
         disconnect.assert_awaited_once()
     assert entry.data[CONF_KAIDI_ROOM_ID] == 0

@@ -27,7 +27,6 @@ def register_services(hass: HomeAssistant) -> None:
             if not controller.remote.massage:
                 raise _invalid(
                     "feature_not_supported",
-                    "This remote has no massage",
                     device_name="This bed",
                     feature="massage",
                 )

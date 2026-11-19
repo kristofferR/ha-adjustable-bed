@@ -85,7 +85,7 @@ async def handle_request(call: ServiceCall) -> None:
             ):
                 if previous is not controller or controller._link is not link:
                     raise _invalid(
-                        "bed_changed", "CheersSleep physical link changed during admission"
+                        "bed_changed"
                     )
         controller.validate_request(request)
 

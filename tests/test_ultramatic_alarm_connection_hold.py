@@ -13,6 +13,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.profiles import ultramatic as app
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_ultramatic_public_routes import native_pair
 from tests.test_ultramatic_runtime import connected, runtime, writes  # noqa: F401 - pytest fixture
@@ -192,7 +193,7 @@ async def test_stop_on_completed_alarm_target_still_blocks_later_receiver_writes
             virtual_clock(),
             patch.object(hass, "loop", asyncio.get_running_loop()),
         ):
-            with pytest.raises(ServiceValidationError, match="stopped during admission"):
+            with raises_key("action_stopped", ServiceValidationError):
                 await set_alarm(hass)
             assert writes(members[0][1])[-1] == app.control("STOP")
             assert len(writes(members[1][1])) == 5

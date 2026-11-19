@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 MEMORY_SELECTIONS = [list(selection) for size in range(1, 6)
                      for selection in combinations(CUSTOMATIC_MEMORY_ACTIONS, size)]
@@ -153,7 +154,7 @@ async def test_lumbar_preflight_rejects_two_motor_profile_before_any_write(
     other, other_controller = target(BED_TYPE_CUSTOMATIC_CLARITY)
     other_controller.held_control_options = ("back_up+legs_down",)
     resolve.return_value = ([(coordinator, SIDE_BOTH), (other, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="does not support held control"):
+    with raises_key("held_control_not_supported", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN, SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY,
             {"device_id": ["bed", "other"], "actions": {"lumbar": "up"}, "duration": 1},

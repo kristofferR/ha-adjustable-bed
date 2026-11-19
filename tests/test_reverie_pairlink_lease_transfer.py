@@ -21,6 +21,7 @@ from custom_components.adjustable_bed import (
 )
 from custom_components.adjustable_bed.beds.reverie import pairlink_transport as transport
 from custom_components.adjustable_bed.const import DOMAIN
+from tests.error_helpers import raises_key
 from tests.test_reverie_pairlink_production import (
     _adapter_objects,
     _device_for_address,
@@ -319,7 +320,7 @@ async def test_absorbed_identity_must_match_the_trusted_entry_and_runtime_before
         hass.config_entries.async_update_entry(pair, data=data)
     before = list(trace)
     leases = dict(hass.data[DOMAIN]["_pairlink_local_profile_leases"])
-    with pytest.raises(ConfigEntryNotReady, match="Absorbed bed"):
+    with raises_key("setup_retry", ConfigEntryNotReady):
         await async_setup_entry(hass, pair)
     assert trace == before
     assert hass.data[DOMAIN]["_pairlink_local_profile_leases"] == leases

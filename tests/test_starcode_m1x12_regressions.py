@@ -49,6 +49,7 @@ from custom_components.adjustable_bed.pairing_candidates import (
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.error_helpers import raises_key
 from tests.state_helpers import published
 from tests.test_starcode_m1x12 import (
     _controller_target,
@@ -786,7 +787,7 @@ async def test_hold_preflight_failure_or_cancellation_never_admits(
             await service
         resume_preflight.set()
     else:
-        with pytest.raises(ServiceValidationError, match="unable to connect"):
+        with raises_key("bed_unavailable", ServiceValidationError):
             await service
 
     assert held == []

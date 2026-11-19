@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, cast, get_args
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import rejected
 from .requests import GmmotorActions, Operation, Request
 
 if TYPE_CHECKING:
@@ -51,7 +51,7 @@ async def handle(call: ServiceCall) -> None:
             unit=data["unit"],
         )
     except ValueError as err:
-        raise ServiceValidationError(str(err)) from err
+        raise rejected(err) from err
     # A sleep stop clears polling/assembly locally; it has no wire STOP.
     # Serialize it with the current GATT operation instead of cancelling a
     # partially sent SDK frame.

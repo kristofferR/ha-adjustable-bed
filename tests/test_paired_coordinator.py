@@ -908,7 +908,7 @@ class TestBothFailureContract:
         """A child's feedback failure enters the paired cleanup path."""
         log: list = []
         coord, left, _ = _pair(log)
-        failure = PositionFeedbackError("Lost fresh position feedback for back during seek")
+        failure = PositionFeedbackError("position_feedback_lost", motor="back")
         left.async_seek_position = AsyncMock(side_effect=failure)
         with pytest.raises(PairedSideError) as exc:
             await coord.async_seek_position(
@@ -2891,7 +2891,7 @@ class TestSequentialCycle:
         with pytest.raises(PairedSideError) as exc:
             await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
         err = exc.value.side_errors[SIDE_LEFT]
-        assert "release also failed" in str(err)
+        assert err.translation_key == "side_not_released"
         assert isinstance(err.__cause__, RuntimeError)  # the original command error
         # The loop broke on left; right is never connected.
         assert (SIDE_RIGHT, "connect") not in log

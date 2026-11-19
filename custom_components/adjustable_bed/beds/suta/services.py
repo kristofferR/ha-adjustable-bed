@@ -5,9 +5,9 @@ from __future__ import annotations
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...const import DOMAIN
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 
 # The payload names the mattress or heating side: 1 left, 2 right.
@@ -31,7 +31,7 @@ async def handle_request(call: ServiceCall) -> None:
     from .controller import CLOCK_COMMAND, Request, SutaController
 
     if call.data["action"] == CLOCK_COMMAND:
-        raise ServiceValidationError("Use the Set bed clock action to set the clock")
+        raise invalid("clock_uses_sync_clock")
     logical = call.data.get("logical_side")
     request = Request(call.data["action"], call.data["suffix"], None if logical is None else _LOGICAL_SIDES[logical], call.data.get("value"))
     preflighted = []
@@ -42,20 +42,20 @@ async def handle_request(call: ServiceCall) -> None:
             for child in _command_targets(parent, side):
                 controller = child.capability_controller
                 if not isinstance(controller, SutaController):
-                    raise ServiceValidationError("Select a SUTA Smart Home bed for this action")
+                    raise invalid("action_for_other_beds", beds="SUTA Smart Home beds")
                 try:
                     controller.validate_request(request, live=False)
                 except ValueError as error:
-                    raise ServiceValidationError(str(error)) from error
+                    raise rejected(error) from error
         for parent, side in targets:
             for child in _command_targets(parent, side):
                 controller = await _validation_controller(parent, child, preflighted)
                 if not isinstance(controller, SutaController):
-                    raise ServiceValidationError("SUTA controller ownership changed")
+                    raise invalid("bed_changed")
                 try:
                     controller.validate_request(request)
                 except ValueError as error:
-                    raise ServiceValidationError(str(error)) from error
+                    raise rejected(error) from error
         await _execute_preflighted(
             targets, preflighted,
             _family_command(SutaController, "SUTA Smart Home", lambda controller: controller.execute_request(request)),

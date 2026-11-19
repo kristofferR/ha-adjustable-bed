@@ -12,7 +12,6 @@ from homeassistant.components.select import SelectEntity, SelectEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ServiceValidationError
 
 from .beds.entity_specs import ControllerSelectSpec
 from .beds.octo.runtime import octo_controller
@@ -25,6 +24,7 @@ from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, named_for_side, own_sides
 from .entity_sweep import PlatformEntities, records_entities
+from .errors import invalid
 from .paired_coordinator import entity_runtimes
 from .state_keys import (
     FOOTWARMING_TIMER_OPTION,
@@ -377,7 +377,7 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         if option not in self._spec.options:
-            raise ServiceValidationError("Option is not supported by this controller")
+            raise invalid("option_unavailable")
         if self._spec.local_select_fn is not None:
             # No frame is sent, so do not take the bed's single BLE link.
             controller = self._coordinator.capability_controller
@@ -387,7 +387,7 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
                 None,
             )
             if live is None or live.local_select_fn is None or option not in live.options:
-                raise ServiceValidationError("Controller no longer supports this local option")
+                raise invalid("option_unavailable")
             live.local_select_fn(option)
             return
 
@@ -396,7 +396,7 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
                 (spec for spec in ctrl.controller_select_specs if spec.key == self._spec.key), None
             )
             if live is None or option not in live.options:
-                raise ServiceValidationError("Controller no longer supports this option")
+                raise invalid("option_unavailable")
             await live.select_fn(ctrl, option)
 
         await self._coordinator.async_execute_controller_command(select)

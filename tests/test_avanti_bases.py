@@ -38,6 +38,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import bed_type_choice, get_bed_type_options
+from tests.error_helpers import raises_key
 from tests.form_helpers import finish_new_bed, start_new_bed
 
 # Share transport/HA fixture helpers only; Avanti's command vectors stay below.
@@ -225,7 +226,7 @@ async def test_avanti_gatt_and_no_reported_state(
     ctrl._write_char = None
     mock_bleak_client.services = _services(last)
     mock_bleak_client.write_gatt_char.reset_mock()
-    with pytest.raises(HomeAssistantError, match="FFE9 and FFE4"):
+    with raises_key("bed_missing_service", HomeAssistantError):
         await ctrl.preset_flat()
     assert not _written(mock_bleak_client)
 

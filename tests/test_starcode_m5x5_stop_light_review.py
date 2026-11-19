@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.beds.starcode.m5x5 import StarcodeM5X5Cont
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.test_starcode_accessory_group import group, target
 from tests.test_starcode_m5x5 import VECTORS, make_controller
 
@@ -141,7 +142,7 @@ async def test_actual_feedback_light_catalog_and_toggle(
         writes = controller.write_command
         writes.reset_mock()
         assert hass.states.get(light_id).state == "unknown"
-        with pytest.raises(ServiceValidationError, match="Light state is unknown"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await hass.services.async_call(
                 "light", "toggle", {"entity_id": light_id}, blocking=True
             )
@@ -178,7 +179,7 @@ async def test_actual_feedback_light_catalog_and_toggle(
         coordinator._notify_connection_state_change(False)
         assert hass.states.get(light_id).state == "unknown"
         writes.reset_mock()
-        with pytest.raises(ServiceValidationError, match="Light state is unknown"):
+        with raises_key("light_state_unknown", ServiceValidationError):
             await hass.services.async_call(
                 "light", "toggle", {"entity_id": light_id}, blocking=True
             )

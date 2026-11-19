@@ -20,6 +20,7 @@ from ...const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
 )
+from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...paired_topology import PairedSideError
 from ...services import (
@@ -46,7 +47,7 @@ def selected(controller: BedController | None) -> MajesticHomeController:
         != "custom_components.adjustable_bed.beds.majestichome.controller"
         or type(controller).__name__ != "MajesticHomeController"
     ):
-        raise ServiceValidationError("Select Majestic Home for this action")
+        raise invalid("action_for_other_beds", beds="Majestic Home beds")
     return cast("MajesticHomeController", controller)
 
 
@@ -89,7 +90,7 @@ async def handle_request(call: ServiceCall) -> ServiceResponse:
                 products[child] = controller.layout.key
                 routes[child] = route(child)
             except ValueError as error:
-                raise ServiceValidationError(str(error)) from error
+                raise rejected(error) from error
     # Every physical STOP generation and local target/form check was captured
     # before this first await, including both children of a native paired bed.
     await async_import_modules(call.hass, "beds.majestichome.controller")
@@ -111,21 +112,19 @@ async def handle_request(call: ServiceCall) -> ServiceResponse:
             if len(current) != len(children) or any(
                 a is not b for a, b in zip(current, children, strict=True)
             ):
-                raise ServiceValidationError(
-                    "Majestic Home physical targets changed after admission"
-                )
+                raise invalid("bed_changed")
             for child in children:
                 if (
                     route(child) != routes[child]
                     or selected(child.capability_controller).layout.key != products[child]
                 ):
-                    raise ServiceValidationError("Majestic Home product changed after admission")
+                    raise invalid("bed_changed")
 
     def validate_read() -> None:
         validate_owners()
         for (parent, side), original in zip(targets, admissions, strict=True):
             if _capture_command_admission(parent, side) != original:
-                raise ServiceValidationError("Majestic Home settings read was stopped")
+                raise invalid("action_stopped")
 
     try:
         validate_owners()
@@ -151,12 +150,12 @@ async def handle_request(call: ServiceCall) -> ServiceResponse:
                         else:
                             plans[target] = plan
                     except ValueError as error:
-                        raise ServiceValidationError(str(error)) from error
+                        raise rejected(error) from error
                     return True
 
                 async def inspect(target) -> None:
                     if not await target.async_execute_controller_query(query, cancel_running=False):
-                        raise ServiceValidationError("Majestic Home preflight was interrupted")
+                        raise invalid("action_stopped")
 
                 if isinstance(parent, PairedBedCoordinator):
                     child_side = next(
@@ -184,7 +183,7 @@ async def handle_request(call: ServiceCall) -> ServiceResponse:
             elif controller in plans:
                 plan = plans[controller]
             else:
-                raise ServiceValidationError("Majestic Home controller changed after preflight")
+                raise invalid("bed_changed")
 
             def submitted() -> None:
                 # A peer may change during another side's FIFO wait. Validate
@@ -244,7 +243,7 @@ async def handle_request(call: ServiceCall) -> ServiceResponse:
     if request.operation == "list":
         validate_read()
         if completed != expected_physical:
-            raise ServiceValidationError("Majestic Home alarm observation was interrupted")
+            raise invalid("action_stopped")
         return {"targets": results}
     return {} if call.return_response else None
 

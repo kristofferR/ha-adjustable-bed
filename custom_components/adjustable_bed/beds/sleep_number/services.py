@@ -7,11 +7,11 @@ import math
 import voluptuous as vol
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
-from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util.json import JsonValueType
 
 from ...const import DOMAIN
+from ...errors import invalid, rejected
 from ...paired_coordinator import PairedBedCoordinator
 from ...services import (
     ATTR_SIDE,
@@ -134,7 +134,6 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
                     ):
                         raise _invalid(
                             "sleep_number_command_not_supported",
-                            f"Sleep Number command {command!r} is not supported by {target.name}",
                             device_name=target.name,
                             command=command,
                         )
@@ -160,9 +159,7 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
                 )
                 sleep_number = controller_as(controller, SleepNumberActions)
                 if sleep_number is None:
-                    raise ServiceValidationError(
-                        f"Sleep Number command {command!r} is not supported by this bed"
-                    )
+                    raise invalid("sleep_number_command_not_supported", device_name=controller._coordinator.name, command=command)
                 with controller.side_scope(physical_side):
                     sleep_number.validate_sleep_number_command(command, parameters)
                     key = physical_side or "single"
@@ -175,7 +172,7 @@ async def handle_sleep_number_command(call: ServiceCall) -> ServiceResponse:
             )
     except ValueError as err:
         await _release_preflighted(preflighted)
-        raise ServiceValidationError(str(err)) from err
+        raise rejected(err) from err
     except BaseException:
         await _release_preflighted(preflighted)
         raise
