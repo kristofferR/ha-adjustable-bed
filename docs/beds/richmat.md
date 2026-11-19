@@ -111,9 +111,9 @@ is an explicit choice (see [Choosing a profile](#choosing-a-profile)).
 | Position Feedback | ❌ | ❌ | ❌ | ❌ (numbered motor reports are not relabeled as physical axes) | ⚠️ VER1 angle replies update the angle numbers; **Reached position** reports memory arrival | Raw observed travel, angle and height data; no inferred position seeking or units | ❌ No inferred angle or general command acknowledgement; desk height, range, unit and error callbacks | ❌ (motor reports never populate position feedback or sliders) | ❌ No calibrated position controls; raw typed events remain visible | ❌ | ❌ Raw motor-number diagnostics only, not calibrated angles | ❌ Raw index, angle and height events only |
 | Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the selected catalog supports them | ✅ Memory slots from the model's catalog | ✅ Product-specific named recall/save buttons, including memory 1–4 where selected | ✅ Per-node short and long gestures, memory-arm and Hold/Release gates | ❌ (named preset saves instead) | ✅ Product-specific short/long gestures and local memory mode | ⚠️ Only as the selected layout's named app buttons | ✅ The product's slots, recall and save (PRO and MAX: one) | ✅ Product-specific recall and explicit save |
 | Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ Model-specific presets; Lounge only on legacy | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the catalog has them | ✅ Standard presets from the model's catalog | ✅ Product-specific | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge actions where the product has them | ⚠️ Only as the selected layout's named app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ Product-specific, recall and save |
-| Massage | ✅ | ✅ Model-specific zone, mode, off or 20-minute timer actions | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off, 10/20/30-minute buttons | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
+| Massage | ✅ | ✅ Model-specific zone, mode and off actions; 20-minute **Massage: Timer** select | ✅ Discrete head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist | ✅ App-labelled buttons; VER1 head/foot intensity numbers | ✅ Product-specific mode, intensity and timer buttons | ✅ Bound levels, patterns, timers and popup choices | ✅ Head and foot strength, mode, off; **Massage: Timer** select (10, 20, 30 minutes or off) | ✅ Exact controls in the selected app layout; bottom massage countdown | ⚠️ Only as the selected layout's named app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
 | Under-bed Lights | ✅ (toggle; RGB color picker + timer on select models) | ✅ Model-specific toggle; legacy also off | ✅ (toggle) | ⚠️ RGB, **Always On** or **1 through 15 minutes** timer; gated on the light acknowledgment and strip flag | ✅ RGB light or colour action, light timeout, button-light page | ✅ Selected lamp buttons; advanced timeout/RGB require product flag and acknowledgement | ✅ Bound controls, capability-gated RGB and timer settings | ✅ (toggle) | ✅ Product-gated actions, RGB settings and duration choices | ⚠️ Only as the selected layout's named app buttons; no RGB | ✅ Light buttons; ordinary light or RGB page where the product and its reply allow | ✅ RGB strip for lighting-flag products, colour and timer otherwise |
-| Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ Sync buttons where selected | ✅ Where the layout has it | ❌ | ✅ Sync on/off actions where the product has them | ❌ | ❌ (one-address Left/Right on stored L400SH and L300SH) | ❌ (one-address Left/Right on side-flag products) |
+| Split-King Sync | ✅ (controller-level on/off; assumed state) | ❌ | ❌ | ✅ Where the catalog has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ✅ Where the layout has it | ❌ | ✅ **Synchronization** switch where the product has Sync on and off | ❌ | ❌ (one-address Left/Right on stored L400SH and L300SH) | ❌ (one-address Left/Right on side-flag products) |
 | Alarms | ❌ | ❌ | ❌ | ⚠️ `adjustable_bed.set_alarm`, product-gated | ✅ Actions and entities where the model's pages exist | ✅ Single or repeat alarms where the product flag and clock acknowledgement permit | ✅ One selected layout action at the next requested wall-clock time | ❌ | ✅ Product-gated single and repeat alarms, slots 1–7 | ❌ | ⚠️ Single and repeating alarms on stored products with alarm lists; none on PRO and MAX | ✅ Single; repeating only on restored products with that capability |
 | Other | | | | ✅ Disabled-by-default catalog buttons; ⚠️ `adjustable_bed.rmcontrol_anti_snore` on six products | ✅ Smart set lock, snore intervention, detection, aroma, waist mattress | ✅ Music, clock synchronization, local layout, single-address paired sides | ✅ Aroma (no reliable setting acknowledgements); desk target, unit, three recall buttons and fourth/reset button | ⚠️ Eleven read-only diagnostic sensors | ✅ Snore settings where the normal product's settings menu admits them; independent type 1/type 2 sleep sensors with live values and direct BLE reports; only the product's listed sides. ❌ Firmware, Wi-Fi and cloud are outside the direct BLE bed boundary | ⚠️ Disabled-by-default app-response diagnostic; Stop cancels and releases the active action only (no emergency-stop command) | ✅ Music page, external snore trigger, sensor-name query; separate [sleep sensors and remote finder](casper-base.md#separate-sleep-sensors-and-remote-finder) | ✅ Fan, heating and music on products that list them; separate [sleep modules](hush-base.md#sleep-transport) |
 
@@ -639,7 +639,7 @@ Device name hints:
   - **Legacy RGB** (other WiLinke remotes with the lights feature flag): power-on,
     color and timer. Timer range: 1-5 minutes or "Always On". Off is the toggle.
   - RGB-capable beds expose a **Light** entity with a color wheel instead of a
-    simple on/off switch. See [Lights](#lights) for the frames.
+    simple on/off light. See [Lights](#lights) for the frames.
 - **Controller Sync** sends `BC` (on) or `BD` (off).
 
 **Controller Sync** sends the selected controller's
@@ -820,8 +820,8 @@ disconnect callback cannot interrupt a newer operation.
 
 No app initialization frame, notification subscription, position parser, read
 query, pairing/PIN handshake, MTU negotiation or bed acknowledgement is present.
-GATT write completion is not bed state. The 20-minute massage button sends one command and offers no invented Off
-option or state feedback.
+GATT write completion is not bed state. The **Massage: Timer** select's 20-minute choice sends one
+command; Off is offered only on models with a massage-off command. Neither reports the bed's state.
 There are no inferred position sensors or sliders.
 
 #### Services
@@ -2439,7 +2439,7 @@ See [Catalog app timing](#catalog-app-timing).
 
 Use `adjustable_bed.goodvibe` for these settings and queries. The action
 validates every target before writing. The dashboard card includes app
-controls, local side selection, the **Light timer** and **Massage timer**
+controls, local side selection, the **Light Timer** and **Massage: Timer**
 selects, the **Synchronization** switch (where a product has Sync on and off),
 snore numbers and sleep state.
 
@@ -3445,7 +3445,7 @@ writer supports it, otherwise writes use a response.
 Every product has Flat, Anti-Snore, Zero-G and Memory 1. Preset save buttons send
 their separate program opcode once. Rise Pro adds Memory 2; Rise Pro Light does
 not. Massage controls are one-shot actions, including intensity steps, mode
-and off; the three timer actions are the **Massage timer** select. The ordinary strip page requires both the
+and off; the three timer actions are the **Massage: Timer** select. The ordinary strip page requires both the
 Rise Pro Light flag and its exact light capability announcement.
 
 #### Timing
@@ -3556,7 +3556,7 @@ Only MS600 has alarm-mode choices. No shared receive parser expands these gates.
 
 PowerCool sends the massage codes to its fans, with 2/3/5-hour timers; the
 same codes on MS300, MS300-SH and MS600 are massage controls, with the
-10/20/30-minute timers as the **Massage timer** select. Discrete actions send once. Preset recall and Save
+10/20/30-minute timers as the **Massage: Timer** select. Discrete actions send once. Preset recall and Save
 buttons use distinct codes; Save waits the app's three-second programming
 threshold and asks for confirmation.
 
@@ -6677,7 +6677,7 @@ title is not an action. Flat is the reachable MotorReset control.
 
 Native motor entities expose each product's held directions. Presets and their
 separate save buttons, light toggle and every massage action are product-gated.
-The massage timer keys are one **Massage timer** select (Off sends All Off), and
+The massage timer keys are one **Massage: Timer** select (Off sends All Off), and
 each zone's level keys are one head or foot massage number (0 sends that zone's
 off key where the product has one).
 Saving uses the source long operand with a single short action, not a timed long

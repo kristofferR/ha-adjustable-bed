@@ -127,7 +127,7 @@ to that family's other routes.
    & Platt), **I don't know: keep the detected controls** (Okin, Keeson, Solace,
    Sleepy's Elite, Malouf / Lucid, LOGICDATA), **Keep the current app**
    (Customatic, Jordan's), **Keep the current controls** (Jensen / Svane,
-   Limoss) or **Keep current setup** (Vibradorm).
+   Limoss) or **Keep the current setup** (Vibradorm).
 2. Where the family has exact Bluetooth endpoint or pairing requirements,
    Home Assistant releases its connection and checks the chosen setup. The
    check screen lists its steps. Nothing is saved yet.
@@ -137,12 +137,12 @@ to that family's other routes.
    control.
 4. **Apply this change** saves it, only if nobody changed the entry meanwhile.
    The last screen names the new setup and the previous one; to switch back,
-   run **Reconfigure** again. **Keep current setup** is the other answer on the
+   run **Reconfigure** again. **Keep the current setup** is the other answer on the
    review.
 
 A failed check shows **Nothing was changed** with **Try again** and **Keep
-current setup**. A failed check, a closed window, the keep answer, **Keep
-current setup** or a concurrent edit leaves the saved setup unchanged and
+the current setup**. A failed check, a closed window, the keep answer, **Keep
+the current setup** or a concurrent edit leaves the saved setup unchanged and
 working. Choosing a label that resolves to
 the saved setup changes nothing. A passed check does not prove the bed's
 physical layout or presets, so test the controls after applying a change.
@@ -173,7 +173,7 @@ setup again, or the question's keep answer, keeps the current profile. Closing i
 leaves the notice open. A review about a Richmat remote setting alone opens
 Configure, where saving the settings confirms it.
 
-**Keep current profile** (or Ignore) dismisses the assessment across restarts and
+**Keep the current setup** (or Ignore) dismisses the assessment across restarts and
 updates. Only a materially different profile or candidate set may ask again.
 Notices for a combined bed name the physical bed and say whether you need to
 separate the beds or remove the Left, Right and Both controls first; neither
@@ -283,7 +283,8 @@ A form shows only the settings the bed uses. **Has massage feature** is left
 out for beds with no massage commands or that turn massage on themselves; the
 maximum angles are left out where the frame's travel is fixed (for example
 Paramount, Serta MP Remote, SBI and BedJet); a motor count with only one
-choice is left out; and **Bluetooth connection** is left out for beds that
+choice is left out; **Movement per tap** is left out for beds that never
+repeat a tap; and **Bluetooth connection** is left out for beds that
 must stay connected (DoubleSleep, GM Sleep, Okin RF Eco BT, Richmat sleep
 receivers and Sleep Number MCR).
 
@@ -339,9 +340,11 @@ Assistant holds blocks the physical Bluetooth remote and the bed's app.
   including STOP cleanup, then start the handoff window together. Sequential
   pairs still release one side before connecting the other.
 - The explicit Disconnect button releases the link immediately.
+- Diagnostics list the connection setting the bed actually uses, including
+  the bed's own default when you have not changed it.
 
 Connection attempts use one timing for every bed: a 25-second connect timeout
-and three attempts with 3 and 6 second backoff. Multiple usable Bluetooth paths
+(shorter on a few beds whose app uses one) and three attempts with 3 and 6 second backoff. Multiple usable Bluetooth paths
 receive a larger bounded retry budget; see
 [connection routing](CONNECTION_GUIDE.md#multiple-adapters-and-proxies).
 
