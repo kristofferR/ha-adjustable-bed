@@ -318,3 +318,21 @@ async def test_off_during_a_queued_polls_send_delay_sends_nothing(hass: HomeAssi
     ctrl._stop_live()
     await asyncio.gather(*ctrl._tasks)
     ctrl._coordinator.client.write_gatt_char.assert_not_awaited()
+
+
+async def test_off_while_a_poll_waits_for_the_write_lock_sends_nothing(
+    hass: HomeAssistant,
+) -> None:
+    ctrl = controller(hass)
+    ctrl._live_enabled = True
+
+    async def execute(apply, **_kwargs):
+        await apply(ctrl)
+
+    ctrl._coordinator.async_execute_controller_command = execute
+    async with ctrl._write_lock:
+        ctrl._queue("q_realtime")
+        await asyncio.sleep(0.2)  # Past the send delay, now waiting for the lock.
+        ctrl._stop_live()
+    await asyncio.gather(*ctrl._tasks)
+    ctrl._coordinator.client.write_gatt_char.assert_not_awaited()

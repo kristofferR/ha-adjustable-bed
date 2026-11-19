@@ -114,6 +114,10 @@ _FLAG_FIELDS: Final[tuple[tuple[str, SleepFlag], ...]] = (
 )
 
 
+
+class _Stopped(Exception):
+    """Live data stopped before a queued write reached the bed."""
+
 class GmmotorSleepController(BedController, GmmotorActions):
     """One explicitly selected GM Control sleep module, independent of the bed."""
 
@@ -246,6 +250,17 @@ class GmmotorSleepController(BedController, GmmotorActions):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
+        await self._write_chunks(command, repeat_count, repeat_delay_ms, cancel_event)
+
+    async def _write_chunks(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+        *,
+        generation: int | None = None,
+    ) -> None:
         transport, client = self._transport, self.client
         if transport is None or client is None or not client.is_connected:
             raise ConnectionError("GM Control sleep session is not ready")
@@ -253,6 +268,13 @@ class GmmotorSleepController(BedController, GmmotorActions):
         if chunk_size <= 0:
             raise ValueError("Invalid negotiated sleep-module MTU")
         cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
+
+        def before_write() -> None:
+            # Both locks are held: a stop that came while this waited for them voids it.
+            if generation is not None and generation != self._generation:
+                raise _Stopped
+
+        first = True
         for index in range(repeat_count):
             if index:
                 await asyncio.sleep(repeat_delay_ms / 1000)
@@ -268,7 +290,9 @@ class GmmotorSleepController(BedController, GmmotorActions):
                             cancel_event=cancel,
                             response=transport.response,
                             characteristic=transport.write,
+                            before_write=before_write if first else None,
                         )
+                first = False
 
     async def _send(self, command: SleepCommand, *, generation: int | None = None) -> None:
         """Send one command; a queued one passes its generation so a stop voids it."""
@@ -291,7 +315,10 @@ class GmmotorSleepController(BedController, GmmotorActions):
         await asyncio.sleep(_QUEUE_TICK)
         if generation is not None and generation != self._generation:
             return  # Stopped during the queue delay.
-        await self.write_command(request.packet)
+        try:
+            await self._write_chunks(request.packet, generation=generation)
+        except _Stopped:
+            return  # Stopped while waiting for the write locks.
 
     def _queue(self, command: SleepCommand, *, delayed: bool = False) -> None:
         generation = self._generation
