@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
+from uuid import uuid4
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,10 +23,8 @@ class FuzionCommand:
 
 
 ENUMS: dict[str, tuple[str, ...]] = {
-    "AccessPointAction": ("start", "stop"),
     "ActLocation": ("head", "foot"),
     "ActuatorMovementStatus": ("0", "1"),
-    "ApplyType": ("app", "app_no_check", "recovery"),
     "ArticulationPreset": (
         "none",
         "in_progress",
@@ -37,60 +36,14 @@ ENUMS: dict[str, tuple[str, ...]] = {
         "read",
     ),
     "BaseType": ("unknown", "no_base", "integrated_base", "ff1", "ff2", "ff3", "c360"),
-    "BedPresence": ("out", "in", "unknown"),
     "BedPresenceFlag": ("out", "in"),
     "ChamberType": ("single", "dual"),
-    "CreqCommand": ("0", "1", "2", "3", "4"),
-    "DataRecordServiceName": (
-        "all",
-        "articulation",
-        "biosignal",
-        "ble_mgmt",
-        "boson",
-        "cloud",
-        "diagnostics",
-        "footwarming",
-        "led",
-        "logging",
-        "messaging",
-        "network",
-        "ubl",
-        "button",
-        "persistence",
-        "power",
-        "pressure_control",
-        "remote",
-        "responsive_air",
-        "routine",
-        "software_mgmt",
-        "software_watchdog",
-        "system",
-        "temperature_sensor",
-        "thermal",
-    ),
     "EnableFlag": ("yes", "no"),
     "EnabledSetting": ("0", "1", "2"),
-    "FileType": ("report", "metadata"),
     "FootwarmingSetting": ("off", "low", "medium", "high"),
-    "FrostySoftwareType": ("app", "update", "recovery", "bootloader"),
-    "HealthStatus": (
-        "normal",
-        "not_enabled",
-        "wrong_sensor_count",
-        "read_sensor_position_error",
-        "duplicate_sensor_position_error",
-        "read_sensor_temperature_error",
-        "temperature_strip_not_connected",
-        "temperature_out_of_range",
-    ),
-    "HeidiRoutineEnable": ("true", "false"),
-    "HeidiVersionType": ("app", "update", "recovery", "bootloader"),
     "Homing": ("done", "in_progress", "required", "error"),
     "HwSku": ("unknown", "SKUA", "SKUB", "SKUC"),
-    "Image": ("app", "recovery"),
     "InstallationStatus": ("none", "done", "articulation_error", "configuration_error"),
-    "LedState": ("off", "on", "blink_fast", "blink_slow"),
-    "LogLevel": ("0", "1", "2", "3", "4", "5", "6", "7", "8"),
     "MattressSize": (
         "twin",
         "twinxl",
@@ -102,105 +55,12 @@ ENUMS: dict[str, tuple[str, ...]] = {
         "king-flex",
     ),
     "MigrateOptions": ("keep", "new"),
-    "NameType": ("fuzion_bed_name", "right_sleeper_name", "left_sleeper_name"),
-    "NetworkConnectivity": (
-        "no_config",
-        "network_cred",
-        "detecting_ssid",
-        "ssid_not_found",
-        "bad_wifi_pwd",
-        "wifi_associated",
-        "wifi_disassociated",
-        "dns_resolution",
-        "server_login_attempted",
-        "connected_over_bloh",
-    ),
     "Presence": ("false", "true"),
     "RebootDevice": ("maverick", "goose", "both"),
-    "RemoteBinaryType": (
-        "bootloader",
-        "main_app",
-        "recovery",
-        "ble_main_app",
-        "ble_recovery",
-        "ui_assets",
-        "none",
-    ),
     "ResetType": ("flat", "favorite", "snore", "zero_g", "watch_tv", "read", "all"),
-    "SensorIndex": ("0", "1", "2", "3", "4"),
-    "ServiceName": (
-        "all",
-        "articulation",
-        "biosignal",
-        "ble_conn",
-        "ble_mgmt",
-        "boson",
-        "cloud",
-        "cooling",
-        "diagnostics",
-        "direct_transfer",
-        "footwarming",
-        "led",
-        "logging",
-        "messaging",
-        "network",
-        "peripheral",
-        "persistence",
-        "power",
-        "pressure",
-        "provisioning",
-        "remote",
-        "responsive_air",
-        "routine",
-        "sleep_sensor_data",
-        "software_mgmt",
-        "software_watchdog",
-        "supervisor_logger",
-        "system",
-        "temperature_sensor",
-        "thermal_control",
-    ),
     "Side": ("left", "right"),
     "SleepNumberAdjustmentStatus": ("0", "1"),
     "SleepiqDataState": ("unknown", "active", "paused"),
-    "SoftwareDownloadStatus": (
-        "no_update_needed",
-        "downloading_fuzion_app",
-        "applying_fuzion_app",
-        "downloading_fuzion_rfs",
-        "applying_fuzion_rfs",
-        "downloading_fuzion_goose",
-        "applying_fuzion_goose",
-        "downloading_heidi",
-        "applying_heidi",
-        "downloading_frosty",
-        "applying_frosty",
-        "downloading_fuzion_remote",
-        "applying_fuzion_remote",
-        "waiting_to_apply",
-        "downloading_unknown",
-        "done",
-    ),
-    "StatusCode": (
-        "0",
-        "16",
-        "17",
-        "18",
-        "19",
-        "20",
-        "21",
-        "32",
-        "33",
-        "48",
-        "49",
-        "50",
-        "64",
-        "65",
-        "66",
-        "67",
-        "68",
-        "69",
-    ),
     "ThermalEnableFlag": ("none", "heat_cool", "cool"),
     "ThermalMode": (
         "off",
@@ -216,11 +76,16 @@ ENUMS: dict[str, tuple[str, ...]] = {
         "heater_test_push",
     ),
     "UblAutoEnable": ("true", "false"),
-    "UblCurrentStatus": ("normal", "under_current", "over_current"),
     "UblLevel": ("off", "low", "medium", "high"),
 }
 
 COMMANDS: dict[str, FuzionCommand] = {
+    "reset_articulation_presets": FuzionCommand(
+        "ACFR", (("side", "Side"), ("preset", "ResetType")), ()
+    ),
+    "run_diagnostics": FuzionCommand(
+        "DSRS", (("diagnostics", "DiagnosticRun"),), (("start_status", "String"),)
+    ),
     "cancel_current_diagnostic_run": FuzionCommand("DSRC", (), ()),
     "cancel_target_preset": FuzionCommand("ACCP", (("side", "Side"),), ()),
     "create_temperature_program": FuzionCommand(
@@ -333,14 +198,6 @@ COMMANDS: dict[str, FuzionCommand] = {
     ),
     "get_system_settings_applied_status": FuzionCommand(
         "SYSA", (), (("bed_installation_status", "InstallationStatus"), ("hardware_sku", "HwSku"))
-    ),
-    "get_system_status": FuzionCommand(
-        "SYST",
-        (),
-        (
-            ("network_connectivity_status", "NetworkConnectivity"),
-            ("fuzion_device_software_download_status", "SoftwareDownloadStatus"),
-        ),
     ),
     "get_target_preset_with_timer": FuzionCommand(
         "ACGP",
@@ -459,6 +316,57 @@ COMMANDS: dict[str, FuzionCommand] = {
 
 # The app joins these two BAMKEY responses by program ID.
 COMMANDS["get_temperature_programs"] = COMMANDS["get_temperature_program_info"]
+
+# DiagnosticTest.testId, restricted to local bed hardware tests. The two
+# network tests and diagnostic file transfer are deliberately absent.
+LOCAL_TESTS = (
+    "power-health-test",
+    "underbed-light-test",
+    "side-button-test",
+    "can-test",
+    "memory-processor-test",
+    "firmness-control-test",
+    "footwarming-test",
+    "box-level-connector-test",
+    "actuator-test",
+    "heidi-fan-test",
+    "heidi-heater-test",
+    "heidi-precheck-test",
+    "heidi-version-test",
+    "heidi-canbus-echo-test",
+    "heidi-canbus-processor-info-test",
+    "temperature-sensor-test",
+    "heidi-module-memory-test",
+    "heidi-power-health-test",
+    "frosty-fan-test",
+    "frosty-precheck-test",
+    "frosty-canbus-echo-test",
+    "frosty-module-memory-test",
+    "frosty-power-health-test",
+)
+
+
+def diagnostic_request(value: object) -> dict[str, object]:
+    request = _object(value, {"tests", "group"}, "diagnostics")
+    group = _choice(request["group"], ("Mattress", "Base", "Temperature", "Foot warming"), "group")
+    tests = request["tests"]
+    if not isinstance(tests, list) or not 1 <= len(tests) <= len(LOCAL_TESTS):
+        raise ValueError("diagnostics.tests must contain local hardware test names")
+    for test in tests:
+        _choice(test, LOCAL_TESTS, "diagnostics.tests")
+    if len(set(tests)) != len(tests):
+        raise ValueError("diagnostics.tests must not repeat tests")
+    return {
+        "metadata": {
+            "reportRequestId": str(uuid4()),
+            "clientLogin": "",
+            "clientId": "Consumer",
+            "testGroup": group,
+            "additionalData": {},
+        },
+        "uploadToCloud": False,
+        "testIds": [{"testId": test} for test in tests],
+    }
 
 
 def _object(value: object, fields: set[str], label: str) -> Mapping[str, object]:
@@ -593,7 +501,9 @@ def format_command(
     args: list[str] = []
     for name, kind in spec.parameters:
         value = parameters[name]
-        if kind == "int":
+        if kind == "DiagnosticRun":
+            args.append(json.dumps(diagnostic_request(value), separators=(",", ":")))
+        elif kind == "int":
             maximum = 100
             if "timer" in name:
                 maximum = {"FWTS": 360, "UBLS": 180, "ACSP": 2**31 - 1}.get(spec.key, 600)

@@ -4751,6 +4751,24 @@
  "switch:ruf_richmat_sleep_right_intervention": {
   "card_section": "utility"
  },
+ "switch:sleepiq_auto_kids_light": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_auto_light": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_head_tilt": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_kids_outlet": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_privacy": {
+  "card_section": "utility"
+ },
+ "switch:sleepiq_responsive_air": {
+  "card_section": "utility"
+ },
  "switch:sleepys_app_motion_sensor": {
   "card_section": "utility"
  },

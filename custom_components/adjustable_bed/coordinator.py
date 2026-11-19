@@ -105,6 +105,7 @@ from .const import (
     BED_TYPE_RICHMAT,
     BED_TYPE_SERTA,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_VIBRADORM_APP,
@@ -134,6 +135,7 @@ from .const import (
     CONF_REMACRO_LED_LEVEL,
     CONF_RICHMAT_REMOTE,
     CONF_SIDE,
+    CONF_SLEEP_NUMBER_MCR_CLIENT_ID,
     CONF_VIBRADORM_APP_METADATA,
     CONF_VIBRADORM_APP_PROFILE,
     CONF_VIBRADORM_CONTROL_TYPE,
@@ -1469,6 +1471,18 @@ class AdjustableBedCoordinator(
         self._pending_internal_bond_marker = None
         current_data = self.entry.data if isinstance(self.entry, ChildEntryView) else entry.data
         return bool(current_data.get(CONF_BLE_BOND_ESTABLISHED, False)) is pending
+
+    def remember_sleep_number_mcr_client_id(self, identifier: int) -> None:
+        """Persist the local BLE client identity on the correct paired side."""
+        if self._bed_type != BED_TYPE_SLEEP_NUMBER_MCR or type(identifier) is not int or not 0 < identifier < 1 << 64:
+            raise ValueError("Invalid Sleep Number MCR client identity")
+        if self.entry.data.get(CONF_SLEEP_NUMBER_MCR_CLIENT_ID) == identifier:
+            return
+        self._begin_internal_entry_update(self._ble_bond_established)
+        self._async_persist_config(
+            {**self.entry.data, CONF_SLEEP_NUMBER_MCR_CLIENT_ID: identifier},
+            keys={CONF_SLEEP_NUMBER_MCR_CLIENT_ID},
+        )
 
     def remember_floyd_room(self, room_id: int) -> None:
         """Persist acknowledged BLE membership without reloading mid-service."""
