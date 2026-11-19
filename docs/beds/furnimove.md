@@ -200,7 +200,7 @@ not establish the product. The repair offers these choices:
 - **FurniMove adjustable bed:** choose the exact handset layout, restoring the
   selected axes. Every captured FurniMove handset is listed.
 - **Single-actuator staircase:** retain its one Stair cover.
-- **Keep current configuration:** dismiss the repair without changing any
+- **Keep the current setup:** dismiss the repair without changing any
   setting. A full OKIMAT bed saved as RF ECO BT is promoted at runtime (#406);
   choose its printed handset code through **Reconfigure**, under **No app:
   Okimat or OKIN handset code**.
@@ -208,8 +208,8 @@ not establish the product. The repair offers these choices:
 A FurniMove entry without a captured handset gets the first two choices.
 
 An **Okin DOT** entry using handset 90167, 91983 or 93558 receives a separate
-fixable warning offering **Switch to the FurniMove profile** or **Keep current
-configuration**. Switching keeps the handset and derives the axes and massage
+fixable warning offering **Switch to the FurniMove profile** or **Keep the current
+setup**. Switching keeps the handset and derives the axes and massage
 availability from its table.
 
 An **Okin CST** entry whose drive reports an `OKIMAT` Device Information model

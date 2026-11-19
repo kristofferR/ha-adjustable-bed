@@ -50,8 +50,8 @@ that bed type:
   entity IDs.
 - A family with a
   [guided change](CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)
-  is offered that guided change or **Keep current configuration** instead.
-- **Keep current configuration** if the bed already works. The repair comes
+  is offered that guided change or **Keep the current setup** instead.
+- **Keep the current setup** if the bed already works. The repair comes
   back only if a later release adds an app for that setup that you have not
   been shown.
 - A paired bed cannot switch app in its shared settings, because app profiles
@@ -63,11 +63,16 @@ that bed type:
 Handing off to **Configure** or the guided change does not answer the repair.
 It stays open until you save a change or choose to keep the current setup.
 
-Version 5 asks once more where a bed type gained an app after that review.
-Generic Solace beds (the HomeKobo, Sealy MotionFlex and Sweet Night route) get
-**"Do you use Woosa Sleep with ...?"**, because Woosa Sleep shares their names
-and only the app tells them apart. It opens the guided change, or keeps the
-current setup.
+Version 5 asks once more where a bed type gained apps after that review, with
+the same repair:
+
+- Solace on Automatic (the HomeKobo, Sealy MotionFlex and Sweet Night route):
+  Woosa Sleep and Sophie, which share these beds' names, so only the app tells
+  them apart.
+- Keeson on Automatic, Base or Sino: ComfortFurniture and Ultramatic.
+- Richmat: Lunio Smart+, SleepEvolution, W.Silver Products (older version),
+  MLILY Control, MLILY Remote, Okimiki and Majestic Home, whose names 4.x set
+  up as a Richmat bed.
 
 The repair reads **"... matches the ... profile"** instead when the bed's
 advertisement now identifies another bed type than the one it was set up
