@@ -33,7 +33,7 @@ For every current and future bed integration, implement direct BLE bed features 
 
 **Current status:** Dozens of bed protocols implemented. The README's "Supported Beds" table is the single source of truth for which protocols exist and which are confirmed working — don't duplicate that list here.
 
-**Baseline:** Work from `main`. It requires Home Assistant 2026.11.0+
+**Baseline:** Work from `v5` while v5 is in beta. It requires Home Assistant 2026.11.0+
 and Python 3.14.2+. Start with the [documentation index](docs/README.md).
 
 ## GitHub Comment Approval
@@ -86,6 +86,10 @@ custom_components/adjustable_bed/
 ├── profile_id.py         # Schema 5 profile id: resolver, migration and setup sync
 ├── entity.py             # Base entity class
 ├── entity_runtime.py     # Typed standalone and paired entity runtime interfaces
+├── entity_retypes.py     # Carries user settings over when an entity changes type
+├── runtime_data.py       # Typed access to entry runtimes and registries in hass.data
+├── command_scheduler.py  # Per-device command lanes, STOP epochs and frame delivery
+├── errors.py             # Every user-visible error, built from translation keys
 ├── paired_coordinator.py # Paired facade, logical side views and entity runtimes
 ├── paired_topology.py    # Topology strategies: admission, locking, switching, STOP fan-out
 ├── paired_registry.py    # Device/entity ownership transfer and rollback
@@ -95,6 +99,7 @@ custom_components/adjustable_bed/
 ├── beds/                 # Bed controllers and everything bed-specific
 │   ├── base.py           # Abstract base class (BedController)
 │   ├── entity_specs.py   # Entity spec dataclasses controllers declare
+│   ├── catalog_buttons.py # Shared entity shapes for app-catalog buttons
 │   ├── gatt_write.py     # Traced, retried GATT writes (BedController's base)
 │   ├── builder.py        # BuildContext for async controller builders
 │   ├── diagnostic.py     # Debug controller for unsupported beds
@@ -117,8 +122,8 @@ custom_components/adjustable_bed/
 
 **AdjustableBedCoordinator** (`coordinator.py`): Central BLE connection manager
 - Handles device discovery via HA's Bluetooth integration
-- Profile-based connection timeouts/backoff; multiple usable paths receive a bounded extra retry budget
-- One-second handoff when Disconnect After Command is enabled; otherwise configurable idle timeout (default 40s), except persistent-connection controllers
+- One connection timing for every bed; multiple usable paths receive a bounded extra retry budget
+- `connection_mode`: release (one-second handoff), idle (`idle_disconnect_seconds`, default 40, one bounded recovery of a dropped link) or always; persistent-connection controllers always hold the link
 - Registers conservative BLE connection parameters (30-50ms intervals)
 - Supports preferred adapter selection for multi-proxy setups
 - Command serialization via `_command_lock` prevents concurrent BLE writes
@@ -126,14 +131,15 @@ custom_components/adjustable_bed/
 - `async_stop_command()`: Cancels running command, acquires lock, then sends STOP
 - Disconnect timer is cancelled during commands to prevent mid-command disconnects
 - `_intentional_disconnect` flag prevents auto-reconnect after manual/idle disconnect
+- Code outside the coordinator uses its public surface (`command_scheduler`,
+  `connection_generation`, `cancel_counter`, `connection_creator_task`) and the
+  pair's public methods, never private attributes; entry runtimes come from
+  `runtime_data.entry_runtime()` / `loaded_runtime()`, not `hass.data[DOMAIN]`
 
-**BedController** (`beds/base.py`): Abstract interface all bed types must implement
-- `write_command(command, repeat_count, repeat_delay_ms, cancel_event)`: Send command bytes
-- `start_notify()` / `stop_notify()`: Position notification handling
-- `read_positions()`: Read current motor positions
-- Motor control methods: `move_head_up()`, `move_back_down()`, `move_legs_stop()`, etc.
-- Preset methods: `preset_memory()`, `program_memory()`
-- Optional features: `lights_on()`, `massage_toggle()`, etc.
+**BedController** (`beds/base.py`): abstract interface every bed type implements:
+`write_command()`, `start_notify()` / `stop_notify()`, `read_positions()`, motor
+methods (`move_head_up()`, …), presets (`preset_memory()`, `program_memory()`)
+and optional features (`lights_on()`, `massage_toggle()`, …).
 
 **Paired beds** (`paired_coordinator.py`, `paired_topology.py`, `paired_registry.py`, `paired_devices.py`):
 - Config-entry schema version 5 supports standalone and paired entries; each entry
@@ -145,35 +151,19 @@ custom_components/adjustable_bed/
 - Child service targets retain their side; conflicting explicit side requests are rejected
 - See [runtime boundaries](docs/design/paired-runtime-and-registry.md)
 
-**Config Flow** (`config_flow.py`):
-- Automatic discovery via BLE service UUIDs and device name patterns
-- Manual entry with bed type selection
-- Per-device Bluetooth adapter/proxy selection
-- Protocol variant selection where applicable
-- Options flow for reconfiguration
-- Active rescan and progress-backed setup, authentication, and bond removal
-- Explicit app/product profiles when advertisement data cannot identify the layout
-- Reversible combination of compatible entries and opt-in single-address side controls
-
-**BLE Connection Binary Sensor** (`binary_sensor.py`):
-- Shows real-time BLE connection state (device class: connectivity)
-- Attributes: `last_connected`, `last_disconnected`, `connection_source`, `rssi`, `state_detail`
-- Updates automatically when connection state changes
+**Config Flow** (`config_flow.py`): discovery, setup by app or remote, Configure
+for everyday settings, Reconfigure for the app, model or remote, progress-backed
+setup and bond removal, and reversible combination of compatible entries.
+Setup, Configure and Repairs share one wording for a shared field.
 
 ## Implemented Bed Types
 
-The supported-protocol list lives in the README's "Supported Beds" table — that is the single source of truth; don't mirror it here. To find how a specific bed works:
-
-- `custom_components/adjustable_bed/beds/` — one package per bed family (`beds/<family>/`,
-  main controller in `controller.py`) holding its controllers and every
-  family-specific module: protocol, catalog, state, services, discovery, repair
-  and data. A family with only a controller is a single `beds/<protocol>.py`.
-  Shared wire formats stay in `codec/` and typed app profiles in `profiles/`.
-- `detection.py` — how each bed type is auto-detected (service UUIDs, name patterns)
-- `controller_factory.py` — which bed type maps to which controller class, including
-  variants that share a controller (e.g. Serta/Ergomotion → `KeesonController`)
-- `docs/beds/*.md` — per-protocol documentation including command formats and
-  tested/untested status
+The README's "Supported Beds" table is the single source of truth for which
+protocols exist and which are confirmed working; don't mirror it here. To see
+how a bed works, read its family package in `beds/` (main controller in
+`controller.py`), `detection.py` for auto-detection, `controller_factory.py`
+for the bed type to controller mapping (variants can share a controller, e.g.
+Serta/Ergomotion → `KeesonController`) and its guide in `docs/beds/`.
 
 ## Adding a New Bed Type
 
@@ -339,7 +329,29 @@ A new app is normally a profile plus its vectors, not a new controller.
     raw or protocol state stays in `protocol_diagnostics`. Controller state
     sensors are disabled by default: set `entity_registry_enabled_default=True`
     only for dashboard values (motion, presets, massage and light state, timers).
-    `tests/test_entity_names.py` checks every translated name and state label.
+    `tests/test_entity_names.py` checks every name, unique ID and default over
+    every variant `tests/entity_surface.py` builds.
+
+14. **Use the shared shapes and plumbing.** Each rule has a test that fails
+    when it is broken.
+    - A control takes its shared shape: an on/off light is a `light`, timers are
+      the shared massage and light timer selects, a settable level is a number,
+      sleep readings use the shared sleep sensor builders, and app-catalog
+      buttons go through `beds/catalog_buttons.py`. A type change of an existing
+      entity needs a `Retype` row in `entity_retypes.py`.
+    - Every `write_gatt_char` call declares whether its write is one of the
+      command's own frames, and a frame held back is marked skipped
+      (`tests/test_frame_delivery_guard.py`).
+    - Entities show commanded values through `_async_send`; controllers publish
+      them with `sent_state()` around the write. Only `delivered()` reads
+      delivery.
+    - Build user-visible errors in `errors.py` with a translation key
+      (`tests/test_translated_errors.py`).
+    - Set a clock through the `supports_clock_sync` / `sync_clock` hook, never a
+      per-bed button or operation. Expose an alarm through `alarm_capability`
+      and the shared `set_alarm` action; keep a bed-specific alarm action only
+      where the bed's alarm needs checks `set_alarm` cannot express.
+    - A button that asks for confirmation never publishes a held gesture.
 
 ## Configuration Options
 
@@ -350,16 +362,14 @@ A new app is normally a profile plus its vectors, not a new controller.
 | `malouf_memory_slots` | Malouf/Lucid remote memory capacity (auto, 1, or 2) | auto |
 | `has_massage` | Enable massage entities | false |
 | `protocol_variant` | Protocol variant (bed-specific) | auto |
-| `disable_angle_sensing` | Disable position feedback | depends on bed type and setup route |
-| `passive_position_reconciliation` | Refresh positions while idle, when supported and quick handoff is off | bed-specific |
+| `disable_angle_sensing` | Stored inverse of the "Read bed position" field, saved only where it differs from the route | depends on bed type and setup route |
+| `passive_position_reconciliation` | Refresh positions while idle, when supported and the connection mode is not release | bed-specific |
 | `preferred_adapter` | Preferred BLE adapter; HA may reroute at connection time | auto |
-| `connection_profile` | BLE connection profile | balanced |
-| `motor_pulse_count` | Command repeat count | 10 |
-| `motor_pulse_delay_ms` | Delay between repeats | 100 |
-| `disconnect_after_command` | Disconnect immediately after commands | per bed type (`disconnect_after_command_default_enabled`) |
-| `idle_disconnect_seconds` | Idle timeout before disconnect; 0 keeps connected unless `disconnect_after_command` | 40 |
+| `connection_mode` | "Bluetooth connection": `release`, `idle` or `always` | per bed type (`bed_traits.default_connection_mode`) |
+| `idle_disconnect_seconds` | "Seconds to stay connected" for the `idle` mode | 40 |
+| `motor_pulse_count` | "Movement per tap": command repeat count | per bed type |
+| `motor_pulse_delay_ms` | Delay between repeats; not shown, a saved value still applies | per bed type |
 | `disable_discovery` | Suppress automatic discovery (global, stored via `discovery_settings`) | false |
-| `position_mode` | Speed vs accuracy tradeoff | speed |
 | `octo_pin` | PIN for Octo beds | "" |
 | `jensen_pin` | PIN for Jensen beds | "" |
 | `cb24_bed_selection` | Bed A/B selection for CB24 split beds | both sides |
@@ -393,9 +403,7 @@ side routing; support capture requires one physical target.
 
 3. **Cancel event handling** - `write_command()` checks `coordinator._cancel_command` by default. When stop is requested, the cancel event is set, the running command exits early, then STOP is sent.
 
-4. **Disconnect timer management** - Timer is cancelled when a command starts (inside the lock) and reset when it ends. This prevents mid-command disconnects for long operations.
-
-5. **Intentional disconnect flag** - Set before `client.disconnect()`, checked in `_on_disconnect` to skip auto-reconnect. Cleared in finally block since callback may not fire on clean disconnects.
+4. **Disconnect timer and intentional disconnect** - The timer is cancelled when a command starts (inside the lock) and reset when it ends, so long operations are never cut off. `_intentional_disconnect` is set before `client.disconnect()`, checked in `_on_disconnect` to skip auto-reconnect, and cleared in a finally block since the callback may not fire on clean disconnects.
 
 ## Releases
 
@@ -494,9 +502,8 @@ beds never answer. Patch any other long protocol wait in the test that hits it.
 
 ### Testing in Home Assistant
 
-1. Copy `custom_components/adjustable_bed` to your HA's `config/custom_components/`
-2. Restart Home Assistant
-3. Enable debug logging: Settings → Devices & Services → Adjustable Bed → ⋮ menu → Enable debug logging. Use the integration, then disable debug logging to download the log file.
+Copy `custom_components/adjustable_bed` to `config/custom_components/`, restart
+Home Assistant, and use the entry's **Enable debug logging** to capture a log.
 
 ### Using BLE Diagnostics
 
@@ -513,17 +520,10 @@ not in auto-injected instructions. Clean-room analysts must not open that guide.
 
 ## Documentation
 
-| File | Content |
-|------|---------|
-| `docs/README.md` | Documentation index and developer entry points |
-| `docs/SUPPORTED_ACTUATORS.md` | Which beds use which actuators, brand lookup |
-| `docs/CONFIGURATION.md` | All configuration options explained |
-| `docs/CONNECTION_GUIDE.md` | Bluetooth setup, ESPHome proxy configuration |
-| `docs/TROUBLESHOOTING.md` | Common issues and solutions |
-| `docs/SERVICES.md` | All public actions, paired side routing and automation examples |
-| `docs/COMMAND_LIFECYCLE.md` | Scheduling, cancellation and connection ownership |
-| `docs/beds/*.md` | Per-actuator protocol documentation |
-| `docs/BED_GUIDE_FORMAT.md` | Required layout for bed guides |
+[`docs/README.md`](docs/README.md) indexes every guide. Bed guides follow
+[`docs/BED_GUIDE_FORMAT.md`](docs/BED_GUIDE_FORMAT.md). A change that removes or
+renames a setting, entity, action or field updates the docs in the same PR
+(`tests/test_doc_terms.py` checks the common cases).
 
 ## Reference Materials
 

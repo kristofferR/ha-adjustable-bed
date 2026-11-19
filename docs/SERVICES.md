@@ -103,7 +103,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
 | [`richmat_legacy`](#richmat_legacy) | SleepEvolution and W.Silver Products: run control | Run a control from the selected app and name prefix, as a press or a save. |
 | [`mlily_remote`](#mlily_remote) | MLILY Remote: settings | Set the MS600 countdown alarm, or run the MS300-SH anti-snore movement on the left side. Set the clock with Set bed clock. |
-| [`rize_program_preset`](#rize_program_preset) | Rize: set default preset | Store the current position as a default preset on one physical Rize bed. Select a single paired side and explicitly confirm. |
+| [`rize_program_preset`](#rize_program_preset) | Rize: set default preset | Store the current position as a default preset on one physical Rize bed. Select one side of a combined bed and explicitly confirm. |
 | [`sleep_number_command`](#sleep_number_command) | Sleep Number: run control | Runs a Sleep Number control or reading. Readings return their results. See the actions guide for each command's options. |
 | [`sleeptracker_climate`](#sleeptracker_climate) | Sleeptracker: climate | Set the left, right or both fan modes and levels. Level 0 stops the selected fans. Heat runs for one hour and cool for ten hours. The bed does not report the time left. |
 | [`sleeptracker_massage`](#sleeptracker_massage) | Sleeptracker: massage | Steps a massage zone or pattern, picks a vibration speed, or stops the massage. |
@@ -242,7 +242,7 @@ data:
   hold_generation: 42
 ```
 
-**Testing status.** Automated tests show scheduler and service tests show that a renewal writes nothing and only moves the deadline,
+**Testing status.** Scheduler and service tests show that a renewal writes nothing and only moves the deadline,
 that expiry runs the bed's own release or STOP once, that STOP, a replacement,
 a dropped link or an unload ends the generation, and that a late or stale
 renewal never starts motion. Card tests cover the 250 ms renewals and the STOP
@@ -1863,7 +1863,7 @@ a separate Richmat sleep entry. See the [operation and parameter reference](beds
 ## Rize
 
 <a id="rize_program_preset"></a>
-**`rize_program_preset`**: Store the current position as a default preset on one physical Rize bed. Select a single paired side and explicitly confirm.
+**`rize_program_preset`**: Store the current position as a default preset on one physical Rize bed. Select one side of a combined bed and explicitly confirm.
 
 | Field | Name | Meaning |
 |-------|------|---------|
