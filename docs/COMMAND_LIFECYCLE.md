@@ -89,8 +89,8 @@ before reservations can cancel newer work, and before committing movement.
 
 ## Checked actions and STOP
 
-`set_alarm` (except the Customatic Z-Series and Symphony alarm paths, which run
-their own checks), `set_position` and `set_positions` capture each selected
+`set_alarm` (except the Customatic Z-Series, Symphony and Ultramatic alarm
+paths, which run their own checks), `set_position` and `set_positions` capture each selected
 bed's STOP state before their checks. A STOP on any selected bed or side while the action
 still connects or checks ends it with nothing written or moved; a STOP after
 the first write skips the remaining targets. Right before each `set_alarm`
