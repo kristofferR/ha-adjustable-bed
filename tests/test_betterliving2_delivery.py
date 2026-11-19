@@ -8,9 +8,8 @@ import pytest
 from custom_components.adjustable_bed.beds.keeson import betterliving2 as runtime
 from custom_components.adjustable_bed.command_scheduler import (
     Delivery,
-    command_delivery,
-    command_frames_written,
     current_command_context,
+    delivered,
 )
 from custom_components.adjustable_bed.light import AdjustableBedAssumedLight
 from tests.hold_lease_wire import virtual_clock
@@ -32,18 +31,18 @@ async def test_startup_frames_do_not_deliver_a_cancelled_user_command(hass):
     results = []
 
     async def operation(_controller):
-        await startup(controller)
-        context = current_command_context()
-        assert context is not None
-        context.cancel_event.set()
-        await controller.lights_toggle()
-        results.append((command_frames_written(), command_delivery()))
+        with delivered(results.append):
+            await startup(controller)
+            context = current_command_context()
+            assert context is not None
+            context.cancel_event.set()
+            await controller.lights_toggle()
 
     try:
         with ready(child), virtual_clock(), patch.object(runtime.dt_util, "now", return_value=NOW):
             await child.async_execute_controller_command(operation)
         assert len(writes(client)) == 2  # Actual clock and query startup frames only.
-        assert results == [(0, Delivery.NONE)]
+        assert results == [Delivery.NONE]
     finally:
         await child.async_shutdown()
 
@@ -54,8 +53,8 @@ async def test_explicit_refresh_is_its_own_command_frame(hass, action):
     results = []
 
     async def operation(_controller):
-        await getattr(controller, action)()
-        results.append(command_frames_written())
+        with delivered(results.append):
+            await getattr(controller, action)()
 
     try:
         with ready(child), virtual_clock():
@@ -63,7 +62,7 @@ async def test_explicit_refresh_is_its_own_command_frame(hass, action):
             client.write_gatt_char.reset_mock()
             await child.async_execute_controller_command(operation)
         assert len(writes(client)) == 1
-        assert results == [1]
+        assert results == [Delivery.SENT]
     finally:
         await child.async_shutdown()
 
@@ -119,6 +118,40 @@ async def test_level_publication_uses_sent_frame_not_cancellation_alone(hass, wh
         await child.async_shutdown()
 
 
+@pytest.mark.parametrize("value", ("level", "alarm"))
+async def test_earlier_clock_write_cannot_publish_an_unsent_value(hass, value):
+    child, controller, client, _ = await bed(hass)
+    controller.forward_controller_state_updates(runtime.LEVELS["head"](2))
+    prior = controller._view = controller._saved = runtime.AlarmView(hour=6, minute=15)
+    results = []
+
+    async def operation(_controller):
+        with delivered(results.append):
+            await controller.sync_clock()
+            context = current_command_context()
+            assert context is not None
+            context.cancel_event.set()
+            if value == "level":
+                await controller.set_level("head", 3)
+            else:
+                plan = controller.prepare_alarm(
+                    enabled=True, hour=7, minute=30, weekdays=frozenset({1}), action="memory_1"
+                )
+                await controller.set_alarm(plan)
+
+    try:
+        with ready(child), virtual_clock():
+            await startup(controller)
+            client.write_gatt_char.reset_mock()
+            await child.async_execute_controller_command(operation)
+        assert len(writes(client)) == 1
+        assert results == [Delivery.PARTIAL]
+        assert child.controller_state[runtime.LEVELS["head"]] == 2
+        assert controller._view == controller._saved == prior
+    finally:
+        await child.async_shutdown()
+
+
 @pytest.mark.parametrize("after_frames", (1, 2))
 async def test_partial_massage_value_becomes_unknown_without_changing_unsent_zone(
     hass, after_frames
@@ -136,10 +169,8 @@ async def test_partial_massage_value_becomes_unknown_without_changing_unsent_zon
             context.cancel_event.set()
 
     async def operation(_controller):
-        try:
+        with delivered(results.append):
             await controller.massage_pair(1, 3)
-        finally:
-            results.append(command_delivery())
 
     try:
         with ready(child), virtual_clock():
@@ -149,7 +180,7 @@ async def test_partial_massage_value_becomes_unknown_without_changing_unsent_zon
             await child.async_execute_controller_command(operation)
         assert len(writes(client)) == after_frames
         assert results == [Delivery.PARTIAL]
-        assert child.controller_state[runtime.LEVELS["head"]] is None
+        assert child.controller_state[runtime.LEVELS["head"]] == (None if after_frames == 1 else 1)
         assert child.controller_state[runtime.LEVELS["feet"]] == 2
     finally:
         await child.async_shutdown()
@@ -163,10 +194,8 @@ async def test_fresh_cleanup_frames_do_not_deliver_the_cancelled_command(hass):
         context = current_command_context()
         assert context is not None
         context.cancel_event.set()
-        try:
+        with delivered(results.append):
             await controller._cleanup(controller._live(), 2, controller._serial, context)
-        finally:
-            results.append((command_frames_written(), command_delivery()))
 
     try:
         with ready(child), virtual_clock():
@@ -174,7 +203,7 @@ async def test_fresh_cleanup_frames_do_not_deliver_the_cancelled_command(hass):
             client.write_gatt_char.reset_mock()
             await child.async_execute_controller_command(operation)
         assert len(writes(client)) == 2
-        assert results == [(0, Delivery.NONE)]
+        assert results == [Delivery.NONE]
     finally:
         await child.async_shutdown()
 
@@ -197,10 +226,8 @@ async def test_partial_alarm_clears_shown_selection_and_retains_prior_preference
         plan = controller.prepare_alarm(
             enabled=True, hour=7, minute=30, weekdays=frozenset({1}), action="memory_1"
         )
-        try:
+        with delivered(results.append):
             await controller.set_alarm(plan)
-        finally:
-            results.append(command_delivery())
 
     try:
         with ready(child), virtual_clock():

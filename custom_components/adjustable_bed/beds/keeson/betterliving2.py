@@ -18,11 +18,8 @@ from ...card import CARD_HIDDEN, CARD_MASSAGE
 from ...command_scheduler import (
     CommandContext,
     Delivery,
-    command_cancelled,
-    command_delivery,
-    command_frames_written,
     current_command_context,
-    frames_sent_since,
+    delivered,
     note_frame_skipped,
     note_frame_written,
     note_write_not_counted,
@@ -115,13 +112,6 @@ async def drain(task: asyncio.Task[None]) -> None:
     task.result()
     if interrupted:
         raise asyncio.CancelledError
-
-
-def _value_delivery(before: int, finished: bool) -> Delivery | None:
-    """Delivery of this value, excluding earlier steps of the same command."""
-    if command_frames_written() > before or finished and frames_sent_since(before):
-        return command_delivery() if finished or command_cancelled() else Delivery.PARTIAL
-    return None
 
 
 class BetterLiving2Controller(KeesonController):
@@ -783,16 +773,8 @@ class BetterLiving2Controller(KeesonController):
             if not 0 <= value <= 3:
                 raise ValueError("P1 massage level must be 0..3")
             word = app.P1_MASSAGE_BASES[zone] + value
-        before, finished = command_frames_written(), False
-        try:
+        with self.sent_state(LEVELS[zone](value)):
             await self.tap(word)
-            finished = True
-        finally:
-            delivery = _value_delivery(before, finished)
-            if delivery is not None:
-                self.forward_sent_state_updates(
-                    LEVELS[zone](value if delivery is Delivery.SENT else None)
-                )
 
     async def massage_pair(self, head: int, feet: int) -> None:
         if self.wire != "P1" or any(type(v) is not int or not 0 <= v <= 3 for v in (head, feet)):
@@ -801,10 +783,9 @@ class BetterLiving2Controller(KeesonController):
         for index, (zone, value) in enumerate((("head", head), ("feet", feet))):
             self._live(link)
             frame = app.command(self.wire, app.P1_MASSAGE_BASES[zone] + value)
-            before, finished = command_frames_written(), False
             try:
-                await self._run((frame, frame), expected=link)
-                finished = True
+                with self.sent_state(LEVELS[zone](value)):
+                    await self._run((frame, frame), expected=link)
                 if index == 0 and await pause(app.MASSAGE_ZONE_GAP_MS / 1000, self._cancel):
                     note_frame_skipped()  # The foot value has not been sent.
                     return
@@ -812,12 +793,6 @@ class BetterLiving2Controller(KeesonController):
                 if index == 0:
                     note_frame_skipped()
                 raise
-            finally:
-                delivery = _value_delivery(before, finished)
-                if delivery is not None:
-                    self.forward_sent_state_updates(
-                        LEVELS[zone](value if delivery is Delivery.SENT else None)
-                    )
 
     async def massage_step(self, word: int) -> None:
         if self.wire == "P1" or word not in app.STEP_MASSAGE.values():
@@ -916,10 +891,13 @@ class BetterLiving2Controller(KeesonController):
             raise ValueError("BetterLiving2 physical owner/profile changed after validation")
         link = self._live(plan.link)
         started = asyncio.get_running_loop().time()
-        before, finished = command_frames_written(), False
+        delivery, finished = Delivery.NONE, False
+
+        def record_delivery(outcome: Delivery) -> None:
+            nonlocal delivery
+            delivery = outcome
 
         def publish_delivery() -> None:
-            delivery = _value_delivery(before, finished)
             if delivery is Delivery.SENT:
                 self._view = self._saved = plan.selected
                 self._publish_alarm()
@@ -929,10 +907,11 @@ class BetterLiving2Controller(KeesonController):
                 self._publish_alarm()
 
         try:
-            await self._run((plan.frame, plan.frame), expected=link, receive_kind="alarm")
+            with delivered(record_delivery):
+                await self._run((plan.frame, plan.frame), expected=link, receive_kind="alarm")
             finished = True
         finally:
-            if not finished or command_cancelled():
+            if not finished or self._cancel.is_set():
                 publish_delivery()
         try:
             if await pause(app.ALARM_SYNC_DELAY_MS / 1000, self._cancel):

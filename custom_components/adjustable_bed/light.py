@@ -26,7 +26,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .beds.octo.runtime import octo_controller
 from .card import CARD_LIGHTING
-from .command_scheduler import Delivery, command_delivery, command_frames_written
+from .command_scheduler import Delivery, delivered
 from .const import DOMAIN
 from .controller_state import ControllerState, sided
 from .entity import AdjustableBedEntity
@@ -221,18 +221,14 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
         is the toggle, so a partly sent one counts, also when cancellation
         interrupts its release frames.
         """
-        sent = False
-        try:
-            await ctrl.lights_toggle()
-        except BaseException:
-            sent = bool(command_frames_written())
-            raise
-        else:
-            sent = command_delivery() is not Delivery.NONE
-        finally:
-            if sent:
+
+        def show(delivery: Delivery) -> None:
+            if delivery is not Delivery.NONE:
                 self._attr_is_on = is_on
                 self.async_write_ha_state()
+
+        with delivered(show):
+            await ctrl.lights_toggle()
 
 
 class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
@@ -882,10 +878,14 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         """Turn the under-bed light on."""
         del kwargs
 
+        generation = self._state_generation
+
         async def _turn_on(ctrl: BedController) -> None:
+            nonlocal generation
             generation = self._state_generation
             await ctrl.lights_on()
-            delivery = command_delivery()
+
+        def show(delivery: Delivery) -> None:
             # Published state wins; a value sent only in part is unknown.
             if (
                 not self._feedback_only
@@ -897,19 +897,20 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                     self._schedule_auto_off()
                 self.async_write_ha_state()
 
-        await self._coordinator.async_execute_controller_command(
-            _turn_on,
-            cancel_running=False,
-        )
+        await self._async_send(_turn_on, on_delivery=show, cancel_running=False)
 
     async def async_turn_off(self, **kwargs: object) -> None:
         """Turn the under-bed light off."""
         del kwargs
 
+        generation = self._state_generation
+
         async def _turn_off(ctrl: BedController) -> None:
+            nonlocal generation
             generation = self._state_generation
             await ctrl.lights_off()
-            delivery = command_delivery()
+
+        def show(delivery: Delivery) -> None:
             if (
                 not self._feedback_only
                 and delivery is not Delivery.NONE
@@ -920,10 +921,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                     self._cancel_auto_off()
                 self.async_write_ha_state()
 
-        await self._coordinator.async_execute_controller_command(
-            _turn_off,
-            cancel_running=False,
-        )
+        await self._async_send(_turn_off, on_delivery=show, cancel_running=False)
 
     async def async_toggle(self, **kwargs: object) -> None:
         """Use discrete commands with known feedback, or a native toggle."""
