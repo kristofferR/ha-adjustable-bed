@@ -345,16 +345,6 @@ class SimmonsController(ProfileExecution[OkinNFrameProfile], BedController):
         return (
             *inclined,
             ControllerButtonSpec(
-                "simmons_sync_clock",
-                "Sync Clock",
-                _action("sync_clock"),
-                translation_key="simmons_sync_clock",
-                diagnostic=True,
-                icon="mdi:clock-check",
-                cancel_movement=False,
-                scheduler_resource="configuration",
-            ),
-            ControllerButtonSpec(
                 "simmons_refresh_alarms",
                 "Refresh Alarms",
                 _action("refresh_alarms"),

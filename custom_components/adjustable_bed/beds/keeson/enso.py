@@ -19,6 +19,7 @@ from ...profiles import enso as app
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
 from ..builder import BuildContext
+from ..cancellation import cancellable, settled
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -278,29 +279,22 @@ class EnsoController(KeesonController):
                 return
             if index:
                 try:
-                    await asyncio.wait_for(cancel.wait(), repeat_delay_ms / 1000)
+                    await cancellable(asyncio.sleep(repeat_delay_ms / 1000), cancel)
+                except asyncio.CancelledError:
                     note_frame_skipped()
+                    if not cancel.is_set():
+                        raise
                     return
-                except TimeoutError:
-                    pass
             await self._send(link, command, cancel)
 
     async def _release(self, link: _Link, *, acknowledge: CommandContext | None = None) -> None:
-        task = asyncio.create_task(
-            self._send(link, self._build_command(0), asyncio.Event(), cleanup=True)
-        )
-        interrupted = False
-        while not task.done():
-            try:
-                await asyncio.shield(task)
-            except asyncio.CancelledError:
-                interrupted = True
-        task.result()
-        if acknowledge is not None:
-            acknowledge.cleanup_stop_sent = True
-            self._cleanup = (link, acknowledge)
-        if interrupted:
-            raise asyncio.CancelledError
+        async def send() -> None:
+            await self._send(link, self._build_command(0), asyncio.Event(), cleanup=True)
+            if acknowledge is not None:
+                acknowledge.cleanup_stop_sent = True
+                self._cleanup = (link, acknowledge)
+
+        await settled(send())
 
     async def _run(
         self,
@@ -333,9 +327,15 @@ class EnsoController(KeesonController):
                 remaining = min(deadline, started + app.REFRESH_MS / 1000) - loop.time()
                 if remaining > 0:
                     try:
-                        await asyncio.wait_for(cancel.wait(), remaining)
-                    except TimeoutError:
-                        pass
+                        await cancellable(asyncio.sleep(remaining), cancel)
+                    except asyncio.CancelledError:
+                        # The final wait only holds the release deadline; no
+                        # refresh is missing once the last planned frame went out.
+                        if started + app.REFRESH_MS / 1000 + 1e-6 < deadline:
+                            note_frame_skipped()
+                        if not cancel.is_set():
+                            raise
+                        return
                 if loop.time() + 1e-6 >= deadline:
                     return
         finally:

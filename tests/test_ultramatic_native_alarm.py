@@ -154,7 +154,7 @@ async def test_registered_native_parent_both_uses_one_combined_sequence(native_a
 
     client.write_gatt_char.side_effect = observe
     generation = inner.controller.operation_generation
-    assert pair._targets_for("both")[0][1] is pair._single_both
+    assert pair.targets_for("both")[0][1] is pair._single_both
     with clocked(hass):
         await alarm(hass, [devices["parent"]], operation)
     assert writes(client) == expected(operation)

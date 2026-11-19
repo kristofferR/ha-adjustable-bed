@@ -17,9 +17,9 @@ from typing import Any, cast
 
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
+from .runtime_data import DomainKey, domain_registry, domain_value
 
-_KEY = "app_sessions"
+_KEY: DomainKey[dict[str, dict[Hashable, Any]]] = DomainKey("app_sessions")
 
 
 def app_session[T](
@@ -37,7 +37,7 @@ def app_session[T](
     the address's other sessions, for apps whose offline and live controllers
     may resolve different profiles at the same time.
     """
-    registry: dict[str, dict[Hashable, Any]] = hass.data.setdefault(DOMAIN, {}).setdefault(_KEY, {})
+    registry = domain_registry(hass, _KEY, dict)
     sessions = registry.setdefault(address.upper(), {})
     if profile in sessions:
         return cast(T, sessions[profile])
@@ -49,6 +49,6 @@ def app_session[T](
 
 def drop_app_sessions(hass: HomeAssistant, address: str) -> None:
     """Forget an address's sessions (profile change or entry removal)."""
-    registry = hass.data.get(DOMAIN, {}).get(_KEY)
-    if isinstance(registry, dict):
+    registry = domain_value(hass, _KEY)
+    if registry is not None:
         registry.pop(address.upper(), None)

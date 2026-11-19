@@ -62,7 +62,7 @@ def _alarm_targets(parent: BedTarget, side: str) -> list[BedChild]:
     """Validate logical owners and the topology's effective dispatch scopes."""
     children = _command_targets(parent, side)
     if isinstance(parent, PairedBedCoordinator):
-        children.extend(child for _, child in parent._targets_for(side))
+        children.extend(child for _, child in parent.targets_for(side))
     return list({id(child): child for child in children}.values())
 
 
@@ -108,7 +108,7 @@ async def _run_alarm(
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
     physical = [child for parent, side in targets for child in _command_targets(parent, side)]
     dispatches = [
-        parent._targets_for(side) if isinstance(parent, PairedBedCoordinator) else [(side, parent)]
+        parent.targets_for(side) if isinstance(parent, PairedBedCoordinator) else [(side, parent)]
         for parent, side in targets
     ]
     # Native Both executes once on a combined view, while admission must still
@@ -168,7 +168,7 @@ async def _run_alarm(
             raise invalid("bed_changed")
         for (parent, side), captured in zip(targets, dispatches, strict=True):
             current_dispatch = (
-                parent._targets_for(side)
+                parent.targets_for(side)
                 if isinstance(parent, PairedBedCoordinator)
                 else [(side, parent)]
             )

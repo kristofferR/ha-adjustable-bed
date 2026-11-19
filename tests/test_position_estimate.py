@@ -533,13 +533,13 @@ async def test_stop_during_lower_both_ends_the_whole_request(
     hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     manager = await calibrated(hass, ((LEFT, "left"), (RIGHT, "right")))
-    parent = SimpleNamespace(_command_scheduler=SimpleNamespace(stop_epoch=0))
+    parent = SimpleNamespace(command_scheduler=SimpleNamespace(stop_epoch=0))
     hass.data[DOMAIN]["entry"] = parent
     moved: list[str] = []
 
     async def timed_move(targets, motor, _direction, _ms) -> None:
         moved.append(f"{targets[0][1]}:{motor}")
-        parent._command_scheduler.stop_epoch += 1  # the user pressed STOP
+        parent.command_scheduler.stop_epoch += 1  # the user pressed STOP
 
     monkeypatch.setattr("custom_components.adjustable_bed.services._async_timed_move", timed_move)
     await pe.async_lower_to_flat(hass, manager, manager.beds.values())

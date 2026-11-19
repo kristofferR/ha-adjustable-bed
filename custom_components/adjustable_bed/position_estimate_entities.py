@@ -37,6 +37,7 @@ from .position_estimate import (
     async_recall_position,
     position_estimates,
 )
+from .runtime_data import entry_runtime
 
 # The card draws a dashed estimate only for an axis whose maximum angle the
 # user configured; percent of travel is not an angle otherwise.
@@ -60,7 +61,7 @@ def _estimated_beds(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> tuple[PositionEstimates, list[tuple[EntityRuntime, BedEstimate]]] | None:
     manager = position_estimates(hass, entry.entry_id)
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     if manager is None:
         return None
     beds = [
@@ -296,7 +297,7 @@ def async_setup_estimate_sensors(
     manager = position_estimates(hass, entry.entry_id)
     if manager is None or not manager.active:
         return
-    async_add_entities([SavedPositionsSensor(hass.data[DOMAIN][entry.entry_id], manager)])
+    async_add_entities([SavedPositionsSensor(entry_runtime(hass, entry.entry_id), manager)])
 
 
 def async_setup_estimate_buttons(
@@ -314,7 +315,7 @@ def async_setup_estimate_buttons(
         entities.append(RemoteUsedButton(runtime, bed))
     async_add_entities(entities)
 
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     buttons: dict[str, SavedPositionButton] = {}
 
     @callback

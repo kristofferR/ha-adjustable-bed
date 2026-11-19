@@ -201,13 +201,6 @@ def devices():
     return asyncio.run(build())
 
 
-# Same-named entities on one device that the typed sensor, light and number work
-# replaces (v5-entities-typed). Remove an entry once its device has one name each.
-KNOWN_DUPLICATE_NAMES = {
-    ("DoubleSleepController", "sleep report status"),
-    ("LogicdataAppController", "under bed lights"),
-    ("ParamountController", "bed height"),
-}
 
 
 def test_every_shown_name_follows_the_rules(devices) -> None:
@@ -225,7 +218,7 @@ def test_one_device_never_shows_one_name_twice(devices) -> None:
     for device in devices:
         names = Counter(entity.name.casefold() for entity in device.entities if entity.name)
         offenders |= {(device.bed, name) for name, count in names.items() if count > 1}
-    assert offenders - KNOWN_DUPLICATE_NAMES == set()
+    assert offenders == set()
 
 
 def test_unique_ids_are_unique_on_every_device(devices) -> None:

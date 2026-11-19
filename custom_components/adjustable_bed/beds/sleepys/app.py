@@ -14,6 +14,7 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Final, cast
 
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...card import (
     CARD_LIGHT_LEVEL,
@@ -1090,6 +1091,8 @@ class SleepysEliteAppController(BedController):
                     # The bed reports both itself; the queries are fallbacks.
                     diagnostic=key
                     in ("sleepys_app_query_position", "sleepys_app_massage_query"),
+                    # Clearing the saved memory is maintenance: there to enable.
+                    entity_registry_enabled_default=key != "sleepys_app_reset_memory",
                     hold=(
                         ControllerHoldSpec(
                             control=builder,
@@ -1140,6 +1143,9 @@ class SleepysEliteAppController(BedController):
                 ).set_motion_sensor(enabled=enabled),
                 icon="mdi:motion-sensor",
                 assumed_state=True,
+                # A setting, not a dashboard control: there to enable.
+                entity_category=EntityCategory.CONFIG,
+                entity_registry_enabled_default=False,
             ),
         )
 

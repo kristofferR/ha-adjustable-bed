@@ -909,7 +909,7 @@ class SvaneController(BedController):
         if (
             context is not None
             and context.active
-            and context.scheduler_token is self._coordinator._command_scheduler.token
+            and context.scheduler_token is self._coordinator.command_scheduler.token
             and context.pulse_count is not None
             and context.pulse_delay_ms is not None
         ):

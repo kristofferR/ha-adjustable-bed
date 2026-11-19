@@ -84,6 +84,7 @@ from .pairing_candidates import (
     active_pairing_candidates,
     build_pair_selection_schema,
 )
+from .runtime_data import loaded_runtime
 from .setup_operation import (
     BluetoothOperationMixin,
     OperationOutcome,
@@ -458,7 +459,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         entry = self._entry()
         if entry is None:
             return None
-        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        coordinator = loaded_runtime(self.hass, entry.entry_id)
         side = self._target_side()
         if coordinator is None or side is None:
             return coordinator

@@ -221,7 +221,6 @@ class EshineOkinController(BedController):
         labels = {
             "flat_zero_g": "Flat and zero gravity",
             "query_state": "Refresh bed state",
-            "sync_clock": "Sync clock",
         }
         if self.supports_massage:
             labels.update(
@@ -241,7 +240,7 @@ class EshineOkinController(BedController):
                 translation_key=EXTRA_KEY if key == "flat_zero_g" else f"eshine_okin_{key}",
                 translation_placeholders={"action": name} if key == "flat_zero_g" else None,
                 hold=ControllerHoldSpec(key) if key in HELD else None,
-                diagnostic=key in ("query_state", "sync_clock"),
+                diagnostic=key == "query_state",
                 entity_registry_enabled_default=key != "flat_zero_g",
                 card=CARD_MASSAGE if key.startswith("massage_") else CARD_UTILITY,
             )

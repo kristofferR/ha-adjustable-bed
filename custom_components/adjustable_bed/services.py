@@ -107,6 +107,7 @@ from .position_estimate import (
     track_motor_command,
     track_stream_member,
 )
+from .runtime_data import loaded_runtime
 from .support_logs import async_setup_support_logs
 
 if TYPE_CHECKING:
@@ -142,9 +143,9 @@ def _capture_command_admission(
     """Capture the selected physical owners before live validation/connect waits."""
     scope = command_resources(*resources)
     if isinstance(coordinator, PairedBedCoordinator):
-        targets = coordinator._targets_for(side)
+        targets = coordinator.targets_for(side)
         pair_generations = {
-            target_side: coordinator._pair_cancel_generation(target_side, scope)
+            target_side: coordinator.pair_cancel_generation(target_side, scope)
             for target_side, _child in targets
         }
     else:
@@ -277,7 +278,7 @@ def _resolve_sided_target(
     device, entry = async_get_device_and_config_entry(hass, DOMAIN, validation_id)
     if isinstance(selected, dr.ChildDeviceEntry):
         device = selected
-    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    coordinator = loaded_runtime(hass, entry.entry_id)
     if coordinator is None:
         return None
     inferred_side: str | None = None
@@ -407,7 +408,7 @@ def _get_support_bundle_target_from_device(
         return None
 
     coordinator: BedChild | None = None
-    stored = hass.data.get(DOMAIN, {}).get(entry_id)
+    stored = loaded_runtime(hass, entry_id)
     if isinstance(stored, PairedBedCoordinator):
         # Reuse the matching live child coordinator so the bundle pauses
         # and reuses its connection instead of opening a second BLE link
@@ -1214,7 +1215,7 @@ async def _execute_position_requests(
                 return
             # Captured with no await since the STOP check above.
             if isinstance(coordinator, PairedBedCoordinator):
-                pair_targets = coordinator._targets_for(side)
+                pair_targets = coordinator.targets_for(side)
                 group = {
                     item
                     for target in _command_targets(coordinator, side)
@@ -1504,7 +1505,7 @@ async def _async_with_hold_lease(
     # Key every claim by the target that executes the command: a native
     # single-address Both runs once on its combined side view.
     executing = (
-        list({id(child): child for _, child in coordinator._targets_for(side)}.values())
+        list({id(child): child for _, child in coordinator.targets_for(side)}.values())
         if isinstance(coordinator, PairedBedCoordinator)
         else _command_targets(coordinator, side)
     )
@@ -1640,7 +1641,7 @@ async def _async_timed_move(
                 if isinstance(coordinator, PairedBedCoordinator):
                     target_side = next(
                         target_side
-                        for target_side, child in coordinator._targets_for(side)
+                        for target_side, child in coordinator.targets_for(side)
                         if child is target
                     )
                 else:
@@ -2167,7 +2168,7 @@ async def _hold_targets(
             ):
                 stop_epochs = {
                     id(child): admission.expected_stop_epochs.get(target_side)
-                    for target_side, child in coordinator._targets_for(side)
+                    for target_side, child in coordinator.targets_for(side)
                 }
 
                 async def hold_shared(
@@ -2374,7 +2375,7 @@ class _CheckedSession:
 
 def _connection_generation(child: BedChild) -> object:
     """Return the side's connection generation; each new connection advances it."""
-    return getattr(child, "_position_connection_generation", None)
+    return None if isinstance(child, SingleAddressSideCoordinator) else child.connection_generation
 
 
 async def _write_checked_alarms(
@@ -2468,15 +2469,15 @@ async def _write_checked_alarms(
             )
         # Only the sequential cycle of this call may open a new session.
         child = next((item for item in checked if item.controller is controller), None)
-        sequential = getattr(parent, "_sequential", None)
-        cycle = sequential._cycle if sequential is not None else None
+        cycle = parent.sequential_cycle if isinstance(parent, PairedBedCoordinator) else None
         if (
             child is not None
             and cycle is not None
             and cycle.task is call_task
             and isinstance(parent, PairedBedCoordinator)
-            and cycle.matches(parent._admission)
-            and getattr(child, "_connection_creator_task", None) is cycle.task
+            and parent.cycle_is_current(cycle)
+            and not isinstance(child, SingleAddressSideCoordinator)
+            and child.connection_creator_task is cycle.task
             and _connection_generation(child)
             == cast("int", sessions[id(child)].generation) + 1
         ):

@@ -2253,9 +2253,6 @@
       "simmons_inclined_right": {
         "name": "Inclined right"
       },
-      "simmons_sync_clock": {
-        "name": "Sync clock"
-      },
       "simmons_refresh_alarms": {
         "name": "Refresh alarms"
       },
@@ -2504,9 +2501,6 @@
       },
       "eshine_okin_query_state": {
         "name": "Refresh bed state"
-      },
-      "eshine_okin_sync_clock": {
-        "name": "Sync clock"
       },
       "eshine_okin_massage_on": {
         "name": "Massage on"
@@ -2979,9 +2973,6 @@
       "resident_check_massage": {
         "name": "Refresh massage timer"
       },
-      "resident_sync_clock": {
-        "name": "Sync clock"
-      },
       "richmat_app_release": {
         "name": "Release held control"
       },
@@ -3174,9 +3165,6 @@
       "symphony_query_alarm": {
         "name": "Refresh alarm"
       },
-      "symphony_sync_clock": {
-        "name": "Sync clock"
-      },
       "symphony_head_up": {
         "name": "Head up"
       },
@@ -3218,9 +3206,6 @@
       },
       "symphony_head_foot_lift_down": {
         "name": "Head and foot lifting down"
-      },
-      "yamada_sync_clock": {
-        "name": "Sync clock"
       },
       "yamada_query_alarms": {
         "name": "Refresh alarms"
@@ -3359,9 +3344,6 @@
       },
       "ultramatic_query_alarm": {
         "name": "Refresh alarm"
-      },
-      "ultramatic_clock": {
-        "name": "Sync bed clock"
       },
       "ultramatic_release": {
         "name": "Release held control"
@@ -4580,9 +4562,6 @@
       "doublesleep_use_side": {
         "name": "Sensor sides"
       },
-      "doublesleep_report": {
-        "name": "Sleep report status"
-      },
       "doublesleep_legacy_report": {
         "name": "Legacy sleep history"
       },
@@ -4723,9 +4702,6 @@
       },
       "paramount_capabilities": {
         "name": "Capabilities"
-      },
-      "paramount_height": {
-        "name": "Bed height"
       },
       "paramount_tilt": {
         "name": "Tilt"
@@ -5069,6 +5045,15 @@
       "majestichome": {
         "name": "Model"
       },
+      "doublesleep_left_report": {
+        "name": "Left sleep report status"
+      },
+      "doublesleep_right_report": {
+        "name": "Right sleep report status"
+      },
+      "paramount_current_height": {
+        "name": "Current bed height"
+      },
       "enso_massage_timer": {
         "name": "Massage timer"
       }
@@ -5300,9 +5285,6 @@
       "leggett_sleep_timer_indicator": {
         "name": "Sleep timer"
       },
-      "under_bed_lights": {
-        "name": "Under Bed Lights"
-      },
       "furnimove_sync": {
         "name": "Synchronized"
       },
@@ -5488,6 +5470,9 @@
       },
       "body_movement_right": {
         "name": "Right body movement"
+      },
+      "under_bed_light_state": {
+        "name": "Under-bed light state"
       },
       "enso_light": {
         "name": "Light"

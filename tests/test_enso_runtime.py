@@ -185,3 +185,35 @@ async def test_configure_hides_and_resets_the_profile_owned_tap_window(hass):
     with patch.object(hass.config_entries, "async_schedule_reload"):
         await flow._async_options_form({}, step_id="settings")
     assert entry.data[const.CONF_MOTOR_PULSE_COUNT] == 10
+
+
+@pytest.mark.parametrize(
+    "sent_first,duration,expected",
+    [(False, 300, "none"), (True, 300, "partial"), (True, 100, "sent")],
+)
+async def test_delivery_counts_only_required_frames_withheld_when_event_is_cleared(
+    sent_first, duration, expected
+):
+    from custom_components.adjustable_bed.command_scheduler import delivered
+
+    c, co, client, _ = await bed()
+    owner = context(co.cancel_command)
+    deliveries = []
+
+    async def cancel_after_frame(*args, **kwargs):
+        if bytes(args[1]) != keeson.frame(0):
+            co.cancel_command.set()
+
+    client.write_gatt_char.side_effect = cancel_after_frame
+    if not sent_first:
+        co.cancel_command.set()
+    marker = _CURRENT_COMMAND_CONTEXT.set(owner)
+    try:
+        with virtual_clock(), delivered(deliveries.append):
+            await c.hold_control("head_up", duration)
+            # Local interruption accounting must not depend on the scheduler
+            # event still being set when delivery settles.
+            co.cancel_command.clear()
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(marker)
+    assert [value.value for value in deliveries] == [expected]

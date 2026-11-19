@@ -44,6 +44,7 @@ from homeassistant.helpers.translation import async_get_translations
 from .app_families import GUIDED_FAMILIES, AppFamily
 from .const import CONF_BED_TYPE, CONF_PROTOCOL_VARIANT, DOMAIN, PAIR_SIDES
 from .pairing import effective_child_data, get_child, is_paired
+from .runtime_data import loaded_runtime
 
 if TYPE_CHECKING:
     from .entity_runtime import EntityRuntime
@@ -297,7 +298,7 @@ async def _async_current_labels(
     """List the entry's controls: the running runtime, else the saved setup, else the registry."""
     from .coordinator import AdjustableBedCoordinator
 
-    runtime = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    runtime = loaded_runtime(hass, entry.entry_id)
     if isinstance(runtime, AdjustableBedCoordinator) and runtime.capability_controller is not None:
         try:
             return await _async_entity_labels(hass, runtime)

@@ -70,6 +70,7 @@ from .paired_topology import (
     PairedSideError,
     PairTarget,
     PairTopology,
+    SequentialCycle,
     SequentialTwoLinkTopology,
     SingleLinkSideAwareTopology,
     linked_readiness_required,
@@ -240,10 +241,10 @@ class PairedBedCoordinator:
 
     # ------------------------------------------------------------------ admission
     # Services capture and revalidate pair ownership around their own preflight.
-    def _targets_for(self, side: str) -> list[PairTarget]:
+    def targets_for(self, side: str) -> list[PairTarget]:
         return self._topology.targets_for(side)
 
-    def _pair_cancel_generation(self, side: str, resources: Collection[str]) -> tuple[int, ...]:
+    def pair_cancel_generation(self, side: str, resources: Collection[str]) -> tuple[int, ...]:
         return self._admission.generation(side, self._topology.command_scope(resources))
 
     def stop_count(self, side: str) -> int:
@@ -253,13 +254,13 @@ class PairedBedCoordinator:
     @property
     def supports_simultaneous_side_holds(self) -> bool:
         """Whether Both can execute one shared lease without serial side waits."""
-        executing = list({id(child): child for _, child in self._targets_for(SIDE_BOTH)}.values())
+        executing = list({id(child): child for _, child in self.targets_for(SIDE_BOTH)}.values())
         return len(executing) <= 1 or (
             self.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
             and len({child.operation_identity for child in executing}) == len(executing)
         )
 
-    def _pair_admission_was_cancelled(
+    def pair_admission_was_cancelled(
         self,
         targets: Collection[PairTarget],
         resources: Collection[str],
@@ -270,7 +271,20 @@ class PairedBedCoordinator:
             targets, resources, entry_cancel, expected_stop_epochs
         )
 
-    def _locked_target_sides(
+    @property
+    def sequential_cycle(self) -> SequentialCycle | None:
+        """Return the one-link command cycle running on this pair, if any."""
+        return self._sequential.cycle if self._sequential is not None else None
+
+    def cycle_is_current(self, cycle: SequentialCycle) -> bool:
+        """Return whether no STOP or newer command on its sides has cancelled ``cycle``."""
+        return cycle.matches(self._admission)
+
+    def is_admitted_child(self, child: BedChild) -> bool:
+        """Return whether ``child`` belongs to the command this pair admitted last."""
+        return child in self._admission.active_children
+
+    def locked_target_sides(
         self, targets: Collection[PairTarget]
     ) -> contextlib.AbstractAsyncContextManager[None]:
         """Lock selected side lanes in stable order (Reverie comfort reservations)."""
@@ -299,7 +313,7 @@ class PairedBedCoordinator:
             raise ValueError("Pass resource or resources, not both")
         cancel_running = cancel_running or self._topology.shared_command_timer
         targets_by_child = {
-            id(child): target_side for target_side, child in self._targets_for(side)
+            id(child): target_side for target_side, child in self.targets_for(side)
         }
 
         async def op(child: BedChild) -> None:
@@ -482,7 +496,7 @@ class PairedBedCoordinator:
 
     async def async_stop_command(self, *, side: str = SIDE_BOTH) -> None:
         """Stop the targeted side(s); never let one side's failure skip another."""
-        targets = self._topology.cancellation_targets(self._targets_for(side))
+        targets = self._topology.cancellation_targets(self.targets_for(side))
         # Bump EVERY targeted side's counter first so a movement still queued on
         # a lane for that side drops instead of starting after this stop,
         # including a side that gets no STOP frame below.
@@ -535,7 +549,7 @@ class PairedBedCoordinator:
         pre-empts the motion holding that side's writer, then runs ``stop_fn``.
         """
         del stream_member  # paired topologies never stream
-        targets = self._topology.cancellation_targets(self._targets_for(side))
+        targets = self._topology.cancellation_targets(self.targets_for(side))
         # A movement for this motor still queued on a side lane drops.
         for target_side, _ in targets:
             self._admission.note_stop(
@@ -654,6 +668,11 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
             self._single_unregister_position_callback = inner.register_position_callback(
                 lambda _positions: self._sync_position_state()
             )
+
+    @property
+    def inner(self) -> AdjustableBedCoordinator:
+        """Return the physical coordinator this side view runs on."""
+        return self._single_inner
 
     @property
     def _entity_source(self) -> EntityRuntime:
@@ -1143,6 +1162,11 @@ class SingleAddressPairedCoordinator(PairedBedCoordinator):
             children,
             connection_mode=PAIR_CONNECTION_MODE_CONCURRENT,
         )
+
+    @property
+    def inner(self) -> AdjustableBedCoordinator:
+        """Return the one physical coordinator both sides run on."""
+        return self._single_inner
 
     @property
     def is_connected(self) -> bool:

@@ -5246,8 +5246,8 @@ and `wake_mode` of `none`, `memory_1` or `memory_2`. Every target is validated
 and admitted before the first requested write, so STOP on a later target wins.
 It sets a daily bed alarm, with fixed day FF. P1 clock fields use year since
 1900 and zero-based month; P2 uses BCD year since 2000, one-based month and
-Sunday-zero weekday. Disable clears the alarm fields. The refresh-alarm and
-sync-clock buttons expose the other bed-local actions. No read-modify-write
+Sunday-zero weekday. Disable clears the alarm fields. The refresh-alarm button
+and the `adjustable_bed.sync_clock` action expose the other bed-local actions. No read-modify-write
 uses default or stale observations. Android tone and phone scheduling are
 outside this integration.
 

@@ -23,6 +23,7 @@ from ...const import (
 from ...errors import invalid, rejected
 from ...import_executor import async_import_modules
 from ...paired_topology import PairedSideError
+from ...runtime_data import loaded_runtime
 from ...services import (
     DEVICE_IDS,
     SIDE_FIELD,
@@ -106,7 +107,7 @@ async def handle_request(call: ServiceCall) -> ServiceResponse:
 
     def validate_owners() -> None:
         for parent, side, children in physical:
-            if call.hass.data.get(DOMAIN, {}).get(parent.entry.entry_id) is not parent:
+            if loaded_runtime(call.hass, parent.entry.entry_id) is not parent:
                 raise _bed_changed()
             current = _command_targets(parent, side)
             if len(current) != len(children) or any(
