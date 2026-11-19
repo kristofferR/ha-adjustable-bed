@@ -2456,7 +2456,7 @@ frame (`codec.record_20_len`). The domains and commands match the
 | Delete repeat alarm | `6e 20 08 05 02 01 slot sum8` | Slots 1–7 |
 | Snore switch | `6e 20 09 06 01 01 00 enabled sum8` | Normal settings menu |
 | Snore configuration | `6e 20 0a 06 05 01 selector 00 value sum8` | Selector 1: count 1–30; selector 2: time 5–30 in steps of five |
-| Time sync | `6e 20 0c 08 02 01 epochBE32 offsetHours sum8`, then `6e 20 0d 08 03 01 yearMinus1970 month day hour minute second sum8` | Startup and the `sync` operation |
+| Time sync | `6e 20 0c 08 02 01 epochBE32 offsetHours sum8`, then `6e 20 0d 08 03 01 yearMinus1970 month day hour minute second sum8` | Startup and [`sync_clock`](../SERVICES.md#sync_clock) |
 
 The repeat-alarm query retains returned records, the sleep-name query reads the
 normal product's independent sensor name, and the snore queries read the count,
@@ -3337,8 +3337,9 @@ paths remain outside BED support, even when their UUID overlaps W5.
 
 #### Services
 
-`adjustable_bed.sonicsleep` exposes `list`, `new`, `edit`, `toggle`, `delete`,
-`link_name` and `sync_clock`, with device and paired-side targeting. Alarm actions
+`adjustable_bed.sonicsleep` exposes `list`, `new`, `edit`, `toggle`, `delete`
+and `link_name`, with device and paired-side targeting. The clock is set with
+[`sync_clock`](../SERVICES.md#sync_clock). Alarm actions
 require a clock-capability reply. Read/modify/write actions require current
 connection-owned alarm records; missing replies reject before alarm writes.
 After a mutation, that ID requires fresh received fields before another mutation;
@@ -3648,7 +3649,8 @@ alarm is local metadata, not a guarantee that a bed retained it after power loss
 #### Services
 
 `adjustable_bed.mlily_remote` accepts `operation`, `device_id` and paired
-`side`. Operations are `time_sync`, `alarm`, `alarm_cancel` and `anti_snore`.
+`side`. Operations are `alarm`, `alarm_cancel` and `anti_snore`; the clock is set
+with [`sync_clock`](../SERVICES.md#sync_clock), once for a shared receiver.
 For MS600 alarms, set `hour` (0–23), `minute` (0–59) and `mode`: `zero_g`,
 `anti_snore`, `tv`, `memory_1`, `memory_2` or `memory_3`. A live clock-support
 announcement is required. The low countdown half precedes the high/action half;
@@ -4913,8 +4915,9 @@ exposed without assigning clinical meaning.
 #### Services
 
 `adjustable_bed.mlily` exposes `single`, `cancel_single`, `repeat`, `toggle`,
-`delete`, `alarms`, `sync`, `light_color`, `light_duration`, `light_off`,
-`massage_timer` and the independent sleep operations. The status sensor's event
+`delete`, `alarms`, `light_color`, `light_duration`, `light_off`,
+`massage_timer` and the independent sleep operations. The clock is set with
+[`sync_clock`](../SERVICES.md#sync_clock). The status sensor's event
 attributes include exact alarm IDs and six-byte records. Select an alarm action
 ID from this product's alarm column, never an opcode from a different product.
 
@@ -4933,8 +4936,9 @@ Unknown recovered modes need an explicit choice. List replies deduplicate all
 six fields; escalation replaces only the first matching ID. Save/delete refresh
 the list after 200 ms; toggle preserves all record fields except enabled.
 
-Sleep operations are `sync`, `part`, `time`, `realtime`, `report`, `anti_snore`,
-`sensitivity` and `init`. MM supports sync, part, realtime and reports; SXB also
+Sleep operations are `part`, `time`, `realtime`, `report`, `anti_snore`,
+`sensitivity` and `init`; [`sync_clock`](../SERVICES.md#sync_clock) sets the
+receiver's clock. MM supports the clock, part, realtime and reports; SXB also
 supports time, anti-snore, sensitivity query and initialization. Part and report
 arguments remain explicit caller inputs. Use `left` and `right` for the SXB
 anti-snore operands. Reports serialize metadata and continuation before receipt;
@@ -6625,8 +6629,9 @@ capability literal conflicts with its type-21 framing; no corrected frame is add
 
 #### Services
 
-`adjustable_bed.bobpowerbase` exposes repeat alarm list/add/delete, local clock
-sync, light color, light timeout and light off. Alarm actions are `anti_snore`,
+`adjustable_bed.bobpowerbase` exposes repeat alarm list/add/delete, light color,
+light timeout and light off; [`sync_clock`](../SERVICES.md#sync_clock) sets the
+local clock. Alarm actions are `anti_snore`,
 `zero_gravity`, `tv`, `memory_1` and `memory_2`. Weekdays are Monday=0 through
 Sunday=6; an empty list means once, and `enabled` occupies the low repeat bit.
 New alarms use the first unused observed id from 1 through 7; this app allocation
@@ -6818,8 +6823,8 @@ publish into a replacement physical session.
 
 #### Actions
 
-`adjustable_bed.majestichome` supports `list`, `new`, `set`, `toggle`, `delete`
-and `sync_clock`. Alarm access requires the current connection's clock ACK.
+`adjustable_bed.majestichome` supports `list`, `new`, `set`, `toggle` and
+`delete`; [`sync_clock`](../SERVICES.md#sync_clock) sets the clock. Alarm access requires the current connection's clock ACK.
 FARM/JLRM supply the four preset choices. `set` creates or replaces an explicit
 ID. `new` also requires an explicit ID from the app's range 1 through 7,
 without claiming firmware capacity. A nonempty cache cannot establish which
@@ -8168,9 +8173,9 @@ shared framing cannot stall the bed notification stream.
 #### Services
 
 `adjustable_bed.galaxy` provides product-gated alarm scheduling/cancellation,
-repeat slots, time synchronization, RGB, light timeout/off, massage countdown and
-bed anti-snore settings. Use `single`, `cancel_single`, `repeat`, `delete`,
-`alarms`, `enable_alarm`, `sync`, `light_color`, `light_duration`, `light_off`, `massage_timer`,
+repeat slots, RGB, light timeout/off, massage countdown and bed anti-snore
+settings; [`sync_clock`](../SERVICES.md#sync_clock) sets the clock. Use `single`,
+`cancel_single`, `repeat`, `delete`, `alarms`, `enable_alarm`, `light_color`, `light_duration`, `light_off`, `massage_timer`,
 `snore_switch`, `snore_count`, `snore_time` or `snore_query`. Alarm writes take an
 exact action ID from the selected product's alarm list. Repeat alarms use slots
 1 through 7, Monday 0 through Sunday 6, and an explicit enable flag. `enable_alarm` changes an observed slot’s enabled bit while preserving all six received fields, including the reserved field and weekday mask. Query `alarms` first. Validating
@@ -9446,8 +9451,9 @@ RGB/duration requests may restore, but are never replayed on reconnect.
 #### Services
 
 `adjustable_bed.okimiki` exposes bounded presses, explicit saves, lighting,
-clock synchronization, IQRM's one-shot lounge alarm and KWRN's recurring list,
-add/edit, enable and delete operations. Alarm actions require the clock
+IQRM's one-shot lounge alarm and KWRN's recurring list, add/edit, enable and
+delete operations. [`sync_clock`](../SERVICES.md#sync_clock) sets the clock of
+products with an alarm. Alarm actions require the clock
 capability reply. HCRN and IPRM have no alarm page. These alarms stay on this
 action rather than the shared `set_alarm`: that action does not yet keep the
 safeguards these record edits need across a paired hand-over, between check and
@@ -9565,9 +9571,10 @@ sits beside excluded infrastructure.
 
 #### Services
 
-`richmat_mh_control` runs a declared current-page opcode, its attached
-fixed-remote long-save caller, or an included query. Arbitrary opcodes and
-unavailable model controls are rejected. Standard preset/memory actions,
+`richmat_mh_control` runs a control on the selected model's app page, named in
+`control` as its button or the app shows it (a motor adds its direction, such as
+`Pillow up` or `Back down`), its attached fixed-remote long-save caller, or an
+included query. A name the model's page does not have is rejected. Standard preset/memory actions,
 `set_alarm` and `richmat_mh_light_color` use the same family runtime. Service
 acceptance captures all physical targets and STOP epochs before lazy imports.
 

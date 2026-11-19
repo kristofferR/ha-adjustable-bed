@@ -152,17 +152,12 @@ async def test_registered_stop_during_lazy_import_fences_first_write(
     assert written(client) == ["6e01006edd"]  # The explicit STOP itself is allowed.
 
 
-@pytest.mark.parametrize("operation", ("light_off", "sync"))
-async def test_all_target_preflight_rejects_before_first_settings_write(
-    hass, runtime, virtual, operation
-):
+async def test_all_target_preflight_rejects_before_first_settings_write(hass, runtime, virtual):
     from tests.test_generic_services import target as fake_target
 
     target, client, resolve = runtime
     assert await target.async_connect()
     notify(target, "6e0e00037f")
-    if operation == "sync":
-        await target.async_disconnect("idle_timeout")
     other, ctrl = fake_target(family=bed.OkimikiController)
     ctrl.product_key = "IPRM"
     ctrl._address = "AA:BB:CC:DD:EE:70"
@@ -177,7 +172,7 @@ async def test_all_target_preflight_rejects_before_first_settings_write(
     resolve.return_value = ([(target, "both"), (other, "both")], [])
     client.write_gatt_char.reset_mock()
     with pytest.raises(ServiceValidationError):
-        await invoke(hass, operation)
+        await invoke(hass, "light_off")
     assert not written(client)
 
 

@@ -45,6 +45,7 @@ async def service_target(hass: HomeAssistant):
     coordinator.bed_type = BED_TYPE_MALOUF_APP
     coordinator.controller_side = None
     coordinator.capability_controller = controller
+    controller._coordinator = coordinator
 
     async def execute(command, **kwargs):
         await command(controller)

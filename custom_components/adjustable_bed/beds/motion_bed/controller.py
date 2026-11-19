@@ -1085,6 +1085,42 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         await self.async_execute_motion_bed_write(self._alarm_write(alarm))
 
+    def _clock_writes(self) -> tuple[MotionBedWrite, ...]:
+        """The clock of this bed's surface; on a hub, the active module's, if it has one."""
+        now = dt_util.now()
+        writes: list[MotionBedWrite] = []
+        for write in (
+            MotionBedWrite("clock", (build_clock(now),), "home"),
+            MotionBedWrite("clock", (build_thermal_clock(now),), "thermal"),
+        ):
+            try:
+                self.validate_motion_bed_write(write)
+            except ValueError:
+                continue
+            writes.append(write)
+        if self.selection.surface == "hub":
+            # Switching module runs its startup; set only the module in use. A link
+            # that went idle keeps the user's module, which reconnecting restores.
+            module = self._active_module or self._remembered_module or ""
+            active = {"motor": "home", "thermal": "thermal"}.get(module)
+            writes = [write for write in writes if write.context == active]
+        return tuple(writes)
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        # A hub's clocks depend on the modules it reports, checked on the live bed.
+        return self.selection.surface != "air"
+
+    def validate_clock_sync(self) -> None:
+        if not self._clock_writes():
+            raise ValueError("Select the hub's motor or heating module first, then set its clock")
+
+    async def sync_clock(self) -> None:
+        # The module in use can change after the call was checked; check it again.
+        self.validate_clock_sync()
+        for write in self._clock_writes():
+            await self.async_execute_motion_bed_write(write)
+
     def validate_motion_bed_write(self, request: MotionBedWrite) -> None:
         available: set[str] = set()
         surface = self.selection.surface

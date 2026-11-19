@@ -488,12 +488,13 @@ async def test_registered_alarm_service_validates_every_target_before_writes(has
         first.set_alarm.assert_not_awaited()
         second.set_alarm.assert_not_awaited()
         data["slot"] = 1
-        data["action"] = "action_9"
+        data["weekdays"] = ["monday", "saturday", "sunday"]
         await hass.services.async_call(DOMAIN, "onlysnore_set_alarm", data, blocking=True)
         first.set_alarm.assert_awaited_once()
         second.set_alarm.assert_awaited_once()
-        # The app's second alarm action, which sends code 09.
-        assert first.set_alarm.await_args.kwargs["type_index"] == 1
+        # The app's repeat bits: 1 Sunday, 2 Monday, 64 Saturday; its default action.
+        assert first.set_alarm.await_args.kwargs["week"] == 0b1000011
+        assert first.set_alarm.await_args.kwargs["type_index"] == 0
 
 
 async def test_real_registry_parent_and_child_alarm_targets_keep_side_and_conflict(hass):

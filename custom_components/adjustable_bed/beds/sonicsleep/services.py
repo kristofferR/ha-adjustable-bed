@@ -1,4 +1,4 @@
-"""Public SonicSleep alarm, clock and link actions with all-target admission."""
+"""Public SonicSleep alarm and link actions with all-target admission."""
 
 from __future__ import annotations
 
@@ -113,7 +113,7 @@ def async_register_sonicsleep_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required("operation"): vol.In(
-                    ("list", "new", "edit", "toggle", "delete", "link_name", "sync_clock")
+                    ("list", "new", "edit", "toggle", "delete", "link_name")
                 ),
                 vol.Optional("alarm_id"): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
                 vol.Optional("hour", default=6): vol.All(vol.Coerce(int), vol.Range(min=0, max=23)),

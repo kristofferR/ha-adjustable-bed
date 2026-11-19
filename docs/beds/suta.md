@@ -1492,8 +1492,9 @@ weekday becomes one `AT+SA` frame (Sunday 0 on the wire) with the app's Loop
 flag `01`, so the alarm repeats weekly. Without weekdays the alarm is set once,
 on the next day the time occurs, with Loop `00`. Turning an alarm off sends
 `AT+CA` with the same days and time. The app's delete frame is not offered.
-Each write is followed by the alarm list query. Clock sync uses Home
-Assistant's current local time.
+Each write is followed by the alarm list query. The clock (`set_date`) is set
+with the shared [`sync_clock`](../SERVICES.md#sync_clock) action, using Home
+Assistant's current local time; the SUTA action does not accept it.
 
 `snore_cycle` sends the app's normal SNORE burst, then FLAT after the
 source's delay. This explicit HA operation owns both effects and cancellation;
