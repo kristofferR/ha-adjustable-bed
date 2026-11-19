@@ -29,6 +29,7 @@ from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .const import (
     ADJUSTAMATTRESS_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
@@ -127,6 +128,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_SOMOS: frozenset({"a", "b", "c", "d", "e"}),
     BED_TYPE_COMFORTBASE: frozenset(COMFORTBASE_PRODUCTS),
     BED_TYPE_YAMADA: frozenset({"p1", "p2"}),
+    BED_TYPE_BETTERLIVING2: frozenset({"p1", "p2", "p3"}),
     BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
     BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
     BED_TYPE_MAJESTICHOME: frozenset(MAJESTICHOME_PROFILES),

@@ -13,6 +13,9 @@ architecture.
 
 ## Known Models
 
+BetterLiving2's two- and three-motor screen choices are explicit app profiles.
+Its shared Bluetooth names do not establish a particular actuator model.
+
 Symphony Sleep Sense's selector 4 and fixed split P1 helpers use this codec.
 Its independent product/selector choices, lifecycle, alarm modes and supported
 controls are documented in the [Symphony profile](okin-soundwave.md#symphony-sleep-sense).
@@ -59,6 +62,7 @@ using independently identified Keeson protocols remains supported.
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | BetterLiving 1.3.0 (16) | `com.ore.betterliving2` | [BetterLiving2](#betterliving2) |
 | ✅ | [OrmatekTechnoSmart](https://play.google.com/store/apps/details?id=com.okin.ormatek) | `com.okin.ormatek` | [Techno Smart New / Lite](#ormatek-technosmart) |
 | ✅ | [Aging in Place / Dawn House](https://play.google.com/store/apps/details?id=com.keeson.agingplace) 1.1.0 (87) | `com.keeson.agingplace` | [Dawn House JSON](#aging-in-place--dawn-house) |
 | ✅ | [Enso Remote](https://play.google.com/store/apps/details?id=com.ore.sfm2) 2.3 | `com.ore.sfm2` | [Enso Remote](#enso-remote) |
@@ -242,6 +246,12 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | OkinComfortBed Ⅱ (Jalon) | bed type `jalon_bed` | K1 `E6`, little-endian, model `00` | app controller | app controller | app controller | renewable lease |
 | アシステック P1 | bed type `yamada`, P1 | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
 | アシステック P2 | bed type `yamada`, P2 | P2 7-byte (`05`) | app controller | app controller | app controller | renewable lease |
+| BetterLiving2 P1, 2 motors | bed type `betterliving2`, P1, 2 motors | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
+| BetterLiving2 P1, 3 motors | bed type `betterliving2`, P1, 3 motors | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
+| BetterLiving2 P2, 2 motors | bed type `betterliving2`, P2, 2 motors | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
+| BetterLiving2 P2, 3 motors | bed type `betterliving2`, P2, 3 motors | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
+| BetterLiving2 P3, 2 motors | bed type `betterliving2`, P3, 2 motors | P2 7-byte (`05`) | app controller | app controller | app controller | renewable lease |
+| BetterLiving2 P3, 3 motors | bed type `betterliving2`, P3, 3 motors | P2 7-byte (`05`) | app controller | app controller | app controller | renewable lease |
 
 ### Hold and release timing
 
@@ -289,13 +299,15 @@ release refreshes at its app interval until the lease ends or STOP arrives, up t
 ### Presets and memory
 
 Words, encoded in the profile's frame. AdjustaMattress P1, AdjustaMattress P2,
-AMERICANSTAR, Avanti Bases, Bedsense Bases, BF, Cherish, Comfort Enhancements,
-ComfortBaseForBluetooth, ComfortFurniture, Cool Base, Dynasty Bases, Glideaway
-Motion, Heal Every Night, INNOVA, OkinComfortBed II P1, OkinComfortBed II P2,
-OkinComfortBed II P3, OkinComfortBed Ⅱ (Jalon), Malouf legacy OKIN, MaxCoil Una,
-OKIN Comfort Bed, OKIN-Seating, ORE Ultramatic, Rondure, SBI, Scott Living, Simon
-Li, Sleepy's BOX15, アシステック P1, アシステック P2 keep their key tables with their app
-controllers; see their sections.
+AMERICANSTAR, Avanti Bases, Bedsense Bases, BetterLiving2 P1, 2 motors,
+BetterLiving2 P1, 3 motors, BetterLiving2 P2, 2 motors, BetterLiving2 P2, 3
+motors, BetterLiving2 P3, 2 motors, BetterLiving2 P3, 3 motors, BF, Cherish,
+Comfort Enhancements, ComfortBaseForBluetooth, ComfortFurniture, Cool Base,
+Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA, OkinComfortBed II P1,
+OkinComfortBed II P2, OkinComfortBed II P3, OkinComfortBed Ⅱ (Jalon), Malouf
+legacy OKIN, MaxCoil Una, OKIN Comfort Bed, OKIN-Seating, ORE Ultramatic, Rondure,
+SBI, Scott Living, Simon Li, Sleepy's BOX15, アシステック P1, アシステック P2 keep their key
+tables with their app controllers; see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -418,17 +430,18 @@ family's codec exists.
 
 | Frame | Layout | Head up | Profiles |
 |---|---|---|---|
-| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | OkinComfortBed II P1, OkinComfortBed II P2, Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1, ComfortBaseForBluetooth, OkinComfortBed Ⅱ (Jalon), アシステック P1 |
+| K1 `E6`, little-endian, side `00` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 00 04` | OkinComfortBed II P1, OkinComfortBed II P2, Sleep Harmony (base-i5), Glideaway Motion, Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1, ComfortBaseForBluetooth, OkinComfortBed Ⅱ (Jalon), アシステック P1, BetterLiving2 P2, 2 motors, BetterLiving2 P2, 3 motors |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | OkinComfortBed II P3, アシステック P2 |
 | K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Serta, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, SBI, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
-| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, ComfortFurniture, ORE Ultramatic, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements |
+| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, ComfortFurniture, ORE Ultramatic, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements, BetterLiving2 P1, 2 motors, BetterLiving2 P1, 3 motors |
 | JSON | JSON envelope, see below | see JSON envelope | JSON/A00A |
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
 | P2 7-byte, checksum end | `04 02` + big-endian word + checksum | `04 02 00 00 00 01 F8` | KSBT04C, Sleep Harmony (KSBT04C) |
 | P2 7-byte, `00` end | `04 02` + big-endian word + `00` | `04 02 00 00 00 01 00` | Purple Premium Plus |
 | K1 `E6`, little-endian, side `01` | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 01 03` | Scott Living |
+| P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | BetterLiving2 P3, 2 motors, BetterLiving2 P3, 3 motors |
 | K1 `E6`, little-endian, Left side `02` | `E6 FE 16` + word + side + checksum | `E6 FE 16 01 00 00 00 02 02` | Base (BaseI4/I5), Ergomotion |
 | K1 `E6`, little-endian, Right side `01` | `E6 FE 16` + word + side + checksum | `E6 FE 16 01 00 00 00 01 03` | Base (BaseI4/I5), Ergomotion |
 <!-- /generated -->
@@ -2252,6 +2265,12 @@ frames of other families and keep it.
 
 | Profile | Bed type | Frame | Word `0x1` | Zero word | Hold until release | Guide |
 |---|---|---|---|---|---|---|
+| BetterLiving2 P1, 2 motors | `betterliving2`, P1, 2 motors | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [BetterLiving2](#betterliving2) |
+| BetterLiving2 P1, 3 motors | `betterliving2`, P1, 3 motors | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [BetterLiving2](#betterliving2) |
+| BetterLiving2 P2, 2 motors | `betterliving2`, P2, 2 motors | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [BetterLiving2](#betterliving2) |
+| BetterLiving2 P2, 3 motors | `betterliving2`, P2, 3 motors | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [BetterLiving2](#betterliving2) |
+| BetterLiving2 P3, 2 motors | `betterliving2`, P3, 2 motors | P2 7-byte (`05`) | `05 02 00 00 00 01 00` | `05 02 00 00 00 00 00` | renewable lease | [BetterLiving2](#betterliving2) |
+| BetterLiving2 P3, 3 motors | `betterliving2`, P3, 3 motors | P2 7-byte (`05`) | `05 02 00 00 00 01 00` | `05 02 00 00 00 00 00` | renewable lease | [BetterLiving2](#betterliving2) |
 | ComfortFurniture | `keeson:comfortfurniture` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [ComfortFurniture](#comfortfurniture) |
 | ORE Ultramatic | `keeson`, `ore_ultramatic` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [ORE Ultramatic](#ore-ultramatic) |
 | アシステック P1 | `yamada`, P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [アシステック](#アシステック--yamada) |
@@ -5257,6 +5276,175 @@ Based on `com.ore.bedding.symphony` 1.1.0 (14).
 All five models and fifteen dispatch outcomes are implemented; physical checks still need testing by owners. Frozen literals and crafted parser cases live in
 `tests/fixtures/symphony_sleep/vectors.json`.
 
+
+### BetterLiving2
+
+**App:** [BetterLiving](https://play.google.com/store/apps/details?id=com.ore.betterliving2)
+1.3.0 (16), `com.ore.betterliving2`
+
+**Status:** Not yet tested. All three app routes are statically supported;
+hardware remains unverified.
+
+#### Setup
+
+Choose **BetterLiving / BetterLiving2**, the P1, P2 or P3 wire route, and the
+app's two- or three-motor screen. Reconfigure asks the same questions. These are
+independent choices, retained per side when combining two physical beds.
+An unknown route or layout has no offline controls. The names `okin*` and
+`smartbed*` are shared scan hints, not evidence that a device uses this app.
+
+The manufacturer read in the Android app can change its wire selector after
+GATT binding. HA keeps the explicit route and its endpoint pair coherent.
+P1/P2 use separate write and notification services; P3 uses Nordic UART. HA
+validates their live properties and prefers write-with-response when supported.
+The artifact does not prove an explicit Android write-mode override.
+
+Only back and feet are separately proven axes. The two-motor HF controls and
+three-motor ALL controls use distinct words; the latter does not establish a
+separately controllable third axis. Two-address native pairing is supported.
+There is no proven one-address side selector, concurrent motor mask or speed
+setting.
+
+<!-- generated:keeson-betterliving2 -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+#### Controls
+
+| Control | P1 | P2 | P3 |
+|---|---|---|---|
+| back up | `E5 FE 16 00 00 00 01 05` | `E6 FE 16 01 00 00 00 00 04` | `05 02 00 00 00 01 00` |
+| back down | `E5 FE 16 00 00 00 02 04` | `E6 FE 16 02 00 00 00 00 03` | `05 02 00 00 00 02 00` |
+| feet up | `E5 FE 16 00 00 00 04 02` | `E6 FE 16 04 00 00 00 00 01` | `05 02 00 00 00 04 00` |
+| feet down | `E5 FE 16 00 00 00 08 FE` | `E6 FE 16 08 00 00 00 00 FD` | `05 02 00 00 00 08 00` |
+| 2-motor back and feet up | `E5 FE 16 00 00 00 05 01` | `E6 FE 16 05 00 00 00 00 00` | `05 02 00 00 00 05 00` |
+| 2-motor back and feet down | `E5 FE 16 00 00 00 0A FC` | `E6 FE 16 0A 00 00 00 00 FB` | `05 02 00 00 00 0A 00` |
+| 3-motor all sections up | `E5 FE 16 00 00 00 10 F6` | `E6 FE 16 10 00 00 00 00 F5` | `05 02 00 00 00 10 00` |
+| 3-motor all sections down | `E5 FE 16 00 00 00 20 E6` | `E6 FE 16 20 00 00 00 00 E5` | `05 02 00 00 00 20 00` |
+| STOP | `E5 FE 16 00 00 00 00 06` | `E6 FE 16 00 00 00 00 00 05` | `05 02 00 00 00 00 00` |
+
+| Preset | P1 | P2 | P3 |
+|---|---|---|---|
+| zero_g | `E5 FE 16 01 00 00 01 04` | `E6 FE 16 00 10 00 00 00 F5` | `05 02 00 00 10 00 00` |
+| flat | `E5 FE 16 01 00 00 02 03` | `E6 FE 16 00 00 00 08 00 FD` | `05 02 08 00 00 00 00` |
+| memory_1 | `E5 FE 16 01 00 00 08 FD` | `E6 FE 16 00 00 01 00 00 04` | `05 02 00 01 00 00 00` |
+| memory_2 | `E5 FE 16 01 00 00 09 FC` | `E6 FE 16 00 00 04 00 00 01` | `05 02 00 04 00 00 00` |
+
+| Program | P1 | P2 | P3 |
+|---|---|---|---|
+| zero_g | `E5 FE 16 20 00 00 01 E5` | `E6 FE 16 00 10 00 00 00 F5` | `05 02 00 00 10 00 00` |
+| memory_1 | `E5 FE 16 20 00 00 08 DE` | `E6 FE 16 00 00 01 00 00 04` | `05 02 00 01 00 00 00` |
+| memory_2 | `E5 FE 16 20 00 00 09 DD` | `E6 FE 16 00 00 04 00 00 01` | `05 02 00 04 00 00 00` |
+
+| P1 absolute control | Values | Word base |
+|---|---|---|
+| head | 0..3 | `0x10000010` |
+| feet | 0..3 | `0x11000010` |
+| wave | 0..3 | `0x10000020` |
+| Timer input | -1, 0, 1, 2 | `0x10000030` |
+| Light | off / on | `0x31000000` / `0x31000001` |
+| Second same preset tap | stop active preset | `0x01000000` |
+
+| Step control | P2 | P3 |
+|---|---|---|
+| toggle | `E6 FE 16 00 01 00 00 00 04` | `05 02 00 00 01 00 00` |
+| timer | `E6 FE 16 00 02 00 00 00 03` | `05 02 00 00 02 00 00` |
+| feet_up | `E6 FE 16 00 04 00 00 00 01` | `05 02 00 00 04 00 00` |
+| head_up | `E6 FE 16 00 08 00 00 00 FD` | `05 02 00 00 08 00 00` |
+| feet_down | `E6 FE 16 00 00 00 01 00 04` | `05 02 01 00 00 00 00` |
+| head_down | `E6 FE 16 00 00 80 00 00 85` | `05 02 00 80 00 00 00` |
+| wave | `E6 FE 16 00 00 00 10 00 F5` | `05 02 10 00 00 00 00` |
+| light | `E6 FE 16 00 00 02 00 00 03` | `05 02 00 02 00 00 00` |
+
+| Wake action | P1 | P2 | P3 |
+|---|---|---|---|
+| memory_1 | 8 | 17 | 5 |
+| memory_2 | 9 | 19 | 6 |
+| massage | 15 | 9 | 8 |
+
+| Role | P1 | P2 | P3 |
+|---|---|---|---|
+| Write service | `0000ffe5-0000-1000-8000-00805f9b34fb` | `0000ffe5-0000-1000-8000-00805f9b34fb` | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` |
+| Write | `0000ffe9-0000-1000-8000-00805f9b34fb` | `0000ffe9-0000-1000-8000-00805f9b34fb` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
+| Notify service | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe0-0000-1000-8000-00805f9b34fb` | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` |
+| Notify | `0000ffe4-0000-1000-8000-00805f9b34fb` | `0000ffe4-0000-1000-8000-00805f9b34fb` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+
+#### Timing
+
+| Operation | Schedule |
+|---|---|
+| 2 motors: back and feet | refresh every 100 ms |
+| 3 motors: back, feet and all sections | refresh every 200 ms |
+| Movement cleanup | 2 zero words, 100 ms apart |
+| Recall | one key, owned zero release after 100 ms |
+| Program P1 | 6000 ms, every 5000 ms |
+| Program P2 | 6000 ms, every 100 ms |
+| Program P3 | 6000 ms, every 100 ms |
+| P1 zone pairs | two writes per zone; 100 ms between pairs |
+| P3 massage follow-up | query at +150 ms |
+| Set/cancel alarm | 2 immediate writes, sync at +100 ms, query at +400 ms |
+| First connection | subscribe, time sync, query at +300 ms |
+| Reconnect | subscribe, time sync, immediate sequential alarm read |
+<!-- /generated -->
+
+#### Notifications
+
+Massage feedback exists on P2/P3. Their signed fields and raw timer indicators
+are retained, with length guards. A recognizable alarm response goes to the
+alarm consumer, preventing it from being interpreted as massage. Other
+headerless massage responses are consumed only in the massage-query context.
+No position feedback, incoming checksum, command ACK or fragment accumulator is
+proven.
+
+The alarm sensor represents the app's selection, not physical confirmation.
+P1's zero or FF week is stateful: a selected switch keeps its prior state;
+an unselected switch restores independently saved actions and time. It never
+means unconditionally disabled. The separate startup preference restoration
+uses massage, then memory A, then memory B precedence. Raw P1 boundary values
+24 hours and 60 minutes do not become invented valid HA times.
+
+P2/P3 alarm callbacks attempt zero STOP before parsing, even for a truncated
+record with a recognized prefix. HA binds that cleanup to its captured session
+and operation, drains movement release first, coalesces pending notifications
+to the latest state and rejects stale notifications. It cannot stop a later
+operation or a reconnected bed.
+
+#### Services
+
+`set_alarm` takes `enabled`, minute-precision `time`, weekday names,
+and `wake_action`: `memory_1`, `memory_2` or `massage`.
+An empty day list chooses the strictly next occurrence. P1 masks its massage
+field with 0x11; P3 compares the signed -128 sentinel before truncation.
+
+`betterliving2_massage` sets explicit P1 `head` and `feet` levels from 0 to 3,
+including zero to stop either zone. P1 exposes head/foot intensity and wave
+numbers. P2/P3 expose named step/toggle actions
+and head/foot intensity state. Both services accept native child
+device targets and optional `side`, reject conflicts and validate every target
+before the first change.
+
+`betterliving2_diagnostic_action` replaces the ordinary status-refresh buttons.
+Its fixed `action` choices are `refresh_alarm` and `refresh_massage` (P2/P3 only).
+These call the existing query methods with the same owner, STOP and session checks.
+The four raw P1 timer inputs remain codec evidence; their physical duration
+mapping is unproven, so they have no Home Assistant action. There is no
+arbitrary packet action. Clock synchronization remains available through the
+shared synchronization action and its existing connection startup.
+
+Alarm selection/preferences are diagnostic data, not an alarm-state entity.
+Wave/timer response settings are diagnostic sensors disabled by default and
+hidden from the card. Their values and the alarm details are included in
+diagnostics/support bundles. Kept motion, preset, memory, lighting and massage
+controls retain their existing entity identities.
+
+The shared preset and memory actions expose Flat, Zero Gravity and two memories;
+Zero Gravity and the memories can be programmed. Finite elapsed deadlines, captured
+session writes and drained cleanup replace the Android app's shared untagged
+timer and unowned delayed recall STOP. Ending refresh alone is not a proven
+physical STOP. Renewable holds are restricted to the six named movement
+controls; they do not assert renewable generic timed movement.
+
+Based on BetterLiving2 1.3.0. Hardware remains unverified. External users with
+existing beds can qualify behavior after a beta or release.
 
 ### アシステック / Yamada
 

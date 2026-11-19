@@ -110,6 +110,8 @@ ERGOMOTION_4_STYLES = frozenset(product.style for product in ERGOMOTION_4_PRODUC
 SUTA_STREAM = tuple(f"SutaProfile:{p.key}@{p.layout}" for p in SUTA_PROFILES.values() if p.execution.declared)
 
 EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
+    **{f"KeesonProfile:betterliving2_p{wire}_{layout}": {"hold": ("BetterLiving2 1.3.0",), "hold_controls": ("BetterLiving2 1.3.0",)}
+       for wire in (1, 2, 3) for layout in (2, 3)},
     **{f"EnsoProfile:{n}": {"hold": ("Enso Remote 2.3: immediate 100 ms refresh until zero release",)} for n in (2, 3, 4)},
     **{f"PersonalComfortProfile:{key}": {"hold": ("Personal Comfort 2.6.1",)}
        for key in ("malouf", "reverie_v1", "reverie_v2")},
@@ -341,6 +343,8 @@ _SIMMONS = ("OkinNFrameProfile:simmons_okin", "OkinNFrameProfile:simmons_smartbe
 # enumeration cannot reach every variant, layout or product, so every place
 # that can declare a capability must be listed and reviewed here.
 DECLARATION_SITES: dict[str, tuple[str, ...]] = {
+    "profiles/keeson.py:<module>.BETTERLIVING2": tuple(
+        f"KeesonProfile:betterliving2_p{wire}_{layout}" for wire in (1, 2, 3) for layout in (2, 3)),
     "profiles/ormatek.py:<module>.PROFILES": ("KeesonProfile:ormatek_okin15", "KeesonProfile:ormatek_okin24"),
     "profiles/personal_comfort.py:<module>.MALOUF": ("PersonalComfortProfile:malouf",),
     "profiles/personal_comfort.py:<module>": ("PersonalComfortProfile:reverie_v1", "PersonalComfortProfile:reverie_v2"),

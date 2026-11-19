@@ -476,6 +476,16 @@
   "card_role": "up",
   "card_motor": "bedsense_waist"
  },
+ "button:betterliving2_all_sections_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "betterliving2_all_sections"
+ },
+ "button:betterliving2_all_sections_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "betterliving2_all_sections"
+ },
  "button:bf_cherish_both_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2666,6 +2676,10 @@
   "card_section": "motors",
   "card_motor": "bedsense_waist"
  },
+ "cover:betterliving2_all_sections": {
+  "card_section": "motors",
+  "card_motor": "betterliving2_all_sections"
+ },
  "cover:both": {
   "card_section": "motors",
   "card_motor": "both"
@@ -3077,6 +3091,15 @@
  "number:back_position_right": {
   "card_section": "motors",
   "card_motor": "back_right"
+ },
+ "number:betterliving2_massage_feet": {
+  "card_section": "massage"
+ },
+ "number:betterliving2_massage_head": {
+  "card_section": "massage"
+ },
+ "number:betterliving2_massage_wave": {
+  "card_section": "massage"
  },
  "number:bf_cherish_intensity": {
   "card_section": "massage"
@@ -3728,6 +3751,18 @@
  },
  "sensor:bedsense_wave_steps": {
   "card_section": "massage"
+ },
+ "sensor:betterliving2_massage_feet": {
+  "card_section": "massage"
+ },
+ "sensor:betterliving2_massage_head": {
+  "card_section": "massage"
+ },
+ "sensor:betterliving2_massage_timer": {
+  "card_section": "hidden"
+ },
+ "sensor:betterliving2_massage_wave": {
+  "card_section": "hidden"
  },
  "sensor:bf_cherish_alarm": {
   "card_section": "hidden"

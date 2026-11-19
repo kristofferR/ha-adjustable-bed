@@ -3525,6 +3525,12 @@
       "adjustamattress_lift_foot": {
         "name": "Lift foot"
       },
+      "betterliving2_all_sections_up": {
+        "name": "Raise all sections"
+      },
+      "betterliving2_all_sections_down": {
+        "name": "Lower all sections"
+      },
       "enso_head_massage_increase": {
         "name": "Increase head massage"
       },
@@ -3916,6 +3922,9 @@
       },
       "ormatek_both": {
         "name": "Head and feet"
+      },
+      "betterliving2_all_sections": {
+        "name": "All sections"
       }
     },
     "sensor": {
@@ -5024,6 +5033,18 @@
       "ormatek_alarm_time": {
         "name": "Alarm time"
       },
+      "betterliving2_massage_head": {
+        "name": "Head massage intensity"
+      },
+      "betterliving2_massage_feet": {
+        "name": "Foot massage intensity"
+      },
+      "betterliving2_massage_wave": {
+        "name": "Massage wave setting"
+      },
+      "betterliving2_massage_timer": {
+        "name": "Massage timer setting"
+      },
       "heart_rate": {
         "name": "Heart rate"
       },
@@ -5808,6 +5829,15 @@
       },
       "l2motion_light_timer": {
         "name": "Light timer"
+      },
+      "betterliving2_massage_head": {
+        "name": "Head massage intensity"
+      },
+      "betterliving2_massage_feet": {
+        "name": "Foot massage intensity"
+      },
+      "betterliving2_massage_wave": {
+        "name": "Massage wave"
       },
       "motion_bed_brightness": {
         "name": "Light brightness"
@@ -9279,6 +9309,39 @@
         }
       }
     },
+    "betterliving2_diagnostic_action": {
+      "name": "BetterLiving2: settings",
+      "description": "Refresh alarm or massage status.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
+    "betterliving2_massage": {
+      "name": "BetterLiving2: run control",
+      "description": "Set head and foot massage intensity. Zero turns a zone off.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "head": {
+          "name": "Head massage level"
+        },
+        "feet": {
+          "name": "Foot massage level"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "majestichome": {
       "name": "Majestic Home: settings",
       "description": "Read, create, edit, turn on or off, or delete the bed's alarms. Set the clock with Set bed clock.",
@@ -9595,6 +9658,15 @@
     },
     "l2motion_control_unavailable": {
       "message": "This control is unavailable. Check the bed model, reported synchronization support and confirmation."
+    },
+    "betterliving2_selection_changed": {
+      "message": "The selected bed changed during the action: {reason}. Try again."
+    },
+    "betterliving2_alarm_owner_changed": {
+      "message": "The selected bed changed while preparing its alarm. Try again."
+    },
+    "betterliving2_massage_owner_changed": {
+      "message": "The selected bed changed while preparing massage. Try again."
     },
     "action_rejected": {
       "message": "{reason}"
@@ -11747,6 +11819,19 @@
       "options": {
         "rgb": "Light color",
         "sync_mode": "Synchronization mode"
+      }
+    },
+    "betterliving2_diagnostic_action": {
+      "options": {
+        "refresh_alarm": "Refresh alarm",
+        "refresh_massage": "Refresh massage"
+      }
+    },
+    "bed_side": {
+      "options": {
+        "left": "Left",
+        "right": "Right",
+        "both": "Both"
       }
     },
     "remacro_model": {

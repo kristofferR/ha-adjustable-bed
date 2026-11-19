@@ -60,6 +60,7 @@ if TYPE_CHECKING:
     from .kaidi.controller import KaidiController as KaidiController
     from .kaidi.rize import RizeController as RizeController
     from .keeson.agingplace import AgingPlaceController as AgingPlaceController
+    from .keeson.betterliving2 import BetterLiving2Controller as BetterLiving2Controller
     from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.enso import EnsoController as EnsoController
@@ -201,6 +202,7 @@ _EXPORT_MODULES = {
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),
     "YamadaController": ("keeson.yamada", "YamadaController"),
+    "BetterLiving2Controller": ("keeson.betterliving2", "BetterLiving2Controller"),
     "GlideawayMotionController": "glideaway_motion.controller",
     "BedSenseController": "bedsense",
     "InnovaController": "innova",

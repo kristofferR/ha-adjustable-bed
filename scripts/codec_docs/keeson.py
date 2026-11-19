@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BE
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from scripts.codec_docs._agingplace import BLOCKS as _AGINGPLACE_BLOCKS
+from scripts.codec_docs._betterliving2 import BLOCKS as _BETTERLIVING2_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._enso import BLOCKS as _ENSO_BLOCKS
 from scripts.codec_docs._ore_ultramatic import BLOCKS as _ULTRAMATIC_BLOCKS
@@ -30,6 +31,8 @@ GUIDE = "docs/beds/keeson.md"
 _K = keeson_profiles.KeesonCommands
 _S = keeson_profiles.SinoCommands
 _KEESON_NAMES: dict[str, str] = {
+    **{f"betterliving2_{wire}_{layout}": f"BetterLiving2 {wire.upper()}, {layout} motors"
+       for wire in ("p1", "p2", "p3") for layout in ("2", "3")},
     "base": "Base (BaseI4/I5)",
     "ergomotion": "Ergomotion",
     "serta": "Serta",
@@ -84,6 +87,8 @@ _KEESON_NAMES: dict[str, str] = {
 }
 # Controllers that keep their key tables and timing; their profile is only the frame.
 _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
+    **{f"betterliving2_{wire}_{layout}": (f"`betterliving2`, {wire.upper()}, {layout} motors", "[BetterLiving2](#betterliving2)")
+       for wire in ("p1", "p2", "p3") for layout in ("2", "3")},
     "comfortfurniture": ("`keeson:comfortfurniture`", "[ComfortFurniture](#comfortfurniture)"),
     "ore_ultramatic": ("`keeson`, `ore_ultramatic`", "[ORE Ultramatic](#ore-ultramatic)"),
     "yamada_p1": ("`yamada`, P1", "[アシステック](#アシステック--yamada)"),
@@ -1196,6 +1201,7 @@ BLOCKS.append((GUIDE, "keeson-symphony-sleep", render_symphony_sleep))
 BLOCKS.extend(_AGINGPLACE_BLOCKS)
 
 BLOCKS.extend(_YAMADA_BLOCKS)
+BLOCKS.extend(_BETTERLIVING2_BLOCKS)
 
 BLOCKS.extend(_ORMATEK_BLOCKS)
 BLOCKS.extend(_SOMOS_BLOCKS)

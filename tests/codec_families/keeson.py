@@ -47,6 +47,7 @@ FAMILY = CodecFamily(
             "keeson",
             "jalon_bed",
             "yamada",
+            "betterliving2",
             "enso",
             "somos",
             "okin_ffe",
@@ -78,6 +79,7 @@ FAMILY = CodecFamily(
     app_routes={"enso": ("product_type", ("2", "3", "4"))},
     guide=CodecGuide(
         path="docs/beds/keeson.md",
+        entry_data={"betterliving2": {"protocol_variant": "p1", "product_type": "2"}},
         spelled=spelled_frames(
             r"`((?:E[56] ?FE ?16|0[45] ?02)(?: ?[0-9A-F]{2}){4,})`", re.IGNORECASE
         ),
