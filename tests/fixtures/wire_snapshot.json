@@ -13326,9 +13326,10 @@
 "sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "gmmotor_sleep_mm": {
-"info": {"bed_type": "gmmotor_sleep_mm", "connect_error": "ValueError", "controller": "GmmotorSleepController", "gaps": ["switch:gmmotor_sleep_live=on"], "module": "gmmotor.sleep", "pulse": [10, 100]},
+"info": {"bed_type": "gmmotor_sleep_mm", "connect_error": "ValueError", "controller": "GmmotorSleepController", "gaps": ["sync_clock", "switch:gmmotor_sleep_live=on"], "module": "gmmotor.sleep", "pulse": [10, 100]},
 "commands": {
 "connect": {"error":"ValueError","status":"error","writes":[]},
+"sync_clock": {"error":"ConnectionError","status":"error","writes":[]},
 "switch:gmmotor_sleep_live=on": {"error":"ConnectionError","status":"error","writes":[]},
 "switch:gmmotor_sleep_live=off": {"status":"no_writes"}
 }},
@@ -13336,7 +13337,8 @@
 "info": {"bed_type": "gmmotor_sleep_sxb", "controller": "GmmotorSleepController", "module": "gmmotor.sleep", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"00000003","notify","",1,0],[100,"00000002",true,"00010100270000110343554420007b226964223a312c22636d64223a22735f70617274222c2276616c223a31327d",1,0],[207,"00000002",true,"000201003e0000110343554437007b226964223a322c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22757463223a307d7d",1,0]]},
-"switch:gmmotor_sleep_live=on": {"status":"ok","writes":[[100,"00000002",true,"000301003c0000110343554435007b226964223a332c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274797065223a302c2274696d65223a317d7d",1,0]]},
+"sync_clock": {"status":"ok","writes":[[100,"00000002",true,"000301003e0000110343554437007b226964223a332c22636d64223a22735f74696d65222c2276616c223a7b227473223a313736373332333034352c22757463223a307d7d",1,0]]},
+"switch:gmmotor_sleep_live=on": {"status":"ok","writes":[[100,"00000002",true,"000401003c0000110343554435007b226964223a342c22636d64223a22715f7265616c74696d65222c2276616c223a7b2274797065223a302c2274696d65223a317d7d",1,0]]},
 "switch:gmmotor_sleep_live=off": {"status":"no_writes"}
 }},
 "goodvibe": {

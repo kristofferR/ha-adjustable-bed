@@ -336,3 +336,12 @@ async def test_off_while_a_poll_waits_for_the_write_lock_sends_nothing(
         ctrl._stop_live()
     await asyncio.gather(*ctrl._tasks)
     ctrl._coordinator.client.write_gatt_char.assert_not_awaited()
+
+
+@pytest.mark.parametrize("sxb", [False, True])
+async def test_shared_clock_sync_sets_the_module_time(hass: HomeAssistant, sxb: bool) -> None:
+    ctrl = controller(hass, sxb=sxb)
+    assert ctrl.supports_clock_sync
+    with patch.object(ctrl, "async_execute_gmmotor_request", AsyncMock()) as request:
+        await ctrl.sync_clock()
+    request.assert_awaited_once_with(Request("sensor_time"))

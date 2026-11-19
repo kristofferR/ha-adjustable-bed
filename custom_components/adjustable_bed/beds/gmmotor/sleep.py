@@ -188,9 +188,17 @@ class GmmotorSleepController(BedController, GmmotorActions):
         return True
 
     @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    async def sync_clock(self) -> None:
+        """Set the module's clock, as the app's time write does on every connection."""
+        await self.async_execute_gmmotor_request(Request("sensor_time"))
+
+    @property
     def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
-        # The clock is set on every connection. The reported part is diagnostic
-        # state the GM Control action can still query.
+        # The clock is set on every connection and through the shared clock
+        # action; the reported part is diagnostic state the GM Control action queries.
         return (
             ControllerSwitchSpec(
                 "gmmotor_sleep_live",
