@@ -9350,6 +9350,67 @@
           "name": "Enabled"
         }
       }
+    },
+    "lp2": {
+      "name": "L&P Adjustable Base: settings",
+      "description": "Lighting, aromatherapy, fans and movement programs. Use Set alarm for wake-up alarms. Physical behavior needs hardware testing.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "operation": {
+          "name": "Setting"
+        },
+        "rgb_color": {
+          "name": "Light color"
+        },
+        "seconds": {
+          "name": "Light duration (seconds)"
+        },
+        "aroma_times": {
+          "name": "Aromatherapy times"
+        },
+        "fan": {
+          "name": "Fan"
+        },
+        "intensity": {
+          "name": "Intensity (%)"
+        },
+        "duration": {
+          "name": "Fan duration",
+          "description": "Duration choice 0 through 6. The foot fan sends only intensity; it does not send a duration."
+        },
+        "schedule": {
+          "name": "Movement program"
+        },
+        "confirm": {
+          "name": "Confirm programming or saving"
+        },
+        "control": {
+          "name": "Control"
+        },
+        "mode": {
+          "name": "Control mode"
+        },
+        "long": {
+          "name": "Long press"
+        },
+        "held": {
+          "name": "Continuous movement"
+        },
+        "head": {
+          "name": "Head selection"
+        },
+        "motor": {
+          "name": "Motor"
+        },
+        "duration_ms": {
+          "name": "Movement duration (milliseconds)"
+        },
+        "side": {
+          "name": "Bed side"
+        }
+      }
     }
   },
   "exceptions": {
@@ -10483,7 +10544,8 @@
         "mlily_supreme": "MLILY Supreme app",
         "okimiki": "Okimiki app",
         "luniosmart": "Lunio Smart+ app",
-        "majestichome": "Majestic Home app"
+        "majestichome": "Majestic Home app",
+        "lp2": "L&P Adjustable Base app"
       }
     },
     "setup_start": {
@@ -11440,7 +11502,8 @@
         "get_up": "Help getting up",
         "wake_up": "Wake-up",
         "wake_mode_1": "Wake mode 1",
-        "wake_mode_2": "Wake mode 2"
+        "wake_mode_2": "Wake mode 2",
+        "flat_sleep": "Flat sleep"
       }
     },
     "set_alarm_sound": {
@@ -11825,6 +11888,23 @@
         "anti_snore": "Anti-Snore",
         "memory_1": "Memory 1",
         "memory_2": "Memory 2"
+      }
+    },
+    "lp2_operation": {
+      "options": {
+        "color": "Set light color",
+        "light_duration": "Set light duration",
+        "aromatherapy": "Set aromatherapy times",
+        "fan": "Set fan",
+        "motor_program": "Program movement sequence",
+        "control": "Run control",
+        "movement_test": "Run movement test"
+      }
+    },
+    "lp2_fan": {
+      "options": {
+        "head": "Head",
+        "foot": "Foot"
       }
     }
   }
