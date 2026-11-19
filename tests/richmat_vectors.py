@@ -11,6 +11,7 @@ import gzip
 import json
 from pathlib import Path
 
+from tests.bedtech_classic_vectors import FROZEN_FRAMES as BEDTECH_CLASSIC_FRAMES
 from tests.bedtech_vectors import FROZEN_FRAMES as BEDTECH_APP_FRAMES
 from tests.richmat_rise_vectors import FROZEN_FRAMES as RISE_FROZEN_FRAMES
 
@@ -2273,3 +2274,7 @@ def _nisco_supreme_frames() -> dict[str, frozenset[str]]:
 
 
 FROZEN_FRAMES.update(_nisco_supreme_frames())
+
+
+# Bed Tech has its own literals, separate from both modern and older sibling apps.
+FROZEN_FRAMES["richmat_mh_bedtech_classic"] = BEDTECH_CLASSIC_FRAMES

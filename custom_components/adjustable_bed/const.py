@@ -606,9 +606,11 @@ RUF_RICHMAT_APPS: Final[dict[str, str]] = {
 }
 BED_TYPE_RICHMAT_NISCO: Final = "richmat_nisco"
 BED_TYPE_RICHMAT_MLILY_SUPREME: Final = "richmat_mlily_supreme"
+BED_TYPE_BEDTECH_CLASSIC: Final = "bedtech_classic"
 RICHMAT_MH_APP_CATALOGS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_NISCO: "nisco",
     BED_TYPE_RICHMAT_MLILY_SUPREME: "mlily_supreme",
+    BED_TYPE_BEDTECH_CLASSIC: "bedtech_classic",
 }
 RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_REVIVE: "revive",

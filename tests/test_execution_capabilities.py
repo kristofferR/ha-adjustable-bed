@@ -253,6 +253,7 @@ EVIDENCE: dict[str, Mapping[str, tuple[str, ...]]] = {
     "RichmatProfile:richmat_mh_ruf": {"hold": ("ruf", "richmat-mh-ruf")},
     "RichmatProfile:richmat_mh_tx": {"hold": ("tx", "richmat-mh-ruf")},
     "RichmatProfile:richmat_mh_wsilver2": {"hold": ("wsilver", "richmat-mh-ruf")},
+    "RichmatProfile:richmat_mh_bedtech_classic": {"hold": ("bedtech-classic",)},
     "RichmatProfile:richmat_mh_nisco": {"hold": ("nisco", "richmat-mh-nisco")},
     "RichmatProfile:richmat_mh_mlily_supreme": {"hold": ("mlily-supreme", "richmat-mh-nisco")},
     "RichmatProfile:richmat_nordic": {"hold": ("rmc2",)},
@@ -501,7 +502,7 @@ DECLARATION_SITES: dict[str, tuple[str, ...]] = {
         for app in (
             *("best_mattress", "blvd_home", "harmony", "idealbed", "revive"),
             *("americanstar", "bailey2", "ruf", "tx", "wsilver2"),
-            *("nisco", "mlily_supreme"),
+            *("nisco", "mlily_supreme", "bedtech_classic"),
         )
     ),
 }

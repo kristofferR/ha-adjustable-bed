@@ -16,6 +16,7 @@ from ...services import (
     _capture_command_admission,
     _command_targets,
     _preflight_and_execute,
+    _Selection,
 )
 from ..base import controller_as
 from . import protocol
@@ -58,9 +59,15 @@ SLEEP_SCHEMA = vol.Schema(_SLEEP_FIELDS)
 
 async def handle_control(call: ServiceCall) -> None:
     targets = _call_targets(call)
+    action = str(call.data["action"])
+    selection = _Selection.capture(targets) if action == "app_mode" else None
+    owners = [
+        (child, child.entry, {key: value for key, value in child.entry.data.items() if key != "capabilities"})
+        for parent, side in targets
+        for child in _command_targets(parent, side)
+    ] if action == "app_mode" else []
     # Capture every physical owner and STOP epoch before the first lazy import.
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
-    action = str(call.data["action"])
     control = str(call.data["control"]) if "control" in call.data else None
     query = str(call.data["query"]) if "query" in call.data else None
     mode = call.data.get("transmit_mode")
@@ -80,6 +87,16 @@ async def handle_control(call: ServiceCall) -> None:
     from .app_controller import RichmatMHAppController
 
     if action == "app_mode":
+        assert selection is not None
+        selection.require_unchanged(call)
+        if any(
+            child.entry is not entry
+            or {key: value for key, value in child.entry.data.items() if key != "capabilities"} != data
+            for child, entry, data in owners
+        ):
+            raise invalid("bed_changed")
+        if selection.stopped():
+            return
         # Local pickers: set them on each side's live or offline controller without
         # entering the BLE scheduler, so a write already waiting reads the new mode.
         controllers: list[RichmatMHAppController] = []

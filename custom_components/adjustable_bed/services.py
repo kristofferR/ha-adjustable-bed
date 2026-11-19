@@ -2261,6 +2261,8 @@ def _check_alarm(
         ("massage_intensity", alarm.massage_intensity, 1, capability.massage_intensities),
     )
     for name, value, low, high in limits:
+        if name == "slot" and capability.live_slots:
+            continue  # The controller admits the exact identity during check_alarm.
         if name in given and not low <= value <= high:
             raise invalid("alarm_value_out_of_range", device_name=device_name, option=name, min=str(low), max=str(high))
     if "massage_duration" in given and alarm.massage_duration not in capability.massage_durations:
@@ -2371,6 +2373,7 @@ class _CheckedSession:
 
     controller: BedController
     generation: object
+    alarm_identity: tuple[int, int] | None = None
 
 
 def _connection_generation(child: BedChild) -> object:
@@ -2426,7 +2429,14 @@ async def _write_checked_alarms(
             request = _check_alarm(child.name, controller, alarm, given)
             if plan.live_check:
                 await controller.check_alarm(request)
-            sessions[id(child)] = _CheckedSession(controller, _connection_generation(child))
+            identity = controller.alarm_record_identity(request) if plan.live_slots else None
+            if plan.live_slots and request.mattress_side is None and identity is None:
+                raise _bed_changed()
+            sessions[id(child)] = _CheckedSession(
+                controller,
+                _connection_generation(child),
+                identity,
+            )
 
         # One side at a time, and a read never preempts movement: a failed
         # check is not a reason to stop anything.
@@ -2498,7 +2508,12 @@ async def _write_checked_alarms(
                 stopped = True
                 return
             # Check the request again on the controller that actually writes.
-            await controller.configure_alarm(_check_alarm(child.name, controller, alarm, given))
+            request = _check_alarm(child.name, controller, alarm, given)
+            if (session := sessions.get(id(child))) is not None and session.alarm_identity is not None:
+                request = dataclasses.replace(request, record_identity=session.alarm_identity)
+            if _capability.live_slots and request.mattress_side is None and request.record_identity is None:
+                raise _bed_changed()
+            await controller.configure_alarm(request)
             written.add(id(child))
 
         return step(configure)
