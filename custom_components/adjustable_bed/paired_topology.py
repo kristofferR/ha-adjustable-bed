@@ -1281,17 +1281,13 @@ class SequentialTwoLinkTopology(PairTopology):
             # side onto a possibly-still-live/moving link.
             disconnected = local_role or await safe_disconnect(side, child)
             if op_error is not None or not disconnected:
-                if op_error is not None and not disconnected:
-                    # Both failed: the command erred AND the release that should
-                    # have halted/released the side also failed — surface both, as
-                    # the link may still be live/moving (the more critical fact).
-                    err = failed("side_not_released", side=side)
-                    err.__cause__ = op_error
-                    errors[side] = err
-                elif op_error is not None:
+                if op_error is not None:
                     errors[side] = op_error
-                else:
-                    errors[side] = failed("side_not_released", side=side)
+                if not disconnected:
+                    # The release that halts the side failed too, so the link may
+                    # still be live: its own entry, beside the command's reason.
+                    key = side if op_error is None else f"{side} (disconnect)"
+                    errors[key] = failed("side_not_released", side=side)
                 break
         if errors:
             raise PairedSideError(action, errors)

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from homeassistant.exceptions import (
+    ConfigEntryError,
     ConfigEntryNotReady,
     HomeAssistantError,
     ServiceValidationError,
@@ -75,6 +76,17 @@ def not_ready(key: str, **placeholders: object) -> ConfigEntryNotReady:
     """Why a bed could not start; shown on the integration card while it retries."""
     values = _placeholders(placeholders)
     return ConfigEntryNotReady(
+        _english(key, values),
+        translation_domain=DOMAIN,
+        translation_key=key,
+        translation_placeholders=values,
+    )
+
+
+def setup_stopped(key: str, **placeholders: object) -> ConfigEntryError:
+    """Why a bed cannot start until the user changes it; Home Assistant does not retry."""
+    values = _placeholders(placeholders)
+    return ConfigEntryError(
         _english(key, values),
         translation_domain=DOMAIN,
         translation_key=key,

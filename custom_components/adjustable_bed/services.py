@@ -571,24 +571,23 @@ async def _execute_sided_translated(
     command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
     **kwargs: Any,
 ) -> None:
-    """Run ``_execute_sided``, surfacing a combined bed's translated side error.
+    """Run ``_execute_sided``, surfacing a combined bed's one translated side error.
 
-    A combined bed wraps each side's failure in one untranslated error. Raise
-    the first translated side error instead, with the combined one as cause.
+    A combined bed wraps each side's failure in one combined error. When only
+    one thing failed and it is a request the user can correct, raise that error
+    instead, with the combined one as cause. More failures keep the combined
+    error, which names each one.
     """
     try:
         await _execute_sided(coordinator, side, command_fn, **kwargs)
     except PairedSideError as err:
-        translated = next(
-            (
-                error
-                for error in err.side_errors.values()
-                if isinstance(error, ServiceValidationError) and error.translation_key
-            ),
-            None,
-        )
-        if translated is not None:
-            raise translated from err
+        [*errors] = err.side_errors.values()
+        if (
+            len(errors) == 1
+            and isinstance(errors[0], ServiceValidationError)
+            and errors[0].translation_key
+        ):
+            raise errors[0] from err
         raise
 
 

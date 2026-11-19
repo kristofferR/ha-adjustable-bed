@@ -569,7 +569,7 @@ def _validate_reverie_deferred_target(
         and coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
         and not controller.requires_disconnected_transport
     ):
-        raise invalid("needs_both_connected")
+        raise invalid("long_action_needs_connection")
 
 
 async def handle_reverie_run_routine(call: ServiceCall) -> None:

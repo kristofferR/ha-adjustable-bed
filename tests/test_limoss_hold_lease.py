@@ -276,7 +276,7 @@ async def test_an_undeclared_profile_refuses_a_lease_before_writing(bed: Bed) ->
             new_callable=PropertyMock,
             return_value=NO_EXECUTION_CAPABILITIES,
         ),
-        raises_key({"hold_renewal_not_supported", "action_rejected"}, ServiceValidationError),
+        raises_key("hold_renewal_not_supported", ServiceValidationError),
     ):
         await _hold(bed, 9)
     assert bed.writes == []

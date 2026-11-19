@@ -67,7 +67,7 @@ async def _hold_limoss_remote(
         if control not in controller.held_control_options:
             raise ValueError(f"The selected profile does not support combination '{control}'")
         if lease is not None and controller.execution.hold is None:
-            raise ValueError("This profile does not support renewable holds")
+            raise invalid("hold_renewal_not_supported", device_name=controller._coordinator.name)
 
     async def hold(controller: BedController) -> None:
         await controller.hold_control(control, duration_ms)

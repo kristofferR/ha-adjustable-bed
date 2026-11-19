@@ -251,7 +251,7 @@ async def test_deferred_actions_preflight_pair_connection_policy(
         return_value=([(first, SIDE_BOTH), (pair, side)], []),
     ):
         if mode == "sequential" and not local_role:
-            with raises_key("needs_both_connected", ServiceValidationError):
+            with raises_key("long_action_needs_connection", ServiceValidationError):
                 await hass.services.async_call(DOMAIN, service, data, blocking=True)
             first.async_execute_controller_command.assert_not_awaited()
             pair.async_execute_controller_command.assert_not_awaited()
@@ -300,7 +300,7 @@ async def test_comfort_rejects_only_deferred_sequential_targets(hass, bed_type, 
             blocking=True,
         )
         if rejected:
-            with raises_key("needs_both_connected", ServiceValidationError):
+            with raises_key("long_action_needs_connection", ServiceValidationError):
                 await call
         else:
             await call

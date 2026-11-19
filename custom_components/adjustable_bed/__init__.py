@@ -14,7 +14,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -86,7 +86,7 @@ from .entity_retypes import async_carry_over_retyped_entities
 from .entity_runtime import EntityRuntime
 from .entity_sweep import async_sweep_after_setup
 from .entry_hooks import ENTRY_PREPARE_STEPS, entry_hooks
-from .errors import not_ready
+from .errors import not_ready, setup_stopped
 from .frontend import async_register_frontend
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .paired_devices import async_register_children
@@ -1189,7 +1189,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             )
     children = _build_paired_children(hass, entry)
     if not children:
-        raise ConfigEntryError(translation_domain=DOMAIN, translation_key="paired_entry_has_no_sides")
+        raise setup_stopped("paired_entry_has_no_sides")
 
     # Observe the first connection too: sequential pairing may disconnect one
     # side before platform setup, taking its live controller with it.
@@ -1475,9 +1475,7 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
     controller = inner.controller
     if controller is not None and not getattr(controller, "supports_single_address_pairing", True):
         await coordinator.async_shutdown()
-        raise ConfigEntryError(
-            translation_domain=DOMAIN, translation_key="single_address_pair_unsupported"
-        )
+        raise setup_stopped("single_address_pair_unsupported")
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
     try:

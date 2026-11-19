@@ -1089,10 +1089,11 @@ async def test_registration_error_preserves_real_cleanup_failures(
         if mode == "concurrent":
             assert str(raised.value.side_errors["right (stop)"]) == "stop failed"
         else:
-            reason = raised.value.side_errors["left"]
-            assert reason.translation_key == "side_not_released"
-            assert isinstance(reason.__cause__, ServiceValidationError)
-            assert reason.__cause__.translation_key == "bed_changed"
+            # Two failures keep the combined error: the bed changed, and the
+            # side did not disconnect.
+            assert raised.value.side_errors["left"].translation_key == "bed_changed"
+            release = raised.value.side_errors["left (disconnect)"]
+            assert release.translation_key == "side_not_released"
         assert all(child._command_connection_holds == 0 for child in live.children.values())
     finally:
         hass.data[const.DOMAIN][live.pair.entry.entry_id] = live.pair

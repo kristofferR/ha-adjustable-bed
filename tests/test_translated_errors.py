@@ -6,18 +6,21 @@ import ast
 import json
 import re
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import ConfigEntryError, HomeAssistantError, ServiceValidationError
 
-from custom_components.adjustable_bed.errors import invalid, not_ready, rejected
+from custom_components.adjustable_bed.errors import invalid, not_ready, rejected, setup_stopped
 
 PACKAGE = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 EXCEPTIONS = json.loads((PACKAGE / "strings.json").read_text())["exceptions"]
-# Errors Home Assistant shows to users: action errors and the reason a bed is not ready.
-SHOWN = frozenset({"ServiceValidationError", "HomeAssistantError", "ConfigEntryNotReady"})
+# Errors Home Assistant shows to users: action errors and why a bed did not start.
+SHOWN = frozenset(
+    {"ServiceValidationError", "HomeAssistantError", "ConfigEntryNotReady", "ConfigEntryError"}
+)
 # The shared builders in errors.py, whose first argument is the key.
-BUILDERS = frozenset({"invalid", "_invalid", "failed", "not_ready"})
+BUILDERS = frozenset({"invalid", "_invalid", "failed", "not_ready", "setup_stopped"})
 
 
 def _calls() -> list[tuple[str, ast.Call, str]]:
@@ -105,6 +108,9 @@ def test_builders_carry_the_key_and_placeholders() -> None:
     assert reason.translation_key == "action_rejected"
     assert reason.translation_placeholders == {"reason": "Choose a mode this bed offers"}
     assert isinstance(not_ready("setup_retry"), HomeAssistantError)
+    stopped = setup_stopped("paired_entry_has_no_sides")
+    assert isinstance(stopped, ConfigEntryError)
+    assert stopped.translation_key == "paired_entry_has_no_sides"
 
 
 @pytest.mark.parametrize("key", sorted(EXCEPTIONS))
@@ -127,7 +133,7 @@ def _flow_error_keys(tree: ast.AST) -> set[str]:
         ):
             used.add(node.value.value)
         if isinstance(node, ast.keyword) and node.arg == "errors" and isinstance(node.value, ast.Dict):
-            used |= {v.value for v in node.value.values if isinstance(v, ast.Constant)}
+            used |= {v.value for v in node.value.values if isinstance(v, ast.Constant) and isinstance(v.value, str)}
     return used
 
 
@@ -151,3 +157,27 @@ def test_flow_errors_are_translated_in_their_own_flow() -> None:
         for flow in users:
             missing += [f"{flow} via {name}: {key}" for key in sorted(_flow_error_keys(node) - namespaces[flow])]
     assert missing == []
+
+
+@pytest.mark.parametrize(
+    ("side_errors", "surfaced"),
+    [
+        ({"left": invalid("bed_changed")}, "bed_changed"),
+        ({"left": invalid("bed_changed"), "left (disconnect)": invalid("action_stopped")}, "pair_side_failed"),
+        ({"left": invalid("bed_changed"), "right": invalid("bed_changed")}, "pair_side_failed"),
+        ({"left": RuntimeError("lost")}, "pair_side_failed"),
+    ],
+)
+async def test_a_combined_bed_surfaces_one_failure_or_all(
+    side_errors: dict[str, BaseException], surfaced: str
+) -> None:
+    """One correctable failure reads as itself; more keep the error that names each."""
+    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.paired_topology import PairedSideError
+
+    async def fail(*_args: object, **_kwargs: object) -> None:
+        raise PairedSideError("test", side_errors)
+
+    with patch.object(services, "_execute_sided", fail), pytest.raises(HomeAssistantError) as raised:
+        await services._execute_sided_translated(MagicMock(), "both", AsyncMock())
+    assert raised.value.translation_key == surfaced

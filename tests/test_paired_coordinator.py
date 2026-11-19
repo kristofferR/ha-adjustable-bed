@@ -2882,17 +2882,18 @@ class TestSequentialCycle:
 
     async def test_op_and_disconnect_both_fail_surfaces_both(self):
         # If a side's command fails AND its release then also fails, the disconnect
-        # failure (link may still be live/moving) must not be dropped — the side
-        # error reflects both, with the original op error as its cause.
+        # failure (link may still be live/moving) must not be dropped, and the
+        # command keeps its own reason beside it.
         log: list = []
         coord, _, _ = self._seq(
             log, left={"fail_command": True, "fail_disconnect": True}
         )
         with pytest.raises(PairedSideError) as exc:
             await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
-        err = exc.value.side_errors[SIDE_LEFT]
-        assert err.translation_key == "side_not_released"
-        assert isinstance(err.__cause__, RuntimeError)  # the original command error
+        assert isinstance(exc.value.side_errors[SIDE_LEFT], RuntimeError)
+        release = exc.value.side_errors[f"{SIDE_LEFT} (disconnect)"]
+        assert release.translation_key == "side_not_released"
+        assert exc.value.translation_key == "pair_side_failed"
         # The loop broke on left; right is never connected.
         assert (SIDE_RIGHT, "connect") not in log
 
