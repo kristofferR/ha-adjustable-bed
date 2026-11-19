@@ -378,7 +378,7 @@ its app's name rule to every target before any write:
 | [ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask) and [Dream Motion](beds/jiecang.md#dream-motion-dreamotion) | 1–20 ASCII letters or digits |
 | [Dream Motion HD](beds/jiecang.md#dream-motion-hd) | 1–20 printable ASCII characters |
 | [Comfort Motion app](beds/jiecang.md#comfort-motion-app) | 1–18 ASCII letters, digits, dots or underscores, discovered G1 name role required |
-| [Enso Remote](beds/keeson.md#enso-remote) | 1 to 14 characters after trimming surrounding spaces and control characters |
+| [Enso Remote](beds/keeson.md#enso-remote) | 1 to 14 UTF-16 code units after trimming leading and trailing U+0000 to U+0020; non-ASCII names are cut short (see the guide) |
 | [INNOVA](beds/keeson.md#innova-profile) | At most 14 characters as typed, then trimmed and non-empty |
 | [FurniMove](beds/furnimove.md#controls-and-actions) | One physical receiver; a unique name of at most 18 UTF-16 units after trimming |
 | [V-MAT Basic](beds/vibradorm.md#v-mat-basic) | One physical receiver; Java-style trim, at most ten UTF-16 units (empty allowed) and 20 UTF-8 bytes |

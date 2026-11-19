@@ -6241,7 +6241,8 @@ matching handle for each role is selected independently.
 
 Write mode follows live characteristic properties: acknowledged writes when
 available, otherwise writes without response. The app does not set a write mode.
-Home Assistant subscribes to the notify characteristic. Actual properties and
+The app only registers for notifications locally; for Home Assistant, Bleak
+handles the subscription and any required CCCD write. Actual properties and
 notification delivery need hardware testing.
 
 #### Controls
@@ -6334,10 +6335,14 @@ indicators and invalidate old notification callbacks.
 #### Services
 
 The shared [`rename`](../SERVICES.md#rename) action sends the Bluetooth name
-frame: 1 to 14 characters after trimming surrounding spaces and control
-characters. ASCII names are sent exactly as the app sends them; how the bed
-stores other characters needs hardware testing. Rename sends once, with no
-release or acknowledgement, and the bed may not advertise the new name. Standard movement, memory and held-control actions are supported;
+frame. The name is trimmed of leading and trailing characters U+0000 to U+0020
+and must then be 1 to 14 UTF-16 code units, so a character outside the basic
+plane, such as an emoji, counts twice. Like the app, the integration sends only
+as many UTF-8 bytes as the name has UTF-16 code units, so a non-ASCII name is
+cut short (`é` is sent as the single byte `C3`). ASCII names are sent exactly;
+how the bed handles other bytes needs hardware testing. Rename sends once, with
+no release and no confirmation from the bed, and the bed may not advertise the
+new name. Standard movement, memory and held-control actions are supported;
 clock and alarm actions are unavailable.
 
 #### Evidence
