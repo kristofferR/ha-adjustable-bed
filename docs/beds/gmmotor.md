@@ -29,7 +29,7 @@
 | Lights | Product controls; RGB/timeout menu requires its capability reply | None | None |
 | Alarms | Countdown or repeat table according to product; requires clock reply | None | None |
 | Anti-snore Settings | HNRN, HQRN, HSRN, HURN, M7RN, MJRN | None | Incoming raw state only |
-| Sleep Monitoring | BLE module name query where admitted | None | Live polling, part settings, day/month reports, clock, raw sensitivity query on SXB |
+| Sleep Monitoring | BLE module name query where admitted | None | **Live sleep data** switch; heart rate, breathing rate, in bed, snoring and body movement; part settings, day/month reports, clock, raw sensitivity query on SXB |
 | Paired Beds | Separate addresses retain their own product and app side; one address requires that product's side choices | Separate physical devices | Separate physical devices |
 | Firmware / Cloud / Bed Network | Outside integration boundary | Outside integration boundary | Outside integration boundary |
 
@@ -113,8 +113,9 @@ covers commands, raw state and static-only status.
 
 ## Commands
 
-The named buttons come from the selected catalog. The card displays them as
-utility controls, with continuous holds for sustain actions and separate buttons
+The named buttons come from the selected catalog. The card places motor,
+preset, memory, massage and light buttons in their own sections and the rest
+under Utility, with continuous holds for sustain actions and separate buttons
 for finite short/long callbacks. The `hold_control` action
 accepts the button's `held_control` identifier and a bounded duration.
 
