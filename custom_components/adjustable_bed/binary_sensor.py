@@ -30,7 +30,6 @@ from .paired_coordinator import entity_runtimes
 from .state_keys import BED_PRESENCE, BED_PRESENCE_SIDE
 
 if TYPE_CHECKING:
-    from .beds.base import BedController
     from .beds.entity_specs import ControllerStateBinarySensorSpec
 
 _LOGGER = logging.getLogger(__name__)
@@ -323,7 +322,10 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         return attrs
 
     async def async_update(self) -> None:
-        """Query the latest bed presence from the controller.
+        """Query the latest bed presence while the bed is connected.
+
+        The poll never connects and never extends the idle window, so it
+        follows the Bluetooth connection setting instead of holding the link.
 
         Home Assistant calls ``async_update`` independently on every enabled
         poll-driven entity. For beds where a single BLE query refreshes
@@ -332,15 +334,8 @@ class AdjustableBedPresenceSensor(AdjustableBedEntity, BinarySensorEntity):
         follow-up polls with a short TTL so we never run the same BLE
         query more than once per cycle.
         """
-
-        async def _read_presence(ctrl: BedController) -> bool | None:
-            return await ctrl.read_bed_presence_cached()
-
         try:
-            await self._coordinator.async_execute_controller_query(
-                _read_presence,
-                cancel_running=False,
-            )
+            await self._coordinator.async_refresh_bed_presence()
         except asyncio.CancelledError:
             return
         except (BleakError, ConnectionError, RuntimeError, TimeoutError, ValueError) as err:

@@ -13,8 +13,10 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_KAIDI_ADV_TYPE,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_RESOLVED_VARIANT,
@@ -24,10 +26,12 @@ from custom_components.adjustable_bed.const import (
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
 )
 from custom_components.adjustable_bed.diagnostics import async_get_config_entry_diagnostics
 from custom_components.adjustable_bed.discovery_log import async_get_discovery_log
+from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
 from custom_components.adjustable_bed.redaction import (
     KEYS_TO_REDACT,
     MAC_ADDRESS_KEYS,
@@ -64,6 +68,44 @@ def mock_diagnostics_config_entry(
     )
     entry.add_to_hass(hass)
     return entry
+
+
+async def test_diagnostics_report_effective_connection_settings(
+    hass: HomeAssistant,
+    mock_coordinator_connected,  # noqa: ARG001
+    enable_custom_integrations,  # noqa: ARG001
+) -> None:
+    """Diagnostics show how the bed connects, not just the keys stored for it."""
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:F1",
+            CONF_NAME: "Test Bed",
+            CONF_BED_TYPE: BED_TYPE_LINAK,
+            CONF_MOTOR_COUNT: 2,
+            CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE,
+            CONF_IDLE_DISCONNECT_SECONDS: 25,
+        },
+        unique_id="AA:BB:CC:DD:EE:F1",
+    )
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    result = await async_get_config_entry_diagnostics(hass, entry)
+
+    # The angle setting is not stored when it matches the default.
+    assert result["config"]["disable_angle_sensing"] is None
+    assert result["connection"] == {
+        "mode": CONNECTION_MODE_IDLE,
+        "idle_seconds": 25,
+        "reads_positions": True,
+    }
+    # A single-address pair's side reports its physical link.
+    side = SingleAddressSideCoordinator(coordinator, "left", MagicMock())
+    assert side.connection_settings == result["connection"]
 
 
 class TestDiagnosticsRedaction:

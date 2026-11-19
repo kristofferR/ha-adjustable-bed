@@ -15,7 +15,7 @@ import time
 import traceback
 from collections.abc import AsyncIterator, Callable, Coroutine, Iterator
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from bleak import BleakClient
 from bleak.backends.device import BLEDevice
@@ -64,6 +64,9 @@ from .const import (
     BED_TYPE_VMATBASIC,
     CONF_PAIRLINK_ROLE,
     CONF_VIBRADORM_APP_PROFILE,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
     IDLE_DISCONNECT_KEEP_CONNECTED,
     LEGGETT_VARIANT_GEN2,
     OKIMAT_SERVICE_UUID,
@@ -100,6 +103,16 @@ _LOGGER = logging.getLogger(f"{__package__}.coordinator")
 # Share a connection across rapid taps, then give the physical remote back its link.
 _COMMAND_BURST_GRACE_SECONDS = 1.0
 _PAIRING_RELEASE_RESTORE_TIMEOUT = 5.0
+# Delay before recovering a link the bed or adapter dropped.
+_AUTO_RECONNECT_DELAY_SECONDS = 5.0
+
+
+class ConnectionSettings(TypedDict):
+    """Effective Bluetooth connection behavior, as diagnostics report it."""
+
+    mode: str
+    idle_seconds: int | None
+    reads_positions: bool
 
 
 class PairingOnlyConnectionActiveError(RuntimeError):
@@ -268,6 +281,23 @@ class CoordinatorConnectionMixin:
         return list(self._connection_attempt_details)
 
     @property
+    def connection_settings(self: AdjustableBedCoordinator) -> ConnectionSettings:
+        """Return how this bed actually connects, after defaults and bed requirements."""
+        if self._disconnect_after_operation_enabled():
+            mode = CONNECTION_MODE_RELEASE
+        elif self._uses_persistent_connection():
+            mode = CONNECTION_MODE_ALWAYS
+        else:
+            mode = CONNECTION_MODE_IDLE
+        return {
+            "mode": mode,
+            "idle_seconds": (
+                self._idle_disconnect_seconds if mode == CONNECTION_MODE_IDLE else None
+            ),
+            "reads_positions": not self._disable_angle_sensing,
+        }
+
+    @property
     def connection_attempt_count(self: AdjustableBedCoordinator) -> int:
         """Return the monotonic number of connection attempts."""
         return self._connection_attempt_count
@@ -340,6 +370,7 @@ class CoordinatorConnectionMixin:
             yield
             return
         self._command_connection_holds += 1
+        self._note_command_demand()
         self._cancel_disconnect_timer()
         try:
             yield
@@ -349,7 +380,7 @@ class CoordinatorConnectionMixin:
                 self._reset_disconnect_timer()
 
     def _auto_reconnect_enabled(self: AdjustableBedCoordinator) -> bool:
-        """Return True when unexpected disconnects should schedule a reconnect timer."""
+        """Return True when an unexpected disconnect should schedule a reconnect timer."""
         controller = self.capability_controller
         if controller is not None and controller.requests_connection_recovery is True:
             return True
@@ -361,24 +392,43 @@ class CoordinatorConnectionMixin:
         # few reconnect cycles enter a protection mode where they stop advertising
         # entirely until power-cycled (#369). The next user command reconnects on
         # demand, so no reconnect timer is needed for these beds.
-        #
         if self._disconnect_after_operation_enabled():
             return False
 
+        if self._uses_persistent_connection():
+            return self._persistent_link_recovers_on_timer()
+
+        # "Stay connected for a while" holds the link for a while after a
+        # command. Recovering every drop with a fresh window would hold it
+        # forever and lock out the remote and app, and storms receivers that
+        # drop idle links (#369). Recover only for pending work, or once within
+        # the window the last command opened: a link a recovery opened is not
+        # recovered again, even if the controller's own startup commands opened
+        # a new window on it.
+        return self._command_needs_link() or (
+            self._idle_window_allows_recovery(_AUTO_RECONNECT_DELAY_SECONDS)
+            and not self._link_from_recovery
+        )
+
+    def _persistent_link_recovers_on_timer(self: AdjustableBedCoordinator) -> bool:
+        """Return True when a held link should be recovered without waiting for a command.
+
+        Other persistent links (such as Sleep Number MCR and "Always stay
+        connected") reconnect on the next command instead.
+        """
         # Retaining an RF eco BT link (staircase, or FurniMove on that receiver)
-        # must not disable recovery from an unexpected drop. Other FurniMove
-        # receivers are not persistent, so this changes nothing for them.
-        if self._bed_type in (BED_TYPE_OKIN_RF_ECO_BT, BED_TYPE_FURNIMOVE):
+        # must not disable recovery from an unexpected drop.
+        if self._bed_type in (
+            BED_TYPE_OKIN_RF_ECO_BT,
+            BED_TYPE_FURNIMOVE,
+            BED_TYPE_GMMOTOR_SLEEP_MM,
+            BED_TYPE_GMMOTOR_SLEEP_SXB,
+        ):
             return True
 
-        if self._bed_type in (BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB):
-            return True
-
-        # LP Comfort Connect's bond makes an unexpected drop recoverable, so it
-        # reconnects promptly while leaving the established lifecycle behavior of
-        # other persistent protocols (such as Sleep Number MCR) unchanged. A
-        # Leggett & Platt entry on Auto or Gen2 counts while its controller is
-        # Gen2 or not yet known.
+        # LP Comfort Connect's bond makes an unexpected drop recoverable, so a
+        # held link reconnects promptly. A Leggett & Platt entry on Auto or Gen2
+        # counts while its controller is Gen2 or not yet known.
         if self._bed_type == BED_TYPE_LEGGETT_GEN2:
             return True
         if self._bed_type == BED_TYPE_LEGGETT_PLATT and self._protocol_variant in (
@@ -386,10 +436,81 @@ class CoordinatorConnectionMixin:
             LEGGETT_VARIANT_GEN2,
         ):
             resolved = self.capability_controller
-            if resolved is None or resolved.holds_link_after_stalled_reconnect:
-                return True
+            return resolved is None or resolved.holds_link_after_stalled_reconnect
+        return False
 
-        return not self._uses_persistent_connection()
+    def _command_needs_link(self: AdjustableBedCoordinator) -> bool:
+        """Return True while a command runs, waits, or holds the link."""
+        return bool(
+            self._command_demand
+            or (self._command_lock.locked() and not self._link_read_active)
+            or self._command_connection_holds
+            or self._command_scheduler.has_pending
+        )
+
+    @contextlib.asynccontextmanager
+    async def _command_demand_scope(
+        self: AdjustableBedCoordinator, demand: bool = True
+    ) -> AsyncIterator[None]:
+        """Count a command as needing the link from before it waits for the lock."""
+        if not demand:
+            yield
+            return
+        self._command_demand += 1
+        self._note_command_demand()
+        try:
+            yield
+        finally:
+            self._command_demand -= 1
+
+    @contextlib.asynccontextmanager
+    async def _link_read_scope(
+        self: AdjustableBedCoordinator, link_read: bool
+    ) -> AsyncIterator[None]:
+        """Mark the command lock's holder as a read for the duration."""
+        self._link_read_active = link_read
+        try:
+            yield
+        finally:
+            self._link_read_active = False
+
+    def _idle_window_allows_recovery(
+        self: AdjustableBedCoordinator, delay: float = 0.0
+    ) -> bool:
+        """Return True when a reconnect after ``delay`` lands inside the idle window."""
+        deadline = self._idle_deadline
+        return deadline is not None and self.hass.loop.time() + delay < deadline
+
+    def _idle_recovery_is_bounded(self: AdjustableBedCoordinator) -> bool:
+        """Return True when a reconnect must stay inside the current idle window."""
+        controller = self.capability_controller
+        if controller is not None and controller.requests_connection_recovery is True:
+            return False
+        return not (
+            self._uses_persistent_connection()
+            or self._disconnect_after_operation_enabled()
+            or self._command_needs_link()
+        )
+
+    def _hold_link_for_command(self: AdjustableBedCoordinator) -> None:
+        """Stop the idle timer while a command owns the link.
+
+        The command's end opens a new idle window, even on a recovered link.
+        """
+        self._recovered_link_window = False
+        self._note_command_demand()
+        self._cancel_disconnect_timer()
+
+    def _note_command_demand(self: AdjustableBedCoordinator) -> None:
+        """Mark that a command wants the link.
+
+        A recovery still connecting finishes for the command instead of being
+        cancelled at the window's end and connected again from scratch.
+        """
+        self._command_link_generation += 1
+        window = self._recovery_connect_window
+        if window is not None and not window.expired():
+            window.reschedule(None)
 
     def _record_dropped_connection(
         self: AdjustableBedCoordinator, stage: str, attempt_details: dict[str, Any], attempt_start: float
@@ -1412,6 +1533,15 @@ class CoordinatorConnectionMixin:
                         sorted(manufacturer_data),
                     )
 
+                # Decided before the new controller exists, so its own startup
+                # commands cannot make a recovery's link look like a command's.
+                # One recovery per window: if this link drops too, the next
+                # command reconnects.
+                self._link_from_recovery = (
+                    self._recovery_generation is not None
+                    and self._recovery_generation == self._command_link_generation
+                )
+
                 # Create the controller
                 _LOGGER.debug("Creating %s controller...", self._bed_type)
                 self._controller = await create_controller(
@@ -1827,9 +1957,13 @@ class CoordinatorConnectionMixin:
         self._schedule_pending_capability_reload()
 
         if not self._auto_reconnect_enabled():
+            task = self._reconnect_task
+            if task is None or task.done():
+                # No recovery owns the link: the next connect opens a full window.
+                self._recovered_link_window = False
             _LOGGER.debug(
-                "Skipping auto-reconnect timer for %s (persistent connection or "
-                "disconnect_after_command); "
+                "Skipping auto-reconnect timer for %s (persistent connection, "
+                "release after each command, or idle window ended); "
                 "next command reconnects on demand",
                 self._bed_type,
             )
@@ -1843,7 +1977,7 @@ class CoordinatorConnectionMixin:
         if self._reconnect_timer is not None:
             self._reconnect_timer.cancel()
         self._reconnect_timer = self.hass.loop.call_later(
-            5.0,  # Wait 5 seconds before attempting reconnect
+            _AUTO_RECONNECT_DELAY_SECONDS,
             self._schedule_auto_reconnect,
         )
 
@@ -1895,18 +2029,50 @@ class CoordinatorConnectionMixin:
         if not self._command_lock.locked():
             self._cancel_command.clear()
 
+        bounded = self._idle_recovery_is_bounded()
+        if bounded and (
+            not self._idle_window_allows_recovery()
+            # A drop under a command scheduled this; the command is gone now.
+            or self._link_from_recovery
+        ):
+            _LOGGER.debug(
+                "Skipping auto-reconnect for %s: the idle window has ended or "
+                "already had its recovery",
+                self._address,
+            )
+            return
+
         _LOGGER.debug("Attempting automatic reconnection to %s", self._address)
+        # A bounded recovery re-arms the idle timer for what is left of the
+        # window the last command opened, never a new one.
+        deadline = self._idle_deadline
+        generation = self._command_link_generation
         try:
-            connected = await self.async_connect()
+            if bounded:
+                connected = await self._async_connect_within_window(deadline, generation)
+                if connected is None:
+                    return
+            else:
+                self._recovered_link_window = False
+                connected = await self.async_connect()
             if connected:
                 _LOGGER.debug("Auto-reconnection successful for %s", self._address)
+                if bounded and generation == self._command_link_generation:
+                    # Retries or a drop during startup may have re-armed the
+                    # timer. Unless a command took the link meanwhile, the
+                    # window still ends when it would have, possibly now.
+                    self._recovered_link_window = True
+                    self._idle_deadline = deadline
+                    self._reset_disconnect_timer()
                 # Note: async_start_notify is called automatically in _async_connect_locked
             else:
+                self._recovered_link_window = False
                 _LOGGER.debug(
                     "Auto-reconnection failed for %s. Will retry on next command.",
                     self._address,
                 )
         except Exception as err:
+            self._recovered_link_window = False
             _LOGGER.warning(
                 "Auto-reconnection error for %s: %s",
                 self._address,
@@ -1922,7 +2088,46 @@ class CoordinatorConnectionMixin:
                 and controller.requests_connection_recovery is True
                 and self._reconnect_timer is None
             ):
-                self._reconnect_timer = self.hass.loop.call_later(5.0, self._schedule_auto_reconnect)
+                self._reconnect_timer = self.hass.loop.call_later(
+                    _AUTO_RECONNECT_DELAY_SECONDS, self._schedule_auto_reconnect
+                )
+
+    async def _async_connect_within_window(
+        self: AdjustableBedCoordinator, deadline: float | None, generation: int
+    ) -> bool | None:
+        """Connect for a bounded recovery; return None when there was nothing to do.
+
+        That is when another connect won the lock or the window ran out. A
+        command that takes the link meanwhile lifts the deadline, so the
+        connect finishes for it. Otherwise cleanup runs under the same
+        connection lock as the attempt, so a command queued on it never sees
+        the abandoned link and connects on demand afterwards.
+        """
+        async with self._lock:
+            if self._client is not None and self._client.is_connected:
+                # An explicit connect or a command got there first.
+                return None
+            # A command that arrived while this waited for the lock owns the link.
+            command_arrived = generation != self._command_link_generation
+            self._recovered_link_window = not command_arrived
+            window = asyncio.timeout_at(None if command_arrived else deadline)
+            self._recovery_connect_window = window
+            self._recovery_generation = generation
+            try:
+                async with window:
+                    return await self._async_connect_locked()
+            except TimeoutError:
+                if not window.expired():
+                    raise
+            finally:
+                self._recovery_connect_window = None
+                self._recovery_generation = None
+            _LOGGER.debug("Auto-reconnect for %s outlasted the idle window", self._address)
+            self._recovered_link_window = False
+            # A cancelled startup error handler can leave a half-open link.
+            if generation == self._command_link_generation or not self._link_ready:
+                await self._async_disconnect_locked("idle_timeout")
+            return None
 
     async def async_disconnect(
         self: AdjustableBedCoordinator,
@@ -1948,6 +2153,7 @@ class CoordinatorConnectionMixin:
             self._reconnect_stalled = False
         # Stop recovery before waiting for the connection lane it may already own.
         self._cancel_auto_reconnect()
+        self._recovered_link_window = False
         if serialize_with_commands:
             # Without this, a disconnect requested while a connect is in flight
             # queues on self._lock and then tears the link down in the same tick
@@ -2230,6 +2436,7 @@ class CoordinatorConnectionMixin:
             return
         if self._uses_persistent_connection():
             self._cancel_disconnect_timer()
+            self._idle_deadline = None
             _LOGGER.debug(
                 "Skipping idle disconnect timer for persistent connection on %s",
                 self._address,
@@ -2237,7 +2444,13 @@ class CoordinatorConnectionMixin:
             return
 
         self._cancel_disconnect_timer()
-        delay = self._idle_disconnect_delay()
+        now = self.hass.loop.time()
+        if self._recovered_link_window and self._idle_deadline is not None:
+            # A recovered link keeps the window the last command opened.
+            delay = max(0.0, self._idle_deadline - now)
+        else:
+            delay = self._idle_disconnect_delay()
+            self._idle_deadline = now + delay
         _LOGGER.debug(
             "Setting idle disconnect timer for %s (%.1f seconds)",
             self._address,
@@ -2317,6 +2530,7 @@ class CoordinatorConnectionMixin:
                     self._address,
                 )
                 return
+            self._recovered_link_window = False
             async with self._lock:
                 await self._async_disconnect_locked("idle_timeout")
 
