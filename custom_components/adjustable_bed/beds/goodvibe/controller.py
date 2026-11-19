@@ -1694,12 +1694,12 @@ class GoodVibeController(BedController):
             return
         request.validate(self, reported=False)
         link = self._current_link()
-        generation = self._coordinator._position_connection_generation
+        generation = self._coordinator.connection_generation
         cancel = self._coordinator.cancel_command
 
         def current() -> None:
             admitted()
-            if self._current_link() is not link or self._coordinator._position_connection_generation != generation:
+            if self._current_link() is not link or self._coordinator.connection_generation != generation:
                 raise ConnectionError("Power Bob Base session changed while awaiting light capability")
             if cancel.is_set():
                 raise asyncio.CancelledError
