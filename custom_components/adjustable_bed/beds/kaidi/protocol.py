@@ -19,9 +19,6 @@ KAIDI_ADV_TYPE_SINGLE = 0x01
 KAIDI_ADV_TYPE_BROADCAST = 0x02
 KAIDI_ADV_TYPE_DISCOVERABLE = 0x09
 
-KAIDI_INTERNAL_COMPANY_ID = 0x4B44
-
-
 @dataclass(frozen=True)
 class KaidiAdvertisement:
     """Parsed Kaidi advertisement payload."""
@@ -117,11 +114,6 @@ def normalize_kaidi_manufacturer_payload(payload: bytes) -> bytes | None:
     if payload.startswith(KAIDI_STRIPPED_ADV_MARKER):
         return b"\xff\xff" + payload
     return None
-
-
-def is_kaidi_manufacturer_payload(payload: bytes) -> bool:
-    """Return True when the payload matches Kaidi's manufacturer blob."""
-    return normalize_kaidi_manufacturer_payload(payload) is not None
 
 
 def parse_kaidi_manufacturer_payload(payload: bytes) -> KaidiAdvertisement | None:

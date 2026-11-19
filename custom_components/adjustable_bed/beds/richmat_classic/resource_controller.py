@@ -54,12 +54,6 @@ LAMP_TIMEOUT: Final = StateKey[int | None]("richmat_resource_lamp_timeout")
 MASSAGE_TIMER: Final = StateKey[int | None]("richmat_resource_massage_timer")
 
 
-async def _bed_command(controller: BedController, command: str) -> None:
-    if not isinstance(controller, ResourceBedController):
-        raise ValueError("Choose Lady Americana, ACAA, STA Homecare or Zero Gravity")
-    await controller.execute_request(p.Request("bed_command", command=command))
-
-
 class ResourceBedController(RichmatClassicController):
     """Resource getters stay shared; app timing, parser and utilities are explicit."""
 

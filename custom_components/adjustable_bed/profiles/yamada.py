@@ -13,7 +13,6 @@ from ..codec import keeson, okin_nframe
 from .keeson import YAMADA_P1, YAMADA_P2, KeesonProfile
 
 PROFILES: Final = {"p1": YAMADA_P1, "p2": YAMADA_P2}
-VERSION_CHOICES: Final = {"p1": "P1: E6 / ED", "p2": "P2: 05 / A5"}
 WORDS: Final = {
     "head_up": 1,
     "head_down": 2,
@@ -55,7 +54,6 @@ NOTIFY_CHARS: Final = frozenset(
         "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
     }
 )
-NAME_PREFIXES: Final = ("okin-ble", "smartbed")
 REFRESH_MS: Final = 300
 SAVE_CONFIRMATION_MS: Final = 5200
 PAGE_ROUNDS_MS: Final = (0, 300, 600)
