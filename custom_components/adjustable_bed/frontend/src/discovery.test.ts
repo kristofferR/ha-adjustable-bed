@@ -10,7 +10,7 @@ import {
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
-import { heldButtonMotor } from "./hold";
+import { activateWithoutPointer, heldButtonMotor } from "./hold";
 import { placed, publish } from "./test-placements";
 import type { EntityRegistryDisplayEntry, HomeAssistant } from "./types";
 
@@ -1568,6 +1568,26 @@ test("App catalog saves sit with the presets and extras in the utility section",
   expect(bed.motors.map((motor) => [motor.key, motor.up])).toEqual([["head", "button.casper_head_up"]]);
   expect(bed.utility).toEqual(["button.casper_fan"]);
   expect(bedIsEmpty(bed)).toBe(false);
+});
+
+test("Keyboard activation of an app-only motor without a release button presses it", async () => {
+  // TEMPUR AU D1/E1 lumbar: an app action on a motor the bed declares no cover for.
+  const calls: unknown[][] = [];
+  const hass = hassWith([entry("button.lumbar_up", "lumbar_up"), entry("cover.back", "back")]);
+  hass.callService = async (...args: unknown[]) => { calls.push(args); };
+  hass.states["button.lumbar_up"] = {
+    entity_id: "button.lumbar_up", state: "unknown", last_changed: "", last_updated: "",
+    attributes: {
+      card_section: "motors", card_role: "up", card_motor: "lumbar", timed_move: false,
+      held_control: "lumbarup", hold_start_delay_ms: 0, hold_release_delay_ms: 400,
+    },
+  };
+  const lumbar = bedEntitiesForDevice(hass, "dev1").motors.find((m) => m.key === "lumbar")!;
+  expect(lumbar.heldControls?.up?.control).toBe("lumbarup");
+  expect(lumbar.timedMove).toBeUndefined();
+  activateWithoutPointer(hass, lumbar, "up");
+  await Promise.resolve();
+  expect(calls).toEqual([["button", "press", { entity_id: "button.lumbar_up" }]]);
 });
 
 test("A held app motor button releases through its own button and is never timed", () => {

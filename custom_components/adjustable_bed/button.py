@@ -1461,6 +1461,9 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         if self._spec.requires_confirmation:
             attributes["requires_confirmation"] = True
+        if self._spec.card.role in (CardRole.UP, CardRole.DOWN):
+            # An app's motor action is pressed, never replaced by a timed motor move.
+            attributes["timed_move"] = False
         hold = self._current_hold_spec()
         if hold is not None:
             attributes.update(

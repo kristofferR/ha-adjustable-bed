@@ -171,8 +171,8 @@ export function bedEntitiesForDevice(
       };
     } else if (
       (key === "back" || key === "legs" || key === "lumbar") &&
-      // Only the bed's own motors take a timed move; an app gesture is pressed instead.
-      typeof control === "string" && !ownRelease
+      // Only the bed's own motors take a timed move; an app's motor action is pressed instead.
+      typeof control === "string" && !ownRelease && attributes?.timed_move !== false
     ) item.timedMove = {
       deviceId,
       motor: key,

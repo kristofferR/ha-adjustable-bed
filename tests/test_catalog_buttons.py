@@ -146,3 +146,20 @@ def test_a_catalog_clock_setter_is_a_disabled_diagnostic() -> None:
     """SUTA's "Sync clock" until the shared sync_clock action covers the bed."""
     spec = catalog_button("suta_set_date", "Sync clock", _press)
     assert spec is not None and spec.diagnostic and not spec.entity_registry_enabled_default
+
+
+def test_an_app_motor_button_tells_the_card_not_to_time_it() -> None:
+    """The card would otherwise send timed_move for a motor the bed's covers do not have."""
+    from unittest.mock import MagicMock
+
+    from custom_components.adjustable_bed.button import ControllerActionButton
+
+    runtime = MagicMock()
+    runtime.entity_side = None
+    runtime.capability_controller = None
+    spec = catalog_button("lumbarup", "Lumbar up", _press)
+    assert spec is not None
+    assert ControllerActionButton(runtime, spec).extra_state_attributes["timed_move"] is False
+    preset = catalog_button("zg", "Zero G", _press)
+    assert preset is not None
+    assert "timed_move" not in ControllerActionButton(runtime, preset).extra_state_attributes
