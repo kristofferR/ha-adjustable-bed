@@ -5282,14 +5282,15 @@ All five models and fifteen dispatch outcomes are implemented; physical checks s
 **App:** [BetterLiving](https://play.google.com/store/apps/details?id=com.ore.betterliving2)
 1.3.0 (16), `com.ore.betterliving2`
 
-**Status:** Not yet tested. All three app routes are statically supported;
-hardware remains unverified.
+**Status:** Not yet tested (built from the app, all three control boxes)
 
 #### Setup
 
-Choose **BetterLiving / BetterLiving2**, the P1, P2 or P3 wire route, and the
-app's two- or three-motor screen. Reconfigure asks the same questions. These are
-independent choices, retained per side when combining two physical beds.
+Choose **BetterLiving / BetterLiving2 app**, then the **P1**, **P2** or **P3
+control box** and **2 motors: back and feet** or **3 motors: back, feet and all
+sections**, the app's two- or three-motor screen. Reconfigure asks the same
+questions. These are independent choices, kept per side when combining two
+physical beds.
 An unknown route or layout has no offline controls. The names `okin*` and
 `smartbed*` are shared scan hints, not evidence that a device uses this app.
 
@@ -5297,7 +5298,7 @@ The manufacturer read in the Android app can change its wire selector after
 GATT binding. HA keeps the explicit route and its endpoint pair coherent.
 P1/P2 use separate write and notification services; P3 uses Nordic UART. HA
 validates their live properties and prefers write-with-response when supported.
-The artifact does not prove an explicit Android write-mode override.
+No explicit Android write mode is known.
 
 Only back and feet are separately proven axes. The two-motor HF controls and
 three-motor ALL controls use distinct words; the latter does not establish a
@@ -5427,8 +5428,9 @@ Its fixed `action` choices are `refresh_alarm` and `refresh_massage` (P2/P3 only
 These call the existing query methods with the same owner, STOP and session checks.
 The four raw P1 timer inputs remain codec evidence; their physical duration
 mapping is unproven, so they have no Home Assistant action. There is no
-arbitrary packet action. Clock synchronization remains available through the
-shared synchronization action and its existing connection startup.
+arbitrary packet action. The **Set bed clock** action
+([`sync_clock`](../SERVICES.md#sync_clock)) sets the clock, as the connection
+startup does.
 
 Alarm selection/preferences are diagnostic data, not an alarm-state entity.
 Wave/timer response settings are diagnostic sensors disabled by default and
@@ -5443,8 +5445,10 @@ timer and unowned delayed recall STOP. Ending refresh alone is not a proven
 physical STOP. Renewable holds are restricted to the six named movement
 controls; they do not assert renewable generic timed movement.
 
-Based on BetterLiving2 1.3.0. Hardware remains unverified. External users with
-existing beds can qualify behavior after a beta or release.
+#### Evidence
+
+Based on BetterLiving2 1.3.0 (`com.ore.betterliving2`). Hardware is not yet
+tested.
 
 ### アシステック / Yamada
 

@@ -27,8 +27,6 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`l2motion`](#l2-motion) | L2 Motion: settings | Change supported light colors or explicitly confirm wired or wireless synchronization. |
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Run full body massage, or a preset with the other base lowering its feet for 30 seconds. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
-| [`betterliving2_massage`](#betterliving2-actions) | BetterLiving2: run control | Set head and foot massage intensity. |
-| [`betterliving2_diagnostic_action`](#betterliving2-actions) | BetterLiving2: settings | Refresh alarm or massage status. |
 | [`sync_clock`](#sync_clock) | Set bed clock | Set each targeted controller's clock to Home Assistant's local time. Every target is checked before any write. |
 | [`rename`](#rename) | Rename Bluetooth name | Write a new Bluetooth name to each targeted controller that supports it. Each app profile applies its own name rule to every target before any write. This does not rename the Home Assistant device. |
 | [`lower_to_flat`](#estimated-positions) | Lower to flat | Lower the selected motors for their full travel time plus a margin. This never sets the reference: confirm flat afterwards. |
@@ -45,6 +43,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`agingplace_set_setting`](#agingplace_set_setting) | Aging in Place: settings | Set light brightness, massage duration or motion light duration. |
 | [`bedtech_app_command`](#bedtech_app_command) | BedTech: press button | Press one of the selected BedTech model's buttons, on the sleeper side the app uses for it. Movement repeats for the configured number of pulses. |
 | [`bedgear`](#bedgear) | Bedgear: settings | Change Bedgear settings. Values show as unknown until the bed reports them. |
+| [`betterliving2_diagnostic_action`](#betterliving2_diagnostic_action) | BetterLiving2: settings | Refresh alarm or massage status. |
+| [`betterliving2_massage`](#betterliving2_massage) | BetterLiving2: run control | Set head and foot massage intensity. Zero turns a zone off. |
 | [`casper_base`](#casper_base) | Casper Base: settings | Configure the selected Casper Base product or its separate sleep sensor. See the Casper Base guide for operation-specific fields. |
 | [`cheerssleep`](#cheerssleep) | CheersSleep: run control | Run one of the bed's controls, such as movement, presets, massage or the light. Every selected bed is checked before any of them changes. |
 | [`comfort_enhancement3_start_massage`](#comfort_enhancement3_start_massage) | Comfort Enhancement 3: start massage | Start a relative massage program. Values are app choices, not measured bed state. |
@@ -437,6 +437,7 @@ data:
 | Bed | Wake actions | Other options |
 |-----|--------------|---------------|
 | BF and Cherish | `none`, `memory_1`, `memory_2` | Once only |
+| BetterLiving2 | `massage`, `memory_1`, `memory_2` | `weekdays` or once, at the next occurrence |
 | Comfort Enhancement 3 | Depends on the remote: `none`, `memory_1`, `memory_2`, `zero_g`, `tv`, `anti_snore` | `slot` 0–99, `massage` with zone, intensity and 10/20/30-minute duration, `light`. Once, at the next occurrence |
 | Comfort Enhancements | `none`, `memory_1`, `memory_2` | `massage`; today only |
 | ComfortBase | `memory_1`, `memory_2` | Once only |
@@ -592,6 +593,31 @@ Use `adjustable_bed.bedgear` for source-supported RGB, light shutdown minutes,
 alarm strength/time, bed synchronization and memory/snore save options. See
 the [Bedgear control reference](beds/motomotion.md#bedgear) for parameters.
 Motor covers and the card use the generic held and timed movement actions.
+
+## BetterLiving2
+
+<a id="betterliving2_diagnostic_action"></a>
+**`betterliving2_diagnostic_action`**: Refresh alarm or massage status.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `action` | Action | `refresh_alarm` (Refresh alarm) or `refresh_massage` (Refresh massage, P2 and P3 control boxes only). |
+
+<a id="betterliving2_massage"></a>
+**`betterliving2_massage`**: Set head and foot massage intensity. Zero turns a zone off.
+
+| Field | Name | Meaning |
+|-------|------|---------|
+| `head` | Head massage level | A number from 0 to 3. |
+| `feet` | Foot massage level | A number from 0 to 3. |
+
+### BetterLiving2 actions
+
+`betterliving2_massage` works on the P1 control box. Every target is checked
+before any write. Set alarms with [`set_alarm`](#set_alarm) (`wake_action`
+`massage`, `memory_1` or `memory_2`; an empty `weekdays` list means the next
+occurrence) and the clock with [`sync_clock`](#sync_clock). See the
+[BetterLiving2 guide](beds/keeson.md#betterliving2).
 
 ## Casper Base
 
@@ -2205,17 +2231,6 @@ give both sides the same alarm time. Serialized pairs offer renewable holds on L
 Right, while finite Both actions remain available.
 Motor covers expose renewable holds through the standard `timed_move` and
 `hold_control` actions; presets stay finite.
-
-## BetterLiving2 actions
-
-Use `set_alarm` with `wake_action` set to `massage`, `memory_1` or `memory_2`.
-`weekdays` uses weekday names; an empty list chooses the next occurrence.
-The shared `sync_clock` action sets the bed clock.
-
-`betterliving2_massage` takes P1 `head` and `feet` levels from 0 to 3.
-`betterliving2_diagnostic_action` offers `refresh_alarm` and P2/P3 `refresh_massage`.
-The raw P1 timer inputs have no proven duration mapping and are not exposed as
-an action. Every target is checked before any write.
 
 ### L2 Motion
 
