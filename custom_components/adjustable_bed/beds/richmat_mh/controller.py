@@ -34,7 +34,7 @@ from ...card import (
     CardSection,
     motor_card,
 )
-from ...command_scheduler import note_frame_written
+from ...command_scheduler import command_frames_counted
 from ...const import (
     CONF_BLE_DEVICE_NAME,
     RICHMAT_MH_APP_CATALOGS,
@@ -1789,9 +1789,9 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         if self._light_page() is None:
             raise NotImplementedError("The bed has not reported a light page for this model")
         r, g, b = (int(v) for v in rgb_color)
-        await self.write_command(rgb_frame(r, g, b), cancel_event=asyncio.Event())
         # STOP cannot interrupt this frame, so once written it is the command's.
-        note_frame_written(self._coordinator.cancel_command)
+        with command_frames_counted():
+            await self.write_command(rgb_frame(r, g, b), cancel_event=asyncio.Event())
 
     async def set_angle(self, bits: int, angle: int) -> None:
         """MotorCallFrag: 100 ms after the slider release, one absolute target."""

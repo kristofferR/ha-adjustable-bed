@@ -722,6 +722,19 @@ def command_frames_not_counted() -> Iterator[None]:
         _FRAMES_NOT_COUNTED.reset(token)
 
 
+_FRAMES_COUNTED: ContextVar[bool] = ContextVar("adjustable_bed_frames_counted", default=False)
+
+
+@contextlib.contextmanager
+def command_frames_counted() -> Iterator[None]:
+    """Count frames the command sends with an event of their own (STOP cannot stop them)."""
+    token = _FRAMES_COUNTED.set(True)
+    try:
+        yield
+    finally:
+        _FRAMES_COUNTED.reset(token)
+
+
 def note_frame_written(cancel_event: asyncio.Event | None) -> None:
     """Record that a frame of the running command was handed to the bed.
 
@@ -732,7 +745,7 @@ def note_frame_written(cancel_event: asyncio.Event | None) -> None:
     context = current_command_context()
     if (
         context is not None
-        and cancel_event is context.cancel_event
+        and (cancel_event is context.cancel_event or _FRAMES_COUNTED.get())
         and not _FRAMES_NOT_COUNTED.get()
     ):
         context.frames_written += 1

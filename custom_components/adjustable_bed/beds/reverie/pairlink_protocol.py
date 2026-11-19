@@ -328,14 +328,19 @@ async def send_central_frame(
         try:
             # The writer counts each fragment it sends.
             await writer.write_gatt_char(characteristic, fragment, response=False)
-            note_write_not_counted()
-            if len(fragments) > 1:
-                await sleep(0.015)
         except asyncio.CancelledError:
-            # Cancelled before the last fragment: the frame is incomplete.
-            if index < len(fragments) - 1:
-                note_frame_skipped()
+            # Cancelled mid-fragment: the frame may be incomplete.
+            note_frame_skipped()
             raise
+        note_write_not_counted()
+        if len(fragments) > 1:
+            try:
+                await sleep(0.015)
+            except asyncio.CancelledError:
+                # Only a pause before the last fragment leaves the frame incomplete.
+                if index < len(fragments) - 1:
+                    note_frame_skipped()
+                raise
 
 
 @dataclass(slots=True)
