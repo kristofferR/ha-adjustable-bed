@@ -8,11 +8,15 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.components.light import ColorMode
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.entity_specs import ControllerSwitchSpec
-from custom_components.adjustable_bed.command_scheduler import current_command_context
+from custom_components.adjustable_bed.command_scheduler import (
+    CommandOutcome,
+    current_command_context,
+)
 from custom_components.adjustable_bed.light import (
     LIGHT_DESCRIPTION,
     AdjustableBedAssumedLight,
@@ -20,6 +24,7 @@ from custom_components.adjustable_bed.light import (
     AdjustableBedOnOffLight,
 )
 from custom_components.adjustable_bed.paired_coordinator import entity_runtimes
+from custom_components.adjustable_bed.state_keys import LIGHT_LEVEL
 from custom_components.adjustable_bed.switch import (
     SWITCH_DESCRIPTIONS,
     AdjustableBedControllerSwitch,
@@ -443,3 +448,240 @@ async def test_production_light_distinguishes_a_toggle_from_a_wake(hass, protoco
             # Only the wake that readies the link went out.
             assert light.is_on is before
             assert bed.controller_state.get(UNDER_BED_LIGHTS_ON) is not True
+
+
+@pytest.mark.parametrize("startup", [True, False])
+@pytest.mark.parametrize("cancelled", [True, False])
+async def test_link_startup_on_reconnect_is_not_the_commands_frame(hass, startup, cancelled) -> None:
+    async with beds(hass, 1, connected=False) as made:
+        bed = made.items[0]
+        _settings(bed)
+        # The real connect path: the command has to open the link itself.
+        del bed.async_ensure_connected
+
+        async def connect_link(reset_timer: bool = True) -> bool:
+            await bed.fake_connect()
+            if startup:
+                # A session open the link sends on connect, through the shared writer.
+                await bed.controller._write_gatt_with_retry(  # type: ignore[union-attr]
+                    "0000fff1-0000-1000-8000-00805f9b34fb", b"startup", repeat_delay_ms=0
+                )
+            return True
+
+        bed._async_connect_link_locked = connect_link  # type: ignore[method-assign]
+        if cancelled:
+            # STOP lands after the link is up, before the command's own frame.
+            bed.before_write = _cancel_while_writing  # type: ignore[attr-defined]
+        light = _entity(AdjustableBedAssumedLight(bed))
+        with virtual_clock():
+            await light.async_turn_on()
+        expected = (["startup"] if startup else []) + ([] if cancelled else ["toggle"])
+        assert bed.sent == expected  # type: ignore[attr-defined]
+        # Only the toggle itself moves the estimate.
+        assert light.is_on is not cancelled
+
+
+def _running_command(cancel: asyncio.Event) -> Any:
+    from custom_components.adjustable_bed.command_scheduler import CommandContext, CommandKind
+
+    return CommandContext(
+        scheduler_token=object(),
+        cancel_event=cancel,
+        admitted_stop_epoch=0,
+        intent_id="test",
+        kind=CommandKind.COMMAND,
+        group_id=None,
+        resources=frozenset({"*"}),
+    )
+
+
+async def test_mlily_cleanup_stop_is_not_the_commands_frame() -> None:
+    from custom_components.adjustable_bed.codec import richmat as codec
+    from tests.test_mlily_remote import make
+
+    controller, coordinator = make()
+    with virtual_clock():
+        await controller.start_notify()
+        link = controller._current()
+        command = _running_command(coordinator.cancel_command)
+        with patch(
+            "custom_components.adjustable_bed.command_scheduler.current_command_context",
+            return_value=command,
+        ):
+            coordinator.cancel_command.set()
+            stop = codec.function(codec.STOP, 0, single=link.legacy)
+            assert await controller._write(stop, link, cleanup=True)
+            assert command.frames_written == 0
+            coordinator.cancel_command.clear()
+            assert await controller._write(stop, link)
+            assert command.frames_written == 1
+        await controller.stop_notify()
+
+
+async def test_svane_release_stop_is_not_the_commands_frame() -> None:
+    from tests.test_svane import HEAD, UP, make_controller
+
+    controller = make_controller()
+    cancel = controller._coordinator.cancel_command
+    command = _running_command(cancel)
+    with patch(
+        "custom_components.adjustable_bed.command_scheduler.current_command_context",
+        return_value=command,
+    ):
+        controller._started[(HEAD, UP)] = None
+        cancel.set()
+        await controller._release(((HEAD, UP),))
+        assert controller.client.write_gatt_char.await_count == 1
+        assert command.frames_written == 0
+        cancel.clear()
+        await controller._write(HEAD, UP, b"\x01\x00")
+        assert command.frames_written == 1
+
+
+@pytest.mark.parametrize("cancelled", [True, False])
+async def test_sent_state_helper_after_a_reconnect_publishes_only_the_commands_frame(
+    hass, cancelled
+) -> None:
+    from custom_components.adjustable_bed.state_keys import LIGHT_LEVEL
+
+    async with beds(hass, 1, connected=False) as made:
+        bed = made.items[0]
+        _settings(bed)
+        del bed.async_ensure_connected
+
+        async def connect_link(reset_timer: bool = True) -> bool:
+            await bed.fake_connect()
+            await bed.controller._write_gatt_with_retry(  # type: ignore[union-attr]
+                "0000fff1-0000-1000-8000-00805f9b34fb", b"startup", repeat_delay_ms=0
+            )
+            return True
+
+        bed._async_connect_link_locked = connect_link  # type: ignore[method-assign]
+        if cancelled:
+            bed.before_write = _cancel_while_writing  # type: ignore[attr-defined]
+
+        async def set_level(controller: SettingsController) -> None:
+            # A select or number that publishes the value it commanded.
+            with controller.sent_state(LIGHT_LEVEL(5)):
+                await controller._write("level 5")
+
+        bed.controller_state[LIGHT_LEVEL] = 3
+        with virtual_clock():
+            await bed.async_execute_controller_command(set_level, cancel_running=False)
+        # Nothing of the command reached the bed: the previous value stays.
+        assert bed.controller_state.get(LIGHT_LEVEL) == (3 if cancelled else 5)
+
+
+async def _fail_after_frame(controller: SettingsController) -> None:
+    """The link drops on the second frame of a two-frame value."""
+    if len(controller.bed.sent) > 1:  # type: ignore[attr-defined]
+        raise BleakError("link lost after the first frame")
+
+
+async def _fail_after_frame_during_stop(controller: SettingsController) -> None:
+    """STOP arrives while the second frame is in flight, and that write fails."""
+    if len(controller.bed.sent) > 1:  # type: ignore[attr-defined]
+        controller.bed.request_command_cancel()
+        raise BleakError("link lost after the first frame")
+
+
+def _on_off_light(bed: Bed) -> Any:
+    light = _entity(AdjustableBedOnOffLight(bed, LIGHT_DESCRIPTION))
+    light._attr_is_on = False
+    return light
+
+
+def _controller_switch(bed: Bed) -> Any:
+    switch = _entity(AdjustableBedControllerSwitch(bed, MASSAGE))
+    switch._commanded = False
+    return switch
+
+
+async def _turn_on(entity: Any) -> None:
+    await entity.async_turn_on()
+
+
+async def _set_level(bed: Bed) -> None:
+    async def set_level(controller: SettingsController) -> None:
+        # A select or number that publishes the value it commanded.
+        with controller.sent_state(LIGHT_LEVEL(5)):
+            await controller._write("level 5")
+
+    await bed.async_execute_controller_command(set_level, cancel_running=False)
+
+
+@pytest.mark.parametrize("site", ["on_off_light", "controller_switch", "published_setting"])
+@pytest.mark.parametrize(
+    ("ending", "shown"),
+    # Cancelled after its only frame: sent. Failed after one of two frames,
+    # with or without a STOP meanwhile: unknown.
+    [("cancelled", "new"), ("failed", "unknown"), ("failed_during_stop", "unknown")],
+)
+async def test_a_command_that_raises_after_its_frame_still_shows_what_was_sent(
+    hass, site, ending, shown
+) -> None:
+    async with beds(hass, 1) as made:
+        bed = made.items[0]
+        _settings(bed)
+        bed.frames = 1 if ending == "cancelled" else 2  # type: ignore[attr-defined]
+        if ending == "cancelled":
+            bed.after_write = _cancel_and_end_in_cleanup  # type: ignore[attr-defined]
+        elif ending == "failed":
+            bed.after_frame = _fail_after_frame  # type: ignore[attr-defined]
+        else:
+            bed.after_frame = _fail_after_frame_during_stop  # type: ignore[attr-defined]
+        bed.controller_state[LIGHT_LEVEL] = 3
+        entity = (
+            _on_off_light(bed)
+            if site == "on_off_light"
+            else _controller_switch(bed)
+            if site == "controller_switch"
+            else None
+        )
+        run = _set_level(bed) if entity is None else _turn_on(entity)
+        with virtual_clock():
+            if ending != "cancelled":
+                # The failure still reaches the caller.
+                with pytest.raises(BleakError):
+                    await run
+            else:
+                await run
+        # The frame went out (the failed second write was attempted, not sent).
+        assert len(bed.sent) == (1 if ending == "cancelled" else 2)  # type: ignore[attr-defined]
+        if entity is None:
+            value = bed.controller_state.get(LIGHT_LEVEL)
+            assert value == (5 if shown == "new" else None)
+        else:
+            assert entity.is_on is (True if shown == "new" else None)
+        if ending == "cancelled":
+            # The cancellation still ended the command: it did not complete.
+            record = bed._command_scheduler.recent_records[-1]
+            assert record.outcome is not CommandOutcome.COMPLETED
+
+
+async def test_preparing_the_link_in_another_task_never_hides_the_commands_frame() -> None:
+    from custom_components.adjustable_bed import command_scheduler as scheduler
+
+    cancel = asyncio.Event()
+    command = _running_command(cancel)
+    token = scheduler._CURRENT_COMMAND_CONTEXT.set(command)
+    try:
+        preparing, release = asyncio.Event(), asyncio.Event()
+
+        async def background_session_ping() -> None:
+            # A task that inherited the command, preparing its link meanwhile.
+            with scheduler.command_frames_not_counted():
+                preparing.set()
+                await release.wait()
+
+        task = asyncio.create_task(background_session_ping())
+        await preparing.wait()
+        scheduler.note_frame_written(cancel)  # The command's own frame.
+        assert command.frames_written == 1
+        release.set()
+        await task
+        with scheduler.command_frames_not_counted():
+            scheduler.note_frame_written(cancel)  # This task's own preparation.
+        assert command.frames_written == 1
+    finally:
+        scheduler._CURRENT_COMMAND_CONTEXT.reset(token)

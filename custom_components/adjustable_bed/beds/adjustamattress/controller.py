@@ -791,8 +791,8 @@ class AdjustaMattressController(
         actions = tuple(
             a for a in DEDICATED if a.startswith(zone) or (zone == "wave" and a == "WaveOne")
         )
-        await self.execute_action(actions[level - 1])
-        self.forward_sent_state_updates(_number_key(zone + "_massage")(level))
+        with self.sent_state(_number_key(zone + "_massage")(level)):
+            await self.execute_action(actions[level - 1])
 
     @property
     def auto_enable_massage(self) -> bool:
@@ -816,8 +816,8 @@ class AdjustaMattressController(
         timer = f"timer{minutes}"
         if not self._dedicated or timer not in TIMERS:
             raise ValueError("Choose 10, 20 or 30 minutes")
-        await self.execute_action(timer)
-        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.execute_action(timer)
 
     @property
     def _sensor_fields(self) -> list[str]:

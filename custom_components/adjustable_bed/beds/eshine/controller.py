@@ -476,8 +476,8 @@ class EshineController(ProfileExecution[RichmatProfile], BedController):
         await self.execute_action("light_toggle")
 
     async def massage_off(self) -> None:
-        await self.execute_action("massage_off")
-        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(0))
+        with self.sent_state(MASSAGE_TIMER_MINUTES(0)):
+            await self.execute_action("massage_off")
 
     @property
     def supports_massage_timer(self) -> bool:
@@ -494,9 +494,9 @@ class EshineController(ProfileExecution[RichmatProfile], BedController):
             return
         if minutes not in TIMERS:
             raise ValueError("Choose 10, 20 or 30 minutes")
-        await self.execute_action(TIMERS[minutes])
         # The bed reports no timer; show the last choice sent.
-        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.execute_action(TIMERS[minutes])
 
     async def massage_mode_step(self) -> None:
         await self.execute_action("massage_mode")

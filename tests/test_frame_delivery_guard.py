@@ -52,3 +52,32 @@ def test_every_function_that_writes_marks_the_frame() -> None:
     ) + "\n".join(
         unmarked
     )
+
+
+def test_delivery_is_read_only_through_the_shared_finalizer() -> None:
+    """Reading delivery after an awaited write misses a write that then raised.
+
+    ``command_scheduler.delivered()`` settles it also when the step raises, so
+    it is the only reader: entities wrap their command, controllers use
+    ``sent_state()`` or ``delivered()`` around the write.
+    """
+    private = {"_delivery_since", "command_delivery", "frames_sent_since"}
+    counters = {"frames_written", "frames_skipped"}
+    readers = []
+    for path in sorted(ROOT.rglob("*.py")):
+        if path.name == "command_scheduler.py":
+            continue
+        tree = ast.parse(path.read_text(), filename=str(path))
+        for node in ast.walk(tree):
+            name = (
+                node.attr
+                if isinstance(node, ast.Attribute)
+                else node.id
+                if isinstance(node, ast.Name)
+                else node.name
+                if isinstance(node, ast.alias)
+                else None
+            )
+            if name in private or name in counters:
+                readers.append(f"{path.relative_to(ROOT)}:{getattr(node, 'lineno', '?')} {name}")
+    assert not readers, "Read delivery only through delivered():\n" + "\n".join(readers)

@@ -25,7 +25,7 @@ from ...card import (
 )
 from ...command_scheduler import (
     Delivery,
-    command_delivery,
+    delivered,
     note_frame_skipped,
     note_frame_written,
     note_write_not_counted,
@@ -682,15 +682,18 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
         else:
             key = _MASSAGE_TIMERS[minutes]
         self._selection_state = replace(self._state, massage_timer=shown)
-        try:
-            await self.async_execute_motion_bed_action(self._function_action(key))
-        finally:
+
+        def show(delivery: Delivery) -> None:
             self._selection_state = None
-        delivery = command_delivery()
-        if delivery is not Delivery.NONE:
-            # A timer sent only in part is unknown.
-            self._shown_massage_timer = (minutes or None) if delivery is Delivery.SENT else None
-            self._publish()
+            if delivery is not Delivery.NONE:
+                # A timer sent only in part is unknown.
+                self._shown_massage_timer = (
+                    (minutes or None) if delivery is Delivery.SENT else None
+                )
+                self._publish()
+
+        with delivered(show):
+            await self.async_execute_motion_bed_action(self._function_action(key))
 
     @property
     def supports_light_timer(self) -> bool:
@@ -703,9 +706,11 @@ class MotionBedController(ProfileExecution[MotionBedProfile], BedController, Mot
     async def set_light_timer(self, timer_option: str) -> None:
         if timer_option not in _LIGHT_TIMERS:
             raise ValueError("Choose 10 minutes, 8 hours or 10 hours")
-        await self.async_execute_motion_bed_action(self._function_action(_LIGHT_TIMERS[timer_option]))
         # The reported light timer's values have no proven option mapping.
-        self.forward_sent_state_updates(LIGHT_TIMER_OPTION(timer_option))
+        with self.sent_state(LIGHT_TIMER_OPTION(timer_option)):
+            await self.async_execute_motion_bed_action(
+                self._function_action(_LIGHT_TIMERS[timer_option])
+            )
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
