@@ -1114,7 +1114,8 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     diagnostic=i in _MAINTENANCE_ACTIONS,
                 )
                 if i not in _SONIC_SOURCES
-                # Both sonic sources sit with the sonic massage they feed.
+                # Both sonic sources sit with the sonic massage they feed; a source
+                # change is there to enable, not on every dashboard.
                 else ControllerButtonSpec(
                     f"doublesleep_{i}",
                     name,
@@ -1122,6 +1123,7 @@ class DoubleSleepController(ProfileExecution[OkinNFrameProfile], BedController):
                     translation_key=MASSAGE_KEY,
                     translation_placeholders={"action": name},
                     card=CARD_MASSAGE,
+                    entity_registry_enabled_default=False,
                 )
             )
             is not None

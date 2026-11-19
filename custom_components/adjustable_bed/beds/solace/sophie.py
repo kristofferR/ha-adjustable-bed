@@ -16,8 +16,6 @@ from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_PRESET_SAVE
 from ...codec import ff_frame as codec
 from ...command_scheduler import (
-    Delivery,
-    command_delivery,
     current_command_context,
     note_frame_written,
 )
@@ -328,14 +326,10 @@ class SophieController(SolaceController):
     async def set_synchro(self, enabled: bool) -> None:
         if not self._coordinator.controller_state.get(SYNC_SUPPORTED, False):
             raise ValueError("Sophie synchronization support has not been reported")
-        await self.write_command(app.SYNC_ON if enabled else app.SYNC_OFF)
         # A cancelled write returns without sending, so nothing changed; one
         # sent only in part leaves the setting unknown.
-        delivery = command_delivery()
-        if delivery is not Delivery.NONE:
-            self.forward_controller_state_updates(
-                SYNCHRO_MODE(enabled if delivery is Delivery.SENT else None)
-            )
+        with self.sent_state(SYNCHRO_MODE(enabled)):
+            await self.write_command(app.SYNC_ON if enabled else app.SYNC_OFF)
 
     @property
     def alarm_capability(self) -> AlarmCapability | None:

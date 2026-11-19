@@ -60,6 +60,7 @@ from .command_scheduler import (
     HoldLease,
     StreamDriver,
     StreamMember,
+    command_frames_not_counted,
     command_resources,
     current_command_context,
 )
@@ -1833,7 +1834,9 @@ class AdjustableBedCoordinator(
         if self._controller is None:
             return
 
-        await self._controller.async_refresh_auth()
+        # Authentication prepares the link; it is not the command's frame.
+        with command_frames_not_counted():
+            await self._controller.async_refresh_auth()
 
     async def async_write_command(
         self,
@@ -2098,7 +2101,8 @@ class AdjustableBedCoordinator(
 
             octo = octo_controller(controller)
             if octo is not None:
-                await octo.async_wait_for_pin_acceptance(self.cancel_command)
+                with command_frames_not_counted():
+                    await octo.async_wait_for_pin_acceptance(self.cancel_command)
         return controller
 
     async def _async_finish_controller_operation(

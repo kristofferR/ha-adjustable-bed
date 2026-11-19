@@ -207,9 +207,9 @@ class CasperBaseController(ProfileExecution[ProductProfile], BedController, Casp
         action = self.massage_timer_actions.get(minutes)
         if action is None:
             raise ValueError("Choose a massage timer this product offers")
-        await self.async_perform_casper_base_action(action)
         # The bed reports no timer.
-        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self.async_perform_casper_base_action(action)
 
     def _sides(self) -> tuple[int, ...]:
         side = self.command_side

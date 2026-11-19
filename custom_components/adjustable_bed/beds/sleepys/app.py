@@ -29,8 +29,8 @@ from ...codec import okin_5a, okin_nframe
 from ...command_scheduler import (
     CommandContext,
     Delivery,
-    command_delivery,
     current_command_context,
+    delivered,
 )
 from ...const import (
     CONF_SLEEPYS_ELITE_SELECTOR,
@@ -1258,13 +1258,15 @@ class SleepysEliteAppController(BedController):
             return
         # The app's interruptByOther event clears pending position events only.
         # HA value commits have no app gesture queue to retain or replay.
-        await self._send_dynamic(route.builder, route.logical_values)
-        delivery = command_delivery()
-        if delivery is Delivery.SENT:
-            self._app_fields["field_0x0b"] = code
-        elif delivery is Delivery.PARTIAL:
-            self._app_fields.pop("field_0x0b", None)  # The bed may hold either timer.
-        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(code * 10))
+        def show(delivery: Delivery) -> None:
+            if delivery is Delivery.SENT:
+                self._app_fields["field_0x0b"] = code
+            elif delivery is Delivery.PARTIAL:
+                self._app_fields.pop("field_0x0b", None)  # The bed may hold either timer.
+
+        # The cache settles before the timer is published.
+        with self.sent_state(MASSAGE_TIMER_MINUTES(code * 10)), delivered(show):
+            await self._send_dynamic(route.builder, route.logical_values)
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone != "all":

@@ -535,6 +535,6 @@ def test_disable_anti_snore_is_an_extra_and_sonic_sources_sit_together(driver):
     sources = [specs.get(f"doublesleep_{i}") for i in (87, 88)]
     if driver == "p2":
         assert all(s is not None and s.card.section == "massage" for s in sources)
-        assert all(s.entity_registry_enabled_default for s in sources if s is not None)
+        assert not any(s.entity_registry_enabled_default for s in sources if s is not None)
     else:
         assert sources == [None, None]

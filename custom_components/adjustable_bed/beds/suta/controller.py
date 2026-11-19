@@ -32,7 +32,7 @@ from ...profiles.suta import (
     service_for_name,
 )
 from ...state_keys import massage_intensity
-from ..base import CONTROLLER_GESTURE_RELEASE, BedController, sent_state_updates
+from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -586,8 +586,7 @@ class SutaController(BedController):
             for characteristic in link.notifications:
                 await link.client.stop_notify(characteristic)
 
-    def _publish(self, *sent: StateUpdate) -> None:
-        """Publish the reported state, with values the running command ``sent``."""
+    def _publish(self) -> None:
         left, right = self.observations.get("side_1_setpoint"), self.observations.get("side_2_setpoint")
         power, light = self.observations.get("power"), self.observations.get("light")
         automatic = {side: self.observations.get(f"side_{side}_automatic_checked") for side in (1, 2)}
@@ -602,7 +601,6 @@ class SutaController(BedController):
                 for side in (1, 2)
                 for value in (self.observations.get(f"side_{side}_strength"),)
             ),
-            *sent_state_updates(*sent),
         )
 
     async def _send(self, link: Link, packet: bytes, cancel: asyncio.Event, *, deadline: float | None = None) -> float | None:
@@ -811,21 +809,22 @@ class SutaController(BedController):
             for offset, key, suffix in ((0.1, "both_stop", ""), (0.4, "mass_head_dt", "00"), (0.7, "mass_foot_dt", "00")):
                 if await pause(max(0, started + offset - monotonic()), cancel):
                     return
-                await self._send(link, codec.text(self.commands[key].text + suffix), cancel)
-                if suffix:
-                    self._cycles[key] = suffix
-                    self._publish(*self._massage_step(key, suffix))
+                # The zone's level shows as off, as far as the stop reached the bed.
+                with self.sent_state(*self._massage_step(key, suffix)):
+                    await self._send(link, codec.text(self.commands[key].text + suffix), cancel)
+                    if suffix:
+                        self._cycles[key] = suffix
             return
         command = self.commands[request.action]
         if command.kind == "lv":
             zones = [key for key in ("mass_head_dt", "mass_foot_dt") if self._cycles.get(key, "00") != "00"]
             started = monotonic()
-            for index, zone in enumerate(zones):
-                if await pause(max(0, started + (0.1 if index == 0 else 0.3) - monotonic()), cancel):
-                    return
-                level = self.commands[zone.replace("_dt", "_lv")]
-                await self._send(link, codec.text(level.text + request.suffix), cancel)
-            self.forward_sent_state_updates(*self._massage_step(request.action, request.suffix))
+            with self.sent_state(*self._massage_step(request.action, request.suffix)):
+                for index, zone in enumerate(zones):
+                    if await pause(max(0, started + (0.1 if index == 0 else 0.3) - monotonic()), cancel):
+                        return
+                    level = self.commands[zone.replace("_dt", "_lv")]
+                    await self._send(link, codec.text(level.text + request.suffix), cancel)
             return
         if command.kind == "motion":
             await self.hold_control(request.action, self._coordinator.motor_pulse_count * self.profile.refresh_ms)
@@ -833,13 +832,15 @@ class SutaController(BedController):
             await self._run_control(request.action, None)
         else:
             suffix = (request.suffix or dt_util.now().strftime("%y%m%d%H%M")) if command.kind == "clock" else request.suffix
-            await self._schedule(link, command, suffix, cancel)
+            # A massage step shows as its zone's level, as far as it reached the bed.
             step = self._massage_step(request.action, suffix)
-            if command.kind in ("dt", "lv", "fan") and not cancel.is_set():
-                self._cycles[request.action] = suffix
-                self._publish(*step)
-            else:
-                self.forward_sent_state_updates(*step)
+            with self.sent_state(*step):
+                await self._schedule(link, command, suffix, cancel)
+                stepped = command.kind in ("dt", "lv", "fan") and not cancel.is_set()
+                if stepped:
+                    self._cycles[request.action] = suffix
+            if stepped and not step:
+                self._publish()
 
     def _massage_step(self, key: str, suffix: str) -> tuple[StateUpdate, ...]:
         """A massage step command's level, as its zone's massage level."""

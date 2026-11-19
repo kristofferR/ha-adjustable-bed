@@ -16,7 +16,7 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final
 
@@ -34,7 +34,7 @@ from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
 from ..bed_traits import BedTraits
-from ..command_scheduler import Delivery, command_delivery, current_command_context
+from ..command_scheduler import Delivery, current_command_context, delivered
 from ..controller_state import (
     StateKey,
     StateUpdate,
@@ -74,16 +74,6 @@ _STANDARD_POSITION_AXES: Final[tuple[tuple[str, int], ...]] = (
     ("head", 3),
     ("feet", 4),
 )
-
-
-def sent_state_updates(*updates: StateUpdate) -> tuple[StateUpdate, ...]:
-    """The updates to publish for values the running command set, as far as it was sent."""
-    delivery = command_delivery()
-    if delivery is Delivery.SENT:
-        return updates
-    if delivery is Delivery.PARTIAL:
-        return tuple(StateUpdate(update.key, None) for update in updates)
-    return ()
 
 
 class BedController(GattWriter):
@@ -199,14 +189,26 @@ class BedController(GattWriter):
         """Forward several ``KEY(value)`` updates at once."""
         self._coordinator.handle_controller_state_updates(*updates)
 
-    def forward_sent_state_updates(self, *updates: StateUpdate) -> None:
-        """Publish values the running command set but the bed does not report.
+    def sent_state(self, *updates: StateUpdate) -> AbstractContextManager[None]:
+        """Publish values the step inside sets but the bed does not report.
 
-        Only as far as the command reached the bed: nothing sent publishes
-        nothing, a command cut off between frames makes the values unknown.
+        Wrap the write: ``with self.sent_state(KEY(value)): await self.write(...)``.
+        Only as far as it reached the bed: nothing sent publishes nothing, a
+        step cut off between frames makes the values unknown. Settled also when
+        the step raises, which still propagates.
         """
-        if sent := sent_state_updates(*updates):
-            self.forward_controller_state_updates(*sent)
+
+        def show(delivery: Delivery) -> None:
+            if not updates:
+                return
+            if delivery is Delivery.SENT:
+                self.forward_controller_state_updates(*updates)
+            elif delivery is Delivery.PARTIAL:
+                self.forward_controller_state_updates(
+                    *(StateUpdate(update.key, None) for update in updates)
+                )
+
+        return delivered(show)
 
     @property
     def client(self) -> BleakClient | None:

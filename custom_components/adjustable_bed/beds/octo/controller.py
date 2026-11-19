@@ -28,7 +28,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
 from ...card import CARD_HIDDEN, memory_card
-from ...command_scheduler import command_frames_written, frames_sent_since
+from ...command_scheduler import Delivery, delivered
 from ...const import (
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_OCTO_PIN,
@@ -1427,19 +1427,23 @@ class OctoController(BedController, OctoPacketCodec):
                 f"OCTO capability {feature_id:06x} requires {len(record.value)} value bytes"
             )
         updated = record.with_value(value)
-        before = command_frames_written()
-        await self._write_octo_command(
-            [0x20, OCTO_SYSTEM_SET_CAPS], _encode_capability_value(updated, value)
-        )
-        # A cancelled write returns without sending: keep the bed's record. An
-        # earlier frame of the same command (say, power on) does not count.
-        if not frames_sent_since(before):
-            return
-        self._capability_records[feature_id] = updated
-        self._apply_capability_records(
-            self._capability_records, preserve_notification_pin_state=True
-        )
-        self._publish_capability_state()
+
+        def show(delivery: Delivery) -> None:
+            # A cancelled write returns without sending: keep the bed's record.
+            # An earlier frame of the same command (say, power on) does not
+            # count; this value is one frame.
+            if delivery is Delivery.NONE:
+                return
+            self._capability_records[feature_id] = updated
+            self._apply_capability_records(
+                self._capability_records, preserve_notification_pin_state=True
+            )
+            self._publish_capability_state()
+
+        with delivered(show):
+            await self._write_octo_command(
+                [0x20, OCTO_SYSTEM_SET_CAPS], _encode_capability_value(updated, value)
+            )
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:

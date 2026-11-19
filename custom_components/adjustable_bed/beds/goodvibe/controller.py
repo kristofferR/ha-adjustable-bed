@@ -1759,10 +1759,19 @@ class GoodVibeController(BedController):
             self.choices.events["repeat_alarms"] = {}
             if self.catalog.reply_gated_menus:
                 self.choices.events["repeat_alarm_records"] = []
+        # The bed reports neither the light duration nor the massage timer.
+        shown = (
+            (LIGHT_TIMER_OPTION(light_option(request.seconds)),)
+            if request.operation == "light_duration" and request.seconds is not None
+            else (MASSAGE_TIMER_MINUTES(request.value),)
+            if request.operation == "massage_timer" and request.value is not None
+            else ()
+        )
         try:
-            for frame in frames:
-                if not await self._send(frame, link=link, dispatch=dispatch):
-                    raise asyncio.CancelledError
+            with self.sent_state(*shown):
+                for frame in frames:
+                    if not await self._send(frame, link=link, dispatch=dispatch):
+                        raise asyncio.CancelledError
         except BaseException:
             self._pending_single = None
             raise
@@ -1770,12 +1779,6 @@ class GoodVibeController(BedController):
             self.choices.events[request.operation] = (
                 request.rgb if request.operation == "light_color" else request.seconds
             )
-            if request.operation == "light_duration" and request.seconds is not None:
-                self.forward_sent_state_updates(LIGHT_TIMER_OPTION(light_option(request.seconds)))
-        elif request.operation == "massage_timer":
-            assert request.value is not None
-            # The bed reports no timer.
-            self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(request.value))
         if self.catalog.reply_gated_menus and request.operation in ("repeat", "delete"):
             await asyncio.sleep(0.2)
             self.choices.events["repeat_alarm_records"] = []
@@ -1831,9 +1834,9 @@ class GoodVibeController(BedController):
         detail = self._massage_timer_details.get(minutes)
         if detail is None:
             raise ValueError("Choose a massage timer this product offers")
-        await _press(self, detail=detail)
         # The bed reports no timer.
-        self.forward_sent_state_updates(MASSAGE_TIMER_MINUTES(minutes))
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await _press(self, detail=detail)
 
     @property
     def _light_durations(self) -> tuple[int, ...]:
