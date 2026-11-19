@@ -401,6 +401,10 @@ on every entity that tells the dashboard card where it belongs.
   next time you edit the card, if every side keeps the same actions.
 - Preset save buttons are never offered as quick actions, and they ask for
   confirmation in the card.
+- A button that asks for confirmation is a plain tap: holding it no longer
+  repeats it. On the Sleepy's app this applies to **Program memory** and
+  **Reset memory**, which 4.x repeated while held; a tap still runs the app's
+  full press.
 - New options, off by default: **Tap to start and stop movement**
   (`tap_to_move`), percentage and lumbar graphics, and opening the full card
   in a dialog from a compact card. A new `show_graphic_labels` option, on by

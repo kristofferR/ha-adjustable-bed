@@ -272,3 +272,19 @@ async def test_translated_action_names_come_from_the_translation(
     await platform.platform_data.async_load_translations()
     await platform.async_add_entities(buttons)
     assert [hass.states.get(b.entity_id).name for b in buttons] == ["Motor Reset", "Remote"]
+
+
+def test_a_button_that_asks_first_publishes_no_held_gesture() -> None:
+    """The card's hold path sends without asking, so confirmation wins over a hold."""
+    from custom_components.adjustable_bed.beds.entity_specs import ControllerHoldSpec
+
+    runtime = MagicMock()
+    runtime.entity_side = None
+    runtime.capability_controller = None
+    spec = ControllerButtonSpec(
+        "program", "Program", AsyncMock(), hold=ControllerHoldSpec("program"),
+        requires_confirmation=True,
+    )
+    attributes = ControllerActionButton(runtime, spec).extra_state_attributes
+    assert attributes["requires_confirmation"] is True
+    assert "held_control" not in attributes

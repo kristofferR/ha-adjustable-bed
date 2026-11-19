@@ -68,6 +68,8 @@ class ShownEntity:
     card: tuple[tuple[str, str | int], ...]
     enabled: bool
     requires_confirmation: bool
+    # Publishes a held gesture the card would send on press-and-hold.
+    held: bool
     category: str | None
 
     @property
@@ -147,6 +149,9 @@ def _shown_name(entity: Entity, domain: str, strings: Mapping[str, Any]) -> str 
 
 def _shown(entity: Entity, domain: str, strings: Mapping[str, Any]) -> ShownEntity:
     category = entity.entity_category
+    # Only controller-declared buttons ask first; read what such a button publishes.
+    confirm = isinstance(entity, ControllerActionButton) and entity._spec.requires_confirmation
+    attributes = entity.extra_state_attributes or {} if confirm else {}
     return ShownEntity(
         domain=domain,
         unique_id=entity.unique_id,
@@ -154,9 +159,8 @@ def _shown(entity: Entity, domain: str, strings: Mapping[str, Any]) -> ShownEnti
         name=_shown_name(entity, domain, strings),
         card=tuple(sorted(entity._card.attributes.items())),  # type: ignore[attr-defined]
         enabled=entity.entity_registry_enabled_default,
-        # Only controller-declared buttons ask first (``requires_confirmation``).
-        requires_confirmation=isinstance(entity, ControllerActionButton)
-        and entity._spec.requires_confirmation,
+        requires_confirmation=bool(attributes.get("requires_confirmation")),
+        held="held_control" in attributes,
         category=category.value if category is not None else None,
     )
 
