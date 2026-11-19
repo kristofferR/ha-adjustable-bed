@@ -27,6 +27,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`l2motion`](#l2-motion) | L2 Motion: settings | Change supported light colors or explicitly confirm wired or wireless synchronization. |
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort: run sequence | Run full body massage, or a preset with the other base lowering its feet for 30 seconds. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
+| [`betterliving2_massage`](#betterliving2-actions) | BetterLiving2: run control | Set head and foot massage intensity. |
+| [`betterliving2_diagnostic_action`](#betterliving2-actions) | BetterLiving2: settings | Refresh alarm or massage status. |
 | [`sync_clock`](#sync_clock) | Set bed clock | Set each targeted controller's clock to Home Assistant's local time. Every target is checked before any write. |
 | [`rename`](#rename) | Rename Bluetooth name | Write a new Bluetooth name to each targeted controller that supports it. Each app profile applies its own name rule to every target before any write. This does not rename the Home Assistant device. |
 | [`lower_to_flat`](#estimated-positions) | Lower to flat | Lower the selected motors for their full travel time plus a margin. This never sets the reference: confirm flat afterwards. |
@@ -2204,6 +2206,17 @@ give both sides the same alarm time. Serialized pairs offer renewable holds on L
 Right, while finite Both actions remain available.
 Motor covers expose renewable holds through the standard `timed_move` and
 `hold_control` actions; presets stay finite.
+
+## BetterLiving2 actions
+
+Use `set_alarm` with `wake_action` set to `massage`, `memory_1` or `memory_2`.
+`weekdays` uses weekday names; an empty list chooses the next occurrence.
+The shared `sync_clock` action sets the bed clock.
+
+`betterliving2_massage` takes P1 `head` and `feet` levels from 0 to 3.
+`betterliving2_diagnostic_action` offers `refresh_alarm` and P2/P3 `refresh_massage`.
+The raw P1 timer inputs have no proven duration mapping and are not exposed as
+an action. Every target is checked before any write.
 
 ### L2 Motion
 

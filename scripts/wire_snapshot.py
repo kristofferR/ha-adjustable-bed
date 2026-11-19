@@ -425,6 +425,8 @@ def plan_commands(controller: Any) -> list[Command]:
                     True,
                 )
             )
+    if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
+        plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
     for name in sorted(LATE_ACTIONS):
         if _overrides(controller, name):
             plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS.get(name))))
@@ -465,6 +467,70 @@ def plan_commands(controller: Any) -> list[Command]:
             Command("sync_clock", _method("sync_clock"), _flag(controller, "supports_clock_sync"))
         )
     return plan
+
+
+def _betterliving2_historical_actions(plan: list[Command], protocol: str) -> list[Command]:
+    """Preserve function-wire contract IDs after UI entities become fixed actions.
+
+    The button:/number: names below are historical snapshot row IDs, NOT current
+    HA entities. Queries use the current diagnostic action; raw timer rows only
+    exercise their frozen encodings, with no duration or effect claimed. Do not
+    reconstruct removed entities or actions to satisfy the snapshot.
+    """
+    from custom_components.adjustable_bed.beds.keeson.betterliving2 import require
+    from custom_components.adjustable_bed.beds.keeson.betterliving2_services import (
+        DiagnosticAction,
+        execute_diagnostic_action,
+    )
+
+    if protocol not in {"P1", "P2", "P3"}:
+        raise ValueError("Unknown BetterLiving2 snapshot route")
+    historical = {
+        "button:betterliving2_refresh_alarm",
+        "button:betterliving2_sync_clock",
+        "button:betterliving2_refresh_massage",
+        "number:betterliving2_massage_timer=-1",
+        "number:betterliving2_massage_timer=2",
+    }
+    if any(command.name in historical for command in plan):
+        raise ValueError("Historical actions already registered")
+    anchors = [
+        index
+        for index, command in enumerate(plan)
+        if command.name == "button:betterliving2_program_zero_g"
+    ]
+    if len(anchors) != 1:
+        raise ValueError("Missing or duplicate BetterLiving2 action anchor")
+    query_and_clock = [
+        Command(
+            "button:betterliving2_refresh_alarm",
+            lambda ctrl: execute_diagnostic_action(require(ctrl), DiagnosticAction.REFRESH_ALARM),
+            True,
+        ),
+        Command("button:betterliving2_sync_clock", lambda ctrl: require(ctrl).sync_clock(), True),
+    ]
+    result = list(plan)
+    result[anchors[0] + 1 : anchors[0] + 1] = query_and_clock
+    if protocol == "P1":
+        result.extend(
+            Command(
+                f"number:betterliving2_massage_timer={value}",
+                lambda ctrl, value=value: require(ctrl).set_level("timer", value),
+                True,
+            )
+            for value in (-1, 2)
+        )
+    else:
+        result.append(
+            Command(
+                "button:betterliving2_refresh_massage",
+                lambda ctrl: execute_diagnostic_action(
+                    require(ctrl), DiagnosticAction.REFRESH_MASSAGE
+                ),
+                True,
+            )
+        )
+    return result
 
 
 def _argument_commands(controller: Any) -> list[Command]:
@@ -1283,6 +1349,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_COMFORTBASE: "accord",
         const.BED_TYPE_SOMOS: "a",
         const.BED_TYPE_YAMADA: "p1",
+        const.BED_TYPE_BETTERLIVING2: "p1",
         const.BED_TYPE_RICHMAT_APP: "6BRM",
         const.BED_TYPE_RICHMAT_APP_SLEEP: "hj",
         const.BED_TYPE_DOUBLESLEEP: "p1",
@@ -1306,6 +1373,8 @@ def default_scenario(bed_type: str) -> Scenario:
         data[const.CONF_PRODUCT_TYPE] = "single"
     if bed_type == const.BED_TYPE_SONICSLEEP:
         data[const.CONF_PRODUCT_TYPE] = "one"
+    if bed_type == const.BED_TYPE_BETTERLIVING2:
+        data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_PROTOCOL_VARIANT: "p1"})
     if bed_type == const.BED_TYPE_ONLYSNORE:
         data[const.CONF_PRODUCT_TYPE] = "single"
     if bed_type in const.KEESON_LAYOUT_APP_BED_TYPES:
@@ -1654,6 +1723,13 @@ def route_scenarios() -> list[Scenario]:
     for variant in "bcde":
         scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))
     scenarios.append(Scenario(id="yamada:p2", bed_type="yamada", protocol_variant="p2", layout_id="yamada"))
+    # Keep the legitimate explicit P1/2 default baseline and all six independent
+    # selected route/layout scenarios. Do not hide an invalid default by filtering.
+    for wire in ("p1", "p2", "p3"):
+        for layout in ("2", "3"):
+            scenarios.append(Scenario(id=f"betterliving2:{wire}:{layout}", bed_type="betterliving2",
+                protocol_variant=wire, entry_data={"protocol_variant": wire, "product_type": layout},
+                layout_id=f"betterliving2:{wire}"))
 
     # Jiecang family: one app, four profiles, shared and distinct layouts.
     for profile in ("dreamask", "dreamotion", "dreamhd", "comfort_motion"):
@@ -2197,8 +2273,11 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type in {"rize_home", "okin_64bit", "ultramatic_smart_bed"}:
-            await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
+        if controller._coordinator.bed_type in {"rize_home", "okin_64bit", "betterliving2", "ultramatic_smart_bed"}:
+            session = SimpleNamespace(async_start_notify=controller.start_notify)
+            if controller._coordinator.bed_type == "betterliving2":
+                session.store_device_info = lambda *_: None
+            await controller.async_on_connect(session)
             return
         if controller._coordinator.bed_type in {"symphony", "linx", "agingplace"}:
             session = SimpleNamespace(
