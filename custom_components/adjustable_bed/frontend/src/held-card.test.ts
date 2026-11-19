@@ -99,6 +99,27 @@ test.each(["Enter", " "])("real utility tile retains right STOP for %p keyboard 
     } finally { f.card.disconnectedCallback(); }
   });
 });
+test("a held button that asks first opens its dialog on pointer and keyboard, never holds", async () => {
+  await withKeyboard(async () => {
+    const f = fixture();
+    // Stale attributes from an older backend: held metadata plus confirmation.
+    f.hass.states["button.mx_memory1"].attributes = {
+      ...f.hass.states["button.mx_memory1"].attributes, requires_confirmation: true,
+    };
+    const card = f.card as unknown as CardUnderTest & { _estimateDialog?: unknown };
+    const button = tile(card._utility(bedEntitiesForDevice(f.hass, "right-child")));
+    // A plain tile: no press-and-hold handlers that could send without asking.
+    for (const event of ["pointerdown", "keydown"]) {
+      expect(button.strings.some((s) => s.endsWith(`@${event}=`))).toBe(false);
+    }
+    // Pointer release and Enter/Space both reach the tile as a click.
+    handler(button, "click")(new Event("click"));
+    expect(f.calls).toEqual([]);
+    expect(card._estimateDialog).toEqual({ kind: "confirm", entityId: "button.mx_memory1" });
+    card.disconnectedCallback();
+  });
+});
+
 test("real card page abandonment cancels a pending utility hold on its owning side", async () => {
   await withKeyboard(async () => {
     const f = fixture();
