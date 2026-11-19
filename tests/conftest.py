@@ -904,6 +904,10 @@ def mock_bluetooth_api() -> Generator[None]:
             "homeassistant.components.bluetooth_adapters.async_setup",
             new=AsyncMock(return_value=True),
         ),
+        # Bluetooth depends on usb, whose real setup starts a USB watcher and
+        # registers a process-wide serial URI scheme: a setup cut short by a
+        # test's shutdown would leak both into every later test on the worker.
+        patch("homeassistant.components.usb.async_setup", new=AsyncMock(return_value=True)),
     ]
 
     for p in patches:
