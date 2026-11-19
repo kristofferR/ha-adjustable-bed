@@ -98,7 +98,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_app`](#richmat_app) | Richmat app: settings | Sets the light, alarm, sleep sensing and other options of a Richmat app bed. Read the feature first before changing it. |
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Write the three aroma timing sliders of a Richmat MH app profile. |
 | [`richmat_mh_light_color`](#richmat_mh_light_color) | Richmat app: light color | Write the LED or button-light page colour of a Richmat MH app profile. |
-| [`majestichome`](#majestichome) | Majestic Home: settings | Read, create, edit, enable, disable or delete bed alarms, or set the bed clock. |
+| [`majestichome`](#majestichome) | Majestic Home: settings | Read, create, edit, turn on or off, or delete the bed's alarms. Set the clock with Set bed clock. |
 | [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run control | Run one of the selected app and model's controls, read one setting from the bed, or set the app mode used by later controls. |
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
 | [`richmat_legacy`](#richmat_legacy) | SleepEvolution and W.Silver Products: run control | Run a control from the selected app and name prefix, as a press or a save. |
@@ -396,7 +396,7 @@ transports, [Glideaway Motion / Montion](beds/keeson.md#alarm-and-clock), [SIMMO
 manufacturer string enables the alarm page (see
 [`set_alarm`](#set_alarm)). Z-Series beds cannot share a call
 with other profiles. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep,
-Galaxy, MLILY, Power Bob Base, Okimiki products with an alarm, Motion Bed (the
+Galaxy, MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, Motion Bed (the
 motor or thermal module clock; on a hub, the clock of the module in use, so
 select the motor or heating module first), GM Control products with an alarm and OKIN
 SleepEase also set their clock here; their own actions no longer do. A bed whose
@@ -1265,17 +1265,17 @@ for field projections, source limitations and the external hardware test status.
 ## Majestic Home
 
 <a id="majestichome"></a>
-**`majestichome`**: Read, create, edit, enable, disable or delete bed alarms, or set the bed clock.
+**`majestichome`**: Read, create, edit, turn on or off, or delete the bed's alarms. Set the clock with Set bed clock.
 
 | Field | Name | Meaning |
 |-------|------|---------|
-| `operation` | Operation |  |
-| `alarm_id` | Alarm ID | Required for new, set, toggle and delete. Choose an explicit ID from 1 through 7 for new alarms, or a received ID for an existing alarm. Partial replies cannot identify a free slot. |
-| `hour` | Hour |  |
-| `minute` | Minute |  |
-| `preset` | Preset |  |
-| `weekdays` | Weekdays | Monday is 0 and Sunday is 6. Empty means once. |
-| `enabled` | Enabled |  |
+| `operation` | Operation | One of `list` (Read alarms), `new` (New alarm), `set` (Set alarm), `toggle` (Turn alarm on or off) or `delete` (Delete alarm). |
+| `alarm_id` | Alarm number | Needed to create, edit, turn on or off, or delete an alarm: 1 to 7 for a new alarm, or the number the bed reported. A partial list cannot show which numbers are free. |
+| `hour` | Hour | A number from 0 to 23. |
+| `minute` | Minute | A number from 0 to 59. |
+| `preset` | Preset | One of `zero_gravity`, `anti_snore` (Anti-Snore), `memory_1` or `memory_2`. |
+| `weekdays` | Weekdays | Leave empty for a one-time alarm. |
+| `enabled` | Enabled | On or off. |
 
 ### Majestic Home settings
 
@@ -1284,8 +1284,8 @@ New IDs use 1 through 7. Partial alarm replies cannot prove a free slot, so
 Home Assistant never chooses an ID automatically. Sequential pairs refresh
 required fields on the execution connection; toggles reject changed fields.
 
-`adjustable_bed.majestichome` accepts `operation: list`, `new`, `set`, `toggle`,
-`delete` or `sync_clock`. Select a configured Majestic Home device or a native
+`adjustable_bed.majestichome` accepts `operation: list`, `new`, `set`, `toggle`
+or `delete`; set the clock with [`sync_clock`](#sync_clock). Select a configured Majestic Home device or a native
 paired parent/child, with `side` when needed. Alarm operations require the current
 connection's clock response. FARM/JLRM accept `preset: zero_gravity`,
 `anti_snore`, `memory_1` or `memory_2`, `hour`, `minute`, `weekdays` (Monday 0

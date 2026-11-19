@@ -100,6 +100,24 @@ CASES = [
         id='mlily:brrm:mlily',
     ),
     pytest.param(
+        'majestichome',
+        {},
+        [
+            [93, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e0c20080201695735a5003f', 1, 0],
+            [193, 'd44bc439-abfd-45a2-b575-925416129600', False, '6e0d20080301380102030405ee', 1, 0],
+        ],
+        id='majestichome',
+    ),
+    pytest.param(
+        'majestichome:FARM:n1',
+        {},
+        [
+            [93, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', False, '6e0c20080201695735a5003f', 1, 0],
+            [193, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', False, '6e0d20080301380102030405ee', 1, 0],
+        ],
+        id='majestichome:FARM:n1',
+    ),
+    pytest.param(
         'okimiki:IQRM:nordic',
         {},
         [

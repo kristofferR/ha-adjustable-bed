@@ -168,7 +168,7 @@ the beta; older field names are not accepted.
 - Setting the clock moved to `sync_clock` for SUTA Smart Home (`action:
   set_date`), SonicSleep (`operation: sync_clock`), MLILY Remote (`operation:
   time_sync`), Galaxy, MLILY and Power Bob Base (`operation: sync`), Okimiki
-  (`operation: sync`). OKIN SleepEase, which set its clock only with a button,
+  (`operation: sync`) and Majestic Home (`operation: sync_clock`). OKIN SleepEase, which set its clock only with a button,
   supports `sync_clock` too. On a bed whose two sides share one receiver,
   `sync_clock` sets the clock once.
 - `onlysnore_set_alarm`: `week_mask` becomes `weekdays` (`monday` to

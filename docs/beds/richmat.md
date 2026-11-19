@@ -6823,8 +6823,8 @@ publish into a replacement physical session.
 
 #### Actions
 
-`adjustable_bed.majestichome` supports `list`, `new`, `set`, `toggle`, `delete`
-and `sync_clock`. Alarm access requires the current connection's clock ACK.
+`adjustable_bed.majestichome` supports `list`, `new`, `set`, `toggle` and
+`delete`; [`sync_clock`](../SERVICES.md#sync_clock) sets the clock. Alarm access requires the current connection's clock ACK.
 FARM/JLRM supply the four preset choices. `set` creates or replaces an explicit
 ID. `new` also requires an explicit ID from the app's range 1 through 7,
 without claiming firmware capacity. A nonempty cache cannot establish which

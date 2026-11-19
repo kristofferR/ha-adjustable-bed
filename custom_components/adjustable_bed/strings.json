@@ -9709,7 +9709,7 @@
     },
     "majestichome": {
       "name": "Majestic Home: settings",
-      "description": "Read, create, edit, enable, disable or delete bed alarms, or set the bed clock.",
+      "description": "Read, create, edit, turn on or off, or delete the bed's alarms. Set the clock with Set bed clock.",
       "fields": {
         "device_id": {
           "name": "Bed"
@@ -9722,8 +9722,8 @@
           "name": "Operation"
         },
         "alarm_id": {
-          "name": "Alarm ID",
-          "description": "Required for new, set, toggle and delete. Choose an explicit ID from 1 through 7 for new alarms, or a received ID for an existing alarm. Partial replies cannot identify a free slot."
+          "name": "Alarm number",
+          "description": "Needed to create, edit, turn on or off, or delete an alarm: 1 to 7 for a new alarm, or the number the bed reported. A partial list cannot show which numbers are free."
         },
         "hour": {
           "name": "Hour"
@@ -9736,7 +9736,7 @@
         },
         "weekdays": {
           "name": "Weekdays",
-          "description": "Monday is 0 and Sunday is 6. Empty means once."
+          "description": "Leave empty for a one-time alarm."
         },
         "enabled": {
           "name": "Enabled"
@@ -12035,8 +12035,7 @@
         "new": "New alarm",
         "set": "Set alarm",
         "toggle": "Turn alarm on or off",
-        "delete": "Delete alarm",
-        "sync_clock": "Set bed clock"
+        "delete": "Delete alarm"
       }
     },
     "majestichome_preset": {

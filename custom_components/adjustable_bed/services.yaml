@@ -3297,7 +3297,7 @@ majestichome:
       required: true
       selector:
         select:
-          options: [list, new, set, toggle, delete, sync_clock]
+          options: [list, new, set, toggle, delete]
           translation_key: majestichome_operation
     alarm_id:
       selector:
