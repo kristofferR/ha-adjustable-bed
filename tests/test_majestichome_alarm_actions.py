@@ -1,4 +1,4 @@
-"""S1/S2: actual registered actions through reconnecting physical pair targets."""
+"""Majestic Home 1.0.4 alarm, clock and timed actions through reconnecting pair targets."""
 
 import asyncio
 from contextlib import AsyncExitStack

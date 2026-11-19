@@ -769,7 +769,7 @@ class TestRichmatMassage:
     )
 
     async def test_ggrm_extra_actions_match_frozen_catalog(self, monkeypatch, command, frame):
-        """Row055 Blvd Home GGRM vectors and Revive ONCE release semantics."""
+        """Richmat MH Blvd Home GGRM vectors and Revive ONCE release semantics."""
         controller = RichmatController(MagicMock(has_massage=True), is_wilinke=True, remote_code="GGRM")
         controller.write_command = AsyncMock()
         sleep = AsyncMock()

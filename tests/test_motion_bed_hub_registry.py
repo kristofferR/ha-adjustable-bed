@@ -52,7 +52,7 @@ async def test_public_home_to_hub_prunes_home_only_registry_control(hass):
     coord._controller = hub
     try:
         new = await async_setup_platforms_and_sweep(hass, coord.entry, coord, (Platform.BUTTON,))
-        assert home_entity.translation_key == "remote_action"
+        assert home_entity.translation_key == "preset_yoga"
         assert old.unique_id not in {e.unique_id for e in new}
         assert registry.async_get(old.entity_id) is None, (
             "Dead home-only control survives actual public hub platform reload"

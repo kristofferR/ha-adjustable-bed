@@ -1,0 +1,4510 @@
+[
+  {
+    "id": "HEAD_UP_FOOT_DOWN-mode0",
+    "protocol": "P1",
+    "action": "HEAD_UP_FOOT_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 33,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002190"
+  },
+  {
+    "id": "HEAD_UP_FOOT_DOWN-mode1",
+    "protocol": "P1",
+    "action": "HEAD_UP_FOOT_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 33,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012191"
+  },
+  {
+    "id": "HEAD_UP_FOOT_DOWN-mode2",
+    "protocol": "P1",
+    "action": "HEAD_UP_FOOT_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 33,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022192"
+  },
+  {
+    "id": "HEAD_DOWN_FOOT_UP-mode0",
+    "protocol": "P1",
+    "action": "HEAD_DOWN_FOOT_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 34,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002291"
+  },
+  {
+    "id": "HEAD_DOWN_FOOT_UP-mode1",
+    "protocol": "P1",
+    "action": "HEAD_DOWN_FOOT_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 34,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012292"
+  },
+  {
+    "id": "HEAD_DOWN_FOOT_UP-mode2",
+    "protocol": "P1",
+    "action": "HEAD_DOWN_FOOT_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 34,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022293"
+  },
+  {
+    "id": "HEAD_UP_FOOT_UP-mode0",
+    "protocol": "P1",
+    "action": "HEAD_UP_FOOT_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 35,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002392"
+  },
+  {
+    "id": "HEAD_UP_FOOT_UP-mode1",
+    "protocol": "P1",
+    "action": "HEAD_UP_FOOT_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 35,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012393"
+  },
+  {
+    "id": "HEAD_UP_FOOT_UP-mode2",
+    "protocol": "P1",
+    "action": "HEAD_UP_FOOT_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 35,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022394"
+  },
+  {
+    "id": "HEAD_UP-mode0",
+    "protocol": "P1",
+    "action": "HEAD_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 36,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002493"
+  },
+  {
+    "id": "HEAD_UP-mode1",
+    "protocol": "P1",
+    "action": "HEAD_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 36,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012494"
+  },
+  {
+    "id": "HEAD_UP-mode2",
+    "protocol": "P1",
+    "action": "HEAD_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 36,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022495"
+  },
+  {
+    "id": "HEAD_DOWN-mode0",
+    "protocol": "P1",
+    "action": "HEAD_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 37,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002594"
+  },
+  {
+    "id": "HEAD_DOWN-mode1",
+    "protocol": "P1",
+    "action": "HEAD_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 37,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012595"
+  },
+  {
+    "id": "HEAD_DOWN-mode2",
+    "protocol": "P1",
+    "action": "HEAD_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 37,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022596"
+  },
+  {
+    "id": "FOOT_UP-mode0",
+    "protocol": "P1",
+    "action": "FOOT_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 38,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002695"
+  },
+  {
+    "id": "FOOT_UP-mode1",
+    "protocol": "P1",
+    "action": "FOOT_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 38,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012696"
+  },
+  {
+    "id": "FOOT_UP-mode2",
+    "protocol": "P1",
+    "action": "FOOT_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 38,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022697"
+  },
+  {
+    "id": "FOOT_DOWN-mode0",
+    "protocol": "P1",
+    "action": "FOOT_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 39,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002796"
+  },
+  {
+    "id": "FOOT_DOWN-mode1",
+    "protocol": "P1",
+    "action": "FOOT_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 39,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012797"
+  },
+  {
+    "id": "FOOT_DOWN-mode2",
+    "protocol": "P1",
+    "action": "FOOT_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 39,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022798"
+  },
+  {
+    "id": "HEAD_FOOT_BOTH_UP-mode0",
+    "protocol": "P1",
+    "action": "HEAD_FOOT_BOTH_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 41,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002998"
+  },
+  {
+    "id": "HEAD_FOOT_BOTH_UP-mode1",
+    "protocol": "P1",
+    "action": "HEAD_FOOT_BOTH_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 41,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012999"
+  },
+  {
+    "id": "HEAD_FOOT_BOTH_UP-mode2",
+    "protocol": "P1",
+    "action": "HEAD_FOOT_BOTH_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 41,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102299a"
+  },
+  {
+    "id": "HEAD_FOOT_BOTH_DOWN-mode0",
+    "protocol": "P1",
+    "action": "HEAD_FOOT_BOTH_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 42,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002a99"
+  },
+  {
+    "id": "HEAD_FOOT_BOTH_DOWN-mode1",
+    "protocol": "P1",
+    "action": "HEAD_FOOT_BOTH_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 42,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012a9a"
+  },
+  {
+    "id": "HEAD_FOOT_BOTH_DOWN-mode2",
+    "protocol": "P1",
+    "action": "HEAD_FOOT_BOTH_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 42,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022a9b"
+  },
+  {
+    "id": "M1_SET-mode0",
+    "protocol": "P1",
+    "action": "M1_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 43,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002b9a"
+  },
+  {
+    "id": "M1_SET-mode1",
+    "protocol": "P1",
+    "action": "M1_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 43,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012b9b"
+  },
+  {
+    "id": "M1_SET-mode2",
+    "protocol": "P1",
+    "action": "M1_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 43,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022b9c"
+  },
+  {
+    "id": "M2_SET-mode0",
+    "protocol": "P1",
+    "action": "M2_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 44,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002c9b"
+  },
+  {
+    "id": "M2_SET-mode1",
+    "protocol": "P1",
+    "action": "M2_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 44,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012c9c"
+  },
+  {
+    "id": "M2_SET-mode2",
+    "protocol": "P1",
+    "action": "M2_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 44,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022c9d"
+  },
+  {
+    "id": "M3_SET-mode0",
+    "protocol": "P1",
+    "action": "M3_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 45,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002d9c"
+  },
+  {
+    "id": "M3_SET-mode1",
+    "protocol": "P1",
+    "action": "M3_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 45,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012d9d"
+  },
+  {
+    "id": "M3_SET-mode2",
+    "protocol": "P1",
+    "action": "M3_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 45,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022d9e"
+  },
+  {
+    "id": "M1_BACK-mode0",
+    "protocol": "P1",
+    "action": "M1_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 46,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002e9d"
+  },
+  {
+    "id": "M1_BACK-mode1",
+    "protocol": "P1",
+    "action": "M1_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 46,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012e9e"
+  },
+  {
+    "id": "M1_BACK-mode2",
+    "protocol": "P1",
+    "action": "M1_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 46,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022e9f"
+  },
+  {
+    "id": "M2_BACK-mode0",
+    "protocol": "P1",
+    "action": "M2_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 47,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002f9e"
+  },
+  {
+    "id": "M2_BACK-mode1",
+    "protocol": "P1",
+    "action": "M2_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 47,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012f9f"
+  },
+  {
+    "id": "M2_BACK-mode2",
+    "protocol": "P1",
+    "action": "M2_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 47,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022fa0"
+  },
+  {
+    "id": "M3_BACK-mode0",
+    "protocol": "P1",
+    "action": "M3_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 48,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100309f"
+  },
+  {
+    "id": "M3_BACK-mode1",
+    "protocol": "P1",
+    "action": "M3_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 48,
+      "mode": 1
+    },
+    "expected_bytes": "6e010130a0"
+  },
+  {
+    "id": "M3_BACK-mode2",
+    "protocol": "P1",
+    "action": "M3_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 48,
+      "mode": 2
+    },
+    "expected_bytes": "6e010230a1"
+  },
+  {
+    "id": "FLAT-mode0",
+    "protocol": "P1",
+    "action": "FLAT-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 49,
+      "mode": 0
+    },
+    "expected_bytes": "6e010031a0"
+  },
+  {
+    "id": "FLAT-mode1",
+    "protocol": "P1",
+    "action": "FLAT-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 49,
+      "mode": 1
+    },
+    "expected_bytes": "6e010131a1"
+  },
+  {
+    "id": "FLAT-mode2",
+    "protocol": "P1",
+    "action": "FLAT-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 49,
+      "mode": 2
+    },
+    "expected_bytes": "6e010231a2"
+  },
+  {
+    "id": "MSG_HEAD_ON_OFF-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_ON_OFF-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 50,
+      "mode": 0
+    },
+    "expected_bytes": "6e010032a1"
+  },
+  {
+    "id": "MSG_HEAD_ON_OFF-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_ON_OFF-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 50,
+      "mode": 1
+    },
+    "expected_bytes": "6e010132a2"
+  },
+  {
+    "id": "MSG_HEAD_ON_OFF-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_ON_OFF-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 50,
+      "mode": 2
+    },
+    "expected_bytes": "6e010232a3"
+  },
+  {
+    "id": "MSG_FOOT_ON_OFF-mode0",
+    "protocol": "P1",
+    "action": "MSG_FOOT_ON_OFF-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 51,
+      "mode": 0
+    },
+    "expected_bytes": "6e010033a2"
+  },
+  {
+    "id": "MSG_FOOT_ON_OFF-mode1",
+    "protocol": "P1",
+    "action": "MSG_FOOT_ON_OFF-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 51,
+      "mode": 1
+    },
+    "expected_bytes": "6e010133a3"
+  },
+  {
+    "id": "MSG_FOOT_ON_OFF-mode2",
+    "protocol": "P1",
+    "action": "MSG_FOOT_ON_OFF-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 51,
+      "mode": 2
+    },
+    "expected_bytes": "6e010233a4"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_INTENSITY_INC-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_INTENSITY_INC-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 52,
+      "mode": 0
+    },
+    "expected_bytes": "6e010034a3"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_INTENSITY_INC-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_INTENSITY_INC-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 52,
+      "mode": 1
+    },
+    "expected_bytes": "6e010134a4"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_INTENSITY_INC-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_INTENSITY_INC-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 52,
+      "mode": 2
+    },
+    "expected_bytes": "6e010234a5"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_INTENSITY_DEC-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_INTENSITY_DEC-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 53,
+      "mode": 0
+    },
+    "expected_bytes": "6e010035a4"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_INTENSITY_DEC-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_INTENSITY_DEC-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 53,
+      "mode": 1
+    },
+    "expected_bytes": "6e010135a5"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_INTENSITY_DEC-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_INTENSITY_DEC-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 53,
+      "mode": 2
+    },
+    "expected_bytes": "6e010235a6"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_SPEED_INC-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_SPEED_INC-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 54,
+      "mode": 0
+    },
+    "expected_bytes": "6e010036a5"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_SPEED_INC-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_SPEED_INC-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 54,
+      "mode": 1
+    },
+    "expected_bytes": "6e010136a6"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_SPEED_INC-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_SPEED_INC-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 54,
+      "mode": 2
+    },
+    "expected_bytes": "6e010236a7"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_SPEED_DEC-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_SPEED_DEC-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 55,
+      "mode": 0
+    },
+    "expected_bytes": "6e010037a6"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_SPEED_DEC-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_SPEED_DEC-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 55,
+      "mode": 1
+    },
+    "expected_bytes": "6e010137a7"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_SPEED_DEC-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_SPEED_DEC-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 55,
+      "mode": 2
+    },
+    "expected_bytes": "6e010237a8"
+  },
+  {
+    "id": "MSG_PULSE-mode0",
+    "protocol": "P1",
+    "action": "MSG_PULSE-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 56,
+      "mode": 0
+    },
+    "expected_bytes": "6e010038a7"
+  },
+  {
+    "id": "MSG_PULSE-mode1",
+    "protocol": "P1",
+    "action": "MSG_PULSE-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 56,
+      "mode": 1
+    },
+    "expected_bytes": "6e010138a8"
+  },
+  {
+    "id": "MSG_PULSE-mode2",
+    "protocol": "P1",
+    "action": "MSG_PULSE-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 56,
+      "mode": 2
+    },
+    "expected_bytes": "6e010238a9"
+  },
+  {
+    "id": "MSG_WAVE-mode0",
+    "protocol": "P1",
+    "action": "MSG_WAVE-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 57,
+      "mode": 0
+    },
+    "expected_bytes": "6e010039a8"
+  },
+  {
+    "id": "MSG_WAVE-mode1",
+    "protocol": "P1",
+    "action": "MSG_WAVE-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 57,
+      "mode": 1
+    },
+    "expected_bytes": "6e010139a9"
+  },
+  {
+    "id": "MSG_WAVE-mode2",
+    "protocol": "P1",
+    "action": "MSG_WAVE-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 57,
+      "mode": 2
+    },
+    "expected_bytes": "6e010239aa"
+  },
+  {
+    "id": "MSG_CONSTANT-mode0",
+    "protocol": "P1",
+    "action": "MSG_CONSTANT-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 58,
+      "mode": 0
+    },
+    "expected_bytes": "6e01003aa9"
+  },
+  {
+    "id": "MSG_CONSTANT-mode1",
+    "protocol": "P1",
+    "action": "MSG_CONSTANT-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 58,
+      "mode": 1
+    },
+    "expected_bytes": "6e01013aaa"
+  },
+  {
+    "id": "MSG_CONSTANT-mode2",
+    "protocol": "P1",
+    "action": "MSG_CONSTANT-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 58,
+      "mode": 2
+    },
+    "expected_bytes": "6e01023aab"
+  },
+  {
+    "id": "MSG_AROMA_ON_OFF-mode0",
+    "protocol": "P1",
+    "action": "MSG_AROMA_ON_OFF-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 59,
+      "mode": 0
+    },
+    "expected_bytes": "6e01003baa"
+  },
+  {
+    "id": "MSG_AROMA_ON_OFF-mode1",
+    "protocol": "P1",
+    "action": "MSG_AROMA_ON_OFF-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 59,
+      "mode": 1
+    },
+    "expected_bytes": "6e01013bab"
+  },
+  {
+    "id": "MSG_AROMA_ON_OFF-mode2",
+    "protocol": "P1",
+    "action": "MSG_AROMA_ON_OFF-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 59,
+      "mode": 2
+    },
+    "expected_bytes": "6e01023bac"
+  },
+  {
+    "id": "UBL_ON_OFF-mode0",
+    "protocol": "P1",
+    "action": "UBL_ON_OFF-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 60,
+      "mode": 0
+    },
+    "expected_bytes": "6e01003cab"
+  },
+  {
+    "id": "UBL_ON_OFF-mode1",
+    "protocol": "P1",
+    "action": "UBL_ON_OFF-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 60,
+      "mode": 1
+    },
+    "expected_bytes": "6e01013cac"
+  },
+  {
+    "id": "UBL_ON_OFF-mode2",
+    "protocol": "P1",
+    "action": "UBL_ON_OFF-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 60,
+      "mode": 2
+    },
+    "expected_bytes": "6e01023cad"
+  },
+  {
+    "id": "HEAD_UP_ONLY-mode0",
+    "protocol": "P1",
+    "action": "HEAD_UP_ONLY-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 61,
+      "mode": 0
+    },
+    "expected_bytes": "6e01003dac"
+  },
+  {
+    "id": "HEAD_UP_ONLY-mode1",
+    "protocol": "P1",
+    "action": "HEAD_UP_ONLY-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 61,
+      "mode": 1
+    },
+    "expected_bytes": "6e01013dad"
+  },
+  {
+    "id": "HEAD_UP_ONLY-mode2",
+    "protocol": "P1",
+    "action": "HEAD_UP_ONLY-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 61,
+      "mode": 2
+    },
+    "expected_bytes": "6e01023dae"
+  },
+  {
+    "id": "FOOT_UP_ONLY-mode0",
+    "protocol": "P1",
+    "action": "FOOT_UP_ONLY-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 62,
+      "mode": 0
+    },
+    "expected_bytes": "6e01003ead"
+  },
+  {
+    "id": "FOOT_UP_ONLY-mode1",
+    "protocol": "P1",
+    "action": "FOOT_UP_ONLY-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 62,
+      "mode": 1
+    },
+    "expected_bytes": "6e01013eae"
+  },
+  {
+    "id": "FOOT_UP_ONLY-mode2",
+    "protocol": "P1",
+    "action": "FOOT_UP_ONLY-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 62,
+      "mode": 2
+    },
+    "expected_bytes": "6e01023eaf"
+  },
+  {
+    "id": "PILLOW_UP-mode0",
+    "protocol": "P1",
+    "action": "PILLOW_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 63,
+      "mode": 0
+    },
+    "expected_bytes": "6e01003fae"
+  },
+  {
+    "id": "PILLOW_UP-mode1",
+    "protocol": "P1",
+    "action": "PILLOW_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 63,
+      "mode": 1
+    },
+    "expected_bytes": "6e01013faf"
+  },
+  {
+    "id": "PILLOW_UP-mode2",
+    "protocol": "P1",
+    "action": "PILLOW_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 63,
+      "mode": 2
+    },
+    "expected_bytes": "6e01023fb0"
+  },
+  {
+    "id": "PILLOW_DOWN-mode0",
+    "protocol": "P1",
+    "action": "PILLOW_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 64,
+      "mode": 0
+    },
+    "expected_bytes": "6e010040af"
+  },
+  {
+    "id": "PILLOW_DOWN-mode1",
+    "protocol": "P1",
+    "action": "PILLOW_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 64,
+      "mode": 1
+    },
+    "expected_bytes": "6e010140b0"
+  },
+  {
+    "id": "PILLOW_DOWN-mode2",
+    "protocol": "P1",
+    "action": "PILLOW_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 64,
+      "mode": 2
+    },
+    "expected_bytes": "6e010240b1"
+  },
+  {
+    "id": "LUMBAR_UP-mode0",
+    "protocol": "P1",
+    "action": "LUMBAR_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 65,
+      "mode": 0
+    },
+    "expected_bytes": "6e010041b0"
+  },
+  {
+    "id": "LUMBAR_UP-mode1",
+    "protocol": "P1",
+    "action": "LUMBAR_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 65,
+      "mode": 1
+    },
+    "expected_bytes": "6e010141b1"
+  },
+  {
+    "id": "LUMBAR_UP-mode2",
+    "protocol": "P1",
+    "action": "LUMBAR_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 65,
+      "mode": 2
+    },
+    "expected_bytes": "6e010241b2"
+  },
+  {
+    "id": "LUMBAR_DOWN-mode0",
+    "protocol": "P1",
+    "action": "LUMBAR_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 66,
+      "mode": 0
+    },
+    "expected_bytes": "6e010042b1"
+  },
+  {
+    "id": "LUMBAR_DOWN-mode1",
+    "protocol": "P1",
+    "action": "LUMBAR_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 66,
+      "mode": 1
+    },
+    "expected_bytes": "6e010142b2"
+  },
+  {
+    "id": "LUMBAR_DOWN-mode2",
+    "protocol": "P1",
+    "action": "LUMBAR_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 66,
+      "mode": 2
+    },
+    "expected_bytes": "6e010242b3"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_UP-mode0",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 67,
+      "mode": 0
+    },
+    "expected_bytes": "6e010043b2"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_UP-mode1",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 67,
+      "mode": 1
+    },
+    "expected_bytes": "6e010143b3"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_UP-mode2",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 67,
+      "mode": 2
+    },
+    "expected_bytes": "6e010243b4"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_DOWN-mode0",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 68,
+      "mode": 0
+    },
+    "expected_bytes": "6e010044b3"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_DOWN-mode1",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 68,
+      "mode": 1
+    },
+    "expected_bytes": "6e010144b4"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_DOWN-mode2",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 68,
+      "mode": 2
+    },
+    "expected_bytes": "6e010244b5"
+  },
+  {
+    "id": "ZG_BACK-mode0",
+    "protocol": "P1",
+    "action": "ZG_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 69,
+      "mode": 0
+    },
+    "expected_bytes": "6e010045b4"
+  },
+  {
+    "id": "ZG_BACK-mode1",
+    "protocol": "P1",
+    "action": "ZG_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 69,
+      "mode": 1
+    },
+    "expected_bytes": "6e010145b5"
+  },
+  {
+    "id": "ZG_BACK-mode2",
+    "protocol": "P1",
+    "action": "ZG_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 69,
+      "mode": 2
+    },
+    "expected_bytes": "6e010245b6"
+  },
+  {
+    "id": "SNORE_BACK-mode0",
+    "protocol": "P1",
+    "action": "SNORE_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 70,
+      "mode": 0
+    },
+    "expected_bytes": "6e010046b5"
+  },
+  {
+    "id": "SNORE_BACK-mode1",
+    "protocol": "P1",
+    "action": "SNORE_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 70,
+      "mode": 1
+    },
+    "expected_bytes": "6e010146b6"
+  },
+  {
+    "id": "SNORE_BACK-mode2",
+    "protocol": "P1",
+    "action": "SNORE_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 70,
+      "mode": 2
+    },
+    "expected_bytes": "6e010246b7"
+  },
+  {
+    "id": "MSG_OFF-mode0",
+    "protocol": "P1",
+    "action": "MSG_OFF-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 71,
+      "mode": 0
+    },
+    "expected_bytes": "6e010047b6"
+  },
+  {
+    "id": "MSG_OFF-mode1",
+    "protocol": "P1",
+    "action": "MSG_OFF-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 71,
+      "mode": 1
+    },
+    "expected_bytes": "6e010147b7"
+  },
+  {
+    "id": "MSG_OFF-mode2",
+    "protocol": "P1",
+    "action": "MSG_OFF-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 71,
+      "mode": 2
+    },
+    "expected_bytes": "6e010247b8"
+  },
+  {
+    "id": "MSG_MODE-mode0",
+    "protocol": "P1",
+    "action": "MSG_MODE-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 72,
+      "mode": 0
+    },
+    "expected_bytes": "6e010048b7"
+  },
+  {
+    "id": "MSG_MODE-mode1",
+    "protocol": "P1",
+    "action": "MSG_MODE-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 72,
+      "mode": 1
+    },
+    "expected_bytes": "6e010148b8"
+  },
+  {
+    "id": "MSG_MODE-mode2",
+    "protocol": "P1",
+    "action": "MSG_MODE-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 72,
+      "mode": 2
+    },
+    "expected_bytes": "6e010248b9"
+  },
+  {
+    "id": "MSG_WAVE1-mode0",
+    "protocol": "P1",
+    "action": "MSG_WAVE1-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 73,
+      "mode": 0
+    },
+    "expected_bytes": "6e010049b8"
+  },
+  {
+    "id": "MSG_WAVE1-mode1",
+    "protocol": "P1",
+    "action": "MSG_WAVE1-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 73,
+      "mode": 1
+    },
+    "expected_bytes": "6e010149b9"
+  },
+  {
+    "id": "MSG_WAVE1-mode2",
+    "protocol": "P1",
+    "action": "MSG_WAVE1-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 73,
+      "mode": 2
+    },
+    "expected_bytes": "6e010249ba"
+  },
+  {
+    "id": "MSG_WAVE2-mode0",
+    "protocol": "P1",
+    "action": "MSG_WAVE2-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 74,
+      "mode": 0
+    },
+    "expected_bytes": "6e01004ab9"
+  },
+  {
+    "id": "MSG_WAVE2-mode1",
+    "protocol": "P1",
+    "action": "MSG_WAVE2-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 74,
+      "mode": 1
+    },
+    "expected_bytes": "6e01014aba"
+  },
+  {
+    "id": "MSG_WAVE2-mode2",
+    "protocol": "P1",
+    "action": "MSG_WAVE2-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 74,
+      "mode": 2
+    },
+    "expected_bytes": "6e01024abb"
+  },
+  {
+    "id": "MSG_WAVE3-mode0",
+    "protocol": "P1",
+    "action": "MSG_WAVE3-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 75,
+      "mode": 0
+    },
+    "expected_bytes": "6e01004bba"
+  },
+  {
+    "id": "MSG_WAVE3-mode1",
+    "protocol": "P1",
+    "action": "MSG_WAVE3-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 75,
+      "mode": 1
+    },
+    "expected_bytes": "6e01014bbb"
+  },
+  {
+    "id": "MSG_WAVE3-mode2",
+    "protocol": "P1",
+    "action": "MSG_WAVE3-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 75,
+      "mode": 2
+    },
+    "expected_bytes": "6e01024bbc"
+  },
+  {
+    "id": "MSG_HEAD_INTENSITY_INC-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_INTENSITY_INC-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 76,
+      "mode": 0
+    },
+    "expected_bytes": "6e01004cbb"
+  },
+  {
+    "id": "MSG_HEAD_INTENSITY_INC-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_INTENSITY_INC-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 76,
+      "mode": 1
+    },
+    "expected_bytes": "6e01014cbc"
+  },
+  {
+    "id": "MSG_HEAD_INTENSITY_INC-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_INTENSITY_INC-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 76,
+      "mode": 2
+    },
+    "expected_bytes": "6e01024cbd"
+  },
+  {
+    "id": "MSG_HEAD_INTENSITY_DEC-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_INTENSITY_DEC-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 77,
+      "mode": 0
+    },
+    "expected_bytes": "6e01004dbc"
+  },
+  {
+    "id": "MSG_HEAD_INTENSITY_DEC-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_INTENSITY_DEC-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 77,
+      "mode": 1
+    },
+    "expected_bytes": "6e01014dbd"
+  },
+  {
+    "id": "MSG_HEAD_INTENSITY_DEC-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_INTENSITY_DEC-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 77,
+      "mode": 2
+    },
+    "expected_bytes": "6e01024dbe"
+  },
+  {
+    "id": "MSG_FOOT_INTENSITY_INC-mode0",
+    "protocol": "P1",
+    "action": "MSG_FOOT_INTENSITY_INC-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 78,
+      "mode": 0
+    },
+    "expected_bytes": "6e01004ebd"
+  },
+  {
+    "id": "MSG_FOOT_INTENSITY_INC-mode1",
+    "protocol": "P1",
+    "action": "MSG_FOOT_INTENSITY_INC-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 78,
+      "mode": 1
+    },
+    "expected_bytes": "6e01014ebe"
+  },
+  {
+    "id": "MSG_FOOT_INTENSITY_INC-mode2",
+    "protocol": "P1",
+    "action": "MSG_FOOT_INTENSITY_INC-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 78,
+      "mode": 2
+    },
+    "expected_bytes": "6e01024ebf"
+  },
+  {
+    "id": "MSG_FOOT_INTENSITY_DEC-mode0",
+    "protocol": "P1",
+    "action": "MSG_FOOT_INTENSITY_DEC-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 79,
+      "mode": 0
+    },
+    "expected_bytes": "6e01004fbe"
+  },
+  {
+    "id": "MSG_FOOT_INTENSITY_DEC-mode1",
+    "protocol": "P1",
+    "action": "MSG_FOOT_INTENSITY_DEC-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 79,
+      "mode": 1
+    },
+    "expected_bytes": "6e01014fbf"
+  },
+  {
+    "id": "MSG_FOOT_INTENSITY_DEC-mode2",
+    "protocol": "P1",
+    "action": "MSG_FOOT_INTENSITY_DEC-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 79,
+      "mode": 2
+    },
+    "expected_bytes": "6e01024fc0"
+  },
+  {
+    "id": "TV_BACK-mode0",
+    "protocol": "P1",
+    "action": "TV_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 88,
+      "mode": 0
+    },
+    "expected_bytes": "6e010058c7"
+  },
+  {
+    "id": "TV_BACK-mode1",
+    "protocol": "P1",
+    "action": "TV_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 88,
+      "mode": 1
+    },
+    "expected_bytes": "6e010158c8"
+  },
+  {
+    "id": "TV_BACK-mode2",
+    "protocol": "P1",
+    "action": "TV_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 88,
+      "mode": 2
+    },
+    "expected_bytes": "6e010258c9"
+  },
+  {
+    "id": "LOUNGE_BACK-mode0",
+    "protocol": "P1",
+    "action": "LOUNGE_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 89,
+      "mode": 0
+    },
+    "expected_bytes": "6e010059c8"
+  },
+  {
+    "id": "LOUNGE_BACK-mode1",
+    "protocol": "P1",
+    "action": "LOUNGE_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 89,
+      "mode": 1
+    },
+    "expected_bytes": "6e010159c9"
+  },
+  {
+    "id": "LOUNGE_BACK-mode2",
+    "protocol": "P1",
+    "action": "LOUNGE_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 89,
+      "mode": 2
+    },
+    "expected_bytes": "6e010259ca"
+  },
+  {
+    "id": "MSG_OFF_RESET-mode0",
+    "protocol": "P1",
+    "action": "MSG_OFF_RESET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 90,
+      "mode": 0
+    },
+    "expected_bytes": "6e01005ac9"
+  },
+  {
+    "id": "MSG_OFF_RESET-mode1",
+    "protocol": "P1",
+    "action": "MSG_OFF_RESET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 90,
+      "mode": 1
+    },
+    "expected_bytes": "6e01015aca"
+  },
+  {
+    "id": "MSG_OFF_RESET-mode2",
+    "protocol": "P1",
+    "action": "MSG_OFF_RESET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 90,
+      "mode": 2
+    },
+    "expected_bytes": "6e01025acb"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_TILT_UP-mode0",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_TILT_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 91,
+      "mode": 0
+    },
+    "expected_bytes": "6e01005bca"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_TILT_UP-mode1",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_TILT_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 91,
+      "mode": 1
+    },
+    "expected_bytes": "6e01015bcb"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_TILT_UP-mode2",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_TILT_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 91,
+      "mode": 2
+    },
+    "expected_bytes": "6e01025bcc"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_TILT_DOWN-mode0",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_TILT_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 92,
+      "mode": 0
+    },
+    "expected_bytes": "6e01005ccb"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_TILT_DOWN-mode1",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_TILT_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 92,
+      "mode": 1
+    },
+    "expected_bytes": "6e01015ccc"
+  },
+  {
+    "id": "PILLOW_LUMBAR_BOTH_TILT_DOWN-mode2",
+    "protocol": "P1",
+    "action": "PILLOW_LUMBAR_BOTH_TILT_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 92,
+      "mode": 2
+    },
+    "expected_bytes": "6e01025ccd"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_BOTH_ON-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_BOTH_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 93,
+      "mode": 0
+    },
+    "expected_bytes": "6e01005dcc"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_BOTH_ON-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_BOTH_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 93,
+      "mode": 1
+    },
+    "expected_bytes": "6e01015dcd"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_BOTH_ON-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_BOTH_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 93,
+      "mode": 2
+    },
+    "expected_bytes": "6e01025dce"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_BOTH_OFF-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_BOTH_OFF-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 94,
+      "mode": 0
+    },
+    "expected_bytes": "6e01005ecd"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_BOTH_OFF-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_BOTH_OFF-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 94,
+      "mode": 1
+    },
+    "expected_bytes": "6e01015ece"
+  },
+  {
+    "id": "MSG_HEAD_FOOT_BOTH_OFF-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_FOOT_BOTH_OFF-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 94,
+      "mode": 2
+    },
+    "expected_bytes": "6e01025ecf"
+  },
+  {
+    "id": "MSG_10MIN-mode0",
+    "protocol": "P1",
+    "action": "MSG_10MIN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 95,
+      "mode": 0
+    },
+    "expected_bytes": "6e01005fce"
+  },
+  {
+    "id": "MSG_10MIN-mode1",
+    "protocol": "P1",
+    "action": "MSG_10MIN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 95,
+      "mode": 1
+    },
+    "expected_bytes": "6e01015fcf"
+  },
+  {
+    "id": "MSG_10MIN-mode2",
+    "protocol": "P1",
+    "action": "MSG_10MIN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 95,
+      "mode": 2
+    },
+    "expected_bytes": "6e01025fd0"
+  },
+  {
+    "id": "MSG_30MIN-mode0",
+    "protocol": "P1",
+    "action": "MSG_30MIN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 97,
+      "mode": 0
+    },
+    "expected_bytes": "6e010061d0"
+  },
+  {
+    "id": "MSG_30MIN-mode1",
+    "protocol": "P1",
+    "action": "MSG_30MIN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 97,
+      "mode": 1
+    },
+    "expected_bytes": "6e010161d1"
+  },
+  {
+    "id": "MSG_30MIN-mode2",
+    "protocol": "P1",
+    "action": "MSG_30MIN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 97,
+      "mode": 2
+    },
+    "expected_bytes": "6e010261d2"
+  },
+  {
+    "id": "FACTORY_RESET-mode0",
+    "protocol": "P1",
+    "action": "FACTORY_RESET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 98,
+      "mode": 0
+    },
+    "expected_bytes": "6e010062d1"
+  },
+  {
+    "id": "FACTORY_RESET-mode1",
+    "protocol": "P1",
+    "action": "FACTORY_RESET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 98,
+      "mode": 1
+    },
+    "expected_bytes": "6e010162d2"
+  },
+  {
+    "id": "FACTORY_RESET-mode2",
+    "protocol": "P1",
+    "action": "FACTORY_RESET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 98,
+      "mode": 2
+    },
+    "expected_bytes": "6e010262d3"
+  },
+  {
+    "id": "MSG_20MIN-mode0",
+    "protocol": "P1",
+    "action": "MSG_20MIN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 99,
+      "mode": 0
+    },
+    "expected_bytes": "6e010063d2"
+  },
+  {
+    "id": "MSG_20MIN-mode1",
+    "protocol": "P1",
+    "action": "MSG_20MIN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 99,
+      "mode": 1
+    },
+    "expected_bytes": "6e010163d3"
+  },
+  {
+    "id": "MSG_20MIN-mode2",
+    "protocol": "P1",
+    "action": "MSG_20MIN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 99,
+      "mode": 2
+    },
+    "expected_bytes": "6e010263d4"
+  },
+  {
+    "id": "TV_SET-mode0",
+    "protocol": "P1",
+    "action": "TV_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 100,
+      "mode": 0
+    },
+    "expected_bytes": "6e010064d3"
+  },
+  {
+    "id": "TV_SET-mode1",
+    "protocol": "P1",
+    "action": "TV_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 100,
+      "mode": 1
+    },
+    "expected_bytes": "6e010164d4"
+  },
+  {
+    "id": "TV_SET-mode2",
+    "protocol": "P1",
+    "action": "TV_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 100,
+      "mode": 2
+    },
+    "expected_bytes": "6e010264d5"
+  },
+  {
+    "id": "LOUNGE_SET-mode0",
+    "protocol": "P1",
+    "action": "LOUNGE_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 101,
+      "mode": 0
+    },
+    "expected_bytes": "6e010065d4"
+  },
+  {
+    "id": "LOUNGE_SET-mode1",
+    "protocol": "P1",
+    "action": "LOUNGE_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 101,
+      "mode": 1
+    },
+    "expected_bytes": "6e010165d5"
+  },
+  {
+    "id": "LOUNGE_SET-mode2",
+    "protocol": "P1",
+    "action": "LOUNGE_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 101,
+      "mode": 2
+    },
+    "expected_bytes": "6e010265d6"
+  },
+  {
+    "id": "ZG_SET-mode0",
+    "protocol": "P1",
+    "action": "ZG_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 102,
+      "mode": 0
+    },
+    "expected_bytes": "6e010066d5"
+  },
+  {
+    "id": "ZG_SET-mode1",
+    "protocol": "P1",
+    "action": "ZG_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 102,
+      "mode": 1
+    },
+    "expected_bytes": "6e010166d6"
+  },
+  {
+    "id": "ZG_SET-mode2",
+    "protocol": "P1",
+    "action": "ZG_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 102,
+      "mode": 2
+    },
+    "expected_bytes": "6e010266d7"
+  },
+  {
+    "id": "MSG_INTENSITY1-mode0",
+    "protocol": "P1",
+    "action": "MSG_INTENSITY1-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 103,
+      "mode": 0
+    },
+    "expected_bytes": "6e010067d6"
+  },
+  {
+    "id": "MSG_INTENSITY1-mode1",
+    "protocol": "P1",
+    "action": "MSG_INTENSITY1-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 103,
+      "mode": 1
+    },
+    "expected_bytes": "6e010167d7"
+  },
+  {
+    "id": "MSG_INTENSITY1-mode2",
+    "protocol": "P1",
+    "action": "MSG_INTENSITY1-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 103,
+      "mode": 2
+    },
+    "expected_bytes": "6e010267d8"
+  },
+  {
+    "id": "MSG_INTENSITY3-mode0",
+    "protocol": "P1",
+    "action": "MSG_INTENSITY3-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 104,
+      "mode": 0
+    },
+    "expected_bytes": "6e010068d7"
+  },
+  {
+    "id": "MSG_INTENSITY3-mode1",
+    "protocol": "P1",
+    "action": "MSG_INTENSITY3-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 104,
+      "mode": 1
+    },
+    "expected_bytes": "6e010168d8"
+  },
+  {
+    "id": "MSG_INTENSITY3-mode2",
+    "protocol": "P1",
+    "action": "MSG_INTENSITY3-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 104,
+      "mode": 2
+    },
+    "expected_bytes": "6e010268d9"
+  },
+  {
+    "id": "SNORE_SET-mode0",
+    "protocol": "P1",
+    "action": "SNORE_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 105,
+      "mode": 0
+    },
+    "expected_bytes": "6e010069d8"
+  },
+  {
+    "id": "SNORE_SET-mode1",
+    "protocol": "P1",
+    "action": "SNORE_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 105,
+      "mode": 1
+    },
+    "expected_bytes": "6e010169d9"
+  },
+  {
+    "id": "SNORE_SET-mode2",
+    "protocol": "P1",
+    "action": "SNORE_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 105,
+      "mode": 2
+    },
+    "expected_bytes": "6e010269da"
+  },
+  {
+    "id": "ZG2_SET-mode0",
+    "protocol": "P1",
+    "action": "ZG2_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 106,
+      "mode": 0
+    },
+    "expected_bytes": "6e01006ad9"
+  },
+  {
+    "id": "ZG2_SET-mode1",
+    "protocol": "P1",
+    "action": "ZG2_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 106,
+      "mode": 1
+    },
+    "expected_bytes": "6e01016ada"
+  },
+  {
+    "id": "ZG2_SET-mode2",
+    "protocol": "P1",
+    "action": "ZG2_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 106,
+      "mode": 2
+    },
+    "expected_bytes": "6e01026adb"
+  },
+  {
+    "id": "ZG2_BACK-mode0",
+    "protocol": "P1",
+    "action": "ZG2_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 107,
+      "mode": 0
+    },
+    "expected_bytes": "6e01006bda"
+  },
+  {
+    "id": "ZG2_BACK-mode1",
+    "protocol": "P1",
+    "action": "ZG2_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 107,
+      "mode": 1
+    },
+    "expected_bytes": "6e01016bdb"
+  },
+  {
+    "id": "ZG2_BACK-mode2",
+    "protocol": "P1",
+    "action": "ZG2_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 107,
+      "mode": 2
+    },
+    "expected_bytes": "6e01026bdc"
+  },
+  {
+    "id": "FLAT2-mode0",
+    "protocol": "P1",
+    "action": "FLAT2-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 108,
+      "mode": 0
+    },
+    "expected_bytes": "6e01006cdb"
+  },
+  {
+    "id": "FLAT2-mode1",
+    "protocol": "P1",
+    "action": "FLAT2-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 108,
+      "mode": 1
+    },
+    "expected_bytes": "6e01016cdc"
+  },
+  {
+    "id": "FLAT2-mode2",
+    "protocol": "P1",
+    "action": "FLAT2-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 108,
+      "mode": 2
+    },
+    "expected_bytes": "6e01026cdd"
+  },
+  {
+    "id": "HEAD_FOOT_ON_OFF-mode0",
+    "protocol": "P1",
+    "action": "HEAD_FOOT_ON_OFF-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 111,
+      "mode": 0
+    },
+    "expected_bytes": "6e01006fde"
+  },
+  {
+    "id": "HEAD_FOOT_ON_OFF-mode1",
+    "protocol": "P1",
+    "action": "HEAD_FOOT_ON_OFF-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 111,
+      "mode": 1
+    },
+    "expected_bytes": "6e01016fdf"
+  },
+  {
+    "id": "HEAD_FOOT_ON_OFF-mode2",
+    "protocol": "P1",
+    "action": "HEAD_FOOT_ON_OFF-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 111,
+      "mode": 2
+    },
+    "expected_bytes": "6e01026fe0"
+  },
+  {
+    "id": "RELAX-mode0",
+    "protocol": "P1",
+    "action": "RELAX-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 112,
+      "mode": 0
+    },
+    "expected_bytes": "6e010070df"
+  },
+  {
+    "id": "RELAX-mode1",
+    "protocol": "P1",
+    "action": "RELAX-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 112,
+      "mode": 1
+    },
+    "expected_bytes": "6e010170e0"
+  },
+  {
+    "id": "RELAX-mode2",
+    "protocol": "P1",
+    "action": "RELAX-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 112,
+      "mode": 2
+    },
+    "expected_bytes": "6e010270e1"
+  },
+  {
+    "id": "MOTOR5_UP-mode0",
+    "protocol": "P1",
+    "action": "MOTOR5_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 113,
+      "mode": 0
+    },
+    "expected_bytes": "6e010071e0"
+  },
+  {
+    "id": "MOTOR5_UP-mode1",
+    "protocol": "P1",
+    "action": "MOTOR5_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 113,
+      "mode": 1
+    },
+    "expected_bytes": "6e010171e1"
+  },
+  {
+    "id": "MOTOR5_UP-mode2",
+    "protocol": "P1",
+    "action": "MOTOR5_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 113,
+      "mode": 2
+    },
+    "expected_bytes": "6e010271e2"
+  },
+  {
+    "id": "MOTOR5_DOWN-mode0",
+    "protocol": "P1",
+    "action": "MOTOR5_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 114,
+      "mode": 0
+    },
+    "expected_bytes": "6e010072e1"
+  },
+  {
+    "id": "MOTOR5_DOWN-mode1",
+    "protocol": "P1",
+    "action": "MOTOR5_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 114,
+      "mode": 1
+    },
+    "expected_bytes": "6e010172e2"
+  },
+  {
+    "id": "MOTOR5_DOWN-mode2",
+    "protocol": "P1",
+    "action": "MOTOR5_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 114,
+      "mode": 2
+    },
+    "expected_bytes": "6e010272e3"
+  },
+  {
+    "id": "MOTOR6_UP-mode0",
+    "protocol": "P1",
+    "action": "MOTOR6_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 115,
+      "mode": 0
+    },
+    "expected_bytes": "6e010073e2"
+  },
+  {
+    "id": "MOTOR6_UP-mode1",
+    "protocol": "P1",
+    "action": "MOTOR6_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 115,
+      "mode": 1
+    },
+    "expected_bytes": "6e010173e3"
+  },
+  {
+    "id": "MOTOR6_UP-mode2",
+    "protocol": "P1",
+    "action": "MOTOR6_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 115,
+      "mode": 2
+    },
+    "expected_bytes": "6e010273e4"
+  },
+  {
+    "id": "MOTOR6_DOWN-mode0",
+    "protocol": "P1",
+    "action": "MOTOR6_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 116,
+      "mode": 0
+    },
+    "expected_bytes": "6e010074e3"
+  },
+  {
+    "id": "MOTOR6_DOWN-mode1",
+    "protocol": "P1",
+    "action": "MOTOR6_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 116,
+      "mode": 1
+    },
+    "expected_bytes": "6e010174e4"
+  },
+  {
+    "id": "MOTOR6_DOWN-mode2",
+    "protocol": "P1",
+    "action": "MOTOR6_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 116,
+      "mode": 2
+    },
+    "expected_bytes": "6e010274e5"
+  },
+  {
+    "id": "UBL_OFF-mode0",
+    "protocol": "P1",
+    "action": "UBL_OFF-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 117,
+      "mode": 0
+    },
+    "expected_bytes": "6e010075e4"
+  },
+  {
+    "id": "UBL_OFF-mode1",
+    "protocol": "P1",
+    "action": "UBL_OFF-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 117,
+      "mode": 1
+    },
+    "expected_bytes": "6e010175e5"
+  },
+  {
+    "id": "UBL_OFF-mode2",
+    "protocol": "P1",
+    "action": "UBL_OFF-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 117,
+      "mode": 2
+    },
+    "expected_bytes": "6e010275e6"
+  },
+  {
+    "id": "TV_ALL_ON-mode0",
+    "protocol": "P1",
+    "action": "TV_ALL_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 119,
+      "mode": 0
+    },
+    "expected_bytes": "6e010077e6"
+  },
+  {
+    "id": "TV_ALL_ON-mode1",
+    "protocol": "P1",
+    "action": "TV_ALL_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 119,
+      "mode": 1
+    },
+    "expected_bytes": "6e010177e7"
+  },
+  {
+    "id": "TV_ALL_ON-mode2",
+    "protocol": "P1",
+    "action": "TV_ALL_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 119,
+      "mode": 2
+    },
+    "expected_bytes": "6e010277e8"
+  },
+  {
+    "id": "TV_HEAD_ON-mode0",
+    "protocol": "P1",
+    "action": "TV_HEAD_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 122,
+      "mode": 0
+    },
+    "expected_bytes": "6e01007ae9"
+  },
+  {
+    "id": "TV_HEAD_ON-mode1",
+    "protocol": "P1",
+    "action": "TV_HEAD_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 122,
+      "mode": 1
+    },
+    "expected_bytes": "6e01017aea"
+  },
+  {
+    "id": "TV_HEAD_ON-mode2",
+    "protocol": "P1",
+    "action": "TV_HEAD_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 122,
+      "mode": 2
+    },
+    "expected_bytes": "6e01027aeb"
+  },
+  {
+    "id": "TV_FOOT_ON-mode0",
+    "protocol": "P1",
+    "action": "TV_FOOT_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 125,
+      "mode": 0
+    },
+    "expected_bytes": "6e01007dec"
+  },
+  {
+    "id": "TV_FOOT_ON-mode1",
+    "protocol": "P1",
+    "action": "TV_FOOT_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 125,
+      "mode": 1
+    },
+    "expected_bytes": "6e01017ded"
+  },
+  {
+    "id": "TV_FOOT_ON-mode2",
+    "protocol": "P1",
+    "action": "TV_FOOT_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 125,
+      "mode": 2
+    },
+    "expected_bytes": "6e01027dee"
+  },
+  {
+    "id": "SNORE_ALL_ON-mode0",
+    "protocol": "P1",
+    "action": "SNORE_ALL_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 120,
+      "mode": 0
+    },
+    "expected_bytes": "6e010078e7"
+  },
+  {
+    "id": "SNORE_ALL_ON-mode1",
+    "protocol": "P1",
+    "action": "SNORE_ALL_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 120,
+      "mode": 1
+    },
+    "expected_bytes": "6e010178e8"
+  },
+  {
+    "id": "SNORE_ALL_ON-mode2",
+    "protocol": "P1",
+    "action": "SNORE_ALL_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 120,
+      "mode": 2
+    },
+    "expected_bytes": "6e010278e9"
+  },
+  {
+    "id": "SNORE_HEAD_ON-mode0",
+    "protocol": "P1",
+    "action": "SNORE_HEAD_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 123,
+      "mode": 0
+    },
+    "expected_bytes": "6e01007bea"
+  },
+  {
+    "id": "SNORE_HEAD_ON-mode1",
+    "protocol": "P1",
+    "action": "SNORE_HEAD_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 123,
+      "mode": 1
+    },
+    "expected_bytes": "6e01017beb"
+  },
+  {
+    "id": "SNORE_HEAD_ON-mode2",
+    "protocol": "P1",
+    "action": "SNORE_HEAD_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 123,
+      "mode": 2
+    },
+    "expected_bytes": "6e01027bec"
+  },
+  {
+    "id": "SNORE_FOOT_ON-mode0",
+    "protocol": "P1",
+    "action": "SNORE_FOOT_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 126,
+      "mode": 0
+    },
+    "expected_bytes": "6e01007eed"
+  },
+  {
+    "id": "SNORE_FOOT_ON-mode1",
+    "protocol": "P1",
+    "action": "SNORE_FOOT_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 126,
+      "mode": 1
+    },
+    "expected_bytes": "6e01017eee"
+  },
+  {
+    "id": "SNORE_FOOT_ON-mode2",
+    "protocol": "P1",
+    "action": "SNORE_FOOT_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 126,
+      "mode": 2
+    },
+    "expected_bytes": "6e01027eef"
+  },
+  {
+    "id": "ZG_ALL_ON-mode0",
+    "protocol": "P1",
+    "action": "ZG_ALL_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 121,
+      "mode": 0
+    },
+    "expected_bytes": "6e010079e8"
+  },
+  {
+    "id": "ZG_ALL_ON-mode1",
+    "protocol": "P1",
+    "action": "ZG_ALL_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 121,
+      "mode": 1
+    },
+    "expected_bytes": "6e010179e9"
+  },
+  {
+    "id": "ZG_ALL_ON-mode2",
+    "protocol": "P1",
+    "action": "ZG_ALL_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 121,
+      "mode": 2
+    },
+    "expected_bytes": "6e010279ea"
+  },
+  {
+    "id": "ZG_HEAD_ON-mode0",
+    "protocol": "P1",
+    "action": "ZG_HEAD_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 124,
+      "mode": 0
+    },
+    "expected_bytes": "6e01007ceb"
+  },
+  {
+    "id": "ZG_HEAD_ON-mode1",
+    "protocol": "P1",
+    "action": "ZG_HEAD_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 124,
+      "mode": 1
+    },
+    "expected_bytes": "6e01017cec"
+  },
+  {
+    "id": "ZG_HEAD_ON-mode2",
+    "protocol": "P1",
+    "action": "ZG_HEAD_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 124,
+      "mode": 2
+    },
+    "expected_bytes": "6e01027ced"
+  },
+  {
+    "id": "ZG_FOOT_ON-mode0",
+    "protocol": "P1",
+    "action": "ZG_FOOT_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 127,
+      "mode": 0
+    },
+    "expected_bytes": "6e01007fee"
+  },
+  {
+    "id": "ZG_FOOT_ON-mode1",
+    "protocol": "P1",
+    "action": "ZG_FOOT_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 127,
+      "mode": 1
+    },
+    "expected_bytes": "6e01017fef"
+  },
+  {
+    "id": "ZG_FOOT_ON-mode2",
+    "protocol": "P1",
+    "action": "ZG_FOOT_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 127,
+      "mode": 2
+    },
+    "expected_bytes": "6e01027ff0"
+  },
+  {
+    "id": "M1_ALL_ON-mode0",
+    "protocol": "P1",
+    "action": "M1_ALL_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 129,
+      "mode": 0
+    },
+    "expected_bytes": "6e010081f0"
+  },
+  {
+    "id": "M1_ALL_ON-mode1",
+    "protocol": "P1",
+    "action": "M1_ALL_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 129,
+      "mode": 1
+    },
+    "expected_bytes": "6e010181f1"
+  },
+  {
+    "id": "M1_ALL_ON-mode2",
+    "protocol": "P1",
+    "action": "M1_ALL_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 129,
+      "mode": 2
+    },
+    "expected_bytes": "6e010281f2"
+  },
+  {
+    "id": "M1_HEAD_ON-mode0",
+    "protocol": "P1",
+    "action": "M1_HEAD_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 130,
+      "mode": 0
+    },
+    "expected_bytes": "6e010082f1"
+  },
+  {
+    "id": "M1_HEAD_ON-mode1",
+    "protocol": "P1",
+    "action": "M1_HEAD_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 130,
+      "mode": 1
+    },
+    "expected_bytes": "6e010182f2"
+  },
+  {
+    "id": "M1_HEAD_ON-mode2",
+    "protocol": "P1",
+    "action": "M1_HEAD_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 130,
+      "mode": 2
+    },
+    "expected_bytes": "6e010282f3"
+  },
+  {
+    "id": "M1_FOOT_ON-mode0",
+    "protocol": "P1",
+    "action": "M1_FOOT_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 131,
+      "mode": 0
+    },
+    "expected_bytes": "6e010083f2"
+  },
+  {
+    "id": "M1_FOOT_ON-mode1",
+    "protocol": "P1",
+    "action": "M1_FOOT_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 131,
+      "mode": 1
+    },
+    "expected_bytes": "6e010183f3"
+  },
+  {
+    "id": "M1_FOOT_ON-mode2",
+    "protocol": "P1",
+    "action": "M1_FOOT_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 131,
+      "mode": 2
+    },
+    "expected_bytes": "6e010283f4"
+  },
+  {
+    "id": "LOCK-mode0",
+    "protocol": "P1",
+    "action": "LOCK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 132,
+      "mode": 0
+    },
+    "expected_bytes": "6e010084f3"
+  },
+  {
+    "id": "LOCK-mode1",
+    "protocol": "P1",
+    "action": "LOCK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 132,
+      "mode": 1
+    },
+    "expected_bytes": "6e010184f4"
+  },
+  {
+    "id": "LOCK-mode2",
+    "protocol": "P1",
+    "action": "LOCK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 132,
+      "mode": 2
+    },
+    "expected_bytes": "6e010284f5"
+  },
+  {
+    "id": "MSG_HEAD_INTENSITY_INC2-mode0",
+    "protocol": "P1",
+    "action": "MSG_HEAD_INTENSITY_INC2-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 164,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100a413"
+  },
+  {
+    "id": "MSG_HEAD_INTENSITY_INC2-mode1",
+    "protocol": "P1",
+    "action": "MSG_HEAD_INTENSITY_INC2-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 164,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101a414"
+  },
+  {
+    "id": "MSG_HEAD_INTENSITY_INC2-mode2",
+    "protocol": "P1",
+    "action": "MSG_HEAD_INTENSITY_INC2-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 164,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102a415"
+  },
+  {
+    "id": "MSG_FOOT_INTENSITY_INC2-mode0",
+    "protocol": "P1",
+    "action": "MSG_FOOT_INTENSITY_INC2-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 165,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100a514"
+  },
+  {
+    "id": "MSG_FOOT_INTENSITY_INC2-mode1",
+    "protocol": "P1",
+    "action": "MSG_FOOT_INTENSITY_INC2-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 165,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101a515"
+  },
+  {
+    "id": "MSG_FOOT_INTENSITY_INC2-mode2",
+    "protocol": "P1",
+    "action": "MSG_FOOT_INTENSITY_INC2-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 165,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102a516"
+  },
+  {
+    "id": "M2_ALL_ON-mode0",
+    "protocol": "P1",
+    "action": "M2_ALL_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 166,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100a615"
+  },
+  {
+    "id": "M2_ALL_ON-mode1",
+    "protocol": "P1",
+    "action": "M2_ALL_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 166,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101a616"
+  },
+  {
+    "id": "M2_ALL_ON-mode2",
+    "protocol": "P1",
+    "action": "M2_ALL_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 166,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102a617"
+  },
+  {
+    "id": "M2_HEAD_ON-mode0",
+    "protocol": "P1",
+    "action": "M2_HEAD_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 167,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100a716"
+  },
+  {
+    "id": "M2_HEAD_ON-mode1",
+    "protocol": "P1",
+    "action": "M2_HEAD_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 167,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101a717"
+  },
+  {
+    "id": "M2_HEAD_ON-mode2",
+    "protocol": "P1",
+    "action": "M2_HEAD_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 167,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102a718"
+  },
+  {
+    "id": "M2_FOOT_ON-mode0",
+    "protocol": "P1",
+    "action": "M2_FOOT_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 168,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100a817"
+  },
+  {
+    "id": "M2_FOOT_ON-mode1",
+    "protocol": "P1",
+    "action": "M2_FOOT_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 168,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101a818"
+  },
+  {
+    "id": "M2_FOOT_ON-mode2",
+    "protocol": "P1",
+    "action": "M2_FOOT_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 168,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102a819"
+  },
+  {
+    "id": "M3_ALL_ON-mode0",
+    "protocol": "P1",
+    "action": "M3_ALL_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 169,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100a918"
+  },
+  {
+    "id": "M3_ALL_ON-mode1",
+    "protocol": "P1",
+    "action": "M3_ALL_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 169,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101a919"
+  },
+  {
+    "id": "M3_ALL_ON-mode2",
+    "protocol": "P1",
+    "action": "M3_ALL_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 169,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102a91a"
+  },
+  {
+    "id": "M3_HEAD_ON-mode0",
+    "protocol": "P1",
+    "action": "M3_HEAD_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 170,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100aa19"
+  },
+  {
+    "id": "M3_HEAD_ON-mode1",
+    "protocol": "P1",
+    "action": "M3_HEAD_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 170,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101aa1a"
+  },
+  {
+    "id": "M3_HEAD_ON-mode2",
+    "protocol": "P1",
+    "action": "M3_HEAD_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 170,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102aa1b"
+  },
+  {
+    "id": "M3_FOOT_ON-mode0",
+    "protocol": "P1",
+    "action": "M3_FOOT_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 171,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100ab1a"
+  },
+  {
+    "id": "M3_FOOT_ON-mode1",
+    "protocol": "P1",
+    "action": "M3_FOOT_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 171,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101ab1b"
+  },
+  {
+    "id": "M3_FOOT_ON-mode2",
+    "protocol": "P1",
+    "action": "M3_FOOT_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 171,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102ab1c"
+  },
+  {
+    "id": "LOUNGE_ALL_ON-mode0",
+    "protocol": "P1",
+    "action": "LOUNGE_ALL_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 172,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100ac1b"
+  },
+  {
+    "id": "LOUNGE_ALL_ON-mode1",
+    "protocol": "P1",
+    "action": "LOUNGE_ALL_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 172,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101ac1c"
+  },
+  {
+    "id": "LOUNGE_ALL_ON-mode2",
+    "protocol": "P1",
+    "action": "LOUNGE_ALL_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 172,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102ac1d"
+  },
+  {
+    "id": "LOUNGE_HEAD_ON-mode0",
+    "protocol": "P1",
+    "action": "LOUNGE_HEAD_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 173,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100ad1c"
+  },
+  {
+    "id": "LOUNGE_HEAD_ON-mode1",
+    "protocol": "P1",
+    "action": "LOUNGE_HEAD_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 173,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101ad1d"
+  },
+  {
+    "id": "LOUNGE_HEAD_ON-mode2",
+    "protocol": "P1",
+    "action": "LOUNGE_HEAD_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 173,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102ad1e"
+  },
+  {
+    "id": "LOUNGE_FOOT_ON-mode0",
+    "protocol": "P1",
+    "action": "LOUNGE_FOOT_ON-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 174,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100ae1d"
+  },
+  {
+    "id": "LOUNGE_FOOT_ON-mode1",
+    "protocol": "P1",
+    "action": "LOUNGE_FOOT_ON-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 174,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101ae1e"
+  },
+  {
+    "id": "LOUNGE_FOOT_ON-mode2",
+    "protocol": "P1",
+    "action": "LOUNGE_FOOT_ON-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 174,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102ae1f"
+  },
+  {
+    "id": "MSG_INTENSITY2-mode0",
+    "protocol": "P1",
+    "action": "MSG_INTENSITY2-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 175,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100af1e"
+  },
+  {
+    "id": "MSG_INTENSITY2-mode1",
+    "protocol": "P1",
+    "action": "MSG_INTENSITY2-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 175,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101af1f"
+  },
+  {
+    "id": "MSG_INTENSITY2-mode2",
+    "protocol": "P1",
+    "action": "MSG_INTENSITY2-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 175,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102af20"
+  },
+  {
+    "id": "ALARM_MODE1-mode0",
+    "protocol": "P1",
+    "action": "ALARM_MODE1-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 176,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100b01f"
+  },
+  {
+    "id": "ALARM_MODE1-mode1",
+    "protocol": "P1",
+    "action": "ALARM_MODE1-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 176,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101b020"
+  },
+  {
+    "id": "ALARM_MODE1-mode2",
+    "protocol": "P1",
+    "action": "ALARM_MODE1-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 176,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102b021"
+  },
+  {
+    "id": "ALARM_MODE2-mode0",
+    "protocol": "P1",
+    "action": "ALARM_MODE2-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 177,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100b120"
+  },
+  {
+    "id": "ALARM_MODE2-mode1",
+    "protocol": "P1",
+    "action": "ALARM_MODE2-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 177,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101b121"
+  },
+  {
+    "id": "ALARM_MODE2-mode2",
+    "protocol": "P1",
+    "action": "ALARM_MODE2-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 177,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102b122"
+  },
+  {
+    "id": "M4_BACK-mode0",
+    "protocol": "P1",
+    "action": "M4_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 178,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100b221"
+  },
+  {
+    "id": "M4_BACK-mode1",
+    "protocol": "P1",
+    "action": "M4_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 178,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101b222"
+  },
+  {
+    "id": "M4_BACK-mode2",
+    "protocol": "P1",
+    "action": "M4_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 178,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102b223"
+  },
+  {
+    "id": "M4_SET-mode0",
+    "protocol": "P1",
+    "action": "M4_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 179,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100b322"
+  },
+  {
+    "id": "M4_SET-mode1",
+    "protocol": "P1",
+    "action": "M4_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 179,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101b323"
+  },
+  {
+    "id": "M4_SET-mode2",
+    "protocol": "P1",
+    "action": "M4_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 179,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102b324"
+  },
+  {
+    "id": "MUSIC_VOLUME-mode0",
+    "protocol": "P1",
+    "action": "MUSIC_VOLUME-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 183,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100b726"
+  },
+  {
+    "id": "MUSIC_VOLUME-mode1",
+    "protocol": "P1",
+    "action": "MUSIC_VOLUME-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 183,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101b727"
+  },
+  {
+    "id": "MUSIC_VOLUME-mode2",
+    "protocol": "P1",
+    "action": "MUSIC_VOLUME-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 183,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102b728"
+  },
+  {
+    "id": "MUSIC_SWITCH-mode0",
+    "protocol": "P1",
+    "action": "MUSIC_SWITCH-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 184,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100b827"
+  },
+  {
+    "id": "MUSIC_SWITCH-mode1",
+    "protocol": "P1",
+    "action": "MUSIC_SWITCH-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 184,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101b828"
+  },
+  {
+    "id": "MUSIC_SWITCH-mode2",
+    "protocol": "P1",
+    "action": "MUSIC_SWITCH-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 184,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102b829"
+  },
+  {
+    "id": "MUSIC_ON_OFF-mode0",
+    "protocol": "P1",
+    "action": "MUSIC_ON_OFF-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 185,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100b928"
+  },
+  {
+    "id": "MUSIC_ON_OFF-mode1",
+    "protocol": "P1",
+    "action": "MUSIC_ON_OFF-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 185,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101b929"
+  },
+  {
+    "id": "MUSIC_ON_OFF-mode2",
+    "protocol": "P1",
+    "action": "MUSIC_ON_OFF-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 185,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102b92a"
+  },
+  {
+    "id": "MUSIC_VOLUME_UP-mode0",
+    "protocol": "P1",
+    "action": "MUSIC_VOLUME_UP-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 212,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100d443"
+  },
+  {
+    "id": "MUSIC_VOLUME_UP-mode1",
+    "protocol": "P1",
+    "action": "MUSIC_VOLUME_UP-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 212,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101d444"
+  },
+  {
+    "id": "MUSIC_VOLUME_UP-mode2",
+    "protocol": "P1",
+    "action": "MUSIC_VOLUME_UP-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 212,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102d445"
+  },
+  {
+    "id": "MUSIC_VOLUME_DOWN-mode0",
+    "protocol": "P1",
+    "action": "MUSIC_VOLUME_DOWN-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 213,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100d544"
+  },
+  {
+    "id": "MUSIC_VOLUME_DOWN-mode1",
+    "protocol": "P1",
+    "action": "MUSIC_VOLUME_DOWN-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 213,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101d545"
+  },
+  {
+    "id": "MUSIC_VOLUME_DOWN-mode2",
+    "protocol": "P1",
+    "action": "MUSIC_VOLUME_DOWN-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 213,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102d546"
+  },
+  {
+    "id": "MUSIC_VIBRATION_MODE-mode0",
+    "protocol": "P1",
+    "action": "MUSIC_VIBRATION_MODE-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 214,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100d645"
+  },
+  {
+    "id": "MUSIC_VIBRATION_MODE-mode1",
+    "protocol": "P1",
+    "action": "MUSIC_VIBRATION_MODE-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 214,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101d646"
+  },
+  {
+    "id": "MUSIC_VIBRATION_MODE-mode2",
+    "protocol": "P1",
+    "action": "MUSIC_VIBRATION_MODE-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 214,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102d647"
+  },
+  {
+    "id": "MUSIC_ON_OFF2-mode0",
+    "protocol": "P1",
+    "action": "MUSIC_ON_OFF2-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 216,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100d847"
+  },
+  {
+    "id": "MUSIC_ON_OFF2-mode1",
+    "protocol": "P1",
+    "action": "MUSIC_ON_OFF2-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 216,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101d848"
+  },
+  {
+    "id": "MUSIC_ON_OFF2-mode2",
+    "protocol": "P1",
+    "action": "MUSIC_ON_OFF2-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 216,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102d849"
+  },
+  {
+    "id": "LUMBAR_BACK-mode0",
+    "protocol": "P1",
+    "action": "LUMBAR_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 145,
+      "mode": 0
+    },
+    "expected_bytes": "6e01009100"
+  },
+  {
+    "id": "LUMBAR_BACK-mode1",
+    "protocol": "P1",
+    "action": "LUMBAR_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 145,
+      "mode": 1
+    },
+    "expected_bytes": "6e01019101"
+  },
+  {
+    "id": "LUMBAR_BACK-mode2",
+    "protocol": "P1",
+    "action": "LUMBAR_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 145,
+      "mode": 2
+    },
+    "expected_bytes": "6e01029102"
+  },
+  {
+    "id": "LUMBAR_SET-mode0",
+    "protocol": "P1",
+    "action": "LUMBAR_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 146,
+      "mode": 0
+    },
+    "expected_bytes": "6e01009201"
+  },
+  {
+    "id": "LUMBAR_SET-mode1",
+    "protocol": "P1",
+    "action": "LUMBAR_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 146,
+      "mode": 1
+    },
+    "expected_bytes": "6e01019202"
+  },
+  {
+    "id": "LUMBAR_SET-mode2",
+    "protocol": "P1",
+    "action": "LUMBAR_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 146,
+      "mode": 2
+    },
+    "expected_bytes": "6e01029203"
+  },
+  {
+    "id": "YOGA_BACK-mode0",
+    "protocol": "P1",
+    "action": "YOGA_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 240,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100f05f"
+  },
+  {
+    "id": "YOGA_BACK-mode1",
+    "protocol": "P1",
+    "action": "YOGA_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 240,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101f060"
+  },
+  {
+    "id": "YOGA_BACK-mode2",
+    "protocol": "P1",
+    "action": "YOGA_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 240,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102f061"
+  },
+  {
+    "id": "YOGA_SET-mode0",
+    "protocol": "P1",
+    "action": "YOGA_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 241,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100f160"
+  },
+  {
+    "id": "YOGA_SET-mode1",
+    "protocol": "P1",
+    "action": "YOGA_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 241,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101f161"
+  },
+  {
+    "id": "YOGA_SET-mode2",
+    "protocol": "P1",
+    "action": "YOGA_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 241,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102f162"
+  },
+  {
+    "id": "READ_BACK-mode0",
+    "protocol": "P1",
+    "action": "READ_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 242,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100f261"
+  },
+  {
+    "id": "READ_BACK-mode1",
+    "protocol": "P1",
+    "action": "READ_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 242,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101f262"
+  },
+  {
+    "id": "READ_BACK-mode2",
+    "protocol": "P1",
+    "action": "READ_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 242,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102f263"
+  },
+  {
+    "id": "READ_SET-mode0",
+    "protocol": "P1",
+    "action": "READ_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 243,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100f362"
+  },
+  {
+    "id": "READ_SET-mode1",
+    "protocol": "P1",
+    "action": "READ_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 243,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101f363"
+  },
+  {
+    "id": "READ_SET-mode2",
+    "protocol": "P1",
+    "action": "READ_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 243,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102f364"
+  },
+  {
+    "id": "M5_BACK-mode0",
+    "protocol": "P1",
+    "action": "M5_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 244,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100f463"
+  },
+  {
+    "id": "M5_BACK-mode1",
+    "protocol": "P1",
+    "action": "M5_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 244,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101f464"
+  },
+  {
+    "id": "M5_BACK-mode2",
+    "protocol": "P1",
+    "action": "M5_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 244,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102f465"
+  },
+  {
+    "id": "M5_SET-mode0",
+    "protocol": "P1",
+    "action": "M5_SET-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 245,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100f564"
+  },
+  {
+    "id": "M5_SET-mode1",
+    "protocol": "P1",
+    "action": "M5_SET-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 245,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101f565"
+  },
+  {
+    "id": "M5_SET-mode2",
+    "protocol": "P1",
+    "action": "M5_SET-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 245,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102f566"
+  },
+  {
+    "id": "FLAT_SLEEP_BACK-mode0",
+    "protocol": "P1",
+    "action": "FLAT_SLEEP_BACK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 246,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100f665"
+  },
+  {
+    "id": "FLAT_SLEEP_BACK-mode1",
+    "protocol": "P1",
+    "action": "FLAT_SLEEP_BACK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 246,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101f666"
+  },
+  {
+    "id": "FLAT_SLEEP_BACK-mode2",
+    "protocol": "P1",
+    "action": "FLAT_SLEEP_BACK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 246,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102f667"
+  },
+  {
+    "id": "FLAT_SLEEP_SAVE-mode0",
+    "protocol": "P1",
+    "action": "FLAT_SLEEP_SAVE-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 247,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100f766"
+  },
+  {
+    "id": "FLAT_SLEEP_SAVE-mode1",
+    "protocol": "P1",
+    "action": "FLAT_SLEEP_SAVE-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 247,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101f767"
+  },
+  {
+    "id": "FLAT_SLEEP_SAVE-mode2",
+    "protocol": "P1",
+    "action": "FLAT_SLEEP_SAVE-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 247,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102f768"
+  },
+  {
+    "id": "SMART_LIGHT_LOCK-mode0",
+    "protocol": "P1",
+    "action": "SMART_LIGHT_LOCK-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 192,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100c02f"
+  },
+  {
+    "id": "SMART_LIGHT_LOCK-mode1",
+    "protocol": "P1",
+    "action": "SMART_LIGHT_LOCK-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 192,
+      "mode": 1
+    },
+    "expected_bytes": "6e0101c030"
+  },
+  {
+    "id": "SMART_LIGHT_LOCK-mode2",
+    "protocol": "P1",
+    "action": "SMART_LIGHT_LOCK-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 192,
+      "mode": 2
+    },
+    "expected_bytes": "6e0102c031"
+  },
+  {
+    "id": "NONE-mode0",
+    "protocol": "P1",
+    "action": "NONE-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 0,
+      "mode": 0
+    },
+    "expected_bytes": "6e0100006f"
+  },
+  {
+    "id": "NONE-mode1",
+    "protocol": "P1",
+    "action": "NONE-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 0,
+      "mode": 1
+    },
+    "expected_bytes": "6e01010070"
+  },
+  {
+    "id": "NONE-mode2",
+    "protocol": "P1",
+    "action": "NONE-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 0,
+      "mode": 2
+    },
+    "expected_bytes": "6e01020071"
+  },
+  {
+    "id": "END-mode0",
+    "protocol": "P1",
+    "action": "END-mode0",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 110,
+      "mode": 0
+    },
+    "expected_bytes": "6e01006edd"
+  },
+  {
+    "id": "END-mode1",
+    "protocol": "P1",
+    "action": "END-mode1",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 110,
+      "mode": 1
+    },
+    "expected_bytes": "6e01016ede"
+  },
+  {
+    "id": "END-mode2",
+    "protocol": "P1",
+    "action": "END-mode2",
+    "builder": "normal",
+    "inputs": {
+      "opcode": 110,
+      "mode": 2
+    },
+    "expected_bytes": "6e01026edf"
+  },
+  {
+    "id": "long-save-threshold-raw",
+    "protocol": "P1",
+    "action": "long-save-threshold-raw",
+    "builder": "queue_long_at_threshold",
+    "inputs": {
+      "opcode": 43,
+      "mode": 0
+    },
+    "expected_bytes": "6e01002b00"
+  },
+  {
+    "id": "angle-0-10",
+    "protocol": "P1",
+    "action": "angle-0-10",
+    "builder": "motor_angle",
+    "inputs": {
+      "axis": 0,
+      "angle": 10
+    },
+    "expected_bytes": "6e88300a30"
+  },
+  {
+    "id": "angle-1-40",
+    "protocol": "P1",
+    "action": "angle-1-40",
+    "builder": "motor_angle",
+    "inputs": {
+      "axis": 1,
+      "angle": 40
+    },
+    "expected_bytes": "6e88342852"
+  },
+  {
+    "id": "angle-2--5",
+    "protocol": "P1",
+    "action": "angle-2--5",
+    "builder": "motor_angle",
+    "inputs": {
+      "axis": 2,
+      "angle": -5
+    },
+    "expected_bytes": "6e88380533"
+  },
+  {
+    "id": "angle-3-127",
+    "protocol": "P1",
+    "action": "angle-3-127",
+    "builder": "motor_angle",
+    "inputs": {
+      "axis": 3,
+      "angle": 127
+    },
+    "expected_bytes": "6e883c7fb1"
+  },
+  {
+    "id": "massage-0-0",
+    "protocol": "P1",
+    "action": "massage-0-0",
+    "builder": "massage",
+    "inputs": {
+      "head": 0,
+      "foot": 0
+    },
+    "expected_bytes": "6e88a00096"
+  },
+  {
+    "id": "massage-1-7",
+    "protocol": "P1",
+    "action": "massage-1-7",
+    "builder": "massage",
+    "inputs": {
+      "head": 1,
+      "foot": 7
+    },
+    "expected_bytes": "6e88a039cf"
+  },
+  {
+    "id": "massage-7-1",
+    "protocol": "P1",
+    "action": "massage-7-1",
+    "builder": "massage",
+    "inputs": {
+      "head": 7,
+      "foot": 1
+    },
+    "expected_bytes": "6e88a00fa5"
+  },
+  {
+    "id": "massage-7-7",
+    "protocol": "P1",
+    "action": "massage-7-7",
+    "builder": "massage",
+    "inputs": {
+      "head": 7,
+      "foot": 7
+    },
+    "expected_bytes": "6e88a03fd5"
+  },
+  {
+    "id": "fa-0x1-",
+    "protocol": "P2",
+    "action": "fa-0x1-",
+    "builder": "fa",
+    "inputs": {
+      "message": 1,
+      "content": []
+    },
+    "expected_bytes": "fa025e01"
+  },
+  {
+    "id": "fa-0x14-010101",
+    "protocol": "P2",
+    "action": "fa-0x14-010101",
+    "builder": "fa",
+    "inputs": {
+      "message": 20,
+      "content": [
+        1,
+        1,
+        1
+      ]
+    },
+    "expected_bytes": "fa050714010101"
+  },
+  {
+    "id": "fa-0x14-010200",
+    "protocol": "P2",
+    "action": "fa-0x14-010200",
+    "builder": "fa",
+    "inputs": {
+      "message": 20,
+      "content": [
+        1,
+        2,
+        0
+      ]
+    },
+    "expected_bytes": "fa050c14010200"
+  },
+  {
+    "id": "fa-0x14-010302",
+    "protocol": "P2",
+    "action": "fa-0x14-010302",
+    "builder": "fa",
+    "inputs": {
+      "message": 20,
+      "content": [
+        1,
+        3,
+        2
+      ]
+    },
+    "expected_bytes": "fa057414010302"
+  },
+  {
+    "id": "fa-0xa5-12",
+    "protocol": "P2",
+    "action": "fa-0xa5-12",
+    "builder": "fa",
+    "inputs": {
+      "message": 165,
+      "content": [
+        18
+      ]
+    },
+    "expected_bytes": "fa0330a512"
+  },
+  {
+    "id": "fa-0x5-01020304",
+    "protocol": "P2",
+    "action": "fa-0x5-01020304",
+    "builder": "fa",
+    "inputs": {
+      "message": 5,
+      "content": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "expected_bytes": "fa06260501020304"
+  },
+  {
+    "id": "rgb-123456",
+    "protocol": "P1",
+    "action": "rgb-123456",
+    "builder": "color",
+    "inputs": {
+      "rgb": [
+        18,
+        52,
+        86
+      ]
+    },
+    "expected_bytes": "6e0cff128b6e0d345605"
+  },
+  {
+    "id": "rgb-ff0080",
+    "protocol": "P1",
+    "action": "rgb-ff0080",
+    "builder": "color",
+    "inputs": {
+      "rgb": [
+        255,
+        0,
+        128
+      ]
+    },
+    "expected_bytes": "6e0cffff786e0d0080fb"
+  },
+  {
+    "id": "alarm-low-300",
+    "protocol": "P1",
+    "action": "alarm-low-300",
+    "builder": "summed",
+    "inputs": {
+      "prefix": [
+        110,
+        5,
+        44,
+        0
+      ]
+    },
+    "expected_bytes": "6e052c009f"
+  },
+  {
+    "id": "alarm-high-300-m1",
+    "protocol": "P1",
+    "action": "alarm-high-300-m1",
+    "builder": "summed",
+    "inputs": {
+      "prefix": [
+        110,
+        6,
+        1,
+        46
+      ]
+    },
+    "expected_bytes": "6e06012ea3"
+  },
+  {
+    "id": "mattress-left-pressure3-dormant",
+    "protocol": "P3",
+    "action": "mattress-left-pressure3-dormant",
+    "builder": "summed",
+    "inputs": {
+      "prefix": [
+        94,
+        1,
+        1,
+        3
+      ]
+    },
+    "expected_bytes": "5e01010363"
+  },
+  {
+    "id": "mattress-right-warm2-dormant",
+    "protocol": "P3",
+    "action": "mattress-right-warm2-dormant",
+    "builder": "summed",
+    "inputs": {
+      "prefix": [
+        94,
+        2,
+        2,
+        2
+      ]
+    },
+    "expected_bytes": "5e02020264"
+  },
+  {
+    "id": "waist-both-stop-dormant",
+    "protocol": "P3",
+    "action": "waist-both-stop-dormant",
+    "builder": "summed",
+    "inputs": {
+      "prefix": [
+        94,
+        3,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "5e03010062"
+  },
+  {
+    "id": "light-timer-infinite",
+    "protocol": "P1",
+    "action": "light-timer-infinite",
+    "builder": "summed",
+    "inputs": {
+      "prefix": [
+        110,
+        11,
+        255,
+        255
+      ]
+    },
+    "expected_bytes": "6e0bffff77"
+  },
+  {
+    "id": "light-timer-300",
+    "protocol": "P1",
+    "action": "light-timer-300",
+    "builder": "summed",
+    "inputs": {
+      "prefix": [
+        110,
+        11,
+        1,
+        44
+      ]
+    },
+    "expected_bytes": "6e0b012ca6"
+  },
+  {
+    "id": "fa-json-local-sensor",
+    "protocol": "P2",
+    "action": "fa-json-local-sensor",
+    "builder": "fa",
+    "inputs": {
+      "message": 17,
+      "content": [
+        123,
+        34,
+        76,
+        101,
+        102,
+        116,
+        34,
+        58,
+        123,
+        34,
+        72,
+        68,
+        34,
+        58,
+        54,
+        53,
+        44,
+        34,
+        66,
+        68,
+        34,
+        58,
+        49,
+        50,
+        44,
+        34,
+        73,
+        115,
+        79,
+        110,
+        66,
+        101,
+        100,
+        34,
+        58,
+        49,
+        44,
+        34,
+        73,
+        115,
+        77,
+        111,
+        118,
+        101,
+        34,
+        58,
+        48,
+        44,
+        34,
+        83,
+        116,
+        100,
+        34,
+        58,
+        50,
+        125,
+        125
+      ]
+    },
+    "expected_bytes": "fa3b24117b224c656674223a7b224844223a36352c224244223a31322c2249734f6e426564223a312c2249734d6f7665223a302c22537464223a327d7d"
+  },
+  {
+    "id": "NISCO-A001-mode0-on",
+    "protocol": "P1",
+    "action": "Snore intervention SNORE_BACK",
+    "builder": "snore",
+    "inputs": {
+      "opcode": 70,
+      "tx_mode": 0
+    },
+    "expected_bytes": "6e130046c7",
+    "caller_metadata": {
+      "default_mask": 6,
+      "constructor_byte2": "01",
+      "final_byte2": "current_tx_mode at asynchronous send time",
+      "one_shot": true,
+      "stop_sent": false
+    }
+  },
+  {
+    "id": "NISCO-A001-mode2-on",
+    "protocol": "P1",
+    "action": "Snore intervention SNORE_BACK",
+    "builder": "snore",
+    "inputs": {
+      "opcode": 70,
+      "tx_mode": 2
+    },
+    "expected_bytes": "6e130246c9",
+    "caller_metadata": {
+      "default_mask": 6,
+      "constructor_byte2": "01",
+      "final_byte2": "current_tx_mode at asynchronous send time",
+      "one_shot": true,
+      "stop_sent": false
+    }
+  },
+  {
+    "id": "NISCO-A001-mode0-off",
+    "protocol": "P1",
+    "action": "Snore intervention off",
+    "builder": "snore",
+    "inputs": {
+      "opcode": 0,
+      "tx_mode": 0
+    },
+    "expected_bytes": "6e13000081",
+    "caller_metadata": {
+      "default_mask": 6,
+      "constructor_byte2": "01",
+      "final_byte2": "current_tx_mode at asynchronous send time",
+      "one_shot": true,
+      "stop_sent": false
+    }
+  },
+  {
+    "id": "NISCO-A001-mode2-off",
+    "protocol": "P1",
+    "action": "Snore intervention off",
+    "builder": "snore",
+    "inputs": {
+      "opcode": 0,
+      "tx_mode": 2
+    },
+    "expected_bytes": "6e13020083",
+    "caller_metadata": {
+      "default_mask": 6,
+      "constructor_byte2": "01",
+      "final_byte2": "current_tx_mode at asynchronous send time",
+      "one_shot": true,
+      "stop_sent": false
+    }
+  },
+  {
+    "id": "NISCO-A001-late-mode0-to2",
+    "protocol": "P1",
+    "action": "Snore intervention SNORE_BACK",
+    "builder": "snore",
+    "inputs": {
+      "opcode": 70,
+      "tx_mode": 2
+    },
+    "expected_bytes": "6e130246c9",
+    "caller_metadata": {
+      "default_mask": 6,
+      "constructor_byte2": "01",
+      "final_byte2": "current_tx_mode at asynchronous send time",
+      "one_shot": true,
+      "stop_sent": false
+    },
+    "observation": {
+      "mode_at_schedule": 0,
+      "mode_before_dispatch": 2,
+      "read_time": "asynchronous dispatch; no mode read while preparing callback",
+      "validation": "focused static reproducer observation, not physical hardware traffic"
+    }
+  }
+]

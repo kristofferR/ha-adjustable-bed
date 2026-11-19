@@ -1,4 +1,4 @@
-"""Production controller, entity and lifecycle contracts for accepted row116."""
+"""Production controller, entity and lifecycle contracts for Good Vibe Sleep 2.0.1."""
 
 from __future__ import annotations
 

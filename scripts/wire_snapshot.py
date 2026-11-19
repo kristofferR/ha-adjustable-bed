@@ -2005,7 +2005,7 @@ def mh_app_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed.const import RICHMAT_MH_APP_CATALOGS
     from custom_components.adjustable_bed.profiles.richmat_mh_apps import models
 
-    fixtures = REPO_ROOT / "tests/fixtures/richmat_cluster022"
+    fixtures = REPO_ROOT / "tests/fixtures/richmat_nisco_supreme"
     mlily = json.loads((fixtures / "mlily_supreme_vectors.json").read_text())
     inputs = {row["id"]: row["inputs"]["args"][0] for row in mlily if row["builder"].startswith("parse_")}
     routes = []

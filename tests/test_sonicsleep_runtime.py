@@ -62,7 +62,8 @@ async def test_real_factory_connect_entities_and_registered_alarm_paths(hass, ru
     assert isinstance(ctrl, bed.SonicSleepController)
     entities = _button_entities_for(hass, target)
     save = next(e for e in entities if e.unique_id.endswith("program_memory_1"))
-    assert save.extra_state_attributes["requires_confirmation"] is True
+    # The card offers a memory save only in Set mode; it needs no second prompt.
+    assert "requires_confirmation" not in save.extra_state_attributes
     custom = next(e for e in entities if e.unique_id.endswith("sonicsleep_lounge_save"))
     assert custom.extra_state_attributes["requires_confirmation"] is True
     cover = AdjustableBedCover(target, _build_cover_description(ctrl.motor_control_specs[0]))

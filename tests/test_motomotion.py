@@ -741,7 +741,8 @@ async def test_selector2_ascii_branch_precedes_moto_binary(
             s for s in c.controller_button_specs if s.key == "motomotion_headrest_" + direction
         )
         assert spec.name == "Back " + direction
-        assert spec.translation_placeholders == {"action": "Back " + direction}
+        # It moves the back, so it sits on the back's motor row.
+        assert spec.translation_key == "back_" + direction
 
 
 @pytest.mark.parametrize("duration", [20, 250])

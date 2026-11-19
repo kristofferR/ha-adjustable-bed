@@ -1,4 +1,4 @@
-"""Unit162 through HA setup, real coordinators, entities and sided service admission."""
+"""MLILY Remote through HA setup, real coordinators, entities and sided service admission."""
 
 import asyncio
 from types import SimpleNamespace

@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Final
 
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESET_SAVE, CARD_PRESETS
 from ...codec import richmat as codec
 from ...controller_state import StateKey
 from ...profiles.mlily_remote import ACTIONS, PROFILES, SAVE_MS, STARTUP, TICK_S
@@ -20,6 +19,7 @@ from ..base import BedController, require_controller
 from ..builder import BuildContext
 from ..casper_base.controller import CasperBaseController
 from ..casper_base.protocol import Request, alarm_countdown
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -300,44 +300,36 @@ class MlilyRemoteController(CasperBaseController):
             )
         )
 
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key.startswith("program_memory_")
-
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         # Flat and the memory slots are the shared preset_flat/preset_memory/
         # program_memory buttons; this adds only the product's other actions.
         cooling = PROFILES[self.model].cooling
-        specs = []
+        specs: list[ControllerButtonSpec | None] = []
         for name, (_, long) in self.actions.items():
             label = (COOLING_LABELS if cooling else LABELS).get(name)
             if label is None:
                 continue
-            card = (
-                (CARD_CLIMATE if cooling else CARD_MASSAGE)
+            kind = (
+                (Kind.CLIMATE if cooling else Kind.MASSAGE)
                 if name.startswith("Massage")
-                else CARD_LIGHTING
+                else Kind.LIGHT
                 if name == "BedLight"
-                else CARD_PRESETS
+                else Kind.PRESET
             )
             for save in (False, True) if long is not None else (False,):
-                title = ("Save " if save else "") + label
                 prefix = "mlily_remote_"
                 if cooling and name.startswith("Massage"):
                     prefix += "cooling_"
-                key = prefix + name.lower() + ("_save" if save else "")
                 specs.append(
-                    ControllerButtonSpec(
-                        key,
-                        title,
+                    catalog_button(
+                        prefix + name.lower() + ("_save" if save else ""),
+                        ("Save " if save else "") + label,
                         partial(invoke, action=name, save=save),
-                        translation_key=key,
-                        translation_placeholders={"action": title},
-                        requires_confirmation=save,
-                        card=CARD_PRESET_SAVE if save else card,
+                        kind=Kind.SAVE if save else kind,
                     )
                 )
-        return tuple(specs)
+        return unique_buttons(specs)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

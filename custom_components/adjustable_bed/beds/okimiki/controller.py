@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Final
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from ...card import CARD_HIDDEN, CARD_PRESET_SAVE, CardPlacement, CardSection
+from ...card import CARD_HIDDEN, CardPlacement, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateKey
@@ -22,6 +22,7 @@ from ...execution import ExecutionCapabilities
 from ...profiles.okimiki import CATALOG, CONTROLS, LIGHT_DELAY_S, PRODUCTS, QUERY_S, SAVE_S, TICK_S
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
+from ..catalog_buttons import save_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -147,9 +148,6 @@ class OkimikiController(GoodVibeController):
     @property
     def supports_memory_programming(self) -> bool:
         return self.model.memory_slots > 0
-
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key.startswith("program_memory_") and self.supports_memory_programming
 
     @property
     def has_dynamic_controller_entities(self) -> bool:
@@ -454,14 +452,8 @@ class OkimikiController(GoodVibeController):
             if control.save is not None and key in ("lounge", "zero_gravity"):
                 label = _SAVE_LABELS[key]
                 buttons.append(
-                    ControllerButtonSpec(
-                        "okimiki_save_" + key,
-                        label,
-                        partial(_press, control=key, save=True),
-                        translation_key="okimiki_action",
-                        translation_placeholders={"action": label},
-                        requires_confirmation=True,
-                        card=CARD_PRESET_SAVE,
+                    save_button(
+                        "okimiki_save_" + key, label, partial(_press, control=key, save=True)
                     )
                 )
         buttons.append(

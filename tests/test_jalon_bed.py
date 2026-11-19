@@ -1,4 +1,4 @@
-"""Frozen row135 vectors and the Jalon app's reachable BLE behavior."""
+"""Frozen Jalon app vectors and the Jalon app's reachable BLE behavior."""
 
 from __future__ import annotations
 

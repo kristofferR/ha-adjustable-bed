@@ -17,6 +17,7 @@ from homeassistant.util import dt as dt_util
 from ...card import CARD_UTILITY
 from ...controller_state import StateKey, StateUpdate
 from ..base import BedController, require_controller
+from ..catalog_buttons import EXTRA_KEY
 from ..entity_specs import ControllerButtonSpec, ControllerStateSensorSpec, MotorControlSpec
 from .notifications import Value
 from .protocol import MalformedNotification
@@ -146,11 +147,12 @@ class GmmotorSleepController(BedController, GmmotorActions):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        operations: tuple[tuple[str, Operation], ...] = (
-            ("Time", "sensor_time"),
-            ("Query part", "sensor_query_part"),
-            ("Start live data", "sensor_live"),
-            ("Stop live data", "sensor_stop"),
+        # Setting the sensor clock and reading its side setting are maintenance.
+        operations: tuple[tuple[str, Operation, bool], ...] = (
+            ("Sync clock", "sensor_time", True),
+            ("Refresh sensor side", "sensor_query_part", True),
+            ("Start live data", "sensor_live", False),
+            ("Stop live data", "sensor_stop", False),
         )
         return tuple(
             ControllerButtonSpec(
@@ -160,8 +162,11 @@ class GmmotorSleepController(BedController, GmmotorActions):
                     ctrl, GmmotorSleepController
                 ).async_execute_gmmotor_request(Request(op)),
                 cancel_movement=False,
+                translation_key=EXTRA_KEY,
+                translation_placeholders={"action": name},
+                diagnostic=maintenance,
             )
-            for name, operation in operations
+            for name, operation, maintenance in operations
         )
 
     @property

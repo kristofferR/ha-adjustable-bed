@@ -59,6 +59,8 @@ def test_source_owned_specs_project_flat_metadata_and_keep_side(app, layout):
                 "held_control": spec.key,
                 "hold_start_delay_ms": 0,
                 "hold_release_delay_ms": delay,
+                # A motor row's app action is pressed, never a timed motor move.
+                **({"timed_move": False} if spec.card.role is not None else {}),
             }
             assert attrs["held_control"] in ctrl.held_control_options
         else:

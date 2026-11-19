@@ -12,13 +12,14 @@ from typing import TYPE_CHECKING, Any, Final
 from bleak.exc import BleakError
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_PRESETS
 from ...codec import okin_nframe as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateKey
 from ...profiles.comfort_enhancement3 import MASSAGE_KEYS, PROFILES, REMOTES, resolve
 from ..base import BedController
 from ..builder import BuildContext
+from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -283,22 +284,20 @@ class ComfortEnhancement3Controller(OkinHandleController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        buttons = []
+        buttons: list[ControllerButtonSpec | None] = []
         for key, _, _, _ in self.remote.groups:
             for direction in ("up", "down"):
                 control = f"{key}_{direction}"
                 name = f"{_GROUP_NAMES[key]} {direction}"
                 buttons.append(
-                    ControllerButtonSpec(
+                    catalog_button(
                         f"apex_{control}",
                         name,
                         lambda c, k=control: _apex(c).move(k),
+                        kind=Kind.MOTOR,
                         scheduler_resource="*",
-                        translation_key="apex_group",
-                        translation_placeholders={"action": name},
                         hold=ControllerHoldSpec(control),
                         invalidates_position=True,
-                        card=CARD_UTILITY,
                     )
                 )
         if self.remote.qs or self.remote.tv:
@@ -353,7 +352,7 @@ class ComfortEnhancement3Controller(OkinHandleController):
                         translation_key=f"apex_{key}",
                     )
                 )
-        return tuple(buttons)
+        return tuple(button for button in buttons if button is not None)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:

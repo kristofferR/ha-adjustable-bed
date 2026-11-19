@@ -595,9 +595,6 @@ class UltramaticController(ProfileExecution[OkinNFrameProfile], OkinNFrameContro
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         return ()
 
-    def standard_button_requires_confirmation(self, key: str) -> bool:
-        return key in ("program_memory_1", "program_memory_2")  # The 6 s save gesture.
-
     def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
         action = {
             "preset_flat": "FLAT",

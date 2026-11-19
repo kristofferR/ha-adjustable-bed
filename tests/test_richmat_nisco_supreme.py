@@ -28,7 +28,7 @@ from custom_components.adjustable_bed.profiles.richmat_mh_apps import (
 from tests.state_helpers import state_writer
 from tests.test_richmat_mh import sleeps as sleeps
 
-FIXTURES = Path(__file__).parent / "fixtures/richmat_cluster022"
+FIXTURES = Path(__file__).parent / "fixtures/richmat_nisco_supreme"
 DIAGNOSTICS = json.loads((FIXTURES / "mlily_diagnostic_cases.json").read_text())
 
 

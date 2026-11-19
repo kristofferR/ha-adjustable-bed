@@ -36,7 +36,7 @@ def main() -> None:
 
     for app in ("nisco", "mlily_supreme"):
         counts: Counter[str] = Counter()
-        rows = json.loads((root / "tests/fixtures/richmat_cluster022" / f"{app}_vectors.json").read_text())
+        rows = json.loads((root / "tests/fixtures/richmat_nisco_supreme" / f"{app}_vectors.json").read_text())
         for row in rows:
             builder, values = row["builder"], row["inputs"]
             if builder.startswith("parse_"):
