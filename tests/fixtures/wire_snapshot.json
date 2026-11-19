@@ -22718,7 +22718,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -22782,7 +22783,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"6e400002",false,"2b",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"6e400002",false,"2f",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"6e400002",false,"2c",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"6e400002",false,"2c",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e0c20080201695735c0005a",1,0],[193,"6e400002",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -22846,7 +22848,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -22910,7 +22913,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -22974,7 +22978,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e0c20080201695735c0005a",1,0],[193,"0000ffe2",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23038,7 +23043,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e0c20080201695735c0005a",1,0],[193,"0000fff2",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:FARM:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23102,7 +23108,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"00000002",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e0c20080201695735c0005a",1,0],[193,"00000002",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JGRN:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23144,7 +23151,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"6e400002",false,"2a",2,107],[307,"6e400002",false,"6e",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"6e400002",false,"2b",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"6e400002",false,"2b",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23186,7 +23194,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002a99",2,107],[307,"d44bc439",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23228,7 +23237,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002a99",2,107],[307,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23270,7 +23280,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002a99",2,107],[307,"0000ffe2",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23312,7 +23323,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002a99",2,107],[307,"0000fff2",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JGRN:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23354,7 +23366,8 @@
 "stop:both_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002a99",2,107],[307,"00000002",false,"6e01006edd",2,100]]},
 "button:majestichome_flat": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]},
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
-"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002b9a",1,0]]}
+"button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002b9a",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23380,7 +23393,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"6e400002",false,"2a",9,107],[1056,"6e400002",false,"6e",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"6e400002",false,"29",2,107],[307,"6e400002",false,"6e",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"6e400002",false,"2a",2,107],[307,"6e400002",false,"6e",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"6e400002",false,"31",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23406,7 +23420,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002a99",9,107],[1056,"d44bc439",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002998",2,107],[307,"d44bc439",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"d44bc439",false,"6e01002a99",2,107],[307,"d44bc439",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23432,7 +23447,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002a99",9,107],[1056,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002998",2,107],[307,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002a99",2,107],[307,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23458,7 +23474,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002a99",9,107],[1056,"0000ffe2",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002998",2,107],[307,"0000ffe2",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"0000ffe2",false,"6e01002a99",2,107],[307,"0000ffe2",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"0000ffe2",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23484,7 +23501,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002a99",9,107],[1056,"0000fff2",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002998",2,107],[307,"0000fff2",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"0000fff2",false,"6e01002a99",2,107],[307,"0000fff2",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"0000fff2",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JHRN:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23510,7 +23528,8 @@
 "hold_foot_down": {"status":"ok","writes":[[100,"00000002",false,"6e01002a99",9,107],[1056,"00000002",false,"6e01006edd",1,0]]},
 "stop:legs_open": {"status":"ok","writes":[[100,"00000002",false,"6e01002998",2,107],[307,"00000002",false,"6e01006edd",2,100]]},
 "stop:legs_close": {"status":"ok","writes":[[100,"00000002",false,"6e01002a99",2,107],[307,"00000002",false,"6e01006edd",2,100]]},
-"button:majestichome_flat": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]}
+"button:majestichome_flat": {"status":"ok","writes":[[93,"00000002",false,"6e010031a0",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:JLRM:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23572,7 +23591,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"6e400002",false,"2e",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"6e400002",false,"2b",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"6e400002",false,"2f",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"6e400002",false,"2c",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"6e400002",false,"2c",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"6e400002",false,"6e0c20080201695735c0005a",1,0],[193,"6e400002",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23634,7 +23654,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23696,7 +23717,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0c20080201695735c0005a",1,0],[193,"d44bc439-abfd-45a2-b575-925416129622",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23758,7 +23780,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000ffe2",false,"6e0c20080201695735c0005a",1,0],[193,"0000ffe2",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23820,7 +23843,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"0000fff2",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"0000fff2",false,"6e0c20080201695735c0005a",1,0],[193,"0000fff2",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:JLRM:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23882,7 +23906,8 @@
 "button:majestichome_memory_1": {"status":"ok","writes":[[93,"00000002",false,"6e01002e9d",1,0]]},
 "button:majestichome_memory_1_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002b9a",1,0]]},
 "button:majestichome_memory_2": {"status":"ok","writes":[[93,"00000002",false,"6e01002f9e",1,0]]},
-"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002c9b",1,0]]}
+"button:majestichome_memory_2_save": {"status":"ok","writes":[[93,"00000002",false,"6e01002c9b",1,0]]},
+"sync_clock": {"status":"ok","writes":[[93,"00000002",false,"6e0c20080201695735c0005a",1,0],[193,"00000002",false,"6e0d2008030138010203042009",1,0]]}
 }},
 "majestichome:none:n1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23900,7 +23925,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"6e400002",false,"6e",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"6e400002",false,"6e",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"6e400002",false,"6e",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w1": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23918,7 +23944,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"d44bc439",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"d44bc439",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"d44bc439",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w2": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23936,7 +23963,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"d44bc439-abfd-45a2-b575-925416129622",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w3": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23954,7 +23982,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"0000ffe2",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w4": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23972,7 +24001,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"0000fff2",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"0000fff2",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"0000fff2",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "majestichome:none:w5": {
 "info": {"bed_type": "majestichome", "controller": "MajesticHomeController", "module": "majestichome.controller", "pulse": [10, 100]},
@@ -23990,7 +24020,8 @@
 "feet_up": {"error":"ValueError","status":"error","writes":[]},
 "feet_down": {"error":"ValueError","status":"error","writes":[]},
 "feet_stop": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]},
-"stop_all": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]}
+"stop_all": {"status":"ok","writes":[[93,"00000002",false,"6e01006edd",1,0]]},
+"sync_clock": {"error":"ValueError","status":"error","writes":[]}
 }},
 "malouf_app": {
 "info": {"bed_type": "malouf_app", "controller": "MaloufAppController", "module": "malouf.app", "pulse": [7, 150]},
