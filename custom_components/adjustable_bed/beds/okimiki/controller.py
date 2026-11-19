@@ -416,6 +416,11 @@ class OkimikiController(GoodVibeController):
         return ()
 
     @property
+    def supports_light_timer(self) -> bool:
+        # The light duration number sets any whole second, not the timer choices.
+        return False
+
+    @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         if not self.supports_lights:
             return ()

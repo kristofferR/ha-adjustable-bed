@@ -338,7 +338,7 @@ class SutaController(BedController):
                     requires_confirmation=command.kind == "save" or key == "reset_on",
                     invalidates_position=command.kind in ("motion", "save") or command.text.startswith("AT+MODE"),
                     # The app has no command that turns the beep off again.
-                    diagnostic=key == "beep_enable",
+                    **({"diagnostic": True} if key == "beep_enable" else {}),
                 ))
         for action in BINARY.values():
             if (

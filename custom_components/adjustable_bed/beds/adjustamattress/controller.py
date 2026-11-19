@@ -680,8 +680,8 @@ class AdjustaMattressController(
                 demonstration="Demonstrate anti-snore",
                 query_status="Refresh anti-snore status",
             )
-        # Named in the shared action shape: a lift end and a demonstration.
-        shared = {"liftHead", "liftFoot", "demonstration"}
+        # A demonstration is the shared extra action shape.
+        shared = {"demonstration"}
         return tuple(
             ControllerButtonSpec(
                 NS + BUTTON_KEYS.get(key, key),

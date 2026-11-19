@@ -3532,6 +3532,12 @@
       },
       "ormatek_both_down": {
         "name": "Head and feet down"
+      },
+      "adjustamattress_lift_head": {
+        "name": "Lift head"
+      },
+      "adjustamattress_lift_foot": {
+        "name": "Lift foot"
       }
     },
     "cover": {

@@ -482,11 +482,13 @@ def save_name(preset: str) -> str:
 
 
 def as_save(spec: ControllerButtonSpec) -> ControllerButtonSpec:
-    """A bed's own save button (named "Save ..."), in the shared save shape."""
+    """A bed's own save button (named "Save ..."), in the shared save shape.
+
+    Only the shape changes: a save the bed takes as a held press keeps its hold.
+    """
     reshaped = relabel(spec, spec.name, kind=Kind.SAVE)
     assert reshaped is not None
-    # The card confirms a tap; a held gesture would send the save unasked.
-    return replace(reshaped, hold=None)
+    return reshaped
 
 
 def relabel(
