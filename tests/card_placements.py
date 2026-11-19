@@ -201,6 +201,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     Some controls exist only for a reported model, layout or page, which no
     offline configuration reaches.
     """
+    from custom_components.adjustable_bed.beds.keeson.enso import EnsoController
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
     from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
     from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
@@ -235,6 +236,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
     from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
+    from custom_components.adjustable_bed.profiles.enso import PROFILES as ENSO_PROFILES
     from custom_components.adjustable_bed.profiles.suta import ROUTES as SUTA_ROUTES
 
     def variant(controller: BedController, **attributes: object) -> BedController:
@@ -245,6 +247,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     for controller in controllers:
         yield controller
+        if isinstance(controller, EnsoController):
+            for profile in ENSO_PROFILES.values():
+                yield variant(controller, profile=profile)
         if isinstance(controller, SutaController):
             for route in SUTA_ROUTES:
                 name = "SUTA-unknown" if route == "fallback" else "SUTA" if route == "short-name" else route.split("*")[0]

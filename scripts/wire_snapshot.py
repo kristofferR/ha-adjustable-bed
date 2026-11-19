@@ -1327,7 +1327,7 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
-    data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {}
+    data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {"product_type": "2"} if bed_type == "enso" else {}
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
             entry_data={const.CONF_PROTOCOL_VARIANT: "A1"}, layout_id="sonicsleep:Nordic")
@@ -1549,7 +1549,7 @@ def route_scenarios() -> list[Scenario]:
     """Protocol-variant and app-profile routes, one scenario each."""
     from custom_components.adjustable_bed import const
 
-    scenarios: list[Scenario] = []
+    scenarios: list[Scenario] = [Scenario(id=f"enso:{n}", bed_type="enso", entry_data={"product_type": str(n), "motor_count": n}, layout_id="enso") for n in (3, 4)]
     for wire in ("okin15", "okin24"):
         for product in ("new", "lite"):
             for transport in ("ffe", "nordic"):
