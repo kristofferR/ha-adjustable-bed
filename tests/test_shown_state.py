@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import dataclasses
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
@@ -16,8 +17,8 @@ from custom_components.adjustable_bed.beds.entity_specs import ControllerSwitchS
 from custom_components.adjustable_bed.command_scheduler import (
     CommandOutcome,
     Delivery,
+    command_frames_counted,
     current_command_context,
-    note_frame_skipped,
 )
 from custom_components.adjustable_bed.light import (
     LIGHT_DESCRIPTION,
@@ -72,23 +73,16 @@ class SettingsController(AlarmController):
         """Send ``name`` through the shared writer, as many times as the bed repeats."""
         await self.bed.before_write(self)  # type: ignore[attr-defined]
         stop: asyncio.Event | None = self.bed.local_stop  # type: ignore[attr-defined]
-        if stop is None:
-            # The shared writer returns without sending once the command is cancelled.
+        # The shared writer returns without sending once the command is cancelled,
+        # or once the controller's own stop (which never cancels the scheduler) is set.
+        with command_frames_counted() if stop is not None else contextlib.nullcontext():
             await self._write_gatt_with_retry(
                 "0000fff1-0000-1000-8000-00805f9b34fb",
                 name.encode(),
                 repeat_count=self.bed.frames,  # type: ignore[attr-defined]
                 repeat_delay_ms=0,
+                cancel_event=stop,
             )
-        else:
-            for _ in range(self.bed.frames):  # type: ignore[attr-defined]
-                if stop.is_set():
-                    # The controller ended the operation itself; STOP never came.
-                    note_frame_skipped()
-                    break
-                await self._write_gatt_with_retry(
-                    "0000fff1-0000-1000-8000-00805f9b34fb", name.encode(), repeat_delay_ms=0
-                )
         await self.bed.after_write(self)  # type: ignore[attr-defined]
 
     async def set_synchro(self, enabled: bool) -> None:
