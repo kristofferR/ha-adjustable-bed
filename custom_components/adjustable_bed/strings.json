@@ -9294,7 +9294,7 @@
         },
         "control": {
           "name": "Control",
-          "description": "The control's name, as its button shows it, such as Flat, Memory 1 or Save M1. Add up or down for a motor, such as Back up."
+          "description": "The control's name, as its button or the app shows it, such as Flat, Memory 1, Save M1 or Massage: Mode. Add up or down for a motor, such as Back up."
         },
         "query": {
           "name": "Setting to read"

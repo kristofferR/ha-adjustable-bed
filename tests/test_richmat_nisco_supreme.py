@@ -417,3 +417,15 @@ def test_controls_are_named_as_their_buttons_show_them() -> None:
     for name in ("Back", "Nonexistent"):
         with pytest.raises(ValueError, match="name of its button"):
             controller.control_named(name)
+
+
+@pytest.mark.parametrize(("app", "model"), [("nisco", "bhrm"), ("nisco", "garm"), ("mlily_supreme", "aerm")])
+def test_every_button_name_runs_its_own_control(app: str, model: str) -> None:
+    """The action takes the name a button shows, so a name copied from the UI works."""
+    from custom_components.adjustable_bed.beds.richmat_mh.app_controller import _shown_name
+
+    controller = make(app, model)
+    for spec in controller.controller_button_specs:
+        code = next((c.code for c in controller._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
+        if code is not None:
+            assert controller.control_named(_shown_name(spec)) == code, spec.key

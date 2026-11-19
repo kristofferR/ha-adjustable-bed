@@ -1494,7 +1494,7 @@ The [Motion Bed action index](beds/ff_frame.md#services-2) covers all 12 typed a
 | Field | Name | Meaning |
 |-------|------|---------|
 | `action` | Action | One of `press` (Press control), `remote_long` (Save with remote button), `query` (Read setting) or `app_mode` (Set app mode). |
-| `control` | Control | The control's name, as its button shows it, such as Flat, Memory 1 or Save M1. Add up or down for a motor, such as Back up. |
+| `control` | Control | The control's name, as its button or the app shows it, such as Flat, Memory 1, Save M1 or Massage: Mode. Add up or down for a motor, such as Back up. |
 | `query` | Setting to read | One of `version` (Firmware version), `exit_one_minute` (Leave one-minute mode), `alarm`, `light`, `mattress`, `waist_mattress`, `snore` (Snore intervention), `diagnostics` (Component check) and others; see the action in Home Assistant. |
 | `transmit_mode` | Transmit mode | The app's transmit mode for later control and release frames (Set app mode). |
 | `motor_group` | Motor group | The app's motor group, which decides the Motor mode choices (Set app mode). |
@@ -1509,8 +1509,8 @@ The [Motion Bed action index](beds/ff_frame.md#services-2) covers all 12 typed a
 ### Nisco and MLILY Supreme controls
 
 `adjustable_bed.richmat_mh_control` accepts `action: press` and a `control`
-named as its button shows it (add `up` or `down` for a motor, such as
-`Back up`), `action: remote_long` for an attached fixed-remote save, or
+named as its button or the app shows it (add `up` or `down` for a motor, such
+as `Back up`), `action: remote_long` for an attached fixed-remote save, or
 `action: query` and one named included query. Each model resolves the name
 against its own app page; a name it does not have is rejected.
 The fixed-remote long action waits three seconds, sends the finalized save and

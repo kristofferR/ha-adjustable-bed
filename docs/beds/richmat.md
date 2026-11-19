@@ -9572,7 +9572,7 @@ sits beside excluded infrastructure.
 #### Services
 
 `richmat_mh_control` runs a control on the selected model's app page, named in
-`control` as its button shows it (a motor adds its direction, such as
+`control` as its button or the app shows it (a motor adds its direction, such as
 `Pillow up` or `Back down`), its attached fixed-remote long-save caller, or an
 included query. A name the model's page does not have is rejected. Standard preset/memory actions,
 `set_alarm` and `richmat_mh_light_color` use the same family runtime. Service
