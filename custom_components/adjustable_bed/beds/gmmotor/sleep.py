@@ -469,6 +469,7 @@ class GmmotorSleepController(BedController, GmmotorActions):
             raise ValueError("Select a part setting admitted by this sleep module's app page")
 
     def _stop_live(self) -> None:
+        self._generation += 1  # Queued realtime polls must not write after this.
         self._live_enabled = False
         self._cancel_live_timers()
         self._receive_buffer.clear()
@@ -497,7 +498,8 @@ class GmmotorSleepController(BedController, GmmotorActions):
                 self._receive_buffer.clear()
                 return
             await self._send("q_realtime")
-            self._start_live_timers()
+            if self._live_enabled:  # Not stopped while the request was being sent.
+                self._start_live_timers()
         else:
             commands: dict[Operation, SleepCommand] = {
                 "sensor_time": "s_time",

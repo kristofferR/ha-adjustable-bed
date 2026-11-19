@@ -273,3 +273,32 @@ async def test_turning_live_data_off_never_takes_the_link(hass: HomeAssistant) -
     assert not ctrl._live_enabled
     await switch.async_turn_on()
     runtime.async_execute_controller_command.assert_awaited_once()
+
+
+async def test_off_drops_a_pending_on_and_queued_polls(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
+
+    ctrl = controller(hass)
+    runtime = MagicMock(capability_controller=ctrl, controller=ctrl)
+    admitted = asyncio.Event()
+    pending: list = []
+
+    async def execute(apply, **_kwargs):
+        pending.append(apply)
+        await admitted.wait()
+        await apply(ctrl)
+
+    runtime.async_execute_controller_command = execute
+    runtime.entity_unique_id.side_effect = lambda key: f"bed_{key}"
+    (spec,) = ctrl.controller_switch_specs
+    switch = AdjustableBedControllerSwitch(runtime, spec)
+    turning_on = asyncio.create_task(switch.async_turn_on())
+    await asyncio.sleep(0)
+    assert pending
+    generation = ctrl._generation
+    await switch.async_turn_off()
+    assert ctrl._generation > generation  # Queued polls of the old stream are void.
+    admitted.set()
+    await turning_on
+    assert not ctrl._live_enabled
+    ctrl._coordinator.client.write_gatt_char.assert_not_awaited()

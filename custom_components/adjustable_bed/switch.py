@@ -231,6 +231,8 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
         self._attr_assumed_state = spec.assumed_state or spec.state_key is None
         # The last command actually sent, for a switch the bed never reports.
         self._commanded: bool | None = None
+        # Local turn-offs, so an earlier turn-on still waiting for the link is dropped.
+        self._local_offs = 0
         self._unregister_callbacks: list[Callable[[], None]] = []
 
     async def async_added_to_hass(self) -> None:
@@ -293,6 +295,7 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             if live is None or live.local_off_fn is None:
                 raise ServiceValidationError("Controller no longer supports this setting")
             live.local_off_fn()
+            self._local_offs += 1
             return
         if self._spec.local_set_fn is not None:
             # No frame is sent, so do not take the bed's single BLE link.
@@ -305,9 +308,12 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             return
 
         sent = False
+        offs = self._local_offs
 
         async def apply(ctrl: BedController) -> None:
             nonlocal sent
+            if on and offs != self._local_offs:
+                return  # Turned off while this waited for the link.
             live = next(
                 (spec for spec in ctrl.controller_switch_specs if spec.key == self._spec.key), None
             )
